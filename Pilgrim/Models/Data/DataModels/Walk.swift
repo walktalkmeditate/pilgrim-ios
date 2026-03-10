@@ -1,5 +1,5 @@
 //
-//  Workout.swift
+//  Walk.swift
 //
 //  Pilgrim
 //  Copyright (C) 2020 Tim Fraedrich <timfraedrich@icloud.com>

@@ -23,7 +23,7 @@ import CoreMotion
 import Combine
 import CombineExt
 
-/// A `WalkBuilderComponent` for counting the steps taken during a workout
+/// A `WalkBuilderComponent` for counting the steps taken during a walk
 class StepCounter: WalkBuilderComponent {
     
     /// The number of steps before the last pause.
@@ -59,12 +59,12 @@ class StepCounter: WalkBuilderComponent {
     
     // MARK: - Dataflow
     
-    /// An Array of cancellables for binding to the workout builder.
+    /// An Array of cancellables for binding to the walk builder.
     private var cancellables: [AnyCancellable] = []
     
-    /// The relay to publish that insufficient permission was granted to the workout builder.
+    /// The relay to publish that insufficient permission was granted to the walk builder.
     private let insufficientPermissionRelay = PassthroughRelay<String>()
-    /// The relay to publish the taken steps to the workout builder.
+    /// The relay to publish the taken steps to the walk builder.
     private let stepsRelay = CurrentValueRelay<Int?>(nil)
     
     // MARK: Binders

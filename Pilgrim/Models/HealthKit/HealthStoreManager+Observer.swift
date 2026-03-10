@@ -96,9 +96,9 @@ extension HealthStoreManager {
         if UserPreferences.automaticallyImportNewHealthWorkouts.value && !samples.isEmpty {
             let workouts = samples.compactMap { $0 as? HKWorkout }
                 .filter { !existingHealthUUIDs.contains($0.uuid) }
-                .compactMap { createHealthWalk(from: $0) }
+                .compactMap { createHealthWorkout(from: $0) }
             
-            DataManager.saveWorkouts(objects: workouts) { _, error, _ in
+            DataManager.saveWalks(objects: workouts) { _, error, _ in
                 guard let error = error else { return }
                 print("[HealthStoreManager+Observer] An error occured while trying to save new health workouts:", error.debugDescription)
             }

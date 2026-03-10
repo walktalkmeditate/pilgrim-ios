@@ -89,7 +89,7 @@ struct BackupV4: BackupProtocol {
     
     init(workouts: [TempV4.Workout], events: [TempV4.Event]) {
         self.date = Date()
-        self.version = BackupV3.versionCode
+        self.version = BackupV4.versionCode
         self.workoutData = workouts
         self.eventData = events
     }

@@ -20,56 +20,56 @@
 
 import Foundation
 
-/// A protocol to unify the saving and processing of objects holding workout data.
+/// A protocol to unify the saving and processing of objects holding walk data.
 public protocol WalkInterface: DataInterface {
     
-    /// The type of the underlying workout. For more see `Walk.WalkType`.
+    /// The type of the underlying walk. For more see `Walk.WalkType`.
     var workoutType: Walk.WalkType { get }
-    /// The distance travelled during the workout in meters.
+    /// The distance travelled during the walk in meters.
     var distance: Double { get }
-    /// The steps taken during the workout. If `nil`, no steps were recorded or it does not make sense to assign a step value to the workout because of its type.
+    /// The steps taken during the walk. If `nil`, no steps were recorded or it does not make sense to assign a step value to the walk because of its type.
     var steps: Int? { get }
-    /// The `Date` the workout was started at.
+    /// The `Date` the walk was started at.
     var startDate: Date { get }
-    /// The `Date` the workout was ended at.
+    /// The `Date` the walk was ended at.
     var endDate: Date { get }
-    /// An estimate of energy burned during the workout in kilocalories. If `nil` no estimate could be made or the workout was imported without data being attached.
+    /// An estimate of energy burned during the walk in kilocalories. If `nil` no estimate could be made or the walk was imported without data being attached.
     var burnedEnergy: Double? { get }
-    /// A boolean indicating whether the recorded workout was a competition.
+    /// A boolean indicating whether the recorded walk was a competition.
     var isRace: Bool { get }
-    /// A `String` providing additional information on a workout. If `nil` none has been set.
+    /// A `String` providing additional information on a walk. If `nil` none has been set.
     var comment: String? { get }
-    /// A boolean indicating whether the workout was modified be the user.
+    /// A boolean indicating whether the walk was modified be the user.
     var isUserModified: Bool { get }
-    /// The universally unique identifier provided by Apple Health and attached to the workout if it was imported from or saved to the HealthStore. If `nil` there is no known reference to the workout in Apple Health.
+    /// The universally unique identifier provided by Apple Health and attached to the walk if it was imported from or saved to the HealthStore. If `nil` there is no known reference to the walk in Apple Health.
     var healthKitUUID: UUID? { get }
-    /// A boolean indicating whether the workout recording has been finished yet.
+    /// A boolean indicating whether the walk recording has been finished yet.
     var finishedRecording: Bool { get }
-    /// The height gained during the workout in meters.
+    /// The height gained during the walk in meters.
     var ascend: Double { get }
-    /// The height lossed during the workout in meters.
+    /// The height lossed during the walk in meters.
     var descend: Double { get }
-    /// The duration the user was actively working out, meaning the workout was neither automatically nor manually paused.
+    /// The duration the user was actively working out, meaning the walk was neither automatically nor manually paused.
     var activeDuration: Double { get }
-    /// The duration the workout was paused.
+    /// The duration the walk was paused.
     var pauseDuration: Double { get }
-    /// A String to identify the specific day a workout was recorded on taken from the `startDate` property. The format of the date is `yyyyMMdd`.
+    /// A String to identify the specific day a walk was recorded on taken from the `startDate` property. The format of the date is `yyyyMMdd`.
     var dayIdentifier: String { get }
-    /// A reference to `WorkoutHeartRateSamples` associated with this workout.
+    /// A reference to `HeartRateDataSample`s associated with this walk.
     var heartRates: [HeartRateDataSampleInterface] { get }
-    /// A reference to `RouteDataSamples` associated with this workout.
+    /// A reference to `RouteDataSamples` associated with this walk.
     var routeData: [RouteDataSampleInterface] { get }
-    /// A reference to `WalkPause`s associated with this workout.
+    /// A reference to `WalkPause`s associated with this walk.
     var pauses: [WalkPauseInterface] { get }
-    /// A reference to `WalkEvent`s associated with this workout.
+    /// A reference to `WalkEvent`s associated with this walk.
     var workoutEvents: [WalkEventInterface] { get }
-    /// A reference to `Event`s associated with this workout.
+    /// A reference to `Event`s associated with this walk.
     var events: [EventInterface] { get }
     /// Duration spent talking (voice recording) in seconds.
     var talkDuration: Double { get }
     /// Duration spent meditating (stationary) in seconds.
     var meditateDuration: Double { get }
-    /// A reference to voice recordings associated with this workout.
+    /// A reference to voice recordings associated with this walk.
     var voiceRecordings: [VoiceRecordingInterface] { get }
 
 }

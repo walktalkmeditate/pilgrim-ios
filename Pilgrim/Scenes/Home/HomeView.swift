@@ -32,7 +32,7 @@ struct HomeView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedWalk) { walk in
-                WalkSummaryView(workout: walk)
+                WalkSummaryView(walk: walk)
             }
         }
     }
@@ -64,7 +64,7 @@ struct HomeView: View {
     private var walkList: some View {
         List {
             ForEach(viewModel.walks) { walk in
-                WalkRowView(workout: walk)
+                WalkRowView(walk: walk)
                     .contentShape(Rectangle())
                     .onTapGesture { selectedWalk = walk }
                     .listRowBackground(Color.parchment)

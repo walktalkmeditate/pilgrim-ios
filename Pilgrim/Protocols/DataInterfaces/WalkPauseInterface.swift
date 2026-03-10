@@ -20,7 +20,7 @@
 
 import Foundation
 
-/// A protocol to unify the saving and processing of pause objects connected to a workout.
+/// A protocol to unify the saving and processing of pause objects connected to a walk.
 public protocol WalkPauseInterface: DataInterface {
     
     /// The `Date` the pause started at.

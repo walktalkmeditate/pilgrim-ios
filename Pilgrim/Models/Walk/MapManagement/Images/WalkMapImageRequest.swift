@@ -22,13 +22,13 @@ import UIKit
 
 class WalkMapImageRequest: Equatable {
     
-    let workoutUUID: UUID?
+    let walkUUID: UUID?
     let size: WalkMapImageSize
     let highPriority: Bool
     var completion: (Bool, UIImage?) -> Void
     
     func cacheIdentifier(forDarkAppearance usesDarkAppearance: Bool = Config.isDarkModeEnabled) -> String? {
-        guard let uuid = workoutUUID else {
+        guard let uuid = walkUUID else {
             return nil
         }
         let id = String(describing: uuid)
@@ -37,14 +37,14 @@ class WalkMapImageRequest: Equatable {
         return id + "_" + size + "_" + appearance
     }
     
-    init(workoutUUID: UUID?, size: WalkMapImageSize, highPriority: Bool = false, completion: @escaping (Bool, UIImage?) -> Void) {
-        self.workoutUUID = workoutUUID
+    init(walkUUID: UUID?, size: WalkMapImageSize, highPriority: Bool = false, completion: @escaping (Bool, UIImage?) -> Void) {
+        self.walkUUID = walkUUID
         self.size = size
         self.highPriority = highPriority
         self.completion = completion
     }
     
     static func == (lhs: WalkMapImageRequest, rhs: WalkMapImageRequest) -> Bool {
-        return lhs.workoutUUID == rhs.workoutUUID && lhs.size == rhs.size
+        return lhs.walkUUID == rhs.walkUUID && lhs.size == rhs.size
     }
 }

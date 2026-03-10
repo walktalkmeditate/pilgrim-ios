@@ -18,7 +18,7 @@ class MainCoordinator: ObservableObject {
             guard let self, self.activeWalkViewModel == nil else { return }
             let vm = ActiveWalkViewModel()
             vm.onWalkCompleted = { [weak self] snapshot in
-                DataManager.saveWalk(object: snapshot) { success, error, workout in
+                DataManager.saveWalk(object: snapshot) { success, error, walk in
                     guard let self else { return }
                     if success {
                         self.pendingSnapshot = snapshot
@@ -58,7 +58,7 @@ struct MainCoordinatorView: View {
             .sheet(item: $coordinator.completedSnapshot, onDismiss: {
                 coordinator.handleSummaryDismiss()
             }) { snapshot in
-                WalkSummaryView(workout: snapshot)
+                WalkSummaryView(walk: snapshot)
             }
             .alert("Save Failed", isPresented: $coordinator.showSaveError) {
                 Button("Dismiss") {

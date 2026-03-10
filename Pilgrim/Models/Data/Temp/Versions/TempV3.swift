@@ -47,8 +47,8 @@ public enum TempV3 {
             
             let pauseObjects = Computation.calculateAndValidatePauses(
                 from: workoutEvents.map { (type: $0.eventType, date: $0.startDate) },
-                workoutStart: startDate,
-                workoutEnd: endDate
+                walkStart: startDate,
+                walkEnd: endDate
             ) ?? []
             
             let pauses = pauseObjects.map { (start, end, type) -> TempWalkPause in

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct WalkRowView: View {
 
-    let workout: Walk
+    let walk: Walk
 
     var body: some View {
         HStack(spacing: Constants.UI.Padding.normal) {
@@ -36,13 +36,13 @@ struct WalkRowView: View {
     }()
 
     private var dateString: String {
-        Self.dateFormatter.string(from: workout.startDate)
+        Self.dateFormatter.string(from: walk.startDate)
     }
 
     private var statsString: String {
-        let distance = Measurement(value: workout.distance, unit: UnitLength.meters)
+        let distance = Measurement(value: walk.distance, unit: UnitLength.meters)
         let distanceStr = MeasurementFormatter.shortDistance.string(from: distance)
-        let duration = workout.activeDuration
+        let duration = walk.activeDuration
         let durationStr = Self.formatDuration(duration)
         return "\(distanceStr) \u{2022} \(durationStr)"
     }

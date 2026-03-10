@@ -26,7 +26,7 @@ class WalkCompletionActionHandler {
     /// A `TempWalk` object to be saved, discarded or handed back to a `WalkBuilder` by this class
     private var snapshot: TempWalk
     
-    /// A weak reference to a `WalkBuilder` to continue the workout
+    /// A weak reference to a `WalkBuilder` to continue the walk
     private weak var builder: WalkBuilder?
     
     /// If `true` the `WalkCompletionActionHandler` did already perform an action, so no additional action should be taken
@@ -44,14 +44,14 @@ class WalkCompletionActionHandler {
     }
     
     /**
-     Displays a dismissable view over the current `UIWindow` that gives the user options on what to do with the just recorded workout, saving it automatically after a certain time
+     Displays a dismissable view over the current `UIWindow` that gives the user options on what to do with the just recorded walk, saving it automatically after a certain time
      */
     public func display() {
         // would normally show save banner
     }
     
     /**
-     Saves the workout if no other action was already performed
+     Saves the walk if no other action was already performed
      */
     public func saveWalk() {
         
@@ -61,14 +61,14 @@ class WalkCompletionActionHandler {
         
         self.didPerformAction = true
         
-        DataManager.saveWalk(object: self.snapshot) { (success, error, workout) in
+        DataManager.saveWalk(object: self.snapshot) { (success, error, walk) in
             // would normally show save success banner
         }
         
     }
     
     /**
-     Continues the workout if no other action was already performed and the builder is still active
+     Continues the walk if no other action was already performed and the builder is still active
      */
     public func continueWalk() {
         
@@ -94,12 +94,12 @@ class WalkCompletionActionHandler {
         
         // would normally show continuing or error banner
         
-        print("Imagine the workout would continue")
+        print("Imagine the walk would continue")
         
     }
     
     /**
-     Discards the workout if no other action was already performed
+     Discards the walk if no other action was already performed
      */
     public func discardWalk() {
         

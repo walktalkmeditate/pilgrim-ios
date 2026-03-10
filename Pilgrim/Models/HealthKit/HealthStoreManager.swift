@@ -32,7 +32,7 @@ class HealthStoreManager {
     /// A class containing static instances of `HKSampleType` for reference to HealthKit objects.
     class HealthType {
         
-        static let Walk = HKObjectType.workoutType()
+        static let Workout = HKObjectType.workoutType()
         static let ActiveEnergyBurned = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!
         static let DistanceWalkingRunning = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)!
         static let DistanceCycling = HKObjectType.quantityType(forIdentifier: .distanceCycling)!
@@ -125,7 +125,7 @@ class HealthStoreManager {
      - parameter workout: the workout that is supposed to be saved
      - parameter completion: the closure performed upon the completion of saving
      */
-    static func saveHealthWalk(for workout: WalkInterface, completion: @escaping (HealthError?, HKWorkout?) -> Void) {
+    static func saveHealthWorkout(for workout: WalkInterface, completion: @escaping (HealthError?, HKWorkout?) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -142,7 +142,7 @@ class HealthStoreManager {
             var metadata: [String : Any] = [HKMetadataKeyWasUserEntered : workout.isUserModified]
             if let uuid = workout.uuid { metadata[HKMetadataKeyExternalUUID] = uuid.uuidString }
             
-            let healthWorkout = HKWalk(
+            let healthWorkout = HKWorkout(
                 activityType: workout.workoutType.healthKitType,
                 start: start,
                 end: end,
@@ -253,7 +253,7 @@ class HealthStoreManager {
         var errorOccured: HealthError?
         
         for workout in unsavedWorkouts {
-            saveHealthWalk(for: workout) { error, _ in
+            saveHealthWorkout(for: workout) { error, _ in
                 saveCount += 1
                 if error != nil {
                     errorOccured = error
@@ -271,7 +271,7 @@ class HealthStoreManager {
      - parameter workout: the workout for which the associated health workout is supposed to be deleted
      - parameter completion: the closure being performed upon completion indicating if an error occured
      */
-    static func deleteHealthWalk(for workout: WalkInterface, completion: @escaping (HealthError?) -> Void) {
+    static func deleteHealthWorkout(for workout: WalkInterface, completion: @escaping (HealthError?) -> Void) {
         
         guard let reference = workout.healthKitUUID else { completion(.invalidInput); return }
         let completion = safeClosure(from: completion)
@@ -340,14 +340,14 @@ class HealthStoreManager {
      - parameter workout: the workout which is supposed to be updated in the health store
      - parameter completion: the closure being performed upon completion indicating if an error occured
      */
-    static func updateHealthWalk(for workout: WalkInterface, completion: @escaping (HealthError?) -> Void) {
+    static func updateHealthWorkout(for workout: WalkInterface, completion: @escaping (HealthError?) -> Void) {
         
         let completion = safeClosure(from: completion)
         
-        deleteHealthWalk(for: workout) { deletionError in
+        deleteHealthWorkout(for: workout) { deletionError in
             guard deletionError == nil else { completion(deletionError); return }
             
-            saveHealthWalk(for: workout) { savingError, _ in
+            saveHealthWorkout(for: workout) { savingError, _ in
                 guard savingError == nil else { completion(savingError); return }
                 completion(nil)
             }
@@ -415,23 +415,23 @@ class HealthStoreManager {
     }
     
     /**
-     Creates `HKWalkEvent`s from the pause and workout event objects of a given workout
+     Creates `HKWorkoutEvent`s from the pause and workout event objects of a given workout
      - parameter workout: the workout object the pause and workout event objects are taken from
-     - returns: the created array of `HKWalkEvent`
+     - returns: the created array of `HKWorkoutEvent`
      */
-    private static func createWalkEvents(from workout: WalkInterface) -> [HKWalkEvent] {
+    private static func createWalkEvents(from workout: WalkInterface) -> [HKWorkoutEvent] {
         
-        var workoutEvents = [HKWalkEvent]()
+        var workoutEvents = [HKWorkoutEvent]()
         
         workout.pauses.forEach { pause in
             
             var events = [
-                HKWalkEvent(
+                HKWorkoutEvent(
                     type: .pause,
                     dateInterval: DateInterval(start: pause.startDate, duration: 0),
                     metadata: nil
                 ),
-                workout.endDate == pause.endDate ? nil : HKWalkEvent(
+                workout.endDate == pause.endDate ? nil : HKWorkoutEvent(
                     type: .resume,
                     dateInterval: DateInterval(start: pause.endDate, duration: 0),
                     metadata: nil
@@ -440,7 +440,7 @@ class HealthStoreManager {
             
             if pause.pauseType == .automatic {
                 events.insert(
-                    HKWalkEvent(
+                    HKWorkoutEvent(
                         type: .motionPaused,
                         dateInterval: DateInterval(start: pause.startDate, duration: 0),
                         metadata: nil
@@ -448,7 +448,7 @@ class HealthStoreManager {
                     at: 1
                 )
                 events.append(
-                    workout.endDate == pause.endDate ? nil : HKWalkEvent(
+                    workout.endDate == pause.endDate ? nil : HKWorkoutEvent(
                         type: .motionResumed,
                         dateInterval: DateInterval(start: pause.endDate, duration: 0),
                         metadata: nil
@@ -462,7 +462,7 @@ class HealthStoreManager {
         workout.workoutEvents.forEach { event in
             guard let type = event.eventType.healthKitType else { return }
             workoutEvents.append(
-                HKWalkEvent(
+                HKWorkoutEvent(
                     type: type,
                     dateInterval: DateInterval(start: event.timestamp, duration: 0),
                     metadata: nil
@@ -482,7 +482,7 @@ class HealthStoreManager {
         
         guard !workout.routeData.isEmpty else { return }
         
-        let locations = workout.routeData.compactMap { CLLocation(workout: $0) }
+        let locations = workout.routeData.compactMap { CLLocation(sample: $0) }
         let routeBuilder = HKWorkoutRouteBuilder(healthStore: HealthStoreManager.healthStore, device: nil)
         
         routeBuilder.insertRouteData(locations) { (success, error) in
@@ -518,7 +518,7 @@ class HealthStoreManager {
      Creates a `HealthWorkout` from an `HKWorkout` and queries additional data required to form the object.
      - returns: the finished `HealthWorkout`
      */
-    static func createHealthWalk(from hkWorkout: HKWorkout) -> HealthWorkout? {
+    static func createHealthWorkout(from hkWorkout: HKWorkout) -> HealthWorkout? {
         let stepsMapper: (Int?, HKQuantity, DateInterval) -> Int = { lastValue, quantity, _ in
             lastValue ?? 0 + Int(quantity.doubleValue(for: .count()))
         }
@@ -537,7 +537,7 @@ class HealthStoreManager {
         let heartRates: [TempHeartRateDataSample] = queryAnchoredHealthSeriesData(
             of: HealthType.HeartRate,  attachedTo: hkWorkout, transform: heartRateMapper) ?? []
         
-        return HealthWalk(
+        return HealthWorkout(
             hkWorkout,
             steps: steps,
             route: routeData,

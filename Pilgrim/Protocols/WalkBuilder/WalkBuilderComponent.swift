@@ -24,13 +24,13 @@ public protocol WalkBuilderComponent: AnyObject {
     
     /**
      Initiates the `WalkBuilderComponent` from a `WalkBuilder`.
-     - parameter builder: the workout builder the component is supposed to be bound to
+     - parameter builder: the walk builder the component is supposed to be bound to
      */
     init(builder: WalkBuilder)
     
     /**
      Binds this component to the provided `WalkBuilder`.
-     - parameter builder: the workout builder the component is supposed to be bound to
+     - parameter builder: the walk builder the component is supposed to be bound to
      */
     func bind(builder: WalkBuilder)
     

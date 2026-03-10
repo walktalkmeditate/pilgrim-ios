@@ -4,7 +4,7 @@ import AVFoundation
 
 struct WalkSummaryView: View {
 
-    let workout: WalkInterface
+    let walk: WalkInterface
     @Environment(\.dismiss) private var dismiss
     @StateObject private var audioPlayer = AudioPlayerModel()
     @ObservedObject private var transcriptionService = TranscriptionService.shared
@@ -19,7 +19,7 @@ struct WalkSummaryView: View {
                     durationHero
                     statsRow
                     timeBreakdown
-                    if !workout.voiceRecordings.isEmpty {
+                    if !walk.voiceRecordings.isEmpty {
                         recordingsSection
                     }
                     if !transcriptions.isEmpty {
@@ -45,7 +45,7 @@ struct WalkSummaryView: View {
             .onAppear { loadExistingTranscriptions() }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
-                    PromptListView(workout: workout, transcriptions: transcriptions)
+                    PromptListView(walk: walk, transcriptions: transcriptions)
                 }
             }
         }
@@ -58,7 +58,7 @@ struct WalkSummaryView: View {
     }()
 
     private var dateTitle: String {
-        Self.dateTitleFormatter.string(from: workout.startDate)
+        Self.dateTitleFormatter.string(from: walk.startDate)
     }
 
     private var promptsButton: some View {
@@ -88,7 +88,7 @@ struct WalkSummaryView: View {
     }
 
     private func loadExistingTranscriptions() {
-        for recording in workout.voiceRecordings {
+        for recording in walk.voiceRecordings {
             if let uuid = recording.uuid, let text = recording.transcription {
                 transcriptions[uuid] = text
             }
@@ -136,7 +136,7 @@ struct WalkSummaryView: View {
     }
 
     private var durationHero: some View {
-        Text(formatDuration(workout.activeDuration))
+        Text(formatDuration(walk.activeDuration))
             .font(Constants.Typography.timer)
             .foregroundColor(.ink)
             .padding(.top, Constants.UI.Padding.small)
@@ -144,9 +144,9 @@ struct WalkSummaryView: View {
 
     private var statsRow: some View {
         HStack(spacing: Constants.UI.Padding.big) {
-            miniStat(label: "Distance", value: formatDistance(workout.distance))
-            miniStat(label: "Steps", value: formatSteps(workout.steps))
-            miniStat(label: "Elevation", value: formatElevation(workout.ascend))
+            miniStat(label: "Distance", value: formatDistance(walk.distance))
+            miniStat(label: "Steps", value: formatSteps(walk.steps))
+            miniStat(label: "Elevation", value: formatElevation(walk.ascend))
         }
         .padding(.bottom, Constants.UI.Padding.small)
     }
@@ -166,13 +166,13 @@ struct WalkSummaryView: View {
     private var timeBreakdown: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: Constants.UI.Padding.normal) {
             SummaryCard(title: "Walk", value: formatDuration(walkDuration), icon: "figure.walk")
-            SummaryCard(title: "Talk", value: formatDuration(workout.talkDuration), icon: "waveform")
-            SummaryCard(title: "Meditate", value: formatDuration(workout.meditateDuration), icon: "brain.head.profile")
+            SummaryCard(title: "Talk", value: formatDuration(walk.talkDuration), icon: "waveform")
+            SummaryCard(title: "Meditate", value: formatDuration(walk.meditateDuration), icon: "brain.head.profile")
         }
     }
 
     private var walkDuration: Double {
-        max(0, workout.activeDuration - workout.meditateDuration)
+        max(0, walk.activeDuration - walk.meditateDuration)
     }
 
     private var recordingsSection: some View {
@@ -180,7 +180,7 @@ struct WalkSummaryView: View {
             recordingsHeader
             transcriptionStatusBanner
 
-            ForEach(Array(workout.voiceRecordings.enumerated()), id: \.element.uuid) { index, recording in
+            ForEach(Array(walk.voiceRecordings.enumerated()), id: \.element.uuid) { index, recording in
                 let isActive = audioPlayer.currentPath == recording.fileRelativePath
                 VoiceRecordingRow(
                     index: index + 1,
@@ -225,7 +225,7 @@ struct WalkSummaryView: View {
                 }
             }
 
-            Text("\(workout.voiceRecordings.count)")
+            Text("\(walk.voiceRecordings.count)")
                 .foregroundColor(.fog)
         }
     }
@@ -274,14 +274,14 @@ struct WalkSummaryView: View {
     }
 
     private var hasUntranscribedRecordings: Bool {
-        workout.voiceRecordings.contains { recording in
+        walk.voiceRecordings.contains { recording in
             guard let uuid = recording.uuid else { return false }
             return transcriptions[uuid] == nil
         }
     }
 
     private func transcribeAll() async {
-        let untranscribed = workout.voiceRecordings.filter { recording in
+        let untranscribed = walk.voiceRecordings.filter { recording in
             guard let uuid = recording.uuid else { return false }
             return transcriptions[uuid] == nil
         }
@@ -304,7 +304,7 @@ struct WalkSummaryView: View {
                 Text("Start")
                     .foregroundColor(.fog)
                 Spacer()
-                Text(formatDate(workout.startDate))
+                Text(formatDate(walk.startDate))
                     .foregroundColor(.ink)
             }
             Divider().background(Color.fog.opacity(Constants.UI.Opacity.medium))
@@ -312,16 +312,16 @@ struct WalkSummaryView: View {
                 Text("End")
                     .foregroundColor(.fog)
                 Spacer()
-                Text(formatDate(workout.endDate))
+                Text(formatDate(walk.endDate))
                     .foregroundColor(.ink)
             }
-            if workout.pauseDuration > 0 {
+            if walk.pauseDuration > 0 {
                 Divider().background(Color.fog.opacity(Constants.UI.Opacity.medium))
                 HStack {
                     Text("Paused")
                         .foregroundColor(.fog)
                     Spacer()
-                    Text(formatDuration(workout.pauseDuration))
+                    Text(formatDuration(walk.pauseDuration))
                         .foregroundColor(.ink)
                 }
             }
@@ -335,8 +335,8 @@ struct WalkSummaryView: View {
     // MARK: - Voice Pin Annotations
 
     private var voicePinAnnotations: [MKPointAnnotation] {
-        let routeSamples = workout.routeData
-        return workout.voiceRecordings.compactMap { recording in
+        let routeSamples = walk.routeData
+        return walk.voiceRecordings.compactMap { recording in
             guard let closest = routeSamples.min(by: {
                 abs($0.timestamp.timeIntervalSince(recording.startDate)) <
                 abs($1.timestamp.timeIntervalSince(recording.startDate))
@@ -352,7 +352,7 @@ struct WalkSummaryView: View {
     // MARK: - Helpers
 
     private var routeCoordinates: [CLLocationCoordinate2D] {
-        workout.routeData.map {
+        walk.routeData.map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
         }
     }

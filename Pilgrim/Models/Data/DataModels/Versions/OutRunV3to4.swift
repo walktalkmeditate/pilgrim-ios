@@ -92,7 +92,7 @@ enum OutRunV3to4: DataModelProtocol, IntermediateDataModelProtocol {
                     (type: $0.eventType.value, date: $0.startDate.value)
                 }
                 
-                let pauseData = Computation.calculateAndValidatePauses(from: events, workoutStart: workout.startDate.value, workoutEnd: workout.endDate.value)
+                let pauseData = Computation.calculateAndValidatePauses(from: events, walkStart: workout.startDate.value, walkEnd: workout.endDate.value)
                 
                 if let pauseData = pauseData {
                 

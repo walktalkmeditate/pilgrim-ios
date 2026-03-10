@@ -20,7 +20,7 @@
 
 import Foundation
 
-/// A protocol to unify the saving and processing of heart rate samples connected to a workout.
+/// A protocol to unify the saving and processing of heart rate samples connected to a walk.
 public protocol HeartRateDataSampleInterface: SampleInterface {
     
     /// The heart rate value of the sample in beats per minute.

@@ -25,7 +25,7 @@ public enum TempV4 {
     public class Workout: Codable, TempValueConvertible {
         
         public var uuid: UUID?
-        public var workoutType: PilgrimV1.Workout.WalkType
+        public var workoutType: Walk.WalkType
         public var distance: Double
         public var steps: Int?
         public var startDate: Date
@@ -58,7 +58,7 @@ public enum TempV4 {
         public var voiceRecordings: [VoiceRecordingInterface] { _voiceRecordings }
         public var events: [EventInterface] { throwOnAccess() }
         
-        public init(uuid: UUID?, workoutType: PilgrimV1.Workout.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = []) {
+        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = []) {
             self.uuid = uuid
             self.workoutType = workoutType
             self.distance = distance
@@ -95,9 +95,9 @@ public enum TempV4 {
         public var uuid: UUID?
         public var startDate: Date
         public var endDate: Date
-        public var pauseType: PilgrimV1.WorkoutPause.PauseType
+        public var pauseType: WalkPause.PauseType
 
-        public init(uuid: UUID?, startDate: Date, endDate: Date, pauseType: PilgrimV1.WorkoutPause.PauseType) {
+        public init(uuid: UUID?, startDate: Date, endDate: Date, pauseType: WalkPause.PauseType) {
             self.uuid = uuid
             self.startDate = startDate
             self.endDate = endDate
@@ -112,10 +112,10 @@ public enum TempV4 {
     public class WorkoutEvent: Codable, TempValueConvertible {
         
         public var uuid: UUID?
-        public var eventType: PilgrimV1.WorkoutEvent.EventType
+        public var eventType: WalkEvent.EventType
         public var timestamp: Date
 
-        public init(uuid: UUID?, eventType: PilgrimV1.WorkoutEvent.EventType, timestamp: Date) {
+        public init(uuid: UUID?, eventType: WalkEvent.EventType, timestamp: Date) {
             self.uuid = uuid
             self.eventType = eventType
             self.timestamp = timestamp

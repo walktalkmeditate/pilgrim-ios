@@ -23,7 +23,7 @@ import CoreGPX
 
 public class ExportManager {
     
-    /// An enumeration of types workouts can be exported as.
+    /// An enumeration of types walks can be exported as.
     public enum ExportTypes: CaseIterable {
         
         /// Pilgrim Backup file
@@ -35,9 +35,9 @@ public class ExportManager {
         public var title: String {
             switch self {
             case .orbup:
-                return LS["WorkoutShareAlert.PilgrimBackup"]
+                return LS["ShareAlert.PilgrimBackup"]
             case .gpx:
-                return LS["WorkoutShareAlert.GPXExport"]
+                return LS["ShareAlert.GPXExport"]
             }
         }
         
@@ -45,9 +45,9 @@ public class ExportManager {
         fileprivate var errorMessage: String {
             switch self {
             case .orbup:
-                return LS["ExportManager.Backup.Error"]
+                return LS["ExportManager.BackupError"]
             case .gpx:
-                return LS["ExportManager.GPX.Error"]
+                return LS["ExportManager.GPXError"]
             }
         }
         
@@ -55,7 +55,7 @@ public class ExportManager {
             switch inclusionType {
             case .all, .someEvents(_):
                 return [.orbup]
-            case .someWorkouts(_):
+            case .someWalks(_):
                 return ExportTypes.allCases
             }
         }
@@ -90,8 +90,8 @@ public class ExportManager {
     }
     
     /**
-     A function displaying a custom share alert to export workout data to different formats.
-     - parameter workouts: the workouts that are supposed to be shared
+     A function displaying a custom share alert to export walk data to different formats.
+     - parameter inclusionType: the type of data to include in the export
      - parameter controller: the `UIViewController` the alert is supposed to be shown on
      */
     static func displayShareAlert(for inclusionType: DataInclusionType, on controller: UIViewController) {
@@ -122,8 +122,8 @@ public class ExportManager {
         ))
         
         let alert = UIAlertController(
-            title: LS["WorkoutShareAlert.Title"],
-            message: LS["WorkoutShareAlert.Message"],
+            title: LS["ShareAlert.Title"],
+            message: LS["ShareAlert.Message"],
             preferredStyle: .actionSheet,
             options: alertOptions
         )
@@ -156,8 +156,8 @@ public class ExportManager {
     }
     
     /**
-     A function transforming workout route data to GPX files.
-     - parameter workouts: the workouts that are supposed to be converted
+     A function transforming walk route data to GPX files.
+     - parameter inclusionType: the type of data to include in the export
      - parameter completion: a closure being performed upon completion
      - parameter success: a boolean indicating the success of the operation
      - parameter urls: a list of urls pointing to the created files
@@ -167,17 +167,17 @@ public class ExportManager {
         let completion = safeClosure(from: completion)
         
         switch inclusionType {
-        case .someWorkouts(let workouts):
-            
+        case .someWalks(let walks):
+
             var urls = [URL]()
-            
-            for workout in workouts {
+
+            for walk in walks {
                 
                 let metadata = GPXMetadata()
                 metadata.desc = "This GPX-File was created by Pilgrim"
                 metadata.time = Date()
                 
-                let trackPoints = workout.routeData.map { (sample) -> GPXTrackPoint in
+                let trackPoints = walk.routeData.map { (sample) -> GPXTrackPoint in
                     let trackPoint = GPXTrackPoint()
                     trackPoint.latitude = sample.latitude
                     trackPoint.longitude = sample.longitude
@@ -196,7 +196,7 @@ public class ExportManager {
                 root.metadata = metadata
                 root.add(track: track)
                 
-                let fileName = CustomDateFormatting.backupTimeCode(forDate: workout.startDate)
+                let fileName = CustomDateFormatting.backupTimeCode(forDate: walk.startDate)
                 let directoryUrl = FileManager.default.temporaryDirectory
                 let fullURL = directoryUrl.appendingPathComponent(fileName + ".gpx")
                 
@@ -219,9 +219,9 @@ public class ExportManager {
     enum DataInclusionType {
         /// Every object in the database will be included.
         case all
-        /// Only the provided workouts (if represented through a valid WalkInterface) will be included, their attached events will be disgarded.
-        case someWorkouts([WalkInterface])
-        /// The provided events and their corresponding workouts will be included.
+        /// Only the provided walks (if represented through a valid WalkInterface) will be included, their attached events will be disgarded.
+        case someWalks([WalkInterface])
+        /// The provided events and their corresponding walks will be included.
         case someEvents([EventInterface])
     }
     

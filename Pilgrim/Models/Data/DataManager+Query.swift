@@ -29,7 +29,7 @@ extension DataManager {
     /**
      Queries an object comforming to `DataTypeProtocol` with the provided `UUID` from the database.
      - parameter whereClause: the `CoreStore.Where` clause used for selection of the object
-     - parameter transaction: an optional `AsynchronousDataTransaction` to be provided if the workout needs to be queried during a tranaction; if `nil` the object will be queried from the `DataManager.dataStack`
+     - parameter transaction: an optional `AsynchronousDataTransaction` to be provided if the object needs to be queried during a transaction; if `nil` the object will be queried from the `DataManager.dataStack`
      - returns: the wanted `DataTypeProtocol` object if one could be found in the database; if the object could not be found, this function will return `nil`
      */
     public static func queryObject<ObjectType: DataTypeProtocol>(from whereClause: Where<ObjectType>, transaction: AsynchronousDataTransaction? = nil) -> ObjectType? {
@@ -41,7 +41,7 @@ extension DataManager {
     /**
      Queries an object comforming to `DataTypeProtocol` with the provided `UUID` from the database.
      - parameter whereClause: the `CoreStore.Where` clause used for selection of the object
-     - parameter transaction: an optional `AsynchronousDataTransaction` to be provided if the workout needs to be queried during a tranaction; if `nil` the object will be queried from the `DataManager.dataStack`
+     - parameter transaction: an optional `AsynchronousDataTransaction` to be provided if the object needs to be queried during a transaction; if `nil` the object will be queried from the `DataManager.dataStack`
      - returns: the wanted `DataTypeProtocol` object if one could be found in the database; if the object could not be found, this function will return `nil`
      */
     public static func queryObjects<ObjectType: DataTypeProtocol>(from whereClause: Where<ObjectType>, transaction: AsynchronousDataTransaction? = nil) -> [ObjectType] {
@@ -53,7 +53,7 @@ extension DataManager {
     /**
      Queries an object comforming to `DataTypeProtocol` with the provided `UUID` from the database.
      - parameter uuid: the `UUID` of the object that is supposed to be returned; if `nil` this function will return immediately with no value
-     - parameter transaction: an optional `AsynchronousDataTransaction` to be provided if the workout needs to be queried during a tranaction; if `nil` the object will be queried from the `DataManager.dataStack`
+     - parameter transaction: an optional `AsynchronousDataTransaction` to be provided if the object needs to be queried during a transaction; if `nil` the object will be queried from the `DataManager.dataStack`
      - returns: the wanted `DataTypeProtocol` object if one could be found in the database; if the object could not be found, this function will return `nil`
      */
     public static func queryObject<ObjectType: DataTypeProtocol>(from uuid: UUID?, transaction: AsynchronousDataTransaction? = nil) -> ObjectType? {
@@ -68,7 +68,7 @@ extension DataManager {
     /**
      Queries an object comforming to `DataTypeProtocol` with the provided object's uuid from the database.
      - parameter anyObject: any object representing the wanted database object to be returned
-     - parameter transaction: an optional `AsynchronousDataTransaction` to be provided if the workout needs to be queried during a tranaction; if `nil` the object will be queried from the `DataManager.dataStack`
+     - parameter transaction: an optional `AsynchronousDataTransaction` to be provided if the object needs to be queried during a transaction; if `nil` the object will be queried from the `DataManager.dataStack`
      - returns: the wanted `DataTypeProtocol` object if one could be found in the database; if the object could not be found, this function will return `nil`
      */
     public static func queryObject<ObjectType: DataTypeProtocol>(from anyObject: DataInterface, transaction: AsynchronousDataTransaction? = nil) -> ObjectType? {
@@ -78,9 +78,9 @@ extension DataManager {
     
     /**
      Queries the count for objects of the given `DataTypeProtocol` and `UUID` returning whether it has duplicates in the database.
-     - parameter uuid: the `UUID` of the workout being checked for duplicates; if `nil` this function will return immediately with `false`
+     - parameter uuid: the `UUID` of the object being checked for duplicates; if `nil` this function will return immediately with `false`
      - parameter objectType: the type of the object being checked for duplicates
-     - returns: `true` if the queried count is anything other than 0 meaning there are workouts with the given `UUID` present in the database.
+     - returns: `true` if the queried count is anything other than 0 meaning there are objects with the given `UUID` present in the database.
      */
     public static func objectHasDuplicate<ObjectType: DataTypeProtocol>(uuid: UUID?, objectType: ObjectType.Type) -> Bool {
         
@@ -109,25 +109,25 @@ extension DataManager {
     // MARK: - Walk Route
     
     /**
-     Queries the route of a workout and converts each route sample into the corresponding `CLLocationDegrees`.
-     - parameter workout: the object the route is going to be queried from, any `WalkInterface` will be accepted
+     Queries the route of a walk and converts each route sample into the corresponding `CLLocationDegrees`.
+     - parameter walk: the object the route is going to be queried from, any `WalkInterface` will be accepted
      - parameter completion: the closure being called upon completion of the query
      - parameter success: indicates whether or not the query succeeded
      - parameter error: provides more detail on a query failure if one occured
      - parameter coordinates: the queried array of `CLLocationCoordinate2D`
      */
-    public static func asyncLocationCoordinatesQuery(for workout: WalkInterface, completion: @escaping (_ error: LocationQueryError?, _ coordinates: [CLLocationCoordinate2D]) -> Void) {
-        
+    public static func asyncLocationCoordinatesQuery(for walk: WalkInterface, completion: @escaping (_ error: LocationQueryError?, _ coordinates: [CLLocationCoordinate2D]) -> Void) {
+
         var error: LocationQueryError?
-        
+
         dataStack.perform(asynchronous: { (transaction) -> [CLLocationCoordinate2D] in
-            
-            guard let workout = (workout as? Walk) ?? queryObject(from: workout.uuid, transaction: transaction) else {
+
+            guard let walk = (walk as? Walk) ?? queryObject(from: walk.uuid, transaction: transaction) else {
                 error = .notSaved
                 return []
             }
             
-            let samples = workout._routeData.value
+            let samples = walk._routeData.value
             guard !samples.isEmpty else {
                 error = .noRouteData
                 return []
@@ -153,18 +153,18 @@ extension DataManager {
     // MARK: - Walk Stats
     
     /**
-     Queries the `WalkStats` object of a workout asynchronously.
-     - parameter workout: the workout object used to construct the stats object
+     Queries the `WalkStats` object of a walk asynchronously.
+     - parameter walk: the walk object used to construct the stats object
      - parameter completion: a closure performed on completion of querying the data
      */
     public static func queryWalkStats(
-        for workout: WalkInterface,
+        for walk: WalkInterface,
         completion: @escaping (WalkStats?) -> Void
     ) {
         dataStack.perform(asynchronous: { (transaction) -> WalkStats? in
-            
-            guard let workout: Walk = queryObject(from: workout, transaction: transaction) else { return nil }
-            return WalkStats(workout: workout)
+
+            guard let walk: Walk = queryObject(from: walk, transaction: transaction) else { return nil }
+            return WalkStats(walk: walk)
             
         }) { (result) in
             switch result {
@@ -179,24 +179,24 @@ extension DataManager {
     // MARK: - Sectioned Metrics
     
     /**
-     Queries a specific metric from specified samples relative to the start date of the workout and grouped by if they are paused or not.
-     - parameter workout: the workout object used to query samples from
+     Queries a specific metric from specified samples relative to the start date of the walk and grouped by if they are paused or not.
+     - parameter walk: the walk object used to query samples from
      - parameter samples: a keypath pointing to the samples of which the matric should be taken
      - parameter metric: a keypath pointing to the metric of the before specified sample
      - parameter includeSamples: a boolean indicating whether the data should include the samples specified
      - parameter completion: a closure performed on completion of querying the data
      */
     public static func querySectionedMetrics <SampleType: Collection, MetricType: Any> (
-        from workout: WalkInterface,
+        from walk: WalkInterface,
         samples samplesPath: KeyPath<Walk, SampleType>,
         metric metricPath: KeyPath<SampleType.Element, MetricType>,
         includeSamples: Bool = false,
         completion: @escaping (WalkStatsSeries<Bool, MetricType, SampleType.Element>) -> Void
     ) where SampleType.Element: SampleInterface {
-        
+
         dataStack.perform(asynchronous: { (transaction) -> WalkStatsSeries<Bool, MetricType, SampleType.Element> in
-            
-            guard let workout: Walk = queryObject(from: workout, transaction: transaction) else {
+
+            guard let walk: Walk = queryObject(from: walk, transaction: transaction) else {
                 return []
             }
             
@@ -204,16 +204,16 @@ extension DataManager {
             var currentlyPaused = false
             var currentData = [(timestamp: TimeInterval, value: MetricType, object: SampleType.Element?)]()
             
-            for sample in workout[keyPath: samplesPath] {
+            for sample in walk[keyPath: samplesPath] {
                 
-                if currentlyPaused != workout.pauses.contains(where: { $0.contains(sample.timestamp) }) {
+                if currentlyPaused != walk.pauses.contains(where: { $0.contains(sample.timestamp) }) {
                     if !currentData.isEmpty {
                         objects.append((currentlyPaused, currentData))
                     }
                     currentlyPaused.toggle()
                 }
                 currentData.append((
-                    timestamp: sample.timestamp.distance(to: workout.startDate),
+                    timestamp: sample.timestamp.distance(to: walk.startDate),
                     value: sample[keyPath: metricPath],
                     object: includeSamples ? sample : nil
                 ))
@@ -247,38 +247,38 @@ extension DataManager {
             
             do {
                 
-                let tempWorkouts: [TempWalk]
+                let tempWalks: [TempWalk]
                 let tempEvents: [TempEvent]
                 
                 switch inclusionType {
                 case .all:
-                    tempWorkouts = try transaction.fetchAll(From<Walk>()).map { $0.asTemp }
+                    tempWalks = try transaction.fetchAll(From<Walk>()).map { $0.asTemp }
                     tempEvents = try transaction.fetchAll(From<Event>()).map { $0.asTemp }
                     
-                case .someWorkouts(let includedWorkouts):
-                    tempWorkouts = includedWorkouts.compactMap({ workoutRep -> Walk? in
-                        queryObject(from: workoutRep, transaction: transaction)
+                case .someWalks(let includedWalks):
+                    tempWalks = includedWalks.compactMap({ walkRep -> Walk? in
+                        queryObject(from: walkRep, transaction: transaction)
                     }).map { $0.asTemp }
                     tempEvents = []
                     
                 case .someEvents(let includedEvents):
-                    var workouts = [Walk]()
+                    var walks = [Walk]()
                     let events = includedEvents.compactMap({ eventRep -> Event? in
                         let event: Event? = queryObject(from: eventRep, transaction: transaction)
                         if let event = event {
-                            for workout in event._workouts.value where !workouts.contains(workout) {
-                                workouts.append(workout)
+                            for walk in event._workouts.value where !walks.contains(walk) {
+                                walks.append(walk)
                             }
                         }
                         return event
                     })
-                    tempWorkouts = workouts.map { $0.asTemp }
+                    tempWalks = walks.map { $0.asTemp }
                     tempEvents = events.map { $0.asTemp }
                 }
                 
                 fetchSucceeded = true
                 
-                let backup = Backup(workouts: tempWorkouts, events: tempEvents)
+                let backup = Backup(workouts: tempWalks, events: tempEvents)
                 
                 let json = try JSONEncoder().encode(backup)
                 return json
@@ -308,7 +308,7 @@ extension DataManager {
     // MARK: - HealthKit
     
     /**
-     Queries the uuids corresponding to HealthKit workouts imported from or saved to AppleHealth and associated with workouts saved in the app.
+     Queries the uuids corresponding to HealthKit walks imported from or saved to AppleHealth and associated with walks saved in the app.
      - note: This function should only be used on the main thread
      */
     public static func queryExistingHealthUUIDs() -> [UUID] {

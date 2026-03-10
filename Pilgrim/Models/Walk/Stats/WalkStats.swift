@@ -24,7 +24,7 @@ import Combine
 
 class WalkStats {
     
-    let workout: WalkInterface
+    let walk: WalkInterface
     
     let workoutType: Walk.WalkType
     
@@ -61,39 +61,39 @@ class WalkStats {
     let averageHeartRate: AnyPublisher<String?, Never>
     let heartRateOverTime: AnyPublisher<WalkStatsSeries<Bool, Int, HeartRateDataSample>, Never>
     
-    init(workout: Walk) {
-        
-        self.workout = workout
-        
-        self.workoutType = workout.workoutType
-        
-        self.hasSteps = workout.steps != nil
-        self.hasWalkPauses = !workout.pauses.isEmpty
-        self.hasWalkEvents = !workout.workoutEvents.isEmpty
-        self.hasRouteSamples = !workout.routeData.isEmpty
-        self.hasHeartRateData = !workout.heartRates.isEmpty
-        self.hasEnergyValue = workout.burnedEnergy != nil
-        
-        self.distance = WalkStats.just(workout.distance, unit: UnitLength.standardUnit)
-        self.steps = WalkStats.just(Double(workout.steps), unit: UnitCount.count)
-        self.ascendingAltitude = WalkStats.just(workout.ascend, unit: UnitLength.meters, type: .altitude)
-        self.descendingAltitude = WalkStats.just(workout.descend, unit: UnitLength.meters, type: .altitude)
-        self.altitudeOverTime = WalkStats.unitSeries(from: workout, samples: \Walk._routeData.value, metric: \RouteDataSample._altitude.value, desiredUnit: UserPreferences.altitudeMeasurementType.safeValue)
-        
-        self.startDate = WalkStats.just(time: workout.startDate)
-        self.endDate = WalkStats.just(time: workout.endDate)
-        self.activeDuration = WalkStats.just(workout.activeDuration, unit: UnitDuration.seconds)
-        self.pauseDuration = WalkStats.just(workout.pauseDuration, unit: UnitDuration.seconds)
-        
-        self.averageSpeed = WalkStats.just(workout.distance / workout.activeDuration, unit: UnitSpeed.metersPerSecond)
-        self.topSpeed = WalkStats.just(workout.routeData.max{ $0.speed > $1.speed }?.speed, unit: UnitSpeed.metersPerSecond)
-        self.speedOverTime = WalkStats.unitSeries(from: workout, samples: \Walk._routeData, metric: \RouteDataSample._speed.value, desiredUnit: UserPreferences.speedMeasurementType.safeValue)
-        
-        self.burnedEnergy = WalkStats.just(workout.burnedEnergy, unit: UnitEnergy.standardUnit)
-        self.burnedEnergyPerMinute = WalkStats.just((workout.burnedEnergy ?? 0) / (workout.activeDuration / 60), unit: UnitPower.energyPerMinute(from: .kilocalories)) // find better solution
-        
-        self.averageHeartRate = WalkStats.just(Double(workout.heartRates.map { $0.heartRate }.reduce(0, +) / workout.heartRates.count), unit: UnitCount.count, type: .count)
-        self.heartRateOverTime = WalkStats.series(from: workout, samples: \Walk._heartRates.value, metric: \HeartRateDataSample._heartRate.value)
+    init(walk: Walk) {
+
+        self.walk = walk
+
+        self.workoutType = walk.workoutType
+
+        self.hasSteps = walk.steps != nil
+        self.hasWalkPauses = !walk.pauses.isEmpty
+        self.hasWalkEvents = !walk.workoutEvents.isEmpty
+        self.hasRouteSamples = !walk.routeData.isEmpty
+        self.hasHeartRateData = !walk.heartRates.isEmpty
+        self.hasEnergyValue = walk.burnedEnergy != nil
+
+        self.distance = WalkStats.just(walk.distance, unit: UnitLength.standardUnit)
+        self.steps = WalkStats.just(Double(walk.steps), unit: UnitCount.count)
+        self.ascendingAltitude = WalkStats.just(walk.ascend, unit: UnitLength.meters, type: .altitude)
+        self.descendingAltitude = WalkStats.just(walk.descend, unit: UnitLength.meters, type: .altitude)
+        self.altitudeOverTime = WalkStats.unitSeries(from: walk, samples: \Walk._routeData.value, metric: \RouteDataSample._altitude.value, desiredUnit: UserPreferences.altitudeMeasurementType.safeValue)
+
+        self.startDate = WalkStats.just(time: walk.startDate)
+        self.endDate = WalkStats.just(time: walk.endDate)
+        self.activeDuration = WalkStats.just(walk.activeDuration, unit: UnitDuration.seconds)
+        self.pauseDuration = WalkStats.just(walk.pauseDuration, unit: UnitDuration.seconds)
+
+        self.averageSpeed = WalkStats.just(walk.distance / walk.activeDuration, unit: UnitSpeed.metersPerSecond)
+        self.topSpeed = WalkStats.just(walk.routeData.max{ $0.speed > $1.speed }?.speed, unit: UnitSpeed.metersPerSecond)
+        self.speedOverTime = WalkStats.unitSeries(from: walk, samples: \Walk._routeData, metric: \RouteDataSample._speed.value, desiredUnit: UserPreferences.speedMeasurementType.safeValue)
+
+        self.burnedEnergy = WalkStats.just(walk.burnedEnergy, unit: UnitEnergy.standardUnit)
+        self.burnedEnergyPerMinute = WalkStats.just((walk.burnedEnergy ?? 0) / (walk.activeDuration / 60), unit: UnitPower.energyPerMinute(from: .kilocalories)) // find better solution
+
+        self.averageHeartRate = WalkStats.just(Double(walk.heartRates.map { $0.heartRate }.reduce(0, +) / walk.heartRates.count), unit: UnitCount.count, type: .count)
+        self.heartRateOverTime = WalkStats.series(from: walk, samples: \Walk._heartRates.value, metric: \HeartRateDataSample._heartRate.value)
     }
     
     /**
@@ -143,23 +143,23 @@ class WalkStats {
     }
     
     /**
-     Queries a series of a specific metric from specified samples relative to the start date of the workout and grouped by if they are paused or not.
-     - parameter workout: the workout object used to query samples from
+     Queries a series of a specific metric from specified samples relative to the start date of the walk and grouped by if they are paused or not.
+     - parameter walk: the walk object used to query samples from
      - parameter samples: a keypath pointing to the samples of which the matric should be taken
      - parameter metric: a keypath pointing to the metric of the before specified sample
      - returns: a driver publishing the stats series
      */
     private static func series <SampleType: Collection, MetricType: Any> (
-        from workout: WalkInterface,
+        from walk: WalkInterface,
         samples samplesPath: KeyPath<Walk, SampleType>,
         metric metricPath: KeyPath<SampleType.Element, MetricType>
     ) -> AnyPublisher<WalkStatsSeries<Bool, MetricType, SampleType.Element>, Never>
     where SampleType.Element: SampleInterface {
-        
+
         return Publishers.Create { subscriber in
             var disposed = false
             DataManager.querySectionedMetrics(
-                from: workout,
+                from: walk,
                 samples: samplesPath,
                 metric: metricPath,
                 completion: { seriesData in
@@ -173,22 +173,22 @@ class WalkStats {
     }
     
     /**
-     Queries a series of a specific `Double` metric converted to a desired unit from specified samples relative to the start date of the workout and grouped by if they are paused or not.
-     - parameter workout: the workout object used to query samples from
+     Queries a series of a specific `Double` metric converted to a desired unit from specified samples relative to the start date of the walk and grouped by if they are paused or not.
+     - parameter walk: the walk object used to query samples from
      - parameter samples: a keypath pointing to the samples of which the matric should be taken
      - parameter metric: a keypath pointing to the metric of the before specified sample
      - parameter desiredUnit: the unit the metric should be converted to
      - returns: a driver publishing the stats series
      */
     private static func unitSeries <SampleType: Collection, UnitType: StandardizedUnit> (
-        from workout: WalkInterface,
+        from walk: WalkInterface,
         samples samplesPath: KeyPath<Walk, SampleType>,
         metric metricPath: KeyPath<SampleType.Element, Double>,
         desiredUnit: UnitType
     ) -> AnyPublisher<WalkStatsSeries<Bool, Double, SampleType.Element>, Never>
     where SampleType.Element: SampleInterface {
-        
-        series(from: workout, samples: samplesPath, metric: metricPath)
+
+        series(from: walk, samples: samplesPath, metric: metricPath)
             .map { series in
                 return WalkStatsSeries(sections: series.sections.map { (sectionValue, data) in
                     let convertedData = data.map { (timestamp, value, object) -> (TimeInterval, Double, SampleType.Element?) in

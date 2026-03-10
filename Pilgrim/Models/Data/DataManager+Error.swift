@@ -90,25 +90,25 @@ extension DataManager {
     /// An enumeration of possible errors coming up during the updating process of multiple objects by the `DataManager`.
     enum UpdateError: Error, CustomDebugStringConvertible {
         
-        /// This workout was not saved to the database yet, so it cannot be altered.
+        /// This walk was not saved to the database yet, so it cannot be altered.
         case notSaved
         /// The provided data set is equal to the one saved in the database.
         case notAltered
         /// The object could not be validated.
         case notValid
-        /// There was an error while trying to update the workout.
+        /// There was an error while trying to update the walk.
         case databaseError(error: CoreStoreError)
         
         var debugDescription: String {
             switch self {
             case .notSaved:
-                return "This workout was not saved to the database yet, so it cannot be altered."
+                return "This walk was not saved to the database yet, so it cannot be altered."
             case .notAltered:
                 return "The provided data set is equal to the one saved in the database."
             case .notValid:
                 return "The object could not be validated."
             case .databaseError(let error):
-                return "There was an error while trying to update the workout:\n\(error)"
+                return "There was an error while trying to update the walk:\n\(error)"
             }
         }
         
@@ -117,17 +117,17 @@ extension DataManager {
     /// An enumeration of possible errors coming up during the updating process of multiple objects by the `DataManager`.
     enum DeleteError: Error, CustomDebugStringConvertible {
         
-        /// This workout was not saved to the database yet, so it cannot be deleted.
+        /// This walk was not saved to the database yet, so it cannot be deleted.
         case notSaved
-        /// There was an error while trying to delete the workout.
+        /// There was an error while trying to delete the walk.
         case databaseError(error: CoreStoreError)
         
         var debugDescription: String {
             switch self {
             case .notSaved:
-                return "This workout was not saved to the database yet, so it cannot be deleted."
+                return "This walk was not saved to the database yet, so it cannot be deleted."
             case .databaseError(let error):
-                return "There was an error while trying to delete the workout:\n\(error)"
+                return "There was an error while trying to delete the walk:\n\(error)"
             }
         }
         
@@ -140,9 +140,9 @@ extension DataManager {
         
         /// The specified `WalkInterface` object was not yet saved to the database, no query on it can be performed.
         case notSaved
-        /// The specified workout does not have any route data
+        /// The specified walk does not have any route data
         case noRouteData
-        /// There was an error while trying to query locations from the workout.
+        /// There was an error while trying to query locations from the walk.
         case databaseError(error: CoreStoreError)
         
         var debugDescription: String {
@@ -150,9 +150,9 @@ extension DataManager {
             case .notSaved:
                 return "The specified `WalkInterface` object was not yet saved to the database, no query on it can be performed."
             case .noRouteData:
-                return "The specified workout does not have any route data"
+                return "The specified walk does not have any route data"
             case .databaseError(let error):
-                return "There was an error while trying to query locations from the workout:\n\(error)"
+                return "There was an error while trying to query locations from the walk:\n\(error)"
             }
         }
         

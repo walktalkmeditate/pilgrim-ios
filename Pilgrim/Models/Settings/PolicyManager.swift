@@ -22,7 +22,7 @@ import Foundation
 
 class PolicyManager {
     
-    static let baseURL = "https://outrun.tadris.de/policies/"
+    static let baseURL = "https://pilgrimapp.org/policies/"
     
     static func query(for type: PolicyType, completion: @escaping (Bool, Error?, String?) -> Void) {
         

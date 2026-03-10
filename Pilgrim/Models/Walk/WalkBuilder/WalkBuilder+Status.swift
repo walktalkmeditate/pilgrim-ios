@@ -30,11 +30,11 @@ extension WalkBuilder {
         
         /// indicating that the `WalkBuilder` is neither recording nor ready to do so, but instead waiting for all components to be ready
         case waiting
-        /// indicating that the `WalkBuilder` is ready to record a workout
+        /// indicating that the `WalkBuilder` is ready to record a walk
         case ready
-        /// indicating that the `WalkBuilder` is recording a workout at the moment
+        /// indicating that the `WalkBuilder` is recording a walk at the moment
         case recording
-        /// indicating that the `WalkBuilder` was manually paused by the user, data is still supposed to be recorded in the background and the workout might be resumed at any point in time
+        /// indicating that the `WalkBuilder` was manually paused by the user, data is still supposed to be recorded in the background and the walk might be resumed at any point in time
         case paused
         /// indicating that the `WalkBuilder` was paused by the automatic pause detection, it should act as if it was manually paused, which a user should still be able to do in this scenario
         case autoPaused

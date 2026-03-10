@@ -50,12 +50,12 @@ public class WalkBuilder: ApplicationStateObserver {
     
     // MARK: - Internal
     
-    /// Indicating the type and last time when a workout was paused by the user or the app.
+    /// Indicating the type and last time when a walk was paused by the user or the app.
     private var lastPause: (type: WalkPause.PauseType, startingAt: Date)?
-    /// Holds a reference to the types of workout builder components still preparing to record.
+    /// Holds a reference to the types of walk builder components still preparing to record.
     private var preparingComponents: [WalkBuilderComponent.Type] = []
 
-    /// Called when a workout snapshot is created after stopping.
+    /// Called when a walk snapshot is created after stopping.
     public var onSnapshotCreated: ((TempWalk) -> Void)?
 
     /// Closures that run synchronously before snapshot creation to flush component state.
@@ -91,8 +91,7 @@ public class WalkBuilder: ApplicationStateObserver {
     
     /**
      Initialises a `WalkBuilder` instance.
-     - parameter workoutType: an optional of the type of workout that is supposed to be recorded; if `nil` the `WalkBuilder` sets it appropriately from `UserPreferences.standardWalkType`
-     - parameter delegate: the delegate that is supposed to receive updates
+     - parameter workoutType: the type of walk to record; defaults to `.walking`
      */
     public init(workoutType: Walk.WalkType = .walking) {
         self.workoutTypeRelay = CurrentValueRelay(workoutType)
@@ -111,7 +110,7 @@ public class WalkBuilder: ApplicationStateObserver {
             let timestamp = Date()
             
             switch newStatus {
-            case .recording: // starting / resuming workout
+            case .recording: // starting / resuming walk
                 if self.startDateRelay.value == nil {
                     self.startDateRelay.accept(timestamp)
                     
@@ -125,7 +124,7 @@ public class WalkBuilder: ApplicationStateObserver {
                     self.pausesRelay.accept(pauses)
                 }
             
-            case .paused, .autoPaused: // (auto) pausing workout
+            case .paused, .autoPaused: // (auto) pausing walk
                 let pauseType = newStatus == .paused ? WalkPause.PauseType.manual : .automatic
                 if let lastPauseObject = self.pausesRelay.value.last, lastPauseObject.pauseType == pauseType, lastPauseObject.endDate.distance(to: timestamp) < 3 {
                     // last pause is of same type and under three seconds in the past -> merge
@@ -135,7 +134,7 @@ public class WalkBuilder: ApplicationStateObserver {
                     self.lastPause = (type: pauseType, startingAt: self.lastPause?.startingAt ?? timestamp)
                 }
                 
-            case .ready: // stopping workout or indicating readiness
+            case .ready: // stopping walk or indicating readiness
                 guard self.startDateRelay.value != nil else { return }
 
                 if let lastPause = self.lastPause {
@@ -168,11 +167,11 @@ public class WalkBuilder: ApplicationStateObserver {
     
     /// The relay to publish the current status of the `WalkBuilder`.
     private let statusRelay = CurrentValueRelay<WalkBuilder.Status>(.waiting)
-    /// The relay to publish the type of workout the `WalkBuilder` is supposed to record.
+    /// The relay to publish the type of walk the `WalkBuilder` is supposed to record.
     private let workoutTypeRelay: CurrentValueRelay<Walk.WalkType>
-    /// The relay to publish the date the recorded workout was started.
+    /// The relay to publish the date the recorded walk was started.
     private let startDateRelay = CurrentValueRelay<Date?>(nil)
-    /// The relay to publish the date the recorded workout was stopped.
+    /// The relay to publish the date the recorded walk was stopped.
     private let endDateRelay = CurrentValueRelay<Date?>(nil)
     /// The relay to publish the distance shared by components.
     private let distanceRelay = CurrentValueRelay<Double>(0)
@@ -188,13 +187,13 @@ public class WalkBuilder: ApplicationStateObserver {
     private let altitudesRelay = CurrentValueRelay<[AltitudeManagement.AltitudeSample]>([])
     /// The relay to publish the heart rate samples received from components.
     private let heartRatesRelay = CurrentValueRelay<[TempHeartRateDataSample]>([])
-    /// The relay to publish a components report of isufficient permissions to record the workout.
+    /// The relay to publish a components report of isufficient permissions to record the walk.
     private let insufficientPermissionRelay = PassthroughRelay<String>()
     /// The relay to publish a UI suspension command.
     private let uiSuspensionRelay = CurrentValueRelay<Bool>(false)
     /// The relay to publish a suspension command.
     private let suspensionRelay = CurrentValueRelay<Bool>(false)
-    /// The relay to publish voice recordings captured during the workout.
+    /// The relay to publish voice recordings captured during the walk.
     private let voiceRecordingsRelay = CurrentValueRelay<[TempVoiceRecording]>([])
     /// The relay to publish the total meditate duration in seconds.
     private let meditateDurationRelay = CurrentValueRelay<Double>(0)
@@ -268,7 +267,7 @@ public class WalkBuilder: ApplicationStateObserver {
     
     /**
      Tranforms the provided inputs to an output establishing a data flow between this WalkBuilder and the caller of this function.
-     - parameter input: the input provided to the workout builder
+     - parameter input: the input provided to the walk builder
      - returns: the output to provide the caller with the necessary data
      */
     public func tranform(_ input: WalkBuilder.Input) -> Output {
@@ -341,7 +340,7 @@ public class WalkBuilder: ApplicationStateObserver {
     // MARK: - Create Snapshot
     
     /**
-     Creates a snapshot of the workout currently under construction.
+     Creates a snapshot of the walk currently under construction.
      - returns: a `TempWalk` constructed from the recorded data; will be `nil` when start or end cannot be determined
      */
     private func createSnapshot() -> TempWalk? {
@@ -389,8 +388,8 @@ public class WalkBuilder: ApplicationStateObserver {
     }
     
     /**
-     Continues a workout by setting up the `WalkBuilder` and it's components like they are recording.
-     - parameter snapshot: the snapshot made of the continued workout
+     Continues a walk by setting up the `WalkBuilder` and its components like they are recording.
+     - parameter snapshot: the snapshot made of the continued walk
      */
     public func continueWalk(from snapshot: TempWalk) {
         

@@ -30,7 +30,7 @@ class Computation {
     typealias RawPauseTouple = (start: Date, end: Date)
     
     /**
-     Computes the elevation changes (ascending and descending) from altitudes of a workouts route
+     Computes the elevation changes (ascending and descending) from altitudes of a walks route
      - parameter altitudes: the provided elevations from the route data samples
      - returns: the calculated ascending and descending altitude in a touple of two values
      */
@@ -78,9 +78,9 @@ class Computation {
     }
     
     /**
-     Computes the duration data (active and pause duration) from the according dates of the workout and pause objects.
-     - parameter start: the start date of the workout
-     - parameter end: the end date of the workout
+     Computes the duration data (active and pause duration) from the according dates of the walk and pause objects.
+     - parameter start: the start date of the walk
+     - parameter end: the end date of the walk
      - parameter pauses: an array of tuples representing the start and end dates of pause objects
      - returns: the calculated active and pause duration in a tuple of two values
      */
@@ -99,13 +99,13 @@ class Computation {
     }
     
     /**
-     Computes and validates pauses from workout event data.
+     Computes and validates pauses from walk event data.
      - parameter events: the events from which the pauses are supposed to be calculated
-     - parameter workoutStart: the start date of the workout to which the pauses are linked
-     - parameter workoutEnd: the start date of the workout to which the pauses are linked
+     - parameter walkStart: the start date of the walk to which the pauses are linked
+     - parameter walkEnd: the end date of the walk to which the pauses are linked
      - returns: the calculated pause objects; if `nil` the validation failed
      */
-    static func calculateAndValidatePauses(from events: [EventTouple], workoutStart: Date, workoutEnd: Date) -> [PauseTouple]? {
+    static func calculateAndValidatePauses(from events: [EventTouple], walkStart: Date, walkEnd: Date) -> [PauseTouple]? {
         
         // filter and sort events
         let events = events.filter { (0...3).contains($0.type) }.sorted(by: { $0.date < $1.date })
@@ -114,7 +114,7 @@ class Computation {
         
         // date range
         if events.contains(where: { (event) -> Bool in
-            event.date < workoutStart || event.date > workoutEnd
+            event.date < walkStart || event.date > walkEnd
         }) {
            return nil
         }
@@ -144,7 +144,7 @@ class Computation {
                 pauseData.append((start: pauseEvent.date, end: resumeEvent.date, type: pauseType))
                 
             } else if index == events.count - 1 {
-                pauseData.append((start: pauseEvent.date, end: workoutEnd, type: pauseType))
+                pauseData.append((start: pauseEvent.date, end: walkEnd, type: pauseType))
                 
             } else {
                 return nil
@@ -186,10 +186,10 @@ class Computation {
     }
     
     /**
-     Computes the energy burned during a workout from the provided information.
-     - parameter type: the type of workout of which the burned energy is supposed to be calculated
-     - parameter distance: the distance travelled during the workout
-     - parameter weight: the weight of the person performing the workout
+     Computes the energy burned during a walk from the provided information.
+     - parameter type: the type of walk of which the burned energy is supposed to be calculated
+     - parameter distance: the distance travelled during the walk
+     - parameter weight: the weight of the person performing the walk
      - returns: the energy burned in kilocalories
      */
     static func calculateBurnedEnergy(for type: Walk.WalkType, distance: Double, weight: Double) -> Double {

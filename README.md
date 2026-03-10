@@ -1,39 +1,43 @@
-# OutRun
+# Pilgrim
 
-OutRun is an iOS app for recording and viewing your outdoor workouts. Despite the name it supports not just running, but also walking, hiking, cycling and skating.
+Pilgrim is a privacy-first iOS app for intentional walking. Record your walks, capture voice reflections, sit in meditation, and receive AI-generated writing prompts — all without your data ever leaving your device.
 
-This project is fully open-source and ad-free.
+Built as part of the [Walk Talk Meditate](https://github.com/momentmaker/walktalkmeditate) project.
 
-<a href="https://apps.apple.com/us/app/OutRun/id1477511092">
-    <img src="https://outrun.tadris.de/src/download.svg">
-</a>
+## Why Pilgrim?
+
+Walking is more than exercise. It's how we think, process, and create. Pilgrim treats a walk as a creative practice — not a fitness metric. There are no leaderboards, no social feeds, no calorie goals. Just you, the path, and whatever arises.
 
 ## Features
 
-OutRun has a rich feature set centered around customisation and privacy. The list of features includes:
+- **GPS Walk Tracking** — Record routes with distance, steps, altitude, and duration
+- **Voice Recording** — Capture thoughts mid-walk with timestamped voice pins
+- **Local Transcription** — On-device speech-to-text via WhisperKit (no network required)
+- **Meditation Timer** — Dedicated meditation mode tracked separately from walking
+- **Three-Way Time Breakdown** — See how your walk splits between walking, talking, and meditating
+- **AI Writing Prompts** — Context-aware prompts generated from your transcriptions and walk data across six styles (contemplative, reflective, creative, gratitude, philosophical, journaling)
+- **Walk Summary** — Post-walk view with route map, stats, recordings, and prompts
+- **Privacy First** — All data stays on your device. No accounts, no servers, no tracking
+- **Backup & Export** — Export walks as GPX files or Pilgrim Backup (.orbup)
 
-- Keep full control over your data
-- Record your outdoor workouts (Running, Walking, Hiking, Cycling and Skating)
-- View detailed statistics
-- Export your workouts as GPX or OutRun-Backup (.orbup)
-- Fully customise the recording process
-- Synchronise with Apple Health
+## Building
 
-## Contribution
+Pilgrim uses CocoaPods and Swift Package Manager. To build:
 
-You want to make this app even better? No problem! There are lots of ways you can contribute:
+```
+git clone https://github.com/momentmaker/pilgrim-ios.git
+cd pilgrim-ios
+pod install
+open Pilgrim.xcworkspace
+```
 
-* **Share this project.** The simplest way of contributing is by sharing this project with your friends and family. Once more people see that it exists, it is more likely to get support and people interested and capable of adding to it.
-* **Join the beta.** Sometimes features need to be tested before being rolled out to all users, that is where beta testers come in. They receive early and sometimes unstable versions of the app and test them thoroughly, to make sure that others get a more polished product. You can join [here](https://testflight.apple.com/join/kDqNWBAi).
-* **Report Issues.** If you see some parts of the app not working as expected, if you want to give any kind of feedback or if you just have a question you can submit an issue on the [issue page](https://github.com/timfraedrich/OutRun/issues) of this project.
-
-OutRun does not accept any other kind of contributions, such as code or translations, at the moment.
+Use `Pilgrim.xcworkspace` (not `.xcodeproj`). Requires Xcode 16+ and iOS 16.0+.
 
 ## License
 
-OutRun is published under the GNU GENERAL PUBLIC LICENSE Version 3 (GLPv3):
+Pilgrim is published under the GNU General Public License v3 (GPLv3):
 
-    OutRun
+    Pilgrim
     Copyright (C) 2020 Tim Fraedrich <timfraedrich@icloud.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -48,3 +52,5 @@ OutRun is published under the GNU GENERAL PUBLIC LICENSE Version 3 (GLPv3):
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Pilgrim is a fork of [OutRun](https://github.com/timfraedrich/OutRun) by Tim Fraedrich.

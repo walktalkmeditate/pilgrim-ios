@@ -21,7 +21,7 @@
 import MapKit
 import UIKit
 
-/// An enum containing static functions and properties, dedicated to rendering workout map images.
+/// An enum containing static functions and properties, dedicated to rendering walk map images.
 enum WalkMapImageManager {
     
     private static var internalStatus = Status.idle {
@@ -87,7 +87,7 @@ enum WalkMapImageManager {
             }
         }
         
-        guard let uuid = request.workoutUUID else {
+        guard let uuid = request.walkUUID else {
             completion(false, nil)
             return
         }

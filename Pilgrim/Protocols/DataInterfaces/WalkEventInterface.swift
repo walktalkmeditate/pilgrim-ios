@@ -20,10 +20,10 @@
 
 import Foundation
 
-/// A protocol to unify the saving and processing of workout event objects connected to a workout.
+/// A protocol to unify the saving and processing of walk event objects connected to a walk.
 public protocol WalkEventInterface: SampleInterface {
     
-    /// The type of the workout event. For more see `WalkEvent.EventType`.
+    /// The type of the walk event. For more see `WalkEvent.EventType`.
     var eventType: WalkEvent.EventType { get }
     
 }

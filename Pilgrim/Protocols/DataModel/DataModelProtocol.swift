@@ -20,7 +20,7 @@
 
 import CoreStore
 
-/// A protocol used to define data models for the data base this application saves workouts in.
+/// A protocol used to define data models for the data base this application saves walks in.
 protocol DataModelProtocol {
     
     /// A `String` to identify the data model in a CoreData/CoreStore context

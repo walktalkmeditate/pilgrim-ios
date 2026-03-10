@@ -9,7 +9,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     private var isWalkActive = false
     private var currentRecordingStart: Date?
     private var currentRecordingRelativePath: String?
-    private var workoutUUID = UUID()
+    private var walkUUID = UUID()
 
     private var cancellables: [AnyCancellable] = []
     private weak var builder: WalkBuilder?
@@ -50,7 +50,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.voiceRecordingsRelay.accept([])
-                self.workoutUUID = UUID()
+                self.walkUUID = UUID()
             }.store(in: &cancellables)
     }
 
@@ -70,7 +70,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
 
     private func ensureRecordingsDirectory() -> URL? {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let dir = docs.appendingPathComponent("Recordings/\(workoutUUID.uuidString)")
+        let dir = docs.appendingPathComponent("Recordings/\(walkUUID.uuidString)")
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             return dir
@@ -90,7 +90,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         let recordingID = UUID()
         let filename = "\(recordingID.uuidString).m4a"
         let fileURL = dir.appendingPathComponent(filename)
-        let relativePath = "Recordings/\(workoutUUID.uuidString)/\(filename)"
+        let relativePath = "Recordings/\(walkUUID.uuidString)/\(filename)"
 
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),

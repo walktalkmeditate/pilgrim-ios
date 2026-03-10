@@ -21,7 +21,7 @@
 import Foundation
 import CoreLocation
 
-/// A protocol to unify the saving and processing of route data samples connected to a workout.
+/// A protocol to unify the saving and processing of route data samples connected to a walk.
 public protocol RouteDataSampleInterface: SampleInterface {
     
     /// The latitude of the location the route data sample was recorded at.

@@ -22,17 +22,17 @@ import Foundation
 import Combine
 import CombineExt
 
-/// A `WalkBuilderComponent` for detecting automatic pauses during a workout
+/// A `WalkBuilderComponent` for detecting automatic pauses during a walk
 public class AutoPauseDetection: WalkBuilderComponent {
     
-    /// The current status of the bound workout builder.
+    /// The current status of the bound walk builder.
     private var currentStatus: WalkBuilder.Status = .waiting
     /// The current predicted start date for an automatic pause.
     private var currentPredictedStartDate: Date?
     
     // MARK: - Dataflow
     
-    /// An Array of cancellables for binding to the workout builder.
+    /// An Array of cancellables for binding to the walk builder.
     private var cancellables: [AnyCancellable] = []
     
     /// The relay to suggest a new status to the `WalkBuilder`.

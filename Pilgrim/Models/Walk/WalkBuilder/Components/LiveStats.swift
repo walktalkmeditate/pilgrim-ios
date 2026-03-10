@@ -27,12 +27,12 @@ class LiveStats: WalkBuilderComponent {
     
     // MARK: - Dataflow
     
-    /// An Array of cancellables for binding to the workout builder.
+    /// An Array of cancellables for binding to the walk builder.
     private var cancellables: [AnyCancellable] = []
     
     /// The relay to publish the current status of the `WalkBuilder`.
     fileprivate let statusRelay = CurrentValueRelay<WalkBuilder.Status>(.waiting)
-    /// The relay to publish the type of workout the `WalkBuilder` is supposed to record.
+    /// The relay to publish the type of walk the `WalkBuilder` is supposed to record.
     fileprivate let workoutTypeRelay = CurrentValueRelay<Walk.WalkType?>(nil)
     /// The relay to publish the distance shared by components.
     fileprivate let distanceRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UserPreferences.distanceMeasurementType.safeValue))
@@ -44,12 +44,12 @@ class LiveStats: WalkBuilderComponent {
     fileprivate let locationsRelay = CurrentValueRelay<[TempRouteDataSample]>([])
     /// The relay to publish the heart rate samples received from components.
     fileprivate let currentHeartRateRelay = CurrentValueRelay<TempHeartRateDataSample?>(nil)
-    /// The relay to publish a components report of isufficient permissions to record the workout.
+    /// The relay to publish a components report of isufficient permissions to record the walk.
     fileprivate let insufficientPermissionRelay = PassthroughRelay<String>()
     
-    /// The relay to publish a string describing the elapsed duration of the workout.
+    /// The relay to publish a string describing the elapsed duration of the walk.
     fileprivate let durationRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UnitDuration.seconds, type: .clock))
-    /// The relay to publish the energy burned during the workout as computed periodically.
+    /// The relay to publish the energy burned during the walk as computed periodically.
     fileprivate let burnedEnergyRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UserPreferences.energyMeasurementType.safeValue))
     /// The relay to publish the speed returned in meters per second.
     fileprivate let speedRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UserPreferences.speedMeasurementType.safeValue, type: (UserPreferences.speedMeasurementType.safeValue == UnitSpeed.minutesPerLengthUnit(from: UnitLength.standardBigLocalUnit as! UnitLength)) ? .pace : .auto))

@@ -45,17 +45,17 @@ public class AltitudeManagement: WalkBuilderComponent {
     
     // MARK: - Dataflow
     
-    /// An Array of cancellables for binding to the workout builder.
+    /// An Array of cancellables for binding to the walk builder.
     private var cancellables: [AnyCancellable] = []
     
-    /// The relay to publish that insufficient permission was granted to the workout builder.
+    /// The relay to publish that insufficient permission was granted to the walk builder.
     private let insufficientPermissionRelay = PassthroughRelay<String>()
-    /// The relay to publish the altitudes recorded to the workout builder.
+    /// The relay to publish the altitudes recorded to the walk builder.
     private let altitudesRelay = CurrentValueRelay<[AltitudeSample]>([])
     
     // MARK: Binders
     
-    /// Binds the current and previous status of the workout builder to this component.
+    /// Binds the current and previous status of the walk builder to this component.
     private var statusBinder: ((WalkBuilder.Status?, WalkBuilder.Status)) -> Void {
         return { [weak self] value in
             guard let self else { return }

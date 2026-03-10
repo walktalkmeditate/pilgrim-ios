@@ -80,18 +80,18 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
     
     // MARK: - Dataflow
     
-    /// An Array of cancellables for binding to the workout builder.
+    /// An Array of cancellables for binding to the walk builder.
     private var cancellables: [AnyCancellable] = []
     
-    /// The relay to publish the status of readiness to the workout builder.
+    /// The relay to publish the status of readiness to the walk builder.
     private let readinessRelay = CurrentValueRelay<WalkBuilderComponentStatus>(.preparing(LocationManagement.self))
-    /// The relay to publish that insufficient permission was granted to the workout builder.
+    /// The relay to publish that insufficient permission was granted to the walk builder.
     private let insufficientPermissionRelay = PassthroughRelay<String>()
-    /// The relay to publish the distance travelled to the workout builder.
+    /// The relay to publish the distance travelled to the walk builder.
     private let distanceRelay = CurrentValueRelay<Double>(0)
-    /// The relay to publish the current location to the workout builder.
+    /// The relay to publish the current location to the walk builder.
     private let currentLocationRelay = CurrentValueRelay<TempRouteDataSample?>(nil)
-    /// The relay to publish all recorded locations to the workout builder.
+    /// The relay to publish all recorded locations to the walk builder.
     private let locationsRelay = CurrentValueRelay<[TempRouteDataSample]>([])
     
     // MARK: Binders

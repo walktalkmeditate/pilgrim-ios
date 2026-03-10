@@ -20,7 +20,7 @@
 
 import Foundation
 
-/// A protocol to unify common datapoints of the samples of a workout.
+/// A protocol to unify common datapoints of the samples of a walk.
 public protocol SampleInterface: DataInterface {
     
     /// The `Date` the sample was recorded.

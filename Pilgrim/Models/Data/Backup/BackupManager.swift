@@ -27,7 +27,7 @@ enum BackupManager {
     
     /**
      Creates a backup and saves it to a file providing it for export.
-     - parameter workouts: the workouts being saved into the backup; if `nil` all workouts inside the database will be used
+     - parameter inclusionType: the type of data to include in the backup
      - parameter completion: a closure providing the status of success of the operation and an optional url to the created file
      - parameter success: indicates the success of the completion
      - parameter url: points to the saved backup file
@@ -63,10 +63,10 @@ enum BackupManager {
      Inserts the data from the backup file into the database.
      - parameter completion: a closure providing the status of success of the operation and a reference to the saved data
      - parameter success: indicates the success of the completion
-     - parameter workouts: the workouts that were saved to the database
+     - parameter walks: the walks that were saved to the database
      - parameter events: the events that were saved to the database
      */
-    static func insertBackup(from url: URL, completion: @escaping (_ success: Bool, _ workouts: [WalkInterface], _ events: [EventInterface]) -> Void) {
+    static func insertBackup(from url: URL, completion: @escaping (_ success: Bool, _ walks: [WalkInterface], _ events: [EventInterface]) -> Void) {
         
         
         guard let data = try? Data(contentsOf: url),
@@ -79,25 +79,25 @@ enum BackupManager {
         switch version {
         case BackupV1.versionCode, BackupV2.versionCode, BackupV3.versionCode, BackupV4.versionCode:
             
-            guard let data: (events: [TempEvent], workouts: [TempWalk]) = try? {
-                
+            guard let data: (events: [TempEvent], walks: [TempWalk]) = try? {
+
                 if version == BackupV1.versionCode {
                     let oldBackup = try JSONDecoder().decode(BackupV1.self, from: data)
-                    return (events: [], workouts: oldBackup.workoutData.map { $0.asTemp })
-                    
+                    return (events: [], walks: oldBackup.workoutData.map { $0.asTemp })
+
                 } else if version == BackupV2.versionCode {
                     let oldBackup = try JSONDecoder().decode(BackupV2.self, from: data)
-                    return (events: [], workouts: oldBackup.workoutData.map { $0.asTemp })
-                    
+                    return (events: [], walks: oldBackup.workoutData.map { $0.asTemp })
+
                 } else if version == BackupV3.versionCode {
                     let oldBackup = try JSONDecoder().decode(BackupV3.self, from: data)
                     return (events: oldBackup.eventData.map { $0.asTemp },
-                            workouts: oldBackup.workoutData.map { $0.asTemp })
-                    
-                    
+                            walks: oldBackup.workoutData.map { $0.asTemp })
+
+
                 } else {
                     let backup = try JSONDecoder().decode(Backup.self, from: data)
-                    return (events: backup.eventData, workouts: backup.workoutData)
+                    return (events: backup.eventData, walks: backup.workoutData)
                 }
             }() else {
                 
@@ -105,24 +105,24 @@ enum BackupManager {
             }
             
             var returnSuccess = true
-            var returnWorkouts: [Walk]?
+            var returnWalks: [Walk]?
             var returnEvents: [Event]?
             
             func completeIfAppropriate() {
-                if let returnWorkouts = returnWorkouts, let returnEvents = returnEvents {
-                    completion(returnSuccess, returnWorkouts, returnEvents)
+                if let returnWalks = returnWalks, let returnEvents = returnEvents {
+                    completion(returnSuccess, returnWalks, returnEvents)
                 }
             }
             
-            DataManager.saveWorkouts(objects: data.workouts) { (success, saveError, workouts) in
+            DataManager.saveWalks(objects: data.walks) { (success, saveError, walks) in
                 if saveError == nil {
-                    
-                    returnWorkouts = workouts
+
+                    returnWalks = walks
                     
                 } else {
-                    print("Error while saving workouts during backup import:", saveError!.debugDescription)
+                    print("Error while saving walks during backup import:", saveError!.debugDescription)
                     returnSuccess = false
-                    returnWorkouts = []
+                    returnWalks = []
                 }
                 
                 completeIfAppropriate()
@@ -142,11 +142,13 @@ enum BackupManager {
                 
                 completeIfAppropriate()
             }
-            
+
+            return
+
         default:
             break
         }
-        
+
         completion(false, [], [])
         return
     }

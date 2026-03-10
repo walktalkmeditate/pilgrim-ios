@@ -2,7 +2,7 @@ import SwiftUI
 
 struct PromptListView: View {
 
-    let workout: WalkInterface
+    let walk: WalkInterface
     let transcriptions: [UUID: String]
     @State private var selectedPrompt: GeneratedPrompt?
     @State private var prompts: [GeneratedPrompt] = []
@@ -30,8 +30,8 @@ struct PromptListView: View {
 
     private func generatePrompts() {
         guard prompts.isEmpty else { return }
-        let routeSamples = workout.routeData
-        let recordings = workout.voiceRecordings.compactMap { recording -> PromptGenerator.RecordingContext? in
+        let routeSamples = walk.routeData
+        let recordings = walk.voiceRecordings.compactMap { recording -> PromptGenerator.RecordingContext? in
             guard let uuid = recording.uuid,
                   let text = transcriptions[uuid] else { return nil }
             let startCoord = closestCoordinate(to: recording.startDate, in: routeSamples)
@@ -46,9 +46,9 @@ struct PromptListView: View {
 
         prompts = PromptGenerator.generateAll(
             recordings: recordings,
-            duration: workout.activeDuration,
-            distance: workout.distance,
-            startDate: workout.startDate
+            duration: walk.activeDuration,
+            distance: walk.distance,
+            startDate: walk.startDate
         )
     }
 

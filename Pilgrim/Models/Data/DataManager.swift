@@ -27,7 +27,7 @@ struct DataManager {
     
     // MARK: - Database setup
     
-    /// static optional instance of the local storage holding the workout data
+    /// static optional instance of the local storage holding the walk data
     private static var storage: SQLiteStore?
     
     /// The size of the local storage in bytes; if `nil` it could not be calculated.
@@ -114,26 +114,26 @@ struct DataManager {
     // MARK: - Walk
     
     /**
-     This function saves a workout to the database.
+     This function saves a walk to the database.
      - parameter object: the data set to be saved to the database
      - parameter completion: the closure being executed on the main thread as soon as the saving either succeeds or fails
-     - parameter success: indicates the success of saving the workout
+     - parameter success: indicates the success of saving the walk
      - parameter error: gives more detailed information on an error if one occured
-     - parameter workout: holds the `Walk` if saving it succeeded
+     - parameter walk: holds the `Walk` if saving it succeeded
      - note: Objects conforming to `EventInterface` and associated with the provided object will not be added to the database
      - warning: An `object` of Type `Walk` will be rejected with an `.alreadySaved` error, because all objects of that type must already be in the database.
      */
     public static func saveWalk(
         object: WalkInterface,
-        completion: @escaping (_ success: Bool, _ error: DataManager.SaveError?, _ workout: Walk?) -> Void) {
-        
+        completion: @escaping (_ success: Bool, _ error: DataManager.SaveError?, _ walk: Walk?) -> Void) {
+
         let completion = safeClosure(from: completion)
-        
-        saveWorkouts(
+
+        saveWalks(
             objects: [object],
-            completion: { success, error, workouts in
-                if let workout = workouts.first {
-                    completion(true, nil, workout)
+            completion: { success, error, walks in
+                if let walk = walks.first {
+                    completion(true, nil, walk)
                 } else {
                     
                     switch error {
@@ -153,18 +153,18 @@ struct DataManager {
     }
     
     /**
-     This function saves multiple workouts to the database.
+     This function saves multiple walks to the database.
      - parameter objects: the data sets to be saved to the database
      - parameter completion: the closure being executed on the main thread as soon as the saving either succeeds or fails
-     - parameter success: indicates the success of saving workouts; this will also be `true` if not all workouts were valid and some have been excluded
+     - parameter success: indicates the success of saving walks; this will also be `true` if not all walks were valid and some have been excluded
      - parameter error: gives more detailed information on an error if one occured
-     - parameter workouts: holds the `Walk`s that were successfully saved
+     - parameter walks: holds the `Walk`s that were successfully saved
      - note: Objects conforming to `EventInterface` and associated with the provided objects will not be added to the database
      - warning: Objects of type `Walk` will be rejected, because all objects of that type must already be in the database.
      */
-    public static func saveWorkouts(
+    public static func saveWalks(
         objects: [WalkInterface],
-        completion: @escaping (_ success: Bool, _ error: DataManager.SaveMultipleError?, _ workouts: [Walk]) -> Void) {
+        completion: @escaping (_ success: Bool, _ error: DataManager.SaveMultipleError?, _ walks: [Walk]) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -183,30 +183,30 @@ struct DataManager {
         
         dataStack.perform(asynchronous: { (transaction) -> [Walk] in
             
-            var workouts = [Walk]()
-            
+            var walks = [Walk]()
+
             for object in validatedObjects {
-                
-                let workout = transaction.create(Into<Walk>())
-                workout._uuid .= object.uuid ?? UUID()
-                workout._workoutType .= object.workoutType
-                workout._distance .= object.distance
-                workout._steps .= object.steps
-                workout._startDate .= object.startDate
-                workout._endDate .= object.endDate
-                workout._burnedEnergy .= object.burnedEnergy
-                workout._isRace .= object.isRace
-                workout._comment .= object.comment
-                workout._isUserModified .= object.isUserModified
-                workout._healthKitUUID .= object.healthKitUUID
-                
-                workout._ascend .= object.ascend
-                workout._descend .= object.descend
-                workout._activeDuration .= object.activeDuration
-                workout._pauseDuration .= object.pauseDuration
-                workout._dayIdentifier .= object.dayIdentifier
-                workout._talkDuration .= object.talkDuration
-                workout._meditateDuration .= object.meditateDuration
+
+                let walk = transaction.create(Into<Walk>())
+                walk._uuid .= object.uuid ?? UUID()
+                walk._workoutType .= object.workoutType
+                walk._distance .= object.distance
+                walk._steps .= object.steps
+                walk._startDate .= object.startDate
+                walk._endDate .= object.endDate
+                walk._burnedEnergy .= object.burnedEnergy
+                walk._isRace .= object.isRace
+                walk._comment .= object.comment
+                walk._isUserModified .= object.isUserModified
+                walk._healthKitUUID .= object.healthKitUUID
+
+                walk._ascend .= object.ascend
+                walk._descend .= object.descend
+                walk._activeDuration .= object.activeDuration
+                walk._pauseDuration .= object.pauseDuration
+                walk._dayIdentifier .= object.dayIdentifier
+                walk._talkDuration .= object.talkDuration
+                walk._meditateDuration .= object.meditateDuration
 
                 for tempPause in object.pauses {
                     let pause = transaction.create(Into<WalkPause>())
@@ -214,17 +214,17 @@ struct DataManager {
                     pause._startDate .= tempPause.startDate
                     pause._endDate .= tempPause.endDate
                     pause._pauseType .= tempPause.pauseType
-                    
-                    pause._workout .= workout
+
+                    pause._workout .= walk
                 }
-                
+
                 for tempWalkEvent in object.workoutEvents {
-                    let workoutEvent = transaction.create(Into<WalkEvent>())
-                    workoutEvent._uuid .= tempWalkEvent.uuid ?? UUID()
-                    workoutEvent._eventType .= tempWalkEvent.eventType
-                    workoutEvent._timestamp .= tempWalkEvent.timestamp
-                    
-                    workoutEvent._workout .= workout
+                    let walkEvent = transaction.create(Into<WalkEvent>())
+                    walkEvent._uuid .= tempWalkEvent.uuid ?? UUID()
+                    walkEvent._eventType .= tempWalkEvent.eventType
+                    walkEvent._timestamp .= tempWalkEvent.timestamp
+
+                    walkEvent._workout .= walk
                 }
 
                 for tempSample in object.routeData {
@@ -238,17 +238,17 @@ struct DataManager {
                     routeSample._verticalAccuracy .= tempSample.verticalAccuracy
                     routeSample._speed .= tempSample.speed
                     routeSample._direction .= tempSample.direction
-                    
-                    routeSample._workout .= workout
+
+                    routeSample._workout .= walk
                 }
-                
+
                 for tempSample in object.heartRates {
                     let heartRateSample = transaction.create(Into<HeartRateDataSample>())
                     heartRateSample._uuid .= tempSample.uuid ?? UUID()
                     heartRateSample._heartRate .= tempSample.heartRate
                     heartRateSample._timestamp .= tempSample.timestamp
 
-                    heartRateSample._workout .= workout
+                    heartRateSample._workout .= walk
                 }
 
                 for tempRecording in object.voiceRecordings {
@@ -260,27 +260,27 @@ struct DataManager {
                     recording._fileRelativePath .= tempRecording.fileRelativePath
                     recording._transcription .= tempRecording.transcription
 
-                    recording._workout .= workout
+                    recording._workout .= walk
                 }
 
-                workouts.append(workout)
-                
+                walks.append(walk)
+
             }
-            
-            return workouts
-            
+
+            return walks
+
         }) { (result) in
             switch result {
-            case .success(let tempWorkouts):
-                let workouts = dataStack.fetchExisting(tempWorkouts)
-                
-                if workouts.count == objects.count {
-                    completion(true, nil, workouts)
-                } else if workouts.count == filteredObjects.count {
-                    completion(true, .notAllSaved, workouts)
+            case .success(let savedWalks):
+                let walks = dataStack.fetchExisting(savedWalks)
+
+                if walks.count == objects.count {
+                    completion(true, nil, walks)
+                } else if walks.count == filteredObjects.count {
+                    completion(true, .notAllSaved, walks)
                 } else {
-                    // last case: workouts.count must be equal to validatedObjects.count
-                    completion(true, .notAllValid, workouts)
+                    // last case: walks.count must be equal to validatedObjects.count
+                    completion(true, .notAllValid, walks)
                 }
                 
             case .failure(let error):
@@ -291,15 +291,15 @@ struct DataManager {
     }
     
     /**
-     This function updates a workout from a data set referencing the workout with its universally unique identifier.
+     This function updates a walk from a data set referencing the walk with its universally unique identifier.
      - parameter object: the data set containing all updates
      - parameter completion: the closure being perfomed upon finishing the updating process
      - parameter success: indicates the success of the operation
      - parameter error: gives more detailed information on an error if one occured
-     - parameter workout: holds the `Walk` if updating it succeeded
+     - parameter walk: holds the `Walk` if updating it succeeded
      - warning: Objects of type `Walk` will be rejected, because all objects of that type must already hold the provided data.
      */
-    public static func updateWalk(object: WalkInterface, completion: @escaping (_ success: Bool, _ error: DataManager.UpdateError?, _ workout: Walk?) -> Void) {
+    public static func updateWalk(object: WalkInterface, completion: @escaping (_ success: Bool, _ error: DataManager.UpdateError?, _ walk: Walk?) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -319,27 +319,27 @@ struct DataManager {
         
         dataStack.perform(asynchronous: { (transaction) -> Walk? in
             
-            if let workout = transaction.edit(queryObject(from: uuid, transaction: transaction) as Walk?) {
-                
-                workout._uuid .= object.uuid ?? UUID()
-                workout._workoutType .= object.workoutType
-                workout._distance .= object.distance
-                workout._steps .= object.steps
-                workout._startDate .= object.startDate
-                workout._endDate .= object.endDate
-                workout._burnedEnergy .= object.burnedEnergy
-                workout._isRace .= object.isRace
-                workout._comment .= object.comment
-                workout._isUserModified .= object.isUserModified
-                workout._healthKitUUID .= object.healthKitUUID
-                
-                workout._ascend .= object.ascend
-                workout._descend .= object.descend
-                workout._activeDuration .= object.activeDuration
-                workout._pauseDuration .= object.pauseDuration
-                workout._dayIdentifier .= object.dayIdentifier
-                workout._talkDuration .= object.talkDuration
-                workout._meditateDuration .= object.meditateDuration
+            if let walk = transaction.edit(queryObject(from: uuid, transaction: transaction) as Walk?) {
+
+                walk._uuid .= object.uuid ?? UUID()
+                walk._workoutType .= object.workoutType
+                walk._distance .= object.distance
+                walk._steps .= object.steps
+                walk._startDate .= object.startDate
+                walk._endDate .= object.endDate
+                walk._burnedEnergy .= object.burnedEnergy
+                walk._isRace .= object.isRace
+                walk._comment .= object.comment
+                walk._isUserModified .= object.isUserModified
+                walk._healthKitUUID .= object.healthKitUUID
+
+                walk._ascend .= object.ascend
+                walk._descend .= object.descend
+                walk._activeDuration .= object.activeDuration
+                walk._pauseDuration .= object.pauseDuration
+                walk._dayIdentifier .= object.dayIdentifier
+                walk._talkDuration .= object.talkDuration
+                walk._meditateDuration .= object.meditateDuration
 
                 for tempPause in object.pauses where tempPause.uuid == nil {
                     let pause = transaction.create(Into<WalkPause>())
@@ -347,17 +347,17 @@ struct DataManager {
                     pause._startDate .= tempPause.startDate
                     pause._endDate .= tempPause.endDate
                     pause._pauseType .= tempPause.pauseType
-                    
-                    pause._workout .= workout
+
+                    pause._workout .= walk
                 }
-                
+
                 for tempWalkEvent in object.workoutEvents where tempWalkEvent.uuid == nil {
-                    let workoutEvent = transaction.create(Into<WalkEvent>())
-                    workoutEvent._uuid .= tempWalkEvent.uuid ?? UUID()
-                    workoutEvent._eventType .= tempWalkEvent.eventType
-                    workoutEvent._timestamp .= tempWalkEvent.timestamp
-                    
-                    workoutEvent._workout .= workout
+                    let walkEvent = transaction.create(Into<WalkEvent>())
+                    walkEvent._uuid .= tempWalkEvent.uuid ?? UUID()
+                    walkEvent._eventType .= tempWalkEvent.eventType
+                    walkEvent._timestamp .= tempWalkEvent.timestamp
+
+                    walkEvent._workout .= walk
                 }
 
                 for tempSample in object.routeData where tempSample.uuid == nil {
@@ -371,17 +371,17 @@ struct DataManager {
                     routeSample._verticalAccuracy .= tempSample.verticalAccuracy
                     routeSample._speed .= tempSample.speed
                     routeSample._direction .= tempSample.direction
-                    
-                    routeSample._workout .= workout
+
+                    routeSample._workout .= walk
                 }
-                
+
                 for tempSample in object.heartRates where tempSample.uuid == nil {
                     let heartRateSample = transaction.create(Into<HeartRateDataSample>())
                     heartRateSample._uuid .= tempSample.uuid ?? UUID()
                     heartRateSample._heartRate .= tempSample.heartRate
                     heartRateSample._timestamp .= tempSample.timestamp
 
-                    heartRateSample._workout .= workout
+                    heartRateSample._workout .= walk
                 }
 
                 for tempRecording in object.voiceRecordings where tempRecording.uuid == nil {
@@ -393,10 +393,10 @@ struct DataManager {
                     recording._fileRelativePath .= tempRecording.fileRelativePath
                     recording._transcription .= tempRecording.transcription
 
-                    recording._workout .= workout
+                    recording._workout .= walk
                 }
 
-                return workout
+                return walk
                 
             } else {
                 return nil
@@ -404,9 +404,9 @@ struct DataManager {
             
         }) { (result) in
             switch result {
-            case .success(let tempWorkout):
-                if let tempWorkout = tempWorkout, let workout = dataStack.fetchExisting(tempWorkout) {
-                    completion(true, nil, workout)
+            case .success(let savedWalk):
+                if let savedWalk = savedWalk, let walk = dataStack.fetchExisting(savedWalk) {
+                    completion(true, nil, walk)
                 } else {
                     completion(false, .databaseError(error: CoreStoreError.persistentStoreNotFound(entity: Walk.self)), nil)
                 }
@@ -463,7 +463,7 @@ struct DataManager {
      - parameter success: indicates the success of saving the event
      - parameter error: gives more detailed information on an error if one occured
      - parameter event: holds the `Event` if saving it succeeded
-     - note: Objects conforming to `WalkInterface` and associated with the provided data sets will not be added to the database, rather the data manager will try to query workout objects from only the provided `UUID`s in the `WalkInterface` objects and attach them to the `Event`. For that it is improtant that these workout objects are already saved to the database, otherwise a reference cannot be established.
+     - note: Objects conforming to `WalkInterface` and associated with the provided data sets will not be added to the database, rather the data manager will try to query walk objects from only the provided `UUID`s in the `WalkInterface` objects and attach them to the `Event`. For that it is important that these walk objects are already saved to the database, otherwise a reference cannot be established.
      - warning: An `object` of Type `Event` will be rejected with an `.alreadySaved` error, because all objects of that type must already be in the database.
      */
     public static func saveEvent(object: EventInterface, completion: @escaping (_ success: Bool, _ error: DataManager.SaveError?, _ event: Event?) -> Void) {
@@ -501,7 +501,7 @@ struct DataManager {
      - parameter success: indicates the success of saving the events
      - parameter error: gives more detailed information on an error if one occured
      - parameter events: holds the `Event`s if saving them succeeded
-     - note: Objects conforming to `WalkInterface` and associated with the provided data sets will not be added to the database, rather the data manager will try to query workout objects from only the provided `UUID`s in the `WalkInterface` objects and attach them to the `Event`s. For that it is improtant that these workout objects are already saved to the database, otherwise a reference cannot be established.
+     - note: Objects conforming to `WalkInterface` and associated with the provided data sets will not be added to the database, rather the data manager will try to query walk objects from only the provided `UUID`s in the `WalkInterface` objects and attach them to the `Event`s. For that it is important that these walk objects are already saved to the database, otherwise a reference cannot be established.
      - warning: `objects` of Type `Event` will be rejected with an `.alreadySaved` error, because all objects of that type must already be in the database.
      */
     public static func saveEvents(objects: [EventInterface], completion: @escaping (_ success: Bool, _ error: DataManager.SaveMultipleError?, _ events: [Event]) -> Void) {
@@ -534,18 +534,16 @@ struct DataManager {
                 event._startDate .= object.startDate
                 event._endDate .= object.endDate
                 
-                let workoutUUIDs = object.workouts.compactMap { (workout) -> UUID? in
-                    return workout.uuid
-                }
-                
-                if let workouts = try? transaction.fetchAll(
+                let walkUUIDs = object.workouts.compactMap { $0.uuid }
+
+                if let walks = try? transaction.fetchAll(
                     From<Walk>()
                         .where({
-                            Where<Walk>(workoutUUIDs.containsOptional($0.uuid))
+                            Where<Walk>(walkUUIDs.containsOptional($0.uuid))
                         })
                         .orderBy(.ascending(\._startDate))
                 ) {
-                    event._workouts .= workouts
+                    event._workouts .= walks
                 }
                 
                 events.append(event)
@@ -564,7 +562,7 @@ struct DataManager {
                 } else if events.count == filteredObjects.count {
                     completion(true, .notAllSaved, events)
                 } else {
-                    // last case: workouts.count must be equal to validatedObjects.count
+                    // last case: events.count must be equal to validatedObjects.count
                     completion(true, .notAllValid, events)
                 }
             case .failure(let error):
@@ -610,16 +608,16 @@ struct DataManager {
                 event._startDate .= object.startDate
                 event._endDate .= object.endDate
                 
-                for workoutObject in object.workouts {
-                    
-                    guard !(workoutObject is Walk), let uuid = workoutObject.uuid, let workout = transaction.edit(queryObject(from: uuid) as Walk?), !workout._events.contains(event) else {
+                for walkObject in object.workouts {
+
+                    guard !(walkObject is Walk), let uuid = walkObject.uuid, let walk = transaction.edit(queryObject(from: uuid) as Walk?), !walk._events.contains(event) else {
                         continue
                     }
-                    
-                    var set = workout._events.value
+
+                    var set = walk._events.value
                     set.insert(event)
-                    workout._events .= set
-                    
+                    walk._events .= set
+
                 }
                 
                 return event
@@ -634,7 +632,7 @@ struct DataManager {
                 if let tempEvent = tempEvent, let event = dataStack.fetchExisting(tempEvent) {
                     completion(true, nil, event)
                 } else {
-                    completion(false, .databaseError(error: CoreStoreError.persistentStoreNotFound(entity: Walk.self)), nil)
+                    completion(false, .databaseError(error: CoreStoreError.persistentStoreNotFound(entity: Event.self)), nil)
                 }
             case .failure(let error):
                 completion(false, .databaseError(error: error), nil)
@@ -657,8 +655,8 @@ struct DataManager {
         dataStack.perform(asynchronous: { (transaction) -> [String] in
 
             var filePaths: [String] = []
-            if let workout = object as? Walk,
-               let editable = transaction.edit(workout) {
+            if let walk = object as? Walk,
+               let editable = transaction.edit(walk) {
                 filePaths = editable._voiceRecordings.value.compactMap { $0._fileRelativePath.value }
             }
             transaction.delete(object)
@@ -721,8 +719,8 @@ struct DataManager {
     
     // MARK: - Monitoring
     
-    /// A `CoreStore.ListMonitor` to observe changes in the database and refresh the `WorkoutListViewController`
-    public static let workoutMonitor = dataStack.monitorList(
+    /// A `CoreStore.ListMonitor` to observe changes in the database and refresh the home view.
+    public static let walkMonitor = dataStack.monitorList(
         From<Walk>()
             .orderBy(.descending(\._startDate))
             .where(Where<Walk>(true))
