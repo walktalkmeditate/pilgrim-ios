@@ -38,7 +38,7 @@ class TextInputSetting: NSObject, Setting, /*KeyboardAvoidanceSetting,*/ UITextF
     fileprivate lazy var textField: UITextField = {
         let textField = UITextField()
         textField.backgroundColor = .clear
-        textField.textColor = .accentColor
+        textField.textColor = .stone
         textField.placeholder = self.textFieldPlaceholderClosure()
         textField.text = self.initialTextFieldText ?? self.textFieldTextClosure?()
         textField.layer.cornerRadius = 10
@@ -49,10 +49,11 @@ class TextInputSetting: NSObject, Setting, /*KeyboardAvoidanceSetting,*/ UITextF
         textField.font = UIFont.preferredFont(forTextStyle: .body)
         textField.adjustsFontForContentSizeCategory = true
         
-        textField.snp.makeConstraints { (make) in
-            make.width.equalTo(150)
-            make.height.equalTo(32)
-        }
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            textField.widthAnchor.constraint(equalToConstant: 150),
+            textField.heightAnchor.constraint(equalToConstant: 32)
+        ])
         
         // textField.addDoneToolbar()
         
@@ -65,46 +66,39 @@ class TextInputSetting: NSObject, Setting, /*KeyboardAvoidanceSetting,*/ UITextF
     
     fileprivate lazy var internalTableViewCell: UITableViewCell = {
         let cell = UITableViewCell()
-        cell.backgroundColor = .systemBackground
+        cell.backgroundColor = .parchment
         cell.accessoryType = .none
         cell.selectionStyle = .none
-        
+
         let safeArea = cell.contentView.layoutMarginsGuide
-        
+
         titleLabel.adjustsFontForContentSizeCategory = true
         
         cell.contentView.addSubview(titleLabel)
-        
-        titleLabel.snp.makeConstraints { (make) in
-            make.top.bottom.equalTo(safeArea)
-            make.left.equalTo(safeArea)
-        }
-        
         cell.contentView.addSubview(self.textField)
-        
-        self.textField.snp.makeConstraints { (make) in
-            make.centerY.equalTo(safeArea)
-            make.left.equalTo(titleLabel.snp.right)
-        }
-        
+
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        self.textField.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            titleLabel.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+            self.textField.centerYAnchor.constraint(equalTo: safeArea.centerYAnchor),
+            self.textField.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor)
+        ])
+
         if self.textBehindTextField == nil {
-            
-            self.textField.snp.makeConstraints { (make) in
-                make.right.equalTo(safeArea)
-            }
-            
+            self.textField.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor).isActive = true
         } else {
-            
             behindLabel.adjustsFontForContentSizeCategory = true
-            
             cell.contentView.addSubview(behindLabel)
-            
-            behindLabel.snp.makeConstraints { (make) in
-                make.centerY.equalTo(textField)
-                make.right.equalTo(safeArea)
-                make.left.equalTo(self.textField.snp.right).offset(10)
-            }
-            
+            behindLabel.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                behindLabel.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+                behindLabel.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor),
+                behindLabel.leadingAnchor.constraint(equalTo: self.textField.trailingAnchor, constant: 10)
+            ])
         }
         
         return cell

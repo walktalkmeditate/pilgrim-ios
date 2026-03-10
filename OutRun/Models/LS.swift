@@ -34,16 +34,10 @@ struct LS {
         let errorValue = "NIL"
         var localizedString = Bundle.main.localizedString(forKey: key, value: errorValue, table: sourceType.tableName)
         
-        // falling back on base language if string for key is not availabe
         if localizedString == "NIL" {
             localizedString = sourceType.fallbackBundle.localizedString(forKey: key, value: errorValue, table: sourceType.tableName)
         }
-        
-        // checking if trademark applies and app name needs to be changed
-        if Locale.current.regionCode?.lowercased() == "gb" {
-            return localizedString.replacingOccurrences(of: "OutRun", with: "Out-Run")
-        }
-        
+
         return localizedString
     }
     

@@ -21,7 +21,7 @@
 import Foundation
 import CoreStore
 
-public typealias WorkoutPause = OutRunV4.WorkoutPause
+public typealias WorkoutPause = PilgrimV1.WorkoutPause
 
 public extension WorkoutPause {
     

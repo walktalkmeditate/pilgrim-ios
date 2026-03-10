@@ -25,19 +25,23 @@ class SetupViewModel: ObservableObject {
     @Published private(set) var finishedSteps: [Int:Bool] = [:]
     @Published private(set) var stepIndex: Int = 0
     
-    let numberOfSteps = 4
-    let skippableIndicies: [Int] = [2]
+    let numberOfSteps = 1
+    let skippableIndicies: [Int] = []
     
     var isNextButtonEnabled: Binding<Bool> {
+        bindingForStep(stepIndex)
+    }
+
+    func bindingForStep(_ index: Int) -> Binding<Bool> {
         Binding(
-            get: { self.finishedSteps[self.stepIndex] ?? self.skippableIndicies.contains(self.stepIndex) },
-            set: { self.finishedSteps[self.stepIndex] = $0 }
+            get: { self.finishedSteps[index] ?? self.skippableIndicies.contains(index) },
+            set: { self.finishedSteps[index] = $0 }
         )
     }
     
     let previousButtonTitle = "Previous"
     var nextButtonTitle: String {
-        stepIndex != numberOfSteps - 1 ? "Next" : "Finish"
+        stepIndex != numberOfSteps - 1 ? "Next" : "Get Started"
     }
     
     func previous() {

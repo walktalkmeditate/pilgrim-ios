@@ -16,18 +16,17 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="runningGlyph" translatesAutoresizingMaskIntoConstraints="NO" id="meg-1D-pkk">
-                                <rect key="frame" x="157" y="387" width="100" height="122"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="100" id="3yh-Qk-Ykd"/>
-                                    <constraint firstAttribute="width" secondItem="meg-1D-pkk" secondAttribute="height" multiplier="32:39" id="W0K-hV-6Dv"/>
-                                </constraints>
-                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Pilgrim" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pil-lb-001">
+                                <rect key="frame" x="107" y="418" width="200" height="60"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleTitle0"/>
+                                <color key="textColor" red="0.545" green="0.451" blue="0.333" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                        <color key="backgroundColor" red="0.961" green="0.941" blue="0.910" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="meg-1D-pkk" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="7vc-wZ-KNo"/>
-                            <constraint firstItem="meg-1D-pkk" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="pvR-Yv-92z"/>
+                            <constraint firstItem="pil-lb-001" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="ctr-y-001"/>
+                            <constraint firstItem="pil-lb-001" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="ctr-x-001"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
                     </view>
@@ -37,7 +36,4 @@
             <point key="canvasLocation" x="52.173913043478265" y="375"/>
         </scene>
     </scenes>
-    <resources>
-        <image name="runningGlyph" width="319" height="390"/>
-    </resources>
 </document>

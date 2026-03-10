@@ -22,17 +22,21 @@ import Foundation
 
 class NewWorkout: TempWorkout {
     
-    init(workoutType: OutRunV4.Workout.WorkoutType, distance: Double, steps: Int?, startDate: Date, endDate: Date, isRace: Bool, comment: String?, isUserModified: Bool, finishedRecording: Bool, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent]) {
-        
+    init(workoutType: Workout.WorkoutType, distance: Double, steps: Int?, startDate: Date, endDate: Date, isRace: Bool, comment: String?, isUserModified: Bool, finishedRecording: Bool, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], meditateDuration: Double = 0) {
+
         let bodyWeight: Double? = UserPreferences.weight.value
         let burnedEnergy: Double? = bodyWeight != nil ? Computation.calculateBurnedEnergy(for: workoutType, distance: distance, weight: bodyWeight!) : nil
-        
+
         let altitudes = routeData.map { $0.altitude }
         let elevation = Computation.calculateElevationData(from: altitudes)
-        
+
         let pauseTouples = pauses.map { ($0.startDate, $0.endDate) }
         let durations = Computation.calculateDurationData(from: startDate, end: endDate, pauses: pauseTouples)
-        
+
+        let rawTalkDuration = voiceRecordings.reduce(0) { $0 + $1.duration }
+        let talkDuration = min(rawTalkDuration, durations.activeDuration)
+        let clampedMeditateDuration = min(meditateDuration, durations.activeDuration)
+
         super.init(
             uuid: nil,
             workoutType: workoutType,
@@ -51,10 +55,13 @@ class NewWorkout: TempWorkout {
             activeDuration: durations.activeDuration,
             pauseDuration: durations.pauseDuration,
             dayIdentifier: CustomDateFormatting.dayIdentifier(forDate: startDate),
+            talkDuration: talkDuration,
+            meditateDuration: clampedMeditateDuration,
             heartRates: heartRates,
             routeData: routeData,
             pauses: pauses,
-            workoutEvents: workoutEvents
+            workoutEvents: workoutEvents,
+            voiceRecordings: voiceRecordings
         )
     }
     

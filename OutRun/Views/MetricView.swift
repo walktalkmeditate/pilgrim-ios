@@ -27,7 +27,7 @@ struct MetricView: View {
     var body: some View {
         VStack(alignment: .leading) {
             Text(viewModel.title)
-                .foregroundColor(.secondary)
+                .foregroundColor(.fog)
                 .font(viewModel.size.titleFont)
                 .bold()
                 .lineLimit(1)

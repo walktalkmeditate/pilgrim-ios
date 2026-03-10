@@ -40,7 +40,7 @@ struct WorkoutCard: View {
                 }.padding(Constants.UI.Padding.small)
                 Spacer(minLength: 0)
                 ZStack {
-                    Color.gray.opacity(0.1)
+                    Color.parchmentTertiary
                     if let mapImage = viewModel.mapImage {
                         Image(uiImage: mapImage)
                             .resizable()

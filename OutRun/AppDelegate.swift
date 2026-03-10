@@ -21,8 +21,6 @@
 import UIKit
 import Foundation
 import CoreStore
-import HealthKit
-import CoreLocation
 
 class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     
@@ -81,85 +79,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
 
     func applicationWillTerminate(_ application: UIApplication) {}
 
-    /*func checkPermissionStatus(controller: UIViewController, completion: (() -> Void)? = nil) {
-
-        let safeCompletion: () -> Void = {
-            DispatchQueue.main.async {
-                completion?()
-            }
-        }
-
-        if UserPreferences.isSetUp.value {
-
-            func checkHealthPermission() {
-                if UserPreferences.synchronizeWorkoutsWithAppleHealth.value || UserPreferences.synchronizeWeightWithAppleHealth.value {
-                    PermissionManager.standard.checkHealthPermission { (success) in
-                        if !success {
-                            DispatchQueue.main.async {
-                                controller.displayError(withMessage: LS["Setup.Permission.AppleHealth.Error"], dismissAction: { _ in
-                                    safeCompletion()
-                                })
-                            }
-                        } else {
-                            safeCompletion()
-                        }
-                    }
-                } else {
-                    safeCompletion()
-                }
-            }
-
-            func checkMotionPermission() {
-                PermissionManager.standard.checkMotionPermission { (success) in
-                    if !success {
-                        DispatchQueue.main.async {
-                            controller.displayOpenSettingsAlert(
-                                withTitle: LS["Error"],
-                                message: LS["Setup.Permission.Motion.Error"],
-                                dismissAction: {
-                                    checkHealthPermission()
-                                }
-                            )
-                        }
-                    } else {
-                        checkHealthPermission()
-                    }
-                }
-            }
-
-            PermissionManager.standard.checkLocationPermission { (status) in
-                switch status {
-                case .granted:
-                    checkMotionPermission()
-                    break
-                case .restricted:
-                    DispatchQueue.main.async {
-                        controller.displayOpenSettingsAlert(
-                            withTitle: LS["Setup.Permission.Location.Restricted.Title"],
-                            message: LS["Setup.Permission.Location.Restricted.Message"],
-                            dismissAction: {
-                                checkMotionPermission()
-                            }
-                        )
-                    }
-                default:
-                    DispatchQueue.main.async {
-                        controller.displayOpenSettingsAlert(
-                            withTitle: LS["Error"],
-                            message: LS["Setup.Permission.Location.Error"],
-                            dismissAction: {
-                                checkMotionPermission()
-                            }
-                        )
-                    }
-                }
-            }
-
-        } else {
-            safeCompletion()
-        }
-    }*/
-    
     enum AppLaunchState {
         case loading
         case migration

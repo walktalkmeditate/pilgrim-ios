@@ -1,27 +1,15 @@
-//
-//  UIColor.swift
-//
-//  OutRun
-//  Copyright (C) 2020 Tim Fraedrich <timfraedrich@icloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-
 import UIKit
 
 extension UIColor {
-    
-    static let accentColor = UIColor(named: "accentColor") ?? .systemOrange
-    
+
+    static let accentColor = UIColor(named: "accentColor") ?? .systemBrown
+    static let stone = UIColor(named: "stone") ?? .systemBrown
+    static let ink = UIColor(named: "ink") ?? .label
+    static let parchment = UIColor(named: "parchment") ?? .systemBackground
+    static let parchmentSecondary = UIColor(named: "parchmentSecondary") ?? .secondarySystemBackground
+    static let parchmentTertiary = UIColor(named: "parchmentTertiary") ?? .tertiarySystemBackground
+    static let moss = UIColor(named: "moss") ?? .systemGreen
+    static let rust = UIColor(named: "rust") ?? .systemRed
+    static let fog = UIColor(named: "fog") ?? .secondaryLabel
+    static let dawn = UIColor(named: "dawn") ?? .systemOrange
 }

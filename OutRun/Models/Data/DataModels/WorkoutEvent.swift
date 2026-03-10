@@ -19,10 +19,9 @@
 //
 
 import Foundation
-import HealthKit
 import CoreStore
 
-public typealias WorkoutEvent = OutRunV4.WorkoutEvent
+public typealias WorkoutEvent = PilgrimV1.WorkoutEvent
 
 public extension WorkoutEvent {
     
@@ -39,19 +38,6 @@ public extension WorkoutEvent {
                 self = .segment
             default:
                 self = .unknown
-            }
-        }
-        
-        public init?(healthType: HKWorkoutEventType) {
-            switch healthType {
-            case .lap:
-                self = .lap
-            case .marker:
-                self = .marker
-            case .segment:
-                self = .segment
-            default:
-                return nil
             }
         }
         
@@ -94,18 +80,6 @@ public extension WorkoutEvent {
             }
         }
         
-        public var healthKitType: HKWorkoutEventType? {
-            switch self {
-            case .lap:
-                return .lap
-            case .marker:
-                return .marker
-            case .segment:
-                return .segment
-            case .unknown:
-                return nil
-            }
-        }
     }
     
 }

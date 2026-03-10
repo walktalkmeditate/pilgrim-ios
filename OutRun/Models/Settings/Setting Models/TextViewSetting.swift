@@ -19,7 +19,6 @@
 //
 
 import UIKit
-import SnapKit
 
 class TextViewSetting: NSObject, Setting, /*KeyboardAvoidanceSetting,*/ UITextViewDelegate {
     
@@ -41,8 +40,8 @@ class TextViewSetting: NSObject, Setting, /*KeyboardAvoidanceSetting,*/ UITextVi
     
     lazy var textView: UITextView = {
         let textView = UITextView()
-        textView.backgroundColor = .systemBackground
-        textView.textColor = .label
+        textView.backgroundColor = .parchment
+        textView.textColor = .ink
         textView.font = .preferredFont(forTextStyle: .body)
         textView.textAlignment = .left
         // textView.addDoneToolbar()
@@ -54,24 +53,27 @@ class TextViewSetting: NSObject, Setting, /*KeyboardAvoidanceSetting,*/ UITextVi
     fileprivate lazy var internalTableViewCell: UITableViewCell = {
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
         
-        cell.backgroundColor = .systemBackground
+        cell.backgroundColor = .parchment
         cell.accessoryType = .none
         cell.selectionStyle = .none
-        
+
         self.placeholderLabel.isHidden = !self.textView.text.isEmpty
         
         cell.contentView.addSubview(textView)
         cell.contentView.addSubview(placeholderLabel)
-        
+
         let safeArea = cell.layoutMarginsGuide
-        
-        self.textView.snp.makeConstraints { (make) in
-            make.edges.equalTo(safeArea)
-            make.height.equalTo(100)
-        }
-        self.placeholderLabel.snp.makeConstraints { (make) in
-            make.left.top.equalTo(safeArea)
-        }
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            textView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            textView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor),
+            textView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
+            textView.heightAnchor.constraint(equalToConstant: 100),
+            placeholderLabel.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            placeholderLabel.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor)
+        ])
         
         return cell
     }()

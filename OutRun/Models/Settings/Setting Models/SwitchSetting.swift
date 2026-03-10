@@ -36,7 +36,7 @@ class SwitchSetting: Setting {
     
     fileprivate lazy var `switch`: UISwitch = {
         let switchView = UISwitch()
-        switchView.onTintColor = .accentColor
+        switchView.onTintColor = .stone
         switchView.addTarget(self, action: #selector(switchToggled(sender:)), for: .valueChanged)
         
         switchView.isOn = isOnClosure()
@@ -49,10 +49,10 @@ class SwitchSetting: Setting {
     
     fileprivate lazy var internalTableViewCell: UITableViewCell = {
         let cell = UITableViewCell()
-        cell.backgroundColor = .systemBackground
+        cell.backgroundColor = .parchment
         cell.accessoryType = .none
         cell.selectionStyle = .none
-        
+
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.alpha = self.isEnabledClosure() ? 1 : 0.5
         
@@ -61,15 +61,16 @@ class SwitchSetting: Setting {
         
         let safeArea = cell.contentView.layoutMarginsGuide
         
-        self.titleLabel.snp.makeConstraints { (make) in
-            make.top.bottom.equalTo(safeArea)
-            make.left.equalTo(safeArea)
-            make.right.equalTo(self.switch.snp.left).offset(-10)
-        }
-        self.switch.snp.makeConstraints { (make) in
-            make.centerY.equalTo(titleLabel)
-            make.right.equalTo(safeArea)
-        }
+        self.titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        self.switch.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            self.titleLabel.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            self.titleLabel.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
+            self.titleLabel.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+            self.titleLabel.trailingAnchor.constraint(equalTo: self.switch.leadingAnchor, constant: -10),
+            self.switch.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            self.switch.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
+        ])
         
         cell.isUserInteractionEnabled = isEnabledClosure()
         cell.contentView.alpha = isEnabledClosure() ? 1 : 0.5

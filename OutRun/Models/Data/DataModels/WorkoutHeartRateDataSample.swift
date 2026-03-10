@@ -20,7 +20,7 @@
 
 import Foundation
 
-public typealias WorkoutHeartRateDataSample = OutRunV4.WorkoutHeartRateDataSample
+public typealias WorkoutHeartRateDataSample = PilgrimV1.WorkoutHeartRateDataSample
 
 // MARK: - CustomStringConvertible
 

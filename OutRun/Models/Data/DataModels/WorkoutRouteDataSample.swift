@@ -21,7 +21,7 @@
 import Foundation
 import CoreLocation
 
-public typealias WorkoutRouteDataSample = OutRunV4.WorkoutRouteDataSample
+public typealias WorkoutRouteDataSample = PilgrimV1.WorkoutRouteDataSample
 
 // MARK: - CustomStringConvertible
 

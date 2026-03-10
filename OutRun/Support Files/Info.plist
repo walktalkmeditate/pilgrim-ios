@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>OutRun</string>
+	<string>Pilgrim</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,18 +24,16 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSHealthShareUsageDescription</key>
-	<string>This app needs access to your health data to save workouts constructed by this app</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>This app needs access to your health data to read and possible correct workouts constructed by this app</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Pilgrim uses the microphone to record voice notes during your walks</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs your location to track workouts</string>
+	<string>Pilgrim needs your location to track your walking route</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>This app needs your location to track workouts</string>
+	<string>Pilgrim needs your location to track your walking route</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs your location to track workouts</string>
+	<string>Pilgrim needs your location to track your walking route</string>
 	<key>NSMotionUsageDescription</key>
-	<string>This app needs motion related tracking capabilities to record data like steps during a workout</string>
+	<string>Pilgrim uses motion tracking to count your steps during walks</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
@@ -65,7 +63,7 @@
 				<string>public.data</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>OutRun Backup</string>
+			<string>Pilgrim Backup</string>
 			<key>UTTypeIconFiles</key>
 			<array/>
 			<key>UTTypeIdentifier</key>
@@ -110,7 +108,7 @@
 				<string>public.data</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>OutRun Backup</string>
+			<string>Pilgrim Backup</string>
 			<key>UTTypeIconFiles</key>
 			<array/>
 			<key>UTTypeIdentifier</key>

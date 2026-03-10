@@ -25,7 +25,7 @@ public enum TempV4 {
     public class Workout: Codable, TempValueConvertible {
         
         public var uuid: UUID?
-        public var workoutType: OutRunV4.Workout.WorkoutType
+        public var workoutType: PilgrimV1.Workout.WorkoutType
         public var distance: Double
         public var steps: Int?
         public var startDate: Date
@@ -42,20 +42,23 @@ public enum TempV4 {
         public var activeDuration: Double
         public var pauseDuration: Double
         public var dayIdentifier: String
+        public var talkDuration: Double
+        public var meditateDuration: Double
         
         var _heartRates: [TempV4.WorkoutHeartRateDataSample]
         var _routeData: [TempV4.WorkoutRouteDataSample]
         var _pauses: [TempV4.WorkoutPause]
         var _workoutEvents: [TempV4.WorkoutEvent]
-        // events are not stored inside workout objects, instead the UUID of a workout is stored in the TempEvent object
-        
+        var _voiceRecordings: [TempV4.VoiceRecording]
+
         public var heartRates: [ORWorkoutHeartRateDataSampleInterface] { _heartRates }
         public var routeData: [ORWorkoutRouteDataSampleInterface] { _routeData }
         public var pauses: [ORWorkoutPauseInterface] { _pauses }
         public var workoutEvents: [ORWorkoutEventInterface] { _workoutEvents }
+        public var voiceRecordings: [ORVoiceRecordingInterface] { _voiceRecordings }
         public var events: [OREventInterface] { throwOnAccess() }
         
-        public init(uuid: UUID?, workoutType: OutRunV4.Workout.WorkoutType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent]) {
+        public init(uuid: UUID?, workoutType: PilgrimV1.Workout.WorkoutType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = []) {
             self.uuid = uuid
             self.workoutType = workoutType
             self.distance = distance
@@ -73,10 +76,13 @@ public enum TempV4 {
             self.activeDuration = activeDuration
             self.pauseDuration = pauseDuration
             self.dayIdentifier = dayIdentifier
+            self.talkDuration = talkDuration
+            self.meditateDuration = meditateDuration
             self._heartRates = heartRates
             self._routeData = routeData
             self._pauses = pauses
             self._workoutEvents = workoutEvents
+            self._voiceRecordings = voiceRecordings
         }
         
         public var asTemp: TempWorkout {
@@ -89,9 +95,9 @@ public enum TempV4 {
         public var uuid: UUID?
         public var startDate: Date
         public var endDate: Date
-        public var pauseType: OutRunV4.WorkoutPause.WorkoutPauseType
+        public var pauseType: PilgrimV1.WorkoutPause.WorkoutPauseType
 
-        public init(uuid: UUID?, startDate: Date, endDate: Date, pauseType: OutRunV4.WorkoutPause.WorkoutPauseType) {
+        public init(uuid: UUID?, startDate: Date, endDate: Date, pauseType: PilgrimV1.WorkoutPause.WorkoutPauseType) {
             self.uuid = uuid
             self.startDate = startDate
             self.endDate = endDate
@@ -106,10 +112,10 @@ public enum TempV4 {
     public class WorkoutEvent: Codable, TempValueConvertible {
         
         public var uuid: UUID?
-        public var eventType: OutRunV4.WorkoutEvent.WorkoutEventType
+        public var eventType: PilgrimV1.WorkoutEvent.WorkoutEventType
         public var timestamp: Date
 
-        public init(uuid: UUID?, eventType: OutRunV4.WorkoutEvent.WorkoutEventType, timestamp: Date) {
+        public init(uuid: UUID?, eventType: PilgrimV1.WorkoutEvent.WorkoutEventType, timestamp: Date) {
             self.uuid = uuid
             self.eventType = eventType
             self.timestamp = timestamp
@@ -166,6 +172,29 @@ public enum TempV4 {
         }
     }
     
+    public class VoiceRecording: Codable, TempValueConvertible {
+
+        public var uuid: UUID?
+        public var startDate: Date
+        public var endDate: Date
+        public var duration: Double
+        public var fileRelativePath: String
+        public var transcription: String?
+
+        public init(uuid: UUID?, startDate: Date, endDate: Date, duration: Double, fileRelativePath: String, transcription: String? = nil) {
+            self.uuid = uuid
+            self.startDate = startDate
+            self.endDate = endDate
+            self.duration = duration
+            self.fileRelativePath = fileRelativePath
+            self.transcription = transcription
+        }
+
+        public var asTemp: TempVoiceRecording {
+            return self
+        }
+    }
+
     public class Event: Codable, TempValueConvertible {
 
         public var uuid: UUID?

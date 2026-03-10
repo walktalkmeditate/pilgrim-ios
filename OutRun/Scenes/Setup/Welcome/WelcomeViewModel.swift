@@ -25,19 +25,19 @@ class WelcomeViewModel: ObservableObject {
     private(set) var setupButtonAction: () -> Void
     
     let titleLineOne = "Welcome to"
-    let titleLineTwo = "OutRun"
+    let titleLineTwo = "Pilgrim"
     let features = [
         FeatureViewModel(
-            title: "Accurate Tracking",
-            description: "Record your running, walking, cycling, skating or hiking workouts.",
-            systemImageName: "location.viewfinder"),
+            title: "Walk & Record",
+            description: "Track your walking journey with GPS and record voice notes along the way.",
+            systemImageName: "figure.walk"),
         FeatureViewModel(
-            title: "Detailed Statistics",
-            description: "Look at them stats in much detail and stuff, and here comes some additional text.",
-            systemImageName: "chart.xyaxis.line"),
+            title: "Voice Memories",
+            description: "Capture thoughts and reflections as voice recordings pinned to your route.",
+            systemImageName: "mic.fill"),
         FeatureViewModel(
-            title: "Privacy Smth Smth",
-            description: "Much privacy, no sharing, data stays on your device whatever happens lol, smth smth.",
+            title: "Privacy First",
+            description: "All data stays on your device. No accounts, no cloud, no tracking.",
             systemImageName: "lock.shield")
     ]
     let actionButtonTitle = "Begin Setup"

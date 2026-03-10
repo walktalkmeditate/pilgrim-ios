@@ -71,6 +71,12 @@ public struct MapView: UIViewRepresentable {
     public func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
+
+        let config = MKStandardMapConfiguration(emphasisStyle: .muted)
+        config.pointOfInterestFilter = .excludingAll
+        config.showsTraffic = false
+        mapView.preferredConfiguration = config
+
         configureView(mapView)
         return mapView
     }
@@ -82,7 +88,6 @@ public struct MapView: UIViewRepresentable {
     // MARK: - Updates
     
     private func configureView(_ mapView: MKMapView) {
-        mapView.mapType = self.mapType
         if let mapRegion = self.region {
             let region = mapView.regionThatFits(mapRegion)
             if region.center != mapView.region.center || region.span != mapView.region.span {
@@ -98,7 +103,7 @@ public struct MapView: UIViewRepresentable {
         mapView.showsUserLocation = self.showsUserLocation
         mapView.userTrackingMode = self.userTrackingMode
         mapView.cameraZoomRange = MKMapView.CameraZoomRange(minCenterCoordinateDistance: 50, maxCenterCoordinateDistance: 2000)
-        
+
         self.updateAnnotations(in: mapView)
         self.updateOverlays(in: mapView)
     }
@@ -124,7 +129,7 @@ public struct MapView: UIViewRepresentable {
             !currentOverlays.contains { $0.isEqual(mapOverlay) }
         }
         mapView.removeOverlays(obsoleteOverlays)
-        mapView.addAnnotations(newAnnotations)
+        mapView.addOverlays(newAnnotations, level: .aboveRoads)
     }
     
     // MARK: - Corrdinator
@@ -140,9 +145,22 @@ public struct MapView: UIViewRepresentable {
         
         public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             let renderer = MKPolylineRenderer(overlay: overlay)
-            renderer.strokeColor = .accentColor
-            renderer.lineWidth = 4
+            renderer.strokeColor = .stone
+            renderer.lineWidth = 3
+            renderer.alpha = 0.85
             return renderer
+        }
+
+        public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            guard !(annotation is MKUserLocation) else { return nil }
+            let identifier = "VoicePin"
+            let view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKMarkerAnnotationView
+                ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            view.annotation = annotation
+            view.glyphImage = UIImage(systemName: "waveform")
+            view.markerTintColor = .moss
+            view.canShowCallout = true
+            return view
         }
         
         public func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {

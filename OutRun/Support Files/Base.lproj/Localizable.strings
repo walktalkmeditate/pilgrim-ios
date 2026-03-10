@@ -20,7 +20,7 @@
 
 "TabBar.Timeline" = "Timeline";
 "TabBar.Settings" = "Settings";
-"OutRun" = "OutRun";
+"OutRun" = "Pilgrim";
 "Cancel" = "Cancel";
 "Save" = "Save";
 "Continue" = "Continue";
@@ -109,7 +109,7 @@
 "AppleHealth.Add" = "Add to Apple Health";
 "AppleHealth.Add.Error" = "Could not add workout to Apple Health, please try again later.";
 "AppleHealth.Remove" = "Remove from Apple Health";
-"AppleHealth.Remove.Error" = "Could not remove workout from Apple Health, please try again later or check in the Apple health app. It is possible that the workout was not added to Apple Health by OutRun, which means we cannot modify it.";
+"AppleHealth.Remove.Error" = "Could not remove workout from Apple Health, please try again later or check in the Apple health app. It is possible that the workout was not added to Apple Health by Pilgrim, which means we cannot modify it.";
 "AppleHealth.RecentlyRemovedWorkouts" = "Some workouts saved in this app were recently removed from Apple Health, but are still saved here, you can sync them again in Settings or delete them manually.";
 "WorkoutStats.Distance" = "Distance";
 "WorkoutStats.AltitudeOverTime" = "Altitude Over Time";
@@ -155,7 +155,7 @@
 "Settings.SyncAll.Error" = "There was an error while trying to sync all unsynced workouts with Apple Health, some workouts may have not been synced.";
 "Settings.SyncAll.AllSyncedAlready" = "It appears that all workouts are already synced.";
 "Settings.DataPreferences" = "Data Preferences";
-"Settings.DataPreferences.Message" = "Backups in OutRun, probably unlike in most other apps, are just files, that you do not need special tools to insert into the app or transfer to another device. They also stay local (unless you save them in the cloud).\n\nWhen creating a backup you will be presented with a '.orbup' file that you can share to whatever other app you want to. Be aware, that the data inside of that file is not encrypted though, sending it to someone or uploading it to a service can compromise your privacy, so please keep that in mind.\n\nTo import a backup just select a '.orbup' file from wherever you previously saved it, the app will then import all the workouts contained in the backup, making sure there are no duplicates automatically.";
+"Settings.DataPreferences.Message" = "Backups in Pilgrim, probably unlike in most other apps, are just files, that you do not need special tools to insert into the app or transfer to another device. They also stay local (unless you save them in the cloud).\n\nWhen creating a backup you will be presented with a '.orbup' file that you can share to whatever other app you want to. Be aware, that the data inside of that file is not encrypted though, sending it to someone or uploading it to a service can compromise your privacy, so please keep that in mind.\n\nTo import a backup just select a '.orbup' file from wherever you previously saved it, the app will then import all the workouts contained in the backup, making sure there are no duplicates automatically.";
 "Settings.CreateBackup" = "Create Backup";
 "Settings.ImportBackupData" = "Import Backup Data";
 "Settings.ImportBackupData.Success" = "The unique workouts from your backup were imported, workouts that already exist in this apps data base were left out.";
@@ -212,10 +212,10 @@
 "ImportList.Error.FetchFailed.Message" = "There was an Error while trying to fetch workouts from Apple Health.";
 "ImportList.ImportAll" = "Import All";
 "HKImport.Alert.Title" = "Import this Workout?";
-"HKImport.Alert.Message" = "Do you want to Import this Apple Health Workout into OutRun?";
+"HKImport.Alert.Message" = "Do you want to Import this Apple Health Workout into Pilgrim?";
 "HKImport.Error" = "The Apple Health Workout could not be added, please try again later.";
 "HKImport.ImportAll.Alert.Title" = "Import all Workouts?";
-"HKImport.ImportAll.Alert.Message" = "Do you want to Import all Apple Health Workout into OutRun, this may take some time?";
+"HKImport.ImportAll.Alert.Message" = "Do you want to Import all Apple Health Workout into Pilgrim, this may take some time?";
 "HKImport.ImportAll.Error" = "Some Apple Health Workouts could not be added, they will still appear in the list, please try again later.";
 "Setup.Headline" = "welcome to";
 "Setup.Introduction" = "the running app that actually cares about your privacy, where you don't have to create a user account, or give sensitive data that then lies on a server in the middle of nowhere.\nBut more of that later for now let's just get started.";
@@ -264,7 +264,7 @@
 "Yesterday" = "Yesterday";
 "EditWorkoutController.SaveWorkout.Error" = "Failed to add workout, please try again.";
 "EditWorkoutController.SaveWorkout.AppleHealth.Error" = "Failed to add workout to Apple Health";
-"EditWorkoutController.AlterWorkout.AppleHealth.Error" = "Could not alter workout in Apple Health. It is possible that the workout was not added to Apple Health by OutRun, which means we cannot modify it. The old instance is still present in the Health app, but the reference was removed from this app. If you want to add the new workout to Apple Health you have to do that manually.";
+"EditWorkoutController.AlterWorkout.AppleHealth.Error" = "Could not alter workout in Apple Health. It is possible that the workout was not added to Apple Health by Pilgrim, which means we cannot modify it. The old instance is still present in the Health app, but the reference was removed from this app. If you want to add the new workout to Apple Health you have to do that manually.";
 "EditWorkoutController.NewWorkout" = "New Workout";
 "EditWorkoutController.EditWorkout" = "Edit Workout";
 "EditWorkoutController.Info" = "Info";
@@ -277,7 +277,7 @@
 "WorkoutShareAlert.Title" = "Export Your Workout";
 "WorkoutShareAlert.Message" = "Please choose how to export your workout from the options below. If you feel like an option is missing feel free to reach out and suggest it.";
 "WorkoutShareAlert.GPXExport" = "GPX File";
-"WorkoutShareAlert.OutRunBackup" = "OutRun Backup";
+"WorkoutShareAlert.OutRunBackup" = "Pilgrim Backup";
 "ExportManager.BackupError" = "The app failed to create a backup, please contact the support.";
 "ExportManager.GPXError" = "The app failed to create a GPX file, please contact the support.";
 "Changelog" = "Changelog";

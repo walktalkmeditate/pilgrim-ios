@@ -26,9 +26,27 @@ import CombineExt
 public class WorkoutBuilder: ApplicationStateObserver {
     
     // MARK: Public
-    
+
     /// The current status of this `WorkoutBuilder` instance.
     public var status: Status { statusRelay.value }
+
+    public var statusPublisher: AnyPublisher<WorkoutBuilder.Status, Never> { statusRelay.eraseToAnyPublisher() }
+    public var startDatePublisher: AnyPublisher<Date?, Never> { startDateRelay.eraseToAnyPublisher() }
+    public var pausesPublisher: AnyPublisher<[TempWorkoutPause], Never> { pausesRelay.eraseToAnyPublisher() }
+    public var locationsPublisher: AnyPublisher<[TempWorkoutRouteDataSample], Never> { locationsRelay.eraseToAnyPublisher() }
+    public var voiceRecordingsPublisher: AnyPublisher<[TempVoiceRecording], Never> { voiceRecordingsRelay.eraseToAnyPublisher() }
+    public var meditateDurationPublisher: AnyPublisher<Double, Never> { meditateDurationRelay.eraseToAnyPublisher() }
+    public var altitudesPublisher: AnyPublisher<[AltitudeManagement.AltitudeSample], Never> { altitudesRelay.eraseToAnyPublisher() }
+    public var isSuspendedPublisher: AnyPublisher<Bool, Never> { suspensionRelay.eraseToAnyPublisher() }
+    public var resetPublisher: AnyPublisher<ORWorkoutInterface?, Never> { resetRelay.eraseToAnyPublisher() }
+
+    /// Requests a transition to the given status, validated against the current state.
+    public func setStatus(_ newStatus: Status) {
+        validateTransition(to: newStatus) { isValid in
+            guard isValid else { return }
+            self.statusRelay.accept(newStatus)
+        }
+    }
     
     // MARK: - Internal
     
@@ -36,6 +54,38 @@ public class WorkoutBuilder: ApplicationStateObserver {
     private var lastPause: (type: WorkoutPause.WorkoutPauseType, startingAt: Date)?
     /// Holds a reference to the types of workout builder components still preparing to record.
     private var preparingComponents: [WorkoutBuilderComponent.Type] = []
+
+    /// Called when a workout snapshot is created after stopping.
+    public var onSnapshotCreated: ((TempWorkout) -> Void)?
+
+    /// Closures that run synchronously before snapshot creation to flush component state.
+    private var preSnapshotFlushActions: [() -> Void] = []
+
+    /// Register a closure to run synchronously before createSnapshot.
+    public func registerPreSnapshotFlush(_ action: @escaping () -> Void) {
+        preSnapshotFlushActions.append(action)
+    }
+
+    /// Write voice recordings directly to the builder's relay, bypassing the async pipeline.
+    public func flushVoiceRecordings(_ recordings: [TempVoiceRecording]) {
+        voiceRecordingsRelay.accept(recordings)
+    }
+
+    /// Write meditate duration directly to the builder's relay, bypassing the async pipeline.
+    public func flushMeditateDuration(_ duration: Double) {
+        meditateDurationRelay.accept(duration)
+    }
+
+    /// Write locations directly to the builder's relay, bypassing the async pipeline.
+    public func flushLocations(_ locations: [TempWorkoutRouteDataSample], distance: Double) {
+        locationsRelay.accept(locations)
+        distanceRelay.accept(distance)
+    }
+
+    /// Write steps directly to the builder's relay, bypassing the async pipeline.
+    public func flushSteps(_ steps: Int?) {
+        stepsRelay.accept(steps)
+    }
     
     // MARK: - Initialisation
     
@@ -44,9 +94,7 @@ public class WorkoutBuilder: ApplicationStateObserver {
      - parameter workoutType: an optional of the type of workout that is supposed to be recorded; if `nil` the `WorkoutBuilder` sets it appropriately from `UserPreferences.standardWorkoutType`
      - parameter delegate: the delegate that is supposed to receive updates
      */
-    public init(workoutType: Workout.WorkoutType? = nil) {
-        
-        let workoutType = workoutType ?? Workout.WorkoutType(rawValue: UserPreferences.standardWorkoutType.value)
+    public init(workoutType: Workout.WorkoutType = .walking) {
         self.workoutTypeRelay = CurrentValueRelay(workoutType)
         
         self.prepareBindings()
@@ -89,20 +137,21 @@ public class WorkoutBuilder: ApplicationStateObserver {
                 
             case .ready: // stopping workout or indicating readiness
                 guard self.startDateRelay.value != nil else { return }
-                
+
                 if let lastPause = self.lastPause {
                     let pause = TempWorkoutPause(uuid: nil, startDate: lastPause.startingAt, endDate: timestamp, pauseType: lastPause.type)
                     let pauses = self.pausesRelay.value + [pause]
                     self.pausesRelay.accept(pauses)
                 }
-                
+
                 self.endDateRelay.accept(timestamp)
-                
+
+                self.preSnapshotFlushActions.forEach { $0() }
+
                 if let snapshot = self.createSnapshot() {
-                    let actionHandler = WorkoutCompletionActionHandler(snapshot: snapshot, builder: self)
-                    actionHandler.display()
+                    self.onSnapshotCreated?(snapshot)
                 }
-                
+
                 self.reset()
                 
             default: // ignore everything else
@@ -145,6 +194,10 @@ public class WorkoutBuilder: ApplicationStateObserver {
     private let uiSuspensionRelay = CurrentValueRelay<Bool>(false)
     /// The relay to publish a suspension command.
     private let suspensionRelay = CurrentValueRelay<Bool>(false)
+    /// The relay to publish voice recordings captured during the workout.
+    private let voiceRecordingsRelay = CurrentValueRelay<[TempVoiceRecording]>([])
+    /// The relay to publish the total meditate duration in seconds.
+    private let meditateDurationRelay = CurrentValueRelay<Double>(0)
     /// The relay to publish a reset command.
     private let resetRelay = PassthroughRelay<ORWorkoutInterface?>()
     
@@ -160,6 +213,8 @@ public class WorkoutBuilder: ApplicationStateObserver {
         let locations: AnyPublisher<[TempWorkoutRouteDataSample], Never>?
         let altitudes: AnyPublisher<[AltitudeManagement.AltitudeSample], Never>?
         let heartRates: AnyPublisher<[TempWorkoutHeartRateDataSample], Never>?
+        let voiceRecordings: AnyPublisher<[TempVoiceRecording], Never>?
+        let meditateDuration: AnyPublisher<Double, Never>?
 
         public init(
             readiness: AnyPublisher<WorkoutBuilderComponentStatus, Never>? = nil,
@@ -171,7 +226,9 @@ public class WorkoutBuilder: ApplicationStateObserver {
             currentLocation: AnyPublisher<TempWorkoutRouteDataSample?, Never>? = nil,
             locations: AnyPublisher<[TempWorkoutRouteDataSample], Never>? = nil,
             altitudes: AnyPublisher<[AltitudeManagement.AltitudeSample], Never>? = nil,
-            heartRates: AnyPublisher<[TempWorkoutHeartRateDataSample], Never>? = nil
+            heartRates: AnyPublisher<[TempWorkoutHeartRateDataSample], Never>? = nil,
+            voiceRecordings: AnyPublisher<[TempVoiceRecording], Never>? = nil,
+            meditateDuration: AnyPublisher<Double, Never>? = nil
         ) {
             self.readiness = readiness
             self.insufficientPermission = insufficientPermission
@@ -183,6 +240,8 @@ public class WorkoutBuilder: ApplicationStateObserver {
             self.locations = locations
             self.altitudes = altitudes
             self.heartRates = heartRates
+            self.voiceRecordings = voiceRecordings
+            self.meditateDuration = meditateDuration
         }
     }
     
@@ -199,6 +258,8 @@ public class WorkoutBuilder: ApplicationStateObserver {
         let locations: AnyPublisher<[TempWorkoutRouteDataSample], Never>
         let altitudes: AnyPublisher<[AltitudeManagement.AltitudeSample], Never>
         let heartRates: AnyPublisher<[TempWorkoutHeartRateDataSample], Never>
+        let voiceRecordings: AnyPublisher<[TempVoiceRecording], Never>
+        let meditateDuration: AnyPublisher<Double, Never>
         let insufficientPermission: AnyPublisher<String, Never>
         let isUISuspended: AnyPublisher<Bool, Never>
         let isSuspended: AnyPublisher<Bool, Never>
@@ -221,7 +282,9 @@ public class WorkoutBuilder: ApplicationStateObserver {
         input.locations?.sink(receiveValue: locationsRelay.accept).store(in: &cancellables)
         input.altitudes?.sink(receiveValue: altitudesRelay.accept).store(in: &cancellables)
         input.heartRates?.sink(receiveValue: heartRatesRelay.accept).store(in: &cancellables)
-        
+        input.voiceRecordings?.sink(receiveValue: voiceRecordingsRelay.accept).store(in: &cancellables)
+        input.meditateDuration?.sink(receiveValue: meditateDurationRelay.accept).store(in: &cancellables)
+
         return Output(
             status: statusRelay.asBackgroundPublisher(),
             workoutType: workoutTypeRelay.asBackgroundPublisher(),
@@ -234,6 +297,8 @@ public class WorkoutBuilder: ApplicationStateObserver {
             locations: locationsRelay.asBackgroundPublisher(),
             altitudes: altitudesRelay.asBackgroundPublisher(),
             heartRates: heartRatesRelay.asBackgroundPublisher(),
+            voiceRecordings: voiceRecordingsRelay.asBackgroundPublisher(),
+            meditateDuration: meditateDurationRelay.asBackgroundPublisher(),
             insufficientPermission: insufficientPermissionRelay.asBackgroundPublisher(),
             isUISuspended: uiSuspensionRelay.asBackgroundPublisher(),
             isSuspended: suspensionRelay.asBackgroundPublisher(),
@@ -245,6 +310,7 @@ public class WorkoutBuilder: ApplicationStateObserver {
     private var readinessBinder: (WorkoutBuilderComponentStatus) -> Void {
         return { [weak self] status in
             guard let self else { return }
+            guard !self.statusRelay.value.isActiveStatus else { return }
             switch status {
             case .preparing(let preparingType):
                 guard !self.preparingComponents.contains(where: { $0 == preparingType }) else { return }
@@ -279,9 +345,9 @@ public class WorkoutBuilder: ApplicationStateObserver {
      - returns: a `TempWorkout` constructed from the recorded data; will be `nil` when start or end cannot be determined
      */
     private func createSnapshot() -> TempWorkout? {
-        
+
         guard let start = startDateRelay.value, let end = endDateRelay.value else { return nil }
-        
+
         return NewWorkout(
             workoutType: workoutTypeRelay.value,
             distance: distanceRelay.value,
@@ -295,7 +361,9 @@ public class WorkoutBuilder: ApplicationStateObserver {
             heartRates: [],
             routeData: locationsRelay.value,
             pauses: pausesRelay.value,
-            workoutEvents: []
+            workoutEvents: [],
+            voiceRecordings: voiceRecordingsRelay.value,
+            meditateDuration: meditateDurationRelay.value
         )
     }
     
@@ -303,11 +371,20 @@ public class WorkoutBuilder: ApplicationStateObserver {
     
     /// Resets the `WorkoutBuilder` and it's components and prepares them for another recording.
     private func reset() {
-        
+
         statusRelay.accept(.waiting)
         startDateRelay.accept(nil)
         endDateRelay.accept(nil)
+        distanceRelay.accept(0)
+        stepsRelay.accept(nil)
+        currentLocationRelay.accept(nil)
+        locationsRelay.accept([])
+        altitudesRelay.accept([])
+        heartRatesRelay.accept([])
         pausesRelay.accept([])
+        voiceRecordingsRelay.accept([])
+        meditateDurationRelay.accept(0)
+        lastPause = nil
         resetRelay.accept(nil)
     }
     

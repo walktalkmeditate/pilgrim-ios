@@ -21,7 +21,6 @@
 import Foundation
 import CoreStore
 import CoreLocation
-import HealthKit
 
 /// A structure holding static instances and methods for database management and manipulation
 struct DataManager {
@@ -52,13 +51,13 @@ struct DataManager {
      - parameter migration: the closure being called on the event of a migration happening, including a `Progress` object indicating the progress of the migration
      - warning: If this method fails it does so in a fatal error, the app will crash as a result.
      */
-    public static func setup(dataModel: ORDataModel.Type = OutRunV4.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
+    public static func setup(dataModel: ORDataModel.Type = PilgrimV1.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
         
         let completion = safeClosure(from: completion)
         
         // setup storage
         let storage = SQLiteStore(
-            fileName: "OutRun.sqlite",
+            fileName: "Pilgrim.sqlite",
             migrationMappingProviders: dataModel.migrationChain.compactMap(
                 { (type) -> CustomSchemaMappingProvider? in
                     return type.mappingProvider
@@ -206,7 +205,9 @@ struct DataManager {
                 workout._activeDuration .= object.activeDuration
                 workout._pauseDuration .= object.pauseDuration
                 workout._dayIdentifier .= object.dayIdentifier
-                
+                workout._talkDuration .= object.talkDuration
+                workout._meditateDuration .= object.meditateDuration
+
                 for tempPause in object.pauses {
                     let pause = transaction.create(Into<WorkoutPause>())
                     pause._uuid .= tempPause.uuid ?? UUID()
@@ -246,10 +247,22 @@ struct DataManager {
                     heartRateSample._uuid .= tempSample.uuid ?? UUID()
                     heartRateSample._heartRate .= tempSample.heartRate
                     heartRateSample._timestamp .= tempSample.timestamp
-                    
+
                     heartRateSample._workout .= workout
                 }
-                
+
+                for tempRecording in object.voiceRecordings {
+                    let recording = transaction.create(Into<VoiceRecording>())
+                    recording._uuid .= tempRecording.uuid ?? UUID()
+                    recording._startDate .= tempRecording.startDate
+                    recording._endDate .= tempRecording.endDate
+                    recording._duration .= tempRecording.duration
+                    recording._fileRelativePath .= tempRecording.fileRelativePath
+                    recording._transcription .= tempRecording.transcription
+
+                    recording._workout .= workout
+                }
+
                 workouts.append(workout)
                 
             }
@@ -325,7 +338,9 @@ struct DataManager {
                 workout._activeDuration .= object.activeDuration
                 workout._pauseDuration .= object.pauseDuration
                 workout._dayIdentifier .= object.dayIdentifier
-                
+                workout._talkDuration .= object.talkDuration
+                workout._meditateDuration .= object.meditateDuration
+
                 for tempPause in object.pauses where tempPause.uuid == nil {
                     let pause = transaction.create(Into<WorkoutPause>())
                     pause._uuid .= tempPause.uuid ?? UUID()
@@ -365,10 +380,22 @@ struct DataManager {
                     heartRateSample._uuid .= tempSample.uuid ?? UUID()
                     heartRateSample._heartRate .= tempSample.heartRate
                     heartRateSample._timestamp .= tempSample.timestamp
-                    
+
                     heartRateSample._workout .= workout
                 }
-                
+
+                for tempRecording in object.voiceRecordings where tempRecording.uuid == nil {
+                    let recording = transaction.create(Into<VoiceRecording>())
+                    recording._uuid .= tempRecording.uuid ?? UUID()
+                    recording._startDate .= tempRecording.startDate
+                    recording._endDate .= tempRecording.endDate
+                    recording._duration .= tempRecording.duration
+                    recording._fileRelativePath .= tempRecording.fileRelativePath
+                    recording._transcription .= tempRecording.transcription
+
+                    recording._workout .= workout
+                }
+
                 return workout
                 
             } else {
@@ -389,39 +416,44 @@ struct DataManager {
         }
     }
     
-    /**
-     This function edits the reference to a HealthKit workout in the provided workout object.
-     - parameter workout: the workout requiring a reference update
-     - parameter reference: the reference being updated
-     */
-    public static func editHealthReference(for workout: ORWorkoutInterface, reference: UUID?) {
-        
-        dataStack.perform { transaction in
-            
-            guard let workout = queryObject(from: workout, transaction: transaction) as Workout? else { return }
-            let edit = transaction.edit(workout)
-            
-            edit?._healthKitUUID .= reference
-            
-        } completion: { result in
-            switch result {
-            case .failure(let error):
-                print("[DataManager] failed to create reference to health workout:", error.localizedDescription)
-            default: break
+    // MARK: - Voice Recording
+
+    private static func cleanupRecordingFiles(relativePaths: [String]) {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        for path in relativePaths {
+            let url = docs.appendingPathComponent(path)
+            try? FileManager.default.removeItem(at: url)
+            let parent = url.deletingLastPathComponent()
+            let remaining = (try? FileManager.default.contentsOfDirectory(at: parent, includingPropertiesForKeys: nil)) ?? []
+            if remaining.isEmpty {
+                try? FileManager.default.removeItem(at: parent)
             }
         }
     }
-    
-    /**
-     This function looks up a workout object by searching for the provided UUID as being referenced in the `_healthKitUUID` property and updating it's reference value to `nil`
-     - parameter reference: the reference that is supposed to be removed from a workout
-     */
-    public static func removeHealthReference(reference: UUID) {
-        
-        guard let workout: Workout = queryObject(from: \._healthKitUUID == reference) else { return }
-        editHealthReference(for: workout, reference: nil)
+
+    private static func cleanupEmptyRecordingsDirectory() {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let recordingsDir = docs.appendingPathComponent("Recordings")
+        let contents = (try? FileManager.default.contentsOfDirectory(at: recordingsDir, includingPropertiesForKeys: nil)) ?? []
+        if contents.isEmpty {
+            try? FileManager.default.removeItem(at: recordingsDir)
+        }
     }
-    
+
+    public static func updateVoiceRecordingTranscription(uuid: UUID, transcription: String) {
+        dataStack.perform(asynchronous: { transaction -> Void in
+            if let recording = transaction.edit(
+                queryObject(from: uuid, transaction: transaction) as VoiceRecording?
+            ) {
+                recording._transcription .= transcription
+            }
+        }) { result in
+            if case .failure(let error) = result {
+                print("[DataManager] Failed to update transcription: \(error)")
+            }
+        }
+    }
+
     // MARK: - Event
     
     /**
@@ -621,20 +653,27 @@ struct DataManager {
      - parameter error: gives more detailed information on an error if one occured
      */
     public static func deleteObject<ObjectType: ORDataType>(object: ObjectType, completion: @escaping (_ success: Bool, _ error: DataManager.DeleteError?) -> Void) {
-        
-        dataStack.perform(asynchronous: { (transaction) -> Void in
-            
+
+        dataStack.perform(asynchronous: { (transaction) -> [String] in
+
+            var filePaths: [String] = []
+            if let workout = object as? Workout,
+               let editable = transaction.edit(workout) {
+                filePaths = editable._voiceRecordings.value.compactMap { $0._fileRelativePath.value }
+            }
             transaction.delete(object)
-            
+            return filePaths
+
         }) { (result) in
             switch result {
-            case .success(_):
+            case .success(let filePaths):
+                cleanupRecordingFiles(relativePaths: filePaths)
                 completion(true, nil)
             case .failure(let error):
                 completion(false, .databaseError(error: error))
             }
         }
-        
+
     }
     
     /**
@@ -644,25 +683,30 @@ struct DataManager {
      - parameter error: gives more detailed information on an error if one occured
      */
     public static func deleteAll(completion: @escaping (_ success: Bool, _ error: DataManager.DeleteError?) -> Void) {
-        
+
         var deletionError: CoreStoreError?
-        
+
+        let allRecordingPaths: [String] = (try? dataStack.fetchAll(From<VoiceRecording>()))?.compactMap { $0._fileRelativePath.value } ?? []
+
         dataStack.perform(asynchronous: { (transaction) -> Void in
-            
+
             do {
                 try transaction.deleteAll(From<Workout>())
                 try transaction.deleteAll(From<WorkoutPause>())
                 try transaction.deleteAll(From<WorkoutEvent>())
                 try transaction.deleteAll(From<WorkoutRouteDataSample>())
                 try transaction.deleteAll(From<WorkoutHeartRateDataSample>())
+                try transaction.deleteAll(From<VoiceRecording>())
                 try transaction.deleteAll(From<Event>())
             } catch {
                 deletionError = error as? CoreStoreError
             }
-            
+
         }) { (result) in
             switch result {
             case .success(_):
+                cleanupRecordingFiles(relativePaths: allRecordingPaths)
+                cleanupEmptyRecordingsDirectory()
                 if let error = deletionError {
                     completion(true, .databaseError(error: error))
                 } else {
@@ -672,7 +716,7 @@ struct DataManager {
                 completion(false, .databaseError(error: error))
             }
         }
-            
+
     }
     
     // MARK: - Monitoring

@@ -20,13 +20,14 @@
 
 import Foundation
 import CoreLocation
-import HealthKit
 
 public typealias TempWorkout = TempV4.Workout
-extension TempWorkout: ORWorkoutInterface {
-    
+extension TempWorkout: ORWorkoutInterface, Identifiable {
+    public var id: UUID { uuid ?? UUID() }
+
+
     convenience init(from object: ORWorkoutInterface) {
-        
+
         self.init(
             uuid: object.uuid,
             workoutType: object.workoutType,
@@ -45,10 +46,13 @@ extension TempWorkout: ORWorkoutInterface {
             activeDuration: object.activeDuration,
             pauseDuration: object.pauseDuration,
             dayIdentifier: object.dayIdentifier,
+            talkDuration: object.talkDuration,
+            meditateDuration: object.meditateDuration,
             heartRates: object.heartRates.map { .init(from: $0) },
             routeData: object.routeData.map { .init(from: $0) },
             pauses: object.pauses.map { .init(from: $0) },
-            workoutEvents: object.workoutEvents.map { .init(from: $0) }
+            workoutEvents: object.workoutEvents.map { .init(from: $0) },
+            voiceRecordings: object.voiceRecordings.map { .init(from: $0) }
         )
     }
 }
@@ -131,6 +135,21 @@ extension TempWorkoutHeartRateDataSample: ORWorkoutHeartRateDataSampleInterface 
         
     }
     
+}
+
+public typealias TempVoiceRecording = TempV4.VoiceRecording
+extension TempVoiceRecording: ORVoiceRecordingInterface {
+
+    convenience init(from object: ORVoiceRecordingInterface) {
+        self.init(
+            uuid: object.uuid,
+            startDate: object.startDate,
+            endDate: object.endDate,
+            duration: object.duration,
+            fileRelativePath: object.fileRelativePath,
+            transcription: object.transcription
+        )
+    }
 }
 
 public typealias TempEvent = TempV4.Event

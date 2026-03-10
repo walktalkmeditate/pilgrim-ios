@@ -83,7 +83,6 @@ class SettingsModel {
                 userSettings,
                 unitPreferences,
                 recordingPreferences,
-                appleHealthPreferences,
                 dataPreferences,
                 support,
                 appInfo
@@ -126,16 +125,6 @@ class SettingsModel {
                         let weightValue = UserPreferences.weightMeasurementType.convert(fromValue: newValue, toPrefered: false)
                         UserPreferences.weight.value = weightValue
                         setting.refresh()
-                        
-                        if UserPreferences.synchronizeWeightWithAppleHealth.value {
-                            
-                            let measurement = NSMeasurement(doubleValue: weightValue, unit: UnitMass.kilograms)
-                            HealthStoreManager.saveWeight(for: measurement) { (error) in
-                                if error != nil {
-                                    print("Failed to sync weight with Apple Health")
-                                }
-                            }
-                        }
                     }
                 )
             ]
@@ -164,37 +153,6 @@ class SettingsModel {
             title: LS["Settings.RecordingPreferences"],
             message: LS["Settings.RecordingPreferences.Message"],
             settings: [
-                TitleSubTitleSetting(
-                    title: { LS["Settings.StandardWorkoutType"] },
-                    subTitle: { Workout.WorkoutType(rawValue: UserPreferences.standardWorkoutType.value).description },
-                    SettingsModel(
-                        title: LS["Settings.StandardWorkoutType"],
-                        sections: [
-                            SettingSection(
-                                title: LS["Workout.Type"],
-                                message: LS["Settings.StandardWorkoutType.Message"],
-                                settings: {
-                                    func selectionSetting(withType type: Workout.WorkoutType) -> SelectionSetting {
-                                        SelectionSetting(
-                                            title: { type.description },
-                                            isSelected: { UserPreferences.standardWorkoutType.value == type.rawValue },
-                                            selectAction: { (settings, controller, cell) in
-                                                UserPreferences.standardWorkoutType.value = type.rawValue
-                                            }
-                                        )
-                                    }
-                                    return [
-                                        selectionSetting(withType: .running),
-                                        selectionSetting(withType: .walking),
-                                        selectionSetting(withType: .hiking),
-                                        selectionSetting(withType: .cycling),
-                                        selectionSetting(withType: .skating)
-                                    ]
-                                }()
-                            )
-                        ]
-                    )
-                ),
                 SwitchSetting(
                     title: LS["Settings.MapVisibility"],
                     isSwitchOn: UserPreferences.shouldShowMap.value,
@@ -208,7 +166,7 @@ class SettingsModel {
                     {
                         func selectionSetting(withTitle title: String, value: Double?) -> SelectionSetting {
                             let valueString = (value != nil && value ?? -1 > 0) ? "\(value!) m" : ""
-                            
+
                             return SelectionSetting(
                                 title: title,
                                 subTitle: valueString,
@@ -219,7 +177,7 @@ class SettingsModel {
                                 UserPreferences.gpsAccuracy.value = value
                             }
                         }
-                        
+
                         return SettingsModel(
                             title: LS["Settings.GPSAccuracy"],
                             sections: [
@@ -237,97 +195,6 @@ class SettingsModel {
                             ]
                         )
                     }()
-                ),
-                SwitchSetting(
-                    title: LS["Settings.DisplayRollingSpeed"],
-                    isSwitchOn: UserPreferences.displayRollingSpeed.value,
-                    switchToggleAction: { (newValue, setting) in
-                        UserPreferences.displayRollingSpeed.value = newValue
-                    }
-                )
-            ]
-        )
-    }
-    
-    // MARK: - Section AppleHealthPreferences
-    
-    private static var appleHealthPreferences: SettingSection {
-        SettingSection(
-            title: LS["Settings.AppleHealthPreferences"],
-            message: LS["Settings.AppleHealthPreferences.Message"],
-            settings: [
-                SwitchSetting(
-                    title: { LS["Settings.SynchronizeWorkoutsWithAppleHealth"] },
-                    isSwitchOn: { UserPreferences.synchronizeWorkoutsWithAppleHealth.value },
-                    switchToggleAction: { (newValue, setting) in
-                        if newValue {
-                            PermissionManager.standard.checkHealthPermission { (success) in
-                                UserPreferences.synchronizeWorkoutsWithAppleHealth.value = success
-                                HealthStoreManager.setupObservers()
-                                setting.refresh()
-                            }
-                        } else {
-                            UserPreferences.synchronizeWorkoutsWithAppleHealth.value = newValue
-                            setting.refresh()
-                        }
-                    }
-                ),
-                SwitchSetting(
-                    title: LS["Settings.SynchronizeWeightWithAppleHealth"],
-                    isSwitchOn: UserPreferences.synchronizeWeightWithAppleHealth.value,
-                    switchToggleAction: { (newValue, setting) in
-                        if newValue {
-                            PermissionManager.standard.checkHealthPermission { (success) in
-                                UserPreferences.synchronizeWeightWithAppleHealth.value = success
-                                HealthStoreManager.setupObservers()
-                            }
-                        } else {
-                            UserPreferences.synchronizeWeightWithAppleHealth.value = newValue
-                        }
-                    }
-                ),
-                SwitchSetting(
-                    title: { LS["Settings.AutoImportHealthWorkouts"] },
-                    isSwitchOn: { (UserPreferences.synchronizeWorkoutsWithAppleHealth.value ?  UserPreferences.automaticallyImportNewHealthWorkouts.value : false) },
-                    isEnabled: { UserPreferences.synchronizeWorkoutsWithAppleHealth.value },
-                    switchToggleAction: { (newValue, setting) in
-                        if newValue {
-                            PermissionManager.standard.checkHealthPermission { (success) in
-                                UserPreferences.automaticallyImportNewHealthWorkouts.value = success
-                            }
-                        } else {
-                            UserPreferences.automaticallyImportNewHealthWorkouts.value = newValue
-                        }
-                    }
-                ),
-                TitleSetting(
-                    title: LS["Settings.ImportFromAppleHealth"],
-                    doesRedirect: true,
-                    selectAction: { (setting, controller, cell) in
-                        
-                        let importController = UIViewController()
-                        controller.show(importController, sender: controller)
-                        
-                    }
-                ),
-                ButtonSetting(
-                    title: { return LS["Settings.SyncAll"] },
-                    selectAction: { (setting, controller, cell) in
-                        /*_ = controller.startLoading {
-                            HealthStoreManager.saveAllWorkouts { error, allSavedAlready in
-                                controller.endLoading {
-                                    if error == nil && allSavedAlready {
-                                        controller.displayInfoAlert(withMessage: LS["Settings.SyncAll.AllSyncedAlready"])
-                                    } else if error == nil {
-                                        controller.displayInfoAlert(withMessage: LS["Settings.SyncAll.Success"])
-                                    } else {
-                                        controller.displayError(withMessage: LS["Settings.SyncAll.Error"])
-                                    }
-                                }
-                            }
-                        }*/
-                    },
-                    isEnabled: { UserPreferences.synchronizeWorkoutsWithAppleHealth.value }
                 )
             ]
         )
@@ -509,10 +376,10 @@ class SettingsModel {
                 ),
                 TitleSubTitleSetting(
                     title: LS["Settings.Email"],
-                    subTitle: "outrun@tadris.de",
+                    subTitle: "support@pilgrimapp.org",
                     doesRedirect: true,
                     selectAction: { (setting, controller, cell) in
-                        guard let url = URL(string: "mailto:outrun@tadris.de?subject=OutRun") else {
+                        guard let url = URL(string: "mailto:support@pilgrimapp.org?subject=Pilgrim") else {
                             return
                         }
                         UIApplication.shared.open(url) { (success) in
@@ -543,7 +410,7 @@ class SettingsModel {
                     subTitle: "github.com",
                     doesRedirect: true,
                     selectAction: { (setting, controller, cell) in
-                        guard let url = URL(string: "https://github.com/timfraedrich/OutRun") else {
+                        guard let url = URL(string: "https://github.com/walktalkmeditate/pilgrim-ios") else {
                             return
                         }
                         UIApplication.shared.open(url) { (success) in

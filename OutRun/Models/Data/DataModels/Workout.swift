@@ -20,155 +20,67 @@
 
 import Foundation
 import CoreLocation
-import HealthKit
 import CoreStore
 
-public typealias Workout = OutRunV4.Workout
+public typealias Workout = PilgrimV1.Workout
 
 public extension Workout {
-    
+
     var hasRouteData: Bool {
         return !self.routeData.isEmpty
     }
-    
-    var hasHeartRateData: Bool {
-        return !self.heartRates.isEmpty
-    }
-    
+
     enum WorkoutType: CaseIterable, CustomStringConvertible, CustomDebugStringConvertible, RawRepresentable, ImportableAttributeType, Codable {
-        
-        case running, walking, cycling, skating, hiking, unknown
-        
+
+        case walking, unknown
+
         public init(rawValue: Int) {
             switch rawValue {
-            case 0:
-                self = .running
             case 1:
                 self = .walking
-            case 2:
-                self = .cycling
-            case 3:
-                self = .skating
-            case 4:
-                self = .hiking
             default:
                 self = .unknown
             }
         }
-        
-        public init?(hkType: HKWorkoutActivityType) {
-            switch hkType {
-            case .running:
-                self = .running
-            case .walking:
-                self = .walking
-            case .cycling:
-                self = .cycling
-            case .skatingSports:
-                self = .skating
-            case .hiking:
-                self = .hiking
-            default:
-                return nil
-            }
-        }
-        
+
         public var rawValue: Int {
             switch self {
-            case .running:
-                return 0
             case .walking:
                 return 1
-            case .cycling:
-                return 2
-            case .skating:
-                return 3
-            case .hiking:
-                return 4
             case .unknown:
                 return -1
             }
         }
-        
+
         public var description: String {
             switch self {
-            case .running:
-                return LS["Workout.Type.Running"]
             case .walking:
-                return LS["Workout.Type.Walking"]
-            case .cycling:
-                return LS["Workout.Type.Cycling"]
-            case .skating:
-                return LS["Workout.Type.Skating"]
-            case .hiking:
-                return LS["Workout.Type.Hiking"]
-            case .unknown:
-                return LS["Workout.Type.Unknown"]
-            }
-        }
-        
-        public var debugDescription: String {
-            switch self {
-            case .running:
-                return "Running"
-            case .walking:
-                return "Walking"
-            case .cycling:
-                return "Cycling"
-            case .skating:
-                return "Skating"
-            case .hiking:
-                return "Hiking"
+                return "Walk"
             case .unknown:
                 return "Unknown"
             }
         }
-        
+
+        public var debugDescription: String {
+            switch self {
+            case .walking:
+                return "Walking"
+            case .unknown:
+                return "Unknown"
+            }
+        }
+
         public var METSpeedMultiplier: Double {
             switch self {
-            case .running:
-                return 1.035
-            case .walking, .hiking:
+            case .walking:
                 return 0.655
-            case .cycling:
-                return 0.450
-            case .skating:
-                return 0.560
             case .unknown:
                 return 0
             }
         }
-        
-        public var healthKitType: HKWorkoutActivityType {
-            switch self {
-            case .running:
-                return .running
-            case .walking:
-                return .walking
-            case .cycling:
-                return .cycling
-            case .skating:
-                return .skatingSports
-            case .hiking:
-                return .hiking
-            case .unknown:
-                return .other
-            }
-        }
-        
-        public var healthKitDistanceType: HKQuantityType? {
-            switch self {
-            case .running, .walking, .hiking:
-                return HealthStoreManager.HealthType.DistanceWalkingRunning
-            case .cycling:
-                return HealthStoreManager.HealthType.DistanceCycling
-            default:
-                return nil
-            }
-        }
-        
+
     }
-    
+
 }
 
 // MARK: - CustomStringConvertible
@@ -214,12 +126,15 @@ extension Workout: ORWorkoutInterface {
     public var activeDuration: Double { threadSafeSyncReturn { self._activeDuration.value } }
     public var pauseDuration: Double { threadSafeSyncReturn { self._pauseDuration.value } }
     public var dayIdentifier: String { threadSafeSyncReturn { self._dayIdentifier.value } }
-    public var heartRates: [ORWorkoutHeartRateDataSampleInterface] { self._heartRates.value }
-    public var routeData: [ORWorkoutRouteDataSampleInterface] { self._routeData.value }
-    public var pauses: [ORWorkoutPauseInterface] { self._pauses.value }
-    public var workoutEvents: [ORWorkoutEventInterface] { self._workoutEvents.value }
-    public var events: [OREventInterface] {  Array(self._events.value) }
-    
+    public var talkDuration: Double { threadSafeSyncReturn { self._talkDuration.value } }
+    public var meditateDuration: Double { threadSafeSyncReturn { self._meditateDuration.value } }
+    public var routeData: [ORWorkoutRouteDataSampleInterface] { threadSafeSyncReturn { self._routeData.value } }
+    public var pauses: [ORWorkoutPauseInterface] { threadSafeSyncReturn { self._pauses.value } }
+    public var workoutEvents: [ORWorkoutEventInterface] { threadSafeSyncReturn { self._workoutEvents.value } }
+    public var events: [OREventInterface] { threadSafeSyncReturn { Array(self._events.value) } }
+    public var voiceRecordings: [ORVoiceRecordingInterface] { threadSafeSyncReturn { self._voiceRecordings.value } }
+    public var heartRates: [ORWorkoutHeartRateDataSampleInterface] { threadSafeSyncReturn { self._heartRates.value } }
+
 }
 
 // MARK: - TempValueConvertible
@@ -227,29 +142,34 @@ extension Workout: ORWorkoutInterface {
 extension Workout: TempValueConvertible {
     
     public var asTemp: TempWorkout {
-        return TempWorkout(
-            uuid: uuid,
-            workoutType: workoutType,
-            distance: distance,
-            steps: steps,
-            startDate: startDate,
-            endDate: endDate,
-            burnedEnergy: burnedEnergy,
-            isRace: isRace,
-            comment: comment,
-            isUserModified: isUserModified,
-            healthKitUUID: healthKitUUID,
-            finishedRecording: finishedRecording,
-            ascend: ascend,
-            descend: descend,
-            activeDuration: activeDuration,
-            pauseDuration: pauseDuration,
-            dayIdentifier: dayIdentifier,
-            heartRates: _heartRates.value.map { $0.asTemp },
-            routeData: _routeData.value.map { $0.asTemp },
-            pauses: _pauses.value.map { $0.asTemp },
-            workoutEvents: _workoutEvents.value.map { $0.asTemp }
-        )
+        return threadSafeSyncReturn {
+            TempWorkout(
+                uuid: self._uuid.value,
+                workoutType: self._workoutType.value,
+                distance: self._distance.value,
+                steps: self._steps.value,
+                startDate: self._startDate.value,
+                endDate: self._endDate.value,
+                burnedEnergy: self._burnedEnergy.value,
+                isRace: self._isRace.value,
+                comment: self._comment.value,
+                isUserModified: self._isUserModified.value,
+                healthKitUUID: self._healthKitUUID.value,
+                finishedRecording: self._finishedRecording.value,
+                ascend: self._ascend.value,
+                descend: self._descend.value,
+                activeDuration: self._activeDuration.value,
+                pauseDuration: self._pauseDuration.value,
+                dayIdentifier: self._dayIdentifier.value,
+                talkDuration: self._talkDuration.value,
+                meditateDuration: self._meditateDuration.value,
+                heartRates: self._heartRates.value.map { $0.asTemp },
+                routeData: self._routeData.value.map { $0.asTemp },
+                pauses: self._pauses.value.map { $0.asTemp },
+                workoutEvents: self._workoutEvents.value.map { $0.asTemp },
+                voiceRecordings: self._voiceRecordings.value.map { $0.asTemp }
+            )
+        }
     }
     
 }

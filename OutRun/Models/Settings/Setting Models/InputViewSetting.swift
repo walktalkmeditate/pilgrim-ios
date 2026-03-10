@@ -37,11 +37,11 @@ class InputViewSetting: NSObject, Setting, /*KeyboardAvoidanceSetting,*/ UITextF
     
     fileprivate lazy var internalTableViewCell: UITableViewCell = {
         let cell = UITableViewCell(style: .value1 , reuseIdentifier: nil)
-        cell.backgroundColor = .systemBackground
+        cell.backgroundColor = .parchment
         cell.accessoryType = .none
         cell.selectionStyle = .none
         _ = cell.heightAnchor.constraint(equalToConstant: 44)
-        cell.textLabel?.textColor = .label
+        cell.textLabel?.textColor = .ink
         cell.textLabel?.text = titleClosure()
         return cell
     }()
@@ -59,9 +59,11 @@ class InputViewSetting: NSObject, Setting, /*KeyboardAvoidanceSetting,*/ UITextF
         super.init()
         
         internalTableViewCell.contentView.addSubview(dummyTextField)
-        dummyTextField.snp.makeConstraints { (make) in
-            make.height.width.equalTo(0)
-        }
+        dummyTextField.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            dummyTextField.widthAnchor.constraint(equalToConstant: 0),
+            dummyTextField.heightAnchor.constraint(equalToConstant: 0)
+        ])
     }
     
     convenience init(title: String) {

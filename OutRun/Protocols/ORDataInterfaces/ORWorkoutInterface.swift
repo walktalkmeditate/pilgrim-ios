@@ -65,7 +65,13 @@ public protocol ORWorkoutInterface: ORDataInterface {
     var workoutEvents: [ORWorkoutEventInterface] { get }
     /// A reference to `Event`s associated with this workout.
     var events: [OREventInterface] { get }
-    
+    /// Duration spent talking (voice recording) in seconds.
+    var talkDuration: Double { get }
+    /// Duration spent meditating (stationary) in seconds.
+    var meditateDuration: Double { get }
+    /// A reference to voice recordings associated with this workout.
+    var voiceRecordings: [ORVoiceRecordingInterface] { get }
+
 }
 
 public extension ORWorkoutInterface {
@@ -90,6 +96,9 @@ public extension ORWorkoutInterface {
     var routeData: [ORWorkoutRouteDataSampleInterface] { throwOnAccess() }
     var pauses: [ORWorkoutPauseInterface] { throwOnAccess() }
     var workoutEvents: [ORWorkoutEventInterface] { throwOnAccess() }
+    var talkDuration: Double { throwOnAccess() }
+    var meditateDuration: Double { throwOnAccess() }
     var events: [OREventInterface] { throwOnAccess() }
-    
+    var voiceRecordings: [ORVoiceRecordingInterface] { throwOnAccess() }
+
 }

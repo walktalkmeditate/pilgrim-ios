@@ -1,11 +1,5 @@
 project 'OutRun.xcodeproj'
-platform :ios, '13.0'
-
-def ui_pods
-  pod 'SnapKit'
-  pod 'Charts'
-  # pod 'JTAppleCalendar'
-end
+platform :ios, '16.0'
 
 def data_pods
   pod 'Cache'
@@ -17,7 +11,6 @@ end
 target 'OutRun' do
   use_frameworks!
 
-  ui_pods
   data_pods
 
   target 'UnitTests' do

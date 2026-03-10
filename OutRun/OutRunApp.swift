@@ -21,7 +21,7 @@
 import SwiftUI
 
 @main
-struct OutRunApp: App {
+struct PilgrimApp: App {
     
     @UIApplicationDelegateAdaptor var delegate: AppDelegate
     

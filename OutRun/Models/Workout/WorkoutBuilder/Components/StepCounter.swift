@@ -100,18 +100,29 @@ class StepCounter: WorkoutBuilderComponent {
     
     public required init(builder: WorkoutBuilder) {
         self.bind(builder: builder)
+
+        builder.registerPreSnapshotFlush { [weak self] in
+            guard let self else { return }
+            builder.flushSteps(self.stepsRelay.value)
+        }
     }
-    
+
     func bind(builder: WorkoutBuilder) {
-        
+
         let input = Input(
             insufficientPermission: insufficientPermissionRelay.asBackgroundPublisher(),
             steps: stepsRelay.asBackgroundPublisher()
         )
-        
-        let output = builder.tranform(input)
-        
-        output.status.sink(receiveValue: statusBinder).store(in: &cancellables)
-        output.onReset.sink(receiveValue: onResetBinder).store(in: &cancellables)
+
+        _ = builder.tranform(input)
+
+        builder.statusPublisher
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: statusBinder)
+            .store(in: &cancellables)
+        builder.resetPublisher
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: onResetBinder)
+            .store(in: &cancellables)
     }
 }

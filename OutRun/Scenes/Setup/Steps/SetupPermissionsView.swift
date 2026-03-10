@@ -25,52 +25,65 @@ struct SetupPermissionsView: View {
     @Binding private var canContinue: Bool
     
     @State private var grantedLocationAccess = false
-    @State private var grantedHealthAccess = false
+    @State private var grantedMicrophoneAccess = false
     @State private var grantedMotionAccess = false
-    
+
     var body: some View {
         SetupStepBaseView(
-            headline: "Now we just need your permission",
-            description: "Lorem Ipsum this is a text about permissions and such stuff which no one wants to read."
+            headline: "Permissions",
+            description: "Pilgrim needs location access to track your route and microphone access to record voice notes."
         ) {
             VStack(spacing: Constants.UI.Padding.small) {
-                
+
                 PermissionView(
                     title: "Location",
+                    subtitle: "Track your walking route",
                     granted: $grantedLocationAccess) {
-                        // show explanation
                     } showPermissionMenu: {
-                        // show permission menu
-                        grantedLocationAccess = true
-                    }
-                
-                // TODO: only display if needed
-                PermissionView(
-                    title: "Apple Health",
-                    granted: $grantedHealthAccess) {
-                        // show explanation
-                    } showPermissionMenu: {
-                        // show permission menu
+                        PermissionManager.standard.checkLocationPermission { status in
+                            grantedLocationAccess = status == .granted
+                        }
                     }
 
                 PermissionView(
-                    title: "Motion (Optional)",
-                    granted: $grantedMotionAccess) {
-                        // show explanation
+                    title: "Microphone",
+                    subtitle: "Record voice notes along the way",
+                    granted: $grantedMicrophoneAccess) {
                     } showPermissionMenu: {
-                        // show permission menu
+                        PermissionManager.standard.checkMicrophonePermission { granted in
+                            grantedMicrophoneAccess = granted
+                        }
                     }
-                
+
+                PermissionView(
+                    title: "Motion",
+                    subtitle: "Count your steps (optional)",
+                    granted: $grantedMotionAccess) {
+                    } showPermissionMenu: {
+                        PermissionManager.standard.checkMotionPermission { granted in
+                            grantedMotionAccess = granted
+                        }
+                    }
+
             }.padding(.top, Constants.UI.Padding.big)
-        }.onChange(of: shouldContinue) { shouldContinue in
+        }
+        .onAppear { checkExistingPermissions() }
+        .onChange(of: shouldContinue) { shouldContinue in
             canContinue = shouldContinue
         }
     }
-    
-    private var shouldContinue: Bool { grantedLocationAccess /*&& if neccessary health*/ }
+
+    private var shouldContinue: Bool { grantedLocationAccess }
     
     init(canContinue: Binding<Bool>) {
         self._canContinue = canContinue
+    }
+
+    private func checkExistingPermissions() {
+        let pm = PermissionManager.standard
+        grantedLocationAccess = pm.currentLocationStatus == .granted
+        grantedMicrophoneAccess = pm.isMicrophoneGranted
+        grantedMotionAccess = pm.isMotionGranted
     }
 }
 

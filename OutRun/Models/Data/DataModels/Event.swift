@@ -20,7 +20,7 @@
 
 import Foundation
 
-public typealias Event = OutRunV4.Event
+public typealias Event = PilgrimV1.Event
 
 // MARK: CustomStringConvertible
 
@@ -28,7 +28,7 @@ extension Event: CustomStringConvertible {
     
     public var description: String {
         
-        var desc = "WorkoutEvent("
+        var desc = "Event("
         
         if let uuid = uuid {
             desc += "uuid: \(uuid), "

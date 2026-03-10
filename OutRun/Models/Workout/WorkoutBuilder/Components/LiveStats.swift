@@ -80,38 +80,12 @@ class LiveStats: WorkoutBuilderComponent {
         return StatsHelper.string(for: burnedEnergy, unit: UnitEnergy.standardUnit)
     }
     
-    /// Binds location updates and the current start date to this component for speed calculation
+    /// Uses the most recent GPS speed for responsive display.
     private var speedMapper: ([TempWorkoutRouteDataSample], Date?, [TempWorkoutPause], Double) -> String? = { locations, startDate, pauses, distance in
-        guard let startDate = startDate else { return nil }
-        
-        let speed: Double?
-        
-        if UserPreferences.displayRollingSpeed.value { // rolling
-            
-            var (tempDistance, tempDuration, lastLocation): (Double, Double, CLLocation?) = (0, 0, nil)
-            
-            for location in locations.reversed() where tempDistance < 1000 {
-                guard !pauses.contains(where: { $0.contains(location.timestamp) }) else {
-                    lastLocation = nil
-                    continue
-                }
-                
-                if let lastLocation = lastLocation {
-                    tempDistance += location.clLocation.distance(from: lastLocation)
-                    tempDuration += location.timestamp.distance(to: lastLocation.timestamp)
-                }
-                lastLocation = location.clLocation
-            }
-            
-            guard tempDuration > 0, tempDistance > 0 else { return nil }
-            speed = tempDistance / tempDuration
-            
-        } else { // average
-            
-            let duration = startDate.distance(to: Date()) - pauses.map { $0.duration }.reduce(0, +)
-            speed = distance / duration
-        }
-        
+        guard startDate != nil else { return nil }
+
+        let speed = locations.last.map { max(0, $0.speed) } ?? 0.0
+
         return StatsHelper.string(for: speed, unit: UnitSpeed.standardUnit)
     }
     
@@ -155,7 +129,7 @@ class LiveStats: WorkoutBuilderComponent {
             .sink(receiveValue: speedRelay.accept)
             .store(in: &cancellables)
         
-        let periodicUpdates = Timer.TimerPublisher(interval: 1, runLoop: .main, mode: .default)
+        let periodicUpdates = Timer.TimerPublisher(interval: 1, runLoop: .main, mode: .default).autoconnect()
         
         periodicUpdates
             .combineLatest(output.startDate, output.pauses, output.endDate)

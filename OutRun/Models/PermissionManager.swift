@@ -21,81 +21,105 @@
 import Foundation
 import CoreLocation
 import CoreMotion
+import AVFoundation
 
 class PermissionManager: NSObject, CLLocationManagerDelegate {
-    
+
     static let standard = PermissionManager()
-    
+
     override init() {
         super.init()
         self.locationManager.delegate = self
     }
-    
-    // MARK: Apple Health
-    
-    func checkHealthPermission(closure: @escaping (Bool) -> Void) {
-        let unauthorisedTypes = HealthStoreManager.HealthType.allImplementedTypes.filter {
-            HealthStoreManager.healthStore.authorizationStatus(for: $0) != .sharingAuthorized
-        }
-        guard unauthorisedTypes.count > 0 else { closure(true); return }
-        HealthStoreManager.gainAuthorisation(for: unauthorisedTypes, completion: { success, authorisedTypes in
-            closure(unauthorisedTypes == authorisedTypes)
-        })
-    }
-    
+
     // MARK: Location
-    
+
     private let locationManager = CLLocationManager()
-    private var locationPermissionClosure: ((LocationPermissionStatus) -> Void)?
+    private var locationPermissionClosures: [(LocationPermissionStatus) -> Void] = []
+    private var motionActivityManager: CMMotionActivityManager?
+
+    var currentLocationStatus: LocationPermissionStatus {
+        switch locationManager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse: return .granted
+        case .restricted: return .restricted
+        case .notDetermined: return .denied
+        default: return .denied
+        }
+    }
+
     func checkLocationPermission(closure: @escaping (LocationPermissionStatus) -> Void) {
         DispatchQueue.main.async {
-            switch CLLocationManager.authorizationStatus() {
+            switch self.locationManager.authorizationStatus {
             case .authorizedAlways, .authorizedWhenInUse:
                 closure(.granted)
             case .notDetermined:
-                self.locationManager.requestWhenInUseAuthorization()
-                self.locationPermissionClosure = closure
+                let shouldRequest = self.locationPermissionClosures.isEmpty
+                self.locationPermissionClosures.append(closure)
+                if shouldRequest {
+                    self.locationManager.requestWhenInUseAuthorization()
+                }
             default:
                 closure(.denied)
             }
         }
     }
-    
+
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        
-        var tempLocationPermissionStatus: LocationPermissionStatus = .denied
-        
-        switch status {
-        case .authorizedAlways, .authorizedWhenInUse:
-            tempLocationPermissionStatus = .granted
-        case .notDetermined:
-            return
-        default:
-            break
+        DispatchQueue.main.async {
+            var permissionStatus: LocationPermissionStatus = .denied
+
+            switch status {
+            case .authorizedAlways, .authorizedWhenInUse:
+                permissionStatus = .granted
+            case .notDetermined:
+                return
+            default:
+                break
+            }
+
+            let closures = self.locationPermissionClosures
+            self.locationPermissionClosures = []
+            closures.forEach { $0(permissionStatus) }
         }
-        
-        guard let closure = self.locationPermissionClosure else {
-            return
-        }
-        
-        closure(tempLocationPermissionStatus)
-        self.locationPermissionClosure = nil
-        
     }
-    
+
     enum LocationPermissionStatus {
         case granted, restricted, denied, error
     }
-    
+
+    // MARK: Microphone
+
+    var isMicrophoneGranted: Bool {
+        AVAudioSession.sharedInstance().recordPermission == .granted
+    }
+
+    func checkMicrophonePermission(closure: @escaping (Bool) -> Void) {
+        switch AVAudioSession.sharedInstance().recordPermission {
+        case .granted:
+            closure(true)
+        case .undetermined:
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                DispatchQueue.main.async { closure(granted) }
+            }
+        default:
+            closure(false)
+        }
+    }
+
     // MARK: Motion
-    
+
+    var isMotionGranted: Bool {
+        CMMotionActivityManager.authorizationStatus() == .authorized
+    }
+
     func checkMotionPermission(closure: @escaping (Bool) -> Void) {
         switch CMMotionActivityManager.authorizationStatus() {
         case .authorized:
             closure(true)
         case .notDetermined:
-            let activityManager = CMMotionActivityManager()
-            activityManager.queryActivityStarting(from: Date(), to: Date(), to: .main) { (activity, error) in
+            motionActivityManager = CMMotionActivityManager()
+            motionActivityManager?.queryActivityStarting(from: Date(), to: Date(), to: .main) { [weak self] (activity, error) in
+                self?.motionActivityManager = nil
                 let auth = CMPedometer.authorizationStatus()
                 switch auth {
                 case .authorized:
@@ -108,5 +132,5 @@ class PermissionManager: NSObject, CLLocationManagerDelegate {
             closure(false)
         }
     }
-    
+
 }

@@ -27,14 +27,14 @@ class ButtonSetting: TitleSetting {
     
     fileprivate lazy var internalTableViewCell: UITableViewCell = {
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        cell.backgroundColor = .systemBackground
+        cell.backgroundColor = .parchment
         cell.textLabel?.textColor = isEnabledClosure() ? buttonColorClosure() : .secondaryLabel
         cell.selectionStyle = .none
         cell.textLabel?.text = self.title
         return cell
     }()
     
-    init(title: @escaping () -> String, selectAction: ((Setting, UIViewController, UITableViewCell) -> Void)? = nil, buttonColor: @escaping () -> UIColor = { return .accentColor }, isEnabled: @escaping () -> Bool = { return true }) {
+    init(title: @escaping () -> String, selectAction: ((Setting, UIViewController, UITableViewCell) -> Void)? = nil, buttonColor: @escaping () -> UIColor = { return .stone }, isEnabled: @escaping () -> Bool = { return true }) {
         self.buttonColorClosure = buttonColor
         self.isEnabledClosure = isEnabled
         super.init(title: title, selectAction: selectAction == nil ? nil : { (setting, controller, cell) in
@@ -44,7 +44,7 @@ class ButtonSetting: TitleSetting {
         })
     }
     
-    convenience init(title: String, selectAction: ((Setting, UIViewController, UITableViewCell) -> Void)? = nil, buttonColor: UIColor = .accentColor, isEnabled: Bool = true) {
+    convenience init(title: String, selectAction: ((Setting, UIViewController, UITableViewCell) -> Void)? = nil, buttonColor: UIColor = .stone, isEnabled: Bool = true) {
         self.init(title: { return title }, selectAction: selectAction, buttonColor: { return buttonColor }, isEnabled: { return isEnabled })
         self.usesClosures = false
     }
