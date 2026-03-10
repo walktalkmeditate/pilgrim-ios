@@ -1,0 +1,31 @@
+import Foundation
+import CoreStore
+import Combine
+
+class HomeViewModel: ObservableObject {
+
+    @Published private(set) var walks: [Walk] = []
+    var onStartWalk: (() -> Void)?
+
+    private var cancellables: [AnyCancellable] = []
+
+    init() {
+        loadWalks()
+    }
+
+    func loadWalks() {
+        do {
+            walks = try DataManager.dataStack.fetchAll(
+                From<Walk>()
+                    .orderBy(.descending(\._startDate))
+            )
+        } catch {
+            print("[HomeViewModel] Failed to fetch walks:", error.localizedDescription)
+            walks = []
+        }
+    }
+
+    func startWalk() {
+        onStartWalk?()
+    }
+}
