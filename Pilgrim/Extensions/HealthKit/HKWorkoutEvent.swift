@@ -1,5 +1,5 @@
 //
-//  URL.swift
+//  HKWorkoutEvent.swift
 //
 //  Pilgrim
 //  Copyright (C) 2020 Tim Fraedrich <timfraedrich@icloud.com>
@@ -20,24 +20,22 @@
 //
 
 import Foundation
+import HealthKit
 
-extension URL {
-    
-    /// the file size of the file at the given `URL` in bytes
-    var fileSize: Int? {
-        
-        do {
-            
-            let file = try self.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey])
-            return file.totalFileAllocatedSize ?? file.fileAllocatedSize
-            
-        } catch {
-            
-            print("Failed to calculate size of file at \(self.absoluteString) because an error occured:", error)
-            return nil
-            
+// MARK: TempValueConvertible
+
+extension HKWorkoutEvent: TempValueConvertible {
+
+    public var asTemp: TempWalkEvent {
+
+        guard let type = WalkEvent.EventType(healthType: self.type) else {
+            fatalError("Error: Tried to create TempWalkEvent from unsupported HKWorkoutEvent type.")
         }
-        
+
+        return TempWalkEvent(
+            uuid: nil,
+            eventType: type,
+            timestamp: self.dateInterval.start
+        )
     }
-    
 }

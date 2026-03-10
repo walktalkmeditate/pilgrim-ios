@@ -1,5 +1,5 @@
 //
-//  URL.swift
+//  HKWorkoutEventType.swift
 //
 //  Pilgrim
 //  Copyright (C) 2020 Tim Fraedrich <timfraedrich@icloud.com>
@@ -19,25 +19,34 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-import Foundation
+import HealthKit
 
-extension URL {
-    
-    /// the file size of the file at the given `URL` in bytes
-    var fileSize: Int? {
-        
-        do {
-            
-            let file = try self.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey])
-            return file.totalFileAllocatedSize ?? file.fileAllocatedSize
-            
-        } catch {
-            
-            print("Failed to calculate size of file at \(self.absoluteString) because an error occured:", error)
-            return nil
-            
+extension HKWorkoutEventType {
+
+    var isPauseType: Bool {
+        switch self {
+        case .pause, .motionPaused, .resume, .motionResumed:
+            return true
+        default:
+            return false
         }
-        
     }
-    
+
+    var convertedRawValue: Int {
+        switch self {
+        case .pause, .resume:
+            return 0
+        case .motionPaused, .motionResumed:
+            return 1
+        case .lap:
+            return 0
+        case .marker:
+            return 1
+        case .segment:
+            return 2
+        default:
+            return -1
+        }
+    }
+
 }
