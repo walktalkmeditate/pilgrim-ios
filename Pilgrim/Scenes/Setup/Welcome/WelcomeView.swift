@@ -6,6 +6,8 @@ struct WelcomeView: View {
 
     var body: some View {
         VStack {
+            PilgrimLogoView(size: 120)
+                .padding(.top, Constants.UI.Padding.big)
             Text(viewModel.titleLineOne)
                 .font(Constants.Typography.displayMedium)
                 .foregroundColor(.fog)
