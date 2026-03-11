@@ -180,8 +180,10 @@
 		AAAA000000000000000000C5 /* PromptDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C6 /* PromptDetailView.swift */; };
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
 		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
+		CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */; };
 		DD00CC0100000000000002 /* MeditateDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00CC0100000000000001 /* MeditateDetection.swift */; };
 		F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */; };
+		FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -367,6 +369,7 @@
 		AAAA000000000000000000C2 /* PromptGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptGenerator.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C4 /* PromptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptListView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C6 /* PromptDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptDetailView.swift; sourceTree = "<group>"; };
+		B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewWalkComputationTests.swift; sourceTree = "<group>"; };
 		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
 		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
 		C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.release.xcconfig"; sourceTree = "<group>"; };
@@ -376,6 +379,7 @@
 		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
+		E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderStatusTests.swift; sourceTree = "<group>"; };
 		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -853,6 +857,8 @@
 				C2D23FF60A762C30296A69E6 /* ComputationTests.swift */,
 				DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */,
 				1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */,
+				E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */,
+				B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1311,6 +1317,8 @@
 				2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */,
 				03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */,
 				F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */,
+				CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */,
+				FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

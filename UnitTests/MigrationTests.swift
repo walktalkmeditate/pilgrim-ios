@@ -1,48 +1,146 @@
-//
-//  MigrationTests.swift
-//
-//  Pilgrim
-//  Copyright (C) 2022 Tim Fraedrich <timfraedrich@icloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-
 import XCTest
+@testable import Pilgrim
 
-class MigrationTests: XCTestCase {
+final class MigrationTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    // MARK: - V1 Migration
+
+    func testV1_asTemp_setsDefaultsForMissingFields() {
+        let v1 = TempV1.Workout(
+            uuid: UUID(),
+            workoutType: 1,
+            startDate: DateFactory.makeDate(2024, 1, 15, 8, 0, 0),
+            endDate: DateFactory.makeDate(2024, 1, 15, 9, 0, 0),
+            distance: 3000,
+            burnedEnergy: 150,
+            healthKitUUID: nil,
+            locations: []
+        )
+        let temp = v1.asTemp
+        XCTAssertNil(temp.steps)
+        XCTAssertNil(temp.comment)
+        XCTAssertFalse(temp.isRace)
+        XCTAssertFalse(temp.isUserModified)
+        XCTAssertTrue(temp.finishedRecording)
+        XCTAssertEqual(temp.pauseDuration, 0)
+        XCTAssertEqual(temp.talkDuration, 0)
+        XCTAssertEqual(temp.meditateDuration, 0)
+        XCTAssertEqual(temp.pauses.count, 0)
+        XCTAssertEqual(temp.workoutEvents.count, 0)
+        XCTAssertEqual(temp.voiceRecordings.count, 0)
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func testV1_asTemp_convertsRouteData() {
+        let location = TempV1.RouteDataSample(
+            uuid: UUID(),
+            timestamp: DateFactory.makeDate(2024, 1, 15, 8, 5, 0),
+            latitude: 48.8566,
+            longitude: 2.3522,
+            altitude: 35,
+            speed: 1.4,
+            direction: 90
+        )
+        let v1 = TempV1.Workout(
+            uuid: UUID(),
+            workoutType: 1,
+            startDate: DateFactory.makeDate(2024, 1, 15, 8, 0, 0),
+            endDate: DateFactory.makeDate(2024, 1, 15, 9, 0, 0),
+            distance: 3000,
+            burnedEnergy: 150,
+            healthKitUUID: nil,
+            locations: [location]
+        )
+        let temp = v1.asTemp
+        XCTAssertEqual(temp.routeData.count, 1)
+        XCTAssertEqual(temp.routeData.first?.latitude, 48.8566)
+        XCTAssertEqual(temp.routeData.first?.horizontalAccuracy, 0)
+        XCTAssertEqual(temp.routeData.first?.verticalAccuracy, 0)
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    // MARK: - V2 Migration
+
+    func testV2_asTemp_carriesOverAllFields() {
+        let v2 = TempV2.Workout(
+            uuid: UUID(),
+            workoutType: 1,
+            startDate: DateFactory.makeDate(2024, 3, 20, 7, 0, 0),
+            endDate: DateFactory.makeDate(2024, 3, 20, 8, 30, 0),
+            distance: 8000,
+            isRace: true,
+            isUserModified: true,
+            comment: "Pilgrimage walk",
+            burnedEnergy: 350,
+            healthKitUUID: nil,
+            locations: []
+        )
+        let temp = v2.asTemp
+        XCTAssertEqual(temp.distance, 8000)
+        XCTAssertEqual(temp.burnedEnergy, 350)
+        XCTAssertEqual(temp.workoutType, .walking)
+        XCTAssertTrue(temp.isRace)
+        XCTAssertTrue(temp.isUserModified)
+        XCTAssertEqual(temp.comment, "Pilgrimage walk")
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        measure {
-            // Put the code you want to measure the time of here.
-        }
+    // MARK: - V3 Migration
+
+    func testV3_asTemp_noEvents_emptyPauses() {
+        let v3 = TempV3.Workout(
+            uuid: UUID(),
+            workoutType: 1,
+            startDate: DateFactory.makeDate(2024, 6, 1, 6, 0, 0),
+            endDate: DateFactory.makeDate(2024, 6, 1, 7, 0, 0),
+            distance: 5000,
+            steps: 7000,
+            isRace: false,
+            isUserModified: false,
+            comment: nil,
+            burnedEnergy: nil,
+            healthKitUUID: nil,
+            workoutEvents: [],
+            locations: [],
+            heartRates: []
+        )
+        let temp = v3.asTemp
+        XCTAssertEqual(temp.pauses.count, 0)
+        XCTAssertEqual(temp.pauseDuration, 0)
+        XCTAssertEqual(temp.workoutEvents.count, 0)
     }
 
+    func testV3_asTemp_pauseEventsUsedForPausesNotWorkoutEvents() {
+        let start = DateFactory.makeDate(2024, 6, 1, 6, 0, 0)
+        let end = DateFactory.makeDate(2024, 6, 1, 7, 0, 0)
+        let v3 = TempV3.Workout(
+            uuid: UUID(),
+            workoutType: 1,
+            startDate: start,
+            endDate: end,
+            distance: 5000,
+            steps: nil,
+            isRace: false,
+            isUserModified: false,
+            comment: nil,
+            burnedEnergy: nil,
+            healthKitUUID: nil,
+            workoutEvents: [
+                TempV3.WorkoutEvent(uuid: nil, eventType: 0,
+                    startDate: DateFactory.makeDate(2024, 6, 1, 6, 15, 0),
+                    endDate: DateFactory.makeDate(2024, 6, 1, 6, 15, 0)),
+                TempV3.WorkoutEvent(uuid: nil, eventType: 2,
+                    startDate: DateFactory.makeDate(2024, 6, 1, 6, 20, 0),
+                    endDate: DateFactory.makeDate(2024, 6, 1, 6, 20, 0)),
+                TempV3.WorkoutEvent(uuid: nil, eventType: 1,
+                    startDate: DateFactory.makeDate(2024, 6, 1, 6, 35, 0),
+                    endDate: DateFactory.makeDate(2024, 6, 1, 6, 35, 0)),
+                TempV3.WorkoutEvent(uuid: nil, eventType: 3,
+                    startDate: DateFactory.makeDate(2024, 6, 1, 6, 40, 0),
+                    endDate: DateFactory.makeDate(2024, 6, 1, 6, 40, 0))
+            ],
+            locations: [],
+            heartRates: []
+        )
+        let temp = v3.asTemp
+        XCTAssertEqual(temp.pauses.count, 2)
+        XCTAssertEqual(temp.workoutEvents.count, 0)
+    }
 }
