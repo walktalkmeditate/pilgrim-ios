@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AAAA000000000000000000A1 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA000000000000000000A3 /* WhisperKit */; };
+		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
+		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
+		0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */; };
 		2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCA829423DF100F54277 /* View+Navigation.swift */; };
 		2201BCAB29423E1600F54277 /* NavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCAA29423E1600F54277 /* NavigationLink.swift */; };
 		2201BCAD29423FDE00F54277 /* SetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCAC29423FDE00F54277 /* SetupViewModel.swift */; };
@@ -17,7 +19,6 @@
 		2207B75623128F8A00BA71B5 /* CLLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2207B75523128F8A00BA71B5 /* CLLocation.swift */; };
 		2209E53924DD4A8F00BBFC2F /* AltitudeManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */; };
 		2213137D23B4110700881806 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2213137C23B4110700881806 /* PermissionManager.swift */; };
-		AAAA000000000000000000B1 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000B2 /* TranscriptionService.swift */; };
 		221436B924432B390010D82B /* DataManager+Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436B824432B390010D82B /* DataManager+Query.swift */; };
 		221436BB244356A90010D82B /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436BA244356A90010D82B /* Array.swift */; };
 		221436BF2443746B0010D82B /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436BE2443746B0010D82B /* Event.swift */; };
@@ -109,7 +110,6 @@
 		22BC993C2941D9A800D9B1A5 /* RoundedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992B2941D9A800D9B1A5 /* RoundedButton.swift */; };
 		22BC993D2941D9A800D9B1A5 /* PillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992C2941D9A800D9B1A5 /* PillView.swift */; };
 		22BC993E2941D9A800D9B1A5 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992D2941D9A800D9B1A5 /* CardView.swift */; };
-		AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */; };
 		22BC993F2941D9A800D9B1A5 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992E2941D9A800D9B1A5 /* ProgressView.swift */; };
 		22BC99402941D9A800D9B1A5 /* FeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992F2941D9A800D9B1A5 /* FeatureView.swift */; };
 		22BC99412941D9A800D9B1A5 /* BaseMapMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99302941D9A800D9B1A5 /* BaseMapMenuView.swift */; };
@@ -158,24 +158,30 @@
 		22FEA0AD24CDD4CA0007CA9C /* FileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0AC24CDD4CA0007CA9C /* FileManager.swift */; };
 		22FEA0AF24CDD7B50007CA9C /* DiskStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0AE24CDD7B50007CA9C /* DiskStorage.swift */; };
 		22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */; };
+		2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D23FF60A762C30296A69E6 /* ComputationTests.swift */; };
 		487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
+		76B622EBDD59AD9489586120 /* DateFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */; };
+		AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */; };
 		AA0001010000000000000011 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000001 /* HomeView.swift */; };
 		AA0001010000000000000012 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000002 /* HomeViewModel.swift */; };
 		AA0001010000000000000013 /* WalkRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000003 /* WalkRowView.swift */; };
 		AA0001010000000000000014 /* ActiveWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000004 /* ActiveWalkView.swift */; };
 		AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000005 /* ActiveWalkViewModel.swift */; };
-		AA00030100000000000002 /* MeditationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00030100000000000001 /* MeditationView.swift */; };
 		AA0001010000000000000016 /* WalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000006 /* WalkSummaryView.swift */; };
 		AA0001010000000000000017 /* MainCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000007 /* MainCoordinatorView.swift */; };
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
 		AA00020100000000000004 /* VoiceRecordingManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000003 /* VoiceRecordingManagement.swift */; };
-		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
-		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
-		DD00CC0100000000000002 /* MeditateDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00CC0100000000000001 /* MeditateDetection.swift */; };
+		AA00030100000000000002 /* MeditationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00030100000000000001 /* MeditationView.swift */; };
+		AAAA000000000000000000A1 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA000000000000000000A3 /* WhisperKit */; };
+		AAAA000000000000000000B1 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000B2 /* TranscriptionService.swift */; };
 		AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C2 /* PromptGenerator.swift */; };
 		AAAA000000000000000000C3 /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C4 /* PromptListView.swift */; };
 		AAAA000000000000000000C5 /* PromptDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C6 /* PromptDetailView.swift */; };
+		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
+		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
+		DD00CC0100000000000002 /* MeditateDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00CC0100000000000001 /* MeditateDetection.swift */; };
+		F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -189,6 +195,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackupSerializationTests.swift; sourceTree = "<group>"; };
 		2201BCA829423DF100F54277 /* View+Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Navigation.swift"; sourceTree = "<group>"; };
 		2201BCAA29423E1600F54277 /* NavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLink.swift; sourceTree = "<group>"; };
 		2201BCAC29423FDE00F54277 /* SetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupViewModel.swift; sourceTree = "<group>"; };
@@ -198,7 +205,6 @@
 		2207B75523128F8A00BA71B5 /* CLLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLLocation.swift; sourceTree = "<group>"; };
 		2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AltitudeManagement.swift; sourceTree = "<group>"; };
 		2213137C23B4110700881806 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
-		AAAA000000000000000000B2 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
 		221436B824432B390010D82B /* DataManager+Query.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataManager+Query.swift"; sourceTree = "<group>"; };
 		221436BA244356A90010D82B /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
 		221436BE2443746B0010D82B /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
@@ -292,7 +298,6 @@
 		22BC992B2941D9A800D9B1A5 /* RoundedButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RoundedButton.swift; sourceTree = "<group>"; };
 		22BC992C2941D9A800D9B1A5 /* PillView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PillView.swift; sourceTree = "<group>"; };
 		22BC992D2941D9A800D9B1A5 /* CardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
-		AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimLogoView.swift; sourceTree = "<group>"; };
 		22BC992E2941D9A800D9B1A5 /* ProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		22BC992F2941D9A800D9B1A5 /* FeatureView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeatureView.swift; sourceTree = "<group>"; };
 		22BC99302941D9A800D9B1A5 /* BaseMapMenuView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseMapMenuView.swift; sourceTree = "<group>"; };
@@ -343,28 +348,35 @@
 		22FEA0AC24CDD4CA0007CA9C /* FileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileManager.swift; sourceTree = "<group>"; };
 		22FEA0AE24CDD7B50007CA9C /* DiskStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskStorage.swift; sourceTree = "<group>"; };
 		22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomByteFormatting.swift; sourceTree = "<group>"; };
+		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
+		721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Combine.swift"; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
-		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
-		C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.release.xcconfig"; sourceTree = "<group>"; };
-		C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UnitTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimLogoView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000001 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000002 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000003 /* WalkRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkRowView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000004 /* ActiveWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000005 /* ActiveWalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkViewModel.swift; sourceTree = "<group>"; };
-		AA00030100000000000001 /* MeditationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000006 /* WalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000007 /* MainCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinatorView.swift; sourceTree = "<group>"; };
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
 		AA00020100000000000003 /* VoiceRecordingManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingManagement.swift; sourceTree = "<group>"; };
-		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
-		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
-		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
+		AA00030100000000000001 /* MeditationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationView.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000B2 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C2 /* PromptGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptGenerator.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C4 /* PromptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptListView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C6 /* PromptDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptDetailView.swift; sourceTree = "<group>"; };
+		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
+		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
+		C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.release.xcconfig"; sourceTree = "<group>"; };
+		C2D23FF60A762C30296A69E6 /* ComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComputationTests.swift; sourceTree = "<group>"; };
+		C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UnitTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
+		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
+		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
+		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -837,6 +849,10 @@
 			isa = PBXGroup;
 			children = (
 				22DD158B280C5BB4002CDB45 /* MigrationTests.swift */,
+				4C304343458BA5DB0C7E2372 /* Helpers */,
+				C2D23FF60A762C30296A69E6 /* ComputationTests.swift */,
+				DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */,
+				1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -882,15 +898,15 @@
 			path = WalkBuilder;
 			sourceTree = "<group>";
 		};
-		BA69BA2459A15E9F0E7493C3 /* Pods */ = {
+		4C304343458BA5DB0C7E2372 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
-				8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */,
-				C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */,
-				C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */,
-				980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */,
+				EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */,
+				4181215714A52E71449BC390 /* WalkDataFactory.swift */,
+				721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */,
 			);
-			name = Pods;
+			name = Helpers;
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 		AA0001010000000000000021 /* Home */ = {
@@ -928,6 +944,17 @@
 				AAAA000000000000000000C6 /* PromptDetailView.swift */,
 			);
 			path = Prompts;
+			sourceTree = "<group>";
+		};
+		BA69BA2459A15E9F0E7493C3 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */,
+				C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */,
+				C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */,
+				980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */,
+			);
+			name = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1278,6 +1305,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				22DD158C280C5BB4002CDB45 /* MigrationTests.swift in Sources */,
+				76B622EBDD59AD9489586120 /* DateFactory.swift in Sources */,
+				0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */,
+				0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */,
+				2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */,
+				03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */,
+				F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
