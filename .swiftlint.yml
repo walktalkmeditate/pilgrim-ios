@@ -1,0 +1,44 @@
+excluded:
+  - Pods
+  - .build
+
+disabled_rules:
+  - trailing_whitespace
+  - vertical_whitespace
+  - line_length
+  - statement_position
+  - identifier_name
+  - nesting
+  - mark
+  - type_name
+  - large_tuple
+  - multiple_closures_with_trailing_closure
+  - todo
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - contains_over_first_not_nil
+  - fallthrough
+  - first_where
+  - last_where
+  - modifier_order
+  - overridden_super_call
+  - redundant_nil_coalescing
+  - yoda_condition
+
+empty_count: warning
+force_cast: warning
+force_try: warning
+cyclomatic_complexity:
+  warning: 15
+  error: 25
+function_body_length:
+  warning: 60
+  error: 100
+file_length:
+  warning: 500
+  error: 1000
+type_body_length:
+  warning: 400
+  error: 700
