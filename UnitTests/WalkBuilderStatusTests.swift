@@ -69,7 +69,7 @@ final class WalkBuilderStatusTests: XCTestCase {
         let builder = WalkBuilder()
         let readinessSubject = PassthroughSubject<WalkBuilderComponentStatus, Never>()
         let input = WalkBuilder.Input(readiness: readinessSubject.eraseToAnyPublisher())
-        let _ = builder.tranform(input)
+        _ = builder.tranform(input)
 
         readinessSubject.send(.preparing(TestComponent.self))
         XCTAssertEqual(builder.status, .waiting)
