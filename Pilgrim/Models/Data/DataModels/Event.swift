@@ -21,7 +21,7 @@
 
 import Foundation
 
-public typealias Event = PilgrimV2.Event
+public typealias Event = PilgrimV3.Event
 
 // MARK: CustomStringConvertible
 

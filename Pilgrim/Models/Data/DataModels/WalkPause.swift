@@ -22,15 +22,15 @@
 import Foundation
 import CoreStore
 
-public typealias WalkPause = PilgrimV2.WorkoutPause
+public typealias WalkPause = PilgrimV3.WorkoutPause
 
-public extension WalkPause {
-    
-    enum PauseType: RawRepresentable, ImportableAttributeType, Codable {
-        
+extension PilgrimV2.WorkoutPause {
+
+    public enum PauseType: RawRepresentable, ImportableAttributeType, Codable {
+
         case manual
         case automatic
-        
+
         public init(rawValue: Int) {
             switch rawValue {
             case 1:
@@ -39,7 +39,7 @@ public extension WalkPause {
                 self = .manual
             }
         }
-        
+
         public var rawValue: Int {
             switch self {
             case .manual:
@@ -49,7 +49,13 @@ public extension WalkPause {
             }
         }
     }
-    
+
+}
+
+public extension WalkPause {
+
+    typealias PauseType = PilgrimV2.WorkoutPause.PauseType
+
 }
 
 // MARK: - CustomStringConvertible

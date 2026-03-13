@@ -22,13 +22,13 @@
 import Foundation
 import CoreStore
 
-public typealias WalkEvent = PilgrimV2.WorkoutEvent
+public typealias WalkEvent = PilgrimV3.WorkoutEvent
 
-public extension WalkEvent {
-    
-    enum EventType: CustomStringConvertible, CustomDebugStringConvertible, RawRepresentable, ImportableAttributeType, Codable {
+extension PilgrimV2.WorkoutEvent {
+
+    public enum EventType: CustomStringConvertible, CustomDebugStringConvertible, RawRepresentable, ImportableAttributeType, Codable {
         case lap, marker, segment, unknown
-        
+
         public init(rawValue: Int) {
             switch rawValue {
             case 0:
@@ -41,7 +41,7 @@ public extension WalkEvent {
                 self = .unknown
             }
         }
-        
+
         public var rawValue: Int {
             switch self {
             case .lap:
@@ -54,7 +54,7 @@ public extension WalkEvent {
                 return -1
             }
         }
-        
+
         public var description: String {
             switch self {
             case .lap:
@@ -67,7 +67,7 @@ public extension WalkEvent {
                 return LS["WalkEvent.Type.Unknown"]
             }
         }
-        
+
         public var debugDescription: String {
             switch self {
             case .lap:
@@ -80,9 +80,15 @@ public extension WalkEvent {
                 return "Unknown"
             }
         }
-        
+
     }
-    
+
+}
+
+public extension WalkEvent {
+
+    typealias EventType = PilgrimV2.WorkoutEvent.EventType
+
 }
 
 // MARK: - CustomStringConvertible

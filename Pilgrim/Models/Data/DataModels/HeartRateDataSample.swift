@@ -21,7 +21,7 @@
 
 import Foundation
 
-public typealias HeartRateDataSample = PilgrimV2.WorkoutHeartRateDataSample
+public typealias HeartRateDataSample = PilgrimV3.WorkoutHeartRateDataSample
 
 // MARK: - CustomStringConvertible
 

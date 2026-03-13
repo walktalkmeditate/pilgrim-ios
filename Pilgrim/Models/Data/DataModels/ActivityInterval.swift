@@ -1,11 +1,11 @@
 import Foundation
 import CoreStore
 
-public typealias ActivityInterval = PilgrimV2.ActivityInterval
+public typealias ActivityInterval = PilgrimV3.ActivityInterval
 
-public extension ActivityInterval {
+extension PilgrimV2.ActivityInterval {
 
-    enum ActivityType: RawRepresentable, ImportableAttributeType, Codable {
+    public enum ActivityType: RawRepresentable, ImportableAttributeType, Codable {
 
         case unknown
         case meditation
@@ -28,6 +28,12 @@ public extension ActivityInterval {
             }
         }
     }
+
+}
+
+public extension ActivityInterval {
+
+    typealias ActivityType = PilgrimV2.ActivityInterval.ActivityType
 
 }
 

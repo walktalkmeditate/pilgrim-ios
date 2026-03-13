@@ -23,15 +23,11 @@ import Foundation
 import CoreLocation
 import CoreStore
 
-public typealias Walk = PilgrimV2.Workout
+public typealias Walk = PilgrimV3.Workout
 
-public extension Walk {
+extension PilgrimV2.Workout {
 
-    var hasRouteData: Bool {
-        return !self.routeData.isEmpty
-    }
-
-    enum WalkType: CaseIterable, CustomStringConvertible, CustomDebugStringConvertible, RawRepresentable, ImportableAttributeType, Codable {
+    public enum WalkType: CaseIterable, CustomStringConvertible, CustomDebugStringConvertible, RawRepresentable, ImportableAttributeType, Codable {
 
         case walking, unknown
 
@@ -81,6 +77,16 @@ public extension Walk {
         }
 
     }
+
+}
+
+public extension Walk {
+
+    var hasRouteData: Bool {
+        return !self.routeData.isEmpty
+    }
+
+    typealias WalkType = PilgrimV2.Workout.WalkType
 
 }
 
