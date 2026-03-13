@@ -260,6 +260,7 @@ struct DataManager {
                     recording._duration .= tempRecording.duration
                     recording._fileRelativePath .= tempRecording.fileRelativePath
                     recording._transcription .= tempRecording.transcription
+                    recording._wordsPerMinute .= tempRecording.wordsPerMinute
 
                     recording._workout .= walk
                 }
@@ -403,6 +404,7 @@ struct DataManager {
                     recording._duration .= tempRecording.duration
                     recording._fileRelativePath .= tempRecording.fileRelativePath
                     recording._transcription .= tempRecording.transcription
+                    recording._wordsPerMinute .= tempRecording.wordsPerMinute
 
                     recording._workout .= walk
                 }
@@ -471,6 +473,20 @@ struct DataManager {
         }) { result in
             if case .failure(let error) = result {
                 print("[DataManager] Failed to update transcription: \(error)")
+            }
+        }
+    }
+
+    public static func updateVoiceRecordingWordsPerMinute(uuid: UUID, wordsPerMinute: Double) {
+        dataStack.perform(asynchronous: { transaction -> Void in
+            if let recording = transaction.edit(
+                queryObject(from: uuid, transaction: transaction) as VoiceRecording?
+            ) {
+                recording._wordsPerMinute .= wordsPerMinute
+            }
+        }) { result in
+            if case .failure(let error) = result {
+                print("[DataManager] Failed to update WPM for \(uuid): \(error)")
             }
         }
     }
