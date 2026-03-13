@@ -348,6 +348,8 @@ struct PromptGenerator {
         }
     }
 
+    // MARK: - Prompt Builder
+
     private static func buildPrompt(preamble: String, instruction: String, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?) -> String {
         var sections = """
             \(preamble)
@@ -400,5 +402,16 @@ struct PromptGenerator {
             """
 
         return sections
+    }
+}
+
+extension String {
+    func truncatedAtWordBoundary(maxLength: Int = 200) -> String {
+        guard count > maxLength else { return self }
+        let truncated = prefix(maxLength)
+        if let lastSpace = truncated.lastIndex(of: " ") {
+            return String(truncated[..<lastSpace]) + "..."
+        }
+        return String(truncated) + "..."
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 import MapKit
 import AVFoundation
+import CoreStore
 
 struct WalkSummaryView: View {
 
@@ -54,7 +55,7 @@ struct WalkSummaryView: View {
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
-                    PromptListView(walk: walk, transcriptions: transcriptions)
+                    PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets)
                 }
             }
         }
@@ -94,6 +95,25 @@ struct WalkSummaryView: View {
             .background(Color.parchmentSecondary)
             .cornerRadius(Constants.UI.CornerRadius.normal)
         }
+    }
+
+    private var recentWalkSnippets: [PromptGenerator.WalkSnippet] {
+        guard let walks = try? DataManager.dataStack.fetchAll(
+            From<Walk>()
+                .where(\._startDate < walk.startDate)
+                .orderBy(.descending(\._startDate))
+        ) else { return [] }
+
+        return walks
+            .filter { w in w.voiceRecordings.contains { $0.transcription != nil } }
+            .prefix(3)
+            .map { w in
+                let allText = w.voiceRecordings
+                    .compactMap { $0.transcription }
+                    .joined(separator: " ")
+                let preview = String(allText.prefix(200)).truncatedAtWordBoundary()
+                return PromptGenerator.WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview)
+            }
     }
 
     private func loadExistingTranscriptions() {
