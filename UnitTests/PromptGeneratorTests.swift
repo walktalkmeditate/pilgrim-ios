@@ -233,4 +233,46 @@ final class PromptGeneratorTests: XCTestCase {
         )
         XCTAssertFalse(prompt.text.contains("Location"))
     }
+
+    // MARK: - Task 8: Pace Context
+
+    func testFormatPaceContext_withSpeedData_containsAveragePace() {
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            routeSpeeds: [1.5, 1.6, 1.4, 1.5, 1.3, 1.7, 1.5, 1.4, 1.6, 1.5, 1.5]
+        )
+        XCTAssertTrue(prompt.text.contains("Pace"))
+        XCTAssertTrue(prompt.text.contains("min/"))
+    }
+
+    func testFormatPaceContext_sparseData_omitsPaceSection() {
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            routeSpeeds: [1.5, 1.6]
+        )
+        XCTAssertFalse(prompt.text.contains("Pace"))
+    }
+
+    func testFormatPaceContext_empty_omitsPaceSection() {
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            routeSpeeds: []
+        )
+        XCTAssertFalse(prompt.text.contains("Pace"))
+    }
 }

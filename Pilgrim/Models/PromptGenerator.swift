@@ -86,13 +86,22 @@ struct PromptGenerator {
         duration: Double,
         distance: Double,
         startDate: Date,
-        placeNames: [PlaceContext] = []
+        placeNames: [PlaceContext] = [],
+        routeSpeeds: [Double] = []
     ) -> GeneratedPrompt {
         let combinedText = formatRecordings(recordings)
         let meditationText = formatMeditations(meditations)
         let metadata = formatMetadata(duration: duration, distance: distance, startDate: startDate)
         let location = formatPlaceNames(placeNames)
-        let prompt = buildPrompt(style: style, transcription: combinedText, meditations: meditationText, metadata: metadata, location: location)
+        let pace = formatPaceContext(speeds: routeSpeeds)
+        let prompt = buildPrompt(
+            style: style,
+            transcription: combinedText,
+            meditations: meditationText,
+            metadata: metadata,
+            location: location,
+            pace: pace
+        )
         return GeneratedPrompt(style: style, customStyle: nil, text: prompt)
     }
 
@@ -187,6 +196,29 @@ struct PromptGenerator {
         return lines.joined(separator: "\n")
     }
 
+    private static func formatPaceContext(speeds: [Double]) -> String? {
+        let moving = speeds.filter { $0 >= 0.3 }
+        guard moving.count >= 10 else { return nil }
+        let avgSpeed = moving.reduce(0, +) / Double(moving.count)
+        let minSpeed = moving.min()!
+        let maxSpeed = moving.max()!
+        let avgPace = formatPace(metersPerSecond: avgSpeed)
+        let slowPace = formatPace(metersPerSecond: minSpeed)
+        let fastPace = formatPace(metersPerSecond: maxSpeed)
+        return "**Pace:** Average \(avgPace) (range: \(fastPace)–\(slowPace))"
+    }
+
+    private static func formatPace(metersPerSecond: Double) -> String {
+        guard metersPerSecond > 0 else { return "—" }
+        let usesMiles = Locale.current.measurementSystem == .us
+        let metersPerUnit: Double = usesMiles ? 1609.34 : 1000.0
+        let label = usesMiles ? "min/mi" : "min/km"
+        let secondsPerUnit = metersPerUnit / metersPerSecond
+        let minutes = Int(secondsPerUnit) / 60
+        let seconds = Int(secondsPerUnit) % 60
+        return String(format: "%d:%02d %@", minutes, seconds, label)
+    }
+
     private static func formatMetadata(duration: Double, distance: Double, startDate: Date) -> String {
         let durationMin = Int(duration / 60)
         let distanceStr = distanceFormatter.string(from: Measurement(value: distance, unit: UnitLength.meters))
@@ -207,7 +239,7 @@ struct PromptGenerator {
         }
     }
 
-    private static func buildPrompt(style: PromptStyle, transcription: String, meditations: String?, metadata: String, location: String?) -> String {
+    private static func buildPrompt(style: PromptStyle, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?) -> String {
         let preamble: String
         let instruction: String
 
@@ -259,6 +291,10 @@ struct PromptGenerator {
 
         if let location = location {
             sections += "\n\n\(location)"
+        }
+
+        if let pace = pace {
+            sections += "\n\n\(pace)"
         }
 
         sections += """
