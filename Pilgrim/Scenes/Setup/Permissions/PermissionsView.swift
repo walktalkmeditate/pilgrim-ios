@@ -20,6 +20,18 @@
 
 import SwiftUI
 
+struct PermissionCardConfig {
+    let icon: String
+    let title: String
+    let description: String
+    let granted: Bool
+    let denied: Bool
+    let shake: Bool
+    let required: Bool
+    let action: () -> Void
+    let retryAction: (() -> Void)?
+}
+
 struct PermissionsView: View {
 
     @ObservedObject var viewModel: PermissionsViewModel
@@ -42,7 +54,7 @@ struct PermissionsView: View {
                 .opacity(appeared ? 1 : 0)
 
             VStack(spacing: Constants.UI.Padding.normal) {
-                permissionCard(
+                permissionCard(PermissionCardConfig(
                     icon: "location.fill",
                     title: LS["Permissions.Location.Title"],
                     description: LS["Permissions.Location.Description"],
@@ -52,9 +64,9 @@ struct PermissionsView: View {
                     required: true,
                     action: viewModel.requestLocation,
                     retryAction: viewModel.openSettings
-                )
+                ))
 
-                permissionCard(
+                permissionCard(PermissionCardConfig(
                     icon: "mic.fill",
                     title: LS["Permissions.Microphone.Title"],
                     description: LS["Permissions.Microphone.Description"],
@@ -64,9 +76,9 @@ struct PermissionsView: View {
                     required: true,
                     action: viewModel.requestMicrophone,
                     retryAction: viewModel.openSettings
-                )
+                ))
 
-                permissionCard(
+                permissionCard(PermissionCardConfig(
                     icon: "figure.walk",
                     title: LS["Permissions.Motion.Title"],
                     description: LS["Permissions.Motion.Description"],
@@ -76,7 +88,7 @@ struct PermissionsView: View {
                     required: false,
                     action: viewModel.requestMotion,
                     retryAction: nil
-                )
+                ))
             }
             .padding(.top, Constants.UI.Padding.big)
             .opacity(appeared ? 1 : 0)
@@ -102,36 +114,26 @@ struct PermissionsView: View {
         .ignoresSafeArea()
     }
 
-    private func permissionCard(
-        icon: String,
-        title: String,
-        description: String,
-        granted: Bool,
-        denied: Bool,
-        shake: Bool,
-        required: Bool,
-        action: @escaping () -> Void,
-        retryAction: (() -> Void)?
-    ) -> some View {
+    private func permissionCard(_ config: PermissionCardConfig) -> some View {
         VStack(spacing: Constants.UI.Padding.small) {
             HStack(spacing: Constants.UI.Padding.normal) {
-                Image(systemName: icon)
+                Image(systemName: config.icon)
                     .font(.title2)
                     .foregroundColor(.stone)
                     .frame(width: 32)
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: Constants.UI.Padding.small) {
-                        Text(title)
+                        Text(config.title)
                             .font(Constants.Typography.heading)
                             .foregroundColor(.ink)
-                        if !required {
+                        if !config.required {
                             Text(LS["Permissions.Motion.Optional"])
                                 .font(Constants.Typography.caption)
                                 .foregroundColor(.fog)
                         }
                     }
-                    Text(description)
+                    Text(config.description)
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
                 }
@@ -139,25 +141,25 @@ struct PermissionsView: View {
                 Spacer()
 
                 grantButton(
-                    granted: granted,
-                    denied: denied,
-                    required: required,
-                    decided: !required && viewModel.motionDecided,
-                    action: denied && retryAction != nil ? retryAction! : action
+                    granted: config.granted,
+                    denied: config.denied,
+                    required: config.required,
+                    decided: !config.required && viewModel.motionDecided,
+                    action: config.denied && config.retryAction != nil ? config.retryAction! : config.action
                 )
             }
             .padding(Constants.UI.Padding.normal)
-            .background(granted ? Color.moss.opacity(0.1) : Color.parchmentSecondary)
+            .background(config.granted ? Color.moss.opacity(0.1) : Color.parchmentSecondary)
             .cornerRadius(Constants.UI.CornerRadius.normal)
-            .offset(x: shake ? -6 : 0)
+            .offset(x: config.shake ? -6 : 0)
             .animation(
-                shake
+                config.shake
                     ? .default.repeatCount(3, autoreverses: true).speed(6)
                     : .default,
-                value: shake
+                value: config.shake
             )
 
-            if denied && required {
+            if config.denied && config.required {
                 Text(LS["Permissions.Required.Hint"])
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
