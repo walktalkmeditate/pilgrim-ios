@@ -134,6 +134,9 @@ final class TranscriptionService: ObservableObject {
                 if !text.isEmpty {
                     results[uuid] = text
                     DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text)
+                    if let wpm = computeWordsPerMinute(from: transcriptionResults) {
+                        DataManager.updateVoiceRecordingWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
+                    }
                 }
             } catch {
                 print("[TranscriptionService] Failed to transcribe recording \(uuid): \(error)")
@@ -182,6 +185,9 @@ final class TranscriptionService: ObservableObject {
             await MainActor.run { state = .completed; isTranscribing = false }
             if !text.isEmpty {
                 DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text)
+                if let wpm = computeWordsPerMinute(from: results) {
+                    DataManager.updateVoiceRecordingWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
+                }
                 return text
             }
             return nil
@@ -190,6 +196,23 @@ final class TranscriptionService: ObservableObject {
             await MainActor.run { state = .failed("Transcription failed"); isTranscribing = false }
             return nil
         }
+    }
+
+    private func computeWordsPerMinute(from results: [TranscriptionResult]) -> Double? {
+        let segments = results.flatMap { $0.segments }
+        guard let first = segments.first, let last = segments.last,
+              last.end > first.start else { return nil }
+        let words = segments.flatMap { $0.words }
+        let wordCount: Int
+        if !words.isEmpty {
+            wordCount = words.count
+        } else {
+            wordCount = segments.flatMap { $0.text.split(separator: " ") }.count
+        }
+        guard wordCount > 0 else { return nil }
+        let durationMinutes = Double(last.end - first.start) / 60.0
+        guard durationMinutes > 0 else { return nil }
+        return Double(wordCount) / durationMinutes
     }
 
     @MainActor
