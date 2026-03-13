@@ -62,6 +62,7 @@ struct PromptGenerator {
         let timestamp: Date
         let startCoordinate: (lat: Double, lon: Double)?
         let endCoordinate: (lat: Double, lon: Double)?
+        let wordsPerMinute: Double?
     }
 
     struct MeditationContext {
@@ -127,8 +128,20 @@ struct PromptGenerator {
                 }
                 header += "]"
             }
+            if let wpm = item.wordsPerMinute {
+                header += " [~\(Int(wpm)) wpm, \(speakingPaceLabel(wpm))]"
+            }
             return "\(header) \(item.text)"
         }.joined(separator: "\n\n")
+    }
+
+    private static func speakingPaceLabel(_ wpm: Double) -> String {
+        switch wpm {
+        case ..<100: return "slow/thoughtful"
+        case 100..<140: return "measured"
+        case 140..<170: return "conversational"
+        default: return "rapid/energized"
+        }
     }
 
     private static func formatCoord(_ lat: Double, _ lon: Double) -> String {

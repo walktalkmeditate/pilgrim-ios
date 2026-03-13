@@ -21,7 +21,8 @@ final class PromptGeneratorTests: XCTestCase {
             text: "The birds are singing beautifully today",
             timestamp: DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
             startCoordinate: nil,
-            endCoordinate: nil
+            endCoordinate: nil,
+            wordsPerMinute: nil
         )
         let prompt = PromptGenerator.generate(
             style: .reflective,
@@ -87,7 +88,8 @@ final class PromptGeneratorTests: XCTestCase {
             text: "Walking in the park",
             timestamp: DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
             startCoordinate: (lat: 48.85660, lon: 2.35220),
-            endCoordinate: nil
+            endCoordinate: nil,
+            wordsPerMinute: nil
         )
         let prompt = PromptGenerator.generate(
             style: .reflective,
@@ -106,7 +108,8 @@ final class PromptGeneratorTests: XCTestCase {
             text: "Walking in the park",
             timestamp: DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
             startCoordinate: nil,
-            endCoordinate: nil
+            endCoordinate: nil,
+            wordsPerMinute: nil
         )
         let prompt = PromptGenerator.generate(
             style: .reflective,
@@ -145,5 +148,44 @@ final class PromptGeneratorTests: XCTestCase {
         XCTAssertEqual(prompt.title, "My Style")
         XCTAssertEqual(prompt.icon, "star.fill")
         XCTAssertEqual(prompt.subtitle, "Do something creative")
+    }
+
+    func testGenerate_recordingWithWPM_containsPaceLabel() {
+        let recording = PromptGenerator.RecordingContext(
+            text: "Quick excited thoughts",
+            timestamp: DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
+            startCoordinate: nil,
+            endCoordinate: nil,
+            wordsPerMinute: 85
+        )
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [recording],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        )
+        XCTAssertTrue(prompt.text.contains("~85 wpm"))
+        XCTAssertTrue(prompt.text.contains("slow/thoughtful"))
+    }
+
+    func testGenerate_recordingWithoutWPM_omitsPaceLabel() {
+        let recording = PromptGenerator.RecordingContext(
+            text: "Just walking",
+            timestamp: DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
+            startCoordinate: nil,
+            endCoordinate: nil,
+            wordsPerMinute: nil
+        )
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [recording],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        )
+        XCTAssertFalse(prompt.text.contains("wpm"))
     }
 }

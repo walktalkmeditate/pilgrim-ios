@@ -40,7 +40,8 @@ struct PromptListView: View {
                 text: text,
                 timestamp: recording.startDate,
                 startCoordinate: startCoord,
-                endCoordinate: endCoord
+                endCoordinate: endCoord,
+                wordsPerMinute: recording.wordsPerMinute
             )
         }.sorted { $0.timestamp < $1.timestamp }
 
