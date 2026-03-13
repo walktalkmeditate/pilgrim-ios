@@ -8,18 +8,12 @@ struct WelcomeView: View {
         VStack {
             PilgrimLogoView(size: 120)
                 .padding(.top, Constants.UI.Padding.big)
-            Text(viewModel.titleLineOne)
+            Text(viewModel.currentQuote)
                 .font(Constants.Typography.displayMedium)
-                .foregroundColor(.fog)
-            Text(viewModel.titleLineTwo)
-                .font(Constants.Typography.displayLarge)
                 .foregroundColor(.stone)
+                .multilineTextAlignment(.center)
             Spacer()
-            ForEach(viewModel.features, id: \.title) { viewModel in
-                FeatureView(viewModel: viewModel)
-            }
-            Spacer()
-            ActionButton(viewModel.actionButtonTitle, action: viewModel.setupButtonAction)
+            ActionButton("Begin Setup", action: viewModel.beginAction)
         }
         .padding([.horizontal, .top], Constants.UI.Padding.big)
         .padding(.bottom, Constants.UI.Padding.normal)

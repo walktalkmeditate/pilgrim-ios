@@ -196,6 +196,7 @@
 		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
 		4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */; };
 		AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */; };
+		BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00CC010000000000000002 /* WelcomeViewModelTests.swift */; };
 		AAAA000000000000000000E1 /* CustomPromptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000E2 /* CustomPromptEditorView.swift */; };
 /* End PBXBuildFile section */
 
@@ -406,6 +407,7 @@
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
 		3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityIntervalTests.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomPromptStyleStoreTests.swift; sourceTree = "<group>"; };
+		BB00CC010000000000000002 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000E2 /* CustomPromptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptEditorView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -893,6 +895,7 @@
 				B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */,
 				3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */,
 				AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */,
+				BB00CC010000000000000002 /* WelcomeViewModelTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1371,6 +1374,7 @@
 				FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */,
 				4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */,
 				AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */,
+				BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

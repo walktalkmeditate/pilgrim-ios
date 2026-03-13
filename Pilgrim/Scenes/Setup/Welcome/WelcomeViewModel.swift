@@ -21,28 +21,29 @@
 import Foundation
 
 class WelcomeViewModel: ObservableObject {
-    
-    private(set) var setupButtonAction: () -> Void
-    
-    let titleLineOne = "Welcome to"
-    let titleLineTwo = "Pilgrim"
-    let features = [
-        FeatureViewModel(
-            title: "Walk & Record",
-            description: "Track your walking journey with GPS and record voice notes along the way.",
-            systemImageName: "figure.walk"),
-        FeatureViewModel(
-            title: "Voice Memories",
-            description: "Capture thoughts and reflections as voice recordings pinned to your route.",
-            systemImageName: "mic.fill"),
-        FeatureViewModel(
-            title: "Privacy First",
-            description: "All data stays on your device. No accounts, no cloud, no tracking.",
-            systemImageName: "lock.shield")
+
+    static let quotePool = [
+        "Every journey begins\nwith a single step",
+        "The path is made\nby walking",
+        "Not all who wander\nare lost",
+        "Solvitur ambulando —\nit is solved by walking",
+        "Walk as if you are kissing\nthe earth with your feet",
+        "The journey of a thousand miles\nbegins beneath your feet"
     ]
-    let actionButtonTitle = "Begin Setup"
-    
-    init(setupButtonAction: @escaping () -> Void) {
-        self.setupButtonAction = setupButtonAction
+
+    let currentQuote: String
+    private let onBegin: () -> Void
+
+    init(beginAction: @escaping () -> Void) {
+        self.currentQuote = Self.quotePool.randomElement() ?? Self.quotePool[0]
+        self.onBegin = beginAction
+    }
+
+    convenience init(setupButtonAction: @escaping () -> Void) {
+        self.init(beginAction: setupButtonAction)
+    }
+
+    func beginAction() {
+        onBegin()
     }
 }
