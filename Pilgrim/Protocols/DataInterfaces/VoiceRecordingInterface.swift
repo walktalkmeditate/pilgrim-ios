@@ -7,6 +7,7 @@ public protocol VoiceRecordingInterface: DataInterface {
     var duration: Double { get }
     var fileRelativePath: String { get }
     var transcription: String? { get }
+    var wordsPerMinute: Double? { get }
 
 }
 
@@ -17,5 +18,6 @@ public extension VoiceRecordingInterface {
     var duration: Double { throwOnAccess() }
     var fileRelativePath: String { throwOnAccess() }
     var transcription: String? { throwOnAccess() }
+    var wordsPerMinute: Double? { throwOnAccess() }
 
 }

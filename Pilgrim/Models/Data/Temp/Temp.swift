@@ -162,7 +162,8 @@ extension TempVoiceRecording: VoiceRecordingInterface {
             endDate: object.endDate,
             duration: object.duration,
             fileRelativePath: object.fileRelativePath,
-            transcription: object.transcription
+            transcription: object.transcription,
+            wordsPerMinute: object.wordsPerMinute
         )
     }
 }

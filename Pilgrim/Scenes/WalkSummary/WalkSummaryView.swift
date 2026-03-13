@@ -1,6 +1,7 @@
 import SwiftUI
 import MapKit
 import AVFoundation
+import CoreStore
 
 struct WalkSummaryView: View {
 
@@ -11,6 +12,7 @@ struct WalkSummaryView: View {
     @State private var transcriptions: [UUID: String] = [:]
     @State private var showPrompts = false
     @State private var mapRegion: MKCoordinateRegion?
+    @State private var recentWalkSnippets: [PromptGenerator.WalkSnippet] = []
 
     var body: some View {
         NavigationView {
@@ -48,13 +50,14 @@ struct WalkSummaryView: View {
             }
             .onAppear {
                 loadExistingTranscriptions()
+                loadRecentWalkSnippets()
                 if routeCoordinates.count > 1 {
                     mapRegion = regionForRoute(routeCoordinates)
                 }
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
-                    PromptListView(walk: walk, transcriptions: transcriptions)
+                    PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets)
                 }
             }
         }
@@ -94,6 +97,26 @@ struct WalkSummaryView: View {
             .background(Color.parchmentSecondary)
             .cornerRadius(Constants.UI.CornerRadius.normal)
         }
+    }
+
+    private func loadRecentWalkSnippets() {
+        guard let walks = try? DataManager.dataStack.fetchAll(
+            From<Walk>()
+                .where(\._startDate < walk.startDate)
+                .orderBy(.descending(\._startDate))
+                .tweak { $0.fetchLimit = 20 }
+        ) else { return }
+
+        recentWalkSnippets = walks
+            .filter { w in w.voiceRecordings.contains { $0.transcription != nil } }
+            .prefix(3)
+            .map { w in
+                let allText = w.voiceRecordings
+                    .compactMap { $0.transcription }
+                    .joined(separator: " ")
+                let preview = allText.truncatedAtWordBoundary()
+                return PromptGenerator.WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview)
+            }
     }
 
     private func loadExistingTranscriptions() {
