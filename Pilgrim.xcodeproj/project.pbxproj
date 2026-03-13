@@ -12,10 +12,10 @@
 		0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */; };
 		2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCA829423DF100F54277 /* View+Navigation.swift */; };
 		2201BCAB29423E1600F54277 /* NavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCAA29423E1600F54277 /* NavigationLink.swift */; };
-		2201BCAD29423FDE00F54277 /* SetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCAC29423FDE00F54277 /* SetupViewModel.swift */; };
+
 		2204A1DD255ACB1100906CFE /* DataTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2204A1DC255ACB1100906CFE /* DataTypeProtocol.swift */; };
 		2204E428295DF28C00243FC3 /* SetupCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2204E427295DF28C00243FC3 /* SetupCoordinatorView.swift */; };
-		2204E42A295DF31300243FC3 /* SetupCoordinatorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2204E429295DF31300243FC3 /* SetupCoordinatorViewModel.swift */; };
+
 		2207B75623128F8A00BA71B5 /* CLLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2207B75523128F8A00BA71B5 /* CLLocation.swift */; };
 		2209E53924DD4A8F00BBFC2F /* AltitudeManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */; };
 		2213137D23B4110700881806 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2213137C23B4110700881806 /* PermissionManager.swift */; };
@@ -101,11 +101,11 @@
 		22BC99172941D97600D9B1A5 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99152941D97600D9B1A5 /* WelcomeView.swift */; };
 		AABB000100000002 /* WelcomeAnimationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB000100000001 /* WelcomeAnimationState.swift */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
-		22BC99202941D97F00D9B1A5 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99192941D97F00D9B1A5 /* SetupView.swift */; };
-		22BC99212941D97F00D9B1A5 /* SetupFormalitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC991B2941D97F00D9B1A5 /* SetupFormalitiesView.swift */; };
-		22BC99222941D97F00D9B1A5 /* SetupStepBaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC991C2941D97F00D9B1A5 /* SetupStepBaseView.swift */; };
-		22BC99242941D97F00D9B1A5 /* SetupUserInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC991E2941D97F00D9B1A5 /* SetupUserInfoView.swift */; };
-		22BC99252941D97F00D9B1A5 /* SetupPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC991F2941D97F00D9B1A5 /* SetupPermissionsView.swift */; };
+
+
+
+
+
 		22BC99392941D9A800D9B1A5 /* MetricViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */; };
 		22BC993A2941D9A800D9B1A5 /* CloseButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99292941D9A800D9B1A5 /* CloseButton.swift */; };
 		22BC993B2941D9A800D9B1A5 /* ActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992A2941D9A800D9B1A5 /* ActionButton.swift */; };
@@ -219,10 +219,10 @@
 		1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackupSerializationTests.swift; sourceTree = "<group>"; };
 		2201BCA829423DF100F54277 /* View+Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Navigation.swift"; sourceTree = "<group>"; };
 		2201BCAA29423E1600F54277 /* NavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLink.swift; sourceTree = "<group>"; };
-		2201BCAC29423FDE00F54277 /* SetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupViewModel.swift; sourceTree = "<group>"; };
+
 		2204A1DC255ACB1100906CFE /* DataTypeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTypeProtocol.swift; sourceTree = "<group>"; };
 		2204E427295DF28C00243FC3 /* SetupCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupCoordinatorView.swift; sourceTree = "<group>"; };
-		2204E429295DF31300243FC3 /* SetupCoordinatorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupCoordinatorViewModel.swift; sourceTree = "<group>"; };
+
 		2207B75523128F8A00BA71B5 /* CLLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLLocation.swift; sourceTree = "<group>"; };
 		2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AltitudeManagement.swift; sourceTree = "<group>"; };
 		2213137C23B4110700881806 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
@@ -310,11 +310,11 @@
 		22BC99152941D97600D9B1A5 /* WelcomeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		AABB000100000001 /* WelcomeAnimationState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeAnimationState.swift; sourceTree = "<group>"; };
 		BREATH000000000000000001 /* BreathTransitionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BreathTransitionView.swift; sourceTree = "<group>"; };
-		22BC99192941D97F00D9B1A5 /* SetupView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
-		22BC991B2941D97F00D9B1A5 /* SetupFormalitiesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetupFormalitiesView.swift; sourceTree = "<group>"; };
-		22BC991C2941D97F00D9B1A5 /* SetupStepBaseView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetupStepBaseView.swift; sourceTree = "<group>"; };
-		22BC991E2941D97F00D9B1A5 /* SetupUserInfoView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetupUserInfoView.swift; sourceTree = "<group>"; };
-		22BC991F2941D97F00D9B1A5 /* SetupPermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetupPermissionsView.swift; sourceTree = "<group>"; };
+
+
+
+
+
 		22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetricViewModel.swift; sourceTree = "<group>"; };
 		22BC99292941D9A800D9B1A5 /* CloseButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloseButton.swift; sourceTree = "<group>"; };
 		22BC992A2941D9A800D9B1A5 /* ActionButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionButton.swift; sourceTree = "<group>"; };
@@ -767,27 +767,12 @@
 		22BC99182941D97F00D9B1A5 /* Setup */ = {
 			isa = PBXGroup;
 			children = (
-				22BC991A2941D97F00D9B1A5 /* Steps */,
 				22BC99132941D97600D9B1A5 /* Welcome */,
 				PERM000100000001 /* Permissions */,
 				2204E427295DF28C00243FC3 /* SetupCoordinatorView.swift */,
-				2204E429295DF31300243FC3 /* SetupCoordinatorViewModel.swift */,
-				22BC99192941D97F00D9B1A5 /* SetupView.swift */,
-				2201BCAC29423FDE00F54277 /* SetupViewModel.swift */,
 				BREATH000000000000000001 /* BreathTransitionView.swift */,
 			);
 			path = Setup;
-			sourceTree = "<group>";
-		};
-		22BC991A2941D97F00D9B1A5 /* Steps */ = {
-			isa = PBXGroup;
-			children = (
-				22BC991B2941D97F00D9B1A5 /* SetupFormalitiesView.swift */,
-				22BC991C2941D97F00D9B1A5 /* SetupStepBaseView.swift */,
-				22BC991E2941D97F00D9B1A5 /* SetupUserInfoView.swift */,
-				22BC991F2941D97F00D9B1A5 /* SetupPermissionsView.swift */,
-			);
-			path = Steps;
 			sourceTree = "<group>";
 		};
 		22BC99262941D9A800D9B1A5 /* Views */ = {
@@ -1212,7 +1197,7 @@
 				22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */,
 				227C690725423294000458BC /* EventInterface.swift in Sources */,
 				22BF623D26E6B1D2008C904C /* WalkBuilderComponentStatus.swift in Sources */,
-				22BC99212941D97F00D9B1A5 /* SetupFormalitiesView.swift in Sources */,
+
 				229790F628F365B50072DC86 /* Publisher.swift in Sources */,
 				2273943C233BF6EA00176A07 /* WalkMapImageManager.swift in Sources */,
 				22A5D02625C1A45100C30786 /* TempValueConvertible.swift in Sources */,
@@ -1242,11 +1227,11 @@
 				22834F772542236000057FEB /* WalkEventInterface.swift in Sources */,
 				22F0000B234A1DF8008CFAD2 /* SwitchSetting.swift in Sources */,
 				221436B924432B390010D82B /* DataManager+Query.swift in Sources */,
-				22BC99242941D97F00D9B1A5 /* SetupUserInfoView.swift in Sources */,
+
 				224AF62A237624E80047CBDE /* CustomDateFormatting.swift in Sources */,
 				22C1108024532C69009ACE81 /* WalkMapImageRequest.swift in Sources */,
 				22BC99452941D9A800D9B1A5 /* MetricView.swift in Sources */,
-				22BC99202941D97F00D9B1A5 /* SetupView.swift in Sources */,
+
 				2288F6B422E0FB5C0014471C /* UIColor.swift in Sources */,
 				221436C12443960A0010D82B /* UnitCount.swift in Sources */,
 				22BC993C2941D9A800D9B1A5 /* RoundedButton.swift in Sources */,
@@ -1268,9 +1253,9 @@
 				22B1DD92253F91380093822B /* OutRunV3to4.swift in Sources */,
 				22BD1F3E247462FF00415A06 /* ApplicationStateObserver.swift in Sources */,
 				22B1DD9A253F91F20093822B /* OutRunV2.swift in Sources */,
-				2204E42A295DF31300243FC3 /* SetupCoordinatorViewModel.swift in Sources */,
+
 				22BC994B2941DA3400D9B1A5 /* Constants.swift in Sources */,
-				22BC99222941D97F00D9B1A5 /* SetupStepBaseView.swift in Sources */,
+
 				22BC99402941D9A800D9B1A5 /* FeatureView.swift in Sources */,
 				225BB02F2716E61000478E09 /* StatsHelper.swift in Sources */,
 				22B1DD82253F90700093822B /* DataStack.swift in Sources */,
@@ -1280,7 +1265,7 @@
 				2221997F2439F6FF00ADAE24 /* CustomNumberFormatting.swift in Sources */,
 				22D299372402BDE400F3F6B8 /* TimeIntervalPickerSetting.swift in Sources */,
 				22AB2FB1233CA201002EF0DE /* WalkMapViewDelegate.swift in Sources */,
-				22BC99252941D97F00D9B1A5 /* SetupPermissionsView.swift in Sources */,
+
 				22834F73254220FC00057FEB /* WalkPauseInterface.swift in Sources */,
 				22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */,
 				221436BF2443746B0010D82B /* Event.swift in Sources */,
@@ -1354,7 +1339,7 @@
 				22BC99542941DD7600D9B1A5 /* MKCoordinateSpan.swift in Sources */,
 				22BC99172941D97600D9B1A5 /* WelcomeView.swift in Sources */,
 				225AC6A4243F2710008D493D /* HeartRateDataSample.swift in Sources */,
-				2201BCAD29423FDE00F54277 /* SetupViewModel.swift in Sources */,
+
 				22585C22240AE1BC0052E2CA /* RouteDataSample.swift in Sources */,
 				22585C20240AE0C70052E2CA /* Walk.swift in Sources */,
 				9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */,

@@ -39,10 +39,6 @@ class WelcomeViewModel: ObservableObject {
         self.onBegin = beginAction
     }
 
-    convenience init(setupButtonAction: @escaping () -> Void) {
-        self.init(beginAction: setupButtonAction)
-    }
-
     func beginAction() {
         onBegin()
     }

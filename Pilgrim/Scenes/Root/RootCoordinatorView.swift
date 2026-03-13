@@ -14,7 +14,7 @@ struct RootCoordinatorView: View {
         case .done:
             switch viewModel.rootState {
             case .setup:
-                SetupCoordinatorView(viewModel: viewModel.setupCoordinatorViewModel)
+                SetupCoordinatorView()
             case .main:
                 MainCoordinatorView()
             }
