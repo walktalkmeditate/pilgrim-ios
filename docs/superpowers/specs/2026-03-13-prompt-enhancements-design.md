@@ -13,7 +13,7 @@ Convert GPS coordinates to human-readable place names using `CLGeocoder`.
 **Geocoding targets:**
 - Start location (first route sample)
 - End location (last route sample, only if > 500m from start)
-- Midpoint (middle route sample, only if walk > 2km)
+- Midpoint (route sample at median index, only if walk > 2km)
 
 **Implementation:**
 - `PromptListView.generatePrompts()` becomes async
@@ -79,15 +79,19 @@ Include transcription snippets from recent walks so the AI can identify patterns
 
 **Data source:** CoreStore query of recent walks with transcriptions. No new storage.
 
-**Query:** Up to 3 most recent completed walks (before current walk's start date) that have at least one voice recording with a non-nil transcription.
+**Query location:** `PromptListView` does not have direct DataManager access. The parent view (`WalkSummaryView`) fetches recent walk snippets and passes them to `PromptListView` as a new `recentWalkSnippets: [WalkSnippet]` init parameter. The query uses `dataStack.fetchAll` directly (not `queryObjects`, which lacks `orderBy` support):
 
 ```swift
-From<Walk>()
-    .orderBy(.descending(\._startDate))
-    .where(\._startDate < currentWalk.startDate)
+let recentWalks = DataManager.dataStack.fetchAll(
+    From<Walk>()
+        .where(\._startDate < currentWalk.startDate)
+        .orderBy(.descending(\._startDate))
+)
 ```
 
-Filter to walks with transcribed recordings, take first 3.
+Post-filter in memory: keep only walks with at least one voice recording where `transcription != nil`. Take first 3. For each, concatenate transcriptions and truncate to 200 characters at nearest word boundary.
+
+**Recent walk place names:** Skip geocoding for prior walks to avoid rate-limit delays. Use date-only headers (`[Jun 12]`). Place names are only geocoded for the current walk.
 
 **Truncation:** 200 characters per walk, cut at nearest word boundary, append ellipsis.
 
@@ -126,7 +130,7 @@ Replace single Copy button behavior with progressive disclosure of AI app shortc
 1. Prompt text copies to clipboard immediately
 2. Copy button shows "Copied!" with checkmark
 3. Below the buttons, hint pills animate in: "Paste in your favorite AI" label with "ChatGPT" and "Claude" pill buttons
-4. Pills auto-hide after ~8 seconds, Copy button resets
+4. "Copied!" state and pills stay visible together for ~8 seconds, then both reset simultaneously (replaces the existing 2-second reset timer)
 
 **Deep link behavior:**
 - ChatGPT pill: `UIApplication.shared.open(URL(string: "https://chat.openai.com/")!)`
@@ -167,14 +171,33 @@ final class CustomPromptStyleStore: ObservableObject {
 
     func save(_ style: CustomPromptStyle) { ... }
     func delete(_ style: CustomPromptStyle) { ... }
-    func canAddMore: Bool { styles.count < Self.maxStyles }
+    var canAddMore: Bool { styles.count < Self.maxStyles }
 }
 ```
 
-**Prompt generation:** Custom styles use a generic preamble:
+**Integration with GeneratedPrompt:** `GeneratedPrompt` currently requires `style: PromptStyle`. To accommodate custom styles, extend the model:
+
+```swift
+struct GeneratedPrompt: Identifiable {
+    let id = UUID()
+    let style: PromptStyle?           // nil for custom styles
+    let customStyle: CustomPromptStyle? // nil for built-in styles
+    let text: String
+
+    var title: String { customStyle?.title ?? style!.title }
+    var icon: String { customStyle?.icon ?? style!.icon }
+    var subtitle: String { customStyle?.instruction ?? style!.description }
+}
+```
+
+`PromptStyleRow` and `PromptDetailView` read `prompt.title`, `prompt.icon`, and `prompt.subtitle` instead of `prompt.style.title`, `prompt.style.icon`, and `prompt.style.description`. For custom styles, `subtitle` shows the first line of the user's instruction as a preview.
+
+**Prompt generation:** A new `generateCustom()` method handles custom styles with a generic preamble:
 > "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
 
 The user's `instruction` field replaces the style-specific instruction block. All context sections (transcriptions, GPS, pace, meditations, metadata, place names, recent walks) are included identically to built-in styles.
+
+**Store injection:** `CustomPromptStyleStore` is instantiated as a `@StateObject` in `PromptListView`.
 
 **UI — Prompt list:**
 - Built-in styles listed first (6 rows)
@@ -215,12 +238,25 @@ Compute words-per-minute from WhisperKit transcription segments, store on VoiceR
 let segments = results.flatMap { $0.segments }
 guard let first = segments.first, let last = segments.last,
       last.end > first.start else { return nil }
-let wordCount = segments.flatMap { $0.words }.count
+
+// Prefer word-level timestamps when available (model-dependent).
+// Fall back to splitting segment text on whitespace for word count.
+let wordCount: Int
+let words = segments.flatMap { $0.words }
+if !words.isEmpty {
+    wordCount = words.count
+} else {
+    wordCount = segments.flatMap { $0.text.split(separator: " ") }.count
+}
+guard wordCount > 0 else { return nil }
+
 let durationMinutes = (last.end - first.start) / 60.0
 let wpm = Double(wordCount) / durationMinutes
 ```
 
-Stored via `DataManager.updateVoiceRecordingWPM(uuid:wpm:)`.
+Stored via `DataManager.updateVoiceRecordingWordsPerMinute(uuid:wordsPerMinute:)`.
+
+**Note:** The `tiny` model variant may not produce word-level timestamps (`.words` can be empty). The whitespace-split fallback ensures WPM is always computable when text exists.
 
 **Prompt format:** Appended to each recording's header line:
 ```
@@ -241,9 +277,11 @@ Stored via `DataManager.updateVoiceRecordingWPM(uuid:wpm:)`.
 **Files modified:**
 - New: `Pilgrim/Models/Data/DataModels/Versions/PilgrimV3.swift`
 - Modified: `Pilgrim/Models/TranscriptionService.swift`
-- Modified: `Pilgrim/Models/Data/DataManager.swift` (migration chain + updateWPM method)
+- Modified: `Pilgrim/Models/Data/DataManager.swift` (migration chain, `updateVoiceRecordingWordsPerMinute(uuid:wordsPerMinute:)` method, default `dataModel` parameter → `PilgrimV3.self`, and `saveWalks`/`updateWalk` methods to copy `wordsPerMinute` field during persistence)
 - Modified: `Pilgrim/Models/Data/DataModels/VoiceRecording.swift` (type alias → PilgrimV3, interface property)
 - Modified: `Pilgrim/Protocols/DataInterfaces/VoiceRecordingInterface.swift` (add `wordsPerMinute`)
+- Modified: `Pilgrim/Models/Data/Temp/Versions/TempV4.swift` (add `wordsPerMinute` to `TempV4.VoiceRecording`)
+- Modified: `Pilgrim/Models/Data/Temp/Temp.swift` (add `wordsPerMinute` to `TempVoiceRecording` convenience init and interface conformance)
 - Modified: `Pilgrim/Models/PromptGenerator.swift` (format WPM in recording headers)
 
 ---
