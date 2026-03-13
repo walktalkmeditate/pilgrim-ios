@@ -53,7 +53,8 @@ extension TempWalk: WalkInterface, Identifiable {
             routeData: object.routeData.map { .init(from: $0) },
             pauses: object.pauses.map { .init(from: $0) },
             workoutEvents: object.workoutEvents.map { .init(from: $0) },
-            voiceRecordings: object.voiceRecordings.map { .init(from: $0) }
+            voiceRecordings: object.voiceRecordings.map { .init(from: $0) },
+            activityIntervals: object.activityIntervals.map { .init(from: $0) }
         )
     }
 }
@@ -136,6 +137,19 @@ extension TempHeartRateDataSample: HeartRateDataSampleInterface {
         
     }
     
+}
+
+public typealias TempActivityInterval = TempV4.ActivityInterval
+extension TempActivityInterval: ActivityIntervalInterface {
+
+    convenience init(from object: ActivityIntervalInterface) {
+        self.init(
+            uuid: object.uuid,
+            activityType: object.activityType,
+            startDate: object.startDate,
+            endDate: object.endDate
+        )
+    }
 }
 
 public typealias TempVoiceRecording = TempV4.VoiceRecording

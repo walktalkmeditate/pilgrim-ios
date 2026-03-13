@@ -23,12 +23,18 @@ final class NewWalkComputationTests: XCTestCase {
     func testMeditateDuration_clampedToActiveDuration() {
         let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         let end = DateFactory.makeDate(2024, 6, 15, 9, 10, 0)
+        let intervals = [
+            WalkDataFactory.makeActivityInterval(
+                startDate: start,
+                endDate: start.addingTimeInterval(1200)
+            )
+        ]
         let walk = NewWalk(
             workoutType: .walking, distance: 1000, steps: nil,
             startDate: start, endDate: end,
             isRace: false, comment: nil, isUserModified: false, finishedRecording: true,
             heartRates: [], routeData: [], pauses: [], workoutEvents: [],
-            meditateDuration: 1200
+            activityIntervals: intervals
         )
         XCTAssertEqual(walk.meditateDuration, 600, accuracy: 0.01)
     }

@@ -10,6 +10,7 @@ struct WalkSummaryView: View {
     @ObservedObject private var transcriptionService = TranscriptionService.shared
     @State private var transcriptions: [UUID: String] = [:]
     @State private var showPrompts = false
+    @State private var mapRegion: MKCoordinateRegion?
 
     var body: some View {
         NavigationView {
@@ -19,6 +20,9 @@ struct WalkSummaryView: View {
                     durationHero
                     statsRow
                     timeBreakdown
+                    activityTimelineBar
+                    activityInsights
+                    activityList
                     if !walk.voiceRecordings.isEmpty {
                         recordingsSection
                     }
@@ -42,7 +46,12 @@ struct WalkSummaryView: View {
                         .foregroundColor(.stone)
                 }
             }
-            .onAppear { loadExistingTranscriptions() }
+            .onAppear {
+                loadExistingTranscriptions()
+                if routeCoordinates.count > 1 {
+                    mapRegion = regionForRoute(routeCoordinates)
+                }
+            }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
                     PromptListView(walk: walk, transcriptions: transcriptions)
@@ -98,18 +107,17 @@ struct WalkSummaryView: View {
     private var mapSection: some View {
         Group {
             if routeCoordinates.count > 1 {
-                let polyline = MKPolyline(coordinates: routeCoordinates, count: routeCoordinates.count)
-                let annotations = voicePinAnnotations
-                let region = regionForRoute(routeCoordinates)
+                let polylines = activityColoredPolylines
+                let annotations = allPinAnnotations
                 ZStack(alignment: .bottom) {
                     MapView(
-                        region: .constant(region),
+                        region: $mapRegion,
                         isZoomEnabled: .constant(true),
                         isScrollEnabled: .constant(true),
                         showsUserLocation: .constant(false),
                         userTrackingMode: .constant(.none),
                         annotations: .constant(annotations as [MKAnnotation]),
-                        overlays: .constant([polyline])
+                        overlays: .constant(polylines)
                     )
                     .frame(height: 280)
                     .cornerRadius(Constants.UI.CornerRadius.big)
@@ -173,6 +181,50 @@ struct WalkSummaryView: View {
 
     private var walkDuration: Double {
         max(0, walk.activeDuration - walk.meditateDuration)
+    }
+
+    private var activityTimelineBar: some View {
+        ActivityTimelineBar(
+            startDate: walk.startDate,
+            endDate: walk.endDate,
+            activeDuration: walk.activeDuration,
+            voiceRecordings: walk.voiceRecordings,
+            activityIntervals: walk.activityIntervals,
+            routeData: walk.routeData,
+            onSegmentTapped: { start, end in
+                if let region = regionForTimeRange(start: start, end: end) {
+                    withAnimation { mapRegion = region }
+                }
+            },
+            onSegmentDeselected: {
+                if routeCoordinates.count > 1 {
+                    withAnimation { mapRegion = regionForRoute(routeCoordinates) }
+                }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var activityInsights: some View {
+        if walk.talkDuration > 0 || walk.meditateDuration > 0 {
+            ActivityInsightsView(
+                talkDuration: walk.talkDuration,
+                activeDuration: walk.activeDuration,
+                activityIntervals: walk.activityIntervals
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var activityList: some View {
+        if !walk.activityIntervals.isEmpty || !walk.voiceRecordings.isEmpty {
+            ActivityListView(
+                startDate: walk.startDate,
+                endDate: walk.endDate,
+                voiceRecordings: walk.voiceRecordings,
+                activityIntervals: walk.activityIntervals
+            )
+        }
     }
 
     private var recordingsSection: some View {
@@ -298,41 +350,96 @@ struct WalkSummaryView: View {
         }
     }
 
+    @ViewBuilder
     private var detailsSection: some View {
-        VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+        if walk.pauseDuration > 0 {
             HStack {
-                Text("Start")
+                Text("Paused")
                     .foregroundColor(.fog)
                 Spacer()
-                Text(formatDate(walk.startDate))
+                Text(formatDuration(walk.pauseDuration))
                     .foregroundColor(.ink)
             }
-            Divider().background(Color.fog.opacity(Constants.UI.Opacity.medium))
-            HStack {
-                Text("End")
-                    .foregroundColor(.fog)
-                Spacer()
-                Text(formatDate(walk.endDate))
-                    .foregroundColor(.ink)
-            }
-            if walk.pauseDuration > 0 {
-                Divider().background(Color.fog.opacity(Constants.UI.Opacity.medium))
-                HStack {
-                    Text("Paused")
-                        .foregroundColor(.fog)
-                    Spacer()
-                    Text(formatDuration(walk.pauseDuration))
-                        .foregroundColor(.ink)
-                }
-            }
+            .font(Constants.Typography.body)
+            .padding(Constants.UI.Padding.normal)
+            .background(Color.parchmentSecondary)
+            .cornerRadius(Constants.UI.CornerRadius.normal)
         }
-        .font(Constants.Typography.body)
-        .padding(Constants.UI.Padding.normal)
-        .background(Color.parchmentSecondary)
-        .cornerRadius(Constants.UI.CornerRadius.normal)
     }
 
-    // MARK: - Voice Pin Annotations
+    // MARK: - Activity-Colored Polylines
+
+    private var activityColoredPolylines: [MKPolyline] {
+        let samples = walk.routeData
+        guard samples.count > 1 else { return [] }
+
+        var segments: [(type: String, indices: [Int])] = []
+        var currentType = activityTypeForSample(samples[0])
+        var currentIndices = [0]
+
+        for i in 1..<samples.count {
+            let type = activityTypeForSample(samples[i])
+            if type == currentType {
+                currentIndices.append(i)
+            } else {
+                currentIndices.append(i)
+                segments.append((type: currentType, indices: currentIndices))
+                currentType = type
+                currentIndices = [i]
+            }
+        }
+        segments.append((type: currentType, indices: currentIndices))
+
+        return segments.map { segment in
+            let coords = segment.indices.map { i in
+                CLLocationCoordinate2D(latitude: samples[i].latitude, longitude: samples[i].longitude)
+            }
+            let polyline = MKPolyline(coordinates: coords, count: coords.count)
+            polyline.title = segment.type
+            return polyline
+        }
+    }
+
+    private func activityTypeForSample(_ sample: RouteDataSampleInterface) -> String {
+        let timestamp = sample.timestamp
+
+        for interval in walk.activityIntervals where interval.activityType == .meditation {
+            if timestamp >= interval.startDate && timestamp <= interval.endDate {
+                return "meditating"
+            }
+        }
+
+        for recording in walk.voiceRecordings {
+            if timestamp >= recording.startDate && timestamp <= recording.endDate {
+                return "talking"
+            }
+        }
+
+        return "walking"
+    }
+
+    // MARK: - Pin Annotations
+
+    private var allPinAnnotations: [MKAnnotation] {
+        voicePinAnnotations + meditationPinAnnotations
+    }
+
+    private var meditationPinAnnotations: [MKPointAnnotation] {
+        let routeSamples = walk.routeData
+        return walk.activityIntervals
+            .filter { $0.activityType == .meditation }
+            .compactMap { interval in
+                guard let closest = routeSamples.min(by: {
+                    abs($0.timestamp.timeIntervalSince(interval.startDate)) <
+                    abs($1.timestamp.timeIntervalSince(interval.startDate))
+                }) else { return nil }
+
+                let annotation = MKPointAnnotation()
+                annotation.coordinate = CLLocationCoordinate2D(latitude: closest.latitude, longitude: closest.longitude)
+                annotation.title = "meditation"
+                return annotation
+            }
+    }
 
     private var voicePinAnnotations: [MKPointAnnotation] {
         let routeSamples = walk.routeData
@@ -355,6 +462,13 @@ struct WalkSummaryView: View {
         walk.routeData.map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
         }
+    }
+
+    private func regionForTimeRange(start: Date, end: Date) -> MKCoordinateRegion? {
+        let samples = walk.routeData.filter { $0.timestamp >= start && $0.timestamp <= end }
+        let coords = samples.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+        guard !coords.isEmpty else { return nil }
+        return regionForRoute(coords)
     }
 
     private func regionForRoute(_ coords: [CLLocationCoordinate2D]) -> MKCoordinateRegion {

@@ -96,7 +96,7 @@ public enum OutRunV4: DataModelProtocol {
         static let identifier = "Workout"
         
         let _uuid = Value.Optional<UUID>("id")
-        let _workoutType = Value.Required<PilgrimV1.Workout.WalkType>("workoutType", initial: .unknown)
+        let _workoutType = Value.Required<PilgrimV2.Workout.WalkType>("workoutType", initial: .unknown)
         let _distance = Value.Required<Double>("distance", initial: -1)
         let _steps = Value.Optional<Int>("steps")
         let _startDate = Value.Required<Date>("startDate", initial: .init(timeIntervalSince1970: 0))
@@ -130,7 +130,7 @@ public enum OutRunV4: DataModelProtocol {
         let _uuid = Value.Optional<UUID>("id")
         let _startDate = Value.Required<Date>("startDate", initial: .init(timeIntervalSince1970: 0))
         let _endDate = Value.Required<Date>("endDate", initial: .init(timeIntervalSince1970: 0))
-        let _pauseType = Value.Required<PilgrimV1.WorkoutPause.PauseType>("pauseType", initial: .manual)
+        let _pauseType = Value.Required<PilgrimV2.WorkoutPause.PauseType>("pauseType", initial: .manual)
         
         let _workout = Relationship.ToOne<OutRunV4.Workout>("workout")
         
@@ -142,7 +142,7 @@ public enum OutRunV4: DataModelProtocol {
         static let identifier = "WorkoutEvent"
         
         let _uuid = Value.Optional<UUID>("id")
-        let _eventType = Value.Required<PilgrimV1.WorkoutEvent.EventType>("eventType", initial: .unknown)
+        let _eventType = Value.Required<PilgrimV2.WorkoutEvent.EventType>("eventType", initial: .unknown)
         let _timestamp = Value.Required<Date>("timestamp", initial: .init(timeIntervalSince1970: 0), renamingIdentifier: "startDate")
         
         let _workout = Relationship.ToOne<OutRunV4.Workout>("workout")

@@ -22,7 +22,7 @@
 import Foundation
 import CoreLocation
 
-public typealias RouteDataSample = PilgrimV1.WorkoutRouteDataSample
+public typealias RouteDataSample = PilgrimV2.WorkoutRouteDataSample
 
 // MARK: - CustomStringConvertible
 

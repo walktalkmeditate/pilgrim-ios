@@ -52,7 +52,7 @@ struct DataManager {
      - parameter migration: the closure being called on the event of a migration happening, including a `Progress` object indicating the progress of the migration
      - warning: If this method fails it does so in a fatal error, the app will crash as a result.
      */
-    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV1.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
+    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV2.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -264,6 +264,16 @@ struct DataManager {
                     recording._workout .= walk
                 }
 
+                for tempInterval in object.activityIntervals {
+                    let interval = transaction.create(Into<ActivityInterval>())
+                    interval._uuid .= tempInterval.uuid ?? UUID()
+                    interval._activityType .= tempInterval.activityType
+                    interval._startDate .= tempInterval.startDate
+                    interval._endDate .= tempInterval.endDate
+
+                    interval._workout .= walk
+                }
+
                 walks.append(walk)
 
             }
@@ -395,6 +405,16 @@ struct DataManager {
                     recording._transcription .= tempRecording.transcription
 
                     recording._workout .= walk
+                }
+
+                for tempInterval in object.activityIntervals where tempInterval.uuid == nil {
+                    let interval = transaction.create(Into<ActivityInterval>())
+                    interval._uuid .= tempInterval.uuid ?? UUID()
+                    interval._activityType .= tempInterval.activityType
+                    interval._startDate .= tempInterval.startDate
+                    interval._endDate .= tempInterval.endDate
+
+                    interval._workout .= walk
                 }
 
                 return walk
@@ -696,6 +716,7 @@ struct DataManager {
                 try transaction.deleteAll(From<RouteDataSample>())
                 try transaction.deleteAll(From<HeartRateDataSample>())
                 try transaction.deleteAll(From<VoiceRecording>())
+                try transaction.deleteAll(From<ActivityInterval>())
                 try transaction.deleteAll(From<Event>())
             } catch {
                 deletionError = error as? CoreStoreError

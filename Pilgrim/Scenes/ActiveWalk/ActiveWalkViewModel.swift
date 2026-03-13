@@ -29,7 +29,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var meditateTime: String = "0:00"
 
     private var meditationStartDate: Date?
-    private var accumulatedMeditateDuration: TimeInterval = 0
+    private var meditationIntervals: [TempActivityInterval] = []
 
     var onWalkCompleted: ((TempWalk) -> Void)?
 
@@ -46,7 +46,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         builder.registerPreSnapshotFlush { [weak self] in
             guard let self else { return }
             self.finalizeMeditation()
-            self.builder.flushMeditateDuration(self.accumulatedMeditateDuration)
+            self.builder.flushActivityIntervals(self.meditationIntervals)
         }
 
         builder.onSnapshotCreated = { [weak self] snapshot in
@@ -134,12 +134,18 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     private func finalizeMeditation() {
         guard let start = meditationStartDate else { return }
-        accumulatedMeditateDuration += Date().timeIntervalSince(start)
+        let interval = TempActivityInterval(
+            uuid: nil,
+            activityType: .meditation,
+            startDate: start,
+            endDate: Date()
+        )
+        meditationIntervals.append(interval)
         meditationStartDate = nil
     }
 
     private var currentMeditateDuration: TimeInterval {
-        var total = accumulatedMeditateDuration
+        var total = meditationIntervals.reduce(0) { $0 + $1.duration }
         if let start = meditationStartDate {
             total += Date().timeIntervalSince(start)
         }

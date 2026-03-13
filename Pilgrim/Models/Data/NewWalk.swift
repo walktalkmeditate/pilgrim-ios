@@ -23,7 +23,7 @@ import Foundation
 
 class NewWalk: TempWalk {
     
-    init(workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, isRace: Bool, comment: String?, isUserModified: Bool, finishedRecording: Bool, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], meditateDuration: Double = 0) {
+    init(workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, isRace: Bool, comment: String?, isUserModified: Bool, finishedRecording: Bool, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = []) {
 
         let bodyWeight: Double? = UserPreferences.weight.value
         let burnedEnergy: Double? = bodyWeight != nil ? Computation.calculateBurnedEnergy(for: workoutType, distance: distance, weight: bodyWeight!) : nil
@@ -36,7 +36,10 @@ class NewWalk: TempWalk {
 
         let rawTalkDuration = voiceRecordings.reduce(0) { $0 + $1.duration }
         let talkDuration = min(rawTalkDuration, durations.activeDuration)
-        let clampedMeditateDuration = min(meditateDuration, durations.activeDuration)
+
+        let meditationIntervals = activityIntervals.filter { $0.activityType == .meditation }
+        let rawMeditateDuration = meditationIntervals.reduce(0) { $0 + $1.startDate.distance(to: $1.endDate) }
+        let clampedMeditateDuration = min(rawMeditateDuration, durations.activeDuration)
 
         super.init(
             uuid: nil,
@@ -62,7 +65,8 @@ class NewWalk: TempWalk {
             routeData: routeData,
             pauses: pauses,
             workoutEvents: workoutEvents,
-            voiceRecordings: voiceRecordings
+            voiceRecordings: voiceRecordings,
+            activityIntervals: activityIntervals
         )
     }
     

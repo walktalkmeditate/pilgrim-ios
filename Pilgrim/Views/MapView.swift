@@ -145,7 +145,14 @@ public struct MapView: UIViewRepresentable {
         
         public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             let renderer = MKPolylineRenderer(overlay: overlay)
-            renderer.strokeColor = .stone
+            switch overlay.title ?? "" {
+            case "talking":
+                renderer.strokeColor = .rust
+            case "meditating":
+                renderer.strokeColor = .dawn
+            default:
+                renderer.strokeColor = .moss
+            }
             renderer.lineWidth = 3
             renderer.alpha = 0.85
             return renderer
@@ -153,12 +160,20 @@ public struct MapView: UIViewRepresentable {
 
         public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
             guard !(annotation is MKUserLocation) else { return nil }
-            let identifier = "VoicePin"
+
+            let isMeditation = annotation.title == "meditation"
+            let identifier = isMeditation ? "MeditationPin" : "VoicePin"
             let view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKMarkerAnnotationView
                 ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
             view.annotation = annotation
-            view.glyphImage = UIImage(systemName: "waveform")
-            view.markerTintColor = .moss
+
+            if isMeditation {
+                view.glyphImage = UIImage(systemName: "brain.head.profile")
+                view.markerTintColor = .dawn
+            } else {
+                view.glyphImage = UIImage(systemName: "waveform")
+                view.markerTintColor = .moss
+            }
             view.canShowCallout = true
             return view
         }

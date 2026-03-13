@@ -72,6 +72,8 @@ public protocol WalkInterface: DataInterface {
     var meditateDuration: Double { get }
     /// A reference to voice recordings associated with this walk.
     var voiceRecordings: [VoiceRecordingInterface] { get }
+    /// A reference to activity intervals associated with this walk.
+    var activityIntervals: [ActivityIntervalInterface] { get }
 
 }
 
@@ -101,5 +103,6 @@ public extension WalkInterface {
     var meditateDuration: Double { throwOnAccess() }
     var events: [EventInterface] { throwOnAccess() }
     var voiceRecordings: [VoiceRecordingInterface] { throwOnAccess() }
+    var activityIntervals: [ActivityIntervalInterface] { [] }
 
 }

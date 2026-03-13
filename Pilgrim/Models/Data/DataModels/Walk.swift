@@ -23,7 +23,7 @@ import Foundation
 import CoreLocation
 import CoreStore
 
-public typealias Walk = PilgrimV1.Workout
+public typealias Walk = PilgrimV2.Workout
 
 public extension Walk {
 
@@ -135,6 +135,7 @@ extension Walk: WalkInterface {
     public var events: [EventInterface] { threadSafeSyncReturn { Array(self._events.value) } }
     public var voiceRecordings: [VoiceRecordingInterface] { threadSafeSyncReturn { self._voiceRecordings.value } }
     public var heartRates: [HeartRateDataSampleInterface] { threadSafeSyncReturn { self._heartRates.value } }
+    public var activityIntervals: [ActivityIntervalInterface] { threadSafeSyncReturn { self._activityIntervals.value } }
 
 }
 
@@ -168,9 +169,10 @@ extension Walk: TempValueConvertible {
                 routeData: self._routeData.value.map { $0.asTemp },
                 pauses: self._pauses.value.map { $0.asTemp },
                 workoutEvents: self._workoutEvents.value.map { $0.asTemp },
-                voiceRecordings: self._voiceRecordings.value.map { $0.asTemp }
+                voiceRecordings: self._voiceRecordings.value.map { $0.asTemp },
+                activityIntervals: self._activityIntervals.value.map { $0.asTemp }
             )
         }
     }
-    
+
 }

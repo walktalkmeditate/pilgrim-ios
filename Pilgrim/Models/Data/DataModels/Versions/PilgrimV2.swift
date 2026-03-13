@@ -1,28 +1,29 @@
 import CoreStore
 
-public enum PilgrimV1: DataModelProtocol {
+public enum PilgrimV2: DataModelProtocol {
 
-    static let identifier = "PilgrimV1"
+    static let identifier = "PilgrimV2"
     static let schema = CoreStoreSchema(
-        modelVersion: PilgrimV1.identifier,
+        modelVersion: PilgrimV2.identifier,
         entities: [
-            Entity<PilgrimV1.Workout>(PilgrimV1.Workout.identifier),
-            Entity<PilgrimV1.WorkoutPause>(PilgrimV1.WorkoutPause.identifier),
-            Entity<PilgrimV1.WorkoutEvent>(PilgrimV1.WorkoutEvent.identifier),
-            Entity<PilgrimV1.WorkoutRouteDataSample>(PilgrimV1.WorkoutRouteDataSample.identifier),
-            Entity<PilgrimV1.WorkoutHeartRateDataSample>(PilgrimV1.WorkoutHeartRateDataSample.identifier),
-            Entity<PilgrimV1.Event>(PilgrimV1.Event.identifier),
-            Entity<PilgrimV1.VoiceRecording>(PilgrimV1.VoiceRecording.identifier)
+            Entity<PilgrimV2.Workout>(PilgrimV2.Workout.identifier),
+            Entity<PilgrimV2.WorkoutPause>(PilgrimV2.WorkoutPause.identifier),
+            Entity<PilgrimV2.WorkoutEvent>(PilgrimV2.WorkoutEvent.identifier),
+            Entity<PilgrimV2.WorkoutRouteDataSample>(PilgrimV2.WorkoutRouteDataSample.identifier),
+            Entity<PilgrimV2.WorkoutHeartRateDataSample>(PilgrimV2.WorkoutHeartRateDataSample.identifier),
+            Entity<PilgrimV2.Event>(PilgrimV2.Event.identifier),
+            Entity<PilgrimV2.VoiceRecording>(PilgrimV2.VoiceRecording.identifier),
+            Entity<PilgrimV2.ActivityInterval>(PilgrimV2.ActivityInterval.identifier)
         ]
     )
 
     static let mappingProvider: CustomSchemaMappingProvider? = CustomSchemaMappingProvider(
-        from: OutRunV4.identifier,
-        to: PilgrimV1.identifier,
+        from: PilgrimV1.identifier,
+        to: PilgrimV2.identifier,
         entityMappings: [
             .transformEntity(
-                sourceEntity: OutRunV4.Workout.identifier,
-                destinationEntity: PilgrimV1.Workout.identifier,
+                sourceEntity: PilgrimV1.Workout.identifier,
+                destinationEntity: PilgrimV2.Workout.identifier,
                 transformer: { (sourceObject: CustomSchemaMappingProvider.UnsafeSourceObject, createDestinationObject: () -> CustomSchemaMappingProvider.UnsafeDestinationObject) in
                     let destinationObject = createDestinationObject()
                     destinationObject.enumerateAttributes { (attribute, sourceAttribute) in
@@ -32,17 +33,18 @@ public enum PilgrimV1: DataModelProtocol {
                     }
                 }
             ),
-            .copyEntity(sourceEntity: OutRunV4.WorkoutPause.identifier, destinationEntity: PilgrimV1.WorkoutPause.identifier),
-            .copyEntity(sourceEntity: OutRunV4.WorkoutEvent.identifier, destinationEntity: PilgrimV1.WorkoutEvent.identifier),
-            .copyEntity(sourceEntity: OutRunV4.WorkoutRouteDataSample.identifier, destinationEntity: PilgrimV1.WorkoutRouteDataSample.identifier),
-            .copyEntity(sourceEntity: OutRunV4.WorkoutHeartRateDataSample.identifier, destinationEntity: PilgrimV1.WorkoutHeartRateDataSample.identifier),
-            .copyEntity(sourceEntity: OutRunV4.Event.identifier, destinationEntity: PilgrimV1.Event.identifier),
-            .insertEntity(destinationEntity: PilgrimV1.VoiceRecording.identifier)
+            .copyEntity(sourceEntity: PilgrimV1.WorkoutPause.identifier, destinationEntity: PilgrimV2.WorkoutPause.identifier),
+            .copyEntity(sourceEntity: PilgrimV1.WorkoutEvent.identifier, destinationEntity: PilgrimV2.WorkoutEvent.identifier),
+            .copyEntity(sourceEntity: PilgrimV1.WorkoutRouteDataSample.identifier, destinationEntity: PilgrimV2.WorkoutRouteDataSample.identifier),
+            .copyEntity(sourceEntity: PilgrimV1.WorkoutHeartRateDataSample.identifier, destinationEntity: PilgrimV2.WorkoutHeartRateDataSample.identifier),
+            .copyEntity(sourceEntity: PilgrimV1.Event.identifier, destinationEntity: PilgrimV2.Event.identifier),
+            .copyEntity(sourceEntity: PilgrimV1.VoiceRecording.identifier, destinationEntity: PilgrimV2.VoiceRecording.identifier),
+            .insertEntity(destinationEntity: PilgrimV2.ActivityInterval.identifier)
         ]
     )
 
     static let migrationChain: [DataModelProtocol.Type] = [
-        OutRunV1.self, OutRunV2.self, OutRunV3.self, OutRunV3to4.self, OutRunV4.self, PilgrimV1.self
+        OutRunV1.self, OutRunV2.self, OutRunV3.self, OutRunV3to4.self, OutRunV4.self, PilgrimV1.self, PilgrimV2.self
     ]
 
     // MARK: Workout
@@ -51,7 +53,7 @@ public enum PilgrimV1: DataModelProtocol {
         static let identifier = "Workout"
 
         let _uuid = Value.Optional<UUID>("id")
-        let _workoutType = Value.Required<PilgrimV2.Workout.WalkType>("workoutType", initial: .unknown)
+        let _workoutType = Value.Required<Workout.WalkType>("workoutType", initial: .unknown)
         let _distance = Value.Required<Double>("distance", initial: -1)
         let _steps = Value.Optional<Int>("steps")
         let _startDate = Value.Required<Date>("startDate", initial: .init(timeIntervalSince1970: 0))
@@ -77,12 +79,13 @@ public enum PilgrimV1: DataModelProtocol {
         let _weatherHumidity = Value.Optional<Double>("weatherHumidity")
         let _weatherWindSpeed = Value.Optional<Double>("weatherWindSpeed")
 
-        let _heartRates = Relationship.ToManyOrdered<PilgrimV1.WorkoutHeartRateDataSample>("heartRates", inverse: { $0._workout })
-        let _routeData = Relationship.ToManyOrdered<PilgrimV1.WorkoutRouteDataSample>("routeData", inverse: { $0._workout })
-        let _pauses = Relationship.ToManyOrdered<PilgrimV1.WorkoutPause>("pauses", inverse: { $0._workout })
-        let _workoutEvents = Relationship.ToManyOrdered<PilgrimV1.WorkoutEvent>("workoutEvents", inverse: { $0._workout })
-        let _events = Relationship.ToManyUnordered<PilgrimV1.Event>("events", inverse: { $0._workouts })
-        let _voiceRecordings = Relationship.ToManyOrdered<PilgrimV1.VoiceRecording>("voiceRecordings", inverse: { $0._workout })
+        let _heartRates = Relationship.ToManyOrdered<PilgrimV2.WorkoutHeartRateDataSample>("heartRates", inverse: { $0._workout })
+        let _routeData = Relationship.ToManyOrdered<PilgrimV2.WorkoutRouteDataSample>("routeData", inverse: { $0._workout })
+        let _pauses = Relationship.ToManyOrdered<PilgrimV2.WorkoutPause>("pauses", inverse: { $0._workout })
+        let _workoutEvents = Relationship.ToManyOrdered<PilgrimV2.WorkoutEvent>("workoutEvents", inverse: { $0._workout })
+        let _events = Relationship.ToManyUnordered<PilgrimV2.Event>("events", inverse: { $0._workouts })
+        let _voiceRecordings = Relationship.ToManyOrdered<PilgrimV2.VoiceRecording>("voiceRecordings", inverse: { $0._workout })
+        let _activityIntervals = Relationship.ToManyOrdered<PilgrimV2.ActivityInterval>("activityIntervals", inverse: { $0._workout })
 
     }
 
@@ -94,9 +97,9 @@ public enum PilgrimV1: DataModelProtocol {
         let _uuid = Value.Optional<UUID>("id")
         let _startDate = Value.Required<Date>("startDate", initial: .init(timeIntervalSince1970: 0))
         let _endDate = Value.Required<Date>("endDate", initial: .init(timeIntervalSince1970: 0))
-        let _pauseType = Value.Required<PilgrimV2.WorkoutPause.PauseType>("pauseType", initial: .manual)
+        let _pauseType = Value.Required<WorkoutPause.PauseType>("pauseType", initial: .manual)
 
-        let _workout = Relationship.ToOne<PilgrimV1.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV2.Workout>("workout")
 
     }
 
@@ -106,10 +109,10 @@ public enum PilgrimV1: DataModelProtocol {
         static let identifier = "WorkoutEvent"
 
         let _uuid = Value.Optional<UUID>("id")
-        let _eventType = Value.Required<PilgrimV2.WorkoutEvent.EventType>("eventType", initial: .unknown)
+        let _eventType = Value.Required<WorkoutEvent.EventType>("eventType", initial: .unknown)
         let _timestamp = Value.Required<Date>("timestamp", initial: .init(timeIntervalSince1970: 0), renamingIdentifier: "startDate")
 
-        let _workout = Relationship.ToOne<PilgrimV1.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV2.Workout>("workout")
 
     }
 
@@ -128,7 +131,7 @@ public enum PilgrimV1: DataModelProtocol {
         let _speed = Value.Required<Double>("speed", initial: -1)
         let _direction = Value.Required<Double>("direction", initial: -1)
 
-        let _workout = Relationship.ToOne<PilgrimV1.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV2.Workout>("workout")
 
     }
 
@@ -141,7 +144,7 @@ public enum PilgrimV1: DataModelProtocol {
         let _heartRate = Value.Required<Int>("heartRate", initial: 0)
         let _timestamp = Value.Required<Date>("timestamp", initial: .init(timeIntervalSince1970: 0))
 
-        let _workout = Relationship.ToOne<PilgrimV1.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV2.Workout>("workout")
 
     }
 
@@ -156,7 +159,7 @@ public enum PilgrimV1: DataModelProtocol {
         let _startDate = Value.Optional<Date>("startDate")
         let _endDate = Value.Optional<Date>("endDate")
 
-        let _workouts = Relationship.ToManyOrdered<PilgrimV1.Workout>("workouts")
+        let _workouts = Relationship.ToManyOrdered<PilgrimV2.Workout>("workouts")
 
     }
 
@@ -172,7 +175,21 @@ public enum PilgrimV1: DataModelProtocol {
         let _fileRelativePath = Value.Required<String>("fileRelativePath", initial: "")
         let _transcription = Value.Optional<String>("transcription")
 
-        let _workout = Relationship.ToOne<PilgrimV1.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV2.Workout>("workout")
+
+    }
+
+    // MARK: ActivityInterval
+    public final class ActivityInterval: CoreStoreObject, DataTypeProtocol {
+
+        static let identifier = "ActivityInterval"
+
+        let _uuid = Value.Optional<UUID>("id")
+        let _activityType = Value.Required<ActivityInterval.ActivityType>("activityType", initial: .unknown)
+        let _startDate = Value.Required<Date>("startDate", initial: .init(timeIntervalSince1970: 0))
+        let _endDate = Value.Required<Date>("endDate", initial: .init(timeIntervalSince1970: 0))
+
+        let _workout = Relationship.ToOne<PilgrimV2.Workout>("workout")
 
     }
 

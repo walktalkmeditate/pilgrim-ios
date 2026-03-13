@@ -37,6 +37,7 @@ public class WalkBuilder: ApplicationStateObserver {
     public var locationsPublisher: AnyPublisher<[TempRouteDataSample], Never> { locationsRelay.eraseToAnyPublisher() }
     public var voiceRecordingsPublisher: AnyPublisher<[TempVoiceRecording], Never> { voiceRecordingsRelay.eraseToAnyPublisher() }
     public var meditateDurationPublisher: AnyPublisher<Double, Never> { meditateDurationRelay.eraseToAnyPublisher() }
+    public var activityIntervalsPublisher: AnyPublisher<[TempActivityInterval], Never> { activityIntervalsRelay.eraseToAnyPublisher() }
     public var altitudesPublisher: AnyPublisher<[AltitudeManagement.AltitudeSample], Never> { altitudesRelay.eraseToAnyPublisher() }
     public var isSuspendedPublisher: AnyPublisher<Bool, Never> { suspensionRelay.eraseToAnyPublisher() }
     public var resetPublisher: AnyPublisher<WalkInterface?, Never> { resetRelay.eraseToAnyPublisher() }
@@ -75,6 +76,11 @@ public class WalkBuilder: ApplicationStateObserver {
     /// Write meditate duration directly to the builder's relay, bypassing the async pipeline.
     public func flushMeditateDuration(_ duration: Double) {
         meditateDurationRelay.accept(duration)
+    }
+
+    /// Write activity intervals directly to the builder's relay, bypassing the async pipeline.
+    public func flushActivityIntervals(_ intervals: [TempActivityInterval]) {
+        activityIntervalsRelay.accept(intervals)
     }
 
     /// Write locations directly to the builder's relay, bypassing the async pipeline.
@@ -198,6 +204,8 @@ public class WalkBuilder: ApplicationStateObserver {
     private let voiceRecordingsRelay = CurrentValueRelay<[TempVoiceRecording]>([])
     /// The relay to publish the total meditate duration in seconds.
     private let meditateDurationRelay = CurrentValueRelay<Double>(0)
+    /// The relay to publish activity intervals captured during the walk.
+    private let activityIntervalsRelay = CurrentValueRelay<[TempActivityInterval]>([])
     /// The relay to publish a reset command.
     private let resetRelay = PassthroughRelay<WalkInterface?>()
     
@@ -363,7 +371,7 @@ public class WalkBuilder: ApplicationStateObserver {
             pauses: pausesRelay.value,
             workoutEvents: [],
             voiceRecordings: voiceRecordingsRelay.value,
-            meditateDuration: meditateDurationRelay.value
+            activityIntervals: activityIntervalsRelay.value
         )
     }
     
@@ -384,6 +392,7 @@ public class WalkBuilder: ApplicationStateObserver {
         pausesRelay.accept([])
         voiceRecordingsRelay.accept([])
         meditateDurationRelay.accept(0)
+        activityIntervalsRelay.accept([])
         lastPause = nil
         resetRelay.accept(nil)
     }

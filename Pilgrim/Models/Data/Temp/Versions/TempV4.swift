@@ -51,15 +51,17 @@ public enum TempV4 {
         var _pauses: [TempV4.WorkoutPause]
         var _workoutEvents: [TempV4.WorkoutEvent]
         var _voiceRecordings: [TempV4.VoiceRecording]
+        var _activityIntervals: [TempV4.ActivityInterval]
 
         public var heartRates: [HeartRateDataSampleInterface] { _heartRates }
         public var routeData: [RouteDataSampleInterface] { _routeData }
         public var pauses: [WalkPauseInterface] { _pauses }
         public var workoutEvents: [WalkEventInterface] { _workoutEvents }
         public var voiceRecordings: [VoiceRecordingInterface] { _voiceRecordings }
+        public var activityIntervals: [ActivityIntervalInterface] { _activityIntervals }
         public var events: [EventInterface] { throwOnAccess() }
         
-        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = []) {
+        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = []) {
             self.uuid = uuid
             self.workoutType = workoutType
             self.distance = distance
@@ -84,6 +86,7 @@ public enum TempV4 {
             self._pauses = pauses
             self._workoutEvents = workoutEvents
             self._voiceRecordings = voiceRecordings
+            self._activityIntervals = activityIntervals
         }
         
         public var asTemp: TempWalk {
@@ -192,6 +195,25 @@ public enum TempV4 {
         }
 
         public var asTemp: TempVoiceRecording {
+            return self
+        }
+    }
+
+    public class ActivityInterval: Codable, TempValueConvertible {
+
+        public var uuid: UUID?
+        public var activityType: PilgrimV2.ActivityInterval.ActivityType
+        public var startDate: Date
+        public var endDate: Date
+
+        public init(uuid: UUID?, activityType: PilgrimV2.ActivityInterval.ActivityType, startDate: Date, endDate: Date) {
+            self.uuid = uuid
+            self.activityType = activityType
+            self.startDate = startDate
+            self.endDate = endDate
+        }
+
+        public var asTemp: TempActivityInterval {
             return self
         }
     }

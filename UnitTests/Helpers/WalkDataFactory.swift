@@ -27,7 +27,8 @@ enum WalkDataFactory {
         routeData: [TempV4.WorkoutRouteDataSample] = [],
         pauses: [TempV4.WorkoutPause] = [],
         workoutEvents: [TempV4.WorkoutEvent] = [],
-        voiceRecordings: [TempV4.VoiceRecording] = []
+        voiceRecordings: [TempV4.VoiceRecording] = [],
+        activityIntervals: [TempV4.ActivityInterval] = []
     ) -> TempWalk {
         TempWalk(
             uuid: uuid, workoutType: workoutType, distance: distance, steps: steps,
@@ -38,7 +39,8 @@ enum WalkDataFactory {
             pauseDuration: pauseDuration, dayIdentifier: dayIdentifier,
             talkDuration: talkDuration, meditateDuration: meditateDuration,
             heartRates: heartRates, routeData: routeData, pauses: pauses,
-            workoutEvents: workoutEvents, voiceRecordings: voiceRecordings
+            workoutEvents: workoutEvents, voiceRecordings: voiceRecordings,
+            activityIntervals: activityIntervals
         )
     }
 
@@ -82,6 +84,15 @@ enum WalkDataFactory {
             duration: duration, fileRelativePath: fileRelativePath,
             transcription: transcription
         )
+    }
+
+    static func makeActivityInterval(
+        uuid: UUID? = nil,
+        activityType: ActivityInterval.ActivityType = .meditation,
+        startDate: Date = DateFactory.makeDate(2024, 6, 15, 9, 10, 0),
+        endDate: Date = DateFactory.makeDate(2024, 6, 15, 9, 15, 0)
+    ) -> TempActivityInterval {
+        TempActivityInterval(uuid: uuid, activityType: activityType, startDate: startDate, endDate: endDate)
     }
 
     static func makeWorkoutEvent(

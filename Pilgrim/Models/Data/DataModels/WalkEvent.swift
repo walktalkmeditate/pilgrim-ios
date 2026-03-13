@@ -22,7 +22,7 @@
 import Foundation
 import CoreStore
 
-public typealias WalkEvent = PilgrimV1.WorkoutEvent
+public typealias WalkEvent = PilgrimV2.WorkoutEvent
 
 public extension WalkEvent {
     
