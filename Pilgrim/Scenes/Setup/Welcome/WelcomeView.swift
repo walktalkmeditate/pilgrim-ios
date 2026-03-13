@@ -55,7 +55,7 @@ struct WelcomeView: View {
                 .padding(.bottom, Constants.UI.Padding.big)
 
             Button(action: beginTapped) {
-                Text("Begin")
+                Text(LS["Welcome.Begin"])
                     .font(Constants.Typography.button)
                     .foregroundColor(.parchment)
                     .frame(maxWidth: .infinity)

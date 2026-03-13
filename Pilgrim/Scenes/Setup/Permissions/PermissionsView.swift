@@ -29,13 +29,13 @@ struct PermissionsView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            Text("Prepare for the journey")
+            Text(LS["Permissions.Headline"])
                 .font(Constants.Typography.displayMedium)
                 .foregroundColor(.stone)
                 .multilineTextAlignment(.center)
                 .opacity(appeared ? 1 : 0)
 
-            Text("Pilgrim walks best with these")
+            Text(LS["Permissions.Subtitle"])
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
                 .padding(.top, Constants.UI.Padding.small)
@@ -44,8 +44,8 @@ struct PermissionsView: View {
             VStack(spacing: Constants.UI.Padding.normal) {
                 permissionCard(
                     icon: "location.fill",
-                    title: "To walk with you",
-                    description: "Track your route, distance, and pace",
+                    title: LS["Permissions.Location.Title"],
+                    description: LS["Permissions.Location.Description"],
                     granted: viewModel.locationGranted,
                     denied: viewModel.locationDenied,
                     shake: viewModel.shakeLocationCard,
@@ -56,8 +56,8 @@ struct PermissionsView: View {
 
                 permissionCard(
                     icon: "mic.fill",
-                    title: "To hear your thoughts",
-                    description: "Capture voice reflections along the way",
+                    title: LS["Permissions.Microphone.Title"],
+                    description: LS["Permissions.Microphone.Description"],
                     granted: viewModel.microphoneGranted,
                     denied: viewModel.microphoneDenied,
                     shake: viewModel.shakeMicrophoneCard,
@@ -68,8 +68,8 @@ struct PermissionsView: View {
 
                 permissionCard(
                     icon: "figure.walk",
-                    title: "To count your steps",
-                    description: "Measure steps as you move",
+                    title: LS["Permissions.Motion.Title"],
+                    description: LS["Permissions.Motion.Description"],
                     granted: viewModel.motionGranted,
                     denied: false,
                     shake: false,
@@ -126,7 +126,7 @@ struct PermissionsView: View {
                             .font(Constants.Typography.heading)
                             .foregroundColor(.ink)
                         if !required {
-                            Text("(optional)")
+                            Text(LS["Permissions.Motion.Optional"])
                                 .font(Constants.Typography.caption)
                                 .foregroundColor(.fog)
                         }
@@ -158,7 +158,7 @@ struct PermissionsView: View {
             )
 
             if denied && required {
-                Text("Pilgrim needs this to walk with you")
+                Text(LS["Permissions.Required.Hint"])
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                     .transition(.opacity)
@@ -179,12 +179,12 @@ struct PermissionsView: View {
                 .foregroundColor(.moss)
                 .font(.subheadline.bold())
         } else if !required && decided {
-            Text("Skipped")
+            Text(LS["Permissions.Skipped"])
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
         } else {
             Button(action: action) {
-                Text(denied ? "Settings" : "Grant")
+                Text(denied ? LS["Permissions.Settings"] : LS["Permissions.Grant"])
                     .font(.subheadline.bold())
                     .foregroundColor(.stone)
                     .padding(.vertical, 6)

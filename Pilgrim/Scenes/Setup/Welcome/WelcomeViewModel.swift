@@ -22,14 +22,7 @@ import Foundation
 
 class WelcomeViewModel: ObservableObject {
 
-    static let quotePool = [
-        "Every journey begins\nwith a single step",
-        "The path is made\nby walking",
-        "Not all who wander\nare lost",
-        "Solvitur ambulando —\nit is solved by walking",
-        "Walk as if you are kissing\nthe earth with your feet",
-        "The journey of a thousand miles\nbegins beneath your feet"
-    ]
+    static let quotePool = (1...6).map { LS["Welcome.Quote.\($0)"] }
 
     let currentQuote: String
     private let onBegin: () -> Void
