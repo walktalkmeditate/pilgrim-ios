@@ -185,6 +185,7 @@
 		F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */; };
 		FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */; };
 		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
+		A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PilgrimV3.swift */; };
 		9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA57CE96EE3401595264807 /* ActivityInterval.swift */; };
 		EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */; };
 		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
@@ -390,6 +391,7 @@
 		E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderStatusTests.swift; sourceTree = "<group>"; };
 		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
 		2722224F049B455DB473E7C9 /* PilgrimV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV2.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
 		1BA57CE96EE3401595264807 /* ActivityInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInterval.swift; sourceTree = "<group>"; };
 		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
 		C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineBar.swift; sourceTree = "<group>"; };
@@ -461,6 +463,7 @@
 				22B1DD91253F91380093822B /* OutRunV4.swift */,
 				BB00AA010000000000000001 /* PilgrimV1.swift */,
 				2722224F049B455DB473E7C9 /* PilgrimV2.swift */,
+				A1B2C3D4E5F601020304050A /* PilgrimV3.swift */,
 			);
 			path = Versions;
 			sourceTree = "<group>";
@@ -1328,6 +1331,7 @@
 				AA00020100000000000004 /* VoiceRecordingManagement.swift in Sources */,
 				BB00AA010000000000000002 /* PilgrimV1.swift in Sources */,
 				3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */,
+				A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */,
 				CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */,
 				EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */,
 				DD00CC0100000000000002 /* MeditateDetection.swift in Sources */,
