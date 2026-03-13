@@ -32,10 +32,23 @@ struct PromptListView: View {
                             PromptStyleRow(prompt: prompt)
                         }
                         .listRowBackground(Color.parchment)
+                        .swipeActions(edge: .leading) {
+                            if let customStyle = prompt.customStyle {
+                                Button {
+                                    editingStyle = customStyle
+                                    showEditor = true
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.stone)
+                            }
+                        }
                     }
                     .onDelete { offsets in
                         for index in offsets {
-                            customStyleStore.delete(customStyleStore.styles[index])
+                            if let customStyle = customPrompts[index].customStyle {
+                                customStyleStore.delete(customStyle)
+                            }
                         }
                         regenerateCustomPrompts()
                     }
@@ -143,14 +156,6 @@ struct PromptListView: View {
             .distance(from: CLLocation(latitude: last.latitude, longitude: last.longitude))
         if distance > 500, let name = await reverseGeocode(geocoder: geocoder, lat: last.latitude, lon: last.longitude) {
             places.append(PromptGenerator.PlaceContext(name: name, coordinate: (lat: last.latitude, lon: last.longitude), role: .end))
-        }
-
-        if walk.distance > 2000 {
-            let midIndex = samples.count / 2
-            let mid = samples[midIndex]
-            if let name = await reverseGeocode(geocoder: geocoder, lat: mid.latitude, lon: mid.longitude) {
-                places.append(PromptGenerator.PlaceContext(name: name, coordinate: (lat: mid.latitude, lon: mid.longitude), role: .midpoint))
-            }
         }
 
         return places
