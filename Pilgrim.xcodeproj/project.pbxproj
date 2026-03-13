@@ -163,6 +163,7 @@
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		76B622EBDD59AD9489586120 /* DateFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */; };
 		AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */; };
+		AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */; };
 		AA0001010000000000000011 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000001 /* HomeView.swift */; };
 		AA0001010000000000000012 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000002 /* HomeViewModel.swift */; };
 		AA0001010000000000000013 /* WalkRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000003 /* WalkRowView.swift */; };
@@ -367,6 +368,7 @@
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
 		AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimLogoView.swift; sourceTree = "<group>"; };
+		AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FootprintShape.swift; sourceTree = "<group>"; };
 		AA0001010000000000000001 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000002 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000003 /* WalkRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkRowView.swift; sourceTree = "<group>"; };
@@ -780,6 +782,7 @@
 				22BC99332941D9A800D9B1A5 /* PermissionView.swift */,
 				22BC992C2941D9A800D9B1A5 /* PillView.swift */,
 				AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */,
+				AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */,
 				22BC992E2941D9A800D9B1A5 /* ProgressView.swift */,
 				22BC99382941D9A800D9B1A5 /* WalkCard.swift */,
 				22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */,
@@ -1227,6 +1230,7 @@
 				22834F8225422D8200057FEB /* HeartRateDataSampleInterface.swift in Sources */,
 				22BC993E2941D9A800D9B1A5 /* CardView.swift in Sources */,
 				AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */,
+				AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */,
 				22BC994F2941DA8F00D9B1A5 /* CLLocationCoordinate2D.swift in Sources */,
 				2226A3BF240C441700FF7A94 /* TextViewSetting.swift in Sources */,
 				22F0000D234A2055008CFAD2 /* Setting.swift in Sources */,
