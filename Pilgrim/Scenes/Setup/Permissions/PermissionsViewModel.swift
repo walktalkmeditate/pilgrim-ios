@@ -116,8 +116,6 @@ class PermissionsViewModel: ObservableObject {
         guard !transitionFired else { return }
         transitionFired = true
         motionDecided = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-            self?.onComplete()
-        }
+        onComplete()
     }
 }

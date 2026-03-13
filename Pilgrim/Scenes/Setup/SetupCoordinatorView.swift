@@ -14,22 +14,19 @@ struct SetupCoordinatorView: View {
         ZStack {
             switch phase {
             case .threshold:
-                WelcomeView(viewModel: WelcomeViewModel {
+                ThresholdPhaseView {
                     withAnimation(.easeInOut(duration: Constants.UI.Motion.gentle)) {
                         phase = .permissions
                     }
-                })
+                }
                 .transition(.opacity)
 
             case .permissions:
-                PermissionsView(viewModel: PermissionsViewModel(
-                    permissionManager: PermissionManager.standard,
-                    onComplete: {
-                        withAnimation(.easeInOut(duration: Constants.UI.Motion.appear)) {
-                            phase = .breathTransition
-                        }
+                PermissionsPhaseView {
+                    withAnimation(.easeInOut(duration: Constants.UI.Motion.appear)) {
+                        phase = .breathTransition
                     }
-                ))
+                }
                 .transition(.opacity)
 
             case .breathTransition:
@@ -39,5 +36,32 @@ struct SetupCoordinatorView: View {
                 .transition(.opacity)
             }
         }
+    }
+}
+
+private struct ThresholdPhaseView: View {
+    @StateObject private var viewModel: WelcomeViewModel
+
+    init(onBegin: @escaping () -> Void) {
+        _viewModel = StateObject(wrappedValue: WelcomeViewModel(beginAction: onBegin))
+    }
+
+    var body: some View {
+        WelcomeView(viewModel: viewModel)
+    }
+}
+
+private struct PermissionsPhaseView: View {
+    @StateObject private var viewModel: PermissionsViewModel
+
+    init(onComplete: @escaping () -> Void) {
+        _viewModel = StateObject(wrappedValue: PermissionsViewModel(
+            permissionManager: PermissionManager.standard,
+            onComplete: onComplete
+        ))
+    }
+
+    var body: some View {
+        PermissionsView(viewModel: viewModel)
     }
 }
