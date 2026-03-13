@@ -99,12 +99,12 @@ Post-filter in memory: keep only walks with at least one voice recording where `
 ```
 **Recent Walk Context (for continuity):**
 
-[Jun 12 – Riverside Park] "I keep thinking about how the river reminds me of home. There's something about water that..."
+[Jun 12] "I keep thinking about how the river reminds me of home. There's something about water that..."
 
-[Jun 10 – Central Park] "Today I noticed I was walking faster than usual. Maybe it's the anxiety about..."
+[Jun 10] "Today I noticed I was walking faster than usual. Maybe it's the anxiety about..."
 ```
 
-Place name included if reverse geocoding is available for that walk (from its route data start point). Falls back to date only.
+Date-only headers for prior walks (no geocoding to avoid rate-limit delays).
 
 **No prior walks:** Section omitted.
 
@@ -318,6 +318,8 @@ static func generate(
 ```
 
 All new parameters default to empty — existing call sites continue to work unchanged.
+
+**RecordingContext extension:** Add `wordsPerMinute: Double?` field (default `nil`) to `PromptGenerator.RecordingContext` so WPM data flows from `VoiceRecordingInterface` through to the prompt formatter.
 
 **buildPrompt() section order:**
 1. Preamble (style-specific or generic for custom)
