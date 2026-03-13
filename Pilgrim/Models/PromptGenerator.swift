@@ -50,9 +50,9 @@ struct GeneratedPrompt: Identifiable {
     let customStyle: CustomPromptStyle?
     let text: String
 
-    var title: String { customStyle?.title ?? style!.title }
-    var icon: String { customStyle?.icon ?? style!.icon }
-    var subtitle: String { customStyle?.instruction ?? style!.description }
+    var title: String { customStyle?.title ?? style?.title ?? "" }
+    var icon: String { customStyle?.icon ?? style?.icon ?? "questionmark" }
+    var subtitle: String { customStyle?.instruction ?? style?.description ?? "" }
 }
 
 struct PromptGenerator {
@@ -71,7 +71,7 @@ struct PromptGenerator {
         let duration: TimeInterval
     }
 
-    enum PlaceRole { case start, end, midpoint }
+    enum PlaceRole { case start, end }
 
     struct PlaceContext {
         let name: String
@@ -291,8 +291,7 @@ struct PromptGenerator {
         let moving = speeds.filter { $0 >= 0.3 }
         guard moving.count >= 10 else { return nil }
         let avgSpeed = moving.reduce(0, +) / Double(moving.count)
-        let minSpeed = moving.min()!
-        let maxSpeed = moving.max()!
+        guard let minSpeed = moving.min(), let maxSpeed = moving.max() else { return nil }
         let avgPace = formatPace(metersPerSecond: avgSpeed)
         let slowPace = formatPace(metersPerSecond: minSpeed)
         let fastPace = formatPace(metersPerSecond: maxSpeed)

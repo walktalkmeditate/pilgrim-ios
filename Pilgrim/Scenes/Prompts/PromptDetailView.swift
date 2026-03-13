@@ -8,6 +8,7 @@ struct PromptDetailView: View {
     @State private var showShareSheet = false
     @State private var copyScale: CGFloat = 1.0
     @State private var showAIPills = false
+    @State private var copyResetWorkItem: DispatchWorkItem?
 
     var body: some View {
         NavigationView {
@@ -54,12 +55,15 @@ struct PromptDetailView: View {
                     withAnimation(.easeOut(duration: 0.15).delay(0.15)) { copyScale = 1.0 }
                     showCopiedFeedback = true
                     withAnimation(.easeOut(duration: 0.3)) { showAIPills = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
+                    copyResetWorkItem?.cancel()
+                    let workItem = DispatchWorkItem {
                         withAnimation {
                             showCopiedFeedback = false
                             showAIPills = false
                         }
                     }
+                    copyResetWorkItem = workItem
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: workItem)
                 } label: {
                     Label(
                         showCopiedFeedback ? "Copied!" : "Copy",
