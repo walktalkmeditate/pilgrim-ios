@@ -201,6 +201,7 @@
 		AAAA000000000000000000E1 /* CustomPromptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000E2 /* CustomPromptEditorView.swift */; };
 		PERM000100000003 /* PermissionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000002 /* PermissionsViewModel.swift */; };
 		PERM000100000005 /* PermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000004 /* PermissionsViewModelTests.swift */; };
+		PERM000100000007 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000006 /* PermissionsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -414,6 +415,7 @@
 		BB00CC010000000000000002 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
 		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
 		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
+		PERM000100000006 /* PermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000E2 /* CustomPromptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptEditorView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -755,6 +757,7 @@
 			isa = PBXGroup;
 			children = (
 				PERM000100000002 /* PermissionsViewModel.swift */,
+				PERM000100000006 /* PermissionsView.swift */,
 			);
 			path = Permissions;
 			sourceTree = "<group>";
@@ -1224,6 +1227,7 @@
 				22BC99162941D97600D9B1A5 /* WelcomeViewModel.swift in Sources */,
 				AABB000100000002 /* WelcomeAnimationState.swift in Sources */,
 				PERM000100000003 /* PermissionsViewModel.swift in Sources */,
+				PERM000100000007 /* PermissionsView.swift in Sources */,
 				2230925F24D6F6A700A3F636 /* WalkBuilder+Status.swift in Sources */,
 				2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */,
 				2201BCAB29423E1600F54277 /* NavigationLink.swift in Sources */,
