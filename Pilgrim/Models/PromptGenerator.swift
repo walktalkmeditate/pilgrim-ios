@@ -102,8 +102,51 @@ struct PromptGenerator {
         let location = formatPlaceNames(placeNames)
         let pace = formatPaceContext(speeds: routeSpeeds)
         let recentWalks = formatRecentWalks(recentWalkSnippets)
+
+        let preamble: String
+        let instruction: String
+
+        switch style {
+        case .contemplative:
+            preamble = "During a walking meditation, these words arose naturally from the rhythm of movement and breath. They were not planned or curated — they emerged as the body moved through space."
+            instruction = """
+                Please receive these walking thoughts with gentleness. Help me sit with what emerged, without rushing to analyze or fix. What was my body and spirit trying to tell me through these words? What wants to be noticed, held, or simply acknowledged? Respond in a contemplative, unhurried tone.
+                """
+
+        case .reflective:
+            preamble = "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
+            instruction = """
+                Please analyze these walking reflections for patterns, recurring themes, and emotional undercurrents. What connections do you see between the different moments? What might I be processing or working through? What contradictions or tensions are present? Offer observations that help me understand myself better.
+                """
+
+        case .creative:
+            preamble = "A walker spoke these words into the open air while moving through the world. They are raw material — fragments of observation, feeling, and thought gathered by a body in motion."
+            instruction = """
+                Transform these walking fragments into something creative. You might compose a poem, write a short prose piece, create a series of haiku, or craft a brief narrative. Let the rhythm of the walk inform the rhythm of the writing. Preserve the essence but elevate the expression.
+                """
+
+        case .gratitude:
+            preamble = "These words were spoken during a walk — a time of moving through the world with awareness. Somewhere in these observations and thoughts are seeds of gratitude, even if not explicitly stated."
+            instruction = """
+                Help me find the gratitude woven through these walking thoughts. What am I thankful for, even if I didn't say it directly? What blessings are hiding in my observations? What can I appreciate about this moment in my life, this body that walks, this world I moved through? Frame your response as a practice of thanksgiving.
+                """
+
+        case .philosophical:
+            preamble = "Walking has long been a companion to philosophical thought — from Aristotle's peripatetic school to Kierkegaard's daily constitutionals. These words emerged during such a walk, where movement and thought intertwined."
+            instruction = """
+                Engage with these walking thoughts philosophically. What deeper questions are being asked? What assumptions about life, meaning, or existence are being explored? Connect my observations to broader wisdom traditions, philosophical concepts, or universal human experiences. Help me think more deeply about what I was already beginning to think.
+                """
+
+        case .journaling:
+            preamble = "The following are raw, unedited voice recordings from a walk. They capture thoughts as they occurred — scattered, honest, and in the moment."
+            instruction = """
+                Help me turn these scattered walking thoughts into a coherent journal entry. Organize the themes, add transitions between ideas, and create a narrative flow while preserving my authentic voice. The result should read as a thoughtful, personal journal entry that I could return to and understand. Include a brief summary of the walk's key themes at the end.
+                """
+        }
+
         let prompt = buildPrompt(
-            style: style,
+            preamble: preamble,
+            instruction: instruction,
             transcription: combinedText,
             meditations: meditationText,
             metadata: metadata,
@@ -114,12 +157,48 @@ struct PromptGenerator {
         return GeneratedPrompt(style: style, customStyle: nil, text: prompt)
     }
 
+    static func generateCustom(
+        customStyle: CustomPromptStyle,
+        recordings: [RecordingContext],
+        meditations: [MeditationContext],
+        duration: Double,
+        distance: Double,
+        startDate: Date,
+        placeNames: [PlaceContext] = [],
+        routeSpeeds: [Double] = [],
+        recentWalkSnippets: [WalkSnippet] = []
+    ) -> GeneratedPrompt {
+        let combinedText = formatRecordings(recordings)
+        let meditationText = formatMeditations(meditations)
+        let metadata = formatMetadata(duration: duration, distance: distance, startDate: startDate)
+        let location = formatPlaceNames(placeNames)
+        let pace = formatPaceContext(speeds: routeSpeeds)
+        let recentWalks = formatRecentWalks(recentWalkSnippets)
+
+        let preamble = "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
+
+        let prompt = buildPrompt(
+            preamble: preamble,
+            instruction: customStyle.instruction,
+            transcription: combinedText,
+            meditations: meditationText,
+            metadata: metadata,
+            location: location,
+            pace: pace,
+            recentWalks: recentWalks
+        )
+        return GeneratedPrompt(style: nil, customStyle: customStyle, text: prompt)
+    }
+
     static func generateAll(
         recordings: [RecordingContext],
         meditations: [MeditationContext],
         duration: Double,
         distance: Double,
-        startDate: Date
+        startDate: Date,
+        placeNames: [PlaceContext] = [],
+        routeSpeeds: [Double] = [],
+        recentWalkSnippets: [WalkSnippet] = []
     ) -> [GeneratedPrompt] {
         PromptStyle.allCases.map { style in
             generate(
@@ -128,7 +207,10 @@ struct PromptGenerator {
                 meditations: meditations,
                 duration: duration,
                 distance: distance,
-                startDate: startDate
+                startDate: startDate,
+                placeNames: placeNames,
+                routeSpeeds: routeSpeeds,
+                recentWalkSnippets: recentWalkSnippets
             )
         }
     }
@@ -266,48 +348,7 @@ struct PromptGenerator {
         }
     }
 
-    private static func buildPrompt(style: PromptStyle, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?) -> String {
-        let preamble: String
-        let instruction: String
-
-        switch style {
-        case .contemplative:
-            preamble = "During a walking meditation, these words arose naturally from the rhythm of movement and breath. They were not planned or curated — they emerged as the body moved through space."
-            instruction = """
-                Please receive these walking thoughts with gentleness. Help me sit with what emerged, without rushing to analyze or fix. What was my body and spirit trying to tell me through these words? What wants to be noticed, held, or simply acknowledged? Respond in a contemplative, unhurried tone.
-                """
-
-        case .reflective:
-            preamble = "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
-            instruction = """
-                Please analyze these walking reflections for patterns, recurring themes, and emotional undercurrents. What connections do you see between the different moments? What might I be processing or working through? What contradictions or tensions are present? Offer observations that help me understand myself better.
-                """
-
-        case .creative:
-            preamble = "A walker spoke these words into the open air while moving through the world. They are raw material — fragments of observation, feeling, and thought gathered by a body in motion."
-            instruction = """
-                Transform these walking fragments into something creative. You might compose a poem, write a short prose piece, create a series of haiku, or craft a brief narrative. Let the rhythm of the walk inform the rhythm of the writing. Preserve the essence but elevate the expression.
-                """
-
-        case .gratitude:
-            preamble = "These words were spoken during a walk — a time of moving through the world with awareness. Somewhere in these observations and thoughts are seeds of gratitude, even if not explicitly stated."
-            instruction = """
-                Help me find the gratitude woven through these walking thoughts. What am I thankful for, even if I didn't say it directly? What blessings are hiding in my observations? What can I appreciate about this moment in my life, this body that walks, this world I moved through? Frame your response as a practice of thanksgiving.
-                """
-
-        case .philosophical:
-            preamble = "Walking has long been a companion to philosophical thought — from Aristotle's peripatetic school to Kierkegaard's daily constitutionals. These words emerged during such a walk, where movement and thought intertwined."
-            instruction = """
-                Engage with these walking thoughts philosophically. What deeper questions are being asked? What assumptions about life, meaning, or existence are being explored? Connect my observations to broader wisdom traditions, philosophical concepts, or universal human experiences. Help me think more deeply about what I was already beginning to think.
-                """
-
-        case .journaling:
-            preamble = "The following are raw, unedited voice recordings from a walk. They capture thoughts as they occurred — scattered, honest, and in the moment."
-            instruction = """
-                Help me turn these scattered walking thoughts into a coherent journal entry. Organize the themes, add transitions between ideas, and create a narrative flow while preserving my authentic voice. The result should read as a thoughtful, personal journal entry that I could return to and understand. Include a brief summary of the walk's key themes at the end.
-                """
-        }
-
+    private static func buildPrompt(preamble: String, instruction: String, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?) -> String {
         var sections = """
             \(preamble)
 

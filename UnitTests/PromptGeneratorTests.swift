@@ -316,4 +316,21 @@ final class PromptGeneratorTests: XCTestCase {
         )
         XCTAssertFalse(prompt.text.contains("Recent Walk Context"))
     }
+
+    // MARK: - Task 10: Custom Prompt Generation
+
+    func testGenerateCustom_usesCustomInstruction() {
+        let custom = CustomPromptStyle(id: UUID(), title: "Letter", icon: "envelope.fill", instruction: "Write this as a letter to my future self")
+        let prompt = PromptGenerator.generateCustom(
+            customStyle: custom,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        )
+        XCTAssertTrue(prompt.text.contains("letter to my future self"))
+        XCTAssertNil(prompt.style)
+        XCTAssertEqual(prompt.customStyle?.title, "Letter")
+    }
 }
