@@ -25,18 +25,19 @@ class WelcomeAnimationState: ObservableObject {
 
         // 0.5s — Logo fades in
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self else { return }
+            guard let self, !self.isExiting else { return }
             withAnimation(.easeInOut(duration: 1.5)) { self.showLogo = true }
         }
 
         // 2.0s — Breathing starts
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            self?.isBreathing = true
+            guard let self, !self.isExiting else { return }
+            self.isBreathing = true
         }
 
         // 2.5s — Quote fades in
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
-            guard let self else { return }
+            guard let self, !self.isExiting else { return }
             withAnimation(.easeInOut(duration: Constants.UI.Motion.gentle)) { self.showQuote = true }
         }
 
@@ -44,29 +45,32 @@ class WelcomeAnimationState: ObservableObject {
         let footprintTimes: [Double] = [3.5, 4.2, 4.9]
         for (index, time) in footprintTimes.enumerated() {
             DispatchQueue.main.asyncAfter(deadline: .now() + time) { [weak self] in
+                guard let self, !self.isExiting else { return }
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation(.easeInOut(duration: Constants.UI.Motion.appear)) {
-                    self?.footprintOpacities[index] = 1.0
+                    self.footprintOpacities[index] = 1.0
                 }
             }
-            // Fade to ghost after appearing (last holds longer)
             let fadeDelay = index == 2 ? 1.5 : 0.8
             DispatchQueue.main.asyncAfter(deadline: .now() + time + fadeDelay) { [weak self] in
+                guard let self, !self.isExiting else { return }
                 withAnimation(.easeOut(duration: 1.0)) {
-                    self?.footprintOpacities[index] = 0.15
+                    self.footprintOpacities[index] = 0.15
                 }
             }
         }
 
         // 5.5s — Button slides up
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.5) { [weak self] in
+            guard let self, !self.isExiting else { return }
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-            withAnimation(.easeOut(duration: Constants.UI.Motion.gentle)) { self?.showButton = true }
+            withAnimation(.easeOut(duration: Constants.UI.Motion.gentle)) { self.showButton = true }
         }
 
         // 6.0s — Ambient starts
         DispatchQueue.main.asyncAfter(deadline: .now() + 6.0) { [weak self] in
-            withAnimation(.easeIn(duration: 2.0)) { self?.showAmbient = true }
+            guard let self, !self.isExiting else { return }
+            withAnimation(.easeIn(duration: 2.0)) { self.showAmbient = true }
         }
     }
 
