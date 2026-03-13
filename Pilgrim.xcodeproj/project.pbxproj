@@ -178,6 +178,7 @@
 		AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C2 /* PromptGenerator.swift */; };
 		AAAA000000000000000000C3 /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C4 /* PromptListView.swift */; };
 		AAAA000000000000000000C5 /* PromptDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C6 /* PromptDetailView.swift */; };
+		AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */; };
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
 		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
 		CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */; };
@@ -378,6 +379,7 @@
 		AAAA000000000000000000C2 /* PromptGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptGenerator.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C4 /* PromptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptListView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C6 /* PromptDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptDetailView.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptStyleStore.swift; sourceTree = "<group>"; };
 		B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewWalkComputationTests.swift; sourceTree = "<group>"; };
 		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
 		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -696,6 +698,7 @@
 				AAAA000000000000000000B2 /* TranscriptionService.swift */,
 				22834F792542239800057FEB /* HelperMethods.swift */,
 				AAAA000000000000000000C2 /* PromptGenerator.swift */,
+				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1336,6 +1339,7 @@
 				EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */,
 				DD00CC0100000000000002 /* MeditateDetection.swift in Sources */,
 				AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */,
+				AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */,
 				AAAA000000000000000000C3 /* PromptListView.swift in Sources */,
 				AAAA000000000000000000C5 /* PromptDetailView.swift in Sources */,
 			);

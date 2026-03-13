@@ -44,8 +44,18 @@ struct PromptListView: View {
             )
         }.sorted { $0.timestamp < $1.timestamp }
 
+        let meditations = walk.activityIntervals
+            .filter { $0.activityType == .meditation }
+            .sorted { $0.startDate < $1.startDate }
+            .map { PromptGenerator.MeditationContext(
+                startDate: $0.startDate,
+                endDate: $0.endDate,
+                duration: $0.duration
+            )}
+
         prompts = PromptGenerator.generateAll(
             recordings: recordings,
+            meditations: meditations,
             duration: walk.activeDuration,
             distance: walk.distance,
             startDate: walk.startDate
@@ -65,16 +75,16 @@ struct PromptStyleRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: prompt.style.icon)
+            Image(systemName: prompt.icon)
                 .font(.title2)
                 .foregroundColor(.stone)
                 .frame(width: 40)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(prompt.style.title)
+                Text(prompt.title)
                     .font(Constants.Typography.heading)
                     .foregroundColor(.ink)
-                Text(prompt.style.description)
+                Text(prompt.subtitle)
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                     .lineLimit(2)

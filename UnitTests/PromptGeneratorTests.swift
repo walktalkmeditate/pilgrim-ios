@@ -6,12 +6,13 @@ final class PromptGeneratorTests: XCTestCase {
     func testGenerateAll_returnsOnePerStyle() {
         let prompts = PromptGenerator.generateAll(
             recordings: [],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         )
         XCTAssertEqual(prompts.count, 6)
-        let styles = Set(prompts.map { $0.style })
+        let styles = Set(prompts.compactMap { $0.style })
         XCTAssertEqual(styles.count, PromptStyle.allCases.count)
     }
 
@@ -25,6 +26,7 @@ final class PromptGeneratorTests: XCTestCase {
         let prompt = PromptGenerator.generate(
             style: .reflective,
             recordings: [recording],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
@@ -36,6 +38,7 @@ final class PromptGeneratorTests: XCTestCase {
         let prompt = PromptGenerator.generate(
             style: .contemplative,
             recordings: [],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
@@ -47,6 +50,7 @@ final class PromptGeneratorTests: XCTestCase {
         let prompt = PromptGenerator.generate(
             style: .contemplative,
             recordings: [],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeLocalDate(2024, 6, 15, 5, 0, 0)
@@ -58,6 +62,7 @@ final class PromptGeneratorTests: XCTestCase {
         let prompt = PromptGenerator.generate(
             style: .contemplative,
             recordings: [],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeLocalDate(2024, 6, 15, 12, 0, 0)
@@ -69,6 +74,7 @@ final class PromptGeneratorTests: XCTestCase {
         let prompt = PromptGenerator.generate(
             style: .contemplative,
             recordings: [],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeLocalDate(2024, 6, 15, 22, 0, 0)
@@ -86,6 +92,7 @@ final class PromptGeneratorTests: XCTestCase {
         let prompt = PromptGenerator.generate(
             style: .reflective,
             recordings: [recording],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
@@ -104,6 +111,7 @@ final class PromptGeneratorTests: XCTestCase {
         let prompt = PromptGenerator.generate(
             style: .reflective,
             recordings: [recording],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
@@ -115,11 +123,27 @@ final class PromptGeneratorTests: XCTestCase {
         let prompt = PromptGenerator.generate(
             style: .journaling,
             recordings: [],
+            meditations: [],
             duration: 1800,
             distance: 2000,
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         )
         XCTAssertFalse(prompt.text.isEmpty)
         XCTAssertTrue(prompt.text.contains("Walking Transcription"))
+    }
+
+    func testGeneratedPrompt_builtInStyle_titleFromStyle() {
+        let prompt = GeneratedPrompt(style: .reflective, customStyle: nil, text: "test")
+        XCTAssertEqual(prompt.title, "Reflective")
+        XCTAssertEqual(prompt.icon, "eye.fill")
+        XCTAssertEqual(prompt.subtitle, "Identify patterns and emotional undercurrents")
+    }
+
+    func testGeneratedPrompt_customStyle_titleFromCustom() {
+        let custom = CustomPromptStyle(id: UUID(), title: "My Style", icon: "star.fill", instruction: "Do something creative")
+        let prompt = GeneratedPrompt(style: nil, customStyle: custom, text: "test")
+        XCTAssertEqual(prompt.title, "My Style")
+        XCTAssertEqual(prompt.icon, "star.fill")
+        XCTAssertEqual(prompt.subtitle, "Do something creative")
     }
 }

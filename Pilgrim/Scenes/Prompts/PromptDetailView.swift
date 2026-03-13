@@ -13,10 +13,10 @@ struct PromptDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Constants.UI.Padding.big) {
                     HStack {
-                        Image(systemName: prompt.style.icon)
+                        Image(systemName: prompt.icon)
                             .font(.title2)
                             .foregroundColor(.stone)
-                        Text(prompt.style.title)
+                        Text(prompt.title)
                             .font(Constants.Typography.displayMedium)
                             .foregroundColor(.ink)
                     }

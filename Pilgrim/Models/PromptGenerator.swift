@@ -24,7 +24,7 @@ enum PromptStyle: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .contemplative: return "leaf.fill"
-        case .reflective: return "mirror.fill"
+        case .reflective: return "eye.fill"
         case .creative: return "paintbrush.fill"
         case .gratitude: return "heart.fill"
         case .philosophical: return "books.vertical.fill"
@@ -46,8 +46,13 @@ enum PromptStyle: String, CaseIterable, Identifiable {
 
 struct GeneratedPrompt: Identifiable {
     let id = UUID()
-    let style: PromptStyle
+    let style: PromptStyle?
+    let customStyle: CustomPromptStyle?
     let text: String
+
+    var title: String { customStyle?.title ?? style!.title }
+    var icon: String { customStyle?.icon ?? style!.icon }
+    var subtitle: String { customStyle?.instruction ?? style!.description }
 }
 
 struct PromptGenerator {
@@ -59,21 +64,30 @@ struct PromptGenerator {
         let endCoordinate: (lat: Double, lon: Double)?
     }
 
+    struct MeditationContext {
+        let startDate: Date
+        let endDate: Date
+        let duration: TimeInterval
+    }
+
     static func generate(
         style: PromptStyle,
         recordings: [RecordingContext],
+        meditations: [MeditationContext],
         duration: Double,
         distance: Double,
         startDate: Date
     ) -> GeneratedPrompt {
         let combinedText = formatRecordings(recordings)
+        let meditationText = formatMeditations(meditations)
         let metadata = formatMetadata(duration: duration, distance: distance, startDate: startDate)
-        let prompt = buildPrompt(style: style, transcription: combinedText, metadata: metadata)
-        return GeneratedPrompt(style: style, text: prompt)
+        let prompt = buildPrompt(style: style, transcription: combinedText, meditations: meditationText, metadata: metadata)
+        return GeneratedPrompt(style: style, customStyle: nil, text: prompt)
     }
 
     static func generateAll(
         recordings: [RecordingContext],
+        meditations: [MeditationContext],
         duration: Double,
         distance: Double,
         startDate: Date
@@ -82,6 +96,7 @@ struct PromptGenerator {
             generate(
                 style: style,
                 recordings: recordings,
+                meditations: meditations,
                 duration: duration,
                 distance: distance,
                 startDate: startDate
@@ -127,6 +142,16 @@ struct PromptGenerator {
         return f
     }()
 
+    private static func formatMeditations(_ meditations: [MeditationContext]) -> String? {
+        guard !meditations.isEmpty else { return nil }
+        let lines = meditations.map { m in
+            let durationSec = Int(m.duration)
+            let durationStr = durationSec < 60 ? "\(durationSec) sec" : "\(durationSec / 60) min \(durationSec % 60) sec"
+            return "[\(timeFormatter.string(from: m.startDate)) – \(timeFormatter.string(from: m.endDate))] Meditated for \(durationStr)"
+        }
+        return lines.joined(separator: "\n")
+    }
+
     private static func formatMetadata(duration: Double, distance: Double, startDate: Date) -> String {
         let durationMin = Int(duration / 60)
         let distanceStr = distanceFormatter.string(from: Measurement(value: distance, unit: UnitLength.meters))
@@ -147,7 +172,7 @@ struct PromptGenerator {
         }
     }
 
-    private static func buildPrompt(style: PromptStyle, transcription: String, metadata: String) -> String {
+    private static func buildPrompt(style: PromptStyle, transcription: String, meditations: String?, metadata: String) -> String {
         let preamble: String
         let instruction: String
 
@@ -189,7 +214,7 @@ struct PromptGenerator {
                 """
         }
 
-        return """
+        var sections = """
             \(preamble)
 
             ---
@@ -199,10 +224,26 @@ struct PromptGenerator {
             **Walking Transcription:**
 
             \(transcription)
+            """
+
+        if let meditations = meditations {
+            sections += """
+
+
+            **Meditation Sessions:**
+
+            \(meditations)
+            """
+        }
+
+        sections += """
+
 
             ---
 
             \(instruction)
             """
+
+        return sections
     }
 }
