@@ -188,4 +188,49 @@ final class PromptGeneratorTests: XCTestCase {
         )
         XCTAssertFalse(prompt.text.contains("wpm"))
     }
+
+    func testFormatPlaceNames_startOnly_containsNear() {
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            placeNames: [
+                PromptGenerator.PlaceContext(name: "Riverside Park, Manhattan", coordinate: (lat: 40.8, lon: -73.97), role: .start)
+            ]
+        )
+        XCTAssertTrue(prompt.text.contains("Near Riverside Park, Manhattan"))
+    }
+
+    func testFormatPlaceNames_startAndEnd_containsArrow() {
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            placeNames: [
+                PromptGenerator.PlaceContext(name: "Riverside Park", coordinate: (lat: 40.8, lon: -73.97), role: .start),
+                PromptGenerator.PlaceContext(name: "Central Park", coordinate: (lat: 40.78, lon: -73.96), role: .end)
+            ]
+        )
+        XCTAssertTrue(prompt.text.contains("Started near Riverside Park"))
+        XCTAssertTrue(prompt.text.contains("Central Park"))
+    }
+
+    func testFormatPlaceNames_empty_omitsLocationSection() {
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            placeNames: []
+        )
+        XCTAssertFalse(prompt.text.contains("Location"))
+    }
 }

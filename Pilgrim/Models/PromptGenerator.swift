@@ -71,18 +71,28 @@ struct PromptGenerator {
         let duration: TimeInterval
     }
 
+    enum PlaceRole { case start, end, midpoint }
+
+    struct PlaceContext {
+        let name: String
+        let coordinate: (lat: Double, lon: Double)
+        let role: PlaceRole
+    }
+
     static func generate(
         style: PromptStyle,
         recordings: [RecordingContext],
         meditations: [MeditationContext],
         duration: Double,
         distance: Double,
-        startDate: Date
+        startDate: Date,
+        placeNames: [PlaceContext] = []
     ) -> GeneratedPrompt {
         let combinedText = formatRecordings(recordings)
         let meditationText = formatMeditations(meditations)
         let metadata = formatMetadata(duration: duration, distance: distance, startDate: startDate)
-        let prompt = buildPrompt(style: style, transcription: combinedText, meditations: meditationText, metadata: metadata)
+        let location = formatPlaceNames(placeNames)
+        let prompt = buildPrompt(style: style, transcription: combinedText, meditations: meditationText, metadata: metadata, location: location)
         return GeneratedPrompt(style: style, customStyle: nil, text: prompt)
     }
 
@@ -135,6 +145,18 @@ struct PromptGenerator {
         }.joined(separator: "\n\n")
     }
 
+    private static func formatPlaceNames(_ places: [PlaceContext]) -> String? {
+        guard !places.isEmpty else { return nil }
+        let start = places.first { $0.role == .start }
+        let end = places.first { $0.role == .end }
+        if let start = start, let end = end {
+            return "**Location:** Started near \(start.name) → ended near \(end.name)"
+        } else if let start = start {
+            return "**Location:** Near \(start.name)"
+        }
+        return nil
+    }
+
     private static func speakingPaceLabel(_ wpm: Double) -> String {
         switch wpm {
         case ..<100: return "slow/thoughtful"
@@ -185,7 +207,7 @@ struct PromptGenerator {
         }
     }
 
-    private static func buildPrompt(style: PromptStyle, transcription: String, meditations: String?, metadata: String) -> String {
+    private static func buildPrompt(style: PromptStyle, transcription: String, meditations: String?, metadata: String, location: String?) -> String {
         let preamble: String
         let instruction: String
 
@@ -233,6 +255,14 @@ struct PromptGenerator {
             ---
 
             **Context:** \(metadata)
+            """
+
+        if let location = location {
+            sections += "\n\n\(location)"
+        }
+
+        sections += """
+
 
             **Walking Transcription:**
 
