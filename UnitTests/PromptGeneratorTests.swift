@@ -275,4 +275,45 @@ final class PromptGeneratorTests: XCTestCase {
         )
         XCTAssertFalse(prompt.text.contains("Pace"))
     }
+
+    // MARK: - Task 9: Walk-to-Walk Threading
+
+    func testFormatRecentWalks_withSnippets_containsContinuitySection() {
+        let snippets = [
+            PromptGenerator.WalkSnippet(
+                date: DateFactory.makeDate(2024, 6, 12, 9, 0, 0),
+                placeName: nil,
+                transcriptionPreview: "I keep thinking about how the river reminds me of home"
+            ),
+            PromptGenerator.WalkSnippet(
+                date: DateFactory.makeDate(2024, 6, 10, 9, 0, 0),
+                placeName: nil,
+                transcriptionPreview: "Today I noticed I was walking faster than usual"
+            )
+        ]
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            recentWalkSnippets: snippets
+        )
+        XCTAssertTrue(prompt.text.contains("Recent Walk Context"))
+        XCTAssertTrue(prompt.text.contains("river reminds me of home"))
+    }
+
+    func testFormatRecentWalks_empty_omitsSection() {
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            recentWalkSnippets: []
+        )
+        XCTAssertFalse(prompt.text.contains("Recent Walk Context"))
+    }
 }

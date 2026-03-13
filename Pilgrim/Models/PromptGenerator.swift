@@ -79,6 +79,12 @@ struct PromptGenerator {
         let role: PlaceRole
     }
 
+    struct WalkSnippet {
+        let date: Date
+        let placeName: String?
+        let transcriptionPreview: String
+    }
+
     static func generate(
         style: PromptStyle,
         recordings: [RecordingContext],
@@ -87,20 +93,23 @@ struct PromptGenerator {
         distance: Double,
         startDate: Date,
         placeNames: [PlaceContext] = [],
-        routeSpeeds: [Double] = []
+        routeSpeeds: [Double] = [],
+        recentWalkSnippets: [WalkSnippet] = []
     ) -> GeneratedPrompt {
         let combinedText = formatRecordings(recordings)
         let meditationText = formatMeditations(meditations)
         let metadata = formatMetadata(duration: duration, distance: distance, startDate: startDate)
         let location = formatPlaceNames(placeNames)
         let pace = formatPaceContext(speeds: routeSpeeds)
+        let recentWalks = formatRecentWalks(recentWalkSnippets)
         let prompt = buildPrompt(
             style: style,
             transcription: combinedText,
             meditations: meditationText,
             metadata: metadata,
             location: location,
-            pace: pace
+            pace: pace,
+            recentWalks: recentWalks
         )
         return GeneratedPrompt(style: style, customStyle: nil, text: prompt)
     }
@@ -219,6 +228,24 @@ struct PromptGenerator {
         return String(format: "%d:%02d %@", minutes, seconds, label)
     }
 
+    private static let shortDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return f
+    }()
+
+    private static func formatRecentWalks(_ snippets: [WalkSnippet]) -> String? {
+        guard !snippets.isEmpty else { return nil }
+        let lines = snippets.map { snippet in
+            let dateStr = shortDateFormatter.string(from: snippet.date)
+            if let place = snippet.placeName {
+                return "[\(dateStr) – \(place)] \"\(snippet.transcriptionPreview)\""
+            }
+            return "[\(dateStr)] \"\(snippet.transcriptionPreview)\""
+        }
+        return "**Recent Walk Context (for continuity):**\n\n" + lines.joined(separator: "\n\n")
+    }
+
     private static func formatMetadata(duration: Double, distance: Double, startDate: Date) -> String {
         let durationMin = Int(duration / 60)
         let distanceStr = distanceFormatter.string(from: Measurement(value: distance, unit: UnitLength.meters))
@@ -239,7 +266,7 @@ struct PromptGenerator {
         }
     }
 
-    private static func buildPrompt(style: PromptStyle, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?) -> String {
+    private static func buildPrompt(style: PromptStyle, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?) -> String {
         let preamble: String
         let instruction: String
 
@@ -312,6 +339,14 @@ struct PromptGenerator {
             **Meditation Sessions:**
 
             \(meditations)
+            """
+        }
+
+        if let recentWalks = recentWalks {
+            sections += """
+
+
+            \(recentWalks)
             """
         }
 
