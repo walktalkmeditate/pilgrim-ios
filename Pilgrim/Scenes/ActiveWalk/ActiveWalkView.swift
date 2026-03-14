@@ -78,7 +78,7 @@ struct ActiveWalkView: View {
             }
             .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)
 
-            if viewModel.paceHistory.count > 2 {
+            if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
                 LivePaceSparklineView(values: viewModel.paceHistory)
                     .frame(height: 28)
                     .padding(.horizontal, Constants.UI.Padding.big)
