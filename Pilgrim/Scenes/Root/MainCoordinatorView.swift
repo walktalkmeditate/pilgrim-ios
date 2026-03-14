@@ -15,20 +15,32 @@ class MainCoordinator: ObservableObject {
         callbacksConfigured = true
 
         homeViewModel.onStartWalk = { [weak self] in
-            guard let self, self.activeWalkViewModel == nil else { return }
-            let vm = ActiveWalkViewModel()
-            vm.onWalkCompleted = { [weak self] snapshot in
-                DataManager.saveWalk(object: snapshot) { success, error, walk in
-                    guard let self else { return }
-                    if success {
-                        self.pendingSnapshot = snapshot
-                        self.activeWalkViewModel = nil
-                    } else {
-                        self.showSaveError = true
-                    }
+            self?.startWalk()
+        }
+    }
+
+    func startWalk() {
+        guard activeWalkViewModel == nil else { return }
+        let vm = ActiveWalkViewModel()
+        vm.onWalkCompleted = { [weak self] snapshot in
+            DataManager.saveWalk(object: snapshot) { success, error, walk in
+                guard let self else { return }
+                if success {
+                    self.pendingSnapshot = snapshot
+                    self.activeWalkViewModel = nil
+                } else {
+                    self.showSaveError = true
                 }
             }
-            self.activeWalkViewModel = vm
+        }
+        activeWalkViewModel = vm
+    }
+
+    func checkFirstLaunchWalk() {
+        guard UserPreferences.startWalkOnFirstLaunch.value else { return }
+        UserPreferences.startWalkOnFirstLaunch.value = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.startWalk()
         }
     }
 
@@ -67,6 +79,9 @@ struct MainCoordinatorView: View {
             } message: {
                 Text("Your walk could not be saved. Please try again.")
             }
-            .onAppear { coordinator.setupCallbacks() }
+            .onAppear {
+                coordinator.setupCallbacks()
+                coordinator.checkFirstLaunchWalk()
+            }
     }
 }

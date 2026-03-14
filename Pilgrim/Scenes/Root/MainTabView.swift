@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum MainTab {
-    case home, log, settings
+    case log, settings
 }
 
 struct MainTabView: View {
@@ -10,10 +10,6 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Home", systemImage: "house", value: .home) {
-                HomePlaceholderView()
-            }
-
             Tab("Log", systemImage: "point.bottomleft.forward.to.point.topright.scurvepath", value: .log) {
                 MainCoordinatorView()
             }

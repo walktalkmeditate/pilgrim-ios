@@ -33,6 +33,8 @@ struct UserPreferences {
 
     static let hemisphereOverride = UserPreference.Optional<Int>(key: "hemisphereOverride")
 
+    static let startWalkOnFirstLaunch = UserPreference.Required<Bool>(key: "startWalkOnFirstLaunch", defaultValue: false)
+
     static let soundsEnabled = UserPreference.Required<Bool>(key: "soundsEnabled", defaultValue: true)
     static let bellVolume = UserPreference.Required<Double>(key: "bellVolume", defaultValue: 0.7)
     static let soundscapeVolume = UserPreference.Required<Double>(key: "soundscapeVolume", defaultValue: 0.4)
