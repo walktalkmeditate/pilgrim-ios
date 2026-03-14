@@ -42,12 +42,8 @@ struct WalkDotView: View {
                 .frame(width: size, height: size)
                 .opacity(opacity)
                 .shadow(color: .ink.opacity(0.15), radius: 2, x: 1, y: 2)
-                .overlay(
-                    Circle()
-                        .stroke(timeOfDayTint, lineWidth: 1.5)
-                        .frame(width: size + 3, height: size + 3)
-                        .opacity(opacity * 0.4)
-                )
+
+            activityArcs(size: size)
 
             Circle()
                 .fill(
@@ -61,10 +57,64 @@ struct WalkDotView: View {
                 .frame(width: size * 0.7, height: size * 0.7)
                 .opacity(opacity * 0.5)
                 .offset(x: -size * 0.08, y: -size * 0.08)
+
+            activityIcons(size: size)
         }
         .position(position)
         .onTapGesture { onTap(snapshot.id) }
         .accessibilityLabel(accessibilityText)
+    }
+
+    // MARK: - Activity arcs
+
+    @ViewBuilder
+    private func activityArcs(size: CGFloat) -> some View {
+        let total = snapshot.duration
+        if total > 0 {
+            let talkFrac = snapshot.talkDuration / total
+            let meditateFrac = snapshot.meditateDuration / total
+            let ringSize = size + 5
+
+            ZStack {
+                if talkFrac > 0.01 {
+                    Circle()
+                        .trim(from: 0, to: talkFrac)
+                        .stroke(Color.rust.opacity(0.7), lineWidth: 2)
+                        .frame(width: ringSize, height: ringSize)
+                        .rotationEffect(.degrees(-90))
+                }
+
+                if meditateFrac > 0.01 {
+                    Circle()
+                        .trim(from: talkFrac, to: talkFrac + meditateFrac)
+                        .stroke(Color.dawn.opacity(0.7), lineWidth: 2)
+                        .frame(width: ringSize, height: ringSize)
+                        .rotationEffect(.degrees(-90))
+                }
+            }
+            .opacity(opacity)
+        }
+    }
+
+    // MARK: - Activity icons
+
+    private func activityIcons(size: CGFloat) -> some View {
+        let iconOffset = size * 0.7 + 6
+        return ZStack {
+            if snapshot.talkDuration > 300 {
+                Image(systemName: "waveform")
+                    .font(.system(size: 6))
+                    .foregroundColor(.rust.opacity(0.5))
+                    .offset(x: iconOffset, y: -4)
+            }
+            if snapshot.meditateDuration > 300 {
+                Image(systemName: "circle.circle")
+                    .font(.system(size: 5))
+                    .foregroundColor(.dawn.opacity(0.5))
+                    .offset(x: iconOffset, y: snapshot.talkDuration > 300 ? 4 : -4)
+            }
+        }
+        .opacity(opacity)
     }
 
     var dotSize: CGFloat {
@@ -77,7 +127,6 @@ struct WalkDotView: View {
 
     private var dotColor: Color {
         let month = Calendar.current.component(.month, from: snapshot.startDate)
-
         let colorName: String
         switch month {
         case 3...5: colorName = "moss"
@@ -85,21 +134,9 @@ struct WalkDotView: View {
         case 9...11: colorName = "dawn"
         default: colorName = "ink"
         }
-
         return Color(uiColor: SeasonalColorEngine.seasonalColor(
-            named: colorName,
-            intensity: .full,
-            on: snapshot.startDate
+            named: colorName, intensity: .full, on: snapshot.startDate
         ))
-    }
-
-    private var timeOfDayTint: Color {
-        let hour = Calendar.current.component(.hour, from: snapshot.startDate)
-        switch hour {
-        case 5..<10: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: snapshot.startDate))
-        case 17..<21: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "fog", intensity: .full, on: snapshot.startDate))
-        default: return .clear
-        }
     }
 
     private var accessibilityText: String {
@@ -107,7 +144,10 @@ struct WalkDotView: View {
         let distance = Measurement(value: snapshot.distance, unit: UnitLength.meters)
         let distanceStr = Self.measurementFormatter.string(from: distance)
         let duration = Self.formatDuration(snapshot.duration)
-        return "Walk on \(dateStr), \(distanceStr), \(duration)"
+        var text = "Walk on \(dateStr), \(distanceStr), \(duration)"
+        if snapshot.hasTalk { text += ", \(Self.formatDuration(snapshot.talkDuration)) talking" }
+        if snapshot.hasMeditate { text += ", \(Self.formatDuration(snapshot.meditateDuration)) meditating" }
+        return text
     }
 
     private static let dateFormatter: DateFormatter = {
@@ -124,7 +164,7 @@ struct WalkDotView: View {
         return f
     }()
 
-    private static func formatDuration(_ seconds: TimeInterval) -> String {
+    static func formatDuration(_ seconds: TimeInterval) -> String {
         let total = Int(seconds)
         let h = total / 3600
         let m = (total % 3600) / 60

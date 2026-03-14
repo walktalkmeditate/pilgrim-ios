@@ -9,6 +9,15 @@ struct WalkSnapshot: Identifiable {
     let duration: TimeInterval
     let averagePace: Double
     let cumulativeDistance: Double
+    let talkDuration: TimeInterval
+    let meditateDuration: TimeInterval
+
+    var walkOnlyDuration: TimeInterval {
+        max(0, duration - talkDuration - meditateDuration)
+    }
+
+    var hasTalk: Bool { talkDuration > 0 }
+    var hasMeditate: Bool { meditateDuration > 0 }
 }
 
 class HomeViewModel: ObservableObject {
@@ -46,6 +55,22 @@ class HomeViewModel: ObservableObject {
         onStartWalk?()
     }
 
+    var totalTalkDuration: TimeInterval {
+        walkSnapshots.reduce(0) { $0 + $1.talkDuration }
+    }
+
+    var totalMeditateDuration: TimeInterval {
+        walkSnapshots.reduce(0) { $0 + $1.meditateDuration }
+    }
+
+    var walksWithTalk: Int {
+        walkSnapshots.filter { $0.hasTalk }.count
+    }
+
+    var walksWithMeditate: Int {
+        walkSnapshots.filter { $0.hasMeditate }.count
+    }
+
     private func buildSnapshots() {
         let reversed = walks.reversed()
         var cumulative: Double = 0
@@ -63,7 +88,9 @@ class HomeViewModel: ObservableObject {
                 distance: walk.distance,
                 duration: duration,
                 averagePace: pace,
-                cumulativeDistance: cumulative
+                cumulativeDistance: cumulative,
+                talkDuration: walk.talkDuration,
+                meditateDuration: walk.meditateDuration
             ))
         }
 

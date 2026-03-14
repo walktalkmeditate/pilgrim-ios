@@ -10,6 +10,11 @@ struct InkScrollView: View {
     @State private var expandedSnapshot: WalkSnapshot?
     @State private var hapticState = ScrollHapticState()
     @State private var hasAppeared = false
+    @State private var statMode: StatMode = .walks
+
+    private enum StatMode: CaseIterable {
+        case walks, talks, meditations
+    }
 
     var body: some View {
         GeometryReader { outerGeo in
@@ -110,27 +115,57 @@ struct InkScrollView: View {
         }
     }
 
-    // MARK: - Journey summary header
+    // MARK: - Journey summary header (tappable cycling)
 
     private func journeySummaryHeader(width: CGFloat) -> some View {
         let totalDistance = snapshots.first?.cumulativeDistance ?? 0
         let totalWalks = snapshots.count
         let firstDate = snapshots.last?.startDate ?? Date()
-        let months = Calendar.current.dateComponents([.month], from: firstDate, to: Date()).month ?? 0
+        let months = max(1, Calendar.current.dateComponents([.month], from: firstDate, to: Date()).month ?? 0)
+        let totalTalk = snapshots.reduce(0) { $0 + $1.talkDuration }
+        let totalMeditate = snapshots.reduce(0) { $0 + $1.meditateDuration }
+        let talkers = snapshots.filter { $0.hasTalk }.count
+        let meditators = snapshots.filter { $0.hasMeditate }.count
 
         return VStack(spacing: 2) {
-            Text(Self.formatTotalDistance(totalDistance))
-                .font(.system(size: 11, weight: .regular, design: .serif))
-                .foregroundColor(.fog.opacity(0.6))
+            Group {
+                switch statMode {
+                case .walks:
+                    Text(Self.formatTotalDistance(totalDistance))
+                case .talks:
+                    Text(WalkDotView.formatDuration(totalTalk) + " talked")
+                case .meditations:
+                    Text(WalkDotView.formatDuration(totalMeditate) + " meditated")
+                }
+            }
+            .font(.system(size: 11, weight: .regular, design: .serif))
+            .foregroundColor(.fog.opacity(0.6))
+            .contentTransition(.numericText())
 
-            Text("\(totalWalks) walks · \(max(1, months)) months")
-                .font(.system(size: 9, weight: .regular, design: .serif))
-                .foregroundColor(.fog.opacity(0.4))
+            Group {
+                switch statMode {
+                case .walks:
+                    Text("\(totalWalks) walks · \(months) months")
+                case .talks:
+                    Text("\(talkers) walks with talk")
+                case .meditations:
+                    Text("\(meditators) walks with meditation")
+                }
+            }
+            .font(.system(size: 9, weight: .regular, design: .serif))
+            .foregroundColor(.fog.opacity(0.4))
+            .contentTransition(.numericText())
         }
         .position(x: width / 2, y: 16)
         .opacity(hasAppeared ? 1 : 0)
         .animation(.easeOut(duration: 0.8).delay(0.5), value: hasAppeared)
-        .accessibilityLabel("Total: \(Self.formatTotalDistance(totalDistance)), \(totalWalks) walks over \(max(1, months)) months")
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                let modes = StatMode.allCases
+                let idx = modes.firstIndex(of: statMode) ?? 0
+                statMode = modes[(idx + 1) % modes.count]
+            }
+        }
     }
 
     private static func formatTotalDistance(_ meters: Double) -> String {
@@ -225,65 +260,163 @@ struct InkScrollView: View {
     @ViewBuilder
     private var expandCard: some View {
         if let snapshot = expandedSnapshot {
+            let seasonColor = expandCardSeasonColor(for: snapshot)
+
             VStack {
                 Spacer()
 
-                VStack(spacing: 6) {
-                    Text(Self.expandDateFormatter.string(from: snapshot.startDate))
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.ink)
+                VStack(spacing: 10) {
+                    HStack {
+                        FootprintShape()
+                            .fill(seasonColor.opacity(0.3))
+                            .frame(width: 12, height: 18)
 
-                    HStack(spacing: 20) {
-                        VStack(spacing: 2) {
-                            Text(Self.shortDistance(snapshot.distance))
-                                .font(Constants.Typography.statValue)
-                                .foregroundColor(.ink)
-                            Text("distance")
-                                .font(.system(size: 9, design: .serif))
-                                .foregroundColor(.fog)
-                        }
+                        Text(Self.expandDateFormatter.string(from: snapshot.startDate))
+                            .font(.system(size: 11, weight: .regular, design: .serif))
+                            .foregroundColor(.ink)
 
-                        Rectangle().fill(Color.fog.opacity(0.2)).frame(width: 0.5, height: 28)
-
-                        VStack(spacing: 2) {
-                            Text(Self.formatDuration(snapshot.duration))
-                                .font(Constants.Typography.statValue)
-                                .foregroundColor(.ink)
-                            Text("duration")
-                                .font(.system(size: 9, design: .serif))
-                                .foregroundColor(.fog)
-                        }
+                        Spacer()
                     }
+
+                    Rectangle()
+                        .fill(seasonColor.opacity(0.15))
+                        .frame(height: 1)
+
+                    HStack(spacing: 0) {
+                        expandStat(value: Self.shortDistance(snapshot.distance), label: "distance")
+                        Spacer()
+                        expandStat(value: WalkDotView.formatDuration(snapshot.duration), label: "duration")
+                        Spacer()
+                        expandStat(value: Self.formatPace(snapshot.averagePace), label: "pace")
+                    }
+
+                    miniActivityBar(snapshot: snapshot)
+
+                    activityPills(snapshot: snapshot)
 
                     Button {
                         let id = snapshot.id
-                        expandedSnapshot = nil
+                        withAnimation(.spring(duration: 0.25)) { expandedSnapshot = nil }
                         onTapWalk(id)
                     } label: {
-                        Text("View details")
+                        Text("View details \(Image(systemName: "arrow.right"))")
                             .font(.system(size: 11, weight: .medium, design: .serif))
-                            .foregroundColor(.stone)
+                            .foregroundColor(.parchment)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.stone.opacity(0.8))
+                            .clipShape(Capsule())
                     }
-                    .padding(.top, 4)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
+                .padding(16)
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
                         .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(seasonColor.opacity(0.10))
+                        )
                         .shadow(color: .ink.opacity(0.1), radius: 12, y: -4)
                 )
-                .padding(.horizontal, Constants.UI.Padding.big)
+                .padding(.horizontal, Constants.UI.Padding.normal)
                 .padding(.bottom, 8)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .onTapGesture {
-                    withAnimation(.spring(duration: 0.25)) {
-                        expandedSnapshot = nil
-                    }
+                    withAnimation(.spring(duration: 0.25)) { expandedSnapshot = nil }
                 }
             }
         }
+    }
+
+    private func expandStat(value: String, label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(Constants.Typography.statValue)
+                .foregroundColor(.ink)
+                .contentTransition(.numericText())
+            Text(label)
+                .font(.system(size: 8, design: .serif))
+                .foregroundColor(.fog)
+        }
+    }
+
+    private func miniActivityBar(snapshot: WalkSnapshot) -> some View {
+        let total = max(1, snapshot.duration)
+        let walkFrac = snapshot.walkOnlyDuration / total
+        let talkFrac = snapshot.talkDuration / total
+        let meditateFrac = snapshot.meditateDuration / total
+
+        return GeometryReader { geo in
+            let w = geo.size.width
+            HStack(spacing: 1) {
+                if walkFrac > 0.01 {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.moss.opacity(0.5))
+                        .frame(width: w * walkFrac)
+                }
+                if talkFrac > 0.01 {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.rust.opacity(0.6))
+                        .frame(width: w * talkFrac)
+                }
+                if meditateFrac > 0.01 {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.dawn.opacity(0.6))
+                        .frame(width: w * meditateFrac)
+                }
+            }
+        }
+        .frame(height: 6)
+        .clipShape(Capsule())
+    }
+
+    private func activityPills(snapshot: WalkSnapshot) -> some View {
+        HStack(spacing: 8) {
+            activityPill(color: .moss, duration: snapshot.walkOnlyDuration, label: "walk")
+
+            if snapshot.hasTalk {
+                activityPill(color: .rust, duration: snapshot.talkDuration, label: "talk")
+            }
+
+            if snapshot.hasMeditate {
+                activityPill(color: .dawn, duration: snapshot.meditateDuration, label: "meditate")
+            }
+
+            Spacer()
+        }
+    }
+
+    private func activityPill(color: Color, duration: TimeInterval, label: String) -> some View {
+        HStack(spacing: 3) {
+            Circle()
+                .fill(color)
+                .frame(width: 5, height: 5)
+            Text("\(WalkDotView.formatDuration(duration)) \(label)")
+                .font(.system(size: 8, weight: .regular, design: .serif))
+                .foregroundColor(.fog)
+        }
+    }
+
+    private func expandCardSeasonColor(for snapshot: WalkSnapshot) -> Color {
+        let month = Calendar.current.component(.month, from: snapshot.startDate)
+        let colorName: String
+        switch month {
+        case 3...5: colorName = "moss"
+        case 6...8: colorName = "rust"
+        case 9...11: colorName = "dawn"
+        default: colorName = "ink"
+        }
+        return Color(uiColor: SeasonalColorEngine.seasonalColor(
+            named: colorName, intensity: .full, on: snapshot.startDate
+        ))
+    }
+
+    private static func formatPace(_ pace: Double) -> String {
+        guard pace > 0 else { return "—" }
+        let minutes = Int(pace) / 60
+        let seconds = Int(pace) % 60
+        return String(format: "%d:%02d/km", minutes, seconds)
     }
 
     private static let expandDateFormatter: DateFormatter = {
