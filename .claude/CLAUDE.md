@@ -14,6 +14,20 @@ xcodebuild -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator b
 xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
+## Resource Safety
+
+This app runs during long walks and meditations (30+ minutes). Resource leaks compound over time and drain battery, overheat the device, or crash the app mid-session — all unacceptable for a mindfulness tool.
+
+**Before writing any code that involves these patterns, verify it won't leak:**
+
+- **Timers**: Every `Timer.scheduledTimer` or `DispatchQueue.asyncAfter` must have a clear cancellation path. Use generation counters for async chains so stale closures become no-ops.
+- **AVAudioPlayer / AVAudioSession**: Only one player per role at a time. Always `stop()` and nil out old players before creating new ones. Never accumulate players through crossfade or loop mechanisms.
+- **SwiftUI animations**: Never mutate `@State` arrays inside `withAnimation(.repeatForever)` — this causes infinite re-diffing. Use a single boolean toggle with `.animation()` modifier instead.
+- **Combine subscriptions**: Store in `cancellables` and ensure the owning object deallocates. Watch for retain cycles in `.sink` closures.
+- **CoreLocation**: Updates continue in background during walks. Ensure location subscriptions are properly cleaned up when walks end.
+
+**If you're unsure whether something leaks, default to the simpler approach.** One `AVAudioPlayer` with `numberOfLoops = -1` is better than a dual-player crossfade timer. A static view is better than a continuously-animated one.
+
 ## Key Constraints
 
 - **Frozen DB identifiers**: CoreStore entity names and migration version identifiers (`OutRunV1`–`OutRunV4`, `PilgrimV1`) cannot be renamed. Internal `TempV1`–`TempV4` class names (`Workout`, `WorkoutPause`, etc.) must match entity names exactly.
