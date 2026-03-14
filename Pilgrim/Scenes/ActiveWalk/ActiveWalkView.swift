@@ -176,27 +176,11 @@ struct TimeMetricItem: View {
     let icon: String
     var isActive: Bool = false
 
-    @State private var pulseScale: CGFloat = 1.0
-
     var body: some View {
         VStack(spacing: 4) {
-            ZStack {
-                if isActive {
-                    Circle()
-                        .fill(activeColor.opacity(0.15))
-                        .frame(width: 22, height: 22)
-                        .scaleEffect(pulseScale)
-                        .onAppear {
-                            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-                                pulseScale = 1.5
-                            }
-                        }
-                        .onDisappear { pulseScale = 1.0 }
-                }
-                Image(systemName: icon)
-                    .font(.caption)
-                    .foregroundColor(isActive ? activeColor : .stone)
-            }
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(isActive ? .rust : .stone)
             Text(value)
                 .font(Constants.Typography.statValue)
                 .foregroundColor(.ink)
@@ -205,15 +189,6 @@ struct TimeMetricItem: View {
                 .foregroundColor(.fog)
         }
         .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: 0.3), value: isActive)
-    }
-
-    private var activeColor: Color {
-        switch label {
-        case "Talk": return .rust
-        case "Meditate": return .moss
-        default: return .stone
-        }
     }
 }
 
