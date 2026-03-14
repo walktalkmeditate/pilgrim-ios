@@ -205,35 +205,20 @@ struct SoundSettingsView: View {
     // MARK: - Rows
 
     private func bellRow(label: String, bellId: String?, action: @escaping () -> Void) -> some View {
-        HStack {
-            Text(label)
-                .font(Constants.Typography.body)
-                .foregroundColor(.fog)
-            Spacer()
-
-            Button {
-                previewBell(id: bellId)
-            } label: {
+        Button(action: action) {
+            HStack {
+                Text(label)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.fog)
+                Spacer()
                 Text(bellDisplayName(for: bellId))
                     .font(Constants.Typography.body)
                     .foregroundColor(.ink)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: action) {
                 Image(systemName: "chevron.right")
                     .font(.caption2)
                     .foregroundColor(.fog)
             }
-            .buttonStyle(.plain)
         }
-    }
-
-    private func previewBell(id: String?) {
-        guard let id,
-              let asset = manifestService.asset(byId: id),
-              fileStore.isAvailable(asset) else { return }
-        bellPlayer.play(asset, volume: Float(bellVolume))
     }
 
     private var soundscapeRow: some View {
