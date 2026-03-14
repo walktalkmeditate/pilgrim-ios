@@ -73,13 +73,21 @@ struct WelcomeView: View {
     }
 
     private var footprintsView: some View {
-        VStack(spacing: Constants.UI.Padding.normal) {
-            ForEach(0..<3, id: \.self) { index in
+        VStack(spacing: Constants.UI.Padding.xs) {
+            ForEach(0..<7, id: \.self) { index in
+                let isRight = index % 2 != 0
+                let visible = animation.footprintOpacities[index] > 0.5
+
                 FootprintShape()
-                    .fill(Color.fog)
-                    .frame(width: 30, height: 20)
+                    .fill(Color.ink.opacity(0.18))
+                    .frame(width: 22, height: 36)
+                    .scaleEffect(x: isRight ? -1 : 1)
+                    .rotationEffect(.degrees(isRight ? 12 : -12))
                     .opacity(animation.footprintOpacities[index])
-                    .offset(x: index % 2 == 0 ? -4 : 4)
+                    .offset(x: isRight ? 10 : -10)
+                    .scaleEffect(visible ? 1.0 : 1.12)
+                    .blur(radius: visible ? 0.4 : 1.2)
+                    .animation(.spring(duration: 0.8, bounce: 0.15), value: visible)
                     .accessibilityHidden(true)
             }
         }

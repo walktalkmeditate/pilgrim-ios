@@ -7,28 +7,31 @@ struct HomeView: View {
     @State private var selectedWalk: Walk?
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                if viewModel.walks.isEmpty {
-                    emptyState
-                } else {
-                    walkList
+        NavigationStack {
+            InkScrollView(
+                snapshots: viewModel.walkSnapshots,
+                onTapWalk: { id in
+                    selectedWalk = viewModel.walk(for: id)
                 }
-
-                startButton
-            }
+            )
             .background(Color.parchment)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    VStack(spacing: 2) {
-                        Text("Pilgrim")
-                            .font(Constants.Typography.displayLarge)
+                    Text("Pilgrim Log")
+                        .font(Constants.Typography.heading)
+                        .foregroundColor(.ink)
+                }
+                #if DEBUG
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("Seed 32 walks") { seedDebugData() }
+                        Button("Clear all walks", role: .destructive) { clearDebugData() }
+                    } label: {
+                        Image(systemName: "ladybug")
                             .foregroundColor(.ink)
-                        Text(dateSubtitle)
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.fog)
                     }
                 }
+                #endif
             }
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedWalk) { walk in
@@ -37,58 +40,23 @@ struct HomeView: View {
         }
     }
 
-    private static let dateSubtitleFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "EEEE, MMMM d"
-        return f
-    }()
-
-    private var dateSubtitle: String {
-        Self.dateSubtitleFormatter.string(from: Date())
-    }
-
-    private var emptyState: some View {
-        VStack(spacing: Constants.UI.Padding.normal) {
-            Spacer()
-            PilgrimLogoView(size: 80, color: .stone)
-                .opacity(0.6)
-            Text("Every journey begins\nwith a single step")
-                .font(Constants.Typography.body)
-                .foregroundColor(.fog)
-                .multilineTextAlignment(.center)
-            Spacer()
+    #if DEBUG
+    private func seedDebugData() {
+        DebugDataSeeder.seed { count in
+            print("[Debug] Seeded \(count) walks")
+            viewModel.loadWalks()
         }
-        .padding(.horizontal, Constants.UI.Padding.big)
     }
 
-    private var walkList: some View {
-        List {
-            ForEach(viewModel.walks) { walk in
-                WalkRowView(walk: walk)
-                    .contentShape(Rectangle())
-                    .onTapGesture { selectedWalk = walk }
-                    .listRowBackground(Color.parchment)
-                    .listRowSeparatorTint(.fog.opacity(Constants.UI.Opacity.medium))
+    private func clearDebugData() {
+        DataManager.deleteAll { success, _ in
+            if success {
+                print("[Debug] Cleared all walks")
+                viewModel.loadWalks()
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Color.parchment)
     }
-
-    private var startButton: some View {
-        Button(action: viewModel.startWalk) {
-            Text("Begin")
-                .font(Constants.Typography.heading)
-                .foregroundColor(.parchment)
-                .frame(maxWidth: .infinity)
-                .padding(Constants.UI.Padding.normal)
-                .background(Color.stone)
-                .clipShape(Capsule())
-        }
-        .padding(.horizontal, Constants.UI.Padding.big)
-        .padding(.vertical, Constants.UI.Padding.normal)
-    }
+    #endif
 }
 
 extension Walk: @retroactive Identifiable {

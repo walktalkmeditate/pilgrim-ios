@@ -5,7 +5,7 @@ class WelcomeAnimationState: ObservableObject {
     @Published var showLogo = false
     @Published var isBreathing = false
     @Published var showQuote = false
-    @Published var footprintOpacities: [Double] = [0, 0, 0]
+    @Published var footprintOpacities: [Double] = [0, 0, 0, 0, 0, 0, 0]
     @Published var showButton = false
     @Published var showAmbient = false
     @Published var isExiting = false
@@ -17,7 +17,7 @@ class WelcomeAnimationState: ObservableObject {
             showLogo = true
             isBreathing = false
             showQuote = true
-            footprintOpacities = [1, 1, 1]
+            footprintOpacities = Array(repeating: 1, count: 7)
             showButton = true
             showAmbient = true
             return
@@ -41,34 +41,41 @@ class WelcomeAnimationState: ObservableObject {
             withAnimation(.easeInOut(duration: Constants.UI.Motion.gentle)) { self.showQuote = true }
         }
 
-        // 3.5s, 4.2s, 4.9s — Footprints one by one
-        let footprintTimes: [Double] = [3.5, 4.2, 4.9]
-        for (index, time) in footprintTimes.enumerated() {
+        // Footprints bottom-to-top (walking away), slow contemplative pace
+        let footprintOrder = [6, 5, 4, 3, 2, 1, 0]
+        let startTime = 3.5
+        let stepInterval = 0.9
+
+        for (orderIndex, footIndex) in footprintOrder.enumerated() {
+            let time = startTime + Double(orderIndex) * stepInterval
+
             DispatchQueue.main.asyncAfter(deadline: .now() + time) { [weak self] in
                 guard let self, !self.isExiting else { return }
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                withAnimation(.easeInOut(duration: Constants.UI.Motion.appear)) {
-                    self.footprintOpacities[index] = 1.0
+                withAnimation(.easeInOut(duration: 0.8)) {
+                    self.footprintOpacities[footIndex] = 1.0
                 }
             }
-            let fadeDelay = index == 2 ? 1.5 : 0.8
+
+            let fadeDelay = footIndex == 0 ? 3.0 : 1.5
             DispatchQueue.main.asyncAfter(deadline: .now() + time + fadeDelay) { [weak self] in
                 guard let self, !self.isExiting else { return }
-                withAnimation(.easeOut(duration: 1.0)) {
-                    self.footprintOpacities[index] = 0.15
+                withAnimation(.easeOut(duration: 1.5)) {
+                    self.footprintOpacities[footIndex] = 0.12
                 }
             }
         }
 
-        // 5.5s — Button slides up
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.5) { [weak self] in
+        // Button after last footprint
+        let buttonTime = startTime + Double(footprintOrder.count) * stepInterval + 0.5
+        DispatchQueue.main.asyncAfter(deadline: .now() + buttonTime) { [weak self] in
             guard let self, !self.isExiting else { return }
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
             withAnimation(.easeOut(duration: Constants.UI.Motion.gentle)) { self.showButton = true }
         }
 
-        // 6.0s — Ambient starts
-        DispatchQueue.main.asyncAfter(deadline: .now() + 6.0) { [weak self] in
+        // Ambient after button
+        DispatchQueue.main.asyncAfter(deadline: .now() + buttonTime + 0.5) { [weak self] in
             guard let self, !self.isExiting else { return }
             withAnimation(.easeIn(duration: 2.0)) { self.showAmbient = true }
         }
@@ -80,7 +87,7 @@ class WelcomeAnimationState: ObservableObject {
         if reduceMotion {
             showLogo = false
             showQuote = false
-            footprintOpacities = [0, 0, 0]
+            footprintOpacities = Array(repeating: 0, count: 7)
             showButton = false
             showAmbient = false
             isBreathing = false
@@ -88,28 +95,23 @@ class WelcomeAnimationState: ObservableObject {
             return
         }
 
-        // Stop breathing
         isBreathing = false
-
-        // Button slides down
         withAnimation(.easeIn(duration: 0.3)) { showButton = false }
 
-        // Footprints fade
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            withAnimation(.easeIn(duration: 0.3)) { self?.footprintOpacities = [0, 0, 0] }
+            withAnimation(.easeIn(duration: 0.3)) {
+                self?.footprintOpacities = Array(repeating: 0, count: 7)
+            }
         }
 
-        // Quote fades
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             withAnimation(.easeIn(duration: 0.3)) { self?.showQuote = false }
         }
 
-        // Logo fades + scales down
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             withAnimation(.easeIn(duration: 0.5)) { self?.showLogo = false }
         }
 
-        // Complete after total exit animation
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { completion() }
     }
 }
