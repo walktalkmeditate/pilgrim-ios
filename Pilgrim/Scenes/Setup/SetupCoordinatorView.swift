@@ -31,7 +31,6 @@ struct SetupCoordinatorView: View {
 
             case .breathTransition:
                 BreathTransitionView {
-                    UserPreferences.startWalkOnFirstLaunch.value = true
                     UserPreferences.isSetUp.value = true
                 }
                 .transition(.opacity)

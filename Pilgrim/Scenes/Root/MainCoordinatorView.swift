@@ -36,14 +36,6 @@ class MainCoordinator: ObservableObject {
         activeWalkViewModel = vm
     }
 
-    func checkFirstLaunchWalk() {
-        guard UserPreferences.startWalkOnFirstLaunch.value else { return }
-        UserPreferences.startWalkOnFirstLaunch.value = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.startWalk()
-        }
-    }
-
     func handleActiveWalkDismiss() {
         if let snapshot = pendingSnapshot {
             pendingSnapshot = nil
@@ -58,30 +50,12 @@ class MainCoordinator: ObservableObject {
 
 struct MainCoordinatorView: View {
 
-    @StateObject private var coordinator = MainCoordinator()
+    @ObservedObject var coordinator: MainCoordinator
 
     var body: some View {
         HomeView(viewModel: coordinator.homeViewModel)
-            .fullScreenCover(item: $coordinator.activeWalkViewModel, onDismiss: {
-                coordinator.handleActiveWalkDismiss()
-            }) { vm in
-                ActiveWalkView(viewModel: vm)
-            }
-            .sheet(item: $coordinator.completedSnapshot, onDismiss: {
-                coordinator.handleSummaryDismiss()
-            }) { snapshot in
-                WalkSummaryView(walk: snapshot)
-            }
-            .alert("Save Failed", isPresented: $coordinator.showSaveError) {
-                Button("Dismiss") {
-                    coordinator.activeWalkViewModel = nil
-                }
-            } message: {
-                Text("Your walk could not be saved. Please try again.")
-            }
             .onAppear {
                 coordinator.setupCallbacks()
-                coordinator.checkFirstLaunchWalk()
             }
     }
 }
