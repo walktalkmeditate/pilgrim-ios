@@ -108,9 +108,9 @@ struct SoundSettingsView: View {
                     .foregroundColor(.fog)
                 Spacer()
                 Picker("", selection: $breathRhythm) {
-                    Text("5 / 7").tag(0)
-                    Text("4 / 4").tag(1)
-                    Text("4 / 7 / 8").tag(2)
+                    ForEach(BreathRhythm.all) { rhythm in
+                        Text("\(rhythm.name) (\(rhythm.label))").tag(rhythm.id)
+                    }
                 }
                 .pickerStyle(.menu)
                 .tint(.ink)

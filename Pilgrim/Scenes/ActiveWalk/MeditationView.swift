@@ -13,22 +13,13 @@ struct MeditationView: View {
     @State private var contentOpacity: Double = 1
     @State private var screenOpacity: Double = 1
     @State private var warmthAmount: Double = 0
+    @State private var holdGlow: Double = 0
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
     @StateObject private var clock = SessionClock()
     @StateObject private var soundscapePlayer = SoundscapePlayer.shared
 
-    private var inhaleSeconds: Double { breathTiming.inhale }
-    private var exhaleSeconds: Double { breathTiming.exhale }
-    private var holdSeconds: Double { breathTiming.hold }
-
-    private var breathTiming: (inhale: Double, exhale: Double, hold: Double) {
-        switch UserPreferences.breathRhythm.value {
-        case 1: return (4, 4, 0)
-        case 2: return (4, 8, 7)
-        default: return (5, 7, 0)
-        }
-    }
+    private var rhythm: BreathRhythm { BreathRhythm.all[UserPreferences.breathRhythm.value] }
 
     var body: some View {
         ZStack {
@@ -197,8 +188,8 @@ struct MeditationView: View {
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.moss.opacity(0.7),
-                            Color.moss.opacity(0.3)
+                            Color.moss.opacity(0.7 + holdGlow * 0.2),
+                            Color.moss.opacity(0.3 + holdGlow * 0.1)
                         ],
                         center: .center,
                         startRadius: 0,
@@ -209,7 +200,7 @@ struct MeditationView: View {
                 .scaleEffect(circleScale)
 
             Circle()
-                .stroke(Color.moss.opacity(0.25), lineWidth: 1)
+                .stroke(Color.moss.opacity(0.25 + holdGlow * 0.15), lineWidth: 1 + holdGlow * 0.5)
                 .frame(width: 200, height: 200)
                 .scaleEffect(circleScale * 1.3)
                 .opacity(Double(circleScale))
@@ -333,23 +324,27 @@ struct MeditationView: View {
     private func breathIn() {
         guard isActive else { return }
         phase = .inhale
-        withAnimation(.easeInOut(duration: inhaleSeconds)) {
+        withAnimation(.easeInOut(duration: rhythm.inhale)) {
             circleScale = 1.0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + inhaleSeconds) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.inhale) {
             self.emitRipple()
-            if self.holdSeconds > 0 {
-                self.breathHold()
+            if self.rhythm.holdIn > 0 {
+                self.holdAfterInhale()
             } else {
                 self.breathOut()
             }
         }
     }
 
-    private func breathHold() {
+    private func holdAfterInhale() {
         guard isActive else { return }
-        phase = .hold
-        DispatchQueue.main.asyncAfter(deadline: .now() + holdSeconds) {
+        phase = .holdIn
+        withAnimation(.easeInOut(duration: rhythm.holdIn / 2).repeatForever(autoreverses: true)) {
+            holdGlow = 1.0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdIn) {
+            withAnimation(.easeInOut(duration: 0.3)) { self.holdGlow = 0 }
             self.breathOut()
         }
     }
@@ -357,10 +352,26 @@ struct MeditationView: View {
     private func breathOut() {
         guard isActive else { return }
         phase = .exhale
-        withAnimation(.easeInOut(duration: exhaleSeconds)) {
+        withAnimation(.easeInOut(duration: rhythm.exhale)) {
             circleScale = 0.45
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + exhaleSeconds) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.exhale) {
+            if self.rhythm.holdOut > 0 {
+                self.holdAfterExhale()
+            } else {
+                self.breathIn()
+            }
+        }
+    }
+
+    private func holdAfterExhale() {
+        guard isActive else { return }
+        phase = .holdOut
+        withAnimation(.easeInOut(duration: rhythm.holdOut / 2).repeatForever(autoreverses: true)) {
+            holdGlow = 0.6
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdOut) {
+            withAnimation(.easeInOut(duration: 0.3)) { self.holdGlow = 0 }
             self.breathIn()
         }
     }
@@ -396,7 +407,26 @@ private class SessionClock: ObservableObject {
 }
 
 private enum BreathPhase {
-    case inhale, hold, exhale
+    case inhale, holdIn, exhale, holdOut
+}
+
+struct BreathRhythm: Identifiable {
+    let id: Int
+    let name: String
+    let label: String
+    let inhale: Double
+    let holdIn: Double
+    let exhale: Double
+    let holdOut: Double
+
+    static let all: [BreathRhythm] = [
+        BreathRhythm(id: 0, name: "Calm", label: "5 / 7", inhale: 5, holdIn: 0, exhale: 7, holdOut: 0),
+        BreathRhythm(id: 1, name: "Equal", label: "4 / 4", inhale: 4, holdIn: 0, exhale: 4, holdOut: 0),
+        BreathRhythm(id: 2, name: "Relaxing", label: "4-7-8", inhale: 4, holdIn: 7, exhale: 8, holdOut: 0),
+        BreathRhythm(id: 3, name: "Box", label: "4-4-4-4", inhale: 4, holdIn: 4, exhale: 4, holdOut: 4),
+        BreathRhythm(id: 4, name: "Coherent", label: "5 / 5", inhale: 5, holdIn: 0, exhale: 5, holdOut: 0),
+        BreathRhythm(id: 5, name: "Deep calm", label: "3 / 6", inhale: 3, holdIn: 0, exhale: 6, holdOut: 0),
+    ]
 }
 
 private enum ClosingPhase {
