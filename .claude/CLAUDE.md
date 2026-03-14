@@ -28,6 +28,18 @@ This app runs during long walks and meditations (30+ minutes). Resource leaks co
 
 **If you're unsure whether something leaks, default to the simpler approach.** One `AVAudioPlayer` with `numberOfLoops = -1` is better than a dual-player crossfade timer. A static view is better than a continuously-animated one.
 
+## Typography
+
+Always use `Constants.Typography.*` — never use `.system()` fonts or SwiftUI defaults. The project uses **Cormorant Garamond** (display, heading, body) and **Lato** (timer, stats, button, caption).
+
+- `displayLarge` / `displayMedium` — large titles, hero text
+- `heading` — section titles, nav bar
+- `body` — body text, labels
+- `timer` — duration displays
+- `statValue` / `statLabel` — metric numbers and labels
+- `button` — button text
+- `caption` — secondary text, hints
+
 ## Key Constraints
 
 - **Frozen DB identifiers**: CoreStore entity names and migration version identifiers (`OutRunV1`–`OutRunV4`, `PilgrimV1`) cannot be renamed. Internal `TempV1`–`TempV4` class names (`Workout`, `WorkoutPause`, etc.) must match entity names exactly.

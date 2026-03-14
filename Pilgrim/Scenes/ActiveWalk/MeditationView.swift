@@ -232,7 +232,7 @@ struct MeditationView: View {
 
     private var breathCountLabel: some View {
         Text("\(breathCount)")
-            .font(.system(.caption2, design: .serif))
+            .font(Constants.Typography.caption)
             .foregroundColor(Color.parchment.opacity(0.15))
             .monospacedDigit()
     }
@@ -245,12 +245,12 @@ struct MeditationView: View {
             } label: {
                 if soundscapePlayer.isMuted {
                     Text("♪ Paused")
-                        .font(.system(.caption, design: .serif))
+                        .font(Constants.Typography.caption)
                         .foregroundColor(Color.fog.opacity(0.2))
                         .strikethrough(color: Color.fog.opacity(0.2))
                 } else {
                     Text("♪ \(name)")
-                        .font(.system(.caption, design: .serif))
+                        .font(Constants.Typography.caption)
                         .foregroundColor(Color.fog.opacity(0.35))
                 }
             }
@@ -276,7 +276,7 @@ struct MeditationView: View {
 
     private var sessionTimer: some View {
         Text(formatTime(clock.elapsed))
-            .font(.system(.title3, design: .serif).weight(.light))
+            .font(Constants.Typography.displayMedium)
             .foregroundColor(Color.parchment.opacity(0.4))
             .monospacedDigit()
     }
@@ -294,11 +294,11 @@ struct MeditationView: View {
     private var closingSummary: some View {
         VStack(spacing: 16) {
             Text(formatTime(clock.elapsed))
-                .font(.system(.largeTitle, design: .serif).weight(.light))
+                .font(Constants.Typography.displayLarge)
                 .foregroundColor(Color.parchment.opacity(0.9))
 
             Text(closingPhrase)
-                .font(.system(.subheadline, design: .serif).italic())
+                .font(Constants.Typography.body)
                 .foregroundColor(Color.fog.opacity(0.5))
         }
         .padding(.bottom, 48)
@@ -309,7 +309,7 @@ struct MeditationView: View {
     private var doneButton: some View {
         Button(action: beginClosingCeremony) {
             Text("Done")
-                .font(.system(.subheadline, design: .serif).weight(.light))
+                .font(Constants.Typography.body)
                 .foregroundColor(Color.parchment.opacity(0.4))
                 .padding(.horizontal, 48)
                 .padding(.vertical, 14)
@@ -326,7 +326,7 @@ struct MeditationView: View {
     private var soundscapePickerSheet: some View {
         VStack(spacing: 16) {
             Text("Soundscape")
-                .font(.system(.headline, design: .serif))
+                .font(Constants.Typography.heading)
                 .foregroundColor(Color.parchment.opacity(0.8))
                 .padding(.top, 12)
 
@@ -344,7 +344,7 @@ struct MeditationView: View {
                         } label: {
                             HStack {
                                 Text(scape.displayName)
-                                    .font(.system(.body, design: .serif))
+                                    .font(Constants.Typography.body)
                                     .foregroundColor(Color.parchment.opacity(0.9))
                                 Spacer()
                                 if isSelected {
@@ -372,7 +372,7 @@ struct MeditationView: View {
                         let noneSelected = soundscapePlayer.currentAsset == nil && UserPreferences.selectedSoundscapeId.value == nil
                         HStack {
                             Text("None")
-                                .font(.system(.body, design: .serif))
+                                .font(Constants.Typography.body)
                                 .foregroundColor(Color.parchment.opacity(0.5))
                             Spacer()
                             if noneSelected {
@@ -397,7 +397,7 @@ struct MeditationView: View {
     private var breathPickerSheet: some View {
         VStack(spacing: 16) {
             Text("Breath Rhythm")
-                .font(.system(.headline, design: .serif))
+                .font(Constants.Typography.heading)
                 .foregroundColor(Color.parchment.opacity(0.8))
                 .padding(.top, 12)
 
@@ -418,14 +418,14 @@ struct MeditationView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack(spacing: 8) {
                                         Text(r.name)
-                                            .font(.system(.body, design: .serif))
+                                            .font(Constants.Typography.body)
                                             .foregroundColor(Color.parchment.opacity(0.9))
                                         Text(r.label)
-                                            .font(.system(.caption, design: .serif))
+                                            .font(Constants.Typography.caption)
                                             .foregroundColor(Color.fog.opacity(0.4))
                                     }
                                     Text(r.description)
-                                        .font(.system(.caption, design: .serif))
+                                        .font(Constants.Typography.caption)
                                         .foregroundColor(Color.fog.opacity(0.35))
                                 }
                                 Spacer()
