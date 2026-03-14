@@ -299,7 +299,8 @@ struct SceneryItemView: View {
     // MARK: - Moon — clouds, stars, moonlight rays, unique phase
 
     private var moonView: some View {
-        let phaseScale = 0.85 + CGFloat(abs(walkDate.hashValue % 30)) / 100.0
+        let daysSinceEpoch = Int(walkDate.timeIntervalSinceReferenceDate / 86400)
+        let phaseScale = 0.85 + CGFloat(abs(daysSinceEpoch % 30)) / 100.0
 
         return TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate

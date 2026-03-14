@@ -259,7 +259,7 @@ struct InkScrollView: View {
     @ViewBuilder
     private var expandCard: some View {
         if let snapshot = expandedSnapshot {
-            let seasonColor = expandCardSeasonColor(for: snapshot)
+            let seasonColor = dotSeasonalColor(for: snapshot)
 
             VStack {
                 Spacer()
@@ -397,20 +397,6 @@ struct InkScrollView: View {
         }
     }
 
-    private func expandCardSeasonColor(for snapshot: WalkSnapshot) -> Color {
-        let month = Calendar.current.component(.month, from: snapshot.startDate)
-        let colorName: String
-        switch month {
-        case 3...5: colorName = "moss"
-        case 6...8: colorName = "rust"
-        case 9...11: colorName = "dawn"
-        default: colorName = "ink"
-        }
-        return Color(uiColor: SeasonalColorEngine.seasonalColor(
-            named: colorName, intensity: .full, on: snapshot.startDate
-        ))
-    }
-
     private static func formatPace(_ pace: Double) -> String {
         guard pace > 0 else { return "—" }
         let minutes = Int(pace) / 60
@@ -447,7 +433,9 @@ struct InkScrollView: View {
         ))
 
         let baseSize: CGFloat = 32
-        let sizeVariation = CGFloat(abs(snapshot.id.hashValue % 20)) / 20.0
+        var h: UInt64 = 14695981039346656037
+        withUnsafeBytes(of: snapshot.id) { $0.forEach { h = (h ^ UInt64($0)) &* 1099511628211 } }
+        let sizeVariation = CGFloat(h % 20) / 20.0
         let size = baseSize + sizeVariation * 24
 
         let xOffset: CGFloat = placement.side == .left ? -40 - size / 2 : 40 + size / 2
@@ -573,7 +561,7 @@ struct InkScrollView: View {
 
     private static let monthFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "MMM"
+        f.setLocalizedDateFormatFromTemplate("MMM")
         return f
     }()
 
