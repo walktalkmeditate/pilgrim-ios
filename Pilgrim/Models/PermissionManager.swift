@@ -97,13 +97,13 @@ class PermissionManager: NSObject, CLLocationManagerDelegate {
     func checkMicrophonePermission(closure: @escaping (Bool) -> Void) {
         switch AVAudioSession.sharedInstance().recordPermission {
         case .granted:
-            closure(true)
+            DispatchQueue.main.async { closure(true) }
         case .undetermined:
             AVAudioSession.sharedInstance().requestRecordPermission { granted in
                 DispatchQueue.main.async { closure(granted) }
             }
         default:
-            closure(false)
+            DispatchQueue.main.async { closure(false) }
         }
     }
 
@@ -116,7 +116,7 @@ class PermissionManager: NSObject, CLLocationManagerDelegate {
     func checkMotionPermission(closure: @escaping (Bool) -> Void) {
         switch CMMotionActivityManager.authorizationStatus() {
         case .authorized:
-            closure(true)
+            DispatchQueue.main.async { closure(true) }
         case .notDetermined:
             motionActivityManager = CMMotionActivityManager()
             motionActivityManager?.queryActivityStarting(from: Date(), to: Date(), to: .main) { [weak self] (activity, error) in
@@ -124,13 +124,13 @@ class PermissionManager: NSObject, CLLocationManagerDelegate {
                 let auth = CMPedometer.authorizationStatus()
                 switch auth {
                 case .authorized:
-                    closure(true)
+                    DispatchQueue.main.async { closure(true) }
                 default:
-                    closure(false)
+                    DispatchQueue.main.async { closure(false) }
                 }
             }
         default:
-            closure(false)
+            DispatchQueue.main.async { closure(false) }
         }
     }
 

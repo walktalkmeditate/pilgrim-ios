@@ -27,8 +27,6 @@ class RootCoordinatorViewModel: ObservableObject {
     
     @Published private(set) var rootState: RootState
     
-    let setupCoordinatorViewModel = SetupCoordinatorViewModel()
-    
     init() {
         self.rootState = RootState(isAppSetUp: UserPreferences.isSetUp.value)
         UserPreferences.isSetUp.publisher

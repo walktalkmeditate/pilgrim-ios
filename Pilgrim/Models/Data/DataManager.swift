@@ -209,72 +209,7 @@ struct DataManager {
                 walk._talkDuration .= object.talkDuration
                 walk._meditateDuration .= object.meditateDuration
 
-                for tempPause in object.pauses {
-                    let pause = transaction.create(Into<WalkPause>())
-                    pause._uuid .= tempPause.uuid ?? UUID()
-                    pause._startDate .= tempPause.startDate
-                    pause._endDate .= tempPause.endDate
-                    pause._pauseType .= tempPause.pauseType
-
-                    pause._workout .= walk
-                }
-
-                for tempWalkEvent in object.workoutEvents {
-                    let walkEvent = transaction.create(Into<WalkEvent>())
-                    walkEvent._uuid .= tempWalkEvent.uuid ?? UUID()
-                    walkEvent._eventType .= tempWalkEvent.eventType
-                    walkEvent._timestamp .= tempWalkEvent.timestamp
-
-                    walkEvent._workout .= walk
-                }
-
-                for tempSample in object.routeData {
-                    let routeSample = transaction.create(Into<RouteDataSample>())
-                    routeSample._uuid .= tempSample.uuid ?? UUID()
-                    routeSample._latitude .= tempSample.latitude
-                    routeSample._longitude .= tempSample.longitude
-                    routeSample._altitude .= tempSample.altitude
-                    routeSample._timestamp .= tempSample.timestamp
-                    routeSample._horizontalAccuracy .= tempSample.horizontalAccuracy
-                    routeSample._verticalAccuracy .= tempSample.verticalAccuracy
-                    routeSample._speed .= tempSample.speed
-                    routeSample._direction .= tempSample.direction
-
-                    routeSample._workout .= walk
-                }
-
-                for tempSample in object.heartRates {
-                    let heartRateSample = transaction.create(Into<HeartRateDataSample>())
-                    heartRateSample._uuid .= tempSample.uuid ?? UUID()
-                    heartRateSample._heartRate .= tempSample.heartRate
-                    heartRateSample._timestamp .= tempSample.timestamp
-
-                    heartRateSample._workout .= walk
-                }
-
-                for tempRecording in object.voiceRecordings {
-                    let recording = transaction.create(Into<VoiceRecording>())
-                    recording._uuid .= tempRecording.uuid ?? UUID()
-                    recording._startDate .= tempRecording.startDate
-                    recording._endDate .= tempRecording.endDate
-                    recording._duration .= tempRecording.duration
-                    recording._fileRelativePath .= tempRecording.fileRelativePath
-                    recording._transcription .= tempRecording.transcription
-                    recording._wordsPerMinute .= tempRecording.wordsPerMinute
-
-                    recording._workout .= walk
-                }
-
-                for tempInterval in object.activityIntervals {
-                    let interval = transaction.create(Into<ActivityInterval>())
-                    interval._uuid .= tempInterval.uuid ?? UUID()
-                    interval._activityType .= tempInterval.activityType
-                    interval._startDate .= tempInterval.startDate
-                    interval._endDate .= tempInterval.endDate
-
-                    interval._workout .= walk
-                }
-
+                persistRelatedEntities(from: object, to: walk, in: transaction)
                 walks.append(walk)
 
             }
@@ -301,7 +236,73 @@ struct DataManager {
         }
         
     }
-    
+
+    private static func persistRelatedEntities(
+        from source: WalkInterface,
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        for tempPause in source.pauses {
+            let pause = transaction.create(Into<WalkPause>())
+            pause._uuid .= tempPause.uuid ?? UUID()
+            pause._startDate .= tempPause.startDate
+            pause._endDate .= tempPause.endDate
+            pause._pauseType .= tempPause.pauseType
+            pause._workout .= walk
+        }
+
+        for tempWalkEvent in source.workoutEvents {
+            let walkEvent = transaction.create(Into<WalkEvent>())
+            walkEvent._uuid .= tempWalkEvent.uuid ?? UUID()
+            walkEvent._eventType .= tempWalkEvent.eventType
+            walkEvent._timestamp .= tempWalkEvent.timestamp
+            walkEvent._workout .= walk
+        }
+
+        for tempSample in source.routeData {
+            let routeSample = transaction.create(Into<RouteDataSample>())
+            routeSample._uuid .= tempSample.uuid ?? UUID()
+            routeSample._latitude .= tempSample.latitude
+            routeSample._longitude .= tempSample.longitude
+            routeSample._altitude .= tempSample.altitude
+            routeSample._timestamp .= tempSample.timestamp
+            routeSample._horizontalAccuracy .= tempSample.horizontalAccuracy
+            routeSample._verticalAccuracy .= tempSample.verticalAccuracy
+            routeSample._speed .= tempSample.speed
+            routeSample._direction .= tempSample.direction
+            routeSample._workout .= walk
+        }
+
+        for tempSample in source.heartRates {
+            let heartRateSample = transaction.create(Into<HeartRateDataSample>())
+            heartRateSample._uuid .= tempSample.uuid ?? UUID()
+            heartRateSample._heartRate .= tempSample.heartRate
+            heartRateSample._timestamp .= tempSample.timestamp
+            heartRateSample._workout .= walk
+        }
+
+        for tempRecording in source.voiceRecordings {
+            let recording = transaction.create(Into<VoiceRecording>())
+            recording._uuid .= tempRecording.uuid ?? UUID()
+            recording._startDate .= tempRecording.startDate
+            recording._endDate .= tempRecording.endDate
+            recording._duration .= tempRecording.duration
+            recording._fileRelativePath .= tempRecording.fileRelativePath
+            recording._transcription .= tempRecording.transcription
+            recording._wordsPerMinute .= tempRecording.wordsPerMinute
+            recording._workout .= walk
+        }
+
+        for tempInterval in source.activityIntervals {
+            let interval = transaction.create(Into<ActivityInterval>())
+            interval._uuid .= tempInterval.uuid ?? UUID()
+            interval._activityType .= tempInterval.activityType
+            interval._startDate .= tempInterval.startDate
+            interval._endDate .= tempInterval.endDate
+            interval._workout .= walk
+        }
+    }
+
     /**
      This function updates a walk from a data set referencing the walk with its universally unique identifier.
      - parameter object: the data set containing all updates

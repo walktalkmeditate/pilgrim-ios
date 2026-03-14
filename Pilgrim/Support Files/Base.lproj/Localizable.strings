@@ -161,3 +161,28 @@
 "ExportManager.GPXError" = "The app failed to create a GPX file, please contact the support.";
 "Changelog" = "Changelog";
 "Keep" = "Keep";
+
+// Welcome - The Threshold
+"Welcome.Quote.1" = "Every journey begins\nwith a single step";
+"Welcome.Quote.2" = "The path is made\nby walking";
+"Welcome.Quote.3" = "Not all who wander\nare lost";
+"Welcome.Quote.4" = "Solvitur ambulando —\nit is solved by walking";
+"Welcome.Quote.5" = "Walk as if you are kissing\nthe earth with your feet";
+"Welcome.Quote.6" = "The journey of a thousand miles\nbegins beneath your feet";
+"Welcome.Begin" = "Begin";
+
+// Permissions - Preparing for the Journey
+"Permissions.Headline" = "Prepare for the journey";
+"Permissions.Subtitle" = "Pilgrim walks best with these";
+"Permissions.Location.Title" = "To walk with you";
+"Permissions.Location.Description" = "Track your route, distance, and pace";
+"Permissions.Microphone.Title" = "To hear your thoughts";
+"Permissions.Microphone.Description" = "Capture voice reflections along the way";
+"Permissions.Motion.Title" = "To count your steps";
+"Permissions.Motion.Description" = "Measure steps as you move";
+"Permissions.Motion.Optional" = "(optional)";
+"Permissions.Grant" = "Grant";
+"Permissions.Settings" = "Settings";
+"Permissions.Skipped" = "Skipped";
+"Permissions.Next" = "Next";
+"Permissions.Required.Hint" = "Pilgrim needs this to walk with you";
