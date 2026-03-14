@@ -420,7 +420,8 @@ struct InkScrollView: View {
 
     private static let expandDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "EEEE, MMM d yyyy · h:mm a"
+        f.dateStyle = .full
+        f.timeStyle = .short
         return f
     }()
 

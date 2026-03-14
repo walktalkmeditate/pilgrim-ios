@@ -84,12 +84,13 @@ struct SceneryGenerator {
     }
 
     private static func deterministicSeed(for snapshot: WalkSnapshot) -> UInt64 {
-        var hasher = Hasher()
-        hasher.combine(snapshot.id)
-        hasher.combine(Int(snapshot.startDate.timeIntervalSince1970))
-        hasher.combine(Int(snapshot.distance * 100))
-        hasher.combine(Int(snapshot.duration))
-        return UInt64(abs(hasher.finalize()))
+        var h: UInt64 = 14695981039346656037
+        func mix(_ v: UInt64) { h = (h ^ v) &* 1099511628211 }
+        withUnsafeBytes(of: snapshot.id) { $0.forEach { mix(UInt64($0)) } }
+        mix(UInt64(bitPattern: Int64(snapshot.startDate.timeIntervalSince1970)))
+        mix(UInt64(bitPattern: Int64(snapshot.distance * 100)))
+        mix(UInt64(bitPattern: Int64(snapshot.duration)))
+        return h
     }
 
     private static func seededRandom(seed: UInt64, salt: UInt64) -> Double {

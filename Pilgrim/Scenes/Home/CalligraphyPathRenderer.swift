@@ -127,10 +127,11 @@ struct CalligraphyPathRenderer {
     }
 
     private func deterministicHash(_ snapshot: WalkSnapshot) -> Int {
-        var hasher = Hasher()
-        hasher.combine(snapshot.id)
-        hasher.combine(Int(snapshot.startDate.timeIntervalSince1970))
-        hasher.combine(Int(snapshot.distance))
-        return abs(hasher.finalize())
+        var h: UInt64 = 14695981039346656037
+        func mix(_ v: UInt64) { h = (h ^ v) &* 1099511628211 }
+        withUnsafeBytes(of: snapshot.id) { $0.forEach { mix(UInt64($0)) } }
+        mix(UInt64(bitPattern: Int64(snapshot.startDate.timeIntervalSince1970)))
+        mix(UInt64(bitPattern: Int64(snapshot.distance)))
+        return Int(h & 0x7FFFFFFFFFFFFFFF)
     }
 }
