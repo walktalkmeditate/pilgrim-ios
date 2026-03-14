@@ -151,10 +151,12 @@ public struct MapView: UIViewRepresentable {
             case "meditating":
                 renderer.strokeColor = .dawn
             default:
-                renderer.strokeColor = .moss
+                renderer.strokeColor = SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
             }
-            renderer.lineWidth = 3
-            renderer.alpha = 0.85
+            renderer.lineWidth = 4
+            renderer.alpha = 0.9
+            renderer.lineCap = .round
+            renderer.lineJoin = .round
             return renderer
         }
 
