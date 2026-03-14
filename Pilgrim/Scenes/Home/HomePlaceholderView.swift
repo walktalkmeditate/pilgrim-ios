@@ -62,7 +62,8 @@ private struct HomePlaceholderPermissionsView: View {
     init(onComplete: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: PermissionsViewModel(
             permissionManager: PermissionManager.standard,
-            onComplete: onComplete
+            onComplete: onComplete,
+            skipInitialCheck: true
         ))
     }
 

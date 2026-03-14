@@ -35,14 +35,16 @@ class PermissionsViewModel: ObservableObject {
 
     private let permissionManager: PermissionManager?
     private let onComplete: () -> Void
+    private let skipInitialCheck: Bool
 
-    init(permissionManager: PermissionManager?, onComplete: @escaping () -> Void) {
+    init(permissionManager: PermissionManager?, onComplete: @escaping () -> Void, skipInitialCheck: Bool = false) {
         self.permissionManager = permissionManager
         self.onComplete = onComplete
+        self.skipInitialCheck = skipInitialCheck
     }
 
     func checkExistingPermissions() {
-        guard let pm = permissionManager else { return }
+        guard !skipInitialCheck, let pm = permissionManager else { return }
         locationGranted = pm.currentLocationStatus == .granted
         microphoneGranted = pm.isMicrophoneGranted
         motionGranted = pm.isMotionGranted
