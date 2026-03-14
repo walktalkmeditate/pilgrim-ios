@@ -16,7 +16,7 @@ struct RootCoordinatorView: View {
             case .setup:
                 SetupCoordinatorView()
             case .main:
-                MainCoordinatorView()
+                MainTabView()
             }
         }
     }

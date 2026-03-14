@@ -222,6 +222,11 @@
 		CC00000200000000GRASSH01 /* GrassShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000GRASSH01 /* GrassShape.swift */; };
 		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
 		CC00000200000000MOONSH01 /* MoonShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOONSH01 /* MoonShape.swift */; };
+		CC00000200000000DEBUGS01 /* DebugDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */; };
+		CC00000200000000MAINTB01 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MAINTB01 /* MainTabView.swift */; };
+		CC00000200000000HOMEPH01 /* HomePlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000HOMEPH01 /* HomePlaceholderView.swift */; };
+		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
+		CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENIV01 /* SceneryItemView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -457,6 +462,11 @@
 		CC00000100000000GRASSH01 /* GrassShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrassShape.swift; sourceTree = "<group>"; };
 		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
 		CC00000100000000MOONSH01 /* MoonShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonShape.swift; sourceTree = "<group>"; };
+		CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugDataSeeder.swift; sourceTree = "<group>"; };
+		CC00000100000000MAINTB01 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		CC00000100000000HOMEPH01 /* HomePlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePlaceholderView.swift; sourceTree = "<group>"; };
+		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -531,6 +541,7 @@
 			children = (
 				225C0F772931D26600B9B45F /* Root */,
 				AA0001010000000000000021 /* Home */,
+				CC00000100000000SETGRP01 /* Settings_Scene */,
 				AA0001010000000000000022 /* ActiveWalk */,
 				AA0001010000000000000023 /* WalkSummary */,
 				22BC99182941D97F00D9B1A5 /* Setup */,
@@ -545,6 +556,7 @@
 				225C0F752931D22300B9B45F /* RootCoordinatorView.swift */,
 				225C0F782931D27900B9B45F /* RootCoordinatorViewModel.swift */,
 				AA0001010000000000000007 /* MainCoordinatorView.swift */,
+				CC00000100000000MAINTB01 /* MainTabView.swift */,
 			);
 			path = Root;
 			sourceTree = "<group>";
@@ -764,6 +776,7 @@
 				22BC994A2941DA3400D9B1A5 /* Constants.swift */,
 				CC00000100000000SEASON01 /* SeasonalColorEngine.swift */,
 				CC00000100000000SCENER01 /* SceneryGenerator.swift */,
+				CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */,
 				22718E3A2592665200708D3B /* Contribution.swift */,
 				2213137C23B4110700881806 /* PermissionManager.swift */,
 				AAAA000000000000000000B2 /* TranscriptionService.swift */,
@@ -1025,6 +1038,7 @@
 				CC00000100000000INKSCR01 /* InkScrollView.swift */,
 				CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */,
 				CC00000100000000MILEST01 /* MilestoneMarkerView.swift */,
+				CC00000100000000HOMEPH01 /* HomePlaceholderView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -1082,8 +1096,17 @@
 				CC00000100000000GRASSH01 /* GrassShape.swift */,
 				CC00000100000000TORIIG01 /* ToriiGateShape.swift */,
 				CC00000100000000MOONSH01 /* MoonShape.swift */,
+				CC00000100000000SCENIV01 /* SceneryItemView.swift */,
 			);
 			path = Scenery;
+			sourceTree = "<group>";
+		};
+		CC00000100000000SETGRP01 /* Settings_Scene */ = {
+			isa = PBXGroup;
+			children = (
+				CC00000100000000SETTVW01 /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1426,6 +1449,10 @@
 				AA0001010000000000000013 /* WalkRowView.swift in Sources */,
 				CC00000200000000SEASON01 /* SeasonalColorEngine.swift in Sources */,
 				CC00000200000000SCENER01 /* SceneryGenerator.swift in Sources */,
+				CC00000200000000DEBUGS01 /* DebugDataSeeder.swift in Sources */,
+				CC00000200000000MAINTB01 /* MainTabView.swift in Sources */,
+				CC00000200000000HOMEPH01 /* HomePlaceholderView.swift in Sources */,
+				CC00000200000000SETTVW01 /* SettingsView.swift in Sources */,
 				CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */,
 				CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */,
 				CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */,
@@ -1438,6 +1465,7 @@
 				CC00000200000000GRASSH01 /* GrassShape.swift in Sources */,
 				CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */,
 				CC00000200000000MOONSH01 /* MoonShape.swift in Sources */,
+				CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */,
 				AA0001010000000000000014 /* ActiveWalkView.swift in Sources */,
 				AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */,
 				AA00030100000000000002 /* MeditationView.swift in Sources */,
@@ -1582,7 +1610,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1639,7 +1667,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -1709,7 +1737,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = QT27QDFZ7N;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = de.tadris.Pilgrim.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1730,7 +1758,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = QT27QDFZ7N;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = de.tadris.Pilgrim.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

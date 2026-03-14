@@ -2,34 +2,21 @@ import SwiftUI
 
 struct MoonShape: Shape {
     func path(in rect: CGRect) -> Path {
-        var path = Path()
         let w = rect.width
         let h = rect.height
+        let center = CGPoint(x: w * 0.45, y: h * 0.5)
+        let outerR = min(w, h) * 0.45
+        let innerR = outerR * 0.78
+        let innerCenter = CGPoint(x: center.x + outerR * 0.5, y: center.y - outerR * 0.08)
 
-        let outerRadius = min(w, h) * 0.45
-        let center = CGPoint(x: w * 0.5, y: h * 0.5)
+        var outer = Path()
+        outer.addArc(center: center, radius: outerR,
+                     startAngle: .degrees(0), endAngle: .degrees(360), clockwise: false)
 
-        path.addArc(
-            center: center,
-            radius: outerRadius,
-            startAngle: .degrees(-60),
-            endAngle: .degrees(200),
-            clockwise: false
-        )
+        var inner = Path()
+        inner.addArc(center: innerCenter, radius: innerR,
+                     startAngle: .degrees(0), endAngle: .degrees(360), clockwise: false)
 
-        let innerCenter = CGPoint(x: center.x + outerRadius * 0.35, y: center.y - outerRadius * 0.15)
-        let innerRadius = outerRadius * 0.8
-
-        path.addArc(
-            center: innerCenter,
-            radius: innerRadius,
-            startAngle: .degrees(200),
-            endAngle: .degrees(-60),
-            clockwise: true
-        )
-
-        path.closeSubpath()
-
-        return path
+        return outer.subtracting(inner)
     }
 }

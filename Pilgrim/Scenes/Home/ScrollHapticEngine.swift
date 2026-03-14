@@ -1,42 +1,39 @@
-import UIKit
 import SwiftUI
 
-struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
+enum HapticEvent: Equatable {
+    case none
+    case lightDot(Int)
+    case heavyDot(Int)
+    case milestone(Int)
 }
 
-class ScrollHapticEngine {
-
-    private var lastTriggeredIndex: Int?
-    private var lastTriggeredMilestone: Int?
-
-    private let lightGenerator = UIImpactFeedbackGenerator(style: .light)
-    private let mediumGenerator = UIImpactFeedbackGenerator(style: .medium)
-    private let rigidGenerator = UIImpactFeedbackGenerator(style: .rigid)
+@Observable
+class ScrollHapticState {
 
     var dotPositions: [CGFloat] = []
     var dotSizes: [CGFloat] = []
     var milestonePositions: [CGFloat] = []
 
-    func prepare() {
-        lightGenerator.prepare()
-        mediumGenerator.prepare()
-        rigidGenerator.prepare()
-    }
+    private(set) var currentEvent: HapticEvent = .none
+    private var lastTriggeredIndex: Int?
+    private var lastTriggeredMilestone: Int?
 
     func handleScrollOffset(_ offset: CGFloat, viewportHeight: CGFloat) {
         guard !UIAccessibility.isReduceMotionEnabled else { return }
 
         let viewCenter = -offset + viewportHeight / 2
 
-        checkDotCrossing(viewCenter: viewCenter)
-        checkMilestoneCrossing(viewCenter: viewCenter)
+        if let dotEvent = checkDotCrossing(viewCenter: viewCenter) {
+            currentEvent = dotEvent
+            return
+        }
+
+        if let milestoneEvent = checkMilestoneCrossing(viewCenter: viewCenter) {
+            currentEvent = milestoneEvent
+        }
     }
 
-    private func checkDotCrossing(viewCenter: CGFloat) {
+    private func checkDotCrossing(viewCenter: CGFloat) -> HapticEvent? {
         let threshold: CGFloat = 20
 
         for (index, dotY) in dotPositions.enumerated() {
@@ -44,17 +41,13 @@ class ScrollHapticEngine {
             guard lastTriggeredIndex != index else { continue }
 
             lastTriggeredIndex = index
-            let isLargeDot = index < dotSizes.count && dotSizes[index] > 15
-            if isLargeDot {
-                mediumGenerator.impactOccurred()
-            } else {
-                lightGenerator.impactOccurred()
-            }
-            return
+            let isLarge = index < dotSizes.count && dotSizes[index] > 15
+            return isLarge ? .heavyDot(index) : .lightDot(index)
         }
+        return nil
     }
 
-    private func checkMilestoneCrossing(viewCenter: CGFloat) {
+    private func checkMilestoneCrossing(viewCenter: CGFloat) -> HapticEvent? {
         let threshold: CGFloat = 25
 
         for (index, milestoneY) in milestonePositions.enumerated() {
@@ -62,8 +55,8 @@ class ScrollHapticEngine {
             guard lastTriggeredMilestone != index else { continue }
 
             lastTriggeredMilestone = index
-            rigidGenerator.impactOccurred()
-            return
+            return .milestone(index)
         }
+        return nil
     }
 }

@@ -7,29 +7,31 @@ struct HomeView: View {
     @State private var selectedWalk: Walk?
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                InkScrollView(
-                    snapshots: viewModel.walkSnapshots,
-                    onTapWalk: { id in
-                        selectedWalk = viewModel.walk(for: id)
-                    }
-                )
-
-                startButton
-            }
+        NavigationStack {
+            InkScrollView(
+                snapshots: viewModel.walkSnapshots,
+                onTapWalk: { id in
+                    selectedWalk = viewModel.walk(for: id)
+                }
+            )
             .background(Color.parchment)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    VStack(spacing: 2) {
-                        Text("Pilgrim")
-                            .font(Constants.Typography.displayLarge)
+                    Text("Pilgrim Log")
+                        .font(Constants.Typography.heading)
+                        .foregroundColor(.ink)
+                }
+                #if DEBUG
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("Seed 32 walks") { seedDebugData() }
+                        Button("Clear all walks", role: .destructive) { clearDebugData() }
+                    } label: {
+                        Image(systemName: "ladybug")
                             .foregroundColor(.ink)
-                        Text(dateSubtitle)
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.fog)
                     }
                 }
+                #endif
             }
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedWalk) { walk in
@@ -38,29 +40,23 @@ struct HomeView: View {
         }
     }
 
-    private static let dateSubtitleFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "EEEE, MMMM d"
-        return f
-    }()
-
-    private var dateSubtitle: String {
-        Self.dateSubtitleFormatter.string(from: Date())
-    }
-
-    private var startButton: some View {
-        Button(action: viewModel.startWalk) {
-            Text("Begin")
-                .font(Constants.Typography.heading)
-                .foregroundColor(.parchment)
-                .frame(maxWidth: .infinity)
-                .padding(Constants.UI.Padding.normal)
-                .background(Color.stone)
-                .clipShape(Capsule())
+    #if DEBUG
+    private func seedDebugData() {
+        DebugDataSeeder.seed { count in
+            print("[Debug] Seeded \(count) walks")
+            viewModel.loadWalks()
         }
-        .padding(.horizontal, Constants.UI.Padding.big)
-        .padding(.vertical, Constants.UI.Padding.normal)
     }
+
+    private func clearDebugData() {
+        DataManager.deleteAll { success, _ in
+            if success {
+                print("[Debug] Cleared all walks")
+                viewModel.loadWalks()
+            }
+        }
+    }
+    #endif
 }
 
 extension Walk: @retroactive Identifiable {

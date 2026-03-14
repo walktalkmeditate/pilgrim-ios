@@ -20,13 +20,45 @@ struct WalkDotView: View {
             }
 
             Circle()
-                .fill(dotColor)
+                .fill(
+                    RadialGradient(
+                        colors: [dotColor.opacity(0.15), .clear],
+                        center: .center,
+                        startRadius: size * 0.5,
+                        endRadius: size * 1.8
+                    )
+                )
+                .frame(width: size * 3.5, height: size * 3.5)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [dotColor, dotColor.opacity(0.7)],
+                        center: UnitPoint(x: 0.4, y: 0.35),
+                        startRadius: 0,
+                        endRadius: size * 0.6
+                    )
+                )
                 .frame(width: size, height: size)
                 .opacity(opacity)
-                .accessibilityLabel(accessibilityText)
+                .shadow(color: .ink.opacity(0.15), radius: 2, x: 1, y: 2)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [.white.opacity(0.3), .clear],
+                        center: UnitPoint(x: 0.3, y: 0.3),
+                        startRadius: 0,
+                        endRadius: size * 0.4
+                    )
+                )
+                .frame(width: size * 0.7, height: size * 0.7)
+                .opacity(opacity * 0.5)
+                .offset(x: -size * 0.08, y: -size * 0.08)
         }
         .position(position)
         .onTapGesture { onTap(snapshot.id) }
+        .accessibilityLabel(accessibilityText)
     }
 
     var dotSize: CGFloat {
@@ -38,8 +70,18 @@ struct WalkDotView: View {
     }
 
     private var dotColor: Color {
-        Color(uiColor: SeasonalColorEngine.seasonalColor(
-            named: "ink",
+        let month = Calendar.current.component(.month, from: snapshot.startDate)
+
+        let colorName: String
+        switch month {
+        case 3...5: colorName = "moss"
+        case 6...8: colorName = "rust"
+        case 9...11: colorName = "dawn"
+        default: colorName = "ink"
+        }
+
+        return Color(uiColor: SeasonalColorEngine.seasonalColor(
+            named: colorName,
             intensity: .full,
             on: snapshot.startDate
         ))
