@@ -54,18 +54,16 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
             }.store(in: &cancellables)
     }
 
+    private let audioCoordinator = AudioSessionCoordinator.shared
+
     private func configureAudioSession() {
-        let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth])
-            try session.setActive(true)
-        } catch {
-            print("[VoiceRecordingManagement] Failed to configure audio session: \(error)")
-        }
+        let needsPlayback = SoundscapePlayer.shared.isPlaying
+        let mode: AudioSessionCoordinator.Mode = needsPlayback ? .recordAndPlay : .recordingOnly
+        audioCoordinator.activate(for: mode, consumer: "voiceRecording")
     }
 
     private func deactivateAudioSession() {
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        audioCoordinator.deactivate(consumer: "voiceRecording")
     }
 
     private func ensureRecordingsDirectory() -> URL? {

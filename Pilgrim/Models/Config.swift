@@ -79,5 +79,10 @@ enum Config {
     static var hasSanboxReceipt: Bool {
         return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
     }
-    
+
+    enum Audio {
+        static let r2BaseURL = URL(string: "https://cdn.pilgrimapp.org/audio")!
+        static let manifestURL = URL(string: "https://cdn.pilgrimapp.org/audio/manifest.json")!
+    }
+
 }

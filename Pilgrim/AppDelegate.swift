@@ -35,6 +35,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             completion: { error in
                 
                 self.appLaunchState = .done
+                AudioManifestService.shared.syncIfNeeded()
 
                 // check permissions
                 // show changelog

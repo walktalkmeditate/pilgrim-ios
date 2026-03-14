@@ -12,6 +12,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     private let stepCounter: StepCounter
     private let liveStats: LiveStats
     let voiceRecordingManagement: VoiceRecordingManagement
+    let soundManagement = SoundManagement()
 
     @Published var status: WalkBuilder.Status = .waiting
     @Published var duration: String = "0:00"
@@ -101,6 +102,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func startRecording() {
         builder.setStatus(.recording)
+        soundManagement.onWalkStart()
     }
 
     func resume() {
@@ -109,6 +111,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func stop() {
         finalizeMeditation()
+        soundManagement.onWalkEnd()
         builder.setStatus(.ready)
     }
 
@@ -125,11 +128,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         }
         meditationStartDate = Date()
         isMeditating = true
+        soundManagement.onMeditationStart()
     }
 
     func endMeditation() {
         finalizeMeditation()
         isMeditating = false
+        soundManagement.onMeditationEnd()
     }
 
     private func finalizeMeditation() {

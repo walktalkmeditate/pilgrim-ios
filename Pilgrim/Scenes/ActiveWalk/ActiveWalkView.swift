@@ -117,10 +117,23 @@ struct ActiveWalkView: View {
                 outlinedButton("Stop", systemImage: "stop.fill", color: .rust) {
                     showStopConfirmation = true
                 }
+                muteButton
             }
         }
         .padding(Constants.UI.Padding.normal)
         .padding(.bottom, Constants.UI.Padding.normal)
+    }
+
+    private var muteButton: some View {
+        Button {
+            viewModel.soundManagement.sessionMuted.toggle()
+        } label: {
+            Image(systemName: viewModel.soundManagement.sessionMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                .font(.caption)
+                .foregroundColor(viewModel.soundManagement.sessionMuted ? .fog : .stone)
+        }
+        .frame(width: 32, height: 32)
+        .offset(y: -8)
     }
 
     private func outlinedButton(_ title: String, systemImage: String, color: Color, action: @escaping () -> Void) -> some View {
