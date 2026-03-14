@@ -42,6 +42,12 @@ struct WalkDotView: View {
                 .frame(width: size, height: size)
                 .opacity(opacity)
                 .shadow(color: .ink.opacity(0.15), radius: 2, x: 1, y: 2)
+                .overlay(
+                    Circle()
+                        .stroke(timeOfDayTint, lineWidth: 1.5)
+                        .frame(width: size + 3, height: size + 3)
+                        .opacity(opacity * 0.4)
+                )
 
             Circle()
                 .fill(
@@ -85,6 +91,15 @@ struct WalkDotView: View {
             intensity: .full,
             on: snapshot.startDate
         ))
+    }
+
+    private var timeOfDayTint: Color {
+        let hour = Calendar.current.component(.hour, from: snapshot.startDate)
+        switch hour {
+        case 5..<10: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: snapshot.startDate))
+        case 17..<21: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "fog", intensity: .full, on: snapshot.startDate))
+        default: return .clear
+        }
     }
 
     private var accessibilityText: String {

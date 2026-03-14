@@ -103,14 +103,21 @@ struct CalligraphyPathRenderer {
     func segmentWidth(for index: Int) -> CGFloat {
         guard index < snapshots.count else { return baseStrokeWidth }
         let snapshot = snapshots[index]
-        guard snapshot.averagePace > 0 else { return baseStrokeWidth }
 
-        let minPace: Double = 300
-        let maxPace: Double = 900
-        let clampedPace = min(max(snapshot.averagePace, minPace), maxPace)
-        let normalized = (clampedPace - minPace) / (maxPace - minPace)
+        let paceWidth: CGFloat
+        if snapshot.averagePace > 0 {
+            let minPace: Double = 300
+            let maxPace: Double = 900
+            let clampedPace = min(max(snapshot.averagePace, minPace), maxPace)
+            let normalized = (clampedPace - minPace) / (maxPace - minPace)
+            paceWidth = baseStrokeWidth + CGFloat(normalized) * (maxStrokeWidth - baseStrokeWidth)
+        } else {
+            paceWidth = baseStrokeWidth
+        }
 
-        return baseStrokeWidth + CGFloat(normalized) * (maxStrokeWidth - baseStrokeWidth)
+        guard snapshots.count > 1 else { return paceWidth }
+        let taper = 1.0 - CGFloat(index) / CGFloat(snapshots.count - 1) * 0.4
+        return paceWidth * taper
     }
 
     private func seed(for index: Int) -> CGFloat {
