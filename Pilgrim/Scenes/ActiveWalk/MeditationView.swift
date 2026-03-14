@@ -211,24 +211,33 @@ struct MeditationView: View {
 
     @ViewBuilder
     private var soundscapeLabel: some View {
-        if soundscapePlayer.currentAsset != nil || soundscapePlayer.isMuted {
+        if let name = selectedSoundscapeName {
             Button {
                 soundscapePlayer.toggleMute()
             } label: {
                 if soundscapePlayer.isMuted {
                     Text("♪ Paused")
                         .font(.system(.caption, design: .serif))
-                        .foregroundColor(Color.fog.opacity(0.3))
-                        .strikethrough(color: Color.fog.opacity(0.3))
-                } else if let name = soundscapePlayer.currentAsset?.displayName {
+                        .foregroundColor(Color.fog.opacity(0.2))
+                        .strikethrough(color: Color.fog.opacity(0.2))
+                } else {
                     Text("♪ \(name)")
                         .font(.system(.caption, design: .serif))
-                        .foregroundColor(Color.fog.opacity(0.5))
+                        .foregroundColor(Color.fog.opacity(0.35))
                 }
             }
-            .transition(.opacity)
             .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.isMuted)
         }
+    }
+
+    private var selectedSoundscapeName: String? {
+        if let playing = soundscapePlayer.currentAsset?.displayName {
+            return playing
+        }
+        if let id = UserPreferences.selectedSoundscapeId.value {
+            return AudioManifestService.shared.asset(byId: id)?.displayName
+        }
+        return nil
     }
 
     private var sessionTimer: some View {
@@ -258,13 +267,13 @@ struct MeditationView: View {
     private var doneButton: some View {
         Button(action: beginClosingCeremony) {
             Text("Done")
-                .font(Constants.Typography.button)
-                .foregroundColor(Color.parchment.opacity(0.7))
+                .font(.system(.subheadline, design: .serif).weight(.light))
+                .foregroundColor(Color.parchment.opacity(0.4))
                 .padding(.horizontal, 48)
                 .padding(.vertical, 14)
                 .background(
                     Capsule()
-                        .fill(Color.stone.opacity(0.35))
+                        .stroke(Color.parchment.opacity(0.15), lineWidth: 1)
                 )
         }
         .disabled(isClosing)
