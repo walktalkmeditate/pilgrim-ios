@@ -42,6 +42,7 @@ struct UserPreferences {
     static let meditationStartBellId = UserPreference.Optional<String>(key: "meditationStartBellId", defaultValue: "temple-bell")
     static let meditationEndBellId = UserPreference.Optional<String>(key: "meditationEndBellId", defaultValue: "yoga-chime")
     static let selectedSoundscapeId = UserPreference.Optional<String>(key: "selectedSoundscapeId", defaultValue: "gentle-stream")
+    static let breathRhythm = UserPreference.Required<Int>(key: "breathRhythm", defaultValue: 0)
 
     static let distanceMeasurementType = MeasurementUserPreference<UnitLength>(key: "distanceMeasurementType", possibleValues: [.kilometers, .miles])
     static let altitudeMeasurementType = MeasurementUserPreference<UnitLength>(key: "altitudeMeasurementType", possibleValues: [.meters, .feet], bigUnits: false)

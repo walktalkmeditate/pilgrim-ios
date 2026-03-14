@@ -18,8 +18,17 @@ struct MeditationView: View {
     @StateObject private var clock = SessionClock()
     @StateObject private var soundscapePlayer = SoundscapePlayer.shared
 
-    private let inhaleSeconds: Double = 5
-    private let exhaleSeconds: Double = 7
+    private var inhaleSeconds: Double { breathTiming.inhale }
+    private var exhaleSeconds: Double { breathTiming.exhale }
+    private var holdSeconds: Double { breathTiming.hold }
+
+    private var breathTiming: (inhale: Double, exhale: Double, hold: Double) {
+        switch UserPreferences.breathRhythm.value {
+        case 1: return (4, 4, 0)
+        case 2: return (4, 8, 7)
+        default: return (5, 7, 0)
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -328,8 +337,20 @@ struct MeditationView: View {
             circleScale = 1.0
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + inhaleSeconds) {
-            emitRipple()
-            breathOut()
+            self.emitRipple()
+            if self.holdSeconds > 0 {
+                self.breathHold()
+            } else {
+                self.breathOut()
+            }
+        }
+    }
+
+    private func breathHold() {
+        guard isActive else { return }
+        phase = .hold
+        DispatchQueue.main.asyncAfter(deadline: .now() + holdSeconds) {
+            self.breathOut()
         }
     }
 
@@ -340,7 +361,7 @@ struct MeditationView: View {
             circleScale = 0.45
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + exhaleSeconds) {
-            breathIn()
+            self.breathIn()
         }
     }
 
@@ -375,14 +396,7 @@ private class SessionClock: ObservableObject {
 }
 
 private enum BreathPhase {
-    case inhale, exhale
-
-    var label: String {
-        switch self {
-        case .inhale: return "Breathe in"
-        case .exhale: return "Breathe out"
-        }
-    }
+    case inhale, hold, exhale
 }
 
 private enum ClosingPhase {

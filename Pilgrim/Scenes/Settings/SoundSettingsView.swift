@@ -15,6 +15,7 @@ struct SoundSettingsView: View {
     @State private var meditationEndBellId = UserPreferences.meditationEndBellId.value
     @State private var selectedSoundscapeId = UserPreferences.selectedSoundscapeId.value
 
+    @State private var breathRhythm = UserPreferences.breathRhythm.value
     @State private var activePicker: PickerType?
 
     private let bellPlayer = BellPlayer.shared
@@ -100,6 +101,23 @@ struct SoundSettingsView: View {
                 activePicker = .meditationEndBell
             }
             soundscapeRow
+
+            HStack {
+                Text("Breath rhythm")
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.fog)
+                Spacer()
+                Picker("", selection: $breathRhythm) {
+                    Text("5 / 7").tag(0)
+                    Text("4 / 4").tag(1)
+                    Text("4 / 7 / 8").tag(2)
+                }
+                .pickerStyle(.menu)
+                .tint(.ink)
+                .onChange(of: breathRhythm) { _, val in
+                    UserPreferences.breathRhythm.value = val
+                }
+            }
         } header: {
             Text("Meditation")
                 .font(Constants.Typography.caption)
@@ -187,20 +205,35 @@ struct SoundSettingsView: View {
     // MARK: - Rows
 
     private func bellRow(label: String, bellId: String?, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(label)
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.fog)
-                Spacer()
+        HStack {
+            Text(label)
+                .font(Constants.Typography.body)
+                .foregroundColor(.fog)
+            Spacer()
+
+            Button {
+                previewBell(id: bellId)
+            } label: {
                 Text(bellDisplayName(for: bellId))
                     .font(Constants.Typography.body)
                     .foregroundColor(.ink)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: action) {
                 Image(systemName: "chevron.right")
                     .font(.caption2)
                     .foregroundColor(.fog)
             }
+            .buttonStyle(.plain)
         }
+    }
+
+    private func previewBell(id: String?) {
+        guard let id,
+              let asset = manifestService.asset(byId: id),
+              fileStore.isAvailable(asset) else { return }
+        bellPlayer.play(asset, volume: Float(bellVolume))
     }
 
     private var soundscapeRow: some View {
