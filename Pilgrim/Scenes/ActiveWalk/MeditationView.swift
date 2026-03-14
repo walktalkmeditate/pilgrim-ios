@@ -11,7 +11,7 @@ struct MeditationView: View {
     @State private var isClosing = false
     @State private var closingPhase: ClosingPhase = .none
     @State private var contentOpacity: Double = 1
-    @State private var screenOpacity: Double = 1
+    @State private var fadeOverlay: Double = 0
     @State private var warmthAmount: Double = 0
     @State private var isHolding = false
     @State private var holdIntensity: Double = 0
@@ -77,7 +77,7 @@ struct MeditationView: View {
             }
             .opacity(contentOpacity)
         }
-        .opacity(screenOpacity)
+        .overlay(Color.parchment.opacity(fadeOverlay))
         .onAppear {
             startBreathCycle()
             spawnParticles()
@@ -479,9 +479,9 @@ struct MeditationView: View {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
             guard self.isClosing else { return }
-            closingPhase = .fadeOut
+            self.closingPhase = .fadeOut
             withAnimation(.easeInOut(duration: 1.5)) {
-                screenOpacity = 0
+                self.fadeOverlay = 1
             }
         }
 
