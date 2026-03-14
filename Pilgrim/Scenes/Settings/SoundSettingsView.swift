@@ -377,6 +377,23 @@ struct SoundSettingsView: View {
                     UserPreferences.selectedSoundscapeId.value = scape.id
                 }
             }
+
+            Button {
+                soundscapePlayer.stop()
+                selectedSoundscapeId = nil
+                UserPreferences.selectedSoundscapeId.value = nil
+            } label: {
+                HStack {
+                    Text("None")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.fog)
+                    Spacer()
+                    if selectedSoundscapeId == nil {
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.stone)
+                    }
+                }
+            }
         }
     }
 

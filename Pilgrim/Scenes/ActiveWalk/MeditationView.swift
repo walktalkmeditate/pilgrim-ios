@@ -49,8 +49,10 @@ struct MeditationView: View {
                         .padding(.top, 32)
                         .transition(.opacity)
                 } else {
-                    breathCountLabel
-                        .padding(.top, 16)
+                    if !rhythm.isNone {
+                        breathCountLabel
+                            .padding(.top, 16)
+                    }
 
                     sessionTimer
                         .padding(.top, 8)
@@ -358,6 +360,29 @@ struct MeditationView: View {
                             .cornerRadius(10)
                         }
                     }
+
+                    Button {
+                        soundscapePlayer.stop()
+                        UserPreferences.selectedSoundscapeId.value = nil
+                        showSoundscapePicker = false
+                    } label: {
+                        let noneSelected = soundscapePlayer.currentAsset == nil && UserPreferences.selectedSoundscapeId.value == nil
+                        HStack {
+                            Text("None")
+                                .font(.system(.body, design: .serif))
+                                .foregroundColor(Color.parchment.opacity(0.5))
+                            Spacer()
+                            if noneSelected {
+                                Image(systemName: "checkmark")
+                                    .font(.caption)
+                                    .foregroundColor(.moss)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(noneSelected ? Color.moss.opacity(0.08) : Color.clear)
+                        .cornerRadius(10)
+                    }
                 }
                 .padding(.horizontal, 16)
             }
@@ -455,6 +480,13 @@ struct MeditationView: View {
     // MARK: - Breath Cycle
 
     private func startBreathCycle() {
+        if rhythm.isNone {
+            phase = .inhale
+            withAnimation(.easeInOut(duration: 2.0)) {
+                circleScale = 0.7
+            }
+            return
+        }
         breathIn()
     }
 
@@ -576,6 +608,8 @@ struct BreathRhythm: Identifiable {
     let exhale: Double
     let holdOut: Double
 
+    var isNone: Bool { inhale == 0 }
+
     static let all: [BreathRhythm] = [
         BreathRhythm(id: 0, name: "Calm", label: "5 / 7", description: "Long exhale for gentle relaxation", inhale: 5, holdIn: 0, exhale: 7, holdOut: 0),
         BreathRhythm(id: 1, name: "Equal", label: "4 / 4", description: "Balanced and simple", inhale: 4, holdIn: 0, exhale: 4, holdOut: 0),
@@ -583,6 +617,7 @@ struct BreathRhythm: Identifiable {
         BreathRhythm(id: 3, name: "Box", label: "4-4-4-4", description: "Four equal phases for focus", inhale: 4, holdIn: 4, exhale: 4, holdOut: 4),
         BreathRhythm(id: 4, name: "Coherent", label: "5 / 5", description: "Heart rate variability training", inhale: 5, holdIn: 0, exhale: 5, holdOut: 0),
         BreathRhythm(id: 5, name: "Deep calm", label: "3 / 6", description: "Short inhale, slow release", inhale: 3, holdIn: 0, exhale: 6, holdOut: 0),
+        BreathRhythm(id: 6, name: "None", label: "—", description: "Still focus point, open meditation", inhale: 0, holdIn: 0, exhale: 0, holdOut: 0),
     ]
 }
 
