@@ -13,17 +13,23 @@ final class AudioSessionCoordinator {
 
     private(set) var currentMode: Mode = .idle
     private var activeConsumers: Set<String> = []
+    private let queue = DispatchQueue(label: "AudioSessionCoordinator")
 
     private init() {}
 
     func activate(for mode: Mode, consumer: String) {
-        activeConsumers.insert(consumer)
+        queue.sync {
+            activeConsumers.insert(consumer)
+        }
         applyMode(mode)
     }
 
     func deactivate(consumer: String) {
-        activeConsumers.remove(consumer)
-        if activeConsumers.isEmpty {
+        let isEmpty = queue.sync {
+            activeConsumers.remove(consumer)
+            return activeConsumers.isEmpty
+        }
+        if isEmpty {
             applyMode(.idle)
         }
     }

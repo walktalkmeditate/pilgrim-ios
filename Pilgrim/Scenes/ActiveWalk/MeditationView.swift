@@ -26,7 +26,11 @@ struct MeditationView: View {
     @StateObject private var clock = SessionClock()
     @StateObject private var soundscapePlayer = SoundscapePlayer.shared
 
-    private var rhythm: BreathRhythm { BreathRhythm.all[UserPreferences.breathRhythm.value] }
+    private var rhythm: BreathRhythm {
+        let idx = UserPreferences.breathRhythm.value
+        guard idx >= 0 && idx < BreathRhythm.all.count else { return BreathRhythm.all[0] }
+        return BreathRhythm.all[idx]
+    }
 
     var body: some View {
         ZStack {
@@ -465,10 +469,12 @@ struct MeditationView: View {
         closingPhase = .dissolving
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            closingPhase = .summary
+            guard self.isClosing else { return }
+            self.closingPhase = .summary
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            guard self.isClosing else { return }
             closingPhase = .fadeOut
             withAnimation(.easeInOut(duration: 1.5)) {
                 screenOpacity = 0
@@ -476,7 +482,8 @@ struct MeditationView: View {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) {
-            onDismiss()
+            guard self.isClosing else { return }
+            self.onDismiss()
         }
     }
 

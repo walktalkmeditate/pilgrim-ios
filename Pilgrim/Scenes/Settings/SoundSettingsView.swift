@@ -110,7 +110,7 @@ struct SoundSettingsView: View {
                         .font(Constants.Typography.body)
                         .foregroundColor(.fog)
                     Spacer()
-                    Text(BreathRhythm.all[breathRhythm].name)
+                    Text(breathRhythm < BreathRhythm.all.count ? BreathRhythm.all[breathRhythm].name : "Calm")
                         .font(Constants.Typography.body)
                         .foregroundColor(.ink)
                     Image(systemName: "chevron.right")

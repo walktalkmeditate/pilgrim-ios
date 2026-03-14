@@ -20,10 +20,8 @@ final class AudioDownloadManager: ObservableObject {
 
     func downloadMissing(assets: [AudioAsset]) {
         let missing = assets.filter { !fileStore.isAvailable($0) }
-        guard !missing.isEmpty else {
-            downloadProgress = 1.0
-            return
-        }
+        guard !missing.isEmpty else { return }
+        guard !isDownloading else { return }
 
         isDownloading = true
         downloadProgress = 0
