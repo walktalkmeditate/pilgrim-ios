@@ -4,8 +4,8 @@ struct BreathTransitionView: View {
 
     let onComplete: () -> Void
 
-    @State private var screenScale: CGFloat = 1.0
-    @State private var footprintOpacity: Double = 0
+    @State private var logoOpacity: Double = 0
+    @State private var logoScale: CGFloat = 0.9
     @State private var warmthOpacity: Double = 0.02
 
     private let reduceMotion = UIAccessibility.isReduceMotionEnabled
@@ -18,47 +18,48 @@ struct BreathTransitionView: View {
             }
             .ignoresSafeArea()
 
-            FootprintShape()
-                .fill(Color.fog)
-                .frame(width: 30, height: 20)
-                .opacity(footprintOpacity)
+            PilgrimLogoView(size: 80)
+                .opacity(logoOpacity)
+                .scaleEffect(logoScale)
         }
-        .scaleEffect(screenScale)
         .onAppear { runTransition() }
     }
 
     private func runTransition() {
         if reduceMotion {
-            warmthOpacity = 0
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { onComplete() }
             return
         }
 
-        let stillness = 0.8
+        withAnimation(.easeInOut(duration: 1.0)) {
+            logoOpacity = 1.0
+            logoScale = 1.0
+        }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + stillness) {
+        let inhaleStart = 1.2
+        DispatchQueue.main.asyncAfter(deadline: .now() + inhaleStart) {
             withAnimation(.easeInOut(duration: Constants.UI.Motion.breath)) {
-                screenScale = 1.015
-                footprintOpacity = 0.3
+                logoScale = 1.04
+                warmthOpacity = 0.04
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + stillness + Constants.UI.Motion.breath) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + inhaleStart + Constants.UI.Motion.breath) {
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         }
 
-        let exhaleStart = stillness + Constants.UI.Motion.breath + 0.3
+        let exhaleStart = inhaleStart + Constants.UI.Motion.breath + 0.3
         DispatchQueue.main.asyncAfter(deadline: .now() + exhaleStart) {
             withAnimation(.easeInOut(duration: Constants.UI.Motion.breath)) {
-                self.screenScale = 1.0
-                self.footprintOpacity = 0
-                self.warmthOpacity = 0
+                logoScale = 0.95
+                logoOpacity = 0
+                warmthOpacity = 0
             }
         }
 
         let completeTime = exhaleStart + Constants.UI.Motion.breath
         DispatchQueue.main.asyncAfter(deadline: .now() + completeTime) {
-            self.onComplete()
+            onComplete()
         }
     }
 }

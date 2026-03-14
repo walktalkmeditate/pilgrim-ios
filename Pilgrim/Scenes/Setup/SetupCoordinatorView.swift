@@ -23,7 +23,7 @@ struct SetupCoordinatorView: View {
 
             case .permissions:
                 PermissionsPhaseView {
-                    withAnimation(.easeInOut(duration: Constants.UI.Motion.appear)) {
+                    withAnimation(.easeInOut(duration: Constants.UI.Motion.breath)) {
                         phase = .breathTransition
                     }
                 }
