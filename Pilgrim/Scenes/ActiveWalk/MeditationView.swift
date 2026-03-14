@@ -15,7 +15,10 @@ struct MeditationView: View {
     @State private var warmthAmount: Double = 0
     @State private var holdGlow: Double = 0
     @State private var showBreathPicker = false
+    @State private var showSoundscapePicker = false
     @State private var selectedRhythmId: Int = UserPreferences.breathRhythm.value
+    @State private var breathCount: Int = 0
+    @State private var milestoneFlash: Double = 0
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
     @StateObject private var clock = SessionClock()
@@ -45,8 +48,11 @@ struct MeditationView: View {
                         .padding(.top, 32)
                         .transition(.opacity)
                 } else {
+                    breathCountLabel
+                        .padding(.top, 16)
+
                     sessionTimer
-                        .padding(.top, 24)
+                        .padding(.top, 8)
 
                     soundscapeLabel
                         .padding(.top, 8)
@@ -74,6 +80,12 @@ struct MeditationView: View {
         .sheet(isPresented: $showBreathPicker) {
             breathPickerSheet
                 .presentationDetents([.fraction(0.4)])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Color.ink.opacity(0.95))
+        }
+        .sheet(isPresented: $showSoundscapePicker) {
+            soundscapePickerSheet
+                .presentationDetents([.fraction(0.45)])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.ink.opacity(0.95))
         }
@@ -212,7 +224,7 @@ struct MeditationView: View {
                 .scaleEffect(circleScale)
 
             Circle()
-                .stroke(Color.moss.opacity(0.25 + holdGlow * 0.15), lineWidth: 1 + holdGlow * 0.5)
+                .stroke(Color.moss.opacity(0.25 + holdGlow * 0.15 + milestoneFlash * 0.4), lineWidth: 1 + holdGlow * 0.5 + milestoneFlash * 1.5)
                 .frame(width: 200, height: 200)
                 .scaleEffect(circleScale * 1.3)
                 .opacity(Double(circleScale))
@@ -220,6 +232,18 @@ struct MeditationView: View {
     }
 
     // MARK: - Labels
+
+    @ViewBuilder
+    private var breathCountLabel: some View {
+        if breathCount > 0 {
+            Text("\(breathCount)")
+                .font(.system(.caption2, design: .serif))
+                .foregroundColor(Color.parchment.opacity(0.15))
+                .monospacedDigit()
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.5), value: breathCount)
+        }
+    }
 
     @ViewBuilder
     private var soundscapeLabel: some View {
@@ -238,6 +262,12 @@ struct MeditationView: View {
                         .foregroundColor(Color.fog.opacity(0.35))
                 }
             }
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 1.0).onEnded { _ in
+                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                    showSoundscapePicker = true
+                }
+            )
             .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.isMuted)
         }
     }
@@ -297,6 +327,52 @@ struct MeditationView: View {
                 )
         }
         .disabled(isClosing)
+    }
+
+    // MARK: - Soundscape Picker
+
+    private var soundscapePickerSheet: some View {
+        VStack(spacing: 20) {
+            Text("Soundscape")
+                .font(.system(.headline, design: .serif))
+                .foregroundColor(Color.parchment.opacity(0.8))
+                .padding(.top, 8)
+
+            ScrollView {
+                VStack(spacing: 4) {
+                    ForEach(AudioManifestService.shared.soundscapes) { scape in
+                        Button {
+                            UserPreferences.selectedSoundscapeId.value = scape.id
+                            if AudioFileStore.shared.isAvailable(scape) {
+                                soundscapePlayer.play(scape, volume: Float(UserPreferences.soundscapeVolume.value))
+                            }
+                            showSoundscapePicker = false
+                        } label: {
+                            HStack {
+                                Text(scape.displayName)
+                                    .font(.system(.body, design: .serif))
+                                    .foregroundColor(Color.parchment.opacity(0.9))
+                                Spacer()
+                                if soundscapePlayer.currentAsset?.id == scape.id {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption)
+                                        .foregroundColor(.moss)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(
+                                soundscapePlayer.currentAsset?.id == scape.id
+                                    ? Color.moss.opacity(0.1)
+                                    : Color.clear
+                            )
+                            .cornerRadius(10)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+        }
     }
 
     // MARK: - Breath Picker
@@ -387,6 +463,10 @@ struct MeditationView: View {
 
     private func breathIn() {
         guard isActive else { return }
+        if phase == .exhale || phase == .holdOut {
+            breathCount += 1
+            checkMilestone()
+        }
         phase = .inhale
         withAnimation(.easeInOut(duration: rhythm.inhale)) {
             circleScale = 1.0
@@ -397,6 +477,21 @@ struct MeditationView: View {
                 self.holdAfterInhale()
             } else {
                 self.breathOut()
+            }
+        }
+    }
+
+    private static let milestoneSeconds: Set<Int> = [300, 600, 900, 1200, 1800]
+
+    private func checkMilestone() {
+        let elapsed = Int(clock.elapsed)
+        for m in Self.milestoneSeconds {
+            if elapsed >= m && elapsed < m + 20 && elapsed - m < 20 {
+                withAnimation(.easeInOut(duration: 1.5)) { milestoneFlash = 1.0 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    withAnimation(.easeOut(duration: 1.5)) { self.milestoneFlash = 0 }
+                }
+                return
             }
         }
     }
