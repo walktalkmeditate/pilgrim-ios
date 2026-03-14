@@ -23,28 +23,27 @@ final class AudioManifestService: ObservableObject {
     }
 
     func syncIfNeeded() {
-        guard !isSyncing else { return }
-        isSyncing = true
+        Task { @MainActor in
+            guard !isSyncing else { return }
+            isSyncing = true
 
-        Task {
-            defer {
-                Task { @MainActor in self.isSyncing = false }
+            let remote = await fetchRemoteManifest()
+
+            guard let remote else {
+                isSyncing = false
+                return
             }
 
-            guard let remote = await fetchRemoteManifest() else { return }
-
-            let localVersion = await MainActor.run { self.manifest?.version }
-            let needsUpdate = localVersion != remote.version
-
-            if needsUpdate {
+            if manifest?.version != remote.version {
                 saveLocalManifest(remote)
-                await MainActor.run { self.manifest = remote }
+                manifest = remote
             }
 
-            let current = await MainActor.run { self.manifest }
-            if let current {
+            if let current = manifest {
                 downloadManager.downloadMissing(assets: current.assets)
             }
+
+            isSyncing = false
         }
     }
 

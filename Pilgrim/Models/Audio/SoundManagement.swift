@@ -7,6 +7,8 @@ final class SoundManagement {
     private let soundscapePlayer = SoundscapePlayer.shared
     private let manifestService = AudioManifestService.shared
     private let fileStore = AudioFileStore.shared
+    private var pendingSoundscapeStart: DispatchWorkItem?
+    private var pendingEndBell: DispatchWorkItem?
 
     private var isSoundsEnabled: Bool {
         UserPreferences.soundsEnabled.value
@@ -41,24 +43,37 @@ final class SoundManagement {
     }
 
     func onWalkEnd() {
+        cancelPending()
         stopSoundscape()
         playBell(id: UserPreferences.walkEndBellId.value)
     }
 
     func onMeditationStart() {
+        cancelPending()
         playBell(id: UserPreferences.meditationStartBellId.value)
         let bellDuration = bellPlayer.currentDuration
         let delay = max(0.5, bellDuration)
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+        let work = DispatchWorkItem { [weak self] in
             self?.startSoundscape()
         }
+        pendingSoundscapeStart = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     func onMeditationEnd() {
+        cancelPending()
         stopSoundscape()
-        let delay: TimeInterval = 2.5
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+        let work = DispatchWorkItem { [weak self] in
             self?.playBell(id: UserPreferences.meditationEndBellId.value)
         }
+        pendingEndBell = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: work)
+    }
+
+    private func cancelPending() {
+        pendingSoundscapeStart?.cancel()
+        pendingSoundscapeStart = nil
+        pendingEndBell?.cancel()
+        pendingEndBell = nil
     }
 }

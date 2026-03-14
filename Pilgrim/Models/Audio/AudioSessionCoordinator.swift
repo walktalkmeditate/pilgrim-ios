@@ -20,17 +20,16 @@ final class AudioSessionCoordinator {
     func activate(for mode: Mode, consumer: String) {
         queue.sync {
             activeConsumers.insert(consumer)
+            applyMode(mode)
         }
-        applyMode(mode)
     }
 
     func deactivate(consumer: String) {
-        let isEmpty = queue.sync {
+        queue.sync {
             activeConsumers.remove(consumer)
-            return activeConsumers.isEmpty
-        }
-        if isEmpty {
-            applyMode(.idle)
+            if activeConsumers.isEmpty {
+                applyMode(.idle)
+            }
         }
     }
 
