@@ -34,14 +34,14 @@ public enum Constants {
     }
 
     public enum Typography {
-        public static let displayLarge: Font = .system(.largeTitle, design: .serif).weight(.light)
-        public static let displayMedium: Font = .system(.title, design: .serif).weight(.light)
-        public static let heading: Font = .system(.headline, design: .serif)
-        public static let timer: Font = .system(size: 48, design: .serif).weight(.thin)
-        public static let statValue: Font = .system(.title3, design: .serif)
-        public static let statLabel: Font = .system(.caption, design: .rounded)
-        public static let body: Font = .system(.body, design: .serif)
-        public static let button: Font = .system(.headline, design: .default).weight(.medium)
-        public static let caption: Font = .system(.caption)
+        public static let displayLarge: Font = .custom("CormorantGaramond-Light", size: 34)
+        public static let displayMedium: Font = .custom("CormorantGaramond-Light", size: 28)
+        public static let heading: Font = .custom("CormorantGaramond-SemiBold", size: 17)
+        public static let timer: Font = .custom("CormorantGaramond-Light", size: 48)
+        public static let statValue: Font = .custom("CormorantGaramond-Regular", size: 20)
+        public static let statLabel: Font = .custom("Lato-Regular", size: 12)
+        public static let body: Font = .custom("CormorantGaramond-Regular", size: 17)
+        public static let button: Font = .custom("Lato-Bold", size: 17)
+        public static let caption: Font = .custom("Lato-Regular", size: 12)
     }
 }

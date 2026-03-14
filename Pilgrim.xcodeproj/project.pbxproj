@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
+		F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */; };
+		F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */; };
+		F0F0F00100000004AABBCC04 /* Lato-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */; };
+		F0F0F00100000005AABBCC05 /* Lato-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
 		0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */; };
@@ -216,6 +221,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Light.otf"; sourceTree = "<group>"; };
+		F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Regular.otf"; sourceTree = "<group>"; };
+		F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-SemiBold.otf"; sourceTree = "<group>"; };
+		F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lato-Regular.ttf"; sourceTree = "<group>"; };
+		F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lato-Bold.ttf"; sourceTree = "<group>"; };
 		1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackupSerializationTests.swift; sourceTree = "<group>"; };
 		2201BCA829423DF100F54277 /* View+Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Navigation.swift"; sourceTree = "<group>"; };
 		2201BCAA29423E1600F54277 /* NavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLink.swift; sourceTree = "<group>"; };
@@ -642,6 +652,7 @@
 		22B1F12722D6193A00C02973 /* Support Files */ = {
 			isa = PBXGroup;
 			children = (
+				F0F0F00300000000AABBCC00 /* Fonts */,
 				22B6CF6022CA0815002D2FB0 /* Assets.xcassets */,
 				22B1F14122D61CF400C02973 /* LaunchScreen.storyboard */,
 				223C2E0B25252F1B00D4B13D /* Info.plist */,
@@ -651,6 +662,18 @@
 				22718E3725925E2D00708D3B /* contribution.json */,
 			);
 			path = "Support Files";
+			sourceTree = "<group>";
+		};
+		F0F0F00300000000AABBCC00 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */,
+				F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */,
+				F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */,
+				F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */,
+				F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		22B6CF4A22CA0814002D2FB0 = {
@@ -1111,6 +1134,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */,
+				F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */,
+				F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */,
+				F0F0F00100000004AABBCC04 /* Lato-Regular.ttf in Resources */,
+				F0F0F00100000005AABBCC05 /* Lato-Bold.ttf in Resources */,
 				22B1F13F22D61CF400C02973 /* LaunchScreen.storyboard in Resources */,
 				2291863A23679AA300929885 /* InfoPlist.strings in Resources */,
 				22FAB3B4253BAC450040CBB1 /* Changelog.strings in Resources */,
