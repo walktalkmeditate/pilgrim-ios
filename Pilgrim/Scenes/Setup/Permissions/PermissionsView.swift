@@ -94,10 +94,26 @@ struct PermissionsView: View {
             .opacity(appeared ? 1 : 0)
 
             Spacer()
-            Spacer()
+
+            if viewModel.canTransition {
+                Button(action: viewModel.proceed) {
+                    Text(LS["Permissions.Next"])
+                        .font(Constants.Typography.button)
+                        .foregroundColor(.parchment)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.stone)
+                        .cornerRadius(Constants.UI.CornerRadius.normal)
+                }
+                .transition(.opacity)
+                .padding(.bottom, Constants.UI.Padding.normal)
+            } else {
+                Spacer()
+            }
         }
         .padding(.horizontal, Constants.UI.Padding.big)
         .background(warmParchment)
+        .animation(.easeInOut(duration: Constants.UI.Motion.gentle), value: viewModel.canTransition)
         .onAppear {
             viewModel.checkExistingPermissions()
             withAnimation(.easeInOut(duration: Constants.UI.Motion.gentle)) {
@@ -187,7 +203,7 @@ struct PermissionsView: View {
         } else {
             Button(action: action) {
                 Text(denied ? LS["Permissions.Settings"] : LS["Permissions.Grant"])
-                    .font(.subheadline.bold())
+                    .font(Constants.Typography.button)
                     .foregroundColor(.stone)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 14)

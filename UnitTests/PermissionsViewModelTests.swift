@@ -28,14 +28,18 @@ final class PermissionsViewModelTests: XCTestCase {
         XCTAssertTrue(vm.canTransition)
     }
 
-    func testOnComplete_calledWhenCanTransitionBecomesTrue() {
-        let expectation = expectation(description: "onComplete called")
-        let vm = PermissionsViewModel(permissionManager: nil, onComplete: {
-            expectation.fulfill()
-        })
-        vm.locationGranted = true
-        vm.microphoneGranted = true
-        waitForExpectations(timeout: 3)
+    func testProceed_callsOnComplete() {
+        var called = false
+        let vm = PermissionsViewModel(permissionManager: nil, onComplete: { called = true })
+        vm.proceed()
+        XCTAssertTrue(called)
+    }
+
+    func testProceed_setsMotionDecided() {
+        let vm = PermissionsViewModel(permissionManager: nil, onComplete: {})
+        XCTAssertFalse(vm.motionDecided)
+        vm.proceed()
+        XCTAssertTrue(vm.motionDecided)
     }
 
     func testLocationDenied_setsFlag() {
@@ -48,17 +52,5 @@ final class PermissionsViewModelTests: XCTestCase {
         let vm = PermissionsViewModel(permissionManager: nil, onComplete: {})
         vm.handleMicrophoneDenied()
         XCTAssertTrue(vm.microphoneDenied)
-    }
-
-    func testMotionDecided_setOnTransition() {
-        let vm = PermissionsViewModel(permissionManager: nil, onComplete: {})
-        XCTAssertFalse(vm.motionDecided)
-        vm.locationGranted = true
-        vm.microphoneGranted = true
-        let expectation = expectation(description: "motionDecided set")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if vm.motionDecided { expectation.fulfill() }
-        }
-        waitForExpectations(timeout: 2)
     }
 }

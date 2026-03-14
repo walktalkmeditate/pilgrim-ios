@@ -19,7 +19,6 @@
 //
 
 import SwiftUI
-import Combine
 
 class PermissionsViewModel: ObservableObject {
 
@@ -36,19 +35,10 @@ class PermissionsViewModel: ObservableObject {
 
     private let permissionManager: PermissionManager?
     private let onComplete: () -> Void
-    private var cancellables = Set<AnyCancellable>()
-    private var transitionFired = false
 
     init(permissionManager: PermissionManager?, onComplete: @escaping () -> Void) {
         self.permissionManager = permissionManager
         self.onComplete = onComplete
-
-        $locationGranted.combineLatest($microphoneGranted)
-            .map { $0 && $1 }
-            .removeDuplicates()
-            .filter { $0 }
-            .sink { [weak self] _ in self?.triggerTransition() }
-            .store(in: &cancellables)
     }
 
     func checkExistingPermissions() {
@@ -112,9 +102,7 @@ class PermissionsViewModel: ObservableObject {
         }
     }
 
-    private func triggerTransition() {
-        guard !transitionFired else { return }
-        transitionFired = true
+    func proceed() {
         motionDecided = true
         onComplete()
     }
