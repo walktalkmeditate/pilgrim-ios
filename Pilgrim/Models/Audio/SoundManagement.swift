@@ -12,20 +12,16 @@ final class SoundManagement {
         UserPreferences.soundsEnabled.value
     }
 
-    func playStartBell() {
-        guard isSoundsEnabled else { return }
-        guard let bellId = UserPreferences.selectedStartBellId.value,
-              let asset = manifestService.asset(byId: bellId),
-              fileStore.isAvailable(asset) else { return }
-        bellPlayer.play(asset, volume: Float(UserPreferences.bellVolume.value))
+    private var hapticEnabled: Bool {
+        UserPreferences.bellHapticEnabled.value
     }
 
-    func playEndBell() {
-        guard isSoundsEnabled else { return }
-        guard let bellId = UserPreferences.selectedEndBellId.value,
+    private func playBell(id: String?) {
+        guard isSoundsEnabled,
+              let bellId = id,
               let asset = manifestService.asset(byId: bellId),
               fileStore.isAvailable(asset) else { return }
-        bellPlayer.play(asset, volume: Float(UserPreferences.bellVolume.value))
+        bellPlayer.play(asset, volume: Float(UserPreferences.bellVolume.value), withHaptic: hapticEnabled)
     }
 
     func startSoundscape() {
@@ -40,8 +36,17 @@ final class SoundManagement {
         soundscapePlayer.stop()
     }
 
+    func onWalkStart() {
+        playBell(id: UserPreferences.walkStartBellId.value)
+    }
+
+    func onWalkEnd() {
+        stopSoundscape()
+        playBell(id: UserPreferences.walkEndBellId.value)
+    }
+
     func onMeditationStart() {
-        playStartBell()
+        playBell(id: UserPreferences.meditationStartBellId.value)
         let bellDuration = bellPlayer.currentDuration
         let delay = max(0.5, bellDuration)
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
@@ -53,16 +58,7 @@ final class SoundManagement {
         stopSoundscape()
         let delay: TimeInterval = 2.5
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            self?.playEndBell()
+            self?.playBell(id: UserPreferences.meditationEndBellId.value)
         }
-    }
-
-    func onWalkStart() {
-        playStartBell()
-    }
-
-    func onWalkEnd() {
-        stopSoundscape()
-        playEndBell()
     }
 }

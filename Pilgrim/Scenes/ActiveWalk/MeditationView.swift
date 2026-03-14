@@ -249,15 +249,23 @@ struct MeditationView: View {
 
     // MARK: - Closing Summary
 
+    private static let closingPhrases = [
+        "Be at peace",
+        "Stillness carries forward",
+        "The path continues",
+        "Return gently",
+        "Carry this calm with you",
+    ]
+
     private var closingSummary: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             Text(formatTime(clock.elapsed))
                 .font(.system(.largeTitle, design: .serif).weight(.light))
                 .foregroundColor(Color.parchment.opacity(0.9))
 
-            Text("Meditation complete")
-                .font(.system(.subheadline, design: .serif))
-                .foregroundColor(Color.fog.opacity(0.6))
+            Text(Self.closingPhrases.randomElement() ?? "Be at peace")
+                .font(.system(.subheadline, design: .serif).italic())
+                .foregroundColor(Color.fog.opacity(0.5))
         }
         .padding(.bottom, 48)
     }

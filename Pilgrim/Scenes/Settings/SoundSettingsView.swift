@@ -5,11 +5,17 @@ struct SoundSettingsView: View {
     @StateObject private var manifestService = AudioManifestService.shared
     @StateObject private var downloadManager = AudioDownloadManager.shared
     @State private var soundsEnabled = UserPreferences.soundsEnabled.value
+    @State private var hapticEnabled = UserPreferences.bellHapticEnabled.value
     @State private var bellVolume = UserPreferences.bellVolume.value
     @State private var soundscapeVolume = UserPreferences.soundscapeVolume.value
-    @State private var selectedStartBellId = UserPreferences.selectedStartBellId.value ?? "echo-chime"
-    @State private var selectedEndBellId = UserPreferences.selectedEndBellId.value ?? "gentle-harp"
-    @State private var selectedSoundscapeId = UserPreferences.selectedSoundscapeId.value ?? "gentle-stream"
+
+    @State private var walkStartBellId = UserPreferences.walkStartBellId.value
+    @State private var walkEndBellId = UserPreferences.walkEndBellId.value
+    @State private var meditationStartBellId = UserPreferences.meditationStartBellId.value
+    @State private var meditationEndBellId = UserPreferences.meditationEndBellId.value
+    @State private var selectedSoundscapeId = UserPreferences.selectedSoundscapeId.value
+
+    @State private var activePicker: PickerType?
 
     private let bellPlayer = BellPlayer.shared
     private let soundscapePlayer = SoundscapePlayer.shared
@@ -17,11 +23,12 @@ struct SoundSettingsView: View {
 
     var body: some View {
         List {
-            masterToggle
+            masterSection
             if soundsEnabled {
-                bellSection
-                soundscapeSection
-                cacheSection
+                walkSection
+                meditationSection
+                volumeSection
+                storageSection
             }
         }
         .scrollContentBackground(.hidden)
@@ -35,58 +42,226 @@ struct SoundSettingsView: View {
                     .foregroundColor(.ink)
             }
         }
+        .sheet(item: $activePicker) { picker in
+            pickerSheet(for: picker)
+        }
         .onDisappear {
             bellPlayer.stop()
             soundscapePlayer.stop()
         }
     }
 
-    private var masterToggle: some View {
+    // MARK: - Sections
+
+    private var masterSection: some View {
         Section {
             Toggle(isOn: $soundsEnabled) {
                 Text("Sounds")
                     .font(Constants.Typography.body)
             }
             .tint(.stone)
-            .onChange(of: soundsEnabled) { _, newValue in
-                UserPreferences.soundsEnabled.value = newValue
+            .onChange(of: soundsEnabled) { _, val in
+                UserPreferences.soundsEnabled.value = val
+            }
+
+            if soundsEnabled {
+                Toggle(isOn: $hapticEnabled) {
+                    Text("Haptic with bells")
+                        .font(Constants.Typography.body)
+                }
+                .tint(.stone)
+                .onChange(of: hapticEnabled) { _, val in
+                    UserPreferences.bellHapticEnabled.value = val
+                }
             }
         }
     }
 
-    private var bellSection: some View {
+    private var walkSection: some View {
         Section {
-            VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-                Text("Volume")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-                Slider(value: $bellVolume, in: 0...1)
-                    .tint(.stone)
-                    .onChange(of: bellVolume) { _, newValue in
-                        UserPreferences.bellVolume.value = newValue
-                    }
+            bellRow(label: "Start bell", bellId: walkStartBellId) {
+                activePicker = .walkStartBell
             }
-
-            bellPicker(title: "Start Bell", selectedId: $selectedStartBellId) { id in
-                UserPreferences.selectedStartBellId.value = id
-            }
-
-            bellPicker(title: "End Bell", selectedId: $selectedEndBellId) { id in
-                UserPreferences.selectedEndBellId.value = id
+            bellRow(label: "End bell", bellId: walkEndBellId) {
+                activePicker = .walkEndBell
             }
         } header: {
-            Text("Bells")
+            Text("Walk")
                 .font(Constants.Typography.caption)
         }
     }
 
-    private func bellPicker(title: String, selectedId: Binding<String>, onSelect: @escaping (String) -> Void) -> some View {
-        let bells = manifestService.bells()
-        return VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-            Text(title)
-                .font(Constants.Typography.body)
-                .foregroundColor(.ink)
+    private var meditationSection: some View {
+        Section {
+            bellRow(label: "Start bell", bellId: meditationStartBellId) {
+                activePicker = .meditationStartBell
+            }
+            bellRow(label: "End bell", bellId: meditationEndBellId) {
+                activePicker = .meditationEndBell
+            }
+            soundscapeRow
+        } header: {
+            Text("Meditation")
+                .font(Constants.Typography.caption)
+        }
+    }
 
+    private var volumeSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Bells")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                    Spacer()
+                    Text("\(Int(bellVolume * 100))%")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
+                Slider(value: $bellVolume, in: 0...1)
+                    .tint(.stone)
+                    .onChange(of: bellVolume) { _, val in
+                        UserPreferences.bellVolume.value = val
+                    }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Soundscape")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                    Spacer()
+                    Text("\(Int(soundscapeVolume * 100))%")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
+                Slider(value: $soundscapeVolume, in: 0...1)
+                    .tint(.stone)
+                    .onChange(of: soundscapeVolume) { _, val in
+                        UserPreferences.soundscapeVolume.value = val
+                    }
+            }
+        } header: {
+            Text("Volume")
+                .font(Constants.Typography.caption)
+        }
+    }
+
+    private var storageSection: some View {
+        Section {
+            if downloadManager.isDownloading {
+                HStack {
+                    SwiftUI.ProgressView(value: downloadManager.downloadProgress)
+                        .tint(.stone)
+                    Text("Downloading...")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
+            }
+
+            HStack {
+                let count = manifestService.manifest?.assets.count ?? 0
+                let sizeMB = Double(fileStore.totalDiskUsage()) / 1_000_000.0
+                Text("\(count) sounds")
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                Spacer()
+                Text(String(format: "%.1f MB", sizeMB))
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+            }
+
+            Button(role: .destructive) {
+                fileStore.clearAll()
+                AudioManifestService.shared.syncIfNeeded()
+            } label: {
+                Text("Clear Downloaded Sounds")
+                    .font(Constants.Typography.body)
+            }
+        } header: {
+            Text("Storage")
+                .font(Constants.Typography.caption)
+        }
+    }
+
+    // MARK: - Rows
+
+    private func bellRow(label: String, bellId: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(label)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.fog)
+                Spacer()
+                Text(bellDisplayName(for: bellId))
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundColor(.fog)
+            }
+        }
+    }
+
+    private var soundscapeRow: some View {
+        Button {
+            activePicker = .soundscape
+        } label: {
+            HStack {
+                Text("Soundscape")
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.fog)
+                Spacer()
+                Text(soundscapeDisplayName)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundColor(.fog)
+            }
+        }
+    }
+
+    // MARK: - Picker Sheet
+
+    @ViewBuilder
+    private func pickerSheet(for picker: PickerType) -> some View {
+        NavigationStack {
+            List {
+                if picker == .soundscape {
+                    soundscapePickerContent
+                } else {
+                    bellPickerContent(for: picker)
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color.parchment)
+            .navigationTitle(picker.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 2) {
+                        Text(picker.title)
+                            .font(Constants.Typography.heading)
+                            .foregroundColor(.ink)
+                        Text(picker.subtitle)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { activePicker = nil }
+                        .foregroundColor(.stone)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func bellPickerContent(for picker: PickerType) -> some View {
+        let currentId = currentBellId(for: picker)
+        let bells = manifestService.bells()
+        return Section {
             ForEach(bells) { bell in
                 HStack {
                     Button {
@@ -105,34 +280,36 @@ struct SoundSettingsView: View {
 
                     Spacer()
 
-                    if selectedId.wrappedValue == bell.id {
+                    if currentId == bell.id {
                         Image(systemName: "checkmark")
                             .foregroundColor(.stone)
                     }
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    selectedId.wrappedValue = bell.id
-                    onSelect(bell.id)
+                    setBellId(bell.id, for: picker)
                 }
-                .padding(.vertical, 2)
+            }
+
+            Button {
+                setBellId(nil, for: picker)
+            } label: {
+                HStack {
+                    Text("None")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.fog)
+                    Spacer()
+                    if currentId == nil {
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.stone)
+                    }
+                }
             }
         }
     }
 
-    private var soundscapeSection: some View {
+    private var soundscapePickerContent: some View {
         Section {
-            VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-                Text("Volume")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-                Slider(value: $soundscapeVolume, in: 0...1)
-                    .tint(.stone)
-                    .onChange(of: soundscapeVolume) { _, newValue in
-                        UserPreferences.soundscapeVolume.value = newValue
-                    }
-            }
-
             ForEach(manifestService.soundscapes) { scape in
                 HStack {
                     Button {
@@ -166,49 +343,72 @@ struct SoundSettingsView: View {
                     selectedSoundscapeId = scape.id
                     UserPreferences.selectedSoundscapeId.value = scape.id
                 }
-                .padding(.vertical, 2)
             }
-        } header: {
-            Text("Soundscapes")
-                .font(Constants.Typography.caption)
         }
     }
 
-    private var cacheSection: some View {
-        Section {
-            HStack {
-                let count = (manifestService.manifest?.assets.count) ?? 0
-                let sizeBytes = fileStore.totalDiskUsage()
-                let sizeMB = Double(sizeBytes) / 1_000_000.0
-                Text("\(count) sounds")
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.ink)
-                Spacer()
-                Text(String(format: "%.1f MB", sizeMB))
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
+    // MARK: - Helpers
 
-            if downloadManager.isDownloading {
-                HStack {
-                    SwiftUI.ProgressView(value: downloadManager.downloadProgress)
-                        .tint(.stone)
-                    Text("Downloading...")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                }
-            }
+    private func bellDisplayName(for id: String?) -> String {
+        guard let id else { return "None" }
+        return manifestService.asset(byId: id)?.displayName ?? id
+    }
 
-            Button(role: .destructive) {
-                fileStore.clearAll()
-                AudioManifestService.shared.syncIfNeeded()
-            } label: {
-                Text("Clear Downloaded Sounds")
-                    .font(Constants.Typography.body)
-            }
-        } header: {
-            Text("Storage")
-                .font(Constants.Typography.caption)
+    private var soundscapeDisplayName: String {
+        guard let id = selectedSoundscapeId else { return "None" }
+        return manifestService.asset(byId: id)?.displayName ?? id
+    }
+
+    private func currentBellId(for picker: PickerType) -> String? {
+        switch picker {
+        case .walkStartBell: return walkStartBellId
+        case .walkEndBell: return walkEndBellId
+        case .meditationStartBell: return meditationStartBellId
+        case .meditationEndBell: return meditationEndBellId
+        case .soundscape: return nil
+        }
+    }
+
+    private func setBellId(_ id: String?, for picker: PickerType) {
+        switch picker {
+        case .walkStartBell:
+            walkStartBellId = id
+            UserPreferences.walkStartBellId.value = id
+        case .walkEndBell:
+            walkEndBellId = id
+            UserPreferences.walkEndBellId.value = id
+        case .meditationStartBell:
+            meditationStartBellId = id
+            UserPreferences.meditationStartBellId.value = id
+        case .meditationEndBell:
+            meditationEndBellId = id
+            UserPreferences.meditationEndBellId.value = id
+        case .soundscape:
+            break
+        }
+    }
+}
+
+enum PickerType: String, Identifiable {
+    case walkStartBell, walkEndBell, meditationStartBell, meditationEndBell, soundscape
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .walkStartBell: return "Start Bell"
+        case .walkEndBell: return "End Bell"
+        case .meditationStartBell: return "Start Bell"
+        case .meditationEndBell: return "End Bell"
+        case .soundscape: return "Soundscape"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .walkStartBell, .walkEndBell: return "for walk"
+        case .meditationStartBell, .meditationEndBell: return "for meditation"
+        case .soundscape: return "during meditation"
         }
     }
 }
