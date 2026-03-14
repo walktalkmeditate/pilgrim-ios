@@ -295,7 +295,7 @@ struct WalkSummaryView: View {
             if hasUntranscribedRecordings && !isTranscribing {
                 Button(action: { Task { await transcribeAll() } }) {
                     Label("Transcribe", systemImage: "text.badge.plus")
-                        .font(.subheadline)
+                        .font(Constants.Typography.caption)
                         .foregroundColor(.stone)
                 }
             }

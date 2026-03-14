@@ -16,7 +16,7 @@ struct FeatureView: View {
                         .font(Constants.Typography.heading)
                         .foregroundColor(.ink)
                     Text(viewModel.description)
-                        .font(.subheadline)
+                        .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
                 }
             }

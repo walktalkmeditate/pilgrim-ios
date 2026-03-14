@@ -15,7 +15,7 @@ struct WalkRowView: View {
                     .font(Constants.Typography.heading)
                     .foregroundColor(.ink)
                 Text(statsString)
-                    .font(.subheadline)
+                    .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
 

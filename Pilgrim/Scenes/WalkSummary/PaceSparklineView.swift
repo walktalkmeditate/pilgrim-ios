@@ -10,7 +10,7 @@ struct PaceSparklineView: View {
         VStack(alignment: .leading, spacing: 2) {
             if let label = averagePaceLabel {
                 Text(label)
-                    .font(.system(size: 10, design: .rounded))
+                    .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
 
