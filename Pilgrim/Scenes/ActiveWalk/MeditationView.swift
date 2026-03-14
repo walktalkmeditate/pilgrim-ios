@@ -142,8 +142,7 @@ struct MeditationView: View {
                 x: CGFloat.random(in: 0.2...0.8),
                 y: CGFloat.random(in: 0.25...0.65),
                 size: CGFloat.random(in: 2...4),
-                opacity: Double.random(in: 0.08...0.2),
-                speed: 0
+                opacity: Double.random(in: 0.08...0.2)
             ))
         }
         particleGlow = true
@@ -656,7 +655,6 @@ struct MeditationParticle: Identifiable {
     var y: CGFloat
     var size: CGFloat
     var opacity: Double
-    var speed: Double
 }
 
 struct RippleRing: Identifiable {

@@ -57,10 +57,11 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             player.setVolume(0, fadeDuration: fadeDuration)
             DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) { [weak self] in
                 player.stop()
-                if self?.activePlayer === player {
-                    self?.activePlayer = nil
+                guard let self else { return }
+                if self.activePlayer === player {
+                    self.activePlayer = nil
+                    self.coordinator.deactivate(consumer: "soundscape")
                 }
-                self?.coordinator.deactivate(consumer: "soundscape")
             }
         } else {
             player.stop()

@@ -33,13 +33,6 @@ final class AudioSessionCoordinator {
         }
     }
 
-    func requestMode(playback: Bool, recording: Bool) -> Mode {
-        if playback && recording { return .recordAndPlay }
-        if playback { return .playbackOnly }
-        if recording { return .recordingOnly }
-        return .idle
-    }
-
     private func applyMode(_ mode: Mode) {
         currentMode = mode
         let session = AVAudioSession.sharedInstance()
