@@ -119,7 +119,8 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             newPlayer.prepareToPlay()
             newPlayer.play()
             activePlayer = newPlayer
-            fadeIn(player: newPlayer, to: targetVolume, duration: crossfadeDuration)
+            let vol = isMuted ? Float(0) : targetVolume
+            fadeIn(player: newPlayer, to: vol, duration: crossfadeDuration)
             scheduleLoopCrossfade(for: newPlayer)
         } catch {
             print("[SoundscapePlayer] Loop crossfade error: \(error)")

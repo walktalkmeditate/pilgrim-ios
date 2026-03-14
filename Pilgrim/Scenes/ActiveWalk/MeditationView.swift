@@ -108,11 +108,13 @@ struct MeditationView: View {
 
     // MARK: - Particles
 
+    @State private var particleGlow = false
+
     private var particleLayer: some View {
         GeometryReader { geo in
             ForEach(particles) { particle in
                 Circle()
-                    .fill(Color.parchment.opacity(particle.opacity))
+                    .fill(Color.parchment.opacity(particleGlow ? particle.opacity * 1.5 : particle.opacity * 0.5))
                     .frame(width: particle.size, height: particle.size)
                     .position(
                         x: geo.size.width * particle.x,
@@ -122,33 +124,22 @@ struct MeditationView: View {
             }
         }
         .allowsHitTesting(false)
+        .animation(.easeInOut(duration: 6).repeatForever(autoreverses: true), value: particleGlow)
     }
 
     private func spawnParticles() {
-        for i in 0..<12 {
-            let p = MeditationParticle(
+        for i in 0..<8 {
+            particles.append(MeditationParticle(
                 id: i,
                 x: CGFloat.random(in: 0.2...0.8),
-                y: CGFloat.random(in: 0.2...0.7),
-                size: CGFloat.random(in: 2...5),
-                opacity: Double.random(in: 0.05...0.2),
-                speed: Double.random(in: 0.3...0.8)
-            )
-            particles.append(p)
+                y: CGFloat.random(in: 0.25...0.65),
+                size: CGFloat.random(in: 2...4),
+                opacity: Double.random(in: 0.08...0.2),
+                speed: 0
+            ))
         }
-        animateParticles()
+        particleGlow = true
         startWarmthProgression()
-    }
-
-    private func animateParticles() {
-        guard isActive else { return }
-        withAnimation(.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
-            for i in particles.indices {
-                particles[i].y -= CGFloat(particles[i].speed) * 0.05
-                particles[i].x += CGFloat.random(in: -0.02...0.02)
-                particles[i].opacity = Double.random(in: 0.05...0.25)
-            }
-        }
     }
 
     private func startWarmthProgression() {
