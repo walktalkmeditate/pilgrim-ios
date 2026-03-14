@@ -79,13 +79,13 @@ struct MeditationView: View {
         }
         .sheet(isPresented: $showBreathPicker) {
             breathPickerSheet
-                .presentationDetents([.fraction(0.4)])
+                .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.ink.opacity(0.95))
         }
         .sheet(isPresented: $showSoundscapePicker) {
             soundscapePickerSheet
-                .presentationDetents([.fraction(0.45)])
+                .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.ink.opacity(0.95))
         }
@@ -332,15 +332,17 @@ struct MeditationView: View {
     // MARK: - Soundscape Picker
 
     private var soundscapePickerSheet: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Text("Soundscape")
                 .font(.system(.headline, design: .serif))
                 .foregroundColor(Color.parchment.opacity(0.8))
-                .padding(.top, 8)
+                .padding(.top, 12)
 
             ScrollView {
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     ForEach(AudioManifestService.shared.soundscapes) { scape in
+                        let isSelected = soundscapePlayer.currentAsset?.id == scape.id
+                            || (soundscapePlayer.currentAsset == nil && UserPreferences.selectedSoundscapeId.value == scape.id)
                         Button {
                             UserPreferences.selectedSoundscapeId.value = scape.id
                             if AudioFileStore.shared.isAvailable(scape) {
@@ -353,17 +355,17 @@ struct MeditationView: View {
                                     .font(.system(.body, design: .serif))
                                     .foregroundColor(Color.parchment.opacity(0.9))
                                 Spacer()
-                                if soundscapePlayer.currentAsset?.id == scape.id {
+                                if isSelected {
                                     Image(systemName: "checkmark")
                                         .font(.caption)
                                         .foregroundColor(.moss)
                                 }
                             }
                             .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 12)
                             .background(
-                                soundscapePlayer.currentAsset?.id == scape.id
-                                    ? Color.moss.opacity(0.1)
+                                isSelected
+                                    ? Color.moss.opacity(0.08)
                                     : Color.clear
                             )
                             .cornerRadius(10)
@@ -378,52 +380,59 @@ struct MeditationView: View {
     // MARK: - Breath Picker
 
     private var breathPickerSheet: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Text("Breath Rhythm")
                 .font(.system(.headline, design: .serif))
                 .foregroundColor(Color.parchment.opacity(0.8))
-                .padding(.top, 8)
+                .padding(.top, 12)
 
-            VStack(spacing: 4) {
-                ForEach(BreathRhythm.all) { r in
-                    Button {
-                        selectedRhythmId = r.id
-                        UserPreferences.breathRhythm.value = r.id
-                        isActive = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isActive = true
-                            startBreathCycle()
-                        }
-                        showBreathPicker = false
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(r.name)
-                                    .font(.system(.body, design: .serif))
-                                    .foregroundColor(Color.parchment.opacity(0.9))
-                                Text(r.label)
-                                    .font(.system(.caption, design: .serif))
-                                    .foregroundColor(Color.fog.opacity(0.5))
+            ScrollView {
+                VStack(spacing: 6) {
+                    ForEach(BreathRhythm.all) { r in
+                        Button {
+                            selectedRhythmId = r.id
+                            UserPreferences.breathRhythm.value = r.id
+                            isActive = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isActive = true
+                                startBreathCycle()
                             }
-                            Spacer()
-                            if selectedRhythmId == r.id {
-                                Image(systemName: "checkmark")
-                                    .font(.caption)
-                                    .foregroundColor(.moss)
+                            showBreathPicker = false
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 8) {
+                                        Text(r.name)
+                                            .font(.system(.body, design: .serif))
+                                            .foregroundColor(Color.parchment.opacity(0.9))
+                                        Text(r.label)
+                                            .font(.system(.caption, design: .serif))
+                                            .foregroundColor(Color.fog.opacity(0.4))
+                                    }
+                                    Text(r.description)
+                                        .font(.system(.caption, design: .serif))
+                                        .foregroundColor(Color.fog.opacity(0.35))
+                                }
+                                Spacer()
+                                if selectedRhythmId == r.id {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption)
+                                        .foregroundColor(.moss)
+                                }
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(
+                                selectedRhythmId == r.id
+                                    ? Color.moss.opacity(0.08)
+                                    : Color.clear
+                            )
+                            .cornerRadius(10)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(
-                            selectedRhythmId == r.id
-                                ? Color.moss.opacity(0.1)
-                                : Color.clear
-                        )
-                        .cornerRadius(10)
                     }
                 }
+                .padding(.horizontal, 16)
             }
-            .padding(.horizontal, 16)
         }
     }
 
@@ -573,18 +582,19 @@ struct BreathRhythm: Identifiable {
     let id: Int
     let name: String
     let label: String
+    let description: String
     let inhale: Double
     let holdIn: Double
     let exhale: Double
     let holdOut: Double
 
     static let all: [BreathRhythm] = [
-        BreathRhythm(id: 0, name: "Calm", label: "5 / 7", inhale: 5, holdIn: 0, exhale: 7, holdOut: 0),
-        BreathRhythm(id: 1, name: "Equal", label: "4 / 4", inhale: 4, holdIn: 0, exhale: 4, holdOut: 0),
-        BreathRhythm(id: 2, name: "Relaxing", label: "4-7-8", inhale: 4, holdIn: 7, exhale: 8, holdOut: 0),
-        BreathRhythm(id: 3, name: "Box", label: "4-4-4-4", inhale: 4, holdIn: 4, exhale: 4, holdOut: 4),
-        BreathRhythm(id: 4, name: "Coherent", label: "5 / 5", inhale: 5, holdIn: 0, exhale: 5, holdOut: 0),
-        BreathRhythm(id: 5, name: "Deep calm", label: "3 / 6", inhale: 3, holdIn: 0, exhale: 6, holdOut: 0),
+        BreathRhythm(id: 0, name: "Calm", label: "5 / 7", description: "Long exhale for gentle relaxation", inhale: 5, holdIn: 0, exhale: 7, holdOut: 0),
+        BreathRhythm(id: 1, name: "Equal", label: "4 / 4", description: "Balanced and simple", inhale: 4, holdIn: 0, exhale: 4, holdOut: 0),
+        BreathRhythm(id: 2, name: "Relaxing", label: "4-7-8", description: "Deep relaxation with held breath", inhale: 4, holdIn: 7, exhale: 8, holdOut: 0),
+        BreathRhythm(id: 3, name: "Box", label: "4-4-4-4", description: "Four equal phases for focus", inhale: 4, holdIn: 4, exhale: 4, holdOut: 4),
+        BreathRhythm(id: 4, name: "Coherent", label: "5 / 5", description: "Heart rate variability training", inhale: 5, holdIn: 0, exhale: 5, holdOut: 0),
+        BreathRhythm(id: 5, name: "Deep calm", label: "3 / 6", description: "Short inhale, slow release", inhale: 3, holdIn: 0, exhale: 6, holdOut: 0),
     ]
 }
 

@@ -24,6 +24,8 @@ final class SoundscapePlayer: NSObject, ObservableObject {
         guard asset.type == .soundscape,
               let url = fileStore.localURL(for: asset) else { return }
 
+        isMuted = false
+
         if let current = activePlayer, current.isPlaying, currentAsset?.id != asset.id {
             crossfade(to: url, asset: asset, volume: volume, fadeDuration: fadeDuration)
             return
