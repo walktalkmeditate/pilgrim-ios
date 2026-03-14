@@ -148,6 +148,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         soundManagement.onMeditationEnd()
     }
 
+    func endMeditationSilently() {
+        finalizeMeditation()
+        isMeditating = false
+    }
+
     private func finalizeMeditation() {
         guard let start = meditationStartDate else { return }
         let interval = TempActivityInterval(

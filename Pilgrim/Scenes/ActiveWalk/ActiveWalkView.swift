@@ -34,8 +34,8 @@ struct ActiveWalkView: View {
             Text("This will save your walk and show the summary.")
         }
         .fullScreenCover(isPresented: $showMeditation) {
-            MeditationView {
-                viewModel.endMeditation()
+            MeditationView(soundManagement: viewModel.soundManagement) {
+                viewModel.endMeditationSilently()
                 showMeditation = false
             }
         }
@@ -58,11 +58,22 @@ struct ActiveWalkView: View {
                     .font(Constants.Typography.timer)
                     .foregroundColor(.ink)
 
-                if let name = viewModel.currentSoundscapeName {
-                    Text("♪ \(name)")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                        .transition(.opacity)
+                if viewModel.currentSoundscapeName != nil || SoundscapePlayer.shared.isMuted {
+                    Button {
+                        SoundscapePlayer.shared.toggleMute()
+                    } label: {
+                        if SoundscapePlayer.shared.isMuted {
+                            Text("♪ Paused")
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog.opacity(0.5))
+                                .strikethrough(color: .fog.opacity(0.5))
+                        } else if let name = viewModel.currentSoundscapeName {
+                            Text("♪ \(name)")
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
+                        }
+                    }
+                    .transition(.opacity)
                 }
             }
             .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)

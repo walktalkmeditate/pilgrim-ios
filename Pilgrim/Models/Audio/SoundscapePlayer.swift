@@ -7,6 +7,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
 
     @Published private(set) var isPlaying = false
     @Published private(set) var currentAsset: AudioAsset?
+    @Published private(set) var isMuted = false
 
     private var activePlayer: AVAudioPlayer?
     private var fadingOutPlayer: AVAudioPlayer?
@@ -55,6 +56,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
         isPlaying = false
         currentAsset = nil
         currentURL = nil
+        isMuted = false
         fadeOut(player: player, duration: fadeDuration) { [weak self] in
             player.stop()
             self?.activePlayer = nil
@@ -66,11 +68,21 @@ final class SoundscapePlayer: NSObject, ObservableObject {
 
     func setVolume(_ volume: Float, animated: Bool = true) {
         targetVolume = volume
-        guard let player = activePlayer else { return }
+        guard let player = activePlayer, !isMuted else { return }
         if animated {
             player.setVolume(volume, fadeDuration: 0.5)
         } else {
             player.volume = volume
+        }
+    }
+
+    func toggleMute() {
+        if isMuted {
+            isMuted = false
+            activePlayer?.setVolume(targetVolume, fadeDuration: 1.5)
+        } else {
+            isMuted = true
+            activePlayer?.setVolume(0, fadeDuration: 1.5)
         }
     }
 
