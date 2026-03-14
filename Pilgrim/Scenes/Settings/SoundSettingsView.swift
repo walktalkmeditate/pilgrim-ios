@@ -2,8 +2,8 @@ import SwiftUI
 
 struct SoundSettingsView: View {
 
-    @StateObject private var manifestService = AudioManifestService.shared
-    @StateObject private var downloadManager = AudioDownloadManager.shared
+    @ObservedObject private var manifestService = AudioManifestService.shared
+    @ObservedObject private var downloadManager = AudioDownloadManager.shared
     @State private var soundsEnabled = UserPreferences.soundsEnabled.value
     @State private var hapticEnabled = UserPreferences.bellHapticEnabled.value
     @State private var bellVolume = UserPreferences.bellVolume.value

@@ -89,8 +89,14 @@ final class SoundscapePlayer: NSObject, ObservableObject {
         }
     }
 
+    private var fadingOutPlayer: AVAudioPlayer?
+
     private func crossfade(to url: URL, asset: AudioAsset, volume: Float, fadeDuration: TimeInterval) {
+        fadingOutPlayer?.stop()
+        fadingOutPlayer = nil
+
         let oldPlayer = activePlayer
+        fadingOutPlayer = oldPlayer
         oldPlayer?.setVolume(0, fadeDuration: fadeDuration)
 
         targetVolume = volume
@@ -105,8 +111,9 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             currentAsset = asset
             newPlayer.setVolume(volume, fadeDuration: fadeDuration)
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
-                oldPlayer?.stop()
+            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) { [weak self] in
+                self?.fadingOutPlayer?.stop()
+                self?.fadingOutPlayer = nil
             }
         } catch {
             print("[SoundscapePlayer] Crossfade error: \(error)")

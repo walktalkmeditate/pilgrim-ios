@@ -142,12 +142,6 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         soundManagement.onMeditationStart()
     }
 
-    func endMeditation() {
-        finalizeMeditation()
-        isMeditating = false
-        soundManagement.onMeditationEnd()
-    }
-
     func endMeditationSilently() {
         finalizeMeditation()
         isMeditating = false

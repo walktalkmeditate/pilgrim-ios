@@ -13,7 +13,8 @@ struct MeditationView: View {
     @State private var contentOpacity: Double = 1
     @State private var screenOpacity: Double = 1
     @State private var warmthAmount: Double = 0
-    @State private var holdGlow: Double = 0
+    @State private var isHolding = false
+    @State private var holdIntensity: Double = 0
     @State private var closingPhrase = ""
     @State private var showBreathPicker = false
     @State private var showSoundscapePicker = false
@@ -21,15 +22,15 @@ struct MeditationView: View {
     @State private var breathCount: Int = 0
     @State private var milestoneFlash: Double = 0
     @State private var breathGeneration: Int = 0
+    @State private var hasDismissed = false
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
     @StateObject private var clock = SessionClock()
-    @StateObject private var soundscapePlayer = SoundscapePlayer.shared
+    @ObservedObject private var soundscapePlayer = SoundscapePlayer.shared
 
     private var rhythm: BreathRhythm {
-        let idx = UserPreferences.breathRhythm.value
-        guard idx >= 0 && idx < BreathRhythm.all.count else { return BreathRhythm.all[0] }
-        return BreathRhythm.all[idx]
+        guard selectedRhythmId >= 0 && selectedRhythmId < BreathRhythm.all.count else { return BreathRhythm.all[0] }
+        return BreathRhythm.all[selectedRhythmId]
     }
 
     var body: some View {
@@ -209,12 +210,14 @@ struct MeditationView: View {
                 .frame(width: 320, height: 320)
                 .scaleEffect(circleScale)
 
+            let glowAmount = isHolding ? holdIntensity : 0
+
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.moss.opacity(0.7 + holdGlow * 0.2),
-                            Color.moss.opacity(0.3 + holdGlow * 0.1)
+                            Color.moss.opacity(0.7 + glowAmount * 0.2),
+                            Color.moss.opacity(0.3 + glowAmount * 0.1)
                         ],
                         center: .center,
                         startRadius: 0,
@@ -223,9 +226,10 @@ struct MeditationView: View {
                 )
                 .frame(width: 160, height: 160)
                 .scaleEffect(circleScale)
+                .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isHolding)
 
             Circle()
-                .stroke(Color.moss.opacity(0.25 + holdGlow * 0.15 + milestoneFlash * 0.4), lineWidth: 1 + holdGlow * 0.5 + milestoneFlash * 1.5)
+                .stroke(Color.moss.opacity(0.25 + glowAmount * 0.15 + milestoneFlash * 0.4), lineWidth: 1 + glowAmount * 0.5 + milestoneFlash * 1.5)
                 .frame(width: 200, height: 200)
                 .scaleEffect(circleScale * 1.3)
                 .opacity(Double(circleScale))
@@ -482,7 +486,8 @@ struct MeditationView: View {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) {
-            guard self.isClosing else { return }
+            guard self.isClosing, !self.hasDismissed else { return }
+            self.hasDismissed = true
             self.onDismiss()
         }
     }
@@ -492,7 +497,7 @@ struct MeditationView: View {
     private func startBreathCycle() {
         breathGeneration += 1
         rippleRings.removeAll()
-        holdGlow = 0
+        isHolding = false
 
         if rhythm.isNone {
             phase = .inhale
@@ -531,7 +536,7 @@ struct MeditationView: View {
     private func checkMilestone() {
         let elapsed = Int(clock.elapsed)
         for m in Self.milestoneSeconds {
-            if elapsed >= m && elapsed < m + 20 && elapsed - m < 20 {
+            if elapsed >= m && elapsed < m + 20 {
                 withAnimation(.easeInOut(duration: 1.5)) { milestoneFlash = 1.0 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     withAnimation(.easeOut(duration: 1.5)) { self.milestoneFlash = 0 }
@@ -545,12 +550,11 @@ struct MeditationView: View {
         guard isActive else { return }
         let gen = breathGeneration
         phase = .holdIn
-        withAnimation(.easeInOut(duration: rhythm.holdIn / 2).repeatForever(autoreverses: true)) {
-            holdGlow = 1.0
-        }
+        holdIntensity = 1.0
+        isHolding = true
         DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdIn) {
             guard self.isActive, self.breathGeneration == gen else { return }
-            withAnimation(.easeInOut(duration: 0.3)) { self.holdGlow = 0 }
+            self.isHolding = false
             self.breathOut()
         }
     }
@@ -576,12 +580,11 @@ struct MeditationView: View {
         guard isActive else { return }
         let gen = breathGeneration
         phase = .holdOut
-        withAnimation(.easeInOut(duration: rhythm.holdOut / 2).repeatForever(autoreverses: true)) {
-            holdGlow = 0.6
-        }
+        holdIntensity = 0.6
+        isHolding = true
         DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdOut) {
             guard self.isActive, self.breathGeneration == gen else { return }
-            withAnimation(.easeInOut(duration: 0.3)) { self.holdGlow = 0 }
+            self.isHolding = false
             self.breathIn()
         }
     }
