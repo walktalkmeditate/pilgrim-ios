@@ -82,7 +82,7 @@ struct WelcomeView: View {
                     .fill(Color.ink.opacity(0.18))
                     .frame(width: 22, height: 36)
                     .scaleEffect(x: isLeft ? -1 : 1)
-                    .rotationEffect(.degrees(isLeft ? 12 : -12))
+                    .rotationEffect(.degrees(isLeft ? -12 : 12))
                     .opacity(animation.footprintOpacities[index])
                     .offset(x: isLeft ? -10 : 10)
                     .scaleEffect(visible ? 1.0 : 1.12)
