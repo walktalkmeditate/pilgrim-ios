@@ -6,52 +6,52 @@ struct FootprintShape: Shape {
         let w = rect.width
         let h = rect.height
 
-        // Heel pad
+        // Heel — rounded oval at the bottom
         path.addEllipse(in: CGRect(
-            x: w * 0.24, y: h * 0.78,
-            width: w * 0.46, height: h * 0.22
+            x: w * 0.22, y: h * 0.75,
+            width: w * 0.50, height: h * 0.25
         ))
 
-        // Ball of foot (no arch — gap between ball and heel)
+        // Outer edge — connects heel to ball along the pinky side
         path.addEllipse(in: CGRect(
-            x: w * 0.10, y: h * 0.44,
-            width: w * 0.58, height: h * 0.20
+            x: w * 0.50, y: h * 0.48,
+            width: w * 0.22, height: h * 0.34
         ))
 
-        // Outer edge pad (pinky side, connects ball to heel)
+        // Ball of foot — wide pad below the toes
         path.addEllipse(in: CGRect(
-            x: w * 0.52, y: h * 0.56,
-            width: w * 0.16, height: h * 0.26
+            x: w * 0.08, y: h * 0.38,
+            width: w * 0.62, height: h * 0.22
         ))
 
-        // Big toe — largest, offset inward
+        // Big toe — largest, on the inner (left) side
         path.addEllipse(in: CGRect(
-            x: w * 0.10, y: h * 0.20,
-            width: w * 0.22, height: h * 0.20
+            x: w * 0.10, y: h * 0.18,
+            width: w * 0.24, height: h * 0.24
         ))
 
-        // Second toe
+        // Second toe — slightly smaller, tucked next to big toe
         path.addEllipse(in: CGRect(
-            x: w * 0.32, y: h * 0.12,
-            width: w * 0.16, height: h * 0.16
+            x: w * 0.32, y: h * 0.10,
+            width: w * 0.18, height: h * 0.22
         ))
 
-        // Third toe
+        // Third toe — middle
         path.addEllipse(in: CGRect(
-            x: w * 0.49, y: h * 0.08,
-            width: w * 0.14, height: h * 0.14
+            x: w * 0.48, y: h * 0.06,
+            width: w * 0.16, height: h * 0.20
         ))
 
-        // Fourth toe
+        // Fourth toe — smaller
         path.addEllipse(in: CGRect(
-            x: w * 0.63, y: h * 0.12,
-            width: w * 0.13, height: h * 0.12
+            x: w * 0.62, y: h * 0.10,
+            width: w * 0.14, height: h * 0.18
         ))
 
-        // Pinky toe — smallest, set back a bit
+        // Pinky toe — smallest, set back
         path.addEllipse(in: CGRect(
-            x: w * 0.74, y: h * 0.20,
-            width: w * 0.11, height: h * 0.10
+            x: w * 0.72, y: h * 0.18,
+            width: w * 0.12, height: h * 0.14
         ))
 
         return path
