@@ -138,8 +138,8 @@ struct InkScrollView: View {
                     Text(WalkDotView.formatDuration(totalMeditate) + " meditated")
                 }
             }
-            .font(Constants.Typography.annotation)
-            .foregroundColor(.fog.opacity(0.6))
+            .font(Constants.Typography.body)
+            .foregroundColor(.stone)
             .contentTransition(.numericText())
 
             Group {
@@ -152,8 +152,8 @@ struct InkScrollView: View {
                     Text("\(meditators) walks with meditation")
                 }
             }
-            .font(Constants.Typography.micro)
-            .foregroundColor(.fog.opacity(0.4))
+            .font(Constants.Typography.caption)
+            .foregroundColor(.fog.opacity(0.7))
             .contentTransition(.numericText())
         }
         .position(x: width / 2, y: 16)
