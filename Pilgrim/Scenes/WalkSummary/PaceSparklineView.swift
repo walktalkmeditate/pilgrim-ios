@@ -83,14 +83,18 @@ struct PaceSparklineView: View {
         let speeds = routeData.filter { $0.speed > 0.3 }.map(\.speed)
         guard !speeds.isEmpty else { return nil }
         let avg = speeds.reduce(0, +) / Double(speeds.count)
-        return "Pace \(formatPace(avg)) /km"
+        let isMiles = UserPreferences.distanceMeasurementType.safeValue == .miles
+        let unitLabel = isMiles ? "/mi" : "/km"
+        return "Pace \(formatPace(avg)) \(unitLabel)"
     }
 
     private func formatPace(_ metersPerSecond: Double) -> String {
         guard metersPerSecond > 0 else { return "--" }
-        let secondsPerKm = 1000.0 / metersPerSecond
-        let minutes = Int(secondsPerKm) / 60
-        let seconds = Int(secondsPerKm) % 60
+        let isMiles = UserPreferences.distanceMeasurementType.safeValue == .miles
+        let metersPerUnit = isMiles ? 1609.344 : 1000.0
+        let secondsPerUnit = metersPerUnit / metersPerSecond
+        let minutes = Int(secondsPerUnit) / 60
+        let seconds = Int(secondsPerUnit) % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
 }

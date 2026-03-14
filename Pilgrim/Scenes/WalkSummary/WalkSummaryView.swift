@@ -519,8 +519,12 @@ struct WalkSummaryView: View {
     }
 
     private func formatDistance(_ meters: Double) -> String {
-        let km = meters / 1000.0
-        return String(format: "%.2f km", km)
+        let pref = UserPreferences.distanceMeasurementType.safeValue
+        if pref == .miles {
+            let miles = meters / 1609.344
+            return String(format: "%.2f mi", miles)
+        }
+        return String(format: "%.2f km", meters / 1000.0)
     }
 
     private func formatSteps(_ steps: Int?) -> String {
@@ -529,6 +533,10 @@ struct WalkSummaryView: View {
     }
 
     private func formatElevation(_ meters: Double) -> String {
+        let pref = UserPreferences.altitudeMeasurementType.safeValue
+        if pref == .feet {
+            return String(format: "%.0f ft", meters * 3.28084)
+        }
         return String(format: "%.0f m", meters)
     }
 

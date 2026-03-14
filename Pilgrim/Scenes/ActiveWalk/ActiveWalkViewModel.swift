@@ -16,9 +16,9 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     @Published var status: WalkBuilder.Status = .waiting
     @Published var duration: String = "0:00"
-    @Published var distance: String = "0.00 km"
+    @Published var distance: String = UserPreferences.distanceMeasurementType.safeValue == .miles ? "0.00 mi" : "0.00 km"
     @Published var steps: String = "0"
-    @Published var speed: String = "0.0 km/h"
+    @Published var speed: String = UserPreferences.speedMeasurementType.safeValue == .milesPerHour ? "0.0 mph" : "0.0 km/h"
     @Published var currentLocation: TempRouteDataSample?
     @Published var routeCoordinates: [CLLocationCoordinate2D] = []
     @Published private(set) var routeOverlays: [MKPolyline] = []

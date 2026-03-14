@@ -169,6 +169,15 @@ struct InkScrollView: View {
     }
 
     private static func formatTotalDistance(_ meters: Double) -> String {
+        let isMiles = UserPreferences.distanceMeasurementType.safeValue == .miles
+        if isMiles {
+            let miles = meters / 1609.344
+            if miles >= 1 {
+                return String(format: "%.1f mi walked", miles)
+            }
+            let feet = meters * 3.28084
+            return String(format: "%.0f ft walked", feet)
+        }
         if meters >= 1000 {
             return String(format: "%.1f km walked", meters / 1000)
         }
@@ -399,9 +408,12 @@ struct InkScrollView: View {
 
     private static func formatPace(_ pace: Double) -> String {
         guard pace > 0 else { return "—" }
-        let minutes = Int(pace) / 60
-        let seconds = Int(pace) % 60
-        return String(format: "%d:%02d/km", minutes, seconds)
+        let isMiles = UserPreferences.distanceMeasurementType.safeValue == .miles
+        let adjustedPace = isMiles ? pace * 1.60934 : pace
+        let minutes = Int(adjustedPace) / 60
+        let seconds = Int(adjustedPace) % 60
+        let unitLabel = isMiles ? "/mi" : "/km"
+        return String(format: "%d:%02d%@", minutes, seconds, unitLabel)
     }
 
     private static let expandDateFormatter: DateFormatter = {
@@ -503,6 +515,15 @@ struct InkScrollView: View {
     }
 
     private static func shortDistance(_ meters: Double) -> String {
+        let isMiles = UserPreferences.distanceMeasurementType.safeValue == .miles
+        if isMiles {
+            let miles = meters / 1609.344
+            if miles >= 1 {
+                return String(format: "%.1fmi", miles)
+            }
+            let feet = meters * 3.28084
+            return String(format: "%.0fft", feet)
+        }
         if meters >= 1000 {
             return String(format: "%.1fkm", meters / 1000)
         }

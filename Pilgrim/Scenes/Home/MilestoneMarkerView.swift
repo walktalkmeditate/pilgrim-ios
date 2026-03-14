@@ -30,6 +30,9 @@ struct MilestoneMarkerView: View {
     }
 
     private var distanceText: String {
-        String(format: "%.0f km", distance / 1000)
+        if UserPreferences.distanceMeasurementType.safeValue == .miles {
+            return String(format: "%.0f mi", distance / 1609.344)
+        }
+        return String(format: "%.0f km", distance / 1000)
     }
 }
