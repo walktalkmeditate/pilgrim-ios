@@ -67,5 +67,8 @@ public enum Constants {
         public static let body: Font = .custom("CormorantGaramond-Regular", size: 17)
         public static let button: Font = .custom("Lato-Bold", size: 17)
         public static let caption: Font = .custom("Lato-Regular", size: 12)
+        public static let annotation: Font = .custom("CormorantGaramond-Regular", size: 11)
+        public static let micro: Font = .custom("Lato-Regular", size: 9)
+        public static let microBold: Font = .custom("Lato-Bold", size: 9)
     }
 }

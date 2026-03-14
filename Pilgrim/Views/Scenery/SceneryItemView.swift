@@ -132,7 +132,7 @@ struct SceneryItemView: View {
         let month = Calendar.current.component(.month, from: walkDate)
         switch month {
         case 3...5: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "moss", intensity: .full, on: walkDate))
-        case 6...8: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "moss", intensity: .full, on: walkDate))
+        case 6...8: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full, on: walkDate))
         case 9...11: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: walkDate))
         default: return Color(uiColor: SeasonalColorEngine.seasonalColor(named: "ink", intensity: .moderate, on: walkDate))
         }

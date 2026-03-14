@@ -17,7 +17,7 @@ struct MilestoneMarkerView: View {
                     .frame(width: 16, height: 14)
 
                 Text(distanceText)
-                    .font(.system(size: 8, weight: .regular, design: .serif))
+                    .font(Constants.Typography.micro)
                     .foregroundColor(.fog.opacity(0.4))
 
                 Rectangle()
@@ -30,9 +30,6 @@ struct MilestoneMarkerView: View {
     }
 
     private var distanceText: String {
-        if distance >= 1_000_000 {
-            return String(format: "%.0f km", distance / 1000)
-        }
-        return String(format: "%.0f km", distance / 1000)
+        String(format: "%.0f km", distance / 1000)
     }
 }

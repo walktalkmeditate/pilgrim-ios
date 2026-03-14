@@ -19,7 +19,7 @@ struct InkScrollView: View {
     var body: some View {
         GeometryReader { outerGeo in
             ScrollView {
-                scrollContent(width: outerGeo.size.width)
+                scrollContent(width: outerGeo.size.width, height: outerGeo.size.height)
             }
             .background(Color.parchment)
             .onScrollGeometryChange(for: CGFloat.self) { geo in
@@ -48,7 +48,7 @@ struct InkScrollView: View {
         }
     }
 
-    private func scrollContent(width: CGFloat) -> some View {
+    private func scrollContent(width: CGFloat, height: CGFloat) -> some View {
         let renderer = CalligraphyPathRenderer(snapshots: snapshots, width: width)
         let positions = renderer.dotPositions()
         let segments = renderer.segmentPaths()
@@ -70,10 +70,10 @@ struct InkScrollView: View {
 
             }
 
-            dotsLayer(positions: positions)
+            dotsLayer(positions: positions, viewportWidth: width, viewportHeight: height)
 
             Group {
-                dateLabels(positions: positions)
+                dateLabels(positions: positions, viewportWidth: width)
                 milestoneMarkers(width: width, positions: positions)
 
                 if snapshots.isEmpty {
@@ -89,13 +89,13 @@ struct InkScrollView: View {
 
     // MARK: - Dots layer
 
-    private func dotsLayer(positions: [CalligraphyPathRenderer.DotPosition]) -> some View {
+    private func dotsLayer(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat, viewportHeight: CGFloat) -> some View {
         ForEach(Array(zip(snapshots.indices, snapshots)), id: \.1.id) { index, snapshot in
             if index < positions.count {
                 let position = positions[index]
                 let opacity = self.dotOpacity(index: index, total: snapshots.count)
                 let isNewest = index == 0
-                let scenery = self.sceneryForDot(snapshot: snapshot, position: position.center)
+                let scenery = self.sceneryForDot(snapshot: snapshot, position: position.center, viewportHeight: viewportHeight)
 
                 self.dotContent(
                     snapshot: snapshot,
@@ -110,7 +110,7 @@ struct InkScrollView: View {
                     value: hasAppeared
                 )
 
-                self.distanceLabel(snapshot: snapshot, position: position.center, opacity: opacity)
+                self.distanceLabel(snapshot: snapshot, position: position.center, opacity: opacity, viewportWidth: viewportWidth)
             }
         }
     }
@@ -138,7 +138,7 @@ struct InkScrollView: View {
                     Text(WalkDotView.formatDuration(totalMeditate) + " meditated")
                 }
             }
-            .font(.system(size: 11, weight: .regular, design: .serif))
+            .font(Constants.Typography.annotation)
             .foregroundColor(.fog.opacity(0.6))
             .contentTransition(.numericText())
 
@@ -152,7 +152,7 @@ struct InkScrollView: View {
                     Text("\(meditators) walks with meditation")
                 }
             }
-            .font(.system(size: 9, weight: .regular, design: .serif))
+            .font(Constants.Typography.micro)
             .foregroundColor(.fog.opacity(0.4))
             .contentTransition(.numericText())
         }
@@ -211,7 +211,6 @@ struct InkScrollView: View {
         withAnimation(.spring(duration: 0.3)) {
             if expandedSnapshot?.id == id {
                 expandedSnapshot = nil
-                onTapWalk(id)
             } else {
                 expandedSnapshot = snapshot
             }
@@ -272,7 +271,7 @@ struct InkScrollView: View {
                             .frame(width: 12, height: 18)
 
                         Text(Self.expandDateFormatter.string(from: snapshot.startDate))
-                            .font(.system(size: 11, weight: .regular, design: .serif))
+                            .font(Constants.Typography.annotation)
                             .foregroundColor(.ink)
 
                         Spacer()
@@ -300,7 +299,7 @@ struct InkScrollView: View {
                         onTapWalk(id)
                     } label: {
                         Text("View details \(Image(systemName: "arrow.right"))")
-                            .font(.system(size: 11, weight: .medium, design: .serif))
+                            .font(Constants.Typography.annotation)
                             .foregroundColor(.parchment)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
@@ -336,7 +335,7 @@ struct InkScrollView: View {
                 .foregroundColor(.ink)
                 .contentTransition(.numericText())
             Text(label)
-                .font(.system(size: 8, design: .serif))
+                .font(Constants.Typography.micro)
                 .foregroundColor(.fog)
         }
     }
@@ -393,7 +392,7 @@ struct InkScrollView: View {
                 .fill(color)
                 .frame(width: 5, height: 5)
             Text("\(WalkDotView.formatDuration(duration)) \(label)")
-                .font(.system(size: 8, weight: .regular, design: .serif))
+                .font(Constants.Typography.micro)
                 .foregroundColor(.fog)
         }
     }
@@ -425,14 +424,6 @@ struct InkScrollView: View {
         return f
     }()
 
-    private static func formatDuration(_ seconds: TimeInterval) -> String {
-        let total = Int(seconds)
-        let h = total / 3600
-        let m = (total % 3600) / 60
-        if h > 0 { return String(format: "%d:%02d", h, m) }
-        return "\(m)m"
-    }
-
     // MARK: - Dot opacity
 
     private func dotOpacity(index: Int, total: Int) -> Double {
@@ -443,7 +434,7 @@ struct InkScrollView: View {
 
     // MARK: - Scenery
 
-    private func sceneryForDot(snapshot: WalkSnapshot, position: CGPoint) -> AnyView? {
+    private func sceneryForDot(snapshot: WalkSnapshot, position: CGPoint, viewportHeight: CGFloat) -> AnyView? {
         guard let placement = SceneryGenerator.scenery(for: snapshot) else {
             return nil
         }
@@ -474,7 +465,7 @@ struct InkScrollView: View {
             .position(sceneryPosition)
             .visualEffect { content, proxy in
                 let frame = proxy.frame(in: .global)
-                let screenMid = UIScreen.main.bounds.height / 2
+                let screenMid = viewportHeight / 2
                 let distFromCenter = (frame.midY - screenMid) / screenMid
                 return content.offset(x: distFromCenter * 8)
             }
@@ -509,13 +500,13 @@ struct InkScrollView: View {
 
     // MARK: - Distance labels
 
-    private func distanceLabel(snapshot: WalkSnapshot, position: CGPoint, opacity: Double) -> some View {
-        let labelX = position.x > UIScreen.main.bounds.width / 2
+    private func distanceLabel(snapshot: WalkSnapshot, position: CGPoint, opacity: Double, viewportWidth: CGFloat) -> some View {
+        let labelX = position.x > viewportWidth / 2
             ? position.x - 32
             : position.x + 32
 
         return Text(Self.shortDistance(snapshot.distance))
-            .font(.system(size: 9, weight: .regular, design: .serif))
+            .font(Constants.Typography.micro)
             .foregroundColor(.fog.opacity(0.5))
             .position(x: labelX, y: position.y + 14)
             .opacity(opacity * 0.7)
@@ -531,8 +522,8 @@ struct InkScrollView: View {
 
     // MARK: - Date labels
 
-    private func dateLabels(positions: [CalligraphyPathRenderer.DotPosition]) -> some View {
-        let labels = computeDateLabels(positions: positions)
+    private func dateLabels(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat) -> some View {
+        let labels = computeDateLabels(positions: positions, viewportWidth: viewportWidth)
         return ForEach(labels, id: \.id) { label in
             Text(label.text)
                 .font(Constants.Typography.caption)
@@ -549,7 +540,7 @@ struct InkScrollView: View {
         let y: CGFloat
     }
 
-    private func computeDateLabels(positions: [CalligraphyPathRenderer.DotPosition]) -> [DateLabel] {
+    private func computeDateLabels(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat) -> [DateLabel] {
         guard snapshots.count >= 2 else { return [] }
 
         var labels: [DateLabel] = []
@@ -565,7 +556,7 @@ struct InkScrollView: View {
             if key != lastMonthYear {
                 lastMonthYear = key
                 let pos = positions[index]
-                let labelX: CGFloat = pos.center.x > 200 ? 36 : UIScreen.main.bounds.width - 36
+                let labelX: CGFloat = pos.center.x > viewportWidth / 2 ? 36 : viewportWidth - 36
 
                 labels.append(DateLabel(
                     id: index,
@@ -637,7 +628,7 @@ struct InkScrollView: View {
 
             for i in 0..<snapshots.count {
                 let snap = snapshots[i]
-                let prevCumulative = i > 0 ? snapshots[i - 1].cumulativeDistance - snapshots[i - 1].distance : 0
+                let prevCumulative = i > 0 ? snapshots[i - 1].cumulativeDistance : 0
                 let currentCumulative = snap.cumulativeDistance
 
                 if prevCumulative < threshold && currentCumulative >= threshold, i < positions.count {
@@ -686,39 +677,18 @@ struct InkScrollView: View {
         hapticState.milestonePositions = milestonePositions.map { $0.yPosition }
     }
 
-    private static let previewDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f
-    }()
-
-    private static func formatDistance(_ meters: Double) -> String {
-        let distance = Measurement(value: meters, unit: UnitLength.meters)
-        let f = MeasurementFormatter()
-        f.unitOptions = .naturalScale
-        f.numberFormatter.maximumFractionDigits = 1
-        return f.string(from: distance)
-    }
 }
 
 private struct SonarRingView: View {
     let color: Color
-    @State private var scale: CGFloat = 0.8
-    @State private var ringOpacity: Double = 0.5
+    @State private var animating = false
 
     var body: some View {
         Circle()
-            .stroke(color.opacity(ringOpacity), lineWidth: 1.5)
+            .stroke(color.opacity(animating ? 0 : 0.5), lineWidth: 1.5)
             .frame(width: 28, height: 28)
-            .scaleEffect(scale)
-            .onAppear { startAnimation() }
-    }
-
-    private func startAnimation() {
-        withAnimation(.easeOut(duration: 2.0).repeatForever(autoreverses: false)) {
-            scale = 2.0
-            ringOpacity = 0
-        }
+            .scaleEffect(animating ? 2.0 : 0.8)
+            .animation(.easeOut(duration: 2.0).repeatForever(autoreverses: false), value: animating)
+            .onAppear { animating = true }
     }
 }

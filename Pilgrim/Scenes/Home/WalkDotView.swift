@@ -103,13 +103,13 @@ struct WalkDotView: View {
         return ZStack {
             if snapshot.talkDuration > 300 {
                 Image(systemName: "waveform")
-                    .font(.system(size: 6))
+                    .font(Constants.Typography.micro)
                     .foregroundColor(.rust.opacity(0.5))
                     .offset(x: iconOffset, y: -4)
             }
             if snapshot.meditateDuration > 300 {
                 Image(systemName: "circle.circle")
-                    .font(.system(size: 5))
+                    .font(Constants.Typography.micro)
                     .foregroundColor(.dawn.opacity(0.5))
                     .offset(x: iconOffset, y: snapshot.talkDuration > 300 ? 4 : -4)
             }
