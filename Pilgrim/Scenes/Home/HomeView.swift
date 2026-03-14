@@ -9,11 +9,12 @@ struct HomeView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                if viewModel.walks.isEmpty {
-                    emptyState
-                } else {
-                    walkList
-                }
+                InkScrollView(
+                    snapshots: viewModel.walkSnapshots,
+                    onTapWalk: { id in
+                        selectedWalk = viewModel.walk(for: id)
+                    }
+                )
 
                 startButton
             }
@@ -45,35 +46,6 @@ struct HomeView: View {
 
     private var dateSubtitle: String {
         Self.dateSubtitleFormatter.string(from: Date())
-    }
-
-    private var emptyState: some View {
-        VStack(spacing: Constants.UI.Padding.normal) {
-            Spacer()
-            PilgrimLogoView(size: 80, color: .stone)
-                .opacity(0.6)
-            Text("Every journey begins\nwith a single step")
-                .font(Constants.Typography.body)
-                .foregroundColor(.fog)
-                .multilineTextAlignment(.center)
-            Spacer()
-        }
-        .padding(.horizontal, Constants.UI.Padding.big)
-    }
-
-    private var walkList: some View {
-        List {
-            ForEach(viewModel.walks) { walk in
-                WalkRowView(walk: walk)
-                    .contentShape(Rectangle())
-                    .onTapGesture { selectedWalk = walk }
-                    .listRowBackground(Color.parchment)
-                    .listRowSeparatorTint(.fog.opacity(Constants.UI.Opacity.medium))
-            }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Color.parchment)
     }
 
     private var startButton: some View {

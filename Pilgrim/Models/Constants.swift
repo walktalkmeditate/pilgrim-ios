@@ -33,6 +33,30 @@ public enum Constants {
         }
     }
 
+    public enum Seasonal {
+        static let springPeakDay: Int = 105
+        static let summerPeakDay: Int = 196
+        static let autumnPeakDay: Int = 288
+        static let winterPeakDay: Int = 15
+
+        static let spread: CGFloat = 91
+
+        static let springHue: CGFloat = 0.02
+        static let summerHue: CGFloat = 0.01
+        static let autumnHue: CGFloat = 0.03
+        static let winterHue: CGFloat = -0.02
+
+        static let springSaturation: CGFloat = 0.10
+        static let summerSaturation: CGFloat = 0.15
+        static let autumnSaturation: CGFloat = 0.05
+        static let winterSaturation: CGFloat = -0.15
+
+        static let springBrightness: CGFloat = 0.05
+        static let summerBrightness: CGFloat = 0.03
+        static let autumnBrightness: CGFloat = -0.03
+        static let winterBrightness: CGFloat = -0.05
+    }
+
     public enum Typography {
         public static let displayLarge: Font = .custom("CormorantGaramond-Light", size: 34)
         public static let displayMedium: Font = .custom("CormorantGaramond-Light", size: 28)

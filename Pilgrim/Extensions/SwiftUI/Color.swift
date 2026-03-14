@@ -2,18 +2,36 @@ import SwiftUI
 
 public extension Color {
 
-    static let parchment = Color("parchment")
-    static let parchmentSecondary = Color("parchmentSecondary")
-    static let parchmentTertiary = Color("parchmentTertiary")
+    static var parchment: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "parchment", intensity: .minimal))
+    }
+    static var parchmentSecondary: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "parchmentSecondary", intensity: .minimal))
+    }
+    static var parchmentTertiary: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "parchmentTertiary", intensity: .minimal))
+    }
 
-    static let stone = Color("stone")
-    static let ink = Color("ink")
-    static let moss = Color("moss")
-    static let rust = Color("rust")
-    static let fog = Color("fog")
-    static let dawn = Color("dawn")
+    static var stone: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full))
+    }
+    static var ink: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "ink", intensity: .minimal))
+    }
+    static var moss: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "moss", intensity: .full))
+    }
+    static var rust: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "rust", intensity: .full))
+    }
+    static var fog: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "fog", intensity: .moderate))
+    }
+    static var dawn: Color {
+        Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full))
+    }
 
-    static let background = parchment
-    static let secondaryBackground = parchmentSecondary
-    static let tertiaryBackground = parchmentTertiary
+    static var background: Color { parchment }
+    static var secondaryBackground: Color { parchmentSecondary }
+    static var tertiaryBackground: Color { parchmentTertiary }
 }
