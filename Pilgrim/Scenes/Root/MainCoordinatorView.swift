@@ -15,21 +15,25 @@ class MainCoordinator: ObservableObject {
         callbacksConfigured = true
 
         homeViewModel.onStartWalk = { [weak self] in
-            guard let self, self.activeWalkViewModel == nil else { return }
-            let vm = ActiveWalkViewModel()
-            vm.onWalkCompleted = { [weak self] snapshot in
-                DataManager.saveWalk(object: snapshot) { success, error, walk in
-                    guard let self else { return }
-                    if success {
-                        self.pendingSnapshot = snapshot
-                        self.activeWalkViewModel = nil
-                    } else {
-                        self.showSaveError = true
-                    }
+            self?.startWalk()
+        }
+    }
+
+    func startWalk() {
+        guard activeWalkViewModel == nil else { return }
+        let vm = ActiveWalkViewModel()
+        vm.onWalkCompleted = { [weak self] snapshot in
+            DataManager.saveWalk(object: snapshot) { success, error, walk in
+                guard let self else { return }
+                if success {
+                    self.pendingSnapshot = snapshot
+                    self.activeWalkViewModel = nil
+                } else {
+                    self.showSaveError = true
                 }
             }
-            self.activeWalkViewModel = vm
         }
+        activeWalkViewModel = vm
     }
 
     func handleActiveWalkDismiss() {
@@ -46,27 +50,12 @@ class MainCoordinator: ObservableObject {
 
 struct MainCoordinatorView: View {
 
-    @StateObject private var coordinator = MainCoordinator()
+    @ObservedObject var coordinator: MainCoordinator
 
     var body: some View {
         HomeView(viewModel: coordinator.homeViewModel)
-            .fullScreenCover(item: $coordinator.activeWalkViewModel, onDismiss: {
-                coordinator.handleActiveWalkDismiss()
-            }) { vm in
-                ActiveWalkView(viewModel: vm)
+            .onAppear {
+                coordinator.setupCallbacks()
             }
-            .sheet(item: $coordinator.completedSnapshot, onDismiss: {
-                coordinator.handleSummaryDismiss()
-            }) { snapshot in
-                WalkSummaryView(walk: snapshot)
-            }
-            .alert("Save Failed", isPresented: $coordinator.showSaveError) {
-                Button("Dismiss") {
-                    coordinator.activeWalkViewModel = nil
-                }
-            } message: {
-                Text("Your walk could not be saved. Please try again.")
-            }
-            .onAppear { coordinator.setupCallbacks() }
     }
 }

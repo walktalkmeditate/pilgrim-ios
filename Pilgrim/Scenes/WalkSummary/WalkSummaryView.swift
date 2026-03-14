@@ -295,7 +295,7 @@ struct WalkSummaryView: View {
             if hasUntranscribedRecordings && !isTranscribing {
                 Button(action: { Task { await transcribeAll() } }) {
                     Label("Transcribe", systemImage: "text.badge.plus")
-                        .font(.subheadline)
+                        .font(Constants.Typography.caption)
                         .foregroundColor(.stone)
                 }
             }
@@ -705,15 +705,14 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
+            AudioSessionCoordinator.shared.activate(for: .playbackOnly, consumer: "audioPlayer")
             let p = try AVAudioPlayer(contentsOf: url)
             p.delegate = self
             p.volume = 1.0
             p.prepareToPlay()
             guard p.play() else {
                 print("[AudioPlayerModel] play() returned false")
-                try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+                AudioSessionCoordinator.shared.deactivate(consumer: "audioPlayer")
                 return
             }
             player = p
@@ -723,7 +722,7 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
             startProgressTimer()
         } catch {
             print("[AudioPlayerModel] Playback error: \(error)")
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            AudioSessionCoordinator.shared.deactivate(consumer: "audioPlayer")
         }
     }
 
@@ -748,7 +747,7 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     func stop() {
         stopPlayer()
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        AudioSessionCoordinator.shared.deactivate(consumer: "audioPlayer")
     }
 
     private func stopPlayer() {
@@ -785,7 +784,7 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         DispatchQueue.main.async { [weak self] in
             self?.stopPlayer()
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            AudioSessionCoordinator.shared.deactivate(consumer: "audioPlayer")
         }
     }
 }

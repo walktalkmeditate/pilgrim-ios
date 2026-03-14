@@ -145,16 +145,11 @@ public struct MapView: UIViewRepresentable {
         
         public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             let renderer = MKPolylineRenderer(overlay: overlay)
-            switch overlay.title ?? "" {
-            case "talking":
-                renderer.strokeColor = .rust
-            case "meditating":
-                renderer.strokeColor = .dawn
-            default:
-                renderer.strokeColor = .moss
-            }
-            renderer.lineWidth = 3
-            renderer.alpha = 0.85
+            renderer.strokeColor = SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
+            renderer.lineWidth = 4
+            renderer.alpha = 0.9
+            renderer.lineCap = .round
+            renderer.lineJoin = .round
             return renderer
         }
 

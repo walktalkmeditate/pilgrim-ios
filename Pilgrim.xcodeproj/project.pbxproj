@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
+		FA9B9D71DB2B3EA84CC73FEE /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */; };
+		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
+		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
+		9D37F522C28D84C1E1ECCDCC /* AudioDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */; };
+		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
+		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
+		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
+		ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */; };
 		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
 		F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */; };
 		F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */; };
@@ -467,6 +476,15 @@
 		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
 		CC00000100000000LANTRN01 /* LanternShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanternShape.swift; sourceTree = "<group>"; };
 		CC00000100000000BTRFLY01 /* ButterflyShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButterflyShape.swift; sourceTree = "<group>"; };
+		2CA2B0038D4875801C41DE26 /* AudioAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAsset.swift; sourceTree = "<group>"; };
+		90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
+		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
+		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
+		1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDownloadManager.swift; sourceTree = "<group>"; };
+		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
+		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
+		263D620E1DB30C5FCA0143CC /* SoundManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManagement.swift; sourceTree = "<group>"; };
+		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -768,6 +786,7 @@
 				22F00012234A2E35008CFAD2 /* Preferences */,
 				22DBFBD42348ABC800DE6E92 /* Walk */,
 				22DBFBD32348AB8000DE6E92 /* Data */,
+				3A2B6107FC73A26AFA4F2434 /* Audio */,
 				22A2D43423E313A3003580EC /* Formatting */,
 				22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */,
 				22BD1F41247463DF00415A06 /* ApplicationState.swift */,
@@ -1101,10 +1120,26 @@
 			path = Scenery;
 			sourceTree = "<group>";
 		};
+		3A2B6107FC73A26AFA4F2434 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				2CA2B0038D4875801C41DE26 /* AudioAsset.swift */,
+				90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */,
+				4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */,
+				390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */,
+				1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */,
+				3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */,
+				6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */,
+				263D620E1DB30C5FCA0143CC /* SoundManagement.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
 		CC00000100000000SETGRP01 /* Settings_Scene */ = {
 			isa = PBXGroup;
 			children = (
 				CC00000100000000SETTVW01 /* SettingsView.swift */,
+				0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1488,6 +1523,15 @@
 				AAAA000000000000000000C3 /* PromptListView.swift in Sources */,
 				AAAA000000000000000000C5 /* PromptDetailView.swift in Sources */,
 				AAAA000000000000000000E1 /* CustomPromptEditorView.swift in Sources */,
+				0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */,
+				FA9B9D71DB2B3EA84CC73FEE /* AudioFileStore.swift in Sources */,
+				13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */,
+				45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */,
+				9D37F522C28D84C1E1ECCDCC /* AudioDownloadManager.swift in Sources */,
+				6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */,
+				1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */,
+				2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */,
+				ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

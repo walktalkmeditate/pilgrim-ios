@@ -33,6 +33,17 @@ struct UserPreferences {
 
     static let hemisphereOverride = UserPreference.Optional<Int>(key: "hemisphereOverride")
 
+    static let soundsEnabled = UserPreference.Required<Bool>(key: "soundsEnabled", defaultValue: true)
+    static let bellHapticEnabled = UserPreference.Required<Bool>(key: "bellHapticEnabled", defaultValue: true)
+    static let bellVolume = UserPreference.Required<Double>(key: "bellVolume", defaultValue: 0.7)
+    static let soundscapeVolume = UserPreference.Required<Double>(key: "soundscapeVolume", defaultValue: 0.4)
+    static let walkStartBellId = UserPreference.Optional<String>(key: "walkStartBellId", defaultValue: "echo-chime")
+    static let walkEndBellId = UserPreference.Optional<String>(key: "walkEndBellId", defaultValue: "gentle-harp")
+    static let meditationStartBellId = UserPreference.Optional<String>(key: "meditationStartBellId", defaultValue: "temple-bell")
+    static let meditationEndBellId = UserPreference.Optional<String>(key: "meditationEndBellId", defaultValue: "yoga-chime")
+    static let selectedSoundscapeId = UserPreference.Optional<String>(key: "selectedSoundscapeId", defaultValue: "gentle-stream")
+    static let breathRhythm = UserPreference.Required<Int>(key: "breathRhythm", defaultValue: 0)
+
     static let distanceMeasurementType = MeasurementUserPreference<UnitLength>(key: "distanceMeasurementType", possibleValues: [.kilometers, .miles])
     static let altitudeMeasurementType = MeasurementUserPreference<UnitLength>(key: "altitudeMeasurementType", possibleValues: [.meters, .feet], bigUnits: false)
     static let speedMeasurementType = MeasurementUserPreference<UnitSpeed>(key: "speedMeasurementType", possibleValues: [.kilometersPerHour, .milesPerHour, .minutesPerLengthUnit(from: .kilometers), .minutesPerLengthUnit(from: .miles)])

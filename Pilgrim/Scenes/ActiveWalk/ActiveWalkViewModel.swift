@@ -12,6 +12,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     private let stepCounter: StepCounter
     private let liveStats: LiveStats
     let voiceRecordingManagement: VoiceRecordingManagement
+    let soundManagement = SoundManagement()
 
     @Published var status: WalkBuilder.Status = .waiting
     @Published var duration: String = "0:00"
@@ -20,13 +21,15 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var speed: String = "0.0 km/h"
     @Published var currentLocation: TempRouteDataSample?
     @Published var routeCoordinates: [CLLocationCoordinate2D] = []
-    @Published private(set) var routeOverlay: MKPolyline?
+    @Published private(set) var routeOverlays: [MKPolyline] = []
     @Published var isRecordingVoice = false
     @Published var audioLevel: Float = 0
     @Published var isMeditating = false
     @Published var walkTime: String = "0:00"
     @Published var talkTime: String = "0:00"
     @Published var meditateTime: String = "0:00"
+    @Published var paceHistory: [Double] = []
+    @Published var currentSoundscapeName: String?
 
     private var meditationStartDate: Date?
     private var meditationIntervals: [TempActivityInterval] = []
@@ -57,6 +60,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
         bindLiveStats()
         bindTimers()
+        bindSoundscape()
     }
 
     private func bindLiveStats() {
@@ -87,13 +91,21 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
         liveStats.locations
             .receive(on: DispatchQueue.main)
-            .map { $0.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) } }
-            .sink { [weak self] coords in
+            .sink { [weak self] samples in
                 guard let self else { return }
+                let coords = samples.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
                 let countChanged = coords.count != self.routeCoordinates.count
                 self.routeCoordinates = coords
                 if countChanged && coords.count > 1 {
-                    self.routeOverlay = MKPolyline(coordinates: coords, count: coords.count)
+                    self.routeOverlays = self.buildActivityPolylines(from: samples)
+                }
+                if countChanged, let last = samples.last {
+                    let speedMps = max(0, last.speed)
+                    let paceMinKm = speedMps > 0.3 ? (1000.0 / speedMps) / 60.0 : 0
+                    self.paceHistory.append(paceMinKm)
+                    if self.paceHistory.count > 60 {
+                        self.paceHistory.removeFirst(self.paceHistory.count - 60)
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -101,6 +113,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func startRecording() {
         builder.setStatus(.recording)
+        soundManagement.onWalkStart()
     }
 
     func resume() {
@@ -109,6 +122,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func stop() {
         finalizeMeditation()
+        soundManagement.onWalkEnd()
         builder.setStatus(.ready)
     }
 
@@ -125,9 +139,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         }
         meditationStartDate = Date()
         isMeditating = true
+        soundManagement.onMeditationStart()
     }
 
-    func endMeditation() {
+    func endMeditationSilently() {
         finalizeMeditation()
         isMeditating = false
     }
@@ -195,6 +210,61 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                 self.walkTime = self.formatTime(walk)
             }
             .store(in: &cancellables)
+    }
+
+    private func bindSoundscape() {
+        SoundscapePlayer.shared.$currentAsset
+            .receive(on: DispatchQueue.main)
+            .map { $0?.displayName }
+            .sink { [weak self] in self?.currentSoundscapeName = $0 }
+            .store(in: &cancellables)
+    }
+
+    private func activityType(at timestamp: Date) -> String {
+        for interval in meditationIntervals {
+            if timestamp >= interval.startDate && timestamp <= interval.endDate {
+                return "meditating"
+            }
+        }
+        if let start = meditationStartDate, timestamp >= start {
+            return "meditating"
+        }
+        if voiceRecordingManagement.isRecording,
+           let recStart = voiceRecordingManagement.recordingStartDate,
+           timestamp >= recStart {
+            return "talking"
+        }
+        return "walking"
+    }
+
+    private func buildActivityPolylines(from samples: [TempRouteDataSample]) -> [MKPolyline] {
+        guard samples.count > 1 else { return [] }
+
+        var segments: [(type: String, indices: [Int])] = []
+        var currentType = activityType(at: samples[0].timestamp)
+        var currentIndices = [0]
+
+        for i in 1..<samples.count {
+            let type = activityType(at: samples[i].timestamp)
+            if type == currentType {
+                currentIndices.append(i)
+            } else {
+                currentIndices.append(i)
+                segments.append((type: currentType, indices: currentIndices))
+                currentType = type
+                currentIndices = [i]
+            }
+        }
+        segments.append((type: currentType, indices: currentIndices))
+
+        return segments.map { segment in
+            let coords = segment.indices.map { i in
+                CLLocationCoordinate2D(latitude: samples[i].latitude, longitude: samples[i].longitude)
+            }
+            let polyline = MKPolyline(coordinates: coords, count: coords.count)
+            polyline.title = segment.type
+            return polyline
+        }
     }
 
     private func formatTime(_ seconds: Double) -> String {

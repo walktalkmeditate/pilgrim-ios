@@ -28,6 +28,24 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        SoundSettingsView()
+                    } label: {
+                        HStack {
+                            Text("Sounds")
+                                .font(Constants.Typography.body)
+                            Spacer()
+                            Text(UserPreferences.soundsEnabled.value ? "On" : "Off")
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
+                        }
+                    }
+                } header: {
+                    Text("Audio")
+                        .font(Constants.Typography.caption)
+                }
+
+                Section {
                     HStack {
                         Text("Version")
                             .font(Constants.Typography.body)

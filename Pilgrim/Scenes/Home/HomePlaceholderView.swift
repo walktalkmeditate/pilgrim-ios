@@ -2,6 +2,8 @@ import SwiftUI
 
 struct HomePlaceholderView: View {
 
+    let onStartWalk: () -> Void
+
     enum Phase {
         case threshold
         case permissions
@@ -31,6 +33,7 @@ struct HomePlaceholderView: View {
 
             case .breathTransition:
                 BreathTransitionView {
+                    onStartWalk()
                     withAnimation(.easeInOut(duration: Constants.UI.Motion.gentle)) {
                         phase = .threshold
                     }

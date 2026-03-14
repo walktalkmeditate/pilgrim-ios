@@ -34,15 +34,15 @@ struct ActiveWalkView: View {
             Text("This will save your walk and show the summary.")
         }
         .fullScreenCover(isPresented: $showMeditation) {
-            MeditationView {
-                viewModel.endMeditation()
+            MeditationView(soundManagement: viewModel.soundManagement) {
+                viewModel.endMeditationSilently()
                 showMeditation = false
             }
         }
     }
 
     private func mapSection(height: CGFloat) -> some View {
-        let overlays: [MKOverlay] = viewModel.routeOverlay.map { [$0] } ?? []
+        let overlays: [MKOverlay] = viewModel.routeOverlays
         return MapView(
             showsUserLocation: .constant(true),
             userTrackingMode: .constant(.follow),
@@ -53,9 +53,37 @@ struct ActiveWalkView: View {
 
     private var statsSection: some View {
         VStack(spacing: Constants.UI.Padding.normal) {
-            Text(viewModel.duration)
-                .font(Constants.Typography.timer)
-                .foregroundColor(.ink)
+            VStack(spacing: 4) {
+                Text(viewModel.duration)
+                    .font(Constants.Typography.timer)
+                    .foregroundColor(.ink)
+
+                if viewModel.currentSoundscapeName != nil || SoundscapePlayer.shared.isMuted {
+                    Button {
+                        SoundscapePlayer.shared.toggleMute()
+                    } label: {
+                        if SoundscapePlayer.shared.isMuted {
+                            Text("♪ Paused")
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog.opacity(0.5))
+                                .strikethrough(color: .fog.opacity(0.5))
+                        } else if let name = viewModel.currentSoundscapeName {
+                            Text("♪ \(name)")
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
+                        }
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)
+
+            if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
+                LivePaceSparklineView(values: viewModel.paceHistory)
+                    .frame(height: 28)
+                    .padding(.horizontal, Constants.UI.Padding.big)
+                    .transition(.opacity)
+            }
 
             HStack(spacing: Constants.UI.Padding.big) {
                 StatItem(label: "Distance", value: viewModel.distance)
@@ -64,7 +92,8 @@ struct ActiveWalkView: View {
             }
 
             HStack(spacing: Constants.UI.Padding.big) {
-                TimeMetricItem(label: "Walk", value: viewModel.walkTime, icon: "figure.walk")
+                TimeMetricItem(label: "Walk", value: viewModel.walkTime, icon: "figure.walk",
+                               isActive: !viewModel.isRecordingVoice && !viewModel.isMeditating)
                 TimeMetricItem(label: "Talk", value: viewModel.talkTime, icon: "waveform",
                                isActive: viewModel.isRecordingVoice)
                 TimeMetricItem(label: "Meditate", value: viewModel.meditateTime, icon: "brain.head.profile",
@@ -160,6 +189,35 @@ struct TimeMetricItem: View {
                 .foregroundColor(.fog)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+struct LivePaceSparklineView: View {
+    let values: [Double]
+
+    var body: some View {
+        GeometryReader { geo in
+            let filtered = values.filter { $0 > 0 }
+            if filtered.count > 1 {
+                let maxVal = filtered.max() ?? 1
+                let minVal = filtered.min() ?? 0
+                let range = max(maxVal - minVal, 0.5)
+
+                Path { path in
+                    for (i, val) in filtered.enumerated() {
+                        let x = geo.size.width * CGFloat(i) / CGFloat(filtered.count - 1)
+                        let normalized = (val - minVal) / range
+                        let y = geo.size.height * (1 - CGFloat(normalized))
+                        if i == 0 {
+                            path.move(to: CGPoint(x: x, y: y))
+                        } else {
+                            path.addLine(to: CGPoint(x: x, y: y))
+                        }
+                    }
+                }
+                .stroke(Color.stone.opacity(0.4), style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            }
+        }
     }
 }
 
