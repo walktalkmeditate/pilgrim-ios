@@ -42,7 +42,7 @@ struct ActiveWalkView: View {
     }
 
     private func mapSection(height: CGFloat) -> some View {
-        let overlays: [MKOverlay] = viewModel.routeOverlay.map { [$0] } ?? []
+        let overlays: [MKOverlay] = viewModel.routeOverlays
         return MapView(
             showsUserLocation: .constant(true),
             userTrackingMode: .constant(.follow),
@@ -53,9 +53,26 @@ struct ActiveWalkView: View {
 
     private var statsSection: some View {
         VStack(spacing: Constants.UI.Padding.normal) {
-            Text(viewModel.duration)
-                .font(Constants.Typography.timer)
-                .foregroundColor(.ink)
+            VStack(spacing: 4) {
+                Text(viewModel.duration)
+                    .font(Constants.Typography.timer)
+                    .foregroundColor(.ink)
+
+                if let name = viewModel.currentSoundscapeName {
+                    Text("♪ \(name)")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)
+
+            if viewModel.paceHistory.count > 2 {
+                LivePaceSparklineView(values: viewModel.paceHistory)
+                    .frame(height: 28)
+                    .padding(.horizontal, Constants.UI.Padding.big)
+                    .transition(.opacity)
+            }
 
             HStack(spacing: Constants.UI.Padding.big) {
                 StatItem(label: "Distance", value: viewModel.distance)
@@ -64,7 +81,8 @@ struct ActiveWalkView: View {
             }
 
             HStack(spacing: Constants.UI.Padding.big) {
-                TimeMetricItem(label: "Walk", value: viewModel.walkTime, icon: "figure.walk")
+                TimeMetricItem(label: "Walk", value: viewModel.walkTime, icon: "figure.walk",
+                               isActive: !viewModel.isRecordingVoice && !viewModel.isMeditating)
                 TimeMetricItem(label: "Talk", value: viewModel.talkTime, icon: "waveform",
                                isActive: viewModel.isRecordingVoice)
                 TimeMetricItem(label: "Meditate", value: viewModel.meditateTime, icon: "brain.head.profile",
@@ -117,23 +135,10 @@ struct ActiveWalkView: View {
                 outlinedButton("Stop", systemImage: "stop.fill", color: .rust) {
                     showStopConfirmation = true
                 }
-                muteButton
             }
         }
         .padding(Constants.UI.Padding.normal)
         .padding(.bottom, Constants.UI.Padding.normal)
-    }
-
-    private var muteButton: some View {
-        Button {
-            viewModel.soundManagement.sessionMuted.toggle()
-        } label: {
-            Image(systemName: viewModel.soundManagement.sessionMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                .font(.caption)
-                .foregroundColor(viewModel.soundManagement.sessionMuted ? .fog : .stone)
-        }
-        .frame(width: 32, height: 32)
-        .offset(y: -8)
     }
 
     private func outlinedButton(_ title: String, systemImage: String, color: Color, action: @escaping () -> Void) -> some View {
@@ -160,11 +165,27 @@ struct TimeMetricItem: View {
     let icon: String
     var isActive: Bool = false
 
+    @State private var pulseScale: CGFloat = 1.0
+
     var body: some View {
         VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(isActive ? .rust : .stone)
+            ZStack {
+                if isActive {
+                    Circle()
+                        .fill(activeColor.opacity(0.15))
+                        .frame(width: 22, height: 22)
+                        .scaleEffect(pulseScale)
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                                pulseScale = 1.5
+                            }
+                        }
+                        .onDisappear { pulseScale = 1.0 }
+                }
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundColor(isActive ? activeColor : .stone)
+            }
             Text(value)
                 .font(Constants.Typography.statValue)
                 .foregroundColor(.ink)
@@ -173,6 +194,44 @@ struct TimeMetricItem: View {
                 .foregroundColor(.fog)
         }
         .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.3), value: isActive)
+    }
+
+    private var activeColor: Color {
+        switch label {
+        case "Talk": return .rust
+        case "Meditate": return .moss
+        default: return .stone
+        }
+    }
+}
+
+struct LivePaceSparklineView: View {
+    let values: [Double]
+
+    var body: some View {
+        GeometryReader { geo in
+            let filtered = values.filter { $0 > 0 }
+            if filtered.count > 1 {
+                let maxVal = filtered.max() ?? 1
+                let minVal = filtered.min() ?? 0
+                let range = max(maxVal - minVal, 0.5)
+
+                Path { path in
+                    for (i, val) in filtered.enumerated() {
+                        let x = geo.size.width * CGFloat(i) / CGFloat(filtered.count - 1)
+                        let normalized = (val - minVal) / range
+                        let y = geo.size.height * (1 - CGFloat(normalized))
+                        if i == 0 {
+                            path.move(to: CGPoint(x: x, y: y))
+                        } else {
+                            path.addLine(to: CGPoint(x: x, y: y))
+                        }
+                    }
+                }
+                .stroke(Color.stone.opacity(0.4), style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            }
+        }
     }
 }
 

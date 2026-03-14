@@ -1,9 +1,7 @@
 import Foundation
 import Combine
 
-final class SoundManagement: ObservableObject {
-
-    @Published var sessionMuted = false
+final class SoundManagement {
 
     private let bellPlayer = BellPlayer.shared
     private let soundscapePlayer = SoundscapePlayer.shared
@@ -11,7 +9,7 @@ final class SoundManagement: ObservableObject {
     private let fileStore = AudioFileStore.shared
 
     private var isSoundsEnabled: Bool {
-        !sessionMuted && UserPreferences.soundsEnabled.value
+        UserPreferences.soundsEnabled.value
     }
 
     func playStartBell() {
