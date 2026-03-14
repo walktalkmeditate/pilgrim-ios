@@ -20,6 +20,7 @@ struct MeditationView: View {
     @State private var selectedRhythmId: Int = UserPreferences.breathRhythm.value
     @State private var breathCount: Int = 0
     @State private var milestoneFlash: Double = 0
+    @State private var breathGeneration: Int = 0
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
     @StateObject private var clock = SessionClock()
@@ -166,6 +167,8 @@ struct MeditationView: View {
     }
 
     private func emitRipple() {
+        guard !rhythm.isNone else { return }
+        if rippleRings.count > 3 { rippleRings.removeFirst() }
         let ring = RippleRing(id: UUID(), size: 160 * circleScale, opacity: 0.3)
         rippleRings.append(ring)
         let ringId = ring.id
@@ -480,6 +483,10 @@ struct MeditationView: View {
     // MARK: - Breath Cycle
 
     private func startBreathCycle() {
+        breathGeneration += 1
+        rippleRings.removeAll()
+        holdGlow = 0
+
         if rhythm.isNone {
             phase = .inhale
             withAnimation(.easeInOut(duration: 2.0)) {
@@ -492,6 +499,7 @@ struct MeditationView: View {
 
     private func breathIn() {
         guard isActive else { return }
+        let gen = breathGeneration
         if phase == .exhale || phase == .holdOut {
             breathCount += 1
             checkMilestone()
@@ -501,6 +509,7 @@ struct MeditationView: View {
             circleScale = 1.0
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.inhale) {
+            guard self.isActive, self.breathGeneration == gen else { return }
             self.emitRipple()
             if self.rhythm.holdIn > 0 {
                 self.holdAfterInhale()
@@ -527,11 +536,13 @@ struct MeditationView: View {
 
     private func holdAfterInhale() {
         guard isActive else { return }
+        let gen = breathGeneration
         phase = .holdIn
         withAnimation(.easeInOut(duration: rhythm.holdIn / 2).repeatForever(autoreverses: true)) {
             holdGlow = 1.0
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdIn) {
+            guard self.isActive, self.breathGeneration == gen else { return }
             withAnimation(.easeInOut(duration: 0.3)) { self.holdGlow = 0 }
             self.breathOut()
         }
@@ -539,11 +550,13 @@ struct MeditationView: View {
 
     private func breathOut() {
         guard isActive else { return }
+        let gen = breathGeneration
         phase = .exhale
         withAnimation(.easeInOut(duration: rhythm.exhale)) {
             circleScale = 0.45
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.exhale) {
+            guard self.isActive, self.breathGeneration == gen else { return }
             if self.rhythm.holdOut > 0 {
                 self.holdAfterExhale()
             } else {
@@ -554,11 +567,13 @@ struct MeditationView: View {
 
     private func holdAfterExhale() {
         guard isActive else { return }
+        let gen = breathGeneration
         phase = .holdOut
         withAnimation(.easeInOut(duration: rhythm.holdOut / 2).repeatForever(autoreverses: true)) {
             holdGlow = 0.6
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdOut) {
+            guard self.isActive, self.breathGeneration == gen else { return }
             withAnimation(.easeInOut(duration: 0.3)) { self.holdGlow = 0 }
             self.breathIn()
         }
