@@ -234,16 +234,11 @@ struct MeditationView: View {
 
     // MARK: - Labels
 
-    @ViewBuilder
     private var breathCountLabel: some View {
-        if breathCount > 0 {
-            Text("\(breathCount)")
-                .font(.system(.caption2, design: .serif))
-                .foregroundColor(Color.parchment.opacity(0.15))
-                .monospacedDigit()
-                .transition(.opacity)
-                .animation(.easeInOut(duration: 0.5), value: breathCount)
-        }
+        Text("\(breathCount)")
+            .font(.system(.caption2, design: .serif))
+            .foregroundColor(Color.parchment.opacity(0.15))
+            .monospacedDigit()
     }
 
     @ViewBuilder
