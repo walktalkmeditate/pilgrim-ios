@@ -276,7 +276,7 @@ struct MeditationView: View {
 
     private var sessionTimer: some View {
         Text(formatTime(clock.elapsed))
-            .font(Constants.Typography.displayMedium)
+            .font(Constants.Typography.statValue)
             .foregroundColor(Color.parchment.opacity(0.4))
             .monospacedDigit()
     }
@@ -294,7 +294,7 @@ struct MeditationView: View {
     private var closingSummary: some View {
         VStack(spacing: 16) {
             Text(formatTime(clock.elapsed))
-                .font(Constants.Typography.displayLarge)
+                .font(Constants.Typography.timer)
                 .foregroundColor(Color.parchment.opacity(0.9))
 
             Text(closingPhrase)
@@ -309,7 +309,7 @@ struct MeditationView: View {
     private var doneButton: some View {
         Button(action: beginClosingCeremony) {
             Text("Done")
-                .font(Constants.Typography.body)
+                .font(Constants.Typography.button)
                 .foregroundColor(Color.parchment.opacity(0.4))
                 .padding(.horizontal, 48)
                 .padding(.vertical, 14)
