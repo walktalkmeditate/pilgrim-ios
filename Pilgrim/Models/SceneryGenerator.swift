@@ -5,13 +5,13 @@ enum ScenerySide {
 }
 
 enum SceneryType: CaseIterable {
-    case tree, stone, pond, mountain, grass, torii, moon
+    case tree, lantern, butterfly, mountain, grass, torii, moon
 
     var shape: AnyShape {
         switch self {
         case .tree: AnyShape(TreeShape())
-        case .stone: AnyShape(StoneShape())
-        case .pond: AnyShape(PondShape())
+        case .lantern: AnyShape(LanternShape())
+        case .butterfly: AnyShape(ButterflyShape())
         case .mountain: AnyShape(MountainShape())
         case .grass: AnyShape(GrassShape())
         case .torii: AnyShape(ToriiGateShape())
@@ -22,8 +22,8 @@ enum SceneryType: CaseIterable {
     var tintColorName: String {
         switch self {
         case .tree: "moss"
-        case .stone: "fog"
-        case .pond: "fog"
+        case .lantern: "stone"
+        case .butterfly: "dawn"
         case .mountain: "fog"
         case .grass: "moss"
         case .torii: "stone"
@@ -46,9 +46,9 @@ struct SceneryGenerator {
 
     private static let weights: [(SceneryType, Double)] = [
         (.tree, 0.27),
-        (.stone, 0.18),
+        (.lantern, 0.18),
         (.grass, 0.22),
-        (.pond, 0.14),
+        (.butterfly, 0.14),
         (.mountain, 0.11),
         (.torii, 0.05),
         (.moon, 0.03),

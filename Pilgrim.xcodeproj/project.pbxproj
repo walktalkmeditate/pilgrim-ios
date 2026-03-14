@@ -216,8 +216,6 @@
 		CC00000200000000HAPTIC01 /* ScrollHapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */; };
 		CC00000200000000MILEST01 /* MilestoneMarkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MILEST01 /* MilestoneMarkerView.swift */; };
 		CC00000200000000TREESH01 /* TreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TREESH01 /* TreeShape.swift */; };
-		CC00000200000000STONSH01 /* StoneShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000STONSH01 /* StoneShape.swift */; };
-		CC00000200000000PONDSH01 /* PondShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000PONDSH01 /* PondShape.swift */; };
 		CC00000200000000MOUNTN01 /* MountainShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOUNTN01 /* MountainShape.swift */; };
 		CC00000200000000GRASSH01 /* GrassShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000GRASSH01 /* GrassShape.swift */; };
 		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
@@ -227,6 +225,8 @@
 		CC00000200000000HOMEPH01 /* HomePlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000HOMEPH01 /* HomePlaceholderView.swift */; };
 		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
 		CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENIV01 /* SceneryItemView.swift */; };
+		CC00000200000000LANTRN01 /* LanternShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LANTRN01 /* LanternShape.swift */; };
+		CC00000200000000BTRFLY01 /* ButterflyShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000BTRFLY01 /* ButterflyShape.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -456,8 +456,6 @@
 		CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollHapticEngine.swift; sourceTree = "<group>"; };
 		CC00000100000000MILEST01 /* MilestoneMarkerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneMarkerView.swift; sourceTree = "<group>"; };
 		CC00000100000000TREESH01 /* TreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeShape.swift; sourceTree = "<group>"; };
-		CC00000100000000STONSH01 /* StoneShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoneShape.swift; sourceTree = "<group>"; };
-		CC00000100000000PONDSH01 /* PondShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PondShape.swift; sourceTree = "<group>"; };
 		CC00000100000000MOUNTN01 /* MountainShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MountainShape.swift; sourceTree = "<group>"; };
 		CC00000100000000GRASSH01 /* GrassShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrassShape.swift; sourceTree = "<group>"; };
 		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
@@ -467,6 +465,8 @@
 		CC00000100000000HOMEPH01 /* HomePlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePlaceholderView.swift; sourceTree = "<group>"; };
 		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
+		CC00000100000000LANTRN01 /* LanternShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanternShape.swift; sourceTree = "<group>"; };
+		CC00000100000000BTRFLY01 /* ButterflyShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButterflyShape.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1090,13 +1090,13 @@
 			isa = PBXGroup;
 			children = (
 				CC00000100000000TREESH01 /* TreeShape.swift */,
-				CC00000100000000STONSH01 /* StoneShape.swift */,
-				CC00000100000000PONDSH01 /* PondShape.swift */,
 				CC00000100000000MOUNTN01 /* MountainShape.swift */,
 				CC00000100000000GRASSH01 /* GrassShape.swift */,
 				CC00000100000000TORIIG01 /* ToriiGateShape.swift */,
 				CC00000100000000MOONSH01 /* MoonShape.swift */,
 				CC00000100000000SCENIV01 /* SceneryItemView.swift */,
+				CC00000100000000BTRFLY01 /* ButterflyShape.swift */,
+				CC00000100000000LANTRN01 /* LanternShape.swift */,
 			);
 			path = Scenery;
 			sourceTree = "<group>";
@@ -1459,13 +1459,13 @@
 				CC00000200000000HAPTIC01 /* ScrollHapticEngine.swift in Sources */,
 				CC00000200000000MILEST01 /* MilestoneMarkerView.swift in Sources */,
 				CC00000200000000TREESH01 /* TreeShape.swift in Sources */,
-				CC00000200000000STONSH01 /* StoneShape.swift in Sources */,
-				CC00000200000000PONDSH01 /* PondShape.swift in Sources */,
 				CC00000200000000MOUNTN01 /* MountainShape.swift in Sources */,
 				CC00000200000000GRASSH01 /* GrassShape.swift in Sources */,
 				CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */,
 				CC00000200000000MOONSH01 /* MoonShape.swift in Sources */,
 				CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */,
+				CC00000200000000BTRFLY01 /* ButterflyShape.swift in Sources */,
+				CC00000200000000LANTRN01 /* LanternShape.swift in Sources */,
 				AA0001010000000000000014 /* ActiveWalkView.swift in Sources */,
 				AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */,
 				AA00030100000000000002 /* MeditationView.swift in Sources */,
