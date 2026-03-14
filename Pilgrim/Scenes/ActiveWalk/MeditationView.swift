@@ -14,6 +14,7 @@ struct MeditationView: View {
     @State private var screenOpacity: Double = 1
     @State private var warmthAmount: Double = 0
     @State private var holdGlow: Double = 0
+    @State private var closingPhrase = ""
     @State private var showBreathPicker = false
     @State private var showSoundscapePicker = false
     @State private var selectedRhythmId: Int = UserPreferences.breathRhythm.value
@@ -305,7 +306,7 @@ struct MeditationView: View {
                 .font(.system(.largeTitle, design: .serif).weight(.light))
                 .foregroundColor(Color.parchment.opacity(0.9))
 
-            Text(Self.closingPhrases.randomElement() ?? "Be at peace")
+            Text(closingPhrase)
                 .font(.system(.subheadline, design: .serif).italic())
                 .foregroundColor(Color.fog.opacity(0.5))
         }
@@ -443,6 +444,7 @@ struct MeditationView: View {
         isClosing = true
         isActive = false
         clock.stop()
+        closingPhrase = Self.closingPhrases.randomElement() ?? "Be at peace"
 
         soundManagement.onMeditationEnd()
 
