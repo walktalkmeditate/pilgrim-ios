@@ -18,8 +18,8 @@ struct MeditationView: View {
     @StateObject private var clock = SessionClock()
     @StateObject private var soundscapePlayer = SoundscapePlayer.shared
 
-    private let inhaleSeconds: Double = 4
-    private let exhaleSeconds: Double = 4
+    private let inhaleSeconds: Double = 5
+    private let exhaleSeconds: Double = 7
 
     var body: some View {
         ZStack {
@@ -33,20 +33,17 @@ struct MeditationView: View {
                 breathingCircle
                     .opacity(closingPhase == .dissolving || closingPhase == .summary || closingPhase == .fadeOut ? 0 : 1)
                     .scaleEffect(closingPhase == .dissolving ? 0.1 : 1)
-                    .padding(.bottom, 48)
 
                 if closingPhase == .summary {
                     closingSummary
+                        .padding(.top, 32)
                         .transition(.opacity)
                 } else {
-                    breathLabel
-                        .padding(.bottom, 12)
+                    sessionTimer
+                        .padding(.top, 24)
 
                     soundscapeLabel
-                        .padding(.bottom, 4)
-
-                    sessionTimer
-                        .padding(.bottom, 48)
+                        .padding(.top, 8)
                 }
 
                 Spacer()
@@ -212,13 +209,6 @@ struct MeditationView: View {
 
     // MARK: - Labels
 
-    private var breathLabel: some View {
-        Text(phase.label)
-            .font(.system(.title3, design: .serif).weight(.light))
-            .foregroundColor(Color.parchment.opacity(0.7))
-            .animation(.easeInOut(duration: 0.6), value: phase)
-    }
-
     @ViewBuilder
     private var soundscapeLabel: some View {
         if soundscapePlayer.currentAsset != nil || soundscapePlayer.isMuted {
@@ -243,8 +233,8 @@ struct MeditationView: View {
 
     private var sessionTimer: some View {
         Text(formatTime(clock.elapsed))
-            .font(.system(.body, design: .serif))
-            .foregroundColor(Color.fog)
+            .font(.system(.title3, design: .serif).weight(.light))
+            .foregroundColor(Color.parchment.opacity(0.4))
             .monospacedDigit()
     }
 
@@ -269,12 +259,12 @@ struct MeditationView: View {
         Button(action: beginClosingCeremony) {
             Text("Done")
                 .font(Constants.Typography.button)
-                .foregroundColor(Color.parchment)
+                .foregroundColor(Color.parchment.opacity(0.7))
                 .padding(.horizontal, 48)
                 .padding(.vertical, 14)
                 .background(
                     Capsule()
-                        .fill(Color.stone.opacity(0.85))
+                        .fill(Color.stone.opacity(0.35))
                 )
         }
         .disabled(isClosing)
