@@ -102,20 +102,20 @@ struct SoundSettingsView: View {
             }
             soundscapeRow
 
-            HStack {
-                Text("Breath rhythm")
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.fog)
-                Spacer()
-                Picker("", selection: $breathRhythm) {
-                    ForEach(BreathRhythm.all) { rhythm in
-                        Text("\(rhythm.name) (\(rhythm.label))").tag(rhythm.id)
-                    }
-                }
-                .pickerStyle(.menu)
-                .tint(.ink)
-                .onChange(of: breathRhythm) { _, val in
-                    UserPreferences.breathRhythm.value = val
+            Button {
+                activePicker = .breathRhythm
+            } label: {
+                HStack {
+                    Text("Breath rhythm")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.fog)
+                    Spacer()
+                    Text(BreathRhythm.all[breathRhythm].name)
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundColor(.fog)
                 }
             }
         } header: {
@@ -263,6 +263,8 @@ struct SoundSettingsView: View {
             List {
                 if picker == .soundscape {
                     soundscapePickerContent
+                } else if picker == .breathRhythm {
+                    breathRhythmPickerContent
                 } else {
                     bellPickerContent(for: picker)
                 }
@@ -397,6 +399,40 @@ struct SoundSettingsView: View {
         }
     }
 
+    private var breathRhythmPickerContent: some View {
+        Section {
+            ForEach(BreathRhythm.all) { r in
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 8) {
+                            Text(r.name)
+                                .font(Constants.Typography.body)
+                                .foregroundColor(.ink)
+                            if !r.isNone {
+                                Text(r.label)
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(.fog)
+                            }
+                        }
+                        Text(r.description)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                    Spacer()
+                    if breathRhythm == r.id {
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.stone)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    breathRhythm = r.id
+                    UserPreferences.breathRhythm.value = r.id
+                }
+            }
+        }
+    }
+
     // MARK: - Helpers
 
     private func bellDisplayName(for id: String?) -> String {
@@ -415,7 +451,7 @@ struct SoundSettingsView: View {
         case .walkEndBell: return walkEndBellId
         case .meditationStartBell: return meditationStartBellId
         case .meditationEndBell: return meditationEndBellId
-        case .soundscape: return nil
+        case .soundscape, .breathRhythm: return nil
         }
     }
 
@@ -433,14 +469,14 @@ struct SoundSettingsView: View {
         case .meditationEndBell:
             meditationEndBellId = id
             UserPreferences.meditationEndBellId.value = id
-        case .soundscape:
+        case .soundscape, .breathRhythm:
             break
         }
     }
 }
 
 enum PickerType: String, Identifiable {
-    case walkStartBell, walkEndBell, meditationStartBell, meditationEndBell, soundscape
+    case walkStartBell, walkEndBell, meditationStartBell, meditationEndBell, soundscape, breathRhythm
 
     var id: String { rawValue }
 
@@ -451,6 +487,7 @@ enum PickerType: String, Identifiable {
         case .meditationStartBell: return "Start Bell"
         case .meditationEndBell: return "End Bell"
         case .soundscape: return "Soundscape"
+        case .breathRhythm: return "Breath Rhythm"
         }
     }
 
@@ -459,6 +496,7 @@ enum PickerType: String, Identifiable {
         case .walkStartBell, .walkEndBell: return "for walk"
         case .meditationStartBell, .meditationEndBell: return "for meditation"
         case .soundscape: return "during meditation"
+        case .breathRhythm: return "for meditation"
         }
     }
 }
