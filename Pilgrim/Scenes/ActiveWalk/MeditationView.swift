@@ -14,6 +14,8 @@ struct MeditationView: View {
     @State private var screenOpacity: Double = 1
     @State private var warmthAmount: Double = 0
     @State private var holdGlow: Double = 0
+    @State private var showBreathPicker = false
+    @State private var selectedRhythmId: Int = UserPreferences.breathRhythm.value
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
     @StateObject private var clock = SessionClock()
@@ -33,6 +35,10 @@ struct MeditationView: View {
                 breathingCircle
                     .opacity(closingPhase == .dissolving || closingPhase == .summary || closingPhase == .fadeOut ? 0 : 1)
                     .scaleEffect(closingPhase == .dissolving ? 0.1 : 1)
+                    .onLongPressGesture(minimumDuration: 1.0) {
+                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                        showBreathPicker = true
+                    }
 
                 if closingPhase == .summary {
                     closingSummary
@@ -64,6 +70,12 @@ struct MeditationView: View {
         .onDisappear {
             isActive = false
             clock.stop()
+        }
+        .sheet(isPresented: $showBreathPicker) {
+            breathPickerSheet
+                .presentationDetents([.fraction(0.4)])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Color.ink.opacity(0.95))
         }
         .statusBarHidden()
         .animation(.easeInOut(duration: 1.5), value: closingPhase)
@@ -285,6 +297,58 @@ struct MeditationView: View {
                 )
         }
         .disabled(isClosing)
+    }
+
+    // MARK: - Breath Picker
+
+    private var breathPickerSheet: some View {
+        VStack(spacing: 20) {
+            Text("Breath Rhythm")
+                .font(.system(.headline, design: .serif))
+                .foregroundColor(Color.parchment.opacity(0.8))
+                .padding(.top, 8)
+
+            VStack(spacing: 4) {
+                ForEach(BreathRhythm.all) { r in
+                    Button {
+                        selectedRhythmId = r.id
+                        UserPreferences.breathRhythm.value = r.id
+                        isActive = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isActive = true
+                            startBreathCycle()
+                        }
+                        showBreathPicker = false
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(r.name)
+                                    .font(.system(.body, design: .serif))
+                                    .foregroundColor(Color.parchment.opacity(0.9))
+                                Text(r.label)
+                                    .font(.system(.caption, design: .serif))
+                                    .foregroundColor(Color.fog.opacity(0.5))
+                            }
+                            Spacer()
+                            if selectedRhythmId == r.id {
+                                Image(systemName: "checkmark")
+                                    .font(.caption)
+                                    .foregroundColor(.moss)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(
+                            selectedRhythmId == r.id
+                                ? Color.moss.opacity(0.1)
+                                : Color.clear
+                        )
+                        .cornerRadius(10)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+        }
     }
 
     // MARK: - Closing Ceremony
