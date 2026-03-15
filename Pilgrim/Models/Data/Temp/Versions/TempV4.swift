@@ -91,6 +91,14 @@ public enum TempV4 {
             self.favicon = favicon
         }
         
+        public func replaceActivityIntervals(_ intervals: [TempV4.ActivityInterval]) {
+            _activityIntervals = intervals
+        }
+
+        public func appendVoiceRecordings(_ recordings: [TempV4.VoiceRecording]) {
+            _voiceRecordings.append(contentsOf: recordings)
+        }
+
         public var asTemp: TempWalk {
             return self
         }

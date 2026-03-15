@@ -73,6 +73,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
+        if WalkSessionGuard.active != nil {
+            print("[SessionGuard] BACKGROUND ENTRY — writing checkpoint")
+        }
+        WalkSessionGuard.active?.checkpointNow()
         WalkMapImageManager.suspendRenderProcess()
         ApplicationStateObservation.stateChanged(to: .background)
     }
@@ -82,7 +86,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         ApplicationStateObservation.stateChanged(to: .foreground)
     }
 
-    func applicationWillTerminate(_ application: UIApplication) {}
+    func applicationWillTerminate(_ application: UIApplication) {
+        if WalkSessionGuard.active != nil {
+            print("[SessionGuard] APP TERMINATING — writing final checkpoint")
+        }
+        WalkSessionGuard.active?.checkpointNow()
+    }
 
     enum AppLaunchState {
         case loading

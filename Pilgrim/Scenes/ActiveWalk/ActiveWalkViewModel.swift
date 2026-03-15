@@ -7,12 +7,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     let id = UUID()
     let builder: WalkBuilder
-    private let locationManagement: LocationManagement
+    let locationManagement: LocationManagement
     private let altitudeManagement: AltitudeManagement
     private let stepCounter: StepCounter
     private let liveStats: LiveStats
     let voiceRecordingManagement: VoiceRecordingManagement
     let soundManagement = SoundManagement()
+    private var sessionGuard: WalkSessionGuard?
 
     @Published var status: WalkBuilder.Status = .waiting
     @Published var duration: String = "0:00"
@@ -63,6 +64,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         bindTimers()
         bindSoundscape()
         bindCompletedRecordings()
+
+        let guard_ = WalkSessionGuard()
+        guard_.builder = builder
+        guard_.locationManagement = locationManagement
+        guard_.viewModel = self
+        guard_.start()
+        self.sessionGuard = guard_
     }
 
     private func bindLiveStats() {
@@ -123,6 +131,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func stop() {
+        sessionGuard?.stopAndCleanup()
         finalizeMeditation()
         soundManagement.onWalkEnd()
         builder.setStatus(.ready)
@@ -147,6 +156,20 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     func endMeditationSilently() {
         finalizeMeditation()
         isMeditating = false
+    }
+
+    func checkpointActivityIntervals() -> [TempActivityInterval] {
+        var intervals = meditationIntervals
+        if let start = meditationStartDate {
+            let provisional = TempActivityInterval(
+                uuid: nil,
+                activityType: .meditation,
+                startDate: start,
+                endDate: Date()
+            )
+            intervals.append(provisional)
+        }
+        return intervals
     }
 
     private func finalizeMeditation() {

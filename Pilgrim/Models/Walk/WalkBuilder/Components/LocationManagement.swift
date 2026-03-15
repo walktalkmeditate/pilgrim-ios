@@ -128,8 +128,23 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
     }
     
     
+    // MARK: - Power Adjustment
+
+    private var baseAccuracy: CLLocationAccuracy = kCLLocationAccuracyBest
+    private var baseDistanceFilter: CLLocationDistance = kCLDistanceFilterNone
+
+    public func adjustPower(accuracy: CLLocationAccuracy, distanceFilter: CLLocationDistance) {
+        locationManager.desiredAccuracy = accuracy
+        locationManager.distanceFilter = distanceFilter
+    }
+
+    public func restoreDefaultPower() {
+        locationManager.desiredAccuracy = baseAccuracy
+        locationManager.distanceFilter = baseDistanceFilter
+    }
+
     // MARK: WalkBuilderComponent
-    
+
     public required init(builder: WalkBuilder) {
         super.init()
         self.builder = builder
@@ -192,6 +207,9 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
         self.locationManager.requestWhenInUseAuthorization()
         self.locationManager.pausesLocationUpdatesAutomatically = true
         self.locationManager.startUpdatingLocation()
+
+        self.baseAccuracy = self.locationManager.desiredAccuracy
+        self.baseDistanceFilter = self.locationManager.distanceFilter
     }
     
     // MARK: - CLLocationManagerDelegate
