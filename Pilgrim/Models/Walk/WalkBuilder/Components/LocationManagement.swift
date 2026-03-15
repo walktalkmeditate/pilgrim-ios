@@ -205,7 +205,9 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
 
         let shouldUpdateDistance = !status.isPausedStatus
 
-        for location in locations where checkForAppropriateAccuracy(location) {
+        for location in locations {
+            let isFirst = locationsRelay.value.isEmpty
+            guard isFirst || checkForAppropriateAccuracy(location) else { continue }
 
             let location = refineLocation(location)
             locationsRelay.accept(locationsRelay.value + [location.asTemp])
