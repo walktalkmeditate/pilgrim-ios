@@ -166,6 +166,16 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: onResetBinder)
             .store(in: &cancellables)
+        builder.statusPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                guard let self, status.isActiveStatus else { return }
+                self.locationManager.startUpdatingLocation()
+                if self.locationsRelay.value.isEmpty, let current = self.currentLocationRelay.value {
+                    self.locationsRelay.accept([current])
+                }
+            }
+            .store(in: &cancellables)
     }
     
     public func prepare() {
@@ -205,7 +215,9 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
 
         let shouldUpdateDistance = !status.isPausedStatus
 
-        for location in locations where checkForAppropriateAccuracy(location) {
+        for location in locations {
+            let isFirst = locationsRelay.value.isEmpty
+            guard isFirst || checkForAppropriateAccuracy(location) else { continue }
 
             let location = refineLocation(location)
             locationsRelay.accept(locationsRelay.value + [location.asTemp])

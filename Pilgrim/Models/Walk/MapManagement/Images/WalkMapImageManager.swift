@@ -1,30 +1,9 @@
-//
-//  WalkMapImageManager.swift
-//
-//  Pilgrim
-//  Copyright (C) 2020 Tim Fraedrich <timfraedrich@icloud.com>
-//  Copyright (C) 2025-2026 Walk Talk Meditate contributors
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-
-import MapKit
 import UIKit
+import MapboxMaps
+import CoreLocation
 
-/// An enum containing static functions and properties, dedicated to rendering walk map images.
 enum WalkMapImageManager {
-    
+
     private static var internalStatus = Status.idle {
         didSet {
             if oldValue == .suspended {
@@ -34,51 +13,39 @@ enum WalkMapImageManager {
     }
     private static var requestQueue = WalkMapImageQueue()
     private static let processQueue = DispatchQueue(label: "processQueue", qos: .userInitiated)
-    private static let snapshotQueue = DispatchQueue(label: "snapshotQueue")
-    
-    /// A funtion for the execution of a WalkMapImageRequest, adding it to the running WalkMapImageQueue. If cached this method directly executes the closure, not rendering the image again.
-    ///
-    /// - Parameter request: An instance of WalkMapImageRequest indicating the type of image being requested
+
     public static func execute(_ request: WalkMapImageRequest) {
-        
         if let id = request.cacheIdentifier(), let image = CustomImageCache.mapImageCache.getMapImage(for: id) {
             request.completion(true, image)
             return
         }
-        
+
         requestQueue.add(request)
         if internalStatus == .idle {
             executeNextInQueue()
         }
     }
-    
-    /// A function suspending the rendering process of new map images to limit cpu cost. This function should only be used when the app enters the background, to ensure that it does not get terminated by the system.
+
     public static func suspendRenderProcess() {
         processQueue.suspend()
-        snapshotQueue.suspend()
         internalStatus = .suspended
     }
-    
-    /// A Funtion resuming the rendering process of new map images after it was suspended by `suspendRenderProcess()`.
+
     public static func resumeRenderProcess() {
         processQueue.resume()
-        snapshotQueue.resume()
         internalStatus = .idle
     }
-    
+
     private static func executeNextInQueue() {
-        
-        if internalStatus == .suspended {
-            return
-        }
-        
+        if internalStatus == .suspended { return }
+
         guard let request = requestQueue.pendingRequests.first else {
             internalStatus = .idle
             return
         }
-        
+
         internalStatus = .running
-        
+
         let imageUsesDarkMode = Config.isDarkModeEnabled
         let completion: (Bool, UIImage?) -> Void = { (success, image) in
             requestQueue.remove(request)
@@ -87,86 +54,172 @@ enum WalkMapImageManager {
                 executeNextInQueue()
             }
         }
-        
+
         guard let uuid = request.walkUUID else {
             completion(false, nil)
             return
         }
-        
+
         DataManager.asyncLocationCoordinatesQuery(
             for: Primitive<Walk>(uuid: uuid),
             completion: { error, coordinates in
-                if error == nil {
-                    
-                    processQueue.async {
-                        
-                        guard coordinates.count > 1 else {
-                            completion(false, nil)
-                            return
-                        }
-                        
-                        let route = MKPolyline(coordinates: coordinates, count: coordinates.count)
-                        
-                        let mapSnapshotOptions = MKMapSnapshotter.Options()
-                        mapSnapshotOptions.region = MKCoordinateRegion(route.boundingMapRect.insetBy(dx: route.boundingMapRect.width * -0.1, dy: route.boundingMapRect.height * -0.1))
-                        mapSnapshotOptions.scale = UIScreen.main.scale
-                        mapSnapshotOptions.size = request.size.rawSize
-                        mapSnapshotOptions.showsBuildings = true
-                        mapSnapshotOptions.showsPointsOfInterest = false
-                        mapSnapshotOptions.mapType = .standard
-                        mapSnapshotOptions.traitCollection = UITraitCollection(userInterfaceStyle: imageUsesDarkMode ? .dark : .light)
-                        
-                        let snapshotter = MKMapSnapshotter(options: mapSnapshotOptions)
-                        
-                        snapshotter.start(with: snapshotQueue, completionHandler: { snapshot, error in
-                            if error == nil, let snapshot = snapshot {
-                                let image = snapshot.image
-                                
-                                UIGraphicsBeginImageContextWithOptions(request.size.rawSize, true, 0)
-                                image.draw(at: CGPoint.zero)
-                                
-                                let context = UIGraphicsGetCurrentContext()
-                                context!.setLineWidth(3.0)
-                                context!.setLineCap(.round)
-                                context!.setStrokeColor(UIColor.accentColor.cgColor)
-                                context!.move(to: snapshot.point(for: coordinates[0]))
-                                for i in 0...(coordinates.count - 1) {
-                                    context!.addLine(to: snapshot.point(for: coordinates[i]))
-                                    context!.move(to: snapshot.point(for: coordinates[i]))
-                                }
-                                context!.strokePath()
-                                let resultImage = UIGraphicsGetImageFromCurrentImageContext()
-                                UIGraphicsEndImageContext()
-                                
-                                if let image = resultImage, let id = request.cacheIdentifier(forDarkAppearance: imageUsesDarkMode) {
+                guard error == nil, coordinates.count > 1 else {
+                    completion(false, nil)
+                    return
+                }
+
+                let size = request.size.rawSize
+
+                processQueue.async {
+                    let lats = coordinates.map { $0.latitude }
+                    let lons = coordinates.map { $0.longitude }
+                    guard let minLat = lats.min(), let maxLat = lats.max(),
+                          let minLon = lons.min(), let maxLon = lons.max() else {
+                        completion(false, nil)
+                        return
+                    }
+
+                    let latPad = (maxLat - minLat) * 0.1
+                    let lonPad = (maxLon - minLon) * 0.1
+                    let sw = CLLocationCoordinate2D(latitude: minLat - latPad, longitude: minLon - lonPad)
+                    let ne = CLLocationCoordinate2D(latitude: maxLat + latPad, longitude: maxLon + lonPad)
+                    let center = CLLocationCoordinate2D(
+                        latitude: (minLat + maxLat) / 2,
+                        longitude: (minLon + maxLon) / 2
+                    )
+
+                    DispatchQueue.main.async {
+                        let scale = UIScreen.main.scale
+                        renderSnapshot(
+                            coordinates: coordinates,
+                            center: center,
+                            sw: sw,
+                            ne: ne,
+                            size: size,
+                            screenScale: scale,
+                            darkMode: imageUsesDarkMode,
+                            completion: { image in
+                                if let image, let id = request.cacheIdentifier(forDarkAppearance: imageUsesDarkMode) {
                                     CustomImageCache.mapImageCache.set(mapImage: image, for: id)
                                 }
-                                
-                                DispatchQueue.main.async {
-                                    
-                                    completion(true, resultImage)
-                                    
-                                    if Config.isDarkModeEnabled != imageUsesDarkMode {
-                                        self.requestQueue.add(request)
-                                    }
-                                    
+
+                                completion(image != nil, image)
+
+                                if Config.isDarkModeEnabled != imageUsesDarkMode {
+                                    self.requestQueue.add(request)
                                 }
-                                
-                            } else {
-                                completion(false, nil)
                             }
-                        })
+                        )
                     }
-                } else {
-                    completion(false, nil)
                 }
             }
         )
-        
     }
-    
+
+    private static var activeSnapshot: SnapshotOperation?
+
+    @MainActor
+    private static func renderSnapshot(
+        coordinates: [CLLocationCoordinate2D],
+        center: CLLocationCoordinate2D,
+        sw: CLLocationCoordinate2D,
+        ne: CLLocationCoordinate2D,
+        size: CGSize,
+        screenScale: CGFloat,
+        darkMode: Bool,
+        completion: @escaping (UIImage?) -> Void
+    ) {
+        activeSnapshot?.invalidate()
+
+        let options = MapSnapshotOptions(size: size, pixelRatio: screenScale)
+        let snapshotter = Snapshotter(options: options)
+        snapshotter.styleURI = darkMode ? .dark : .light
+        snapshotter.setCamera(to: .init(center: center))
+
+        let operation = SnapshotOperation(snapshotter: snapshotter, completion: completion)
+        activeSnapshot = operation
+
+        operation.timeoutItem = DispatchWorkItem { [weak operation] in
+            guard let operation, !operation.isComplete else { return }
+            operation.complete(with: nil)
+            activeSnapshot = nil
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: operation.timeoutItem!)
+
+        operation.cancellable = snapshotter.onStyleLoaded.observeNext { [weak operation] _ in
+            guard let operation, !operation.isComplete else { return }
+
+            do {
+                var source = GeoJSONSource(id: "route")
+                source.data = .featureCollection(FeatureCollection(features: [
+                    Feature(geometry: .lineString(LineString(coordinates)))
+                ]))
+                try snapshotter.addSource(source)
+
+                var layer = LineLayer(id: "route-layer", source: "route")
+                layer.lineWidth = .constant(3)
+                layer.lineCap = .constant(.round)
+                layer.lineJoin = .constant(.round)
+                layer.lineColor = .constant(StyleColor(
+                    SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
+                ))
+                try snapshotter.addLayer(layer)
+            } catch {
+                print("[WalkMapImageManager] Failed to add route layer: \(error)")
+            }
+
+            let camera = snapshotter.camera(
+                for: [sw, ne],
+                padding: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10),
+                bearing: nil,
+                pitch: nil
+            )
+            snapshotter.setCamera(to: camera)
+
+            snapshotter.start(overlayHandler: nil) { [weak operation] result in
+                guard let operation, !operation.isComplete else { return }
+                switch result {
+                case .success(let image):
+                    operation.complete(with: image)
+                case .failure(let error):
+                    print("[WalkMapImageManager] Snapshot failed: \(error)")
+                    operation.complete(with: nil)
+                }
+                activeSnapshot = nil
+            }
+        }
+    }
+
+    private class SnapshotOperation {
+        let snapshotter: Snapshotter
+        private let onComplete: (UIImage?) -> Void
+        var cancellable: AnyCancelable?
+        var timeoutItem: DispatchWorkItem?
+        private(set) var isComplete = false
+
+        init(snapshotter: Snapshotter, completion: @escaping (UIImage?) -> Void) {
+            self.snapshotter = snapshotter
+            self.onComplete = completion
+        }
+
+        func complete(with image: UIImage?) {
+            guard !isComplete else { return }
+            isComplete = true
+            timeoutItem?.cancel()
+            cancellable?.cancel()
+            onComplete(image)
+        }
+
+        func invalidate() {
+            guard !isComplete else { return }
+            isComplete = true
+            timeoutItem?.cancel()
+            cancellable?.cancel()
+            onComplete(nil)
+        }
+    }
+
     private enum Status {
         case idle, running, suspended
     }
-    
 }

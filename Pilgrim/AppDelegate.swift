@@ -22,6 +22,7 @@
 import UIKit
 import Foundation
 import CoreStore
+import MapboxMaps
 
 class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     
@@ -30,7 +31,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     static let lastVersion = UserPreference.Optional<String>(key: "lastVersion", initialValue: "1.0")
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
+
+        MapboxMapsOptions.tileStoreUsageMode = .readOnly
+
         DataManager.setup(
             completion: { error in
                 
@@ -87,4 +90,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         case done
     }
 }
-
