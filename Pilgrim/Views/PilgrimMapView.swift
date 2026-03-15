@@ -180,15 +180,15 @@ struct PilgrimMapView: UIViewRepresentable {
                     : SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
 
                 var casing = LineLayer(id: "pilgrim-route-casing", source: Self.sourceId)
-                casing.lineWidth = .constant(7)
+                casing.lineWidth = .constant(10)
                 casing.lineCap = .constant(.round)
                 casing.lineJoin = .constant(.round)
-                casing.lineOpacity = .constant(isDark ? 0.4 : 0.2)
+                casing.lineOpacity = .constant(isDark ? 0.35 : 0.15)
                 casing.lineColor = .constant(StyleColor(isDark ? UIColor.white : UIColor.black))
                 try mapView.mapboxMap.addLayer(casing)
 
                 var layer = LineLayer(id: "pilgrim-route-layer", source: Self.sourceId)
-                layer.lineWidth = .constant(4)
+                layer.lineWidth = .constant(6)
                 layer.lineCap = .constant(.round)
                 layer.lineJoin = .constant(.round)
                 layer.lineOpacity = .constant(1.0)

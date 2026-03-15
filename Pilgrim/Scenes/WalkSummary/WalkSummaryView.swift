@@ -31,6 +31,8 @@ struct WalkSummaryView: View {
         case hidden, zoomed, revealed
     }
 
+    @State private var animatedDistance: Double = 0
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -42,13 +44,13 @@ struct WalkSummaryView: View {
                     if let milestone {
                         milestoneCallout(milestone)
                     }
+                    statsRow
+                    timeBreakdown
                     FaviconSelectorView(selection: $selectedFavicon)
                         .onChange(of: selectedFavicon) { _, newValue in
                             guard let uuid = walk.uuid else { return }
                             DataManager.setFavicon(walkID: uuid, favicon: newValue)
                         }
-                    statsRow
-                    timeBreakdown
                     activityTimelineBar
                     activityInsights
                     activityList
@@ -242,6 +244,7 @@ struct WalkSummaryView: View {
         let coords = routeCoordinates
         guard !coords.isEmpty else {
             revealPhase = .revealed
+            animatedDistance = walk.distance
             return
         }
 
@@ -256,6 +259,20 @@ struct WalkSummaryView: View {
             cameraBounds = boundsForRoute(coords)
             withAnimation(.easeInOut(duration: 0.6)) {
                 revealPhase = .revealed
+            }
+            animateDistanceCountUp()
+        }
+    }
+
+    private func animateDistanceCountUp() {
+        let target = walk.distance
+        let steps = 30
+        let interval = 2.0 / Double(steps)
+        for i in 0...steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + interval * Double(i)) {
+                let progress = Double(i) / Double(steps)
+                let eased = progress * progress * (3 - 2 * progress)
+                animatedDistance = target * eased
             }
         }
     }
@@ -323,11 +340,16 @@ struct WalkSummaryView: View {
 
     private var statsRow: some View {
         HStack(spacing: Constants.UI.Padding.big) {
-            miniStat(label: "Distance", value: formatDistance(walk.distance))
-            miniStat(label: "Steps", value: formatSteps(walk.steps))
-            miniStat(label: "Elevation", value: formatElevation(walk.ascend))
+            miniStat(label: "Distance", value: formatDistance(animatedDistance))
+            if let steps = walk.steps, steps > 0 {
+                miniStat(label: "Steps", value: "\(steps)")
+            }
+            if walk.ascend > 1 {
+                miniStat(label: "Elevation", value: formatElevation(walk.ascend))
+            }
         }
-        .padding(.bottom, Constants.UI.Padding.small)
+        .opacity(revealPhase == .revealed ? 1 : 0)
+        .animation(.easeIn(duration: 0.6).delay(0.2), value: revealPhase)
     }
 
     private func miniStat(label: String, value: String) -> some View {
@@ -348,6 +370,8 @@ struct WalkSummaryView: View {
             SummaryCard(title: "Talk", value: formatDuration(walk.talkDuration), icon: "waveform")
             SummaryCard(title: "Meditate", value: formatDuration(walk.meditateDuration), icon: "brain.head.profile")
         }
+        .opacity(revealPhase == .revealed ? 1 : 0)
+        .animation(.easeIn(duration: 0.6).delay(0.4), value: revealPhase)
     }
 
     private var walkDuration: Double {
