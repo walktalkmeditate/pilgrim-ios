@@ -208,64 +208,51 @@ struct PilgrimMapView: UIViewRepresentable {
 
     // MARK: - Annotations
 
-    private static let voiceImage: UIImage = {
-        UIImage(systemName: "waveform")?
-            .withTintColor(.moss, renderingMode: .alwaysOriginal)
-            ?? UIImage()
-    }()
-
-    private static let startImage: UIImage = {
-        renderCircle(size: 14, color: .moss, borderColor: .white, borderWidth: 2)
-    }()
-
-    private static let endImage: UIImage = {
-        renderCircle(size: 14, color: .stone, borderColor: .white, borderWidth: 2)
-    }()
-
-    private static func meditationImage(duration: TimeInterval) -> UIImage {
-        let minSize: CGFloat = 18
-        let maxSize: CGFloat = 44
-        let scale = CGFloat(min(duration / 600, 1.0))
-        let size = minSize + (maxSize - minSize) * scale
-        return renderCircle(size: size, color: .dawn.withAlphaComponent(0.7), borderColor: .dawn, borderWidth: 1.5)
-    }
-
-    private static func renderCircle(size: CGFloat, color: UIColor, borderColor: UIColor, borderWidth: CGFloat) -> UIImage {
-        let totalSize = CGSize(width: size + borderWidth * 2, height: size + borderWidth * 2)
-        let renderer = UIGraphicsImageRenderer(size: totalSize)
-        return renderer.image { ctx in
-            let rect = CGRect(origin: .zero, size: totalSize)
-            ctx.cgContext.setFillColor(borderColor.cgColor)
-            ctx.cgContext.fillEllipse(in: rect)
-            let inner = rect.insetBy(dx: borderWidth, dy: borderWidth)
-            ctx.cgContext.setFillColor(color.cgColor)
-            ctx.cgContext.fillEllipse(in: inner)
-        }
-    }
-
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
 
-        if coordinator.annotationManager == nil {
-            coordinator.annotationManager = mapView.annotations.makePointAnnotationManager()
+        if coordinator.circleManager == nil {
+            coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager()
         }
 
-        guard let manager = coordinator.annotationManager else { return }
+        guard let circleManager = coordinator.circleManager else { return }
 
-        manager.annotations = pinAnnotations.map { pin in
-            var annotation = PointAnnotation(coordinate: pin.coordinate)
+        circleManager.annotations = pinAnnotations.compactMap { pin in
+            var circle = CircleAnnotation(centerCoordinate: pin.coordinate)
             switch pin.kind {
             case .meditation(let duration):
-                let img = Self.meditationImage(duration: duration)
-                annotation.image = .init(image: img, name: "meditation-\(Int(duration))")
+                let minRadius: Double = 10
+                let maxRadius: Double = 24
+                let scale = min(duration / 600, 1.0)
+                circle.circleRadius = minRadius + (maxRadius - minRadius) * scale
+                circle.circleColor = StyleColor(UIColor.dawn)
+                circle.circleOpacity = 0.7
+                circle.circleStrokeColor = StyleColor(UIColor.dawn)
+                circle.circleStrokeWidth = 2
+                circle.circleStrokeOpacity = 1.0
             case .voiceRecording:
-                annotation.image = .init(image: Self.voiceImage, name: "voice-pin")
+                circle.circleRadius = 8
+                circle.circleColor = StyleColor(UIColor.moss)
+                circle.circleOpacity = 0.8
+                circle.circleStrokeColor = StyleColor(.white)
+                circle.circleStrokeWidth = 1.5
+                circle.circleStrokeOpacity = 0.9
             case .startPoint:
-                annotation.image = .init(image: Self.startImage, name: "start-pin")
+                circle.circleRadius = 7
+                circle.circleColor = StyleColor(UIColor.moss)
+                circle.circleOpacity = 1.0
+                circle.circleStrokeColor = StyleColor(.white)
+                circle.circleStrokeWidth = 2
+                circle.circleStrokeOpacity = 0.9
             case .endPoint:
-                annotation.image = .init(image: Self.endImage, name: "end-pin")
+                circle.circleRadius = 7
+                circle.circleColor = StyleColor(UIColor.stone)
+                circle.circleOpacity = 1.0
+                circle.circleStrokeColor = StyleColor(.white)
+                circle.circleStrokeWidth = 2
+                circle.circleStrokeOpacity = 0.9
             }
-            return annotation
+            return circle
         }
     }
 
@@ -273,7 +260,7 @@ struct PilgrimMapView: UIViewRepresentable {
 
     class Coordinator {
         var cancellables = Set<AnyCancelable>()
-        var annotationManager: PointAnnotationManager?
+        var circleManager: CircleAnnotationManager?
         var isFollowing = false
         var lastSegments: [RouteSegment] = []
         var pendingSegments: [RouteSegment] = []
@@ -282,7 +269,7 @@ struct PilgrimMapView: UIViewRepresentable {
         weak var mapView: MBMapView?
 
         deinit {
-            if let manager = annotationManager, let mapView {
+            if let manager = circleManager, let mapView {
                 mapView.annotations.removeAnnotationManager(withId: manager.id)
             }
         }
