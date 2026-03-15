@@ -1,5 +1,4 @@
 import SwiftUI
-import MapKit
 
 struct ActiveWalkView: View {
 
@@ -42,11 +41,11 @@ struct ActiveWalkView: View {
     }
 
     private func mapSection(height: CGFloat) -> some View {
-        let overlays: [MKOverlay] = viewModel.routeOverlays
-        return MapView(
-            showsUserLocation: .constant(true),
-            userTrackingMode: .constant(.follow),
-            overlays: .constant(overlays)
+        PilgrimMapView(
+            isInteractive: false,
+            showsUserLocation: true,
+            followsUserLocation: true,
+            routeSegments: viewModel.routeSegments
         )
         .frame(height: height)
     }

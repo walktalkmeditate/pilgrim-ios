@@ -94,7 +94,7 @@
 		22A5D02E25C1A57600C30786 /* TempV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A5D02D25C1A57600C30786 /* TempV2.swift */; };
 		22A5D03325C1AB2200C30786 /* TempV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A5D03225C1AB2200C30786 /* TempV3.swift */; };
 		22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A5D03525C1ABDA00C30786 /* TempV4.swift */; };
-		22AB2FB1233CA201002EF0DE /* WalkMapViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22AB2FB0233CA201002EF0DE /* WalkMapViewDelegate.swift */; };
+
 		22B1DD82253F90700093822B /* DataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B1DD80253F90700093822B /* DataStack.swift */; };
 		22B1DD83253F90700093822B /* SQLiteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B1DD81253F90700093822B /* SQLiteStore.swift */; };
 		22B1DD8B253F90FD0093822B /* IntermediateDataModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B1DD89253F90FD0093822B /* IntermediateDataModelProtocol.swift */; };
@@ -129,8 +129,8 @@
 		22BC993E2941D9A800D9B1A5 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992D2941D9A800D9B1A5 /* CardView.swift */; };
 		22BC993F2941D9A800D9B1A5 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992E2941D9A800D9B1A5 /* ProgressView.swift */; };
 		22BC99402941D9A800D9B1A5 /* FeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992F2941D9A800D9B1A5 /* FeatureView.swift */; };
-		22BC99412941D9A800D9B1A5 /* BaseMapMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99302941D9A800D9B1A5 /* BaseMapMenuView.swift */; };
-		22BC99422941D9A800D9B1A5 /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99312941D9A800D9B1A5 /* MapView.swift */; };
+
+
 		22BC99432941D9A800D9B1A5 /* CornerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99322941D9A800D9B1A5 /* CornerView.swift */; };
 		22BC99442941D9A800D9B1A5 /* PermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99332941D9A800D9B1A5 /* PermissionView.swift */; };
 		22BC99452941D9A800D9B1A5 /* MetricView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99342941D9A800D9B1A5 /* MetricView.swift */; };
@@ -140,15 +140,15 @@
 		22BC99492941D9A800D9B1A5 /* WalkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99382941D9A800D9B1A5 /* WalkCard.swift */; };
 		22BC994B2941DA3400D9B1A5 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC994A2941DA3400D9B1A5 /* Constants.swift */; };
 		22BC994D2941DA6200D9B1A5 /* Binding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC994C2941DA6200D9B1A5 /* Binding.swift */; };
-		22BC994F2941DA8F00D9B1A5 /* CLLocationCoordinate2D.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC994E2941DA8F00D9B1A5 /* CLLocationCoordinate2D.swift */; };
+
 		22BC99522941DC9900D9B1A5 /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99512941DC9900D9B1A5 /* Color.swift */; };
-		22BC99542941DD7600D9B1A5 /* MKCoordinateSpan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99532941DD7600D9B1A5 /* MKCoordinateSpan.swift */; };
+
 		22BD1F3E247462FF00415A06 /* ApplicationStateObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BD1F3D247462FF00415A06 /* ApplicationStateObserver.swift */; };
 		22BD1F402474638200415A06 /* ApplicationStateObservation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */; };
 		22BD1F42247463DF00415A06 /* ApplicationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BD1F41247463DF00415A06 /* ApplicationState.swift */; };
 		22BF623D26E6B1D2008C904C /* WalkBuilderComponentStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BF623C26E6B1D2008C904C /* WalkBuilderComponentStatus.swift */; };
 		22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C09B9326514BD8004AF34F /* DataInterface.swift */; };
-		22C1107C24532AE2009ACE81 /* WalkMapViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C1107B24532AE2009ACE81 /* WalkMapViewManager.swift */; };
+
 		22C1108024532C69009ACE81 /* WalkMapImageRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C1107F24532C69009ACE81 /* WalkMapImageRequest.swift */; };
 		22C1108224532DBA009ACE81 /* WalkMapImageSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C1108124532DBA009ACE81 /* WalkMapImageSize.swift */; };
 		22C1108424532E36009ACE81 /* WalkMapImageQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C1108324532E36009ACE81 /* WalkMapImageQueue.swift */; };
@@ -192,6 +192,11 @@
 		AA00020100000000000004 /* VoiceRecordingManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000003 /* VoiceRecordingManagement.swift */; };
 		AA00030100000000000002 /* MeditationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00030100000000000001 /* MeditationView.swift */; };
 		AAAA000000000000000000A1 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA000000000000000000A3 /* WhisperKit */; };
+		AAAA00000000000000000MB1 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000MB3 /* MapboxMaps */; };
+		AAAA00000000000000000MF1 /* RouteSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF2 /* RouteSegment.swift */; };
+		AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */; };
+		AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */; };
+		AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF8 /* PilgrimMapView.swift */; };
 		AAAA000000000000000000B1 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000B2 /* TranscriptionService.swift */; };
 		AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C2 /* PromptGenerator.swift */; };
 		AAAA000000000000000000C3 /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C4 /* PromptListView.swift */; };
@@ -333,7 +338,7 @@
 		22A5D02D25C1A57600C30786 /* TempV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempV2.swift; sourceTree = "<group>"; };
 		22A5D03225C1AB2200C30786 /* TempV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempV3.swift; sourceTree = "<group>"; };
 		22A5D03525C1ABDA00C30786 /* TempV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempV4.swift; sourceTree = "<group>"; };
-		22AB2FB0233CA201002EF0DE /* WalkMapViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMapViewDelegate.swift; sourceTree = "<group>"; };
+
 		22B1DD80253F90700093822B /* DataStack.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataStack.swift; sourceTree = "<group>"; };
 		22B1DD81253F90700093822B /* SQLiteStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SQLiteStore.swift; sourceTree = "<group>"; };
 		22B1DD89253F90FD0093822B /* IntermediateDataModelProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntermediateDataModelProtocol.swift; sourceTree = "<group>"; };
@@ -368,8 +373,8 @@
 		22BC992D2941D9A800D9B1A5 /* CardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		22BC992E2941D9A800D9B1A5 /* ProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		22BC992F2941D9A800D9B1A5 /* FeatureView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeatureView.swift; sourceTree = "<group>"; };
-		22BC99302941D9A800D9B1A5 /* BaseMapMenuView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseMapMenuView.swift; sourceTree = "<group>"; };
-		22BC99312941D9A800D9B1A5 /* MapView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
+
+
 		22BC99322941D9A800D9B1A5 /* CornerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CornerView.swift; sourceTree = "<group>"; };
 		22BC99332941D9A800D9B1A5 /* PermissionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
 		22BC99342941D9A800D9B1A5 /* MetricView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetricView.swift; sourceTree = "<group>"; };
@@ -379,15 +384,15 @@
 		22BC99382941D9A800D9B1A5 /* WalkCard.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalkCard.swift; sourceTree = "<group>"; };
 		22BC994A2941DA3400D9B1A5 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		22BC994C2941DA6200D9B1A5 /* Binding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Binding.swift; sourceTree = "<group>"; };
-		22BC994E2941DA8F00D9B1A5 /* CLLocationCoordinate2D.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLLocationCoordinate2D.swift; sourceTree = "<group>"; };
+
 		22BC99512941DC9900D9B1A5 /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
-		22BC99532941DD7600D9B1A5 /* MKCoordinateSpan.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MKCoordinateSpan.swift; sourceTree = "<group>"; };
+
 		22BD1F3D247462FF00415A06 /* ApplicationStateObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationStateObserver.swift; sourceTree = "<group>"; };
 		22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationStateObservation.swift; sourceTree = "<group>"; };
 		22BD1F41247463DF00415A06 /* ApplicationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationState.swift; sourceTree = "<group>"; };
 		22BF623C26E6B1D2008C904C /* WalkBuilderComponentStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkBuilderComponentStatus.swift; sourceTree = "<group>"; };
 		22C09B9326514BD8004AF34F /* DataInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataInterface.swift; sourceTree = "<group>"; };
-		22C1107B24532AE2009ACE81 /* WalkMapViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMapViewManager.swift; sourceTree = "<group>"; };
+
 		22C1107F24532C69009ACE81 /* WalkMapImageRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMapImageRequest.swift; sourceTree = "<group>"; };
 		22C1108124532DBA009ACE81 /* WalkMapImageSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMapImageSize.swift; sourceTree = "<group>"; };
 		22C1108324532E36009ACE81 /* WalkMapImageQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMapImageQueue.swift; sourceTree = "<group>"; };
@@ -499,6 +504,10 @@
 		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
 		263D620E1DB30C5FCA0143CC /* SoundManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManagement.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000MF2 /* RouteSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSegment.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimAnnotation.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapStyle.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000MF8 /* PilgrimMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -507,6 +516,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAAA000000000000000000A1 /* WhisperKit in Frameworks */,
+				AAAA00000000000000000MB1 /* MapboxMaps in Frameworks */,
 				50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -832,12 +842,12 @@
 				22E5057025C96B3600DC9AC1 /* UIKit */,
 				221436BA244356A90010D82B /* Array.swift */,
 				2207B75523128F8A00BA71B5 /* CLLocation.swift */,
-				22BC994E2941DA8F00D9B1A5 /* CLLocationCoordinate2D.swift */,
+
 				22FEA0A624CDA3FF0007CA9C /* ClosedRange.swift */,
 				226E9A4A23F01E6E00992815 /* Date.swift */,
 				2230926224D7573C00A3F636 /* Double.swift */,
 				22FEA0AC24CDD4CA0007CA9C /* FileManager.swift */,
-				22BC99532941DD7600D9B1A5 /* MKCoordinateSpan.swift */,
+
 				22623C0022DFBB71004065C6 /* Sequence.swift */,
 				221436C02443960A0010D82B /* UnitCount.swift */,
 				22877543234A75A10078CE12 /* Units.swift */,
@@ -882,12 +892,13 @@
 				22BC99282941D9A800D9B1A5 /* Buttons */,
 				CC00000100000000SCGRP001 /* Scenery */,
 				22BC99352941D9A800D9B1A5 /* AxisGeometryReader.swift */,
-				22BC99302941D9A800D9B1A5 /* BaseMapMenuView.swift */,
+
 				22BC992D2941D9A800D9B1A5 /* CardView.swift */,
 				22BC99322941D9A800D9B1A5 /* CornerView.swift */,
 				22BC992F2941D9A800D9B1A5 /* FeatureView.swift */,
 				22BC99372941D9A800D9B1A5 /* FeatureViewModel.swift */,
-				22BC99312941D9A800D9B1A5 /* MapView.swift */,
+
+				AAAA00000000000000000MF8 /* PilgrimMapView.swift */,
 				22BC99342941D9A800D9B1A5 /* MetricView.swift */,
 				22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */,
 				22BC99332941D9A800D9B1A5 /* PermissionView.swift */,
@@ -925,8 +936,10 @@
 		22C1107A24532A79009ACE81 /* MapManagement */ = {
 			isa = PBXGroup;
 			children = (
+				AAAA00000000000000000MF2 /* RouteSegment.swift */,
+				AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */,
+				AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */,
 				22C1107D24532AE7009ACE81 /* Images */,
-				22C1107E24532AFB009ACE81 /* Views */,
 			);
 			path = MapManagement;
 			sourceTree = "<group>";
@@ -940,15 +953,6 @@
 				22C1108124532DBA009ACE81 /* WalkMapImageSize.swift */,
 			);
 			path = Images;
-			sourceTree = "<group>";
-		};
-		22C1107E24532AFB009ACE81 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				22C1107B24532AE2009ACE81 /* WalkMapViewManager.swift */,
-				22AB2FB0233CA201002EF0DE /* WalkMapViewDelegate.swift */,
-			);
-			path = Views;
 			sourceTree = "<group>";
 		};
 		22DBFBD32348AB8000DE6E92 /* Data */ = {
@@ -1185,6 +1189,7 @@
 			name = Pilgrim;
 			packageProductDependencies = (
 				AAAA000000000000000000A3 /* WhisperKit */,
+				AAAA00000000000000000MB3 /* MapboxMaps */,
 			);
 			productName = Pilgrim;
 			productReference = 22B6CF5322CA0814002D2FB0 /* Pilgrim.app */;
@@ -1247,6 +1252,7 @@
 			mainGroup = 22B6CF4A22CA0814002D2FB0;
 			packageReferences = (
 				AAAA000000000000000000A2 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				AAAA00000000000000000MB2 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */,
 			);
 			productRefGroup = 22B6CF5422CA0814002D2FB0 /* Products */;
 			projectDirPath = "";
@@ -1396,14 +1402,14 @@
 				22DBFBE12349362900DE6E92 /* UserPreferences.swift in Sources */,
 				2287753E234A3DF60078CE12 /* TextInputSetting.swift in Sources */,
 				22BD1F402474638200415A06 /* ApplicationStateObservation.swift in Sources */,
-				22C1107C24532AE2009ACE81 /* WalkMapViewManager.swift in Sources */,
+
 				2273943E233BF81800176A07 /* CustomImageCache.swift in Sources */,
-				22BC99422941D9A800D9B1A5 /* MapView.swift in Sources */,
+
 				22834F8225422D8200057FEB /* HeartRateDataSampleInterface.swift in Sources */,
 				22BC993E2941D9A800D9B1A5 /* CardView.swift in Sources */,
 				AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */,
 				AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */,
-				22BC994F2941DA8F00D9B1A5 /* CLLocationCoordinate2D.swift in Sources */,
+
 				2226A3BF240C441700FF7A94 /* TextViewSetting.swift in Sources */,
 				22F0000D234A2055008CFAD2 /* Setting.swift in Sources */,
 				2230926324D7573C00A3F636 /* Double.swift in Sources */,
@@ -1421,7 +1427,11 @@
 				22BC99482941D9A800D9B1A5 /* FeatureViewModel.swift in Sources */,
 				2221997F2439F6FF00ADAE24 /* CustomNumberFormatting.swift in Sources */,
 				22D299372402BDE400F3F6B8 /* TimeIntervalPickerSetting.swift in Sources */,
-				22AB2FB1233CA201002EF0DE /* WalkMapViewDelegate.swift in Sources */,
+
+				AAAA00000000000000000MF1 /* RouteSegment.swift in Sources */,
+				AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */,
+				AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */,
+				AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */,
 
 				22834F73254220FC00057FEB /* WalkPauseInterface.swift in Sources */,
 				22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */,
@@ -1449,7 +1459,7 @@
 				22D299332402B1AC00F3F6B8 /* InputViewSetting.swift in Sources */,
 				22B1DD93253F91380093822B /* OutRunV4.swift in Sources */,
 				22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */,
-				22BC99412941D9A800D9B1A5 /* BaseMapMenuView.swift in Sources */,
+
 				22BC994D2941DA6200D9B1A5 /* Binding.swift in Sources */,
 				22B6CF7022CA08C9002D2FB0 /* WalkBuilder.swift in Sources */,
 				221436BB244356A90010D82B /* Array.swift in Sources */,
@@ -1493,7 +1503,7 @@
 				2227C642234B66BC00CFE31A /* ButtonSetting.swift in Sources */,
 				221E47D123ECB837004EAB1D /* Backup.swift in Sources */,
 				225C0F762931D22300B9B45F /* RootCoordinatorView.swift in Sources */,
-				22BC99542941DD7600D9B1A5 /* MKCoordinateSpan.swift in Sources */,
+
 				22BC99172941D97600D9B1A5 /* WelcomeView.swift in Sources */,
 				225AC6A4243F2710008D493D /* HeartRateDataSample.swift in Sources */,
 
@@ -1882,6 +1892,14 @@
 				minimumVersion = 0.9.0;
 			};
 		};
+		AAAA00000000000000000MB2 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mapbox/mapbox-maps-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1889,6 +1907,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AAAA000000000000000000A2 /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
+		};
+		AAAA00000000000000000MB3 /* MapboxMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAAA00000000000000000MB2 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */;
+			productName = MapboxMaps;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

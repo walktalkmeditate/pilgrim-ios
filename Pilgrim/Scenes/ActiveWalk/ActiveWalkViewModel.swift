@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 import CombineExt
-import MapKit
+import CoreLocation
 
 class ActiveWalkViewModel: ObservableObject, Identifiable {
 
@@ -21,7 +21,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var speed: String = UserPreferences.speedMeasurementType.safeValue == .milesPerHour ? "0.0 mph" : "0.0 km/h"
     @Published var currentLocation: TempRouteDataSample?
     @Published var routeCoordinates: [CLLocationCoordinate2D] = []
-    @Published private(set) var routeOverlays: [MKPolyline] = []
+    @Published private(set) var routeSegments: [RouteSegment] = []
     @Published var isRecordingVoice = false
     @Published var audioLevel: Float = 0
     @Published var isMeditating = false
@@ -97,7 +97,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                 let countChanged = coords.count != self.routeCoordinates.count
                 self.routeCoordinates = coords
                 if countChanged && coords.count > 1 {
-                    self.routeOverlays = self.buildActivityPolylines(from: samples)
+                    self.routeSegments = self.buildActivitySegments(from: samples)
                 }
                 if countChanged, let last = samples.last {
                     let speedMps = max(0, last.speed)
@@ -237,7 +237,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         return "walking"
     }
 
-    private func buildActivityPolylines(from samples: [TempRouteDataSample]) -> [MKPolyline] {
+    private func buildActivitySegments(from samples: [TempRouteDataSample]) -> [RouteSegment] {
         guard samples.count > 1 else { return [] }
 
         var segments: [(type: String, indices: [Int])] = []
@@ -261,9 +261,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             let coords = segment.indices.map { i in
                 CLLocationCoordinate2D(latitude: samples[i].latitude, longitude: samples[i].longitude)
             }
-            let polyline = MKPolyline(coordinates: coords, count: coords.count)
-            polyline.title = segment.type
-            return polyline
+            return RouteSegment(coordinates: coords, activityType: segment.type)
         }
     }
 

@@ -1,7 +1,7 @@
 import SwiftUI
-import MapKit
 import AVFoundation
 import CoreStore
+import CoreLocation
 
 struct WalkSummaryView: View {
 
@@ -17,7 +17,7 @@ struct WalkSummaryView: View {
         self.walk = walk
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
     }
-    @State private var mapRegion: MKCoordinateRegion?
+    @State private var cameraBounds: (sw: CLLocationCoordinate2D, ne: CLLocationCoordinate2D)?
     @State private var recentWalkSnippets: [PromptGenerator.WalkSnippet] = []
 
     var body: some View {
@@ -63,7 +63,7 @@ struct WalkSummaryView: View {
                 loadExistingTranscriptions()
                 loadRecentWalkSnippets()
                 if routeCoordinates.count > 1 {
-                    mapRegion = regionForRoute(routeCoordinates)
+                    cameraBounds = boundsForRoute(routeCoordinates)
                 }
             }
             .sheet(isPresented: $showPrompts) {
@@ -141,17 +141,13 @@ struct WalkSummaryView: View {
     private var mapSection: some View {
         Group {
             if routeCoordinates.count > 1 {
-                let polylines = activityColoredPolylines
-                let annotations = allPinAnnotations
                 ZStack(alignment: .bottom) {
-                    MapView(
-                        region: $mapRegion,
-                        isZoomEnabled: .constant(true),
-                        isScrollEnabled: .constant(true),
-                        showsUserLocation: .constant(false),
-                        userTrackingMode: .constant(.none),
-                        annotations: .constant(annotations as [MKAnnotation]),
-                        overlays: .constant(polylines)
+                    PilgrimMapView(
+                        isInteractive: true,
+                        showsUserLocation: false,
+                        routeSegments: activityColoredSegments,
+                        pinAnnotations: allPinAnnotations,
+                        cameraBounds: cameraBounds
                     )
                     .frame(height: 280)
                     .cornerRadius(Constants.UI.CornerRadius.big)
@@ -226,13 +222,13 @@ struct WalkSummaryView: View {
             activityIntervals: walk.activityIntervals,
             routeData: walk.routeData,
             onSegmentTapped: { start, end in
-                if let region = regionForTimeRange(start: start, end: end) {
-                    withAnimation { mapRegion = region }
+                if let bounds = boundsForTimeRange(start: start, end: end) {
+                    withAnimation { cameraBounds = bounds }
                 }
             },
             onSegmentDeselected: {
                 if routeCoordinates.count > 1 {
-                    withAnimation { mapRegion = regionForRoute(routeCoordinates) }
+                    withAnimation { cameraBounds = boundsForRoute(routeCoordinates) }
                 }
             }
         )
@@ -401,9 +397,9 @@ struct WalkSummaryView: View {
         }
     }
 
-    // MARK: - Activity-Colored Polylines
+    // MARK: - Activity-Colored Route Segments
 
-    private var activityColoredPolylines: [MKPolyline] {
+    private var activityColoredSegments: [RouteSegment] {
         let samples = walk.routeData
         guard samples.count > 1 else { return [] }
 
@@ -428,9 +424,7 @@ struct WalkSummaryView: View {
             let coords = segment.indices.map { i in
                 CLLocationCoordinate2D(latitude: samples[i].latitude, longitude: samples[i].longitude)
             }
-            let polyline = MKPolyline(coordinates: coords, count: coords.count)
-            polyline.title = segment.type
-            return polyline
+            return RouteSegment(coordinates: coords, activityType: segment.type)
         }
     }
 
@@ -454,11 +448,11 @@ struct WalkSummaryView: View {
 
     // MARK: - Pin Annotations
 
-    private var allPinAnnotations: [MKAnnotation] {
+    private var allPinAnnotations: [PilgrimAnnotation] {
         voicePinAnnotations + meditationPinAnnotations
     }
 
-    private var meditationPinAnnotations: [MKPointAnnotation] {
+    private var meditationPinAnnotations: [PilgrimAnnotation] {
         let routeSamples = walk.routeData
         return walk.activityIntervals
             .filter { $0.activityType == .meditation }
@@ -468,14 +462,14 @@ struct WalkSummaryView: View {
                     abs($1.timestamp.timeIntervalSince(interval.startDate))
                 }) else { return nil }
 
-                let annotation = MKPointAnnotation()
-                annotation.coordinate = CLLocationCoordinate2D(latitude: closest.latitude, longitude: closest.longitude)
-                annotation.title = "meditation"
-                return annotation
+                return PilgrimAnnotation(
+                    coordinate: CLLocationCoordinate2D(latitude: closest.latitude, longitude: closest.longitude),
+                    kind: .meditation
+                )
             }
     }
 
-    private var voicePinAnnotations: [MKPointAnnotation] {
+    private var voicePinAnnotations: [PilgrimAnnotation] {
         let routeSamples = walk.routeData
         return walk.voiceRecordings.compactMap { recording in
             guard let closest = routeSamples.min(by: {
@@ -483,10 +477,10 @@ struct WalkSummaryView: View {
                 abs($1.timestamp.timeIntervalSince(recording.startDate))
             }) else { return nil }
 
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = CLLocationCoordinate2D(latitude: closest.latitude, longitude: closest.longitude)
-            annotation.title = "Recording \(formatDuration(recording.duration))"
-            return annotation
+            return PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: closest.latitude, longitude: closest.longitude),
+                kind: .voiceRecording(label: "Recording \(formatDuration(recording.duration))")
+            )
         }
     }
 
@@ -498,26 +492,26 @@ struct WalkSummaryView: View {
         }
     }
 
-    private func regionForTimeRange(start: Date, end: Date) -> MKCoordinateRegion? {
+    private func boundsForTimeRange(start: Date, end: Date) -> (sw: CLLocationCoordinate2D, ne: CLLocationCoordinate2D)? {
         let samples = walk.routeData.filter { $0.timestamp >= start && $0.timestamp <= end }
         let coords = samples.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
         guard !coords.isEmpty else { return nil }
-        return regionForRoute(coords)
+        return boundsForRoute(coords)
     }
 
-    private func regionForRoute(_ coords: [CLLocationCoordinate2D]) -> MKCoordinateRegion {
+    private func boundsForRoute(_ coords: [CLLocationCoordinate2D]) -> (sw: CLLocationCoordinate2D, ne: CLLocationCoordinate2D) {
         let lats = coords.map { $0.latitude }
         let lons = coords.map { $0.longitude }
-        guard let minLat = lats.min(), let maxLat = lats.max(),
-              let minLon = lons.min(), let maxLon = lons.max() else {
-            return MKCoordinateRegion()
-        }
-        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2, longitude: (minLon + maxLon) / 2)
-        let span = MKCoordinateSpan(
-            latitudeDelta: (maxLat - minLat) * 1.3 + 0.002,
-            longitudeDelta: (maxLon - minLon) * 1.3 + 0.002
+        let minLat = lats.min() ?? 0
+        let maxLat = lats.max() ?? 0
+        let minLon = lons.min() ?? 0
+        let maxLon = lons.max() ?? 0
+        let latPad = (maxLat - minLat) * 0.15 + 0.001
+        let lonPad = (maxLon - minLon) * 0.15 + 0.001
+        return (
+            sw: CLLocationCoordinate2D(latitude: minLat - latPad, longitude: minLon - lonPad),
+            ne: CLLocationCoordinate2D(latitude: maxLat + latPad, longitude: maxLon + lonPad)
         )
-        return MKCoordinateRegion(center: center, span: span)
     }
 
     private func formatDuration(_ seconds: Double) -> String {
