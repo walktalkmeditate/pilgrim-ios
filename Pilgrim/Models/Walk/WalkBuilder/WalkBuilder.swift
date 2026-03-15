@@ -351,19 +351,31 @@ public class WalkBuilder: ApplicationStateObserver {
     public func createCheckpointSnapshot() -> TempWalk? {
         guard let start = startDateRelay.value else { return nil }
 
+        let now = Date()
+        var pauses = pausesRelay.value
+        if let lastPause {
+            let pending = TempWalkPause(
+                uuid: nil,
+                startDate: lastPause.startingAt,
+                endDate: now,
+                pauseType: lastPause.type
+            )
+            pauses.append(pending)
+        }
+
         return NewWalk(
             workoutType: workoutTypeRelay.value,
             distance: distanceRelay.value,
             steps: stepsRelay.value,
             startDate: start,
-            endDate: Date(),
+            endDate: now,
             isRace: false,
             comment: nil,
             isUserModified: false,
             finishedRecording: false,
             heartRates: [],
             routeData: locationsRelay.value,
-            pauses: pausesRelay.value,
+            pauses: pauses,
             workoutEvents: [],
             voiceRecordings: voiceRecordingsRelay.value,
             activityIntervals: activityIntervalsRelay.value
