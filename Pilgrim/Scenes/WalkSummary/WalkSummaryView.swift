@@ -264,12 +264,17 @@ struct WalkSummaryView: View {
         }
     }
 
+    @State private var distanceAnimationGeneration = 0
+
     private func animateDistanceCountUp() {
         let target = walk.distance
         let steps = 30
         let interval = 2.0 / Double(steps)
+        distanceAnimationGeneration += 1
+        let generation = distanceAnimationGeneration
         for i in 0...steps {
             DispatchQueue.main.asyncAfter(deadline: .now() + interval * Double(i)) {
+                guard generation == distanceAnimationGeneration else { return }
                 let progress = Double(i) / Double(steps)
                 let eased = progress * progress * (3 - 2 * progress)
                 animatedDistance = target * eased
@@ -290,7 +295,7 @@ struct WalkSummaryView: View {
             if distanceKm < 0.1 {
                 return "A moment of stillness, right where you are."
             }
-            return "A journey inward, \(String(format: "%.1f", distanceKm)) km along the way."
+            return "A journey inward, \(formatDistance(walk.distance)) along the way."
         } else if hasTalk {
             return "You walked and gave voice to your thoughts."
         } else if distanceKm > 5 {

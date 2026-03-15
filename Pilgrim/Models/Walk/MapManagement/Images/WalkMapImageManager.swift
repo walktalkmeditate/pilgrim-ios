@@ -13,9 +13,6 @@ enum WalkMapImageManager {
     }
     private static var requestQueue = WalkMapImageQueue()
     private static let processQueue = DispatchQueue(label: "processQueue", qos: .userInitiated)
-    private static let screenScale: CGFloat = {
-        UIScreen.main.scale
-    }()
 
     public static func execute(_ request: WalkMapImageRequest) {
         if let id = request.cacheIdentifier(), let image = CustomImageCache.mapImageCache.getMapImage(for: id) {
@@ -72,7 +69,6 @@ enum WalkMapImageManager {
                 }
 
                 let size = request.size.rawSize
-                let scale = screenScale
 
                 processQueue.async {
                     let lats = coordinates.map { $0.latitude }
@@ -93,6 +89,7 @@ enum WalkMapImageManager {
                     )
 
                     DispatchQueue.main.async {
+                        let scale = UIScreen.main.scale
                         renderSnapshot(
                             coordinates: coordinates,
                             center: center,
