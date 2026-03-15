@@ -238,15 +238,8 @@ struct InkScrollView: View {
 
     private func breathingPulse(snapshot: WalkSnapshot, position: CGPoint) -> some View {
         let color = dotSeasonalColor(for: snapshot)
-        return Circle()
-            .fill(color.opacity(0.08))
-            .frame(width: 50, height: 50)
+        return BreathingPulseView(color: color)
             .position(position)
-            .phaseAnimator([false, true]) { content, phase in
-                content
-                    .scaleEffect(phase ? 1.3 : 0.9)
-                    .opacity(phase ? 0.0 : 0.15)
-            } animation: { _ in .easeInOut(duration: 2.5) }
     }
 
     private func dotSeasonalColor(for snapshot: WalkSnapshot) -> Color {
@@ -278,6 +271,12 @@ struct InkScrollView: View {
                         FootprintShape()
                             .fill(seasonColor.opacity(0.3))
                             .frame(width: 12, height: 18)
+
+                        if let raw = snapshot.favicon, let fav = WalkFavicon(rawValue: raw) {
+                            Image(systemName: fav.icon)
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(seasonColor)
+                        }
 
                         Text(Self.expandDateFormatter.string(from: snapshot.startDate))
                             .font(Constants.Typography.annotation)
@@ -687,6 +686,21 @@ struct InkScrollView: View {
         hapticState.milestonePositions = milestonePositions.map { $0.yPosition }
     }
 
+}
+
+private struct BreathingPulseView: View {
+    let color: Color
+
+    var body: some View {
+        Circle()
+            .fill(color.opacity(0.08))
+            .frame(width: 50, height: 50)
+            .phaseAnimator([false, true]) { content, phase in
+                content
+                    .scaleEffect(phase ? 1.3 : 0.9)
+                    .opacity(phase ? 0.0 : 0.15)
+            } animation: { _ in .easeInOut(duration: 2.5) }
+    }
 }
 
 private struct SonarRingView: View {

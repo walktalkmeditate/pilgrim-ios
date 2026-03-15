@@ -1,7 +1,7 @@
 import Foundation
 import CoreStore
 
-public typealias VoiceRecording = PilgrimV3.VoiceRecording
+public typealias VoiceRecording = PilgrimV4.VoiceRecording
 
 extension VoiceRecording: VoiceRecordingInterface {
 

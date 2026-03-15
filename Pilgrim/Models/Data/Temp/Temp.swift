@@ -54,7 +54,8 @@ extension TempWalk: WalkInterface, Identifiable {
             pauses: object.pauses.map { .init(from: $0) },
             workoutEvents: object.workoutEvents.map { .init(from: $0) },
             voiceRecordings: object.voiceRecordings.map { .init(from: $0) },
-            activityIntervals: object.activityIntervals.map { .init(from: $0) }
+            activityIntervals: object.activityIntervals.map { .init(from: $0) },
+            favicon: object.favicon
         )
     }
 }

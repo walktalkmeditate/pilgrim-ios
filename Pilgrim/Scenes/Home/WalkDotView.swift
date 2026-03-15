@@ -43,6 +43,8 @@ struct WalkDotView: View {
                 .opacity(opacity)
                 .shadow(color: .ink.opacity(0.15), radius: 2, x: 1, y: 2)
 
+            faviconOverlay(size: size)
+
             activityArcs(size: size)
 
             Circle()
@@ -63,6 +65,21 @@ struct WalkDotView: View {
         .position(position)
         .onTapGesture { onTap(snapshot.id) }
         .accessibilityLabel(accessibilityText)
+    }
+
+    // MARK: - Favicon overlay
+
+    @ViewBuilder
+    private func faviconOverlay(size: CGFloat) -> some View {
+        if size >= 14, let raw = snapshot.favicon, let fav = WalkFavicon(rawValue: raw) {
+            Image(systemName: fav.icon)
+                .font(size >= 18 ? Constants.Typography.caption : Constants.Typography.micro)
+                .bold()
+                .foregroundColor(.parchment)
+                .shadow(color: .ink.opacity(0.4), radius: 1, x: 0, y: 0.5)
+                .frame(width: size, height: size)
+                .opacity(opacity)
+        }
     }
 
     // MARK: - Activity arcs

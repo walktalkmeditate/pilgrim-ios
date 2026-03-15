@@ -22,7 +22,7 @@
 import Foundation
 import CoreStore
 
-public typealias WalkPause = PilgrimV3.WorkoutPause
+public typealias WalkPause = PilgrimV4.WorkoutPause
 
 extension PilgrimV2.WorkoutPause {
 
