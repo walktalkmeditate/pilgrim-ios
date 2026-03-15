@@ -107,7 +107,7 @@ struct MeditationView: View {
 
     private var background: some View {
         ZStack {
-            Color.ink
+            Color.parchment
             Color.orange.opacity(warmthAmount * 0.06)
         }
         .ignoresSafeArea()
@@ -122,7 +122,7 @@ struct MeditationView: View {
         GeometryReader { geo in
             ForEach(particles) { particle in
                 Circle()
-                    .fill(Color.parchment.opacity(particleGlow ? particle.opacity * 1.5 : particle.opacity * 0.5))
+                    .fill(Color.fog.opacity(particleGlow ? particle.opacity * 1.5 : particle.opacity * 0.5))
                     .frame(width: particle.size, height: particle.size)
                     .position(
                         x: geo.size.width * particle.x,
@@ -191,24 +191,15 @@ struct MeditationView: View {
 
     // MARK: - Breathing Circle
 
-    @Environment(\.colorScheme) private var meditationColorScheme
-
     private var breathingCircle: some View {
-        let isDark = meditationColorScheme == .dark
-        let orbColor = Color.moss
-        let outerOpacity = isDark ? 0.2 : 0.5
-        let innerBase = isDark ? 0.3 : 0.7
-        let innerFade = isDark ? 0.1 : 0.3
-        let strokeBase = isDark ? 0.12 : 0.25
-
-        return ZStack {
+        ZStack {
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            orbColor.opacity(outerOpacity),
-                            orbColor.opacity(outerOpacity * 0.3),
-                            orbColor.opacity(0.0)
+                            Color.moss.opacity(0.5),
+                            Color.moss.opacity(0.15),
+                            Color.moss.opacity(0.0)
                         ],
                         center: .center,
                         startRadius: 20,
@@ -224,8 +215,8 @@ struct MeditationView: View {
                 .fill(
                     RadialGradient(
                         colors: [
-                            orbColor.opacity(innerBase + glowAmount * 0.1),
-                            orbColor.opacity(innerFade + glowAmount * 0.05)
+                            Color.moss.opacity(0.7 + glowAmount * 0.2),
+                            Color.moss.opacity(0.3 + glowAmount * 0.1)
                         ],
                         center: .center,
                         startRadius: 0,
@@ -237,7 +228,7 @@ struct MeditationView: View {
                 .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isHolding)
 
             Circle()
-                .stroke(orbColor.opacity(strokeBase + glowAmount * 0.08 + milestoneFlash * 0.2), lineWidth: 1 + glowAmount * 0.5 + milestoneFlash * 1.5)
+                .stroke(Color.moss.opacity(0.25 + glowAmount * 0.15 + milestoneFlash * 0.4), lineWidth: 1 + glowAmount * 0.5 + milestoneFlash * 1.5)
                 .frame(width: 200, height: 200)
                 .scaleEffect(circleScale * 1.3)
                 .opacity(Double(circleScale))
