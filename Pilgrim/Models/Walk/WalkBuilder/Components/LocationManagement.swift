@@ -166,6 +166,16 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: onResetBinder)
             .store(in: &cancellables)
+        builder.statusPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                guard let self, status.isActiveStatus else { return }
+                self.locationManager.startUpdatingLocation()
+                if self.locationsRelay.value.isEmpty, let current = self.currentLocationRelay.value {
+                    self.locationsRelay.accept([current])
+                }
+            }
+            .store(in: &cancellables)
     }
     
     public func prepare() {
