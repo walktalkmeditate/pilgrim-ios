@@ -103,25 +103,31 @@ struct ActiveWalkView: View {
     }
 
     private var micButton: some View {
-        Button(action: { viewModel.toggleVoiceRecording() }) {
+        let isActive = viewModel.isRecordingVoice
+        return Button(action: { viewModel.toggleVoiceRecording() }) {
             VStack(spacing: 6) {
-                if viewModel.isRecordingVoice {
+                if isActive {
                     AudioWaveformView(level: viewModel.audioLevel)
                         .frame(width: 36, height: 24)
                 } else {
                     Image(systemName: "mic")
-                        .font(.title)
+                        .font(.title2)
                 }
-                Text(viewModel.isRecordingVoice ? "Stop" : "Record")
+                Text(isActive ? "Stop" : "Record")
                     .font(Constants.Typography.caption)
             }
             .foregroundColor(.rust)
             .frame(width: 72, height: 72)
             .background(
                 Circle()
-                    .stroke(Color.rust, lineWidth: 2)
+                    .fill(Color.rust.opacity(isActive ? 0.15 : 0.06))
+            )
+            .background(
+                Circle()
+                    .stroke(Color.rust, lineWidth: isActive ? 2.5 : 1.5)
             )
         }
+        .animation(.easeInOut(duration: 0.3), value: isActive)
     }
 
     private var controlsSection: some View {
@@ -132,16 +138,16 @@ struct ActiveWalkView: View {
                     .tint(.stone)
                     .frame(maxWidth: .infinity)
             case .ready:
-                outlinedButton("Start", systemImage: "play.fill", color: .moss) {
+                actionButton("Start", systemImage: "play.fill", color: .moss, isFilled: true) {
                     viewModel.startRecording()
                 }
             case .recording, .paused, .autoPaused:
-                outlinedButton("Meditate", systemImage: "brain.head.profile", color: .dawn) {
+                actionButton("Meditate", systemImage: "brain.head.profile", color: .dawn) {
                     viewModel.startMeditation()
                     showMeditation = true
                 }
                 micButton
-                outlinedButton("Stop", systemImage: "stop.fill", color: .fog) {
+                actionButton("End", systemImage: "stop.fill", color: .fog) {
                     showStopConfirmation = true
                 }
             }
@@ -150,7 +156,7 @@ struct ActiveWalkView: View {
         .padding(.bottom, Constants.UI.Padding.normal)
     }
 
-    private func outlinedButton(_ title: String, systemImage: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func actionButton(_ title: String, systemImage: String, color: Color, isFilled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: systemImage)
@@ -162,7 +168,11 @@ struct ActiveWalkView: View {
             .frame(width: 72, height: 72)
             .background(
                 Circle()
-                    .stroke(color, lineWidth: 2)
+                    .fill(color.opacity(isFilled ? 0.12 : 0.06))
+            )
+            .background(
+                Circle()
+                    .stroke(color, lineWidth: 1.5)
             )
         }
     }
