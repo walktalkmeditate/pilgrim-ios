@@ -115,11 +115,11 @@ struct ActiveWalkView: View {
                 Text(viewModel.isRecordingVoice ? "Stop" : "Record")
                     .font(Constants.Typography.caption)
             }
-            .foregroundColor(viewModel.isRecordingVoice ? .rust : .stone)
+            .foregroundColor(.rust)
             .frame(width: 72, height: 72)
             .background(
                 Circle()
-                    .stroke(viewModel.isRecordingVoice ? Color.rust : Color.stone, lineWidth: 2)
+                    .stroke(Color.rust, lineWidth: 2)
             )
         }
     }
@@ -136,12 +136,12 @@ struct ActiveWalkView: View {
                     viewModel.startRecording()
                 }
             case .recording, .paused, .autoPaused:
-                outlinedButton("Meditate", systemImage: "brain.head.profile", color: .moss) {
+                outlinedButton("Meditate", systemImage: "brain.head.profile", color: .dawn) {
                     viewModel.startMeditation()
                     showMeditation = true
                 }
                 micButton
-                outlinedButton("Stop", systemImage: "stop.fill", color: .rust) {
+                outlinedButton("Stop", systemImage: "stop.fill", color: .fog) {
                     showStopConfirmation = true
                 }
             }
