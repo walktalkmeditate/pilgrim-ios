@@ -79,11 +79,17 @@ struct WalkSummaryView: View {
             }
             .onAppear {
                 loadExistingTranscriptions()
-                loadRecentWalkSnippets()
                 cachedSegments = activityColoredSegments
                 cachedAnnotations = allPinAnnotations
-                detectMilestone()
                 startRevealSequence()
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let snippets = computeRecentWalkSnippets()
+                    let detectedMilestone = computeMilestone()
+                    DispatchQueue.main.async {
+                        recentWalkSnippets = snippets
+                        milestone = detectedMilestone
+                    }
+                }
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
@@ -129,15 +135,15 @@ struct WalkSummaryView: View {
         }
     }
 
-    private func loadRecentWalkSnippets() {
+    private func computeRecentWalkSnippets() -> [PromptGenerator.WalkSnippet] {
         guard let walks = try? DataManager.dataStack.fetchAll(
             From<Walk>()
                 .where(\._startDate < walk.startDate)
                 .orderBy(.descending(\._startDate))
                 .tweak { $0.fetchLimit = 20 }
-        ) else { return }
+        ) else { return [] }
 
-        recentWalkSnippets = walks
+        return walks
             .filter { w in w.voiceRecordings.contains { $0.transcription != nil } }
             .prefix(3)
             .map { w in
@@ -309,27 +315,25 @@ struct WalkSummaryView: View {
 
     // MARK: - Milestones
 
-    private func detectMilestone() {
+    private func computeMilestone() -> String? {
         guard let walks = try? DataManager.dataStack.fetchAll(
             From<Walk>()
                 .where(\._startDate < walk.startDate)
                 .orderBy(.descending(\._startDate))
                 .tweak { $0.fetchLimit = 100 }
-        ) else { return }
+        ) else { return nil }
 
         if walk.meditateDuration > 0 {
             let longestPast = walks.map { $0.meditateDuration }.max() ?? 0
             if walk.meditateDuration > longestPast && longestPast > 0 {
-                milestone = "Your longest meditation yet"
-                return
+                return "Your longest meditation yet"
             }
         }
 
         if walk.distance > 0 {
             let longestPast = walks.map { $0.distance }.max() ?? 0
             if walk.distance > longestPast && longestPast > 0 {
-                milestone = "Your longest walk yet"
-                return
+                return "Your longest walk yet"
             }
         }
 
@@ -338,9 +342,9 @@ struct WalkSummaryView: View {
         let pastKm = Int((totalDistance - walk.distance) / 1000)
         let milestones = [10, 25, 50, 100, 250, 500, 1000]
         for m in milestones where totalKm >= m && pastKm < m {
-            milestone = "You've now walked \(m) km total"
-            return
+            return "You've now walked \(m) km total"
         }
+        return nil
     }
 
     private var statsRow: some View {
@@ -1072,7 +1076,7 @@ struct ElevationProfileView: View {
                 Text(formatElevation(minAlt))
                 Spacer()
                 Image(systemName: "mountain.2")
-                    .font(.caption2)
+                    .font(Constants.Typography.caption)
                 Spacer()
                 Text(formatElevation(maxAlt))
             }

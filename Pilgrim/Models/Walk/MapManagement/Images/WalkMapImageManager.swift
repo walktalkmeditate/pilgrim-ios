@@ -213,6 +213,7 @@ enum WalkMapImageManager {
             isComplete = true
             timeoutItem?.cancel()
             cancellable?.cancel()
+            onComplete(nil)
         }
     }
 
