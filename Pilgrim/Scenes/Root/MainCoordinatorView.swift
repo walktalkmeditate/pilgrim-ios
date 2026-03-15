@@ -16,6 +16,7 @@ class MainCoordinator: ObservableObject {
             DataManager.saveWalk(object: snapshot) { success, error, walk in
                 guard let self else { return }
                 if success {
+                    snapshot.uuid = walk?.uuid
                     self.pendingSnapshot = snapshot
                     self.activeWalkViewModel = nil
                 } else {

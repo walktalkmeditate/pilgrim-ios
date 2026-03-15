@@ -10,7 +10,13 @@ struct WalkSummaryView: View {
     @StateObject private var audioPlayer = AudioPlayerModel()
     @ObservedObject private var transcriptionService = TranscriptionService.shared
     @State private var transcriptions: [UUID: String] = [:]
+    @State private var selectedFavicon: WalkFavicon?
     @State private var showPrompts = false
+
+    init(walk: WalkInterface) {
+        self.walk = walk
+        _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
+    }
     @State private var mapRegion: MKCoordinateRegion?
     @State private var recentWalkSnippets: [PromptGenerator.WalkSnippet] = []
 
@@ -20,6 +26,11 @@ struct WalkSummaryView: View {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     mapSection
                     durationHero
+                    FaviconSelectorView(selection: $selectedFavicon)
+                        .onChange(of: selectedFavicon) { _, newValue in
+                            guard let uuid = walk.uuid else { return }
+                            DataManager.setFavicon(walkID: uuid, favicon: newValue)
+                        }
                     statsRow
                     timeBreakdown
                     activityTimelineBar

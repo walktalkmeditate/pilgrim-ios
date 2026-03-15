@@ -37,6 +37,11 @@ struct HomeView: View {
             .sheet(item: $selectedWalk) { walk in
                 WalkSummaryView(walk: walk)
             }
+            .onChange(of: selectedWalk) { old, new in
+                if old != nil && new == nil {
+                    viewModel.loadWalks()
+                }
+            }
         }
     }
 

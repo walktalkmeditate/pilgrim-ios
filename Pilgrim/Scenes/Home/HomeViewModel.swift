@@ -11,6 +11,7 @@ struct WalkSnapshot: Identifiable {
     let cumulativeDistance: Double
     let talkDuration: TimeInterval
     let meditateDuration: TimeInterval
+    let favicon: String?
 
     var walkOnlyDuration: TimeInterval {
         max(0, duration - talkDuration - meditateDuration)
@@ -84,7 +85,8 @@ class HomeViewModel: ObservableObject {
                 averagePace: pace,
                 cumulativeDistance: cumulative,
                 talkDuration: walk.talkDuration,
-                meditateDuration: walk.meditateDuration
+                meditateDuration: walk.meditateDuration,
+                favicon: walk.favicon
             ))
         }
 

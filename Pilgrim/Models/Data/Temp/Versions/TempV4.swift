@@ -45,7 +45,8 @@ public enum TempV4 {
         public var dayIdentifier: String
         public var talkDuration: Double
         public var meditateDuration: Double
-        
+        public var favicon: String?
+
         var _heartRates: [TempV4.WorkoutHeartRateDataSample]
         var _routeData: [TempV4.WorkoutRouteDataSample]
         var _pauses: [TempV4.WorkoutPause]
@@ -61,7 +62,7 @@ public enum TempV4 {
         public var activityIntervals: [ActivityIntervalInterface] { _activityIntervals }
         public var events: [EventInterface] { throwOnAccess() }
         
-        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = []) {
+        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = [], favicon: String? = nil) {
             self.uuid = uuid
             self.workoutType = workoutType
             self.distance = distance
@@ -87,6 +88,7 @@ public enum TempV4 {
             self._workoutEvents = workoutEvents
             self._voiceRecordings = voiceRecordings
             self._activityIntervals = activityIntervals
+            self.favicon = favicon
         }
         
         public var asTemp: TempWalk {

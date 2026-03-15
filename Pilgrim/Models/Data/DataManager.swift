@@ -52,7 +52,7 @@ struct DataManager {
      - parameter migration: the closure being called on the event of a migration happening, including a `Progress` object indicating the progress of the migration
      - warning: If this method fails it does so in a fatal error, the app will crash as a result.
      */
-    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV3.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
+    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV4.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -209,6 +209,8 @@ struct DataManager {
                 walk._talkDuration .= object.talkDuration
                 walk._meditateDuration .= object.meditateDuration
 
+                walk._favicon .= object.favicon
+
                 persistRelatedEntities(from: object, to: walk, in: transaction)
                 walks.append(walk)
 
@@ -353,6 +355,7 @@ struct DataManager {
                 walk._dayIdentifier .= object.dayIdentifier
                 walk._talkDuration .= object.talkDuration
                 walk._meditateDuration .= object.meditateDuration
+                walk._favicon .= object.favicon
 
                 for tempPause in object.pauses where tempPause.uuid == nil {
                     let pause = transaction.create(Into<WalkPause>())
@@ -488,6 +491,22 @@ struct DataManager {
         }) { result in
             if case .failure(let error) = result {
                 print("[DataManager] Failed to update WPM for \(uuid): \(error)")
+            }
+        }
+    }
+
+    // MARK: - Favicon
+
+    public static func setFavicon(walkID: UUID, favicon: WalkFavicon?) {
+        dataStack.perform(asynchronous: { transaction -> Void in
+            if let walk = transaction.edit(
+                queryObject(from: walkID, transaction: transaction) as Walk?
+            ) {
+                walk._favicon .= favicon?.rawValue
+            }
+        }) { result in
+            if case .failure(let error) = result {
+                print("[DataManager] Failed to set favicon: \(error)")
             }
         }
     }
