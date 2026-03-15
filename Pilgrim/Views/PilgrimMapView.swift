@@ -204,17 +204,40 @@ struct PilgrimMapView: UIViewRepresentable {
 
     // MARK: - Annotations
 
-    private static let meditationImage: UIImage = {
-        UIImage(systemName: "brain.head.profile")?
-            .withTintColor(.dawn, renderingMode: .alwaysOriginal)
-            ?? UIImage()
-    }()
-
     private static let voiceImage: UIImage = {
         UIImage(systemName: "waveform")?
             .withTintColor(.moss, renderingMode: .alwaysOriginal)
             ?? UIImage()
     }()
+
+    private static let startImage: UIImage = {
+        renderCircle(size: 14, color: .moss, borderColor: .white, borderWidth: 2)
+    }()
+
+    private static let endImage: UIImage = {
+        renderCircle(size: 14, color: .stone, borderColor: .white, borderWidth: 2)
+    }()
+
+    private static func meditationImage(duration: TimeInterval) -> UIImage {
+        let minSize: CGFloat = 18
+        let maxSize: CGFloat = 44
+        let scale = CGFloat(min(duration / 600, 1.0))
+        let size = minSize + (maxSize - minSize) * scale
+        return renderCircle(size: size, color: .dawn.withAlphaComponent(0.7), borderColor: .dawn, borderWidth: 1.5)
+    }
+
+    private static func renderCircle(size: CGFloat, color: UIColor, borderColor: UIColor, borderWidth: CGFloat) -> UIImage {
+        let totalSize = CGSize(width: size + borderWidth * 2, height: size + borderWidth * 2)
+        let renderer = UIGraphicsImageRenderer(size: totalSize)
+        return renderer.image { ctx in
+            let rect = CGRect(origin: .zero, size: totalSize)
+            ctx.cgContext.setFillColor(borderColor.cgColor)
+            ctx.cgContext.fillEllipse(in: rect)
+            let inner = rect.insetBy(dx: borderWidth, dy: borderWidth)
+            ctx.cgContext.setFillColor(color.cgColor)
+            ctx.cgContext.fillEllipse(in: inner)
+        }
+    }
 
     private func updateAnnotations(on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
@@ -228,10 +251,15 @@ struct PilgrimMapView: UIViewRepresentable {
         manager.annotations = pinAnnotations.map { pin in
             var annotation = PointAnnotation(coordinate: pin.coordinate)
             switch pin.kind {
-            case .meditation:
-                annotation.image = .init(image: Self.meditationImage, name: "meditation-pin")
+            case .meditation(let duration):
+                let img = Self.meditationImage(duration: duration)
+                annotation.image = .init(image: img, name: "meditation-\(Int(duration))")
             case .voiceRecording:
                 annotation.image = .init(image: Self.voiceImage, name: "voice-pin")
+            case .startPoint:
+                annotation.image = .init(image: Self.startImage, name: "start-pin")
+            case .endPoint:
+                annotation.image = .init(image: Self.endImage, name: "end-pin")
             }
             return annotation
         }
