@@ -71,13 +71,12 @@ struct WalkDotView: View {
     @ViewBuilder
     private func faviconOverlay(size: CGFloat) -> some View {
         if let raw = snapshot.favicon, let fav = WalkFavicon(rawValue: raw) {
-            let iconSize = max(size, 14.0)
             Image(systemName: fav.icon)
-                .font(iconSize >= 18 ? Constants.Typography.caption : Constants.Typography.micro)
+                .font(.system(size: max(size * 0.45, 5)))
                 .bold()
                 .foregroundColor(.parchment)
                 .shadow(color: .ink.opacity(0.4), radius: 1, x: 0, y: 0.5)
-                .frame(width: iconSize, height: iconSize)
+                .frame(width: size, height: size)
                 .opacity(opacity)
         }
     }
