@@ -33,6 +33,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     private var meditationStartDate: Date?
     private var meditationIntervals: [TempActivityInterval] = []
+    private var completedRecordings: [TempVoiceRecording] = []
 
     var onWalkCompleted: ((TempWalk) -> Void)?
 
@@ -61,6 +62,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         bindLiveStats()
         bindTimers()
         bindSoundscape()
+        bindCompletedRecordings()
     }
 
     private func bindLiveStats() {
@@ -212,6 +214,15 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .store(in: &cancellables)
     }
 
+    private func bindCompletedRecordings() {
+        builder.voiceRecordingsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] recordings in
+                self?.completedRecordings = recordings
+            }
+            .store(in: &cancellables)
+    }
+
     private func bindSoundscape() {
         SoundscapePlayer.shared.$currentAsset
             .receive(on: DispatchQueue.main)
@@ -228,6 +239,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         }
         if let start = meditationStartDate, timestamp >= start {
             return "meditating"
+        }
+        for recording in completedRecordings {
+            if timestamp >= recording.startDate && timestamp <= recording.endDate {
+                return "talking"
+            }
         }
         if voiceRecordingManagement.isRecording,
            let recStart = voiceRecordingManagement.recordingStartDate,
