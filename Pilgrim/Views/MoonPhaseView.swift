@@ -13,33 +13,51 @@ struct MoonPhaseView: View {
     var body: some View {
         VStack(spacing: Constants.UI.Padding.small) {
             ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: isDark
-                                ? [Color.ink.opacity(0.06), Color.clear]
-                                : [Color.stone.opacity(0.12), Color.stone.opacity(0.02), Color.clear],
-                            center: .center,
-                            startRadius: size * 0.2,
-                            endRadius: size * 1.2 * glowPulse
+                if isDark {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.ink.opacity(0.06), Color.clear],
+                                center: .center,
+                                startRadius: size * 0.3,
+                                endRadius: size * 1.2 * glowPulse
+                            )
                         )
-                    )
-                    .frame(width: size * 2.5, height: size * 2.5)
+                        .frame(width: size * 2.5, height: size * 2.5)
 
-                if !isDark {
                     MoonPhaseShape(illumination: phase.illumination, isWaxing: phase.isWaxing)
-                        .fill(Color.stone.opacity(0.08))
-                        .frame(width: size + 4, height: size + 4)
-                        .blur(radius: 3)
-                }
+                        .fill(Color.ink.opacity(0.35))
+                        .frame(width: size, height: size)
+                } else {
+                    let silver = Color(red: 0.55, green: 0.58, blue: 0.65)
 
-                MoonPhaseShape(illumination: phase.illumination, isWaxing: phase.isWaxing)
-                    .fill(isDark ? Color.ink.opacity(0.35) : Color.stone.opacity(0.4))
-                    .frame(width: size, height: size)
-                    .shadow(
-                        color: isDark ? .clear : Color.stone.opacity(0.15),
-                        radius: 6, x: 0, y: 2
-                    )
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [silver.opacity(0.18), silver.opacity(0.06), Color.clear],
+                                center: .center,
+                                startRadius: size * 0.15,
+                                endRadius: size * 1.4 * glowPulse
+                            )
+                        )
+                        .frame(width: size * 3, height: size * 3)
+
+                    MoonPhaseShape(illumination: phase.illumination, isWaxing: phase.isWaxing)
+                        .fill(silver.opacity(0.15))
+                        .frame(width: size + 6, height: size + 6)
+                        .blur(radius: 4)
+
+                    MoonPhaseShape(illumination: phase.illumination, isWaxing: phase.isWaxing)
+                        .fill(
+                            LinearGradient(
+                                colors: [silver.opacity(0.5), Color.fog.opacity(0.35)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: size, height: size)
+                        .shadow(color: silver.opacity(0.25), radius: 8, x: 0, y: 0)
+                }
             }
             .accessibilityLabel(phase.name)
             .onAppear {
