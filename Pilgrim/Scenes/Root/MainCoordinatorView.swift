@@ -39,7 +39,7 @@ class MainCoordinator: ObservableObject {
         guard activeWalkViewModel == nil else { return }
         let vm = ActiveWalkViewModel()
         vm.onWalkCompleted = { [weak self] snapshot in
-            DataManager.saveWalk(object: snapshot) { success, error, walk in
+            DataManager.saveWalk(object: snapshot) { success, _, walk in
                 guard let self else { return }
                 if success {
                     snapshot.uuid = walk?.uuid

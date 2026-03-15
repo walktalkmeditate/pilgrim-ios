@@ -1,6 +1,24 @@
 import SwiftUI
 
 struct WinterTreeShape: Shape {
+
+    private struct Branch {
+        let y: CGFloat
+        let length: CGFloat
+        let angle: CGFloat
+        let side: CGFloat
+        let hasTwig: Bool
+    }
+
+    private static let branches = [
+        Branch(y: 0.32, length: 0.32, angle: -50, side: -1, hasTwig: true),
+        Branch(y: 0.42, length: 0.26, angle: -45, side: 1, hasTwig: true),
+        Branch(y: 0.50, length: 0.18, angle: -55, side: -1, hasTwig: false),
+        Branch(y: 0.58, length: 0.20, angle: -40, side: 1, hasTwig: true),
+        Branch(y: 0.68, length: 0.13, angle: -50, side: -1, hasTwig: false),
+        Branch(y: 0.75, length: 0.10, angle: -42, side: 1, hasTwig: false)
+    ]
+
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let w = rect.width
@@ -8,12 +26,9 @@ struct WinterTreeShape: Shape {
         let cx = w * 0.48
 
         addTrunk(to: &path, cx: cx, w: w, h: h)
-        addBranch(to: &path, cx: cx, w: w, h: h, y: 0.32, length: 0.32, angle: -50, side: -1, hasTwig: true)
-        addBranch(to: &path, cx: cx, w: w, h: h, y: 0.42, length: 0.26, angle: -45, side: 1, hasTwig: true)
-        addBranch(to: &path, cx: cx, w: w, h: h, y: 0.50, length: 0.18, angle: -55, side: -1, hasTwig: false)
-        addBranch(to: &path, cx: cx, w: w, h: h, y: 0.58, length: 0.20, angle: -40, side: 1, hasTwig: true)
-        addBranch(to: &path, cx: cx, w: w, h: h, y: 0.68, length: 0.13, angle: -50, side: -1, hasTwig: false)
-        addBranch(to: &path, cx: cx, w: w, h: h, y: 0.75, length: 0.10, angle: -42, side: 1, hasTwig: false)
+        for branch in Self.branches {
+            addBranch(to: &path, cx: cx, w: w, h: h, branch: branch)
+        }
 
         return path
     }
@@ -36,19 +51,18 @@ struct WinterTreeShape: Shape {
         path.closeSubpath()
     }
 
-    private func addBranch(to path: inout Path, cx: CGFloat, w: CGFloat, h: CGFloat,
-                           y: CGFloat, length: CGFloat, angle: CGFloat, side: CGFloat, hasTwig: Bool) {
-        let startY = h * y
-        let startX = cx + side * w * 0.03
-        let rad = Double(angle) * .pi / 180
-        let len = w * length
+    private func addBranch(to path: inout Path, cx: CGFloat, w: CGFloat, h: CGFloat, branch: Branch) {
+        let startY = h * branch.y
+        let startX = cx + branch.side * w * 0.03
+        let rad = Double(branch.angle) * .pi / 180
+        let len = w * branch.length
         let thickness = w * 0.022
         let cosRad = CGFloat(Foundation.cos(rad))
         let sinRad = CGFloat(Foundation.sin(rad))
 
-        let midX = startX + side * len * 0.5
+        let midX = startX + branch.side * len * 0.5
         let curveY = startY + len * sinRad * 0.5 - w * 0.02
-        let endX = startX + side * len * cosRad
+        let endX = startX + branch.side * len * cosRad
         let endY = startY + len * sinRad
 
         path.move(to: CGPoint(x: startX, y: startY - thickness))
@@ -62,15 +76,13 @@ struct WinterTreeShape: Shape {
         )
         path.closeSubpath()
 
-        if hasTwig {
+        if branch.hasTwig {
             let twigStart: CGFloat = 0.55
-            let cosRad = CGFloat(Foundation.cos(Double(rad)))
-            let sinRad = CGFloat(Foundation.sin(Double(rad)))
-            let twigX = startX + side * len * twigStart * cosRad
+            let twigX = startX + branch.side * len * twigStart * cosRad
             let twigY = startY + len * twigStart * sinRad
             let twigLen = len * 0.35
-            let twigRad = Double(rad) + Double(side) * (-0.6)
-            let twigEndX = twigX + side * twigLen * CGFloat(Foundation.cos(twigRad))
+            let twigRad = Double(rad) + Double(branch.side) * (-0.6)
+            let twigEndX = twigX + branch.side * twigLen * CGFloat(Foundation.cos(twigRad))
             let twigEndY = twigY + twigLen * CGFloat(Foundation.sin(twigRad))
             let tw = thickness * 0.5
 

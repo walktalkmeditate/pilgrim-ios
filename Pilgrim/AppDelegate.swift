@@ -35,7 +35,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         MapboxMapsOptions.tileStoreUsageMode = .readOnly
 
         DataManager.setup(
-            completion: { error in
+            completion: { _ in
                 
                 self.appLaunchState = .done
                 AudioManifestService.shared.syncIfNeeded()
@@ -61,7 +61,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 //     }
                 // }
 
-            }, migration: { progress in
+            }, migration: { _ in
 
                 // show migration screen
                 self.appLaunchState = .migration

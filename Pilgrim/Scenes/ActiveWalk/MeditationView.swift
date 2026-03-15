@@ -295,7 +295,7 @@ struct MeditationView: View {
         "Stillness carries forward",
         "The path continues",
         "Return gently",
-        "Carry this calm with you",
+        "Carry this calm with you"
     ]
 
     private var closingSummary: some View {
@@ -641,7 +641,7 @@ struct BreathRhythm: Identifiable {
         BreathRhythm(id: 3, name: "Box", label: "4-4-4-4", description: "Four equal phases for focus", inhale: 4, holdIn: 4, exhale: 4, holdOut: 4),
         BreathRhythm(id: 4, name: "Coherent", label: "5 / 5", description: "Heart rate variability training", inhale: 5, holdIn: 0, exhale: 5, holdOut: 0),
         BreathRhythm(id: 5, name: "Deep calm", label: "3 / 6", description: "Short inhale, slow release", inhale: 3, holdIn: 0, exhale: 6, holdOut: 0),
-        BreathRhythm(id: 6, name: "None", label: "—", description: "Still focus point, open meditation", inhale: 0, holdIn: 0, exhale: 0, holdOut: 0),
+        BreathRhythm(id: 6, name: "None", label: "—", description: "Still focus point, open meditation", inhale: 0, holdIn: 0, exhale: 0, holdOut: 0)
     ]
 }
 

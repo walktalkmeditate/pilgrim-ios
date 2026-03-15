@@ -24,7 +24,7 @@ struct SoundSettingsView: View {
 
     var body: some View {
         List {
-            masterSection
+            mainToggleSection
             if soundsEnabled {
                 walkSection
                 meditationSection
@@ -54,7 +54,7 @@ struct SoundSettingsView: View {
 
     // MARK: - Sections
 
-    private var masterSection: some View {
+    private var mainToggleSection: some View {
         Section {
             Toggle(isOn: $soundsEnabled) {
                 Text("Sounds")
