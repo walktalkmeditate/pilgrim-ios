@@ -27,7 +27,7 @@ post_install do |installer|
   end
 
   # Inject Secrets.xcconfig into Pilgrim target xcconfigs
-  secrets_include = '#include? "../../Secrets.xcconfig"'
+  secrets_include = '#include? "../../../Secrets.xcconfig"'
   Dir.glob('Pods/Target Support Files/Pods-Pilgrim/*.xcconfig').each do |path|
     content = File.read(path)
     unless content.include?(secrets_include)
