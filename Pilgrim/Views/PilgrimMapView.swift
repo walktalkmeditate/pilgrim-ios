@@ -174,17 +174,12 @@ struct PilgrimMapView: UIViewRepresentable {
                 source.data = .featureCollection(collection)
                 try mapView.mapboxMap.addSource(source)
 
-                let isDark = coordinator.currentColorScheme == .dark
-                let walkColor = isDark
-                    ? SeasonalColorEngine.seasonalColor(named: "parchment", intensity: .moderate)
-                    : SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
-
                 var casing = LineLayer(id: "pilgrim-route-casing", source: Self.sourceId)
                 casing.lineWidth = .constant(10)
                 casing.lineCap = .constant(.round)
                 casing.lineJoin = .constant(.round)
-                casing.lineOpacity = .constant(isDark ? 0.35 : 0.15)
-                casing.lineColor = .constant(StyleColor(isDark ? UIColor.white : UIColor.black))
+                casing.lineOpacity = .constant(0.3)
+                casing.lineColor = .constant(StyleColor(.white))
                 try mapView.mapboxMap.addLayer(casing)
 
                 var layer = LineLayer(id: "pilgrim-route-layer", source: Self.sourceId)
@@ -198,8 +193,8 @@ struct PilgrimMapView: UIViewRepresentable {
                         "meditating"
                         UIColor.dawn
                         "talking"
+                        UIColor.rust
                         UIColor.moss
-                        walkColor
                     }
                 )
                 try mapView.mapboxMap.addLayer(layer)
