@@ -230,25 +230,25 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeOpacity = 1.0
             case .voiceRecording:
                 circle.circleRadius = 8
-                circle.circleColor = StyleColor(UIColor.moss)
+                circle.circleColor = StyleColor(UIColor.rust)
                 circle.circleOpacity = 0.8
-                circle.circleStrokeColor = StyleColor(.white)
+                circle.circleStrokeColor = StyleColor(UIColor.rust)
                 circle.circleStrokeWidth = 1.5
-                circle.circleStrokeOpacity = 0.9
+                circle.circleStrokeOpacity = 1.0
             case .startPoint:
-                circle.circleRadius = 7
-                circle.circleColor = StyleColor(UIColor.moss)
-                circle.circleOpacity = 1.0
-                circle.circleStrokeColor = StyleColor(.white)
+                circle.circleRadius = 6
+                circle.circleColor = StyleColor(UIColor.parchment)
+                circle.circleOpacity = 0.9
+                circle.circleStrokeColor = StyleColor(UIColor.stone)
                 circle.circleStrokeWidth = 2
-                circle.circleStrokeOpacity = 0.9
+                circle.circleStrokeOpacity = 1.0
             case .endPoint:
-                circle.circleRadius = 7
-                circle.circleColor = StyleColor(UIColor.stone)
-                circle.circleOpacity = 1.0
-                circle.circleStrokeColor = StyleColor(.white)
+                circle.circleRadius = 6
+                circle.circleColor = StyleColor(UIColor.ink)
+                circle.circleOpacity = 0.9
+                circle.circleStrokeColor = StyleColor(UIColor.stone)
                 circle.circleStrokeWidth = 2
-                circle.circleStrokeOpacity = 0.9
+                circle.circleStrokeOpacity = 1.0
             }
             return circle
         }
