@@ -235,6 +235,7 @@
 		CC00000200000000HAPTIC01 /* ScrollHapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */; };
 		CC00000200000000MILEST01 /* MilestoneMarkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MILEST01 /* MilestoneMarkerView.swift */; };
 		CC00000200000000TREESH01 /* TreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TREESH01 /* TreeShape.swift */; };
+		CC00000200000000WINTRT01 /* WinterTreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WINTRT01 /* WinterTreeShape.swift */; };
 		CC00000200000000MOUNTN01 /* MountainShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOUNTN01 /* MountainShape.swift */; };
 		CC00000200000000GRASSH01 /* GrassShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000GRASSH01 /* GrassShape.swift */; };
 		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
@@ -482,6 +483,7 @@
 		CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollHapticEngine.swift; sourceTree = "<group>"; };
 		CC00000100000000MILEST01 /* MilestoneMarkerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneMarkerView.swift; sourceTree = "<group>"; };
 		CC00000100000000TREESH01 /* TreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeShape.swift; sourceTree = "<group>"; };
+		CC00000100000000WINTRT01 /* WinterTreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinterTreeShape.swift; sourceTree = "<group>"; };
 		CC00000100000000MOUNTN01 /* MountainShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MountainShape.swift; sourceTree = "<group>"; };
 		CC00000100000000GRASSH01 /* GrassShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrassShape.swift; sourceTree = "<group>"; };
 		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
@@ -1137,6 +1139,7 @@
 			isa = PBXGroup;
 			children = (
 				CC00000100000000TREESH01 /* TreeShape.swift */,
+				CC00000100000000WINTRT01 /* WinterTreeShape.swift */,
 				CC00000100000000MOUNTN01 /* MountainShape.swift */,
 				CC00000100000000GRASSH01 /* GrassShape.swift */,
 				CC00000100000000TORIIG01 /* ToriiGateShape.swift */,
@@ -1531,6 +1534,7 @@
 				CC00000200000000HAPTIC01 /* ScrollHapticEngine.swift in Sources */,
 				CC00000200000000MILEST01 /* MilestoneMarkerView.swift in Sources */,
 				CC00000200000000TREESH01 /* TreeShape.swift in Sources */,
+				CC00000200000000WINTRT01 /* WinterTreeShape.swift in Sources */,
 				CC00000200000000MOUNTN01 /* MountainShape.swift in Sources */,
 				CC00000200000000GRASSH01 /* GrassShape.swift in Sources */,
 				CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */,

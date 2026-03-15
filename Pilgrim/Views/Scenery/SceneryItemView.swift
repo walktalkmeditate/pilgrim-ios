@@ -86,24 +86,10 @@ struct SceneryItemView: View {
     private func winterBranches(time: Double, totalSway: Double, color: Color) -> some View {
         let s = size
         return ZStack {
-            // Trunk
-            Rectangle()
+            WinterTreeShape()
                 .fill(color.opacity(0.25))
-                .frame(width: s * 0.08, height: s * 0.5)
-                .offset(y: s * 0.22)
-
-            // Branches — stroked lines radiating out
-            ForEach(0..<5, id: \.self) { i in
-                let angle = -60.0 + Double(i) * 30.0
-                let length = s * (0.2 + CGFloat(i % 3) * 0.08)
-                let branchSway = sin(time * (0.5 + Double(i) * 0.15)) * 2
-
-                Rectangle()
-                    .fill(color.opacity(0.2))
-                    .frame(width: length, height: s * 0.025)
-                    .rotationEffect(.degrees(angle + branchSway + totalSway * 0.3), anchor: .leading)
-                    .offset(x: s * 0.04, y: -s * 0.05 + CGFloat(i) * s * 0.08)
-            }
+                .frame(width: s, height: s)
+                .rotationEffect(.degrees(totalSway * 0.3), anchor: .bottom)
         }
     }
 
