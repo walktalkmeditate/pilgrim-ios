@@ -5,7 +5,7 @@ struct HomeView: View {
 
     @ObservedObject var viewModel: HomeViewModel
     @State private var selectedWalk: Walk?
-    @Environment(\.scenePhase) private var scenePhase
+    @State private var unitRefreshKey = UUID()
 
     var body: some View {
         NavigationStack {
@@ -15,6 +15,7 @@ struct HomeView: View {
                     selectedWalk = viewModel.walk(for: id)
                 }
             )
+            .id(unitRefreshKey)
             .background(Color.parchment)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -43,10 +44,8 @@ struct HomeView: View {
                     viewModel.loadWalks()
                 }
             }
-            .onChange(of: scenePhase) { _, new in
-                if new == .active {
-                    viewModel.loadWalks()
-                }
+            .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+                unitRefreshKey = UUID()
             }
         }
     }
