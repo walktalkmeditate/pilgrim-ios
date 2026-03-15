@@ -60,7 +60,6 @@ struct WalkDotView: View {
                 .opacity(opacity * 0.5)
                 .offset(x: -size * 0.08, y: -size * 0.08)
 
-            activityIcons(size: size)
         }
         .position(position)
         .onTapGesture { onTap(snapshot.id) }
@@ -111,27 +110,6 @@ struct WalkDotView: View {
             }
             .opacity(opacity)
         }
-    }
-
-    // MARK: - Activity icons
-
-    private func activityIcons(size: CGFloat) -> some View {
-        let iconOffset = size * 0.7 + 6
-        return ZStack {
-            if snapshot.talkDuration > 300 {
-                Image(systemName: "waveform")
-                    .font(Constants.Typography.micro)
-                    .foregroundColor(.rust.opacity(0.5))
-                    .offset(x: iconOffset, y: -4)
-            }
-            if snapshot.meditateDuration > 300 {
-                Image(systemName: "circle.circle")
-                    .font(Constants.Typography.micro)
-                    .foregroundColor(.dawn.opacity(0.5))
-                    .offset(x: iconOffset, y: snapshot.talkDuration > 300 ? 4 : -4)
-            }
-        }
-        .opacity(opacity)
     }
 
     var dotSize: CGFloat {

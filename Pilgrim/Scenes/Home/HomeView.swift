@@ -39,7 +39,9 @@ struct HomeView: View {
             }
             .onChange(of: selectedWalk) { old, new in
                 if old != nil && new == nil {
-                    viewModel.loadWalks()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        viewModel.loadWalks()
+                    }
                 }
             }
         }
