@@ -85,6 +85,9 @@ fastlane/test_output
 
 iOSInjectionProject/
 
+# Secrets
+Secrets.xcconfig
+
 # macOS
 .DS_Store
 

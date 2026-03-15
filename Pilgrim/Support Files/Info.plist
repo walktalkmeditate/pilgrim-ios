@@ -23,7 +23,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>MBXAccessToken</key>
-	<string>pk.eyJ1IjoicGlsZ3JpbWFwcCIsImEiOiJjbW1wMmh4bmswaXphMnFxNmszcXU3bWYxIn0.9mPu_oucewffwKzdU36xLQ</string>
+	<string>$(MAPBOX_ACCESS_TOKEN)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
