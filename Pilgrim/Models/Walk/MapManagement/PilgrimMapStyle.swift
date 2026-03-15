@@ -4,7 +4,11 @@ import MapboxMaps
 enum PilgrimMapStyle {
 
     static func applyWabiSabiStyle(to mapboxMap: MapboxMap) {
-        setLayerColor(mapboxMap, layer: "background", property: "background-color", hex: "#F5F0E8")
+        let parchment = SeasonalColorEngine.seasonalColor(named: "parchment", intensity: .minimal)
+        let stone = SeasonalColorEngine.seasonalColor(named: "stone", intensity: .moderate)
+        let fog = SeasonalColorEngine.seasonalColor(named: "fog", intensity: .minimal)
+
+        setLayerColor(mapboxMap, layer: "background", property: "background-color", color: parchment)
 
         let roadLayers = [
             "road-motorway-trunk", "road-primary", "road-secondary-tertiary",
@@ -13,12 +17,12 @@ enum PilgrimMapStyle {
             "road-secondary-tertiary-case", "road-street-case", "road-minor-case"
         ]
         for layerId in roadLayers {
-            setLayerColor(mapboxMap, layer: layerId, property: "line-color", hex: "#8B7355")
+            setLayerColor(mapboxMap, layer: layerId, property: "line-color", color: stone)
         }
 
         let waterLayers = ["water", "water-shadow"]
         for layerId in waterLayers {
-            setLayerColor(mapboxMap, layer: layerId, property: "fill-color", hex: "#D5CFC7")
+            setLayerColor(mapboxMap, layer: layerId, property: "fill-color", color: fog)
         }
 
         let labelLayers = [
@@ -26,7 +30,7 @@ enum PilgrimMapStyle {
             "path-pedestrian-label", "waterway-label"
         ]
         for layerId in labelLayers {
-            setLayerColor(mapboxMap, layer: layerId, property: "text-color", hex: "#B8AFA2")
+            setLayerColor(mapboxMap, layer: layerId, property: "text-color", color: fog)
         }
 
         let removeLayers = [
@@ -39,23 +43,8 @@ enum PilgrimMapStyle {
         }
     }
 
-    private static func setLayerColor(_ map: MapboxMap, layer: String, property: String, hex: String) {
+    private static func setLayerColor(_ map: MapboxMap, layer: String, property: String, color: UIColor) {
         guard map.layerExists(withId: layer) else { return }
-        let color = StyleColor(UIColor(hex: hex))
-        try? map.setLayerProperty(for: layer, property: property, value: color.rawValue)
-    }
-}
-
-private extension UIColor {
-    convenience init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
-        var rgb: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&rgb)
-        self.init(
-            red: CGFloat((rgb >> 16) & 0xFF) / 255,
-            green: CGFloat((rgb >> 8) & 0xFF) / 255,
-            blue: CGFloat(rgb & 0xFF) / 255,
-            alpha: 1
-        )
+        try? map.setLayerProperty(for: layer, property: property, value: StyleColor(color).rawValue)
     }
 }

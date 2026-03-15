@@ -17,7 +17,7 @@ struct WalkSummaryView: View {
         self.walk = walk
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
     }
-    @State private var cameraBounds: (sw: CLLocationCoordinate2D, ne: CLLocationCoordinate2D)?
+    @State private var cameraBounds: MapCameraBounds?
     @State private var recentWalkSnippets: [PromptGenerator.WalkSnippet] = []
 
     var body: some View {
@@ -492,14 +492,14 @@ struct WalkSummaryView: View {
         }
     }
 
-    private func boundsForTimeRange(start: Date, end: Date) -> (sw: CLLocationCoordinate2D, ne: CLLocationCoordinate2D)? {
+    private func boundsForTimeRange(start: Date, end: Date) -> MapCameraBounds? {
         let samples = walk.routeData.filter { $0.timestamp >= start && $0.timestamp <= end }
         let coords = samples.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
         guard !coords.isEmpty else { return nil }
         return boundsForRoute(coords)
     }
 
-    private func boundsForRoute(_ coords: [CLLocationCoordinate2D]) -> (sw: CLLocationCoordinate2D, ne: CLLocationCoordinate2D) {
+    private func boundsForRoute(_ coords: [CLLocationCoordinate2D]) -> MapCameraBounds {
         let lats = coords.map { $0.latitude }
         let lons = coords.map { $0.longitude }
         let minLat = lats.min() ?? 0
@@ -508,7 +508,7 @@ struct WalkSummaryView: View {
         let maxLon = lons.max() ?? 0
         let latPad = (maxLat - minLat) * 0.15 + 0.001
         let lonPad = (maxLon - minLon) * 0.15 + 0.001
-        return (
+        return MapCameraBounds(
             sw: CLLocationCoordinate2D(latitude: minLat - latPad, longitude: minLon - lonPad),
             ne: CLLocationCoordinate2D(latitude: maxLat + latPad, longitude: maxLon + lonPad)
         )

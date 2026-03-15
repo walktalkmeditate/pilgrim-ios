@@ -14,7 +14,7 @@ struct PilgrimMapView: UIViewRepresentable {
     var pinAnnotations: [PilgrimAnnotation] = []
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
-    var cameraBounds: (sw: CLLocationCoordinate2D, ne: CLLocationCoordinate2D)?
+    var cameraBounds: MapCameraBounds?
 
     init(
         isInteractive: Bool = true,
@@ -24,7 +24,7 @@ struct PilgrimMapView: UIViewRepresentable {
         pinAnnotations: [PilgrimAnnotation] = [],
         cameraCenter: Binding<CLLocationCoordinate2D?> = .constant(nil),
         cameraZoom: Binding<CGFloat> = .constant(14),
-        cameraBounds: (sw: CLLocationCoordinate2D, ne: CLLocationCoordinate2D)? = nil
+        cameraBounds: MapCameraBounds? = nil
     ) {
         self.isInteractive = isInteractive
         self.showsUserLocation = showsUserLocation
@@ -55,7 +55,7 @@ struct PilgrimMapView: UIViewRepresentable {
 
         mapView.mapboxMap.onStyleLoaded.observeNext { _ in
             PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap)
-            self.updateRouteSource(on: mapView)
+            self.updateRouteSource(on: mapView, coordinator: context.coordinator)
             self.updateAnnotations(on: mapView, coordinator: context.coordinator)
         }.store(in: &context.coordinator.cancellables)
 
@@ -64,26 +64,33 @@ struct PilgrimMapView: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MBMapView, context: Context) {
-        updateRouteSource(on: mapView)
+        updateRouteSource(on: mapView, coordinator: context.coordinator)
         updateAnnotations(on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
-            mapView.viewport.transition(
-                to: mapView.viewport.makeFollowPuckViewportState(
-                    options: FollowPuckViewportStateOptions(zoom: 16)
+            if !context.coordinator.isFollowing {
+                context.coordinator.isFollowing = true
+                mapView.viewport.transition(
+                    to: mapView.viewport.makeFollowPuckViewportState(
+                        options: FollowPuckViewportStateOptions(zoom: 16)
+                    )
                 )
-            )
-        } else if let bounds = cameraBounds {
-            let camera = mapView.mapboxMap.camera(
-                for: [bounds.sw, bounds.ne],
-                padding: UIEdgeInsets(top: 40, left: 30, bottom: 40, right: 30),
-                bearing: nil,
-                pitch: nil
-            )
-            mapView.camera.ease(to: camera, duration: 0.4)
-        } else if let center = cameraCenter {
-            let camera = CameraOptions(center: center, zoom: cameraZoom)
-            mapView.camera.ease(to: camera, duration: 0.4)
+            }
+        } else {
+            context.coordinator.isFollowing = false
+
+            if let bounds = cameraBounds {
+                let camera = mapView.mapboxMap.camera(
+                    for: [bounds.sw, bounds.ne],
+                    padding: UIEdgeInsets(top: 40, left: 30, bottom: 40, right: 30),
+                    bearing: nil,
+                    pitch: nil
+                )
+                mapView.camera.ease(to: camera, duration: 0.4)
+            } else if let center = cameraCenter {
+                let camera = CameraOptions(center: center, zoom: cameraZoom)
+                mapView.camera.ease(to: camera, duration: 0.4)
+            }
         }
     }
 
@@ -91,8 +98,10 @@ struct PilgrimMapView: UIViewRepresentable {
 
     private static let sourceId = "pilgrim-route"
 
-    private func updateRouteSource(on mapView: MBMapView) {
+    private func updateRouteSource(on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
+        guard routeSegments != coordinator.lastSegments else { return }
+        coordinator.lastSegments = routeSegments
 
         var features: [Feature] = []
         for segment in routeSegments where segment.coordinates.count > 1 {
@@ -104,35 +113,55 @@ struct PilgrimMapView: UIViewRepresentable {
         let collection = FeatureCollection(features: features)
 
         if mapView.mapboxMap.sourceExists(withId: Self.sourceId) {
-            try? mapView.mapboxMap.updateGeoJSONSource(
-                withId: Self.sourceId,
-                geoJSON: .featureCollection(collection)
-            )
+            do {
+                try mapView.mapboxMap.updateGeoJSONSource(
+                    withId: Self.sourceId,
+                    geoJSON: .featureCollection(collection)
+                )
+            } catch {
+                print("[PilgrimMapView] Failed to update route source: \(error)")
+            }
         } else {
-            var source = GeoJSONSource(id: Self.sourceId)
-            source.data = .featureCollection(collection)
-            try? mapView.mapboxMap.addSource(source)
+            do {
+                var source = GeoJSONSource(id: Self.sourceId)
+                source.data = .featureCollection(collection)
+                try mapView.mapboxMap.addSource(source)
 
-            var layer = LineLayer(id: "pilgrim-route-layer", source: Self.sourceId)
-            layer.lineWidth = .constant(4)
-            layer.lineCap = .constant(.round)
-            layer.lineJoin = .constant(.round)
-            layer.lineOpacity = .constant(0.9)
-            layer.lineColor = .expression(
-                Exp(.match) {
-                    Exp(.get) { "activityType" }
-                    "meditating"
-                    UIColor.dawn
-                    "talking"
-                    UIColor.moss
-                    UIColor(named: "stone") ?? UIColor.gray
-                }
-            )
-            try? mapView.mapboxMap.addLayer(layer)
+                var layer = LineLayer(id: "pilgrim-route-layer", source: Self.sourceId)
+                layer.lineWidth = .constant(4)
+                layer.lineCap = .constant(.round)
+                layer.lineJoin = .constant(.round)
+                layer.lineOpacity = .constant(0.9)
+                layer.lineColor = .expression(
+                    Exp(.match) {
+                        Exp(.get) { "activityType" }
+                        "meditating"
+                        UIColor.dawn
+                        "talking"
+                        UIColor.moss
+                        SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
+                    }
+                )
+                try mapView.mapboxMap.addLayer(layer)
+            } catch {
+                print("[PilgrimMapView] Failed to add route layer: \(error)")
+            }
         }
     }
 
     // MARK: - Annotations
+
+    private static let meditationImage: UIImage = {
+        UIImage(systemName: "brain.head.profile")?
+            .withTintColor(.dawn, renderingMode: .alwaysOriginal)
+            ?? UIImage()
+    }()
+
+    private static let voiceImage: UIImage = {
+        UIImage(systemName: "waveform")?
+            .withTintColor(.moss, renderingMode: .alwaysOriginal)
+            ?? UIImage()
+    }()
 
     private func updateAnnotations(on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
@@ -147,17 +176,9 @@ struct PilgrimMapView: UIViewRepresentable {
             var annotation = PointAnnotation(coordinate: pin.coordinate)
             switch pin.kind {
             case .meditation:
-                annotation.image = .init(
-                    image: UIImage(systemName: "brain.head.profile")!
-                        .withTintColor(.dawn, renderingMode: .alwaysOriginal),
-                    name: "meditation-pin"
-                )
+                annotation.image = .init(image: Self.meditationImage, name: "meditation-pin")
             case .voiceRecording:
-                annotation.image = .init(
-                    image: UIImage(systemName: "waveform")!
-                        .withTintColor(.moss, renderingMode: .alwaysOriginal),
-                    name: "voice-pin"
-                )
+                annotation.image = .init(image: Self.voiceImage, name: "voice-pin")
             }
             return annotation
         }
@@ -168,6 +189,14 @@ struct PilgrimMapView: UIViewRepresentable {
     class Coordinator {
         var cancellables = Set<AnyCancelable>()
         var annotationManager: PointAnnotationManager?
+        var isFollowing = false
+        var lastSegments: [RouteSegment] = []
         weak var mapView: MBMapView?
+
+        deinit {
+            if let manager = annotationManager, let mapView {
+                mapView.annotations.removeAnnotationManager(withId: manager.id)
+            }
+        }
     }
 }
