@@ -15,6 +15,7 @@ struct PilgrimMapView: UIViewRepresentable {
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     var cameraBounds: MapCameraBounds?
+    @Environment(\.colorScheme) private var colorScheme
 
     init(
         isInteractive: Bool = true,
@@ -41,7 +42,9 @@ struct PilgrimMapView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> MBMapView {
-        let mapView = MBMapView(frame: .zero, mapInitOptions: MapInitOptions(styleURI: .light))
+        let isDark = colorScheme == .dark
+        let styleURI: StyleURI = isDark ? .dark : .light
+        let mapView = MBMapView(frame: .zero, mapInitOptions: MapInitOptions(styleURI: styleURI))
         mapView.preferredFramesPerSecond = 30
 
         mapView.gestures.options.panEnabled = isInteractive
@@ -49,12 +52,17 @@ struct PilgrimMapView: UIViewRepresentable {
         mapView.gestures.options.rotateEnabled = false
         mapView.gestures.options.pitchEnabled = false
 
-        if showsUserLocation {
-            mapView.location.options.puckType = .puck2D(Puck2DConfiguration.makeDefault(showBearing: false))
-        }
+        mapView.ornaments.options.scaleBar.visibility = .hidden
+        mapView.ornaments.options.compass.visibility = .hidden
+        mapView.ornaments.options.attributionButton.position = .bottomLeading
+
+        configurePuck(on: mapView)
+
+        context.coordinator.currentColorScheme = colorScheme
 
         mapView.mapboxMap.onStyleLoaded.observeNext { _ in
-            PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap)
+            let mode: PilgrimMapStyle.Mode = context.coordinator.currentColorScheme == .dark ? .dark : .light
+            PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap, mode: mode)
             self.updateRouteSource(on: mapView, coordinator: context.coordinator)
             self.updateAnnotations(on: mapView, coordinator: context.coordinator)
         }.store(in: &context.coordinator.cancellables)
@@ -64,6 +72,14 @@ struct PilgrimMapView: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MBMapView, context: Context) {
+        if colorScheme != context.coordinator.currentColorScheme {
+            context.coordinator.currentColorScheme = colorScheme
+            context.coordinator.lastSegments = []
+            let newStyle: StyleURI = colorScheme == .dark ? .dark : .light
+            mapView.mapboxMap.loadStyle(newStyle)
+            return
+        }
+
         updateRouteSource(on: mapView, coordinator: context.coordinator)
         updateAnnotations(on: mapView, coordinator: context.coordinator)
 
@@ -92,6 +108,30 @@ struct PilgrimMapView: UIViewRepresentable {
                 mapView.camera.ease(to: camera, duration: 0.4)
             }
         }
+    }
+
+    // MARK: - Puck
+
+    private func configurePuck(on mapView: MBMapView) {
+        guard showsUserLocation else { return }
+
+        let stoneColor = SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
+
+        let puckSize = CGSize(width: 22.0, height: 22.0)
+        let renderer = UIGraphicsImageRenderer(size: puckSize)
+        let puckImage = renderer.image { ctx in
+            let rect = CGRect(origin: .zero, size: puckSize)
+            ctx.cgContext.setFillColor(stoneColor.cgColor)
+            ctx.cgContext.fillEllipse(in: rect)
+            let innerRect = rect.insetBy(dx: 4, dy: 4)
+            ctx.cgContext.setFillColor(UIColor.white.withAlphaComponent(0.9).cgColor)
+            ctx.cgContext.fillEllipse(in: innerRect)
+        }
+
+        var config = Puck2DConfiguration(topImage: puckImage, scale: .constant(1.0))
+        config.showsAccuracyRing = false
+        config.pulsing = .init(color: stoneColor.withAlphaComponent(0.3), radius: .constant(40))
+        mapView.location.options.puckType = .puck2D(config)
     }
 
     // MARK: - Route Lines
@@ -191,6 +231,7 @@ struct PilgrimMapView: UIViewRepresentable {
         var annotationManager: PointAnnotationManager?
         var isFollowing = false
         var lastSegments: [RouteSegment] = []
+        var currentColorScheme: ColorScheme = .light
         weak var mapView: MBMapView?
 
         deinit {
