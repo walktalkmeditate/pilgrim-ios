@@ -6,6 +6,9 @@ struct MoonPhaseView: View {
     var size: CGFloat = 44
 
     @State private var glowPulse: CGFloat = 1.0
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var isDark: Bool { colorScheme == .dark }
 
     var body: some View {
         VStack(spacing: Constants.UI.Padding.small) {
@@ -13,17 +16,30 @@ struct MoonPhaseView: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color.ink.opacity(0.06), Color.clear],
+                            colors: isDark
+                                ? [Color.ink.opacity(0.06), Color.clear]
+                                : [Color.stone.opacity(0.12), Color.stone.opacity(0.02), Color.clear],
                             center: .center,
-                            startRadius: size * 0.3,
+                            startRadius: size * 0.2,
                             endRadius: size * 1.2 * glowPulse
                         )
                     )
                     .frame(width: size * 2.5, height: size * 2.5)
 
+                if !isDark {
+                    MoonPhaseShape(illumination: phase.illumination, isWaxing: phase.isWaxing)
+                        .fill(Color.stone.opacity(0.08))
+                        .frame(width: size + 4, height: size + 4)
+                        .blur(radius: 3)
+                }
+
                 MoonPhaseShape(illumination: phase.illumination, isWaxing: phase.isWaxing)
-                    .fill(Color.ink.opacity(0.35))
+                    .fill(isDark ? Color.ink.opacity(0.35) : Color.stone.opacity(0.4))
                     .frame(width: size, height: size)
+                    .shadow(
+                        color: isDark ? .clear : Color.stone.opacity(0.15),
+                        radius: 6, x: 0, y: 2
+                    )
             }
             .accessibilityLabel(phase.name)
             .onAppear {
