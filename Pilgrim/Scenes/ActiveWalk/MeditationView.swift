@@ -240,7 +240,7 @@ struct MeditationView: View {
     private var breathCountLabel: some View {
         Text("\(breathCount)")
             .font(Constants.Typography.caption)
-            .foregroundColor(Color.parchment.opacity(0.15))
+            .foregroundColor(Color.fog.opacity(0.4))
             .monospacedDigit()
     }
 
@@ -284,7 +284,7 @@ struct MeditationView: View {
     private var sessionTimer: some View {
         Text(formatTime(clock.elapsed))
             .font(Constants.Typography.statValue)
-            .foregroundColor(Color.parchment.opacity(0.4))
+            .foregroundColor(Color.fog)
             .monospacedDigit()
     }
 
@@ -302,11 +302,11 @@ struct MeditationView: View {
         VStack(spacing: 16) {
             Text(formatTime(clock.elapsed))
                 .font(Constants.Typography.timer)
-                .foregroundColor(Color.parchment.opacity(0.9))
+                .foregroundColor(Color.ink)
 
             Text(closingPhrase)
                 .font(Constants.Typography.body)
-                .foregroundColor(Color.fog.opacity(0.5))
+                .foregroundColor(Color.fog)
         }
         .padding(.bottom, 48)
     }
@@ -317,12 +317,12 @@ struct MeditationView: View {
         Button(action: beginClosingCeremony) {
             Text("Done")
                 .font(Constants.Typography.button)
-                .foregroundColor(Color.parchment.opacity(0.4))
+                .foregroundColor(Color.fog)
                 .padding(.horizontal, 48)
                 .padding(.vertical, 14)
                 .background(
                     Capsule()
-                        .stroke(Color.parchment.opacity(0.15), lineWidth: 1)
+                        .stroke(Color.fog.opacity(0.3), lineWidth: 1)
                 )
         }
         .disabled(isClosing)
