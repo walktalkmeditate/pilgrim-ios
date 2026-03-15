@@ -18,9 +18,18 @@ struct WalkSummaryView: View {
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
     }
     @State private var cameraBounds: MapCameraBounds?
+    @State private var cameraCenter: CLLocationCoordinate2D?
+    @State private var cameraZoom: CGFloat = 16
+    @State private var cameraDuration: TimeInterval = 0.4
     @State private var cachedSegments: [RouteSegment] = []
     @State private var cachedAnnotations: [PilgrimAnnotation] = []
     @State private var recentWalkSnippets: [PromptGenerator.WalkSnippet] = []
+    @State private var revealPhase: RevealPhase = .hidden
+    @State private var milestone: String?
+
+    private enum RevealPhase {
+        case hidden, zoomed, revealed
+    }
 
     var body: some View {
         NavigationView {
@@ -28,7 +37,11 @@ struct WalkSummaryView: View {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     mapSection
                     elevationProfile
+                    journeyQuote
                     durationHero
+                    if let milestone {
+                        milestoneCallout(milestone)
+                    }
                     FaviconSelectorView(selection: $selectedFavicon)
                         .onChange(of: selectedFavicon) { _, newValue in
                             guard let uuid = walk.uuid else { return }
@@ -67,9 +80,8 @@ struct WalkSummaryView: View {
                 loadRecentWalkSnippets()
                 cachedSegments = activityColoredSegments
                 cachedAnnotations = allPinAnnotations
-                if !routeCoordinates.isEmpty {
-                    cameraBounds = boundsForRoute(routeCoordinates)
-                }
+                detectMilestone()
+                startRevealSequence()
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
@@ -146,25 +158,26 @@ struct WalkSummaryView: View {
     private var mapSection: some View {
         Group {
             if !routeCoordinates.isEmpty {
-                ZStack(alignment: .bottom) {
-                    PilgrimMapView(
-                        isInteractive: true,
-                        showsUserLocation: false,
-                        routeSegments: cachedSegments,
-                        pinAnnotations: cachedAnnotations,
-                        cameraBounds: cameraBounds
+                PilgrimMapView(
+                    isInteractive: revealPhase == .revealed,
+                    showsUserLocation: false,
+                    routeSegments: cachedSegments,
+                    pinAnnotations: cachedAnnotations,
+                    cameraCenter: $cameraCenter,
+                    cameraZoom: $cameraZoom,
+                    cameraBounds: cameraBounds,
+                    cameraDuration: cameraDuration
+                )
+                .frame(height: 320)
+                .mask(
+                    RadialGradient(
+                        gradient: Gradient(colors: [.white, .white, .white.opacity(0)]),
+                        center: .center,
+                        startRadius: 80,
+                        endRadius: 180
                     )
-                    .frame(height: 280)
-                    .cornerRadius(Constants.UI.CornerRadius.big)
-
-                    LinearGradient(
-                        colors: [.clear, .parchment.opacity(0.4)],
-                        startPoint: .center,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 60)
-                    .cornerRadius(Constants.UI.CornerRadius.big)
-                }
+                )
+                .padding(.horizontal, -Constants.UI.Padding.normal)
             } else {
                 RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                     .fill(Color.parchmentSecondary)
@@ -189,11 +202,123 @@ struct WalkSummaryView: View {
         }
     }
 
+    private var journeyQuote: some View {
+        Text(generateJourneyQuote())
+            .font(Constants.Typography.body)
+            .foregroundColor(.fog)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, Constants.UI.Padding.big)
+            .opacity(revealPhase == .revealed ? 1 : 0)
+            .animation(.easeIn(duration: 0.8), value: revealPhase)
+    }
+
     private var durationHero: some View {
         Text(formatDuration(walk.activeDuration))
             .font(Constants.Typography.timer)
             .foregroundColor(.ink)
-            .padding(.top, Constants.UI.Padding.small)
+            .opacity(revealPhase == .hidden ? 0 : 1)
+            .animation(.easeIn(duration: 0.6), value: revealPhase)
+    }
+
+    private func milestoneCallout(_ text: String) -> some View {
+        HStack(spacing: Constants.UI.Padding.small) {
+            Image(systemName: "sparkles")
+                .foregroundColor(.dawn)
+            Text(text)
+                .font(Constants.Typography.caption)
+                .foregroundColor(.ink)
+        }
+        .padding(.horizontal, Constants.UI.Padding.normal)
+        .padding(.vertical, Constants.UI.Padding.small)
+        .background(Color.dawn.opacity(0.1))
+        .cornerRadius(Constants.UI.CornerRadius.normal)
+        .opacity(revealPhase == .revealed ? 1 : 0)
+        .animation(.easeIn(duration: 0.8).delay(0.3), value: revealPhase)
+    }
+
+    // MARK: - Reveal Sequence
+
+    private func startRevealSequence() {
+        let coords = routeCoordinates
+        guard !coords.isEmpty else {
+            revealPhase = .revealed
+            return
+        }
+
+        cameraCenter = coords.first
+        cameraZoom = 16
+        cameraDuration = 0.1
+        revealPhase = .zoomed
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            cameraDuration = 2.5
+            cameraCenter = nil
+            cameraBounds = boundsForRoute(coords)
+            withAnimation(.easeInOut(duration: 0.6)) {
+                revealPhase = .revealed
+            }
+        }
+    }
+
+    // MARK: - Journey Quote
+
+    private func generateJourneyQuote() -> String {
+        let hasTalk = walk.talkDuration > 0
+        let hasMeditation = walk.meditateDuration > 0
+        let distanceKm = walk.distance / 1000
+
+        if hasTalk && hasMeditation {
+            return "You walked, spoke your mind, and found stillness."
+        } else if hasMeditation {
+            if distanceKm < 0.1 {
+                return "A moment of stillness, right where you are."
+            }
+            return "A journey inward, \(String(format: "%.1f", distanceKm)) km along the way."
+        } else if hasTalk {
+            return "You walked and gave voice to your thoughts."
+        } else if distanceKm > 5 {
+            return "A long road, well traveled."
+        } else if distanceKm > 1 {
+            return "Every step, a small arrival."
+        } else {
+            return "A quiet walk, a gentle return."
+        }
+    }
+
+    // MARK: - Milestones
+
+    private func detectMilestone() {
+        guard let walks = try? DataManager.dataStack.fetchAll(
+            From<Walk>()
+                .where(\._startDate < walk.startDate)
+                .orderBy(.descending(\._startDate))
+                .tweak { $0.fetchLimit = 100 }
+        ) else { return }
+
+        if walk.meditateDuration > 0 {
+            let longestPast = walks.map { $0.meditateDuration }.max() ?? 0
+            if walk.meditateDuration > longestPast && longestPast > 0 {
+                milestone = "Your longest meditation yet"
+                return
+            }
+        }
+
+        if walk.distance > 0 {
+            let longestPast = walks.map { $0.distance }.max() ?? 0
+            if walk.distance > longestPast && longestPast > 0 {
+                milestone = "Your longest walk yet"
+                return
+            }
+        }
+
+        let totalDistance = walks.reduce(0.0) { $0 + $1.distance } + walk.distance
+        let totalKm = Int(totalDistance / 1000)
+        let pastKm = Int((totalDistance - walk.distance) / 1000)
+        let milestones = [10, 25, 50, 100, 250, 500, 1000]
+        for m in milestones where totalKm >= m && pastKm < m {
+            milestone = "You've now walked \(m) km total"
+            return
+        }
     }
 
     private var statsRow: some View {

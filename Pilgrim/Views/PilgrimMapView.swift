@@ -15,6 +15,7 @@ struct PilgrimMapView: UIViewRepresentable {
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     var cameraBounds: MapCameraBounds?
+    var cameraDuration: TimeInterval = 0.4
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -25,7 +26,8 @@ struct PilgrimMapView: UIViewRepresentable {
         pinAnnotations: [PilgrimAnnotation] = [],
         cameraCenter: Binding<CLLocationCoordinate2D?> = .constant(nil),
         cameraZoom: Binding<CGFloat> = .constant(14),
-        cameraBounds: MapCameraBounds? = nil
+        cameraBounds: MapCameraBounds? = nil,
+        cameraDuration: TimeInterval = 0.4
     ) {
         self.isInteractive = isInteractive
         self.showsUserLocation = showsUserLocation
@@ -35,6 +37,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self._cameraCenter = cameraCenter
         self._cameraZoom = cameraZoom
         self.cameraBounds = cameraBounds
+        self.cameraDuration = cameraDuration
     }
 
     func makeCoordinator() -> Coordinator {
@@ -106,10 +109,10 @@ struct PilgrimMapView: UIViewRepresentable {
                     bearing: nil,
                     pitch: nil
                 )
-                mapView.camera.ease(to: camera, duration: 0.4)
+                mapView.camera.ease(to: camera, duration: cameraDuration)
             } else if let center = cameraCenter {
                 let camera = CameraOptions(center: center, zoom: cameraZoom)
-                mapView.camera.ease(to: camera, duration: 0.4)
+                mapView.camera.ease(to: camera, duration: cameraDuration)
             }
         }
     }
@@ -215,7 +218,18 @@ struct PilgrimMapView: UIViewRepresentable {
 
         guard let circleManager = coordinator.circleManager else { return }
 
-        circleManager.annotations = pinAnnotations.compactMap { pin in
+        var circles: [CircleAnnotation] = []
+
+        for pin in pinAnnotations {
+            if case .endPoint = pin.kind {
+                var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
+                glow.circleRadius = 18
+                glow.circleColor = StyleColor(UIColor.stone)
+                glow.circleOpacity = 0.15
+                glow.circleStrokeWidth = 0
+                circles.append(glow)
+            }
+
             var circle = CircleAnnotation(centerCoordinate: pin.coordinate)
             switch pin.kind {
             case .meditation(let duration):
@@ -243,15 +257,17 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
             case .endPoint:
-                circle.circleRadius = 6
+                circle.circleRadius = 7
                 circle.circleColor = StyleColor(UIColor.ink)
                 circle.circleOpacity = 0.9
                 circle.circleStrokeColor = StyleColor(UIColor.stone)
                 circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
             }
-            return circle
+            circles.append(circle)
         }
+
+        circleManager.annotations = circles
     }
 
     // MARK: - Coordinator
