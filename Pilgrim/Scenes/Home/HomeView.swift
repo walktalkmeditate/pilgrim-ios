@@ -5,6 +5,7 @@ struct HomeView: View {
 
     @ObservedObject var viewModel: HomeViewModel
     @State private var selectedWalk: Walk?
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -39,6 +40,11 @@ struct HomeView: View {
             }
             .onChange(of: selectedWalk) { old, new in
                 if old != nil && new == nil {
+                    viewModel.loadWalks()
+                }
+            }
+            .onChange(of: scenePhase) { _, new in
+                if new == .active {
                     viewModel.loadWalks()
                 }
             }
