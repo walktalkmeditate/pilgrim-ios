@@ -5,7 +5,7 @@ struct HomeView: View {
 
     @ObservedObject var viewModel: HomeViewModel
     @State private var selectedWalk: Walk?
-    @State private var unitRefreshKey = UUID()
+    @State private var unitKey: String = UserPreferences.distanceMeasurementType.safeValue.symbol
 
     var body: some View {
         NavigationStack {
@@ -15,7 +15,7 @@ struct HomeView: View {
                     selectedWalk = viewModel.walk(for: id)
                 }
             )
-            .id(unitRefreshKey)
+            .id(unitKey)
             .background(Color.parchment)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -44,8 +44,8 @@ struct HomeView: View {
                     viewModel.loadWalks()
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
-                unitRefreshKey = UUID()
+            .onAppear {
+                unitKey = UserPreferences.distanceMeasurementType.safeValue.symbol
             }
         }
     }
