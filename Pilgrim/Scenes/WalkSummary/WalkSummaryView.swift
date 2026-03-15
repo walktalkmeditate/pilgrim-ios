@@ -81,15 +81,9 @@ struct WalkSummaryView: View {
                 loadExistingTranscriptions()
                 cachedSegments = activityColoredSegments
                 cachedAnnotations = allPinAnnotations
+                recentWalkSnippets = computeRecentWalkSnippets()
+                milestone = computeMilestone()
                 startRevealSequence()
-                DispatchQueue.global(qos: .userInitiated).async {
-                    let snippets = computeRecentWalkSnippets()
-                    let detectedMilestone = computeMilestone()
-                    DispatchQueue.main.async {
-                        recentWalkSnippets = snippets
-                        milestone = detectedMilestone
-                    }
-                }
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {

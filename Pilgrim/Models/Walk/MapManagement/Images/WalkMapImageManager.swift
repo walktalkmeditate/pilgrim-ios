@@ -97,6 +97,7 @@ enum WalkMapImageManager {
                             ne: ne,
                             size: size,
                             screenScale: scale,
+                            darkMode: imageUsesDarkMode,
                             completion: { image in
                                 if let image, let id = request.cacheIdentifier(forDarkAppearance: imageUsesDarkMode) {
                                     CustomImageCache.mapImageCache.set(mapImage: image, for: id)
@@ -125,13 +126,14 @@ enum WalkMapImageManager {
         ne: CLLocationCoordinate2D,
         size: CGSize,
         screenScale: CGFloat,
+        darkMode: Bool,
         completion: @escaping (UIImage?) -> Void
     ) {
         activeSnapshot?.invalidate()
 
         let options = MapSnapshotOptions(size: size, pixelRatio: screenScale)
         let snapshotter = Snapshotter(options: options)
-        snapshotter.styleURI = .light
+        snapshotter.styleURI = darkMode ? .dark : .light
         snapshotter.setCamera(to: .init(center: center))
 
         let operation = SnapshotOperation(snapshotter: snapshotter, completion: completion)
