@@ -186,3 +186,5 @@
 "Permissions.Skipped" = "Skipped";
 "Permissions.Next" = "Next";
 "Permissions.Required.Hint" = "Pilgrim needs this to walk with you";
+
+"Recovery.WalkRecovered" = "Walk from %@ recovered and saved";

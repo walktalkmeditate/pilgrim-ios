@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
+		DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */; };
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
 		FA9B9D71DB2B3EA84CC73FEE /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */; };
 		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
@@ -263,6 +265,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkCheckpoint.swift; sourceTree = "<group>"; };
+		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
 		F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Light.otf"; sourceTree = "<group>"; };
 		F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Regular.otf"; sourceTree = "<group>"; };
 		F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-SemiBold.otf"; sourceTree = "<group>"; };
@@ -988,6 +992,8 @@
 				22A0FAF224D8D4B7000292DF /* WalkCompletionActionHandler.swift */,
 				225BB02E2716E61000478E09 /* StatsHelper.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */,
+				A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */,
+				D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */,
 			);
 			path = Walk;
 			sourceTree = "<group>";
@@ -1363,6 +1369,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */,
+				DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */,
 				22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */,
 				227C690725423294000458BC /* EventInterface.swift in Sources */,
 				22BF623D26E6B1D2008C904C /* WalkBuilderComponentStatus.swift in Sources */,

@@ -43,5 +43,12 @@ struct MainTabView: View {
         } message: {
             Text("Your walk could not be saved. Please try again.")
         }
+        .overlay(alignment: .top) {
+            if let date = coordinator.recoveredWalkDate {
+                RecoveryBanner(date: date)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut, value: coordinator.recoveredWalkDate != nil)
     }
 }
