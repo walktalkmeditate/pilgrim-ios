@@ -8,10 +8,6 @@ enum PilgrimMapStyle {
         case dark
     }
 
-    static var styleURI: StyleURI {
-        Config.isDarkModeEnabled ? .dark : .light
-    }
-
     static func applyWabiSabiStyle(to map: MapboxMap, mode: Mode) {
         let palette = mode == .dark ? darkPalette : lightPalette
         applyPalette(palette, to: map)

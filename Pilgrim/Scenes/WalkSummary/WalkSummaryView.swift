@@ -18,6 +18,8 @@ struct WalkSummaryView: View {
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
     }
     @State private var cameraBounds: MapCameraBounds?
+    @State private var cachedSegments: [RouteSegment] = []
+    @State private var cachedAnnotations: [PilgrimAnnotation] = []
     @State private var recentWalkSnippets: [PromptGenerator.WalkSnippet] = []
 
     var body: some View {
@@ -63,7 +65,9 @@ struct WalkSummaryView: View {
             .onAppear {
                 loadExistingTranscriptions()
                 loadRecentWalkSnippets()
-                if routeCoordinates.count > 1 {
+                cachedSegments = activityColoredSegments
+                cachedAnnotations = allPinAnnotations
+                if !routeCoordinates.isEmpty {
                     cameraBounds = boundsForRoute(routeCoordinates)
                 }
             }
@@ -141,13 +145,13 @@ struct WalkSummaryView: View {
 
     private var mapSection: some View {
         Group {
-            if routeCoordinates.count > 1 {
+            if !routeCoordinates.isEmpty {
                 ZStack(alignment: .bottom) {
                     PilgrimMapView(
                         isInteractive: true,
                         showsUserLocation: false,
-                        routeSegments: activityColoredSegments,
-                        pinAnnotations: allPinAnnotations,
+                        routeSegments: cachedSegments,
+                        pinAnnotations: cachedAnnotations,
                         cameraBounds: cameraBounds
                     )
                     .frame(height: 280)

@@ -13,6 +13,9 @@ enum WalkMapImageManager {
     }
     private static var requestQueue = WalkMapImageQueue()
     private static let processQueue = DispatchQueue(label: "processQueue", qos: .userInitiated)
+    private static let screenScale: CGFloat = {
+        UIScreen.main.scale
+    }()
 
     public static func execute(_ request: WalkMapImageRequest) {
         if let id = request.cacheIdentifier(), let image = CustomImageCache.mapImageCache.getMapImage(for: id) {
@@ -47,8 +50,6 @@ enum WalkMapImageManager {
         internalStatus = .running
 
         let imageUsesDarkMode = Config.isDarkModeEnabled
-        let screenScale = UIScreen.main.scale
-
         let completion: (Bool, UIImage?) -> Void = { (success, image) in
             requestQueue.remove(request)
             DispatchQueue.main.async {
@@ -70,25 +71,48 @@ enum WalkMapImageManager {
                     return
                 }
 
-                processQueue.async {
-                    renderSnapshot(
-                        coordinates: coordinates,
-                        size: request.size.rawSize,
-                        screenScale: screenScale,
-                        completion: { image in
-                            if let image, let id = request.cacheIdentifier(forDarkAppearance: imageUsesDarkMode) {
-                                CustomImageCache.mapImageCache.set(mapImage: image, for: id)
-                            }
+                let size = request.size.rawSize
+                let scale = screenScale
 
-                            DispatchQueue.main.async {
+                processQueue.async {
+                    let lats = coordinates.map { $0.latitude }
+                    let lons = coordinates.map { $0.longitude }
+                    guard let minLat = lats.min(), let maxLat = lats.max(),
+                          let minLon = lons.min(), let maxLon = lons.max() else {
+                        completion(false, nil)
+                        return
+                    }
+
+                    let latPad = (maxLat - minLat) * 0.1
+                    let lonPad = (maxLon - minLon) * 0.1
+                    let sw = CLLocationCoordinate2D(latitude: minLat - latPad, longitude: minLon - lonPad)
+                    let ne = CLLocationCoordinate2D(latitude: maxLat + latPad, longitude: maxLon + lonPad)
+                    let center = CLLocationCoordinate2D(
+                        latitude: (minLat + maxLat) / 2,
+                        longitude: (minLon + maxLon) / 2
+                    )
+
+                    DispatchQueue.main.async {
+                        renderSnapshot(
+                            coordinates: coordinates,
+                            center: center,
+                            sw: sw,
+                            ne: ne,
+                            size: size,
+                            screenScale: scale,
+                            completion: { image in
+                                if let image, let id = request.cacheIdentifier(forDarkAppearance: imageUsesDarkMode) {
+                                    CustomImageCache.mapImageCache.set(mapImage: image, for: id)
+                                }
+
                                 completion(image != nil, image)
 
                                 if Config.isDarkModeEnabled != imageUsesDarkMode {
                                     self.requestQueue.add(request)
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         )
@@ -96,53 +120,35 @@ enum WalkMapImageManager {
 
     private static var activeSnapshot: SnapshotOperation?
 
+    @MainActor
     private static func renderSnapshot(
         coordinates: [CLLocationCoordinate2D],
+        center: CLLocationCoordinate2D,
+        sw: CLLocationCoordinate2D,
+        ne: CLLocationCoordinate2D,
         size: CGSize,
         screenScale: CGFloat,
         completion: @escaping (UIImage?) -> Void
     ) {
-        let lats = coordinates.map { $0.latitude }
-        let lons = coordinates.map { $0.longitude }
-        guard let minLat = lats.min(), let maxLat = lats.max(),
-              let minLon = lons.min(), let maxLon = lons.max() else {
-            completion(nil)
-            return
-        }
+        activeSnapshot?.invalidate()
 
-        let latPad = (maxLat - minLat) * 0.1
-        let lonPad = (maxLon - minLon) * 0.1
-        let sw = CLLocationCoordinate2D(latitude: minLat - latPad, longitude: minLon - lonPad)
-        let ne = CLLocationCoordinate2D(latitude: maxLat + latPad, longitude: maxLon + lonPad)
-
-        let options = MapSnapshotOptions(
-            size: size,
-            pixelRatio: screenScale
-        )
+        let options = MapSnapshotOptions(size: size, pixelRatio: screenScale)
         let snapshotter = Snapshotter(options: options)
         snapshotter.styleURI = .light
+        snapshotter.setCamera(to: .init(center: center))
 
-        snapshotter.setCamera(to: .init(
-            center: CLLocationCoordinate2D(
-                latitude: (minLat + maxLat) / 2,
-                longitude: (minLon + maxLon) / 2
-            )
-        ))
-
-        let operation = SnapshotOperation(snapshotter: snapshotter)
+        let operation = SnapshotOperation(snapshotter: snapshotter, completion: completion)
         activeSnapshot = operation
 
-        var timeoutFired = false
-        let timeoutItem = DispatchWorkItem {
-            guard !timeoutFired else { return }
-            timeoutFired = true
+        operation.timeoutItem = DispatchWorkItem { [weak operation] in
+            guard let operation, !operation.isComplete else { return }
+            operation.complete(with: nil)
             activeSnapshot = nil
-            completion(nil)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: timeoutItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: operation.timeoutItem!)
 
-        operation.cancellable = snapshotter.onStyleLoaded.observeNext { _ in
-            guard !timeoutFired else { return }
+        operation.cancellable = snapshotter.onStyleLoaded.observeNext { [weak operation] _ in
+            guard let operation, !operation.isComplete else { return }
 
             do {
                 var source = GeoJSONSource(id: "route")
@@ -171,28 +177,45 @@ enum WalkMapImageManager {
             )
             snapshotter.setCamera(to: camera)
 
-            snapshotter.start(overlayHandler: nil) { result in
-                timeoutItem.cancel()
-                guard !timeoutFired else { return }
-                activeSnapshot = nil
-
+            snapshotter.start(overlayHandler: nil) { [weak operation] result in
+                guard let operation, !operation.isComplete else { return }
                 switch result {
                 case .success(let image):
-                    completion(image)
+                    operation.complete(with: image)
                 case .failure(let error):
                     print("[WalkMapImageManager] Snapshot failed: \(error)")
-                    completion(nil)
+                    operation.complete(with: nil)
                 }
+                activeSnapshot = nil
             }
         }
     }
 
     private class SnapshotOperation {
         let snapshotter: Snapshotter
+        private let onComplete: (UIImage?) -> Void
         var cancellable: AnyCancelable?
+        var timeoutItem: DispatchWorkItem?
+        private(set) var isComplete = false
 
-        init(snapshotter: Snapshotter) {
+        init(snapshotter: Snapshotter, completion: @escaping (UIImage?) -> Void) {
             self.snapshotter = snapshotter
+            self.onComplete = completion
+        }
+
+        func complete(with image: UIImage?) {
+            guard !isComplete else { return }
+            isComplete = true
+            timeoutItem?.cancel()
+            cancellable?.cancel()
+            onComplete(image)
+        }
+
+        func invalidate() {
+            guard !isComplete else { return }
+            isComplete = true
+            timeoutItem?.cancel()
+            cancellable?.cancel()
         }
     }
 

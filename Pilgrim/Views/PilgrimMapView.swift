@@ -60,11 +60,12 @@ struct PilgrimMapView: UIViewRepresentable {
 
         context.coordinator.currentColorScheme = colorScheme
 
-        mapView.mapboxMap.onStyleLoaded.observeNext { _ in
-            let mode: PilgrimMapStyle.Mode = context.coordinator.currentColorScheme == .dark ? .dark : .light
+        mapView.mapboxMap.onStyleLoaded.observeNext { [coordinator = context.coordinator] _ in
+            let mode: PilgrimMapStyle.Mode = coordinator.currentColorScheme == .dark ? .dark : .light
             PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap, mode: mode)
-            self.updateRouteSource(on: mapView, coordinator: context.coordinator)
-            self.updateAnnotations(on: mapView, coordinator: context.coordinator)
+            coordinator.lastSegments = []
+            Self.applyRouteSource(coordinator.pendingSegments, on: mapView, coordinator: coordinator)
+            Self.applyAnnotations(coordinator.pendingAnnotations, on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
         context.coordinator.mapView = mapView
@@ -72,6 +73,9 @@ struct PilgrimMapView: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MBMapView, context: Context) {
+        context.coordinator.pendingSegments = routeSegments
+        context.coordinator.pendingAnnotations = pinAnnotations
+
         if colorScheme != context.coordinator.currentColorScheme {
             context.coordinator.currentColorScheme = colorScheme
             context.coordinator.lastSegments = []
@@ -80,8 +84,8 @@ struct PilgrimMapView: UIViewRepresentable {
             return
         }
 
-        updateRouteSource(on: mapView, coordinator: context.coordinator)
-        updateAnnotations(on: mapView, coordinator: context.coordinator)
+        Self.applyRouteSource(routeSegments, on: mapView, coordinator: context.coordinator)
+        Self.applyAnnotations(pinAnnotations, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
             if !context.coordinator.isFollowing {
@@ -138,7 +142,7 @@ struct PilgrimMapView: UIViewRepresentable {
 
     private static let sourceId = "pilgrim-route"
 
-    private func updateRouteSource(on mapView: MBMapView, coordinator: Coordinator) {
+    private static func applyRouteSource(_ routeSegments: [RouteSegment], on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
         guard routeSegments != coordinator.lastSegments else { return }
         coordinator.lastSegments = routeSegments
@@ -239,7 +243,7 @@ struct PilgrimMapView: UIViewRepresentable {
         }
     }
 
-    private func updateAnnotations(on mapView: MBMapView, coordinator: Coordinator) {
+    private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
 
         if coordinator.annotationManager == nil {
@@ -272,6 +276,8 @@ struct PilgrimMapView: UIViewRepresentable {
         var annotationManager: PointAnnotationManager?
         var isFollowing = false
         var lastSegments: [RouteSegment] = []
+        var pendingSegments: [RouteSegment] = []
+        var pendingAnnotations: [PilgrimAnnotation] = []
         var currentColorScheme: ColorScheme = .light
         weak var mapView: MBMapView?
 
