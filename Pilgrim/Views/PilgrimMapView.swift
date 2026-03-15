@@ -79,6 +79,9 @@ struct PilgrimMapView: UIViewRepresentable {
         context.coordinator.pendingSegments = routeSegments
         context.coordinator.pendingAnnotations = pinAnnotations
 
+        mapView.gestures.options.panEnabled = isInteractive
+        mapView.gestures.options.pinchEnabled = isInteractive
+
         if colorScheme != context.coordinator.currentColorScheme {
             context.coordinator.currentColorScheme = colorScheme
             context.coordinator.lastSegments = []

@@ -332,11 +332,13 @@ struct WalkSummaryView: View {
         }
 
         let totalDistance = walks.reduce(0.0) { $0 + $1.distance } + walk.distance
-        let totalKm = Int(totalDistance / 1000)
-        let pastKm = Int((totalDistance - walk.distance) / 1000)
+        let isMiles = UserPreferences.distanceMeasurementType.safeValue == .miles
+        let totalUnits = Int(totalDistance / (isMiles ? 1609.344 : 1000))
+        let pastUnits = Int((totalDistance - walk.distance) / (isMiles ? 1609.344 : 1000))
+        let unit = isMiles ? "mi" : "km"
         let milestones = [10, 25, 50, 100, 250, 500, 1000]
-        for m in milestones where totalKm >= m && pastKm < m {
-            return "You've now walked \(m) km total"
+        for m in milestones where totalUnits >= m && pastUnits < m {
+            return "You've now walked \(m) \(unit) total"
         }
         return nil
     }
