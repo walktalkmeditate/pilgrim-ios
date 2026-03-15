@@ -90,4 +90,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         case done
     }
 }
-
