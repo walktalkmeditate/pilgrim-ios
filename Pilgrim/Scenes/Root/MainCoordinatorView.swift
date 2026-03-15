@@ -8,18 +8,8 @@ class MainCoordinator: ObservableObject {
     @Published var showSaveError = false
 
     private var pendingSnapshot: TempWalk?
-    private var callbacksConfigured = false
 
-    func setupCallbacks() {
-        guard !callbacksConfigured else { return }
-        callbacksConfigured = true
-
-        homeViewModel.onStartWalk = { [weak self] in
-            self?.startWalk()
-        }
-    }
-
-    func startWalk() {
+    func startWalk(mode: WalkMode = .solo) {
         guard activeWalkViewModel == nil else { return }
         let vm = ActiveWalkViewModel()
         vm.onWalkCompleted = { [weak self] snapshot in
@@ -54,8 +44,5 @@ struct MainCoordinatorView: View {
 
     var body: some View {
         HomeView(viewModel: coordinator.homeViewModel)
-            .onAppear {
-                coordinator.setupCallbacks()
-            }
     }
 }

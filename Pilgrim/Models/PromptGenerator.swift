@@ -332,7 +332,8 @@ struct PromptGenerator {
         let distanceStr = distanceFormatter.string(from: Measurement(value: distance, unit: UnitLength.meters))
         let timeOfDay = timeOfDayDescription(startDate)
 
-        return "Walk duration: \(durationMin) minutes | Distance: \(distanceStr) | Time: \(timeOfDay) on \(dateTimeFormatter.string(from: startDate))"
+        let lunar = LunarPhase.current(date: startDate)
+        return "Walk duration: \(durationMin) minutes | Distance: \(distanceStr) | Time: \(timeOfDay) on \(dateTimeFormatter.string(from: startDate)) | Moon: \(lunar.name) (\(Int(round(lunar.illumination * 100)))% illumination)"
     }
 
     private static func timeOfDayDescription(_ date: Date) -> String {

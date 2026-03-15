@@ -12,8 +12,8 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Home", systemImage: "house", value: .home) {
-                HomePlaceholderView(onStartWalk: {
-                    coordinator.startWalk()
+                WalkStartView(onStartWalk: { mode in
+                    coordinator.startWalk(mode: mode)
                 })
             }
 

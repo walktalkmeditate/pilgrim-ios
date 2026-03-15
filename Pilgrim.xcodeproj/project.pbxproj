@@ -22,6 +22,7 @@
 		F0F0F00100000004AABBCC04 /* Lato-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */; };
 		F0F0F00100000005AABBCC05 /* Lato-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
+		CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
 		0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */; };
 		2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCA829423DF100F54277 /* View+Navigation.swift */; };
@@ -231,7 +232,10 @@
 		CC00000200000000MOONSH01 /* MoonShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOONSH01 /* MoonShape.swift */; };
 		CC00000200000000DEBUGS01 /* DebugDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */; };
 		CC00000200000000MAINTB01 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MAINTB01 /* MainTabView.swift */; };
-		CC00000200000000HOMEPH01 /* HomePlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000HOMEPH01 /* HomePlaceholderView.swift */; };
+		CC00000200000000WKSTRT01 /* WalkStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKSTRT01 /* WalkStartView.swift */; };
+		CC00000200000000WKMODE01 /* WalkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKMODE01 /* WalkMode.swift */; };
+		CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRPH01 /* LunarPhase.swift */; };
+		CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOONPV01 /* MoonPhaseView.swift */; };
 		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
 		CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENIV01 /* SceneryItemView.swift */; };
 		CC00000200000000LANTRN01 /* LanternShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LANTRN01 /* LanternShape.swift */; };
@@ -440,6 +444,7 @@
 		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
+		CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunarPhaseTests.swift; sourceTree = "<group>"; };
 		E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderStatusTests.swift; sourceTree = "<group>"; };
 		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
 		2722224F049B455DB473E7C9 /* PilgrimV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV2.swift; sourceTree = "<group>"; };
@@ -471,7 +476,10 @@
 		CC00000100000000MOONSH01 /* MoonShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonShape.swift; sourceTree = "<group>"; };
 		CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugDataSeeder.swift; sourceTree = "<group>"; };
 		CC00000100000000MAINTB01 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
-		CC00000100000000HOMEPH01 /* HomePlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePlaceholderView.swift; sourceTree = "<group>"; };
+		CC00000100000000WKSTRT01 /* WalkStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStartView.swift; sourceTree = "<group>"; };
+		CC00000100000000WKMODE01 /* WalkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMode.swift; sourceTree = "<group>"; };
+		CC00000100000000LUNRPH01 /* LunarPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarPhase.swift; sourceTree = "<group>"; };
+		CC00000100000000MOONPV01 /* MoonPhaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonPhaseView.swift; sourceTree = "<group>"; };
 		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
 		CC00000100000000LANTRN01 /* LanternShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanternShape.swift; sourceTree = "<group>"; };
@@ -802,6 +810,7 @@
 				22834F792542239800057FEB /* HelperMethods.swift */,
 				AAAA000000000000000000C2 /* PromptGenerator.swift */,
 				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
+				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -881,6 +890,7 @@
 				22BC992E2941D9A800D9B1A5 /* ProgressView.swift */,
 				22BC99382941D9A800D9B1A5 /* WalkCard.swift */,
 				22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */,
+				CC00000100000000MOONPV01 /* MoonPhaseView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -959,6 +969,7 @@
 				22C1107A24532A79009ACE81 /* MapManagement */,
 				22A0B72A245B075700E1AB68 /* Stats */,
 				22FEA08E24CD37200007CA9C /* WalkBuilder */,
+				CC00000100000000WKMODE01 /* WalkMode.swift */,
 				22A0FAF224D8D4B7000292DF /* WalkCompletionActionHandler.swift */,
 				225BB02E2716E61000478E09 /* StatsHelper.swift */,
 			);
@@ -983,6 +994,7 @@
 				4C304343458BA5DB0C7E2372 /* Helpers */,
 				C2D23FF60A762C30296A69E6 /* ComputationTests.swift */,
 				DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */,
+				CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */,
 				1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */,
 				E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */,
 				B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */,
@@ -1057,7 +1069,7 @@
 				CC00000100000000INKSCR01 /* InkScrollView.swift */,
 				CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */,
 				CC00000100000000MILEST01 /* MilestoneMarkerView.swift */,
-				CC00000100000000HOMEPH01 /* HomePlaceholderView.swift */,
+				CC00000100000000WKSTRT01 /* WalkStartView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -1486,7 +1498,10 @@
 				CC00000200000000SCENER01 /* SceneryGenerator.swift in Sources */,
 				CC00000200000000DEBUGS01 /* DebugDataSeeder.swift in Sources */,
 				CC00000200000000MAINTB01 /* MainTabView.swift in Sources */,
-				CC00000200000000HOMEPH01 /* HomePlaceholderView.swift in Sources */,
+				CC00000200000000WKSTRT01 /* WalkStartView.swift in Sources */,
+				CC00000200000000WKMODE01 /* WalkMode.swift in Sources */,
+				CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */,
+				CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */,
 				CC00000200000000SETTVW01 /* SettingsView.swift in Sources */,
 				CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */,
 				CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */,
@@ -1545,6 +1560,7 @@
 				0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */,
 				2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */,
 				03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */,
+				CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */,
 				F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */,
 				CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */,
 				FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */,

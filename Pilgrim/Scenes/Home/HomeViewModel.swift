@@ -24,8 +24,6 @@ class HomeViewModel: ObservableObject {
 
     @Published private(set) var walks: [Walk] = []
     @Published private(set) var walkSnapshots: [WalkSnapshot] = []
-    var onStartWalk: (() -> Void)?
-
     private var cancellables: [AnyCancellable] = []
 
     init() {
@@ -49,10 +47,6 @@ class HomeViewModel: ObservableObject {
 
     func walk(for snapshotID: UUID) -> Walk? {
         walks.first { $0.id == snapshotID }
-    }
-
-    func startWalk() {
-        onStartWalk?()
     }
 
     var totalTalkDuration: TimeInterval {
