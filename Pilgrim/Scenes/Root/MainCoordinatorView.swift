@@ -35,7 +35,7 @@ class MainCoordinator: ObservableObject {
     }
 
     func handleSummaryDismiss() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [self] in
             homeViewModel.loadWalks()
         }
     }

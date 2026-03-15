@@ -504,11 +504,7 @@ struct DataManager {
             ) {
                 walk._favicon .= favicon?.rawValue
             }
-        }) { result in
-            if case .failure(let error) = result {
-                print("[DataManager] Failed to set favicon: \(error)")
-            }
-        }
+        }) { _ in }
     }
 
     // MARK: - Event
