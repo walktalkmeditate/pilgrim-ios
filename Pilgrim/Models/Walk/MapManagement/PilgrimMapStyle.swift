@@ -138,7 +138,12 @@ enum PilgrimMapStyle {
                 hillshade.hillshadeShadowColor = .constant(StyleColor(UIColor.black.withAlphaComponent(0.08)))
                 hillshade.hillshadeHighlightColor = .constant(StyleColor(UIColor.white.withAlphaComponent(0.3)))
             }
-            try map.addLayer(hillshade, layerPosition: .below("road-minor"))
+            let belowLayer = map.layerExists(withId: "road-minor") ? "road-minor" : "road-street"
+            if map.layerExists(withId: belowLayer) {
+                try map.addLayer(hillshade, layerPosition: .below(belowLayer))
+            } else {
+                try map.addLayer(hillshade)
+            }
         } catch {
             print("[PilgrimMapStyle] Hillshade setup failed: \(error)")
         }

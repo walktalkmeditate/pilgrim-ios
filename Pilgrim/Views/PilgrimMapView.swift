@@ -209,8 +209,6 @@ struct PilgrimMapView: UIViewRepresentable {
     // MARK: - Annotations
 
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], on mapView: MBMapView, coordinator: Coordinator) {
-        guard mapView.mapboxMap.isStyleLoaded else { return }
-
         if coordinator.circleManager == nil {
             coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager()
         }
