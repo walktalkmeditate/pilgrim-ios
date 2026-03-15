@@ -42,7 +42,6 @@ struct ActiveWalkView: View {
 
     private func mapSection(height: CGFloat) -> some View {
         PilgrimMapView(
-            isInteractive: false,
             showsUserLocation: true,
             followsUserLocation: true,
             routeSegments: viewModel.routeSegments
