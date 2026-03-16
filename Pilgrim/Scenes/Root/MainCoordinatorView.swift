@@ -83,6 +83,7 @@ class MainCoordinator: ObservableObject {
 
         if batteryOK {
             Task {
+                await VoiceEnhancer.shared.waitForPendingWork()
                 _ = await TranscriptionService.shared.transcribeRecordings(snapshot.voiceRecordings)
             }
         } else {

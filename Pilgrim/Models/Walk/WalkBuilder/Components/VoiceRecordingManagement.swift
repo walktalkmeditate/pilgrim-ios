@@ -138,7 +138,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         builder?.flushVoiceRecordings(voiceRecordingsRelay.value)
     }
 
-    private func commitRecording(successfully flag: Bool, skipEnhancement: Bool = false) {
+    private func commitRecording(successfully flag: Bool) {
         guard let start = currentRecordingStart, let relativePath = currentRecordingRelativePath else {
             return
         }
@@ -157,7 +157,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         }
 
         let end = Date()
-        let enhanced = !skipEnhancement && UserPreferences.dynamicVoiceEnabled.value
+        let enhanced = UserPreferences.dynamicVoiceEnabled.value
         finalizeRecording(start: start, end: end, relativePath: relativePath, isEnhanced: enhanced)
 
         if enhanced {

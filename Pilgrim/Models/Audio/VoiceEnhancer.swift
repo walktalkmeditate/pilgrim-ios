@@ -15,6 +15,14 @@ final class VoiceEnhancer {
         }
     }
 
+    func waitForPendingWork() async {
+        await withCheckedContinuation { continuation in
+            processingQueue.async {
+                continuation.resume()
+            }
+        }
+    }
+
     private func processFile(at fileURL: URL) -> Bool {
         let tempURL = fileURL.deletingLastPathComponent()
             .appendingPathComponent(UUID().uuidString + ".m4a")
