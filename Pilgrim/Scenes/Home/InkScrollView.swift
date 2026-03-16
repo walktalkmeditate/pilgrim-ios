@@ -283,6 +283,13 @@ struct InkScrollView: View {
                             .foregroundColor(.ink)
 
                         Spacer()
+
+                        if snapshot.isShared {
+                            Image(systemName: "link")
+                                .font(.system(size: 10))
+                                .foregroundColor(.stone)
+                                .opacity(0.5)
+                        }
                     }
 
                     Rectangle()

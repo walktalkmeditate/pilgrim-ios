@@ -12,6 +12,7 @@ struct WalkSnapshot: Identifiable {
     let talkDuration: TimeInterval
     let meditateDuration: TimeInterval
     let favicon: String?
+    let isShared: Bool
 
     var walkOnlyDuration: TimeInterval {
         max(0, duration - talkDuration - meditateDuration)
@@ -86,7 +87,8 @@ class HomeViewModel: ObservableObject {
                 cumulativeDistance: cumulative,
                 talkDuration: walk.talkDuration,
                 meditateDuration: walk.meditateDuration,
-                favicon: walk.favicon
+                favicon: walk.favicon,
+                isShared: ShareService.cachedShare(for: walk.id) != nil
             ))
         }
 

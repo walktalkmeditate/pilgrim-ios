@@ -16,6 +16,7 @@ struct WalkSummaryView: View {
     @State private var pathToDelete: String?
     @State private var showDeleteConfirmation = false
     @State private var waveforms: [UUID: [Float]] = [:]
+    @State private var showShareSheet = false
 
     init(walk: WalkInterface) {
         self.walk = walk
@@ -65,6 +66,7 @@ struct WalkSummaryView: View {
                         promptsButton
                     }
                     detailsSection
+                    shareCard
                 }
                 .padding(Constants.UI.Padding.normal)
             }
@@ -93,6 +95,9 @@ struct WalkSummaryView: View {
                 NavigationView {
                     PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets)
                 }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                WalkShareView(walk: walk)
             }
         }
     }
@@ -642,9 +647,40 @@ struct WalkSummaryView: View {
         }
     }
 
-    // MARK: - Activity-Colored Route Segments
+    @ViewBuilder
+    private var shareCard: some View {
+        if walk.routeData.count >= 2 {
+            Button {
+                showShareSheet = true
+            } label: {
+                VStack(spacing: Constants.UI.Padding.small) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 20))
+                        .foregroundColor(.stone)
+                    Text("Share this walk")
+                        .font(Constants.Typography.heading)
+                        .foregroundColor(.ink)
+                    Text("Create a beautiful page to share with others")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Constants.UI.Padding.big)
+                .padding(.horizontal, Constants.UI.Padding.normal)
+                .background(Color.parchmentSecondary)
+                .cornerRadius(Constants.UI.CornerRadius.normal)
+            }
+        }
+    }
 
-    private var activityColoredSegments: [RouteSegment] {
+}
+
+// MARK: - Route Segments & Annotations
+
+extension WalkSummaryView {
+
+    var activityColoredSegments: [RouteSegment] {
         let samples = walk.routeData
         guard samples.count > 1 else { return [] }
 
@@ -673,7 +709,7 @@ struct WalkSummaryView: View {
         }
     }
 
-    private func activityTypeForSample(_ sample: RouteDataSampleInterface) -> String {
+    func activityTypeForSample(_ sample: RouteDataSampleInterface) -> String {
         let timestamp = sample.timestamp
 
         for interval in walk.activityIntervals where interval.activityType == .meditation {
@@ -691,13 +727,11 @@ struct WalkSummaryView: View {
         return "walking"
     }
 
-    // MARK: - Pin Annotations
-
-    private var allPinAnnotations: [PilgrimAnnotation] {
+    var allPinAnnotations: [PilgrimAnnotation] {
         startEndAnnotations + meditationPinAnnotations + voicePinAnnotations
     }
 
-    private var startEndAnnotations: [PilgrimAnnotation] {
+    var startEndAnnotations: [PilgrimAnnotation] {
         var pins: [PilgrimAnnotation] = []
         if let first = walk.routeData.first {
             pins.append(PilgrimAnnotation(
@@ -714,7 +748,7 @@ struct WalkSummaryView: View {
         return pins
     }
 
-    private var meditationPinAnnotations: [PilgrimAnnotation] {
+    var meditationPinAnnotations: [PilgrimAnnotation] {
         let routeSamples = walk.routeData
         return walk.activityIntervals
             .filter { $0.activityType == .meditation }
@@ -731,7 +765,7 @@ struct WalkSummaryView: View {
             }
     }
 
-    private var voicePinAnnotations: [PilgrimAnnotation] {
+    var voicePinAnnotations: [PilgrimAnnotation] {
         let routeSamples = walk.routeData
         return walk.voiceRecordings.compactMap { recording in
             guard let closest = routeSamples.min(by: {
@@ -746,22 +780,20 @@ struct WalkSummaryView: View {
         }
     }
 
-    // MARK: - Helpers
-
-    private var routeCoordinates: [CLLocationCoordinate2D] {
+    var routeCoordinates: [CLLocationCoordinate2D] {
         walk.routeData.map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
         }
     }
 
-    private func boundsForTimeRange(start: Date, end: Date) -> MapCameraBounds? {
+    func boundsForTimeRange(start: Date, end: Date) -> MapCameraBounds? {
         let samples = walk.routeData.filter { $0.timestamp >= start && $0.timestamp <= end }
         let coords = samples.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
         guard !coords.isEmpty else { return nil }
         return boundsForRoute(coords)
     }
 
-    private func boundsForRoute(_ coords: [CLLocationCoordinate2D]) -> MapCameraBounds {
+    func boundsForRoute(_ coords: [CLLocationCoordinate2D]) -> MapCameraBounds {
         let lats = coords.map { $0.latitude }
         let lons = coords.map { $0.longitude }
         let minLat = lats.min() ?? 0
@@ -776,7 +808,7 @@ struct WalkSummaryView: View {
         )
     }
 
-    private func formatDuration(_ seconds: Double) -> String {
+    func formatDuration(_ seconds: Double) -> String {
         let totalSeconds = Int(seconds)
         let h = totalSeconds / 3600
         let m = (totalSeconds % 3600) / 60
@@ -785,7 +817,7 @@ struct WalkSummaryView: View {
         return String(format: "%d:%02d", m, s)
     }
 
-    private func formatDistance(_ meters: Double) -> String {
+    func formatDistance(_ meters: Double) -> String {
         let pref = UserPreferences.distanceMeasurementType.safeValue
         if pref == .miles {
             let miles = meters / 1609.344
@@ -794,12 +826,12 @@ struct WalkSummaryView: View {
         return String(format: "%.2f km", meters / 1000.0)
     }
 
-    private func formatSteps(_ steps: Int?) -> String {
+    func formatSteps(_ steps: Int?) -> String {
         guard let steps = steps else { return "--" }
         return "\(steps)"
     }
 
-    private func formatElevation(_ meters: Double) -> String {
+    func formatElevation(_ meters: Double) -> String {
         let pref = UserPreferences.altitudeMeasurementType.safeValue
         if pref == .feet {
             return String(format: "%.0f ft", meters * 3.28084)
@@ -807,14 +839,14 @@ struct WalkSummaryView: View {
         return String(format: "%.0f m", meters)
     }
 
-    private static let shortDateFormatter: DateFormatter = {
+    static var shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateStyle = .short
         f.timeStyle = .short
         return f
     }()
 
-    private func formatDate(_ date: Date) -> String {
+    func formatDate(_ date: Date) -> String {
         Self.shortDateFormatter.string(from: date)
     }
 }
