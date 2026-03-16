@@ -450,11 +450,15 @@ struct WalkSummaryView: View {
                     progress: isActive ? audioPlayer.progress : 0,
                     currentTime: isActive ? audioPlayer.currentTime : 0,
                     audioDuration: isActive ? audioPlayer.totalDuration : recording.duration,
+                    playbackSpeed: audioPlayer.playbackSpeed,
                     onTogglePlay: {
                         audioPlayer.toggle(relativePath: recording.fileRelativePath)
                     },
                     onSeek: { fraction in
                         audioPlayer.seek(to: fraction)
+                    },
+                    onCycleSpeed: {
+                        audioPlayer.cycleSpeed()
                     },
                     onRetranscribe: {
                         Task { await retranscribeSingle(recording) }
@@ -827,8 +831,10 @@ struct VoiceRecordingRow: View {
     let progress: Double
     let currentTime: TimeInterval
     let audioDuration: TimeInterval
+    let playbackSpeed: Float
     let onTogglePlay: () -> Void
     let onSeek: (Double) -> Void
+    let onCycleSpeed: () -> Void
     let onRetranscribe: () -> Void
     let onDelete: () -> Void
     let waveformSamples: [Float]?
@@ -840,31 +846,62 @@ struct VoiceRecordingRow: View {
             if fileAvailable {
                 HStack(spacing: Constants.UI.Padding.small) {
                     Button(action: onTogglePlay) {
-                        Image(systemName: playIcon)
+                        Image(systemName: isActive && isPlaying ? "pause.circle.fill" : "play.circle.fill")
                             .font(.title2)
                             .foregroundColor(.stone)
+                            .contentTransition(.symbolEffect(.replace))
                     }
-
-                    if let samples = waveformSamples {
-                        WaveformBarView(
-                            samples: samples,
-                            progress: isActive ? progress : 0,
-                            isPlaying: isPlaying
-                        ) { fraction in
-                            if isActive {
-                                onSeek(fraction)
-                            } else {
-                                onTogglePlay()
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    onSeek(fraction)
-                                }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Recording \(index)")
+                            .font(Constants.Typography.body)
+                            .foregroundColor(.ink)
+                        HStack(spacing: Constants.UI.Padding.xs) {
+                            Text(formattedDuration)
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
+                            if recording.isEnhanced {
+                                Text("·")
+                                    .foregroundColor(.fog)
+                                Text("Enhanced")
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(.stone)
                             }
                         }
-                    } else {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.fog.opacity(0.15))
-                            .frame(height: 32)
                     }
+                    Spacer()
+                    Text(formattedTime)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                    Button(action: onCycleSpeed) {
+                        Text(speedLabel)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(playbackSpeed > 1.0 ? .parchment : .stone)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(playbackSpeed > 1.0 ? Color.stone : Color.stone.opacity(0.12))
+                            .cornerRadius(4)
+                    }
+                }
+
+                if let samples = waveformSamples {
+                    WaveformBarView(
+                        samples: samples,
+                        progress: isActive ? progress : 0,
+                        isPlaying: isPlaying
+                    ) { fraction in
+                        if isActive {
+                            onSeek(fraction)
+                        } else {
+                            onTogglePlay()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                onSeek(fraction)
+                            }
+                        }
+                    }
+                } else {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.fog.opacity(0.15))
+                        .frame(height: 28)
                 }
 
                 if isActive {
@@ -879,30 +916,6 @@ struct VoiceRecordingRow: View {
                             .foregroundColor(.fog)
                             .monospacedDigit()
                     }
-                }
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Recording \(index)")
-                            .font(Constants.Typography.heading)
-                            .foregroundColor(.ink)
-                        Text(formattedDuration)
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.fog)
-                    }
-                    if recording.isEnhanced {
-                        Text("Enhanced")
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.stone)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.stone.opacity(0.12))
-                            .cornerRadius(4)
-                    }
-                    Spacer()
-                    Text(formattedTime)
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
                 }
             } else {
                 HStack {
@@ -948,11 +961,8 @@ struct VoiceRecordingRow: View {
         }
     }
 
-    private var playIcon: String {
-        if isActive && isPlaying {
-            return "pause.circle.fill"
-        }
-        return "play.circle.fill"
+    private var speedLabel: String {
+        playbackSpeed == 1.0 ? "1x" : String(format: "%.1gx", playbackSpeed)
     }
 
 
@@ -986,6 +996,9 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var progress: Double = 0
     @Published var currentTime: TimeInterval = 0
     @Published var totalDuration: TimeInterval = 0
+    @Published var playbackSpeed: Float = 1.0
+
+    private static let speeds: [Float] = [1.0, 1.5, 2.0]
 
     private var player: AVAudioPlayer?
     private var progressTimer: Timer?
@@ -1000,6 +1013,17 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
         } else {
             play(relativePath: relativePath)
         }
+    }
+
+    func cycleSpeed() {
+        guard let idx = Self.speeds.firstIndex(of: playbackSpeed) else {
+            playbackSpeed = 1.0
+            player?.rate = 1.0
+            return
+        }
+        let next = Self.speeds[(idx + 1) % Self.speeds.count]
+        playbackSpeed = next
+        player?.rate = next
     }
 
     func play(relativePath: String) {
@@ -1018,6 +1042,8 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
             let p = try AVAudioPlayer(contentsOf: url)
             p.delegate = self
             p.volume = 1.0
+            p.enableRate = true
+            p.rate = playbackSpeed
             p.prepareToPlay()
             guard p.play() else {
                 print("[AudioPlayerModel] play() returned false")

@@ -136,6 +136,8 @@ struct RecordingsListView: View {
         let fileAvailable = isFileAvailable(recording.fileRelativePath)
         let transcriptionText = recUUID.flatMap { transcriptionOverrides[$0] } ?? recording.transcription
 
+        let speedLabel = audioPlayer.playbackSpeed == 1.0 ? "1x" : String(format: "%.1gx", audioPlayer.playbackSpeed)
+
         return VStack(alignment: .leading, spacing: Constants.UI.Padding.xs) {
             if fileAvailable {
                 HStack(spacing: Constants.UI.Padding.small) {
@@ -143,11 +145,46 @@ struct RecordingsListView: View {
                         Image(systemName: isActive && audioPlayer.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                             .font(.title2)
                             .foregroundColor(.stone)
+                            .contentTransition(.symbolEffect(.replace))
                     }
                     .buttonStyle(.plain)
 
-                    waveformContent(for: recording, isActive: isActive)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Recording \(index)")
+                            .font(Constants.Typography.body)
+                            .foregroundColor(.ink)
+                        HStack(spacing: Constants.UI.Padding.xs) {
+                            Text(formatSeconds(recording.duration))
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
+                            if let uuid = recUUID, let size = fileSizes[uuid] {
+                                Text(formatFileSize(size))
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(.fog)
+                            }
+                            if recording.isEnhanced {
+                                Text("·")
+                                    .foregroundColor(.fog)
+                                Text("Enhanced")
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(.stone)
+                            }
+                        }
+                    }
+                    Spacer()
+                    Button { audioPlayer.cycleSpeed() } label: {
+                        Text(speedLabel)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(audioPlayer.playbackSpeed > 1.0 ? .parchment : .stone)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(audioPlayer.playbackSpeed > 1.0 ? Color.stone : Color.stone.opacity(0.12))
+                            .cornerRadius(4)
+                    }
+                    .buttonStyle(.plain)
                 }
+
+                waveformContent(for: recording, isActive: isActive)
 
                 if isActive {
                     HStack {
@@ -171,29 +208,6 @@ struct RecordingsListView: View {
                         .foregroundColor(.fog)
                 }
                 .frame(height: 32)
-            }
-
-            HStack(spacing: Constants.UI.Padding.xs) {
-                Text("Recording \(index)")
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.ink)
-                Text(formatSeconds(recording.duration))
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-                if let uuid = recUUID, let size = fileSizes[uuid] {
-                    Text(formatFileSize(size))
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                }
-                if recording.isEnhanced {
-                    Text("Enhanced")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.stone)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.stone.opacity(0.12))
-                        .cornerRadius(4)
-                }
             }
 
             if let text = transcriptionText, !text.isEmpty {
