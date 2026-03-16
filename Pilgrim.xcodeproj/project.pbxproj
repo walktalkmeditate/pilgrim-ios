@@ -194,6 +194,8 @@
 		AA0001010000000000000014 /* ActiveWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000004 /* ActiveWalkView.swift */; };
 		AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000005 /* ActiveWalkViewModel.swift */; };
 		AA0001010000000000000016 /* WalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000006 /* WalkSummaryView.swift */; };
+		AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000001 /* VoiceRecordingRow.swift */; };
+		AA00040100000000000004 /* AudioPlayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000003 /* AudioPlayerModel.swift */; };
 		AAAA00000000000000000EL1 /* ElevationProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000EL2 /* ElevationProfileView.swift */; };
 		AA0001010000000000000017 /* MainCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000007 /* MainCoordinatorView.swift */; };
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
@@ -445,6 +447,8 @@
 		AA0001010000000000000004 /* ActiveWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000005 /* ActiveWalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000006 /* WalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryView.swift; sourceTree = "<group>"; };
+		AA00040100000000000001 /* VoiceRecordingRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingRow.swift; sourceTree = "<group>"; };
+		AA00040100000000000003 /* AudioPlayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000007 /* MainCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinatorView.swift; sourceTree = "<group>"; };
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
 		AA00020100000000000003 /* VoiceRecordingManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingManagement.swift; sourceTree = "<group>"; };
@@ -1123,6 +1127,8 @@
 			isa = PBXGroup;
 			children = (
 				AA0001010000000000000006 /* WalkSummaryView.swift */,
+				AA00040100000000000001 /* VoiceRecordingRow.swift */,
+				AA00040100000000000003 /* AudioPlayerModel.swift */,
 				AAAA00000000000000000EL2 /* ElevationProfileView.swift */,
 				04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */,
 				D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */,
@@ -1572,6 +1578,8 @@
 				AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */,
 				AA00030100000000000002 /* MeditationView.swift in Sources */,
 				AA0001010000000000000016 /* WalkSummaryView.swift in Sources */,
+				AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */,
+				AA00040100000000000004 /* AudioPlayerModel.swift in Sources */,
 				AAAA00000000000000000EL1 /* ElevationProfileView.swift in Sources */,
 				B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */,
 				6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */,

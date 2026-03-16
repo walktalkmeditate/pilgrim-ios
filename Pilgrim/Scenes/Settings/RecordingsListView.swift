@@ -136,102 +136,19 @@ struct RecordingsListView: View {
         let fileAvailable = isFileAvailable(recording.fileRelativePath)
         let transcriptionText = recUUID.flatMap { transcriptionOverrides[$0] } ?? recording.transcription
 
-        let speed = audioPlayer.playbackSpeed
-        let speedLabel = speed.truncatingRemainder(dividingBy: 1) == 0
-            ? String(format: "%.0fx", speed)
-            : String(format: "%gx", speed)
-
         return VStack(alignment: .leading, spacing: Constants.UI.Padding.xs) {
             if fileAvailable {
-                HStack(spacing: Constants.UI.Padding.small) {
-                    Button { audioPlayer.toggle(relativePath: recording.fileRelativePath) } label: {
-                        Image(systemName: isActive && audioPlayer.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.stone)
-                            .contentTransition(.symbolEffect(.replace))
-                    }
-                    .buttonStyle(.plain)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Recording \(index)")
-                            .font(Constants.Typography.body)
-                            .foregroundColor(.ink)
-                        HStack(spacing: Constants.UI.Padding.xs) {
-                            Text(formatSeconds(recording.duration))
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(.fog)
-                            if let uuid = recUUID, let size = fileSizes[uuid] {
-                                Text(formatFileSize(size))
-                                    .font(Constants.Typography.caption)
-                                    .foregroundColor(.fog)
-                            }
-                            if recording.isEnhanced {
-                                Text("·")
-                                    .foregroundColor(.fog)
-                                Text("Enhanced")
-                                    .font(Constants.Typography.caption)
-                                    .foregroundColor(.stone)
-                            }
-                        }
-                    }
-                    Spacer()
-                    Button { audioPlayer.cycleSpeed() } label: {
-                        Text(speedLabel)
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(audioPlayer.playbackSpeed > 1.0 ? .parchment : .stone)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(audioPlayer.playbackSpeed > 1.0 ? Color.stone : Color.stone.opacity(0.12))
-                            .cornerRadius(4)
-                    }
-                    .buttonStyle(.plain)
-                }
-
+                playerHeader(for: recording, index: index, isActive: isActive)
                 waveformContent(for: recording, isActive: isActive)
-
                 if isActive {
-                    HStack {
-                        Text(formatSeconds(audioPlayer.currentTime))
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.fog)
-                            .monospacedDigit()
-                        Spacer()
-                        Text(formatSeconds(audioPlayer.totalDuration))
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.fog)
-                            .monospacedDigit()
-                    }
+                    playbackTimeLabels
                 }
             } else {
-                HStack(spacing: Constants.UI.Padding.xs) {
-                    Image(systemName: "waveform.slash")
-                        .foregroundColor(.fog)
-                    Text("File unavailable")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                }
-                .frame(height: 32)
+                unavailableRow
             }
 
             if let text = transcriptionText, !text.isEmpty {
-                let expanded = recUUID.map { expandedTranscriptions.contains($0) } ?? false
-                Text(text)
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.ink)
-                    .lineLimit(expanded ? nil : 3)
-                    .padding(Constants.UI.Padding.small)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.parchmentTertiary)
-                    .cornerRadius(Constants.UI.CornerRadius.small)
-                    .onTapGesture {
-                        if let uuid = recUUID {
-                            if expandedTranscriptions.contains(uuid) {
-                                expandedTranscriptions.remove(uuid)
-                            } else {
-                                expandedTranscriptions.insert(uuid)
-                            }
-                        }
-                    }
+                transcriptionBlock(text: text, uuid: recUUID)
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -257,7 +174,106 @@ struct RecordingsListView: View {
         .task { await loadWaveformAndSize(for: recording) }
     }
 
-    // MARK: - Waveform Row
+    // MARK: - Row Components
+
+    private func playerHeader(for recording: VoiceRecordingInterface, index: Int, isActive: Bool) -> some View {
+        let speed = audioPlayer.playbackSpeed
+        let speedLabel = speed.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0fx", speed)
+            : String(format: "%gx", speed)
+
+        return HStack(spacing: Constants.UI.Padding.small) {
+            Button { audioPlayer.toggle(relativePath: recording.fileRelativePath) } label: {
+                Image(systemName: isActive && audioPlayer.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                    .font(.title2)
+                    .foregroundColor(.stone)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Recording \(index)")
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                HStack(spacing: Constants.UI.Padding.xs) {
+                    Text(formatSeconds(recording.duration))
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                    if let uuid = recording.uuid, let size = fileSizes[uuid] {
+                        Text(formatFileSize(size))
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                    if recording.isEnhanced {
+                        Text("·")
+                            .foregroundColor(.fog)
+                        Text("Enhanced")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.stone)
+                    }
+                }
+            }
+            Spacer()
+            Button { audioPlayer.cycleSpeed() } label: {
+                Text(speedLabel)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(speed > 1.0 ? .parchment : .stone)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(speed > 1.0 ? Color.stone : Color.stone.opacity(0.12))
+                    .cornerRadius(4)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var playbackTimeLabels: some View {
+        HStack {
+            Text(formatSeconds(audioPlayer.currentTime))
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
+                .monospacedDigit()
+            Spacer()
+            Text(formatSeconds(audioPlayer.totalDuration))
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
+                .monospacedDigit()
+        }
+    }
+
+    private var unavailableRow: some View {
+        HStack(spacing: Constants.UI.Padding.xs) {
+            Image(systemName: "waveform.slash")
+                .foregroundColor(.fog)
+            Text("File unavailable")
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
+        }
+        .frame(height: 32)
+    }
+
+    private func transcriptionBlock(text: String, uuid: UUID?) -> some View {
+        let expanded = uuid.map { expandedTranscriptions.contains($0) } ?? false
+        return Text(text)
+            .font(Constants.Typography.body)
+            .foregroundColor(.ink)
+            .lineLimit(expanded ? nil : 3)
+            .padding(Constants.UI.Padding.small)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.parchmentTertiary)
+            .cornerRadius(Constants.UI.CornerRadius.small)
+            .onTapGesture {
+                if let uuid {
+                    if expandedTranscriptions.contains(uuid) {
+                        expandedTranscriptions.remove(uuid)
+                    } else {
+                        expandedTranscriptions.insert(uuid)
+                    }
+                }
+            }
+    }
+
+    // MARK: - Waveform
 
     @ViewBuilder
     private func waveformContent(for recording: VoiceRecordingInterface, isActive: Bool) -> some View {
