@@ -16,13 +16,12 @@ struct RecordingsListView: View {
     @State private var showDeleteAllConfirmation = false
     @State private var pathToDelete: String?
     @State private var showDeleteConfirmation = false
+    @State private var expandedTranscriptions: Set<UUID> = []
 
     var body: some View {
         Group {
             if walkSections.isEmpty {
                 emptyState
-            } else if filteredSections.isEmpty {
-                noMatchState
             } else {
                 recordingsList
             }
@@ -56,41 +55,50 @@ struct RecordingsListView: View {
                 deletedPaths.insert(path)
             }
         }
-        .confirmationDialog(
-            "Delete all recording files? Transcriptions will be kept.",
-            isPresented: $showDeleteAllConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete All", role: .destructive) {
-                audioPlayer.stop()
-                DataManager.deleteAllRecordingFiles()
-                deletedPaths.formUnion(
-                    walkSections.flatMap { $0.recordings.map { $0.fileRelativePath } }
-                )
-            }
-        }
     }
 
     // MARK: - List
 
     private var recordingsList: some View {
         List {
-            ForEach(filteredSections) { section in
-                Section {
-                    ForEach(Array(section.recordings.enumerated()), id: \.element.uuid) { index, recording in
-                        recordingRow(recording, index: index + 1, in: section)
+            if filteredSections.isEmpty {
+                Text("No recordings match")
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.fog)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Constants.UI.Padding.big)
+                    .listRowBackground(Color.clear)
+            } else {
+                ForEach(filteredSections) { section in
+                    Section {
+                        ForEach(Array(section.recordings.enumerated()), id: \.element.uuid) { index, recording in
+                            recordingRow(recording, index: index + 1, in: section)
+                        }
+                    } header: {
+                        sectionHeader(for: section)
                     }
-                } header: {
-                    sectionHeader(for: section)
                 }
-            }
 
-            Section {
-                Button(role: .destructive) {
-                    showDeleteAllConfirmation = true
-                } label: {
-                    Text("Delete All Recording Files")
-                        .font(Constants.Typography.body)
+                Section {
+                    Button(role: .destructive) {
+                        showDeleteAllConfirmation = true
+                    } label: {
+                        Text("Delete All Recording Files")
+                            .font(Constants.Typography.body)
+                    }
+                    .confirmationDialog(
+                        "Delete all recording files? Transcriptions will be kept.",
+                        isPresented: $showDeleteAllConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Delete All", role: .destructive) {
+                            audioPlayer.stop()
+                            DataManager.deleteAllRecordingFiles()
+                            deletedPaths.formUnion(
+                                walkSections.flatMap { $0.recordings.map { $0.fileRelativePath } }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -176,13 +184,24 @@ struct RecordingsListView: View {
             }
 
             if let text = transcriptionText, !text.isEmpty {
+                let expanded = recUUID.map { expandedTranscriptions.contains($0) } ?? false
                 Text(text)
                     .font(Constants.Typography.body)
                     .foregroundColor(.ink)
+                    .lineLimit(expanded ? nil : 3)
                     .padding(Constants.UI.Padding.small)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.parchmentTertiary)
                     .cornerRadius(Constants.UI.CornerRadius.small)
+                    .onTapGesture {
+                        if let uuid = recUUID {
+                            if expandedTranscriptions.contains(uuid) {
+                                expandedTranscriptions.remove(uuid)
+                            } else {
+                                expandedTranscriptions.insert(uuid)
+                            }
+                        }
+                    }
             }
         }
         .contentShape(Rectangle())
@@ -259,19 +278,6 @@ struct RecordingsListView: View {
                 .font(Constants.Typography.body)
                 .foregroundColor(.fog)
                 .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.parchment)
-    }
-
-    private var noMatchState: some View {
-        VStack(spacing: Constants.UI.Padding.normal) {
-            Image(systemName: "magnifyingglass")
-                .font(.largeTitle)
-                .foregroundColor(.fog)
-            Text("No recordings match")
-                .font(Constants.Typography.body)
-                .foregroundColor(.fog)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.parchment)
@@ -389,7 +395,7 @@ struct RecordingsListView: View {
 private struct WalkSection: Identifiable {
     let walk: Walk
     let recordings: [VoiceRecordingInterface]
-    var id: UUID? { walk.uuid }
+    var id: UUID { walk.uuid ?? UUID() }
 }
 
 // MARK: - WaveformBarView

@@ -828,6 +828,8 @@ struct VoiceRecordingRow: View {
     let onDelete: () -> Void
     let waveformSamples: [Float]?
 
+    @State private var isTranscriptionExpanded = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if fileAvailable {
@@ -886,10 +888,12 @@ struct VoiceRecordingRow: View {
                     Text(transcription)
                         .font(Constants.Typography.body)
                         .foregroundColor(.ink)
+                        .lineLimit(isTranscriptionExpanded ? nil : 3)
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.parchmentTertiary)
                         .cornerRadius(8)
+                        .onTapGesture { isTranscriptionExpanded.toggle() }
 
                     if fileAvailable {
                         Button(action: onRetranscribe) {
