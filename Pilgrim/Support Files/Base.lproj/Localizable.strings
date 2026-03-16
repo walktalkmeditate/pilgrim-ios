@@ -188,3 +188,26 @@
 "Permissions.Required.Hint" = "Pilgrim needs this to walk with you";
 
 "Recovery.WalkRecovered" = "Walk from %@ recovered and saved";
+
+// Talks & Recordings
+"Recording.Unavailable" = "Recording unavailable";
+"Recording.DeleteFile" = "Delete Recording File";
+"Recording.DeleteFile.Confirm" = "Delete this recording file? The transcription will be kept.";
+"Settings.Talks" = "Talks";
+"Settings.DynamicVoice" = "Dynamic Voice";
+"Settings.DynamicVoice.Caption" = "Enhances voice recordings for clarity";
+"Settings.AutoTranscribe" = "Auto-transcribe";
+"Settings.AutoTranscribe.Caption" = "Transcribe recordings after each walk";
+"Settings.DeleteAllRecordings" = "Delete All Recording Files";
+"Settings.DeleteAllRecordings.Confirm" = "Delete all recording files? Transcriptions will be kept.";
+"Settings.TranscriptionModel" = "Transcription model";
+"Settings.TranscriptionModel.NotDownloaded" = "Not downloaded";
+"Settings.DeleteTranscriptionModel" = "Delete Transcription Model";
+"AutoTranscription.Skipped.LowBattery" = "Auto-transcription skipped — battery below 20%";
+"Recordings.Empty" = "Your voice recordings will appear here";
+"Recordings.NoMatch" = "No recordings match";
+"Recordings.DeleteAll" = "Delete All Recording Files";
+"Recordings.DeleteAll.Confirm" = "Delete all recording files? Transcriptions will be kept.";
+"Recordings.Enhanced" = "Enhanced";
+"Recordings.Unavailable" = "Recording unavailable";
+"Recordings.Retranscribe" = "Retranscribe";
