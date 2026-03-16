@@ -1,4 +1,5 @@
 import Foundation
+import CoreLocation
 
 @MainActor
 final class WalkShareViewModel: ObservableObject {
@@ -60,7 +61,8 @@ final class WalkShareViewModel: ObservableObject {
     func share() async {
         shareState = .uploading
 
-        let payload = buildPayload()
+        let placeNames = await geocodeEndpoints()
+        let payload = buildPayload(placeStart: placeNames.start, placeEnd: placeNames.end)
 
         do {
             let result = try await ShareService.share(payload: payload)
@@ -73,7 +75,34 @@ final class WalkShareViewModel: ObservableObject {
         }
     }
 
-    private func buildPayload() -> SharePayload {
+    private func geocodeEndpoints() async -> (start: String?, end: String?) {
+        let routeData = walk.routeData
+        guard let first = routeData.first, let last = routeData.last else {
+            return (nil, nil)
+        }
+
+        let geocoder = CLGeocoder()
+        let startLoc = CLLocation(latitude: first.latitude, longitude: first.longitude)
+        let endLoc = CLLocation(latitude: last.latitude, longitude: last.longitude)
+
+        async let startName = geocodeSingle(geocoder: CLGeocoder(), location: startLoc)
+        async let endName = geocodeSingle(geocoder: CLGeocoder(), location: endLoc)
+
+        let (s, e) = await (startName, endName)
+        if s != nil && e != nil && s == e { return (s, nil) }
+        return (s, e)
+    }
+
+    private func geocodeSingle(geocoder: CLGeocoder, location: CLLocation) async -> String? {
+        do {
+            let placemarks = try await geocoder.reverseGeocodeLocation(location)
+            return placemarks.first?.locality ?? placemarks.first?.subLocality ?? placemarks.first?.name
+        } catch {
+            return nil
+        }
+    }
+
+    private func buildPayload(placeStart: String?, placeEnd: String?) -> SharePayload {
         let isMetric = UserPreferences.distanceMeasurementType.safeValue == .kilometers
 
         let routePoints = walk.routeData.map { sample in
@@ -132,7 +161,9 @@ final class WalkShareViewModel: ObservableObject {
             expiryDays: selectedExpiry.rawValue,
             units: isMetric ? "metric" : "imperial",
             startDate: formatter.string(from: walk.startDate),
-            toggledStats: toggledStats
+            toggledStats: toggledStats,
+            placeStart: placeStart,
+            placeEnd: placeEnd
         )
     }
 }

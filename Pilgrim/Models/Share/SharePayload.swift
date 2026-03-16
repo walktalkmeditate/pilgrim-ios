@@ -10,6 +10,8 @@ struct SharePayload: Encodable {
     let units: String
     let startDate: String
     let toggledStats: [String]
+    let placeStart: String?
+    let placeEnd: String?
 
     struct Stats: Encodable {
         let distance: Double?
@@ -56,5 +58,7 @@ struct SharePayload: Encodable {
         case expiryDays = "expiry_days"
         case startDate = "start_date"
         case toggledStats = "toggled_stats"
+        case placeStart = "place_start"
+        case placeEnd = "place_end"
     }
 }
