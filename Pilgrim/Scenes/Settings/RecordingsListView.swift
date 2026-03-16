@@ -236,26 +236,7 @@ struct RecordingsListView: View {
 
     @ViewBuilder
     private func waveformRow(for recording: VoiceRecordingInterface, isActive: Bool, fileAvailable: Bool) -> some View {
-        if let uuid = recording.uuid, let samples = waveforms[uuid] {
-            WaveformBarView(
-                samples: samples,
-                progress: isActive ? audioPlayer.progress : 0,
-                isPlaying: isActive && audioPlayer.isPlaying
-            ) { fraction in
-                if isActive {
-                    audioPlayer.seek(to: fraction)
-                } else if fileAvailable {
-                    audioPlayer.toggle(relativePath: recording.fileRelativePath)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        audioPlayer.seek(to: fraction)
-                    }
-                }
-            }
-        } else if fileAvailable {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.fog.opacity(0.15))
-                .frame(height: 32)
-        } else {
+        if !fileAvailable {
             HStack(spacing: Constants.UI.Padding.xs) {
                 Image(systemName: "waveform.slash")
                     .foregroundColor(.fog)
@@ -264,6 +245,25 @@ struct RecordingsListView: View {
                     .foregroundColor(.fog)
             }
             .frame(height: 32)
+        } else if let uuid = recording.uuid, let samples = waveforms[uuid] {
+            WaveformBarView(
+                samples: samples,
+                progress: isActive ? audioPlayer.progress : 0,
+                isPlaying: isActive && audioPlayer.isPlaying
+            ) { fraction in
+                if isActive {
+                    audioPlayer.seek(to: fraction)
+                } else {
+                    audioPlayer.toggle(relativePath: recording.fileRelativePath)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        audioPlayer.seek(to: fraction)
+                    }
+                }
+            }
+        } else {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.fog.opacity(0.15))
+                .frame(height: 32)
         }
     }
 
