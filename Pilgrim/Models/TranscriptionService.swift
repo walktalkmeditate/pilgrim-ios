@@ -32,24 +32,22 @@ final class TranscriptionService: ObservableObject {
 
     private init() {}
 
-    private var modelStoragePath: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("WhisperModels")
+    private var savedModelPath: URL? {
+        get {
+            guard let path = UserDefaults.standard.string(forKey: "whisperModelPath") else { return nil }
+            let url = URL(fileURLWithPath: path)
+            guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+            return url
+        }
+        set {
+            UserDefaults.standard.set(newValue?.path, forKey: "whisperModelPath")
+        }
     }
 
     var isModelDownloaded: Bool {
-        guard FileManager.default.fileExists(atPath: modelStoragePath.path) else { return false }
-        guard let modelDir = modelDirectory else { return false }
-        let modelFiles = (try? FileManager.default.contentsOfDirectory(at: modelDir, includingPropertiesForKeys: nil)) ?? []
-        return !modelFiles.isEmpty
-    }
-
-    private var modelDirectory: URL? {
-        let contents = (try? FileManager.default.contentsOfDirectory(at: modelStoragePath, includingPropertiesForKeys: [.isDirectoryKey])) ?? []
-        return contents.first { url in
-            let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            return isDir && url.lastPathComponent.hasPrefix("openai_whisper-\(modelVariant)")
-        }
+        guard let modelDir = savedModelPath else { return false }
+        let files = (try? FileManager.default.contentsOfDirectory(at: modelDir, includingPropertiesForKeys: nil)) ?? []
+        return !files.isEmpty
     }
 
     func ensureModelReady() async throws {
@@ -57,17 +55,12 @@ final class TranscriptionService: ObservableObject {
 
         await MainActor.run { state = .downloadingModel(progress: 0) }
 
-        let modelsDir = modelStoragePath
-
-        if !FileManager.default.fileExists(atPath: modelsDir.path) {
-            try FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
-        }
-
         let modelURL: URL
-        if let existing = modelDirectory {
+        if let existing = savedModelPath {
             modelURL = existing
         } else {
-            modelURL = try await downloadModel(to: modelsDir)
+            modelURL = try await downloadModel()
+            savedModelPath = modelURL
         }
 
         let config = WhisperKitConfig(
@@ -80,7 +73,7 @@ final class TranscriptionService: ObservableObject {
         await MainActor.run { state = .idle }
     }
 
-    private func downloadModel(to modelsDir: URL) async throws -> URL {
+    private func downloadModel() async throws -> URL {
         try await WhisperKit.download(
             variant: modelVariant,
             from: "argmaxinc/whisperkit-coreml",
@@ -222,4 +215,11 @@ final class TranscriptionService: ObservableObject {
         state = .idle
         Task.detached { await kit?.unloadModels() }
     }
+
+    enum AutoTranscriptionSkipReason {
+        case lowBattery
+    }
+
+    @MainActor @Published var autoTranscriptionSkippedReason: AutoTranscriptionSkipReason?
+
 }
