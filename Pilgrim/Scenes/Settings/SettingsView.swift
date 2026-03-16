@@ -45,6 +45,13 @@ struct SettingsView: View {
                                 .foregroundColor(.fog)
                         }
                     }
+
+                    NavigationLink {
+                        TalkSettingsView()
+                    } label: {
+                        Text("Talks")
+                            .font(Constants.Typography.body)
+                    }
                 } header: {
                     Text("Audio")
                         .font(Constants.Typography.caption)

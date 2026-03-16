@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 class MainCoordinator: ObservableObject {
 
@@ -37,6 +38,7 @@ class MainCoordinator: ObservableObject {
 
     func startWalk(mode: WalkMode = .solo) {
         guard activeWalkViewModel == nil else { return }
+        Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
         let vm = ActiveWalkViewModel()
         vm.onWalkCompleted = { [weak self] snapshot in
             DataManager.saveWalk(object: snapshot) { success, _, walk in
@@ -45,6 +47,7 @@ class MainCoordinator: ObservableObject {
                     snapshot.uuid = walk?.uuid
                     self.pendingSnapshot = snapshot
                     self.activeWalkViewModel = nil
+                    self.triggerAutoTranscription(for: snapshot)
                 } else {
                     self.showSaveError = true
                 }
@@ -57,11 +60,36 @@ class MainCoordinator: ObservableObject {
         if let snapshot = pendingSnapshot {
             pendingSnapshot = nil
             completedSnapshot = snapshot
+        } else {
+            Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
         }
     }
 
     func handleSummaryDismiss() {
+        Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
         homeViewModel.loadWalks()
+    }
+
+    private func triggerAutoTranscription(for snapshot: TempWalk) {
+        guard UserPreferences.autoTranscribe.value,
+              !snapshot.voiceRecordings.isEmpty else { return }
+
+        let wasMonitoring = UIDevice.current.isBatteryMonitoringEnabled
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        let level = UIDevice.current.batteryLevel
+        let batteryState = UIDevice.current.batteryState
+        UIDevice.current.isBatteryMonitoringEnabled = wasMonitoring
+        let batteryOK = level < 0 || level > 0.2 || batteryState == .charging || batteryState == .full
+
+        if batteryOK {
+            Task {
+                _ = await TranscriptionService.shared.transcribeRecordings(snapshot.voiceRecordings)
+            }
+        } else {
+            Task { @MainActor in
+                TranscriptionService.shared.autoTranscriptionSkippedReason = .lowBattery
+            }
+        }
     }
 }
 

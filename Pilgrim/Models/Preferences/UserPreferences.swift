@@ -44,6 +44,9 @@ struct UserPreferences {
     static let selectedSoundscapeId = UserPreference.Optional<String>(key: "selectedSoundscapeId", defaultValue: "gentle-stream")
     static let breathRhythm = UserPreference.Required<Int>(key: "breathRhythm", defaultValue: 0)
 
+    static let dynamicVoiceEnabled = UserPreference.Required<Bool>(key: "dynamicVoiceEnabled", defaultValue: true)
+    static let autoTranscribe = UserPreference.Required<Bool>(key: "autoTranscribe", defaultValue: false)
+
     static let distanceMeasurementType = MeasurementUserPreference<UnitLength>(key: "distanceMeasurementType", possibleValues: [.kilometers, .miles])
     static let altitudeMeasurementType = MeasurementUserPreference<UnitLength>(key: "altitudeMeasurementType", possibleValues: [.meters, .feet], bigUnits: false)
     static let speedMeasurementType = MeasurementUserPreference<UnitSpeed>(key: "speedMeasurementType", possibleValues: [.kilometersPerHour, .milesPerHour, .minutesPerLengthUnit(from: .kilometers), .minutesPerLengthUnit(from: .miles)])

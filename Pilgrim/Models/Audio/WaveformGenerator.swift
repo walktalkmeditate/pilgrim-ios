@@ -4,36 +4,34 @@ struct WaveformGenerator {
 
     static func generateSamples(from url: URL, count: Int = 150) -> [Float]? {
         guard let file = try? AVAudioFile(forReading: url) else { return nil }
+        let totalFrames = Int(file.length)
+        guard totalFrames > 0 else { return nil }
+
         let format = file.processingFormat
-        let frameCount = AVAudioFrameCount(file.length)
-        guard frameCount > 0,
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
-        else { return nil }
+        let framesPerBin = max(1, totalFrames / count)
+        let chunkSize: AVAudioFrameCount = 65536
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunkSize) else { return nil }
 
-        do {
-            try file.read(into: buffer)
-        } catch {
-            return nil
-        }
+        var samples = [Float](repeating: 0, count: count)
+        var globalFrame = 0
 
-        guard let channelData = buffer.floatChannelData?[0] else { return nil }
-        let totalFrames = Int(buffer.frameLength)
-        let samplesPerBin = max(1, totalFrames / count)
-        var samples: [Float] = []
-        samples.reserveCapacity(count)
-
-        for bin in 0..<count {
-            let start = bin * samplesPerBin
-            let end = min(start + samplesPerBin, totalFrames)
-            guard start < totalFrames else {
-                samples.append(0)
-                continue
+        while file.framePosition < file.length {
+            let remaining = AVAudioFrameCount(file.length - file.framePosition)
+            let toRead = min(chunkSize, remaining)
+            do {
+                try file.read(into: buffer, frameCount: toRead)
+            } catch {
+                return nil
             }
-            var maxAmp: Float = 0
-            for i in start..<end {
-                maxAmp = max(maxAmp, abs(channelData[i]))
+
+            guard let channelData = buffer.floatChannelData?[0] else { return nil }
+            let readCount = Int(buffer.frameLength)
+
+            for i in 0..<readCount {
+                let bin = min(globalFrame / framesPerBin, count - 1)
+                samples[bin] = max(samples[bin], abs(channelData[i]))
+                globalFrame += 1
             }
-            samples.append(maxAmp)
         }
 
         let peak = samples.max() ?? 1
