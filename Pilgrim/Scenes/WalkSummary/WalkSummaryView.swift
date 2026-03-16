@@ -838,31 +838,37 @@ struct VoiceRecordingRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if fileAvailable {
-                if let samples = waveformSamples {
-                    WaveformBarView(
-                        samples: samples,
-                        progress: isActive ? progress : 0,
-                        isPlaying: isPlaying
-                    ) { fraction in
-                        if isActive {
-                            onSeek(fraction)
-                        } else {
-                            onTogglePlay()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                HStack(spacing: Constants.UI.Padding.small) {
+                    Button(action: onTogglePlay) {
+                        Image(systemName: playIcon)
+                            .font(.title2)
+                            .foregroundColor(.stone)
+                    }
+
+                    if let samples = waveformSamples {
+                        WaveformBarView(
+                            samples: samples,
+                            progress: isActive ? progress : 0,
+                            isPlaying: isPlaying
+                        ) { fraction in
+                            if isActive {
                                 onSeek(fraction)
+                            } else {
+                                onTogglePlay()
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    onSeek(fraction)
+                                }
                             }
                         }
+                    } else {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.fog.opacity(0.15))
+                            .frame(height: 32)
                     }
-                    .onTapGesture { onTogglePlay() }
                 }
 
                 if isActive {
                     HStack {
-                        Button(action: onTogglePlay) {
-                            Image(systemName: playIcon)
-                                .font(.title2)
-                                .foregroundColor(.stone)
-                        }
                         Text(formatSeconds(currentTime))
                             .font(Constants.Typography.caption)
                             .foregroundColor(.fog)
@@ -873,8 +879,30 @@ struct VoiceRecordingRow: View {
                             .foregroundColor(.fog)
                             .monospacedDigit()
                     }
-                } else {
-                    compactInfo
+                }
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Recording \(index)")
+                            .font(Constants.Typography.heading)
+                            .foregroundColor(.ink)
+                        Text(formattedDuration)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                    if recording.isEnhanced {
+                        Text("Enhanced")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.stone)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.stone.opacity(0.12))
+                            .cornerRadius(4)
+                    }
+                    Spacer()
+                    Text(formattedTime)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
                 }
             } else {
                 HStack {
@@ -927,24 +955,6 @@ struct VoiceRecordingRow: View {
         return "play.circle.fill"
     }
 
-    private var compactInfo: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Recording \(index)")
-                    .font(Constants.Typography.heading)
-                    .foregroundColor(.ink)
-                Text(formattedDuration)
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
-
-            Spacer()
-
-            Text(formattedTime)
-                .font(Constants.Typography.caption)
-                .foregroundColor(.fog)
-        }
-    }
 
     private func formatSeconds(_ seconds: TimeInterval) -> String {
         let total = Int(max(0, seconds))

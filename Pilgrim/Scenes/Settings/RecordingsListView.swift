@@ -137,7 +137,41 @@ struct RecordingsListView: View {
         let transcriptionText = recUUID.flatMap { transcriptionOverrides[$0] } ?? recording.transcription
 
         return VStack(alignment: .leading, spacing: Constants.UI.Padding.xs) {
-            waveformRow(for: recording, isActive: isActive, fileAvailable: fileAvailable)
+            if fileAvailable {
+                HStack(spacing: Constants.UI.Padding.small) {
+                    Button { audioPlayer.toggle(relativePath: recording.fileRelativePath) } label: {
+                        Image(systemName: isActive && audioPlayer.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.stone)
+                    }
+                    .buttonStyle(.plain)
+
+                    waveformContent(for: recording, isActive: isActive)
+                }
+
+                if isActive {
+                    HStack {
+                        Text(formatSeconds(audioPlayer.currentTime))
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                            .monospacedDigit()
+                        Spacer()
+                        Text(formatSeconds(audioPlayer.totalDuration))
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                            .monospacedDigit()
+                    }
+                }
+            } else {
+                HStack(spacing: Constants.UI.Padding.xs) {
+                    Image(systemName: "waveform.slash")
+                        .foregroundColor(.fog)
+                    Text("File unavailable")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
+                .frame(height: 32)
+            }
 
             HStack(spacing: Constants.UI.Padding.xs) {
                 Text("Recording \(index)")
@@ -162,27 +196,6 @@ struct RecordingsListView: View {
                 }
             }
 
-            if isActive {
-                HStack(spacing: Constants.UI.Padding.small) {
-                    Button { audioPlayer.toggle(relativePath: recording.fileRelativePath) } label: {
-                        Image(systemName: audioPlayer.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(.stone)
-                    }
-                    .buttonStyle(.plain)
-
-                    Text(formatSeconds(audioPlayer.currentTime))
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                        .monospacedDigit()
-                    Spacer()
-                    Text(formatSeconds(audioPlayer.totalDuration))
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                        .monospacedDigit()
-                }
-            }
-
             if let text = transcriptionText, !text.isEmpty {
                 let expanded = recUUID.map { expandedTranscriptions.contains($0) } ?? false
                 Text(text)
@@ -203,11 +216,6 @@ struct RecordingsListView: View {
                         }
                     }
             }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            guard fileAvailable else { return }
-            audioPlayer.toggle(relativePath: recording.fileRelativePath)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if fileAvailable {
@@ -235,17 +243,8 @@ struct RecordingsListView: View {
     // MARK: - Waveform Row
 
     @ViewBuilder
-    private func waveformRow(for recording: VoiceRecordingInterface, isActive: Bool, fileAvailable: Bool) -> some View {
-        if !fileAvailable {
-            HStack(spacing: Constants.UI.Padding.xs) {
-                Image(systemName: "waveform.slash")
-                    .foregroundColor(.fog)
-                Text("File unavailable")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
-            .frame(height: 32)
-        } else if let uuid = recording.uuid, let samples = waveforms[uuid] {
+    private func waveformContent(for recording: VoiceRecordingInterface, isActive: Bool) -> some View {
+        if let uuid = recording.uuid, let samples = waveforms[uuid] {
             WaveformBarView(
                 samples: samples,
                 progress: isActive ? audioPlayer.progress : 0,
