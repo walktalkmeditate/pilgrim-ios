@@ -134,7 +134,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         audioRecorder = nil
         recorder.delegate = nil
         recorder.stop()
-        commitRecording(successfully: true, skipEnhancement: true)
+        commitRecording(successfully: true)
         builder?.flushVoiceRecordings(voiceRecordingsRelay.value)
     }
 
