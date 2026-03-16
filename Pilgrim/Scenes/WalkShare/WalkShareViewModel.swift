@@ -89,7 +89,7 @@ final class WalkShareViewModel: ObservableObject {
 
         var intervals: [SharePayload.ActivityIntervalPayload] = []
 
-        for interval in walk.activityIntervals {
+        for interval in walk.activityIntervals where interval.activityType == .meditation {
             intervals.append(SharePayload.ActivityIntervalPayload(
                 type: "meditation",
                 startTs: Int(interval.startDate.timeIntervalSince1970),

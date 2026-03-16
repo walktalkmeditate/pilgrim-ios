@@ -5,6 +5,7 @@ struct WalkShareView: View {
     @StateObject private var viewModel: WalkShareViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showCopiedToast = false
+    @State private var toastGeneration = 0
 
     init(walk: WalkInterface) {
         _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk))
@@ -191,9 +192,12 @@ struct WalkShareView: View {
                 HStack(spacing: Constants.UI.Padding.small) {
                     Button {
                         UIPasteboard.general.string = url
+                        toastGeneration += 1
+                        let gen = toastGeneration
                         showCopiedToast = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            showCopiedToast = false
+                        Task {
+                            try? await Task.sleep(for: .seconds(2))
+                            if toastGeneration == gen { showCopiedToast = false }
                         }
                     } label: {
                         HStack(spacing: 4) {
@@ -208,17 +212,19 @@ struct WalkShareView: View {
                         .cornerRadius(Constants.UI.CornerRadius.small)
                     }
 
-                    ShareLink(item: URL(string: url)!) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Share")
-                                .font(Constants.Typography.button)
+                    if let shareURL = URL(string: url) {
+                        ShareLink(item: shareURL) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share")
+                                    .font(Constants.Typography.button)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.stone)
+                            .foregroundColor(.parchment)
+                            .cornerRadius(Constants.UI.CornerRadius.small)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.stone)
-                        .foregroundColor(.parchment)
-                        .cornerRadius(Constants.UI.CornerRadius.small)
                     }
                 }
             }

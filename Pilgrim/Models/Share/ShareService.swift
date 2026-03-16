@@ -97,18 +97,21 @@ enum ShareService {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: keychainKey,
-            kSecValueData as String: data
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         ]
         SecItemDelete(query as CFDictionary)
         SecItemAdd(query as CFDictionary, nil)
     }
+
+    private static let isoFormatter = ISO8601DateFormatter()
 
     static func cachedShare(for walkID: UUID) -> ShareResult? {
         guard let dict = UserDefaults.standard.dictionary(forKey: "share:\(walkID.uuidString)"),
               let url = dict["url"] as? String,
               let id = dict["id"] as? String,
               let expiryStr = dict["expiry"] as? String,
-              let expiry = ISO8601DateFormatter().date(from: expiryStr),
+              let expiry = isoFormatter.date(from: expiryStr),
               expiry > Date() else {
             return nil
         }
@@ -120,7 +123,7 @@ enum ShareService {
         let dict: [String: String] = [
             "url": result.url,
             "id": result.id,
-            "expiry": ISO8601DateFormatter().string(from: expiry)
+            "expiry": isoFormatter.string(from: expiry)
         ]
         UserDefaults.standard.set(dict, forKey: "share:\(walkID.uuidString)")
     }

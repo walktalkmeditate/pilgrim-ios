@@ -7,7 +7,24 @@ enum RouteDownsampler {
         maxPoints: Int = 200
     ) -> [SharePayload.RoutePoint] {
         guard points.count > maxPoints else { return points }
-        return ramerDouglasPeucker(points, epsilon: findEpsilon(points, target: maxPoints))
+        let result = ramerDouglasPeucker(points, epsilon: findEpsilon(points, target: maxPoints))
+        guard result.count <= maxPoints else {
+            return strideSample(result, target: maxPoints)
+        }
+        return result
+    }
+
+    private static func strideSample(
+        _ points: [SharePayload.RoutePoint],
+        target: Int
+    ) -> [SharePayload.RoutePoint] {
+        let step = Double(points.count - 1) / Double(target - 1)
+        var result: [SharePayload.RoutePoint] = []
+        for i in 0..<(target - 1) {
+            result.append(points[Int((Double(i) * step).rounded())])
+        }
+        result.append(points[points.count - 1])
+        return result
     }
 
     private static func ramerDouglasPeucker(
