@@ -16,6 +16,7 @@ struct WalkSummaryView: View {
     @State private var pathToDelete: String?
     @State private var showDeleteConfirmation = false
     @State private var waveforms: [UUID: [Float]] = [:]
+    @State private var showShareSheet = false
 
     init(walk: WalkInterface) {
         self.walk = walk
@@ -77,8 +78,17 @@ struct WalkSummaryView: View {
                         .foregroundColor(.ink)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
+                    HStack(spacing: Constants.UI.Padding.normal) {
+                        Button {
+                            showShareSheet = true
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
                         .foregroundColor(.stone)
+
+                        Button("Done") { dismiss() }
+                            .foregroundColor(.stone)
+                    }
                 }
             }
             .onAppear {
@@ -93,6 +103,9 @@ struct WalkSummaryView: View {
                 NavigationView {
                     PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets)
                 }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                WalkShareView(walk: walk)
             }
         }
     }

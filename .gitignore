@@ -94,6 +94,7 @@ Secrets.xcconfig
 # Superpowers
 .superpowers/
 
+
 # AppCode
 .idea/*
 !.idea/codeStyles/*

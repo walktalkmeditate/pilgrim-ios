@@ -7,37 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
-		DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */; };
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
-		FA9B9D71DB2B3EA84CC73FEE /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */; };
-		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
-		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
-		9D37F522C28D84C1E1ECCDCC /* AudioDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */; };
-		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
-		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
-		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
-		ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */; };
-		EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */; };
-		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
-		A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */; };
-		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
-		B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */; };
-		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
-		F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */; };
-		F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */; };
-		F0F0F00100000004AABBCC04 /* Lato-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */; };
-		F0F0F00100000005AABBCC05 /* Lato-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
-		CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */; };
+		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
 		0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */; };
+		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
+		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
 		2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCA829423DF100F54277 /* View+Navigation.swift */; };
 		2201BCAB29423E1600F54277 /* NavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCAA29423E1600F54277 /* NavigationLink.swift */; };
-
 		2204A1DD255ACB1100906CFE /* DataTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2204A1DC255ACB1100906CFE /* DataTypeProtocol.swift */; };
 		2204E428295DF28C00243FC3 /* SetupCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2204E427295DF28C00243FC3 /* SetupCoordinatorView.swift */; };
-
 		2207B75623128F8A00BA71B5 /* CLLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2207B75523128F8A00BA71B5 /* CLLocation.swift */; };
 		2209E53924DD4A8F00BBFC2F /* AltitudeManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */; };
 		2213137D23B4110700881806 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2213137C23B4110700881806 /* PermissionManager.swift */; };
@@ -101,7 +81,6 @@
 		22A5D02E25C1A57600C30786 /* TempV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A5D02D25C1A57600C30786 /* TempV2.swift */; };
 		22A5D03325C1AB2200C30786 /* TempV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A5D03225C1AB2200C30786 /* TempV3.swift */; };
 		22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A5D03525C1ABDA00C30786 /* TempV4.swift */; };
-
 		22B1DD82253F90700093822B /* DataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B1DD80253F90700093822B /* DataStack.swift */; };
 		22B1DD83253F90700093822B /* SQLiteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B1DD81253F90700093822B /* SQLiteStore.swift */; };
 		22B1DD8B253F90FD0093822B /* IntermediateDataModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B1DD89253F90FD0093822B /* IntermediateDataModelProtocol.swift */; };
@@ -121,13 +100,6 @@
 		22BBDD3224D77C2B00225AE4 /* StepCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BBDD3124D77C2B00225AE4 /* StepCounter.swift */; };
 		22BC99162941D97600D9B1A5 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99142941D97600D9B1A5 /* WelcomeViewModel.swift */; };
 		22BC99172941D97600D9B1A5 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99152941D97600D9B1A5 /* WelcomeView.swift */; };
-		AABB000100000002 /* WelcomeAnimationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB000100000001 /* WelcomeAnimationState.swift */; };
-		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
-
-
-
-
-
 		22BC99392941D9A800D9B1A5 /* MetricViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */; };
 		22BC993A2941D9A800D9B1A5 /* CloseButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99292941D9A800D9B1A5 /* CloseButton.swift */; };
 		22BC993B2941D9A800D9B1A5 /* ActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992A2941D9A800D9B1A5 /* ActionButton.swift */; };
@@ -136,8 +108,6 @@
 		22BC993E2941D9A800D9B1A5 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992D2941D9A800D9B1A5 /* CardView.swift */; };
 		22BC993F2941D9A800D9B1A5 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992E2941D9A800D9B1A5 /* ProgressView.swift */; };
 		22BC99402941D9A800D9B1A5 /* FeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992F2941D9A800D9B1A5 /* FeatureView.swift */; };
-
-
 		22BC99432941D9A800D9B1A5 /* CornerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99322941D9A800D9B1A5 /* CornerView.swift */; };
 		22BC99442941D9A800D9B1A5 /* PermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99332941D9A800D9B1A5 /* PermissionView.swift */; };
 		22BC99452941D9A800D9B1A5 /* MetricView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99342941D9A800D9B1A5 /* MetricView.swift */; };
@@ -147,15 +117,12 @@
 		22BC99492941D9A800D9B1A5 /* WalkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99382941D9A800D9B1A5 /* WalkCard.swift */; };
 		22BC994B2941DA3400D9B1A5 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC994A2941DA3400D9B1A5 /* Constants.swift */; };
 		22BC994D2941DA6200D9B1A5 /* Binding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC994C2941DA6200D9B1A5 /* Binding.swift */; };
-
 		22BC99522941DC9900D9B1A5 /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99512941DC9900D9B1A5 /* Color.swift */; };
-
 		22BD1F3E247462FF00415A06 /* ApplicationStateObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BD1F3D247462FF00415A06 /* ApplicationStateObserver.swift */; };
 		22BD1F402474638200415A06 /* ApplicationStateObservation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */; };
 		22BD1F42247463DF00415A06 /* ApplicationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BD1F41247463DF00415A06 /* ApplicationState.swift */; };
 		22BF623D26E6B1D2008C904C /* WalkBuilderComponentStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BF623C26E6B1D2008C904C /* WalkBuilderComponentStatus.swift */; };
 		22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C09B9326514BD8004AF34F /* DataInterface.swift */; };
-
 		22C1108024532C69009ACE81 /* WalkMapImageRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C1107F24532C69009ACE81 /* WalkMapImageRequest.swift */; };
 		22C1108224532DBA009ACE81 /* WalkMapImageSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C1108124532DBA009ACE81 /* WalkMapImageSize.swift */; };
 		22C1108424532E36009ACE81 /* WalkMapImageQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C1108324532E36009ACE81 /* WalkMapImageQueue.swift */; };
@@ -183,83 +150,108 @@
 		22FEA0AF24CDD7B50007CA9C /* DiskStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0AE24CDD7B50007CA9C /* DiskStorage.swift */; };
 		22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */; };
 		2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D23FF60A762C30296A69E6 /* ComputationTests.swift */; };
+		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
+		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
+		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
 		487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */; };
+		4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
+		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
+		6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */; };
+		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
+		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
+		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
+		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
 		76B622EBDD59AD9489586120 /* DateFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */; };
-		AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */; };
+		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
+		8A200FA63DDEC6D859F1C4EE /* WalkShareViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */; };
+		9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA57CE96EE3401595264807 /* ActivityInterval.swift */; };
+		9A477336A61C4C38B9D4F13C /* RouteDownsampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */; };
+		9D37F522C28D84C1E1ECCDCC /* AudioDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */; };
+		A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PilgrimV3.swift */; };
+		A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */; };
+		A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */; };
 		AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */; };
+		AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */; };
 		AA0001010000000000000011 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000001 /* HomeView.swift */; };
 		AA0001010000000000000012 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000002 /* HomeViewModel.swift */; };
 		AA0001010000000000000013 /* WalkRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000003 /* WalkRowView.swift */; };
 		AA0001010000000000000014 /* ActiveWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000004 /* ActiveWalkView.swift */; };
 		AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000005 /* ActiveWalkViewModel.swift */; };
 		AA0001010000000000000016 /* WalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000006 /* WalkSummaryView.swift */; };
-		AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000001 /* VoiceRecordingRow.swift */; };
-		AA00040100000000000004 /* AudioPlayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000003 /* AudioPlayerModel.swift */; };
-		AAAA00000000000000000EL1 /* ElevationProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000EL2 /* ElevationProfileView.swift */; };
 		AA0001010000000000000017 /* MainCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000007 /* MainCoordinatorView.swift */; };
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
 		AA00020100000000000004 /* VoiceRecordingManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000003 /* VoiceRecordingManagement.swift */; };
 		AA00030100000000000002 /* MeditationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00030100000000000001 /* MeditationView.swift */; };
+		AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000001 /* VoiceRecordingRow.swift */; };
+		AA00040100000000000004 /* AudioPlayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000003 /* AudioPlayerModel.swift */; };
 		AAAA000000000000000000A1 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA000000000000000000A3 /* WhisperKit */; };
-		AAAA00000000000000000MB1 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000MB3 /* MapboxMaps */; };
-		AAAA00000000000000000MF1 /* RouteSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF2 /* RouteSegment.swift */; };
-		AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */; };
-		AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */; };
-		AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF8 /* PilgrimMapView.swift */; };
 		AAAA000000000000000000B1 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000B2 /* TranscriptionService.swift */; };
 		AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C2 /* PromptGenerator.swift */; };
 		AAAA000000000000000000C3 /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C4 /* PromptListView.swift */; };
 		AAAA000000000000000000C5 /* PromptDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C6 /* PromptDetailView.swift */; };
 		AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */; };
+		AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */; };
+		AAAA000000000000000000E1 /* CustomPromptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000E2 /* CustomPromptEditorView.swift */; };
+		AAAA00000000000000000EL1 /* ElevationProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000EL2 /* ElevationProfileView.swift */; };
+		AAAA00000000000000000MB1 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000MB3 /* MapboxMaps */; };
+		AAAA00000000000000000MF1 /* RouteSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF2 /* RouteSegment.swift */; };
+		AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */; };
+		AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */; };
+		AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF8 /* PilgrimMapView.swift */; };
+		AABB000100000002 /* WelcomeAnimationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB000100000001 /* WelcomeAnimationState.swift */; };
+		ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */; };
+		B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */; };
+		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
+		BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00CC010000000000000002 /* WelcomeViewModelTests.swift */; };
+		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
+		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
+		CC00000200000000BTRFLY01 /* ButterflyShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000BTRFLY01 /* ButterflyShape.swift */; };
+		CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000CALLIG01 /* CalligraphyPathRenderer.swift */; };
+		CC00000200000000DEBUGS01 /* DebugDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */; };
+		CC00000200000000GRASSH01 /* GrassShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000GRASSH01 /* GrassShape.swift */; };
+		CC00000200000000HAPTIC01 /* ScrollHapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */; };
+		CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000INKSCR01 /* InkScrollView.swift */; };
+		CC00000200000000LANTRN01 /* LanternShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LANTRN01 /* LanternShape.swift */; };
+		CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRPH01 /* LunarPhase.swift */; };
+		CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */; };
+		CC00000200000000MAINTB01 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MAINTB01 /* MainTabView.swift */; };
+		CC00000200000000MILEST01 /* MilestoneMarkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MILEST01 /* MilestoneMarkerView.swift */; };
+		CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOONPV01 /* MoonPhaseView.swift */; };
+		CC00000200000000MOONSH01 /* MoonShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOONSH01 /* MoonShape.swift */; };
+		CC00000200000000MOUNTN01 /* MountainShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOUNTN01 /* MountainShape.swift */; };
+		CC00000200000000SCENER01 /* SceneryGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENER01 /* SceneryGenerator.swift */; };
+		CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENIV01 /* SceneryItemView.swift */; };
+		CC00000200000000SEASON01 /* SeasonalColorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SEASON01 /* SeasonalColorEngine.swift */; };
+		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
+		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
+		CC00000200000000TREESH01 /* TreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TREESH01 /* TreeShape.swift */; };
+		CC00000200000000WINTRT01 /* WinterTreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WINTRT01 /* WinterTreeShape.swift */; };
+		CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKDOTV01 /* WalkDotView.swift */; };
+		CC00000200000000WKMODE01 /* WalkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKMODE01 /* WalkMode.swift */; };
+		CC00000200000000WKSTRT01 /* WalkStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKSTRT01 /* WalkStartView.swift */; };
 		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
 		CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */; };
+		DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */; };
+		DBC54AC76144B10493D3E481 /* WalkShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE9557700152F043C359DC /* WalkShareView.swift */; };
 		DD00CC0100000000000002 /* MeditateDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00CC0100000000000001 /* MeditateDetection.swift */; };
-		F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */; };
-		FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */; };
-		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
-		A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PilgrimV3.swift */; };
+		EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */; };
+		EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */; };
+		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
+		F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */; };
+		F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */; };
+		F0F0F00100000004AABBCC04 /* Lato-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */; };
+		F0F0F00100000005AABBCC05 /* Lato-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */; };
 		F1A2B3C4D5E6F7A8B9C0D1E3 /* WalkFavicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E5 /* PilgrimV4.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */; };
-		A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E7 /* FaviconSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */; };
-		9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA57CE96EE3401595264807 /* ActivityInterval.swift */; };
-		EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */; };
-		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
-		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
-		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
-		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
-		4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */; };
-		AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */; };
-		BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00CC010000000000000002 /* WelcomeViewModelTests.swift */; };
-		AAAA000000000000000000E1 /* CustomPromptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000E2 /* CustomPromptEditorView.swift */; };
+		F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */; };
+		FA9B9D71DB2B3EA84CC73FEE /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */; };
+		FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */; };
 		PERM000100000003 /* PermissionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000002 /* PermissionsViewModel.swift */; };
 		PERM000100000005 /* PermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000004 /* PermissionsViewModelTests.swift */; };
 		PERM000100000007 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000006 /* PermissionsView.swift */; };
-		CC00000200000000SEASON01 /* SeasonalColorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SEASON01 /* SeasonalColorEngine.swift */; };
-		CC00000200000000SCENER01 /* SceneryGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENER01 /* SceneryGenerator.swift */; };
-		CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000CALLIG01 /* CalligraphyPathRenderer.swift */; };
-		CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKDOTV01 /* WalkDotView.swift */; };
-		CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000INKSCR01 /* InkScrollView.swift */; };
-		CC00000200000000HAPTIC01 /* ScrollHapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */; };
-		CC00000200000000MILEST01 /* MilestoneMarkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MILEST01 /* MilestoneMarkerView.swift */; };
-		CC00000200000000TREESH01 /* TreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TREESH01 /* TreeShape.swift */; };
-		CC00000200000000WINTRT01 /* WinterTreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WINTRT01 /* WinterTreeShape.swift */; };
-		CC00000200000000MOUNTN01 /* MountainShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOUNTN01 /* MountainShape.swift */; };
-		CC00000200000000GRASSH01 /* GrassShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000GRASSH01 /* GrassShape.swift */; };
-		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
-		CC00000200000000MOONSH01 /* MoonShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOONSH01 /* MoonShape.swift */; };
-		CC00000200000000DEBUGS01 /* DebugDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */; };
-		CC00000200000000MAINTB01 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MAINTB01 /* MainTabView.swift */; };
-		CC00000200000000WKSTRT01 /* WalkStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKSTRT01 /* WalkStartView.swift */; };
-		CC00000200000000WKMODE01 /* WalkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKMODE01 /* WalkMode.swift */; };
-		CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRPH01 /* LunarPhase.swift */; };
-		CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOONPV01 /* MoonPhaseView.swift */; };
-		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
-		CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENIV01 /* SceneryItemView.swift */; };
-		CC00000200000000LANTRN01 /* LanternShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LANTRN01 /* LanternShape.swift */; };
-		CC00000200000000BTRFLY01 /* ButterflyShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000BTRFLY01 /* ButterflyShape.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -273,20 +265,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkCheckpoint.swift; sourceTree = "<group>"; };
-		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
-		F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Light.otf"; sourceTree = "<group>"; };
-		F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Regular.otf"; sourceTree = "<group>"; };
-		F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-SemiBold.otf"; sourceTree = "<group>"; };
-		F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lato-Regular.ttf"; sourceTree = "<group>"; };
-		F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lato-Bold.ttf"; sourceTree = "<group>"; };
+		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
+		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
+		16BE9557700152F043C359DC /* WalkShareView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareView.swift; sourceTree = "<group>"; };
+		1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDownloadManager.swift; sourceTree = "<group>"; };
 		1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackupSerializationTests.swift; sourceTree = "<group>"; };
+		1BA57CE96EE3401595264807 /* ActivityInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInterval.swift; sourceTree = "<group>"; };
 		2201BCA829423DF100F54277 /* View+Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Navigation.swift"; sourceTree = "<group>"; };
 		2201BCAA29423E1600F54277 /* NavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLink.swift; sourceTree = "<group>"; };
-
 		2204A1DC255ACB1100906CFE /* DataTypeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTypeProtocol.swift; sourceTree = "<group>"; };
 		2204E427295DF28C00243FC3 /* SetupCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupCoordinatorView.swift; sourceTree = "<group>"; };
-
 		2207B75523128F8A00BA71B5 /* CLLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLLocation.swift; sourceTree = "<group>"; };
 		2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AltitudeManagement.swift; sourceTree = "<group>"; };
 		2213137C23B4110700881806 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
@@ -352,7 +340,6 @@
 		22A5D02D25C1A57600C30786 /* TempV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempV2.swift; sourceTree = "<group>"; };
 		22A5D03225C1AB2200C30786 /* TempV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempV3.swift; sourceTree = "<group>"; };
 		22A5D03525C1ABDA00C30786 /* TempV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempV4.swift; sourceTree = "<group>"; };
-
 		22B1DD80253F90700093822B /* DataStack.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataStack.swift; sourceTree = "<group>"; };
 		22B1DD81253F90700093822B /* SQLiteStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SQLiteStore.swift; sourceTree = "<group>"; };
 		22B1DD89253F90FD0093822B /* IntermediateDataModelProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntermediateDataModelProtocol.swift; sourceTree = "<group>"; };
@@ -372,13 +359,6 @@
 		22BBDD3124D77C2B00225AE4 /* StepCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounter.swift; sourceTree = "<group>"; };
 		22BC99142941D97600D9B1A5 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
 		22BC99152941D97600D9B1A5 /* WelcomeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
-		AABB000100000001 /* WelcomeAnimationState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeAnimationState.swift; sourceTree = "<group>"; };
-		BREATH000000000000000001 /* BreathTransitionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BreathTransitionView.swift; sourceTree = "<group>"; };
-
-
-
-
-
 		22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetricViewModel.swift; sourceTree = "<group>"; };
 		22BC99292941D9A800D9B1A5 /* CloseButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloseButton.swift; sourceTree = "<group>"; };
 		22BC992A2941D9A800D9B1A5 /* ActionButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionButton.swift; sourceTree = "<group>"; };
@@ -387,8 +367,6 @@
 		22BC992D2941D9A800D9B1A5 /* CardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		22BC992E2941D9A800D9B1A5 /* ProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		22BC992F2941D9A800D9B1A5 /* FeatureView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeatureView.swift; sourceTree = "<group>"; };
-
-
 		22BC99322941D9A800D9B1A5 /* CornerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CornerView.swift; sourceTree = "<group>"; };
 		22BC99332941D9A800D9B1A5 /* PermissionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
 		22BC99342941D9A800D9B1A5 /* MetricView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetricView.swift; sourceTree = "<group>"; };
@@ -398,15 +376,12 @@
 		22BC99382941D9A800D9B1A5 /* WalkCard.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalkCard.swift; sourceTree = "<group>"; };
 		22BC994A2941DA3400D9B1A5 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		22BC994C2941DA6200D9B1A5 /* Binding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Binding.swift; sourceTree = "<group>"; };
-
 		22BC99512941DC9900D9B1A5 /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
-
 		22BD1F3D247462FF00415A06 /* ApplicationStateObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationStateObserver.swift; sourceTree = "<group>"; };
 		22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationStateObservation.swift; sourceTree = "<group>"; };
 		22BD1F41247463DF00415A06 /* ApplicationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationState.swift; sourceTree = "<group>"; };
 		22BF623C26E6B1D2008C904C /* WalkBuilderComponentStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkBuilderComponentStatus.swift; sourceTree = "<group>"; };
 		22C09B9326514BD8004AF34F /* DataInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataInterface.swift; sourceTree = "<group>"; };
-
 		22C1107F24532C69009ACE81 /* WalkMapImageRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMapImageRequest.swift; sourceTree = "<group>"; };
 		22C1108124532DBA009ACE81 /* WalkMapImageSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMapImageSize.swift; sourceTree = "<group>"; };
 		22C1108324532E36009ACE81 /* WalkMapImageQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMapImageQueue.swift; sourceTree = "<group>"; };
@@ -435,103 +410,112 @@
 		22FEA0AC24CDD4CA0007CA9C /* FileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileManager.swift; sourceTree = "<group>"; };
 		22FEA0AE24CDD7B50007CA9C /* DiskStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskStorage.swift; sourceTree = "<group>"; };
 		22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomByteFormatting.swift; sourceTree = "<group>"; };
+		263D620E1DB30C5FCA0143CC /* SoundManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManagement.swift; sourceTree = "<group>"; };
+		2722224F049B455DB473E7C9 /* PilgrimV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV2.swift; sourceTree = "<group>"; };
+		2CA2B0038D4875801C41DE26 /* AudioAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAsset.swift; sourceTree = "<group>"; };
+		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
+		3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityIntervalTests.swift; sourceTree = "<group>"; };
+		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
+		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
+		4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceSparklineView.swift; sourceTree = "<group>"; };
+		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
+		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
 		721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Combine.swift"; sourceTree = "<group>"; };
+		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
+		8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareViewModel.swift; sourceTree = "<group>"; };
+		90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
+		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
-		AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimLogoView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
+		A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV5.swift; sourceTree = "<group>"; };
+		A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkCheckpoint.swift; sourceTree = "<group>"; };
 		AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FootprintShape.swift; sourceTree = "<group>"; };
+		AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimLogoView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000001 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000002 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000003 /* WalkRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkRowView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000004 /* ActiveWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000005 /* ActiveWalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000006 /* WalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryView.swift; sourceTree = "<group>"; };
-		AA00040100000000000001 /* VoiceRecordingRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingRow.swift; sourceTree = "<group>"; };
-		AA00040100000000000003 /* AudioPlayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000007 /* MainCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinatorView.swift; sourceTree = "<group>"; };
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
 		AA00020100000000000003 /* VoiceRecordingManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingManagement.swift; sourceTree = "<group>"; };
 		AA00030100000000000001 /* MeditationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationView.swift; sourceTree = "<group>"; };
+		AA00040100000000000001 /* VoiceRecordingRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingRow.swift; sourceTree = "<group>"; };
+		AA00040100000000000003 /* AudioPlayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerModel.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000B2 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C2 /* PromptGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptGenerator.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C4 /* PromptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptListView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C6 /* PromptDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptDetailView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptStyleStore.swift; sourceTree = "<group>"; };
-		B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewWalkComputationTests.swift; sourceTree = "<group>"; };
-		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
-		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
-		C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.release.xcconfig"; sourceTree = "<group>"; };
-		C2D23FF60A762C30296A69E6 /* ComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComputationTests.swift; sourceTree = "<group>"; };
-		C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UnitTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
-		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
-		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
-		CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunarPhaseTests.swift; sourceTree = "<group>"; };
-		E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderStatusTests.swift; sourceTree = "<group>"; };
-		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
-		2722224F049B455DB473E7C9 /* PilgrimV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV2.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
-		F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkFavicon.swift; sourceTree = "<group>"; };
-		F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV4.swift; sourceTree = "<group>"; };
-		A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV5.swift; sourceTree = "<group>"; };
-		F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconSelectorView.swift; sourceTree = "<group>"; };
-		1BA57CE96EE3401595264807 /* ActivityInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInterval.swift; sourceTree = "<group>"; };
-		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
-		C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineBar.swift; sourceTree = "<group>"; };
-		4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceSparklineView.swift; sourceTree = "<group>"; };
-		D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityListView.swift; sourceTree = "<group>"; };
-		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
-		3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityIntervalTests.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomPromptStyleStoreTests.swift; sourceTree = "<group>"; };
-		BB00CC010000000000000002 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
-		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
-		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
-		PERM000100000006 /* PermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000E2 /* CustomPromptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptEditorView.swift; sourceTree = "<group>"; };
-		CC00000100000000SEASON01 /* SeasonalColorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonalColorEngine.swift; sourceTree = "<group>"; };
-		CC00000100000000SCENER01 /* SceneryGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryGenerator.swift; sourceTree = "<group>"; };
-		CC00000100000000CALLIG01 /* CalligraphyPathRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalligraphyPathRenderer.swift; sourceTree = "<group>"; };
-		CC00000100000000WKDOTV01 /* WalkDotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkDotView.swift; sourceTree = "<group>"; };
-		CC00000100000000INKSCR01 /* InkScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InkScrollView.swift; sourceTree = "<group>"; };
-		CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollHapticEngine.swift; sourceTree = "<group>"; };
-		CC00000100000000MILEST01 /* MilestoneMarkerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneMarkerView.swift; sourceTree = "<group>"; };
-		CC00000100000000TREESH01 /* TreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeShape.swift; sourceTree = "<group>"; };
-		CC00000100000000WINTRT01 /* WinterTreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinterTreeShape.swift; sourceTree = "<group>"; };
-		CC00000100000000MOUNTN01 /* MountainShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MountainShape.swift; sourceTree = "<group>"; };
-		CC00000100000000GRASSH01 /* GrassShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrassShape.swift; sourceTree = "<group>"; };
-		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
-		CC00000100000000MOONSH01 /* MoonShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonShape.swift; sourceTree = "<group>"; };
-		CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugDataSeeder.swift; sourceTree = "<group>"; };
-		CC00000100000000MAINTB01 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
-		CC00000100000000WKSTRT01 /* WalkStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStartView.swift; sourceTree = "<group>"; };
-		CC00000100000000WKMODE01 /* WalkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMode.swift; sourceTree = "<group>"; };
-		CC00000100000000LUNRPH01 /* LunarPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarPhase.swift; sourceTree = "<group>"; };
-		CC00000100000000MOONPV01 /* MoonPhaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonPhaseView.swift; sourceTree = "<group>"; };
-		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
-		CC00000100000000LANTRN01 /* LanternShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanternShape.swift; sourceTree = "<group>"; };
-		CC00000100000000BTRFLY01 /* ButterflyShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButterflyShape.swift; sourceTree = "<group>"; };
-		2CA2B0038D4875801C41DE26 /* AudioAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAsset.swift; sourceTree = "<group>"; };
-		90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
-		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
-		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
-		1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDownloadManager.swift; sourceTree = "<group>"; };
-		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
-		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
-		263D620E1DB30C5FCA0143CC /* SoundManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManagement.swift; sourceTree = "<group>"; };
-		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
-		C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEnhancer.swift; sourceTree = "<group>"; };
-		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
-		EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformCache.swift; sourceTree = "<group>"; };
-		F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkSettingsView.swift; sourceTree = "<group>"; };
-		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000EL2 /* ElevationProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevationProfileView.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF2 /* RouteSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSegment.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimAnnotation.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapStyle.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF8 /* PilgrimMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapView.swift; sourceTree = "<group>"; };
-		AAAA00000000000000000EL2 /* ElevationProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevationProfileView.swift; sourceTree = "<group>"; };
+		AABB000100000001 /* WelcomeAnimationState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeAnimationState.swift; sourceTree = "<group>"; };
+		B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewWalkComputationTests.swift; sourceTree = "<group>"; };
+		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
+		BB00CC010000000000000002 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
+		BREATH000000000000000001 /* BreathTransitionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BreathTransitionView.swift; sourceTree = "<group>"; };
+		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
+		C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.release.xcconfig"; sourceTree = "<group>"; };
+		C2D23FF60A762C30296A69E6 /* ComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComputationTests.swift; sourceTree = "<group>"; };
+		C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEnhancer.swift; sourceTree = "<group>"; };
+		C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UnitTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineBar.swift; sourceTree = "<group>"; };
+		CC00000100000000BTRFLY01 /* ButterflyShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButterflyShape.swift; sourceTree = "<group>"; };
+		CC00000100000000CALLIG01 /* CalligraphyPathRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalligraphyPathRenderer.swift; sourceTree = "<group>"; };
+		CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugDataSeeder.swift; sourceTree = "<group>"; };
+		CC00000100000000GRASSH01 /* GrassShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrassShape.swift; sourceTree = "<group>"; };
+		CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollHapticEngine.swift; sourceTree = "<group>"; };
+		CC00000100000000INKSCR01 /* InkScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InkScrollView.swift; sourceTree = "<group>"; };
+		CC00000100000000LANTRN01 /* LanternShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanternShape.swift; sourceTree = "<group>"; };
+		CC00000100000000LUNRPH01 /* LunarPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarPhase.swift; sourceTree = "<group>"; };
+		CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunarPhaseTests.swift; sourceTree = "<group>"; };
+		CC00000100000000MAINTB01 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		CC00000100000000MILEST01 /* MilestoneMarkerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneMarkerView.swift; sourceTree = "<group>"; };
+		CC00000100000000MOONPV01 /* MoonPhaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonPhaseView.swift; sourceTree = "<group>"; };
+		CC00000100000000MOONSH01 /* MoonShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonShape.swift; sourceTree = "<group>"; };
+		CC00000100000000MOUNTN01 /* MountainShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MountainShape.swift; sourceTree = "<group>"; };
+		CC00000100000000SCENER01 /* SceneryGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryGenerator.swift; sourceTree = "<group>"; };
+		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
+		CC00000100000000SEASON01 /* SeasonalColorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonalColorEngine.swift; sourceTree = "<group>"; };
+		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
+		CC00000100000000TREESH01 /* TreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeShape.swift; sourceTree = "<group>"; };
+		CC00000100000000WINTRT01 /* WinterTreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinterTreeShape.swift; sourceTree = "<group>"; };
+		CC00000100000000WKDOTV01 /* WalkDotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkDotView.swift; sourceTree = "<group>"; };
+		CC00000100000000WKMODE01 /* WalkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMode.swift; sourceTree = "<group>"; };
+		CC00000100000000WKSTRT01 /* WalkStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStartView.swift; sourceTree = "<group>"; };
+		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
+		D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayload.swift; sourceTree = "<group>"; };
+		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityListView.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
+		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
+		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
+		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
+		E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderStatusTests.swift; sourceTree = "<group>"; };
+		E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteDownsampler.swift; sourceTree = "<group>"; };
+		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
+		EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformCache.swift; sourceTree = "<group>"; };
+		F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Light.otf"; sourceTree = "<group>"; };
+		F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Regular.otf"; sourceTree = "<group>"; };
+		F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-SemiBold.otf"; sourceTree = "<group>"; };
+		F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lato-Regular.ttf"; sourceTree = "<group>"; };
+		F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lato-Bold.ttf"; sourceTree = "<group>"; };
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkFavicon.swift; sourceTree = "<group>"; };
+		F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV4.swift; sourceTree = "<group>"; };
+		F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconSelectorView.swift; sourceTree = "<group>"; };
+		F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkSettingsView.swift; sourceTree = "<group>"; };
+		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
+		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
+		PERM000100000006 /* PermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -609,11 +593,12 @@
 			children = (
 				225C0F772931D26600B9B45F /* Root */,
 				AA0001010000000000000021 /* Home */,
-				CC00000100000000SETGRP01 /* Settings_Scene */,
+				CC00000100000000SETGRP01 /* Settings */,
 				AA0001010000000000000022 /* ActiveWalk */,
 				AA0001010000000000000023 /* WalkSummary */,
 				22BC99182941D97F00D9B1A5 /* Setup */,
 				AAAA000000000000000000C7 /* Prompts */,
+				5F0241D04FDB88FFB08D690B /* WalkShare */,
 			);
 			path = Scenes;
 			sourceTree = "<group>";
@@ -772,18 +757,6 @@
 			path = "Support Files";
 			sourceTree = "<group>";
 		};
-		F0F0F00300000000AABBCC00 /* Fonts */ = {
-			isa = PBXGroup;
-			children = (
-				F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */,
-				F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */,
-				F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */,
-				F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */,
-				F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */,
-			);
-			path = Fonts;
-			sourceTree = "<group>";
-		};
 		22B6CF4A22CA0814002D2FB0 = {
 			isa = PBXGroup;
 			children = (
@@ -853,6 +826,7 @@
 				AAAA000000000000000000C2 /* PromptGenerator.swift */,
 				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
 				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
+				8534424C43418F78E8F15520 /* Share */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -867,12 +841,10 @@
 				22E5057025C96B3600DC9AC1 /* UIKit */,
 				221436BA244356A90010D82B /* Array.swift */,
 				2207B75523128F8A00BA71B5 /* CLLocation.swift */,
-
 				22FEA0A624CDA3FF0007CA9C /* ClosedRange.swift */,
 				226E9A4A23F01E6E00992815 /* Date.swift */,
 				2230926224D7573C00A3F636 /* Double.swift */,
 				22FEA0AC24CDD4CA0007CA9C /* FileManager.swift */,
-
 				22623C0022DFBB71004065C6 /* Sequence.swift */,
 				221436C02443960A0010D82B /* UnitCount.swift */,
 				22877543234A75A10078CE12 /* Units.swift */,
@@ -889,15 +861,6 @@
 				AABB000100000001 /* WelcomeAnimationState.swift */,
 			);
 			path = Welcome;
-			sourceTree = "<group>";
-		};
-		PERM000100000001 /* Permissions */ = {
-			isa = PBXGroup;
-			children = (
-				PERM000100000002 /* PermissionsViewModel.swift */,
-				PERM000100000006 /* PermissionsView.swift */,
-			);
-			path = Permissions;
 			sourceTree = "<group>";
 		};
 		22BC99182941D97F00D9B1A5 /* Setup */ = {
@@ -917,12 +880,10 @@
 				22BC99282941D9A800D9B1A5 /* Buttons */,
 				CC00000100000000SCGRP001 /* Scenery */,
 				22BC99352941D9A800D9B1A5 /* AxisGeometryReader.swift */,
-
 				22BC992D2941D9A800D9B1A5 /* CardView.swift */,
 				22BC99322941D9A800D9B1A5 /* CornerView.swift */,
 				22BC992F2941D9A800D9B1A5 /* FeatureView.swift */,
 				22BC99372941D9A800D9B1A5 /* FeatureViewModel.swift */,
-
 				AAAA00000000000000000MF8 /* PilgrimMapView.swift */,
 				22BC99342941D9A800D9B1A5 /* MetricView.swift */,
 				22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */,
@@ -1086,6 +1047,24 @@
 			path = WalkBuilder;
 			sourceTree = "<group>";
 		};
+		3A2B6107FC73A26AFA4F2434 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				2CA2B0038D4875801C41DE26 /* AudioAsset.swift */,
+				90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */,
+				4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */,
+				390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */,
+				1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */,
+				3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */,
+				6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */,
+				263D620E1DB30C5FCA0143CC /* SoundManagement.swift */,
+				C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */,
+				8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */,
+				EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
 		4C304343458BA5DB0C7E2372 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -1095,6 +1074,27 @@
 			);
 			name = Helpers;
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		5F0241D04FDB88FFB08D690B /* WalkShare */ = {
+			isa = PBXGroup;
+			children = (
+				16BE9557700152F043C359DC /* WalkShareView.swift */,
+				8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */,
+			);
+			name = WalkShare;
+			path = WalkShare;
+			sourceTree = "<group>";
+		};
+		8534424C43418F78E8F15520 /* Share */ = {
+			isa = PBXGroup;
+			children = (
+				D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */,
+				E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */,
+				5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */,
+			);
+			name = Share;
+			path = Share;
 			sourceTree = "<group>";
 		};
 		AA0001010000000000000021 /* Home */ = {
@@ -1176,25 +1176,7 @@
 			path = Scenery;
 			sourceTree = "<group>";
 		};
-		3A2B6107FC73A26AFA4F2434 /* Audio */ = {
-			isa = PBXGroup;
-			children = (
-				2CA2B0038D4875801C41DE26 /* AudioAsset.swift */,
-				90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */,
-				4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */,
-				390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */,
-				1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */,
-				3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */,
-				6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */,
-				263D620E1DB30C5FCA0143CC /* SoundManagement.swift */,
-				C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */,
-				8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */,
-				EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */,
-			);
-			path = Audio;
-			sourceTree = "<group>";
-		};
-		CC00000100000000SETGRP01 /* Settings_Scene */ = {
+		CC00000100000000SETGRP01 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
 				CC00000100000000SETTVW01 /* SettingsView.swift */,
@@ -1203,6 +1185,27 @@
 				D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		F0F0F00300000000AABBCC00 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */,
+				F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */,
+				F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */,
+				F0F0F00200000004AABBCC04 /* Lato-Regular.ttf */,
+				F0F0F00200000005AABBCC05 /* Lato-Bold.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		PERM000100000001 /* Permissions */ = {
+			isa = PBXGroup;
+			children = (
+				PERM000100000002 /* PermissionsViewModel.swift */,
+				PERM000100000006 /* PermissionsView.swift */,
+			);
+			path = Permissions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1398,7 +1401,6 @@
 				22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */,
 				227C690725423294000458BC /* EventInterface.swift in Sources */,
 				22BF623D26E6B1D2008C904C /* WalkBuilderComponentStatus.swift in Sources */,
-
 				229790F628F365B50072DC86 /* Publisher.swift in Sources */,
 				2273943C233BF6EA00176A07 /* WalkMapImageManager.swift in Sources */,
 				22A5D02625C1A45100C30786 /* TempValueConvertible.swift in Sources */,
@@ -1428,11 +1430,9 @@
 				22834F772542236000057FEB /* WalkEventInterface.swift in Sources */,
 				22F0000B234A1DF8008CFAD2 /* SwitchSetting.swift in Sources */,
 				221436B924432B390010D82B /* DataManager+Query.swift in Sources */,
-
 				224AF62A237624E80047CBDE /* CustomDateFormatting.swift in Sources */,
 				22C1108024532C69009ACE81 /* WalkMapImageRequest.swift in Sources */,
 				22BC99452941D9A800D9B1A5 /* MetricView.swift in Sources */,
-
 				2288F6B422E0FB5C0014471C /* UIColor.swift in Sources */,
 				221436C12443960A0010D82B /* UnitCount.swift in Sources */,
 				22BC993C2941D9A800D9B1A5 /* RoundedButton.swift in Sources */,
@@ -1440,23 +1440,18 @@
 				22DBFBE12349362900DE6E92 /* UserPreferences.swift in Sources */,
 				2287753E234A3DF60078CE12 /* TextInputSetting.swift in Sources */,
 				22BD1F402474638200415A06 /* ApplicationStateObservation.swift in Sources */,
-
 				2273943E233BF81800176A07 /* CustomImageCache.swift in Sources */,
-
 				22834F8225422D8200057FEB /* HeartRateDataSampleInterface.swift in Sources */,
 				22BC993E2941D9A800D9B1A5 /* CardView.swift in Sources */,
 				AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */,
 				AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */,
-
 				2226A3BF240C441700FF7A94 /* TextViewSetting.swift in Sources */,
 				22F0000D234A2055008CFAD2 /* Setting.swift in Sources */,
 				2230926324D7573C00A3F636 /* Double.swift in Sources */,
 				22B1DD92253F91380093822B /* OutRunV3to4.swift in Sources */,
 				22BD1F3E247462FF00415A06 /* ApplicationStateObserver.swift in Sources */,
 				22B1DD9A253F91F20093822B /* OutRunV2.swift in Sources */,
-
 				22BC994B2941DA3400D9B1A5 /* Constants.swift in Sources */,
-
 				22BC99402941D9A800D9B1A5 /* FeatureView.swift in Sources */,
 				225BB02F2716E61000478E09 /* StatsHelper.swift in Sources */,
 				22B1DD82253F90700093822B /* DataStack.swift in Sources */,
@@ -1465,12 +1460,10 @@
 				22BC99482941D9A800D9B1A5 /* FeatureViewModel.swift in Sources */,
 				2221997F2439F6FF00ADAE24 /* CustomNumberFormatting.swift in Sources */,
 				22D299372402BDE400F3F6B8 /* TimeIntervalPickerSetting.swift in Sources */,
-
 				AAAA00000000000000000MF1 /* RouteSegment.swift in Sources */,
 				AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */,
 				AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */,
 				AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */,
-
 				22834F73254220FC00057FEB /* WalkPauseInterface.swift in Sources */,
 				22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */,
 				221436BF2443746B0010D82B /* Event.swift in Sources */,
@@ -1497,7 +1490,6 @@
 				22D299332402B1AC00F3F6B8 /* InputViewSetting.swift in Sources */,
 				22B1DD93253F91380093822B /* OutRunV4.swift in Sources */,
 				22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */,
-
 				22BC994D2941DA6200D9B1A5 /* Binding.swift in Sources */,
 				22B6CF7022CA08C9002D2FB0 /* WalkBuilder.swift in Sources */,
 				221436BB244356A90010D82B /* Array.swift in Sources */,
@@ -1541,10 +1533,8 @@
 				2227C642234B66BC00CFE31A /* ButtonSetting.swift in Sources */,
 				221E47D123ECB837004EAB1D /* Backup.swift in Sources */,
 				225C0F762931D22300B9B45F /* RootCoordinatorView.swift in Sources */,
-
 				22BC99172941D97600D9B1A5 /* WelcomeView.swift in Sources */,
 				225AC6A4243F2710008D493D /* HeartRateDataSample.swift in Sources */,
-
 				22585C22240AE1BC0052E2CA /* RouteDataSample.swift in Sources */,
 				22585C20240AE0C70052E2CA /* Walk.swift in Sources */,
 				9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */,
@@ -1617,6 +1607,11 @@
 				F1A2B3C4D5E6F7A8B9C0D1E5 /* PilgrimV4.swift in Sources */,
 				A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E7 /* FaviconSelectorView.swift in Sources */,
+				DBC54AC76144B10493D3E481 /* WalkShareView.swift in Sources */,
+				8A200FA63DDEC6D859F1C4EE /* WalkShareViewModel.swift in Sources */,
+				7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */,
+				9A477336A61C4C38B9D4F13C /* RouteDownsampler.swift in Sources */,
+				6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
