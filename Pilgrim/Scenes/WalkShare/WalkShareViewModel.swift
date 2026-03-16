@@ -81,7 +81,6 @@ final class WalkShareViewModel: ObservableObject {
             return (nil, nil)
         }
 
-        let geocoder = CLGeocoder()
         let startLoc = CLLocation(latitude: first.latitude, longitude: first.longitude)
         let endLoc = CLLocation(latitude: last.latitude, longitude: last.longitude)
 
