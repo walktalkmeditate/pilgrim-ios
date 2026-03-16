@@ -91,6 +91,9 @@ Secrets.xcconfig
 # macOS
 .DS_Store
 
+# Superpowers
+.superpowers/
+
 # AppCode
 .idea/*
 !.idea/codeStyles/*
