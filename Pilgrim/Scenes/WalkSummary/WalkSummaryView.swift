@@ -962,7 +962,9 @@ struct VoiceRecordingRow: View {
     }
 
     private var speedLabel: String {
-        playbackSpeed == 1.0 ? "1x" : String(format: "%.1gx", playbackSpeed)
+        playbackSpeed.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0fx", playbackSpeed)
+            : String(format: "%gx", playbackSpeed)
     }
 
 

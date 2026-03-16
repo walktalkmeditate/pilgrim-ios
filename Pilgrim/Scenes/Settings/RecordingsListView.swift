@@ -136,7 +136,10 @@ struct RecordingsListView: View {
         let fileAvailable = isFileAvailable(recording.fileRelativePath)
         let transcriptionText = recUUID.flatMap { transcriptionOverrides[$0] } ?? recording.transcription
 
-        let speedLabel = audioPlayer.playbackSpeed == 1.0 ? "1x" : String(format: "%.1gx", audioPlayer.playbackSpeed)
+        let speed = audioPlayer.playbackSpeed
+        let speedLabel = speed.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0fx", speed)
+            : String(format: "%gx", speed)
 
         return VStack(alignment: .leading, spacing: Constants.UI.Padding.xs) {
             if fileAvailable {
