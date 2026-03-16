@@ -22,6 +22,7 @@
 		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
 		A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */; };
 		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
+		B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */; };
 		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
 		F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */; };
 		F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */; };
@@ -521,6 +522,7 @@
 		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
 		EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformCache.swift; sourceTree = "<group>"; };
 		F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkSettingsView.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF2 /* RouteSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSegment.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimAnnotation.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapStyle.swift; sourceTree = "<group>"; };
@@ -1192,6 +1194,7 @@
 				CC00000100000000SETTVW01 /* SettingsView.swift */,
 				0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */,
 				F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */,
+				D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1601,6 +1604,7 @@
 				5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */,
 				A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */,
 				C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */,
+				B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E3 /* WalkFavicon.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E5 /* PilgrimV4.swift in Sources */,
 				A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */,
