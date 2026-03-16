@@ -18,6 +18,8 @@
 		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
 		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
 		ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */; };
+		EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */; };
+		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
 		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
 		F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */; };
 		F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */; };
@@ -215,6 +217,7 @@
 		A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PilgrimV3.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E3 /* WalkFavicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E5 /* PilgrimV4.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */; };
+		A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E7 /* FaviconSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */; };
 		9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA57CE96EE3401595264807 /* ActivityInterval.swift */; };
 		EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */; };
@@ -465,6 +468,7 @@
 		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkFavicon.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV4.swift; sourceTree = "<group>"; };
+		A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV5.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconSelectorView.swift; sourceTree = "<group>"; };
 		1BA57CE96EE3401595264807 /* ActivityInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInterval.swift; sourceTree = "<group>"; };
 		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
@@ -511,6 +515,8 @@
 		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
 		263D620E1DB30C5FCA0143CC /* SoundManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManagement.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
+		C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEnhancer.swift; sourceTree = "<group>"; };
+		F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkSettingsView.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF2 /* RouteSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSegment.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimAnnotation.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapStyle.swift; sourceTree = "<group>"; };
@@ -583,6 +589,7 @@
 				2722224F049B455DB473E7C9 /* PilgrimV2.swift */,
 				A1B2C3D4E5F601020304050A /* PilgrimV3.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */,
+				A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */,
 			);
 			path = Versions;
 			sourceTree = "<group>";
@@ -1168,6 +1175,7 @@
 				3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */,
 				6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */,
 				263D620E1DB30C5FCA0143CC /* SoundManagement.swift */,
+				C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -1177,6 +1185,7 @@
 			children = (
 				CC00000100000000SETTVW01 /* SettingsView.swift */,
 				0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */,
+				F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1582,8 +1591,11 @@
 				1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */,
 				2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */,
 				ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */,
+				EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */,
+				C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E3 /* WalkFavicon.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E5 /* PilgrimV4.swift in Sources */,
+				A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E7 /* FaviconSelectorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

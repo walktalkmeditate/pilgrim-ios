@@ -1,7 +1,7 @@
 import Foundation
 import CoreStore
 
-public typealias VoiceRecording = PilgrimV4.VoiceRecording
+public typealias VoiceRecording = PilgrimV5.VoiceRecording
 
 extension VoiceRecording: VoiceRecordingInterface {
 
@@ -12,6 +12,7 @@ extension VoiceRecording: VoiceRecordingInterface {
     public var fileRelativePath: String { threadSafeSyncReturn { self._fileRelativePath.value } }
     public var transcription: String? { threadSafeSyncReturn { self._transcription.value } }
     public var wordsPerMinute: Double? { threadSafeSyncReturn { self._wordsPerMinute.value } }
+    public var isEnhanced: Bool { threadSafeSyncReturn { self._isEnhanced.value } }
     public var workout: WalkInterface? { self._workout.value as? WalkInterface }
 
 }
@@ -26,7 +27,8 @@ extension VoiceRecording: TempValueConvertible {
             duration: duration,
             fileRelativePath: fileRelativePath,
             transcription: transcription,
-            wordsPerMinute: wordsPerMinute
+            wordsPerMinute: wordsPerMinute,
+            isEnhanced: isEnhanced
         )
     }
 

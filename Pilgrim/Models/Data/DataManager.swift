@@ -52,7 +52,7 @@ struct DataManager {
      - parameter migration: the closure being called on the event of a migration happening, including a `Progress` object indicating the progress of the migration
      - warning: If this method fails it does so in a fatal error, the app will crash as a result.
      */
-    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV4.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
+    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV5.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -292,6 +292,7 @@ struct DataManager {
             recording._fileRelativePath .= tempRecording.fileRelativePath
             recording._transcription .= tempRecording.transcription
             recording._wordsPerMinute .= tempRecording.wordsPerMinute
+            recording._isEnhanced .= tempRecording.isEnhanced
             recording._workout .= walk
         }
 
@@ -409,6 +410,7 @@ struct DataManager {
                     recording._fileRelativePath .= tempRecording.fileRelativePath
                     recording._transcription .= tempRecording.transcription
                     recording._wordsPerMinute .= tempRecording.wordsPerMinute
+                    recording._isEnhanced .= tempRecording.isEnhanced
 
                     recording._workout .= walk
                 }
@@ -465,6 +467,35 @@ struct DataManager {
         if contents.isEmpty {
             try? FileManager.default.removeItem(at: recordingsDir)
         }
+    }
+
+    public static func deleteRecordingFile(relativePath: String) {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let fileURL = docs.appendingPathComponent(relativePath)
+        try? FileManager.default.removeItem(at: fileURL)
+        let parent = fileURL.deletingLastPathComponent()
+        let remaining = (try? FileManager.default.contentsOfDirectory(at: parent, includingPropertiesForKeys: nil)) ?? []
+        if remaining.isEmpty {
+            try? FileManager.default.removeItem(at: parent)
+        }
+        cleanupEmptyRecordingsDirectory()
+    }
+
+    public static func recordingFileCount() -> Int {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let recordingsDir = docs.appendingPathComponent("Recordings")
+        guard let enumerator = FileManager.default.enumerator(at: recordingsDir, includingPropertiesForKeys: nil) else { return 0 }
+        var count = 0
+        for case let url as URL in enumerator where url.pathExtension == "m4a" {
+            count += 1
+        }
+        return count
+    }
+
+    public static func deleteAllRecordingFiles() {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let recordingsDir = docs.appendingPathComponent("Recordings")
+        try? FileManager.default.removeItem(at: recordingsDir)
     }
 
     public static func updateVoiceRecordingTranscription(uuid: UUID, transcription: String) {

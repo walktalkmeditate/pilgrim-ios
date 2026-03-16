@@ -195,8 +195,9 @@ public enum TempV4 {
         public var fileRelativePath: String
         public var transcription: String?
         public var wordsPerMinute: Double?
+        public var isEnhanced: Bool
 
-        public init(uuid: UUID?, startDate: Date, endDate: Date, duration: Double, fileRelativePath: String, transcription: String? = nil, wordsPerMinute: Double? = nil) {
+        public init(uuid: UUID?, startDate: Date, endDate: Date, duration: Double, fileRelativePath: String, transcription: String? = nil, wordsPerMinute: Double? = nil, isEnhanced: Bool = false) {
             self.uuid = uuid
             self.startDate = startDate
             self.endDate = endDate
@@ -204,6 +205,7 @@ public enum TempV4 {
             self.fileRelativePath = fileRelativePath
             self.transcription = transcription
             self.wordsPerMinute = wordsPerMinute
+            self.isEnhanced = isEnhanced
         }
 
         public var asTemp: TempVoiceRecording {

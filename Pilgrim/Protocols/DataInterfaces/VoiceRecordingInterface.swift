@@ -8,6 +8,7 @@ public protocol VoiceRecordingInterface: DataInterface {
     var fileRelativePath: String { get }
     var transcription: String? { get }
     var wordsPerMinute: Double? { get }
+    var isEnhanced: Bool { get }
 
 }
 
@@ -19,5 +20,6 @@ public extension VoiceRecordingInterface {
     var fileRelativePath: String { throwOnAccess() }
     var transcription: String? { throwOnAccess() }
     var wordsPerMinute: Double? { throwOnAccess() }
+    var isEnhanced: Bool { throwOnAccess() }
 
 }
