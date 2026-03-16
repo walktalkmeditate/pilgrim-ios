@@ -66,6 +66,7 @@ struct WalkSummaryView: View {
                         promptsButton
                     }
                     detailsSection
+                    shareCard
                 }
                 .padding(Constants.UI.Padding.normal)
             }
@@ -78,17 +79,8 @@ struct WalkSummaryView: View {
                         .foregroundColor(.ink)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: Constants.UI.Padding.normal) {
-                        Button {
-                            showShareSheet = true
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                        }
+                    Button("Done") { dismiss() }
                         .foregroundColor(.stone)
-
-                        Button("Done") { dismiss() }
-                            .foregroundColor(.stone)
-                    }
                 }
             }
             .onAppear {
@@ -652,6 +644,33 @@ struct WalkSummaryView: View {
             .padding(Constants.UI.Padding.normal)
             .background(Color.parchmentSecondary)
             .cornerRadius(Constants.UI.CornerRadius.normal)
+        }
+    }
+
+    @ViewBuilder
+    private var shareCard: some View {
+        if walk.routeData.count >= 2 {
+            Button {
+                showShareSheet = true
+            } label: {
+                VStack(spacing: Constants.UI.Padding.small) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 20))
+                        .foregroundColor(.stone)
+                    Text("Share this walk")
+                        .font(Constants.Typography.heading)
+                        .foregroundColor(.ink)
+                    Text("Create a beautiful page to share with others")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Constants.UI.Padding.big)
+                .padding(.horizontal, Constants.UI.Padding.normal)
+                .background(Color.parchmentSecondary)
+                .cornerRadius(Constants.UI.CornerRadius.normal)
+            }
         }
     }
 

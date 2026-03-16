@@ -51,6 +51,45 @@ final class WalkShareViewModel: ObservableObject {
         return ShareService.cachedShare(for: uuid) != nil
     }
 
+    var formattedDistance: String? {
+        guard walk.distance > 0 else { return nil }
+        let isMetric = UserPreferences.distanceMeasurementType.safeValue == .kilometers
+        if isMetric {
+            return String(format: "%.1f km", walk.distance / 1000)
+        }
+        return String(format: "%.1f mi", walk.distance / 1609.344)
+    }
+
+    var formattedDuration: String? {
+        guard walk.activeDuration > 0 else { return nil }
+        let h = Int(walk.activeDuration) / 3600
+        let m = (Int(walk.activeDuration) % 3600) / 60
+        if h > 0 { return "\(h)h \(m)m" }
+        return "\(m)m"
+    }
+
+    var formattedElevation: String? {
+        guard walk.ascend > 1 else { return nil }
+        let isMetric = UserPreferences.altitudeMeasurementType.safeValue == .meters
+        if isMetric {
+            return "\(Int(walk.ascend)) m"
+        }
+        return "\(Int(walk.ascend * 3.28084)) ft"
+    }
+
+    var formattedActivityBreakdown: String? {
+        let parts = [
+            walk.meditateDuration > 0 ? "\(Int(walk.meditateDuration / 60))m meditation" : nil,
+            walk.talkDuration > 0 ? "\(Int(walk.talkDuration / 60))m reflection" : nil,
+        ].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
+
+    var formattedSteps: String? {
+        guard let steps = walk.steps, steps > 0 else { return nil }
+        return "\(steps.formatted())"
+    }
+
     init(walk: WalkInterface) {
         self.walk = walk
         if let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid) {

@@ -11,15 +11,24 @@ struct WalkShareView: View {
         _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk))
     }
 
+    private var isShared: Bool {
+        if case .success = viewModel.shareState { return true }
+        return false
+    }
+
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.big) {
-                    mapPreview
-                    statToggles
-                    journalSection
-                    expiryPicker
-                    shareButton
+                    if isShared {
+                        shareButton
+                    } else {
+                        routePreview
+                        statToggles
+                        journalSection
+                        expiryPicker
+                        shareButton
+                    }
                 }
                 .padding(Constants.UI.Padding.normal)
             }
@@ -27,29 +36,34 @@ struct WalkShareView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Share Walk")
+                    Text(isShared ? "Walk Shared" : "Share Walk")
                         .font(Constants.Typography.heading)
                         .foregroundColor(.ink)
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if isShared {
+                        Button("Done") { dismiss() }
+                            .foregroundColor(.stone)
+                    }
+                }
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundColor(.stone)
+                    if !isShared {
+                        Button("Cancel") { dismiss() }
+                            .foregroundColor(.stone)
+                    }
                 }
             }
         }
     }
 
-    // MARK: - Map Preview
+    // MARK: - Route Preview
 
-    private var mapPreview: some View {
-        RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal)
-            .fill(Color.parchmentSecondary)
+    private var routePreview: some View {
+        let points = viewModel.walk.routeData
+        return RouteShapeView(routeData: points)
             .frame(height: 200)
-            .overlay(
-                Text("Route Preview")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            )
+            .background(Color.parchmentSecondary)
+            .cornerRadius(Constants.UI.CornerRadius.normal)
     }
 
     // MARK: - Stat Toggles
@@ -58,11 +72,31 @@ struct WalkShareView: View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
             sectionLabel("Share these details")
 
-            StatToggleRow(title: "Distance", isOn: $viewModel.toggleDistance)
-            StatToggleRow(title: "Duration", isOn: $viewModel.toggleDuration)
-            StatToggleRow(title: "Elevation", isOn: $viewModel.toggleElevation)
-            StatToggleRow(title: "Walk / Meditation / Talk", isOn: $viewModel.toggleActivityBreakdown)
-            StatToggleRow(title: "Steps", isOn: $viewModel.toggleSteps)
+            StatToggleRow(
+                title: "Distance",
+                value: viewModel.formattedDistance,
+                isOn: $viewModel.toggleDistance
+            )
+            StatToggleRow(
+                title: "Duration",
+                value: viewModel.formattedDuration,
+                isOn: $viewModel.toggleDuration
+            )
+            StatToggleRow(
+                title: "Elevation",
+                value: viewModel.formattedElevation,
+                isOn: $viewModel.toggleElevation
+            )
+            StatToggleRow(
+                title: "Walk / Meditation / Talk",
+                value: viewModel.formattedActivityBreakdown,
+                isOn: $viewModel.toggleActivityBreakdown
+            )
+            StatToggleRow(
+                title: "Steps",
+                value: viewModel.formattedSteps,
+                isOn: $viewModel.toggleSteps
+            )
         }
     }
 
@@ -75,7 +109,7 @@ struct WalkShareView: View {
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $viewModel.journal)
                     .font(Constants.Typography.body)
-                    .frame(minHeight: 60)
+                    .frame(minHeight: 80)
                     .padding(Constants.UI.Padding.small)
                     .scrollContentBackground(.hidden)
                     .background(Color.parchmentSecondary)
@@ -87,7 +121,7 @@ struct WalkShareView: View {
                     }
 
                 if viewModel.journal.isEmpty {
-                    Text("A few words about this walk...")
+                    Text("\u{201C}A few words about this walk...")
                         .font(Constants.Typography.body)
                         .foregroundColor(.fog)
                         .padding(.horizontal, Constants.UI.Padding.normal)
@@ -177,17 +211,18 @@ struct WalkShareView: View {
 
         case .success(let url):
             VStack(spacing: Constants.UI.Padding.normal) {
-                VStack(spacing: Constants.UI.Padding.small) {
-                    Text("Walk shared")
-                        .font(Constants.Typography.heading)
-                        .foregroundColor(.ink)
+                routePreview
 
-                    Text(url)
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.stone)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
+                Text(url)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.stone)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text("Returns to the trail on \(expiryDateFormatted)")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+                    .italic()
 
                 HStack(spacing: Constants.UI.Padding.small) {
                     Button {
@@ -272,13 +307,21 @@ struct WalkShareView: View {
 
 private struct StatToggleRow: View {
     let title: String
+    let value: String?
     @Binding var isOn: Bool
 
     var body: some View {
         HStack {
-            Text(title)
-                .font(Constants.Typography.body)
-                .foregroundColor(.ink)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                if let value {
+                    Text(value)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
+            }
             Spacer()
             Toggle("", isOn: $isOn)
                 .labelsHidden()

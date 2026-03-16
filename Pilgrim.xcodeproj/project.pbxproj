@@ -206,6 +206,7 @@
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
 		BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00CC010000000000000002 /* WelcomeViewModelTests.swift */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
+		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
 		CC00000200000000BTRFLY01 /* ButterflyShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000BTRFLY01 /* ButterflyShape.swift */; };
 		CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000CALLIG01 /* CalligraphyPathRenderer.swift */; };
@@ -419,6 +420,7 @@
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
 		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
 		4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceSparklineView.swift; sourceTree = "<group>"; };
+		4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteShapeView.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
 		721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Combine.swift"; sourceTree = "<group>"; };
@@ -1081,6 +1083,7 @@
 			children = (
 				16BE9557700152F043C359DC /* WalkShareView.swift */,
 				8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */,
+				4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */,
 			);
 			name = WalkShare;
 			path = WalkShare;
@@ -1612,6 +1615,7 @@
 				7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */,
 				9A477336A61C4C38B9D4F13C /* RouteDownsampler.swift in Sources */,
 				6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */,
+				C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
