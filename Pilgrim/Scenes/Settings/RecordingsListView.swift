@@ -72,10 +72,9 @@ struct RecordingsListView: View {
                         Text("Delete All Recording Files")
                             .font(Constants.Typography.body)
                     }
-                    .confirmationDialog(
+                    .alert(
                         "Delete all recording files? Transcriptions will be kept.",
-                        isPresented: $showDeleteAllConfirmation,
-                        titleVisibility: .visible
+                        isPresented: $showDeleteAllConfirmation
                     ) {
                         Button("Delete All", role: .destructive) {
                             audioPlayer.stop()
@@ -84,17 +83,17 @@ struct RecordingsListView: View {
                                 walkSections.flatMap { $0.recordings.map { $0.fileRelativePath } }
                             )
                         }
+                        Button("Cancel", role: .cancel) {}
                     }
                 }
             }
         }
         .searchable(text: $searchText, prompt: "Search transcriptions")
-        .confirmationDialog(
+        .alert(
             "Delete this recording file? The transcription will be kept.",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
+            isPresented: $showDeleteConfirmation
         ) {
-            Button("Delete Recording", role: .destructive) {
+            Button("Delete", role: .destructive) {
                 guard let path = pathToDelete else { return }
                 if audioPlayer.currentPath == path {
                     audioPlayer.stop()
@@ -102,6 +101,7 @@ struct RecordingsListView: View {
                 DataManager.deleteRecordingFile(relativePath: path)
                 deletedPaths.insert(path)
             }
+            Button("Cancel", role: .cancel) {}
         }
     }
 

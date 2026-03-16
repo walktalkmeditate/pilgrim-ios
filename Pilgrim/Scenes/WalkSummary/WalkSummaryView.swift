@@ -496,12 +496,11 @@ struct WalkSummaryView: View {
         .padding(Constants.UI.Padding.normal)
         .background(Color.parchmentSecondary)
         .cornerRadius(Constants.UI.CornerRadius.normal)
-        .confirmationDialog(
+        .alert(
             "Delete this recording file? The transcription will be kept.",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
+            isPresented: $showDeleteConfirmation
         ) {
-            Button("Delete Recording", role: .destructive) {
+            Button("Delete", role: .destructive) {
                 guard let path = pathToDelete else { return }
                 if audioPlayer.currentPath == path {
                     audioPlayer.stop()
@@ -509,6 +508,7 @@ struct WalkSummaryView: View {
                 DataManager.deleteRecordingFile(relativePath: path)
                 deletedPaths.insert(path)
             }
+            Button("Cancel", role: .cancel) {}
         }
     }
 
