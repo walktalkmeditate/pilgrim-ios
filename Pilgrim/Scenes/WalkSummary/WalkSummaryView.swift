@@ -12,6 +12,10 @@ struct WalkSummaryView: View {
     @State private var transcriptions: [UUID: String] = [:]
     @State private var selectedFavicon: WalkFavicon?
     @State private var showPrompts = false
+    @State private var deletedPaths: Set<String> = []
+    @State private var pathToDelete: String?
+    @State private var showDeleteConfirmation = false
+    @State private var waveforms: [UUID: [Float]] = [:]
 
     init(walk: WalkInterface) {
         self.walk = walk
@@ -431,14 +435,17 @@ struct WalkSummaryView: View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
             recordingsHeader
             transcriptionStatusBanner
+            autoTranscriptionBanner
 
             ForEach(Array(walk.voiceRecordings.enumerated()), id: \.element.uuid) { index, recording in
                 let isActive = audioPlayer.currentPath == recording.fileRelativePath
+                let fileAvailable = isFileAvailable(recording.fileRelativePath)
                 VoiceRecordingRow(
                     index: index + 1,
                     recording: recording,
                     transcription: recording.uuid.flatMap { transcriptions[$0] },
-                    isActive: isActive,
+                    fileAvailable: fileAvailable,
+                    isActive: isActive && fileAvailable,
                     isPlaying: isActive && audioPlayer.isPlaying,
                     progress: isActive ? audioPlayer.progress : 0,
                     currentTime: isActive ? audioPlayer.currentTime : 0,
@@ -451,13 +458,52 @@ struct WalkSummaryView: View {
                     },
                     onRetranscribe: {
                         Task { await retranscribeSingle(recording) }
-                    }
+                    },
+                    onDelete: {
+                        pathToDelete = recording.fileRelativePath
+                        showDeleteConfirmation = true
+                    },
+                    waveformSamples: recording.uuid.flatMap { waveforms[$0] }
                 )
+                .task {
+                    guard let uuid = recording.uuid,
+                          waveforms[uuid] == nil,
+                          isFileAvailable(recording.fileRelativePath)
+                    else { return }
+                    guard await WaveformCache.shared.markInFlight(uuid) else {
+                        if let cached = await WaveformCache.shared.samples(for: uuid) {
+                            waveforms[uuid] = cached
+                        }
+                        return
+                    }
+                    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                    let url = docs.appendingPathComponent(recording.fileRelativePath)
+                    if let samples = await Task.detached(priority: .utility, operation: {
+                        WaveformGenerator.generateSamples(from: url)
+                    }).value {
+                        await WaveformCache.shared.store(samples, for: uuid)
+                        waveforms[uuid] = samples
+                    }
+                }
             }
         }
         .padding(Constants.UI.Padding.normal)
         .background(Color.parchmentSecondary)
         .cornerRadius(Constants.UI.CornerRadius.normal)
+        .confirmationDialog(
+            "Delete this recording file? The transcription will be kept.",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Recording", role: .destructive) {
+                guard let path = pathToDelete else { return }
+                if audioPlayer.currentPath == path {
+                    audioPlayer.stop()
+                }
+                DataManager.deleteRecordingFile(relativePath: path)
+                deletedPaths.insert(path)
+            }
+        }
     }
 
     private var recordingsHeader: some View {
@@ -528,14 +574,14 @@ struct WalkSummaryView: View {
     private var hasUntranscribedRecordings: Bool {
         walk.voiceRecordings.contains { recording in
             guard let uuid = recording.uuid else { return false }
-            return transcriptions[uuid] == nil
+            return transcriptions[uuid] == nil && isFileAvailable(recording.fileRelativePath)
         }
     }
 
     private func transcribeAll() async {
         let untranscribed = walk.voiceRecordings.filter { recording in
             guard let uuid = recording.uuid else { return false }
-            return transcriptions[uuid] == nil
+            return transcriptions[uuid] == nil && isFileAvailable(recording.fileRelativePath)
         }
         let results = await transcriptionService.transcribeRecordings(untranscribed)
         for (uuid, text) in results {
@@ -547,6 +593,26 @@ struct WalkSummaryView: View {
         if let text = await transcriptionService.transcribeSingle(recording),
            let uuid = recording.uuid {
             transcriptions[uuid] = text
+        }
+    }
+
+    private func isFileAvailable(_ relativePath: String) -> Bool {
+        guard !deletedPaths.contains(relativePath) else { return false }
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return FileManager.default.fileExists(atPath: docs.appendingPathComponent(relativePath).path)
+    }
+
+    @ViewBuilder
+    private var autoTranscriptionBanner: some View {
+        if transcriptionService.autoTranscriptionSkippedReason == .lowBattery {
+            HStack(spacing: 8) {
+                Image(systemName: "battery.25")
+                    .foregroundColor(.dawn)
+                Text("Auto-transcription skipped — battery below 20%")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+            }
+            .padding(.vertical, 4)
         }
     }
 
@@ -750,6 +816,7 @@ struct VoiceRecordingRow: View {
     let index: Int
     let recording: VoiceRecordingInterface
     let transcription: String?
+    let fileAvailable: Bool
     let isActive: Bool
     let isPlaying: Bool
     let progress: Double
@@ -758,20 +825,59 @@ struct VoiceRecordingRow: View {
     let onTogglePlay: () -> Void
     let onSeek: (Double) -> Void
     let onRetranscribe: () -> Void
+    let onDelete: () -> Void
+    let waveformSamples: [Float]?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Button(action: onTogglePlay) {
-                    Image(systemName: playIcon)
-                        .font(.title2)
-                        .foregroundColor(.stone)
+            if fileAvailable {
+                if let samples = waveformSamples {
+                    WaveformBarView(
+                        samples: samples,
+                        progress: isActive ? progress : 0,
+                        isPlaying: isPlaying
+                    ) { fraction in
+                        if isActive {
+                            onSeek(fraction)
+                        } else {
+                            onTogglePlay()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                onSeek(fraction)
+                            }
+                        }
+                    }
+                    .onTapGesture { onTogglePlay() }
                 }
 
                 if isActive {
-                    playerControls
+                    HStack {
+                        Button(action: onTogglePlay) {
+                            Image(systemName: playIcon)
+                                .font(.title2)
+                                .foregroundColor(.stone)
+                        }
+                        Text(formatSeconds(currentTime))
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                            .monospacedDigit()
+                        Spacer()
+                        Text(formatSeconds(audioDuration))
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                            .monospacedDigit()
+                    }
                 } else {
                     compactInfo
+                }
+            } else {
+                HStack {
+                    Image(systemName: "waveform.slash")
+                        .font(.title2)
+                        .foregroundColor(.fog)
+                    Text("Recording unavailable")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.fog)
+                    Spacer()
                 }
             }
 
@@ -785,15 +891,24 @@ struct VoiceRecordingRow: View {
                         .background(Color.parchmentTertiary)
                         .cornerRadius(8)
 
-                    Button(action: onRetranscribe) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.caption)
-                            .foregroundColor(.fog)
+                    if fileAvailable {
+                        Button(action: onRetranscribe) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption)
+                                .foregroundColor(.fog)
+                        }
                     }
                 }
             }
         }
         .padding(.vertical, 4)
+        .contextMenu {
+            if fileAvailable {
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete Recording File", systemImage: "trash")
+                }
+            }
+        }
     }
 
     private var playIcon: String {
@@ -801,31 +916,6 @@ struct VoiceRecordingRow: View {
             return "pause.circle.fill"
         }
         return "play.circle.fill"
-    }
-
-    private var playerControls: some View {
-        VStack(spacing: 4) {
-            Slider(
-                value: Binding(
-                    get: { progress },
-                    set: { onSeek($0) }
-                ),
-                in: 0...1
-            )
-            .tint(.stone)
-
-            HStack {
-                Text(formatSeconds(currentTime))
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-                    .monospacedDigit()
-                Spacer()
-                Text(formatSeconds(audioDuration))
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-                    .monospacedDigit()
-            }
-        }
     }
 
     private var compactInfo: some View {
