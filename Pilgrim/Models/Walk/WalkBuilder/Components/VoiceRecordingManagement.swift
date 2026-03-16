@@ -134,11 +134,11 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         audioRecorder = nil
         recorder.delegate = nil
         recorder.stop()
-        commitRecording(successfully: true)
+        commitRecording(successfully: true, skipEnhancement: true)
         builder?.flushVoiceRecordings(voiceRecordingsRelay.value)
     }
 
-    private func commitRecording(successfully flag: Bool) {
+    private func commitRecording(successfully flag: Bool, skipEnhancement: Bool = false) {
         guard let start = currentRecordingStart, let relativePath = currentRecordingRelativePath else {
             return
         }
@@ -157,12 +157,24 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         }
 
         let end = Date()
+        let enhanced = !skipEnhancement && UserPreferences.dynamicVoiceEnabled.value
+        finalizeRecording(start: start, end: end, relativePath: relativePath, isEnhanced: enhanced)
+
+        if enhanced {
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let fileURL = docs.appendingPathComponent(relativePath)
+            VoiceEnhancer.shared.enhance(fileURL) { _ in }
+        }
+    }
+
+    private func finalizeRecording(start: Date, end: Date, relativePath: String, isEnhanced: Bool = false) {
         let recording = TempVoiceRecording(
             uuid: UUID(),
             startDate: start,
             endDate: end,
             duration: end.timeIntervalSince(start),
-            fileRelativePath: relativePath
+            fileRelativePath: relativePath,
+            isEnhanced: isEnhanced
         )
         voiceRecordingsRelay.accept(voiceRecordingsRelay.value + [recording])
     }
