@@ -19,6 +19,8 @@
 		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
 		ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */; };
 		EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */; };
+		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
+		A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */; };
 		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
 		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
 		F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */; };
@@ -516,6 +518,8 @@
 		263D620E1DB30C5FCA0143CC /* SoundManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManagement.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEnhancer.swift; sourceTree = "<group>"; };
+		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
+		EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformCache.swift; sourceTree = "<group>"; };
 		F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkSettingsView.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF2 /* RouteSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSegment.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimAnnotation.swift; sourceTree = "<group>"; };
@@ -1176,6 +1180,8 @@
 				6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */,
 				263D620E1DB30C5FCA0143CC /* SoundManagement.swift */,
 				C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */,
+				8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */,
+				EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -1592,6 +1598,8 @@
 				2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */,
 				ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */,
 				EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */,
+				5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */,
+				A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */,
 				C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E3 /* WalkFavicon.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E5 /* PilgrimV4.swift in Sources */,
