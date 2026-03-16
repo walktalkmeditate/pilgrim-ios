@@ -483,6 +483,8 @@ struct WalkSummaryView: View {
                     }).value {
                         await WaveformCache.shared.store(samples, for: uuid)
                         waveforms[uuid] = samples
+                    } else {
+                        await WaveformCache.shared.clearInFlight(uuid)
                     }
                 }
             }
@@ -586,6 +588,9 @@ struct WalkSummaryView: View {
         let results = await transcriptionService.transcribeRecordings(untranscribed)
         for (uuid, text) in results {
             transcriptions[uuid] = text
+        }
+        if !results.isEmpty {
+            transcriptionService.autoTranscriptionSkippedReason = nil
         }
     }
 

@@ -21,4 +21,8 @@ actor WaveformCache {
         inFlight.insert(id)
         return true
     }
+
+    func clearInFlight(_ id: UUID) {
+        inFlight.remove(id)
+    }
 }

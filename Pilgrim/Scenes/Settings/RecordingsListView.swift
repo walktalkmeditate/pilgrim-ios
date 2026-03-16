@@ -292,7 +292,10 @@ struct RecordingsListView: View {
                     .orderBy(.descending(\._startDate))
             )
             walkSections = walks.compactMap { walk in
-                let recordings = walk.voiceRecordings.sorted { $0.startDate < $1.startDate }
+                guard walk.uuid != nil else { return nil }
+                let recordings = walk.voiceRecordings
+                    .filter { $0.uuid != nil }
+                    .sorted { $0.startDate < $1.startDate }
                 guard !recordings.isEmpty else { return nil }
                 return WalkSection(walk: walk, recordings: recordings)
             }
@@ -329,6 +332,8 @@ struct RecordingsListView: View {
             }).value {
                 await WaveformCache.shared.store(samples, for: uuid)
                 await MainActor.run { waveforms[uuid] = samples }
+            } else {
+                await WaveformCache.shared.clearInFlight(uuid)
             }
         }
 
