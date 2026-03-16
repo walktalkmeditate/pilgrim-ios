@@ -60,6 +60,13 @@ struct WalkDotView: View {
                 .opacity(opacity * 0.5)
                 .offset(x: -size * 0.08, y: -size * 0.08)
 
+            if snapshot.isShared {
+                Circle()
+                    .stroke(Color.stone.opacity(0.5), lineWidth: 1)
+                    .frame(width: size + 12, height: size + 12)
+                    .opacity(opacity)
+            }
+
         }
         .position(position)
         .onTapGesture { onTap(snapshot.id) }
