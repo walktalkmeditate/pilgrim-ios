@@ -41,20 +41,6 @@ struct RecordingsListView: View {
         .sheet(item: $selectedWalk) { walk in
             WalkSummaryView(walk: walk)
         }
-        .confirmationDialog(
-            "Delete this recording file? The transcription will be kept.",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete Recording", role: .destructive) {
-                guard let path = pathToDelete else { return }
-                if audioPlayer.currentPath == path {
-                    audioPlayer.stop()
-                }
-                DataManager.deleteRecordingFile(relativePath: path)
-                deletedPaths.insert(path)
-            }
-        }
     }
 
     // MARK: - List
@@ -103,6 +89,20 @@ struct RecordingsListView: View {
             }
         }
         .searchable(text: $searchText, prompt: "Search transcriptions")
+        .confirmationDialog(
+            "Delete this recording file? The transcription will be kept.",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Recording", role: .destructive) {
+                guard let path = pathToDelete else { return }
+                if audioPlayer.currentPath == path {
+                    audioPlayer.stop()
+                }
+                DataManager.deleteRecordingFile(relativePath: path)
+                deletedPaths.insert(path)
+            }
+        }
     }
 
     // MARK: - Section Header
