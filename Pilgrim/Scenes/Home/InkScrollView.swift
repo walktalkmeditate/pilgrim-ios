@@ -42,7 +42,9 @@ struct InkScrollView: View {
             .overlay(expandCard)
         }
         .onAppear {
-            hasAppeared = true
+            DispatchQueue.main.async {
+                hasAppeared = true
+            }
         }
     }
 
