@@ -248,12 +248,7 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeWidth = 1.5
                 circle.circleStrokeOpacity = 1.0
             case .waypoint:
-                circle.circleRadius = 9
-                circle.circleColor = StyleColor(UIColor.stone)
-                circle.circleOpacity = 0.9
-                circle.circleStrokeColor = StyleColor(UIColor.parchment)
-                circle.circleStrokeWidth = 2
-                circle.circleStrokeOpacity = 1.0
+                continue
             case .startPoint:
                 circle.circleRadius = 6
                 circle.circleColor = StyleColor(UIColor.parchment)
@@ -273,6 +268,31 @@ struct PilgrimMapView: UIViewRepresentable {
         }
 
         circleManager.annotations = circles
+
+        if coordinator.pointManager == nil {
+            coordinator.pointManager = mapView.annotations.makePointAnnotationManager()
+        }
+
+        guard let pointManager = coordinator.pointManager else { return }
+
+        var points: [PointAnnotation] = []
+        for pin in pinAnnotations {
+            if case .waypoint(_, let icon) = pin.kind {
+                var point = PointAnnotation(coordinate: pin.coordinate)
+                if let image = Self.renderSFSymbol(icon, size: 18, color: .stone) {
+                    point.image = .init(image: image, name: icon)
+                }
+                point.iconSize = 1.0
+                points.append(point)
+            }
+        }
+        pointManager.annotations = points
+    }
+
+    private static func renderSFSymbol(_ name: String, size: CGFloat, color: UIColor) -> UIImage? {
+        let config = UIImage.SymbolConfiguration(pointSize: size, weight: .medium)
+        return UIImage(systemName: name, withConfiguration: config)?
+            .withTintColor(color, renderingMode: .alwaysOriginal)
     }
 
     // MARK: - Coordinator
@@ -280,6 +300,7 @@ struct PilgrimMapView: UIViewRepresentable {
     class Coordinator {
         var cancellables = Set<AnyCancelable>()
         var circleManager: CircleAnnotationManager?
+        var pointManager: PointAnnotationManager?
         var isFollowing = false
         var lastSegments: [RouteSegment] = []
         var pendingSegments: [RouteSegment] = []
@@ -288,8 +309,9 @@ struct PilgrimMapView: UIViewRepresentable {
         weak var mapView: MBMapView?
 
         deinit {
-            if let manager = circleManager, let mapView {
-                mapView.annotations.removeAnnotationManager(withId: manager.id)
+            if let mapView {
+                if let manager = circleManager { mapView.annotations.removeAnnotationManager(withId: manager.id) }
+                if let manager = pointManager { mapView.annotations.removeAnnotationManager(withId: manager.id) }
             }
         }
     }
