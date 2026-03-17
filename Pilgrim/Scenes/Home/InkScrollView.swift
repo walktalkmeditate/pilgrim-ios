@@ -194,18 +194,16 @@ struct InkScrollView: View {
         isNewest: Bool,
         sceneryView: AnyView?
     ) -> some View {
-        ZStack {
-            WalkDotView(
-                snapshot: snapshot,
-                position: position,
-                opacity: opacity,
-                onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
-                sceneryView: sceneryView
-            )
-
+        WalkDotView(
+            snapshot: snapshot,
+            position: position,
+            opacity: opacity,
+            onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
+            sceneryView: sceneryView
+        )
+        .overlay {
             if isNewest {
-                newestDotRing(snapshot: snapshot, position: position)
-                breathingPulse(snapshot: snapshot, position: position)
+                newestDotEffects(snapshot: snapshot)
             }
         }
         .simultaneousGesture(
@@ -229,18 +227,13 @@ struct InkScrollView: View {
 
     // MARK: - Newest dot ring
 
-    private func newestDotRing(snapshot: WalkSnapshot, position: CGPoint) -> some View {
+    private func newestDotEffects(snapshot: WalkSnapshot) -> some View {
         let color = dotSeasonalColor(for: snapshot)
-        return SonarRingView(color: color)
-            .position(position)
-    }
-
-    // MARK: - Breathing pulse on newest dot
-
-    private func breathingPulse(snapshot: WalkSnapshot, position: CGPoint) -> some View {
-        let color = dotSeasonalColor(for: snapshot)
-        return BreathingPulseView(color: color)
-            .position(position)
+        return ZStack {
+            BreathingPulseView(color: color)
+            SonarRingView(color: color)
+        }
+        .allowsHitTesting(false)
     }
 
     private func dotSeasonalColor(for snapshot: WalkSnapshot) -> Color {
