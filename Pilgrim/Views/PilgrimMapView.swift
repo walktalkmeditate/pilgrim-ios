@@ -292,8 +292,12 @@ struct PilgrimMapView: UIViewRepresentable {
 
     private static func renderSFSymbol(_ name: String, size: CGFloat, color: UIColor) -> UIImage? {
         let config = UIImage.SymbolConfiguration(pointSize: size, weight: .medium)
-        return UIImage(systemName: name, withConfiguration: config)?
-            .withTintColor(color, renderingMode: .alwaysOriginal)
+        guard let symbol = UIImage(systemName: name, withConfiguration: config)?
+            .withTintColor(color, renderingMode: .alwaysOriginal) else { return nil }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        let renderer = UIGraphicsImageRenderer(size: symbol.size, format: format)
+        return renderer.image { _ in symbol.draw(at: .zero) }
     }
 
     // MARK: - Coordinator
