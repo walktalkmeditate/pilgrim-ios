@@ -93,6 +93,16 @@ public class WalkBuilder: ApplicationStateObserver {
     public func flushSteps(_ steps: Int?) {
         stepsRelay.accept(steps)
     }
+
+    public var waypointsPublisher: AnyPublisher<[TempWaypoint], Never> { waypointsRelay.asBackgroundPublisher() }
+
+    public func flushWaypoints(_ waypoints: [TempWaypoint]) {
+        waypointsRelay.accept(waypoints)
+    }
+
+    public func addWaypoint(_ waypoint: TempWaypoint) {
+        waypointsRelay.accept(waypointsRelay.value + [waypoint])
+    }
     
     // MARK: - Initialisation
     
@@ -206,6 +216,8 @@ public class WalkBuilder: ApplicationStateObserver {
     private let meditateDurationRelay = CurrentValueRelay<Double>(0)
     /// The relay to publish activity intervals captured during the walk.
     private let activityIntervalsRelay = CurrentValueRelay<[TempActivityInterval]>([])
+    /// The relay to publish waypoints dropped during the walk.
+    private let waypointsRelay = CurrentValueRelay<[TempWaypoint]>([])
     /// The relay to publish a reset command.
     private let resetRelay = PassthroughRelay<WalkInterface?>()
     
@@ -378,7 +390,8 @@ public class WalkBuilder: ApplicationStateObserver {
             pauses: pauses,
             workoutEvents: [],
             voiceRecordings: voiceRecordingsRelay.value,
-            activityIntervals: activityIntervalsRelay.value
+            activityIntervals: activityIntervalsRelay.value,
+            waypoints: waypointsRelay.value
         )
     }
 
@@ -405,7 +418,8 @@ public class WalkBuilder: ApplicationStateObserver {
             pauses: pausesRelay.value,
             workoutEvents: [],
             voiceRecordings: voiceRecordingsRelay.value,
-            activityIntervals: activityIntervalsRelay.value
+            activityIntervals: activityIntervalsRelay.value,
+            waypoints: waypointsRelay.value
         )
     }
     
@@ -427,6 +441,7 @@ public class WalkBuilder: ApplicationStateObserver {
         voiceRecordingsRelay.accept([])
         meditateDurationRelay.accept(0)
         activityIntervalsRelay.accept([])
+        waypointsRelay.accept([])
         lastPause = nil
         resetRelay.accept(nil)
     }

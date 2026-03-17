@@ -23,7 +23,7 @@ import Foundation
 
 class NewWalk: TempWalk {
     
-    init(workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, isRace: Bool, comment: String?, isUserModified: Bool, finishedRecording: Bool, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = []) {
+    init(workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, isRace: Bool, comment: String?, isUserModified: Bool, finishedRecording: Bool, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = [], waypoints: [TempV4.Waypoint] = []) {
 
         let bodyWeight: Double? = UserPreferences.weight.value
         let burnedEnergy: Double? = bodyWeight != nil ? Computation.calculateBurnedEnergy(for: workoutType, distance: distance, weight: bodyWeight!) : nil
@@ -66,7 +66,8 @@ class NewWalk: TempWalk {
             pauses: pauses,
             workoutEvents: workoutEvents,
             voiceRecordings: voiceRecordings,
-            activityIntervals: activityIntervals
+            activityIntervals: activityIntervals,
+            waypoints: waypoints
         )
     }
     
