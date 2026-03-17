@@ -287,6 +287,7 @@ struct PilgrimMapView: UIViewRepresentable {
             }
         }
         pointManager.annotations = points
+        pointManager.iconAllowOverlap = true
     }
 
     private static func renderSFSymbol(_ name: String, size: CGFloat, color: UIColor) -> UIImage? {
