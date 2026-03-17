@@ -1,23 +1,23 @@
 import SwiftUI
 
 enum MainTab {
-    case home, log, settings
+    case path, journal, settings
 }
 
 struct MainTabView: View {
 
-    @State private var selectedTab: MainTab = .home
+    @State private var selectedTab: MainTab = .path
     @StateObject private var coordinator = MainCoordinator()
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Home", systemImage: "house", value: .home) {
+            Tab("Path", systemImage: "figure.walk", value: .path) {
                 WalkStartView(onStartWalk: { mode in
                     coordinator.startWalk(mode: mode)
                 })
             }
 
-            Tab("Log", systemImage: "point.bottomleft.forward.to.point.topright.scurvepath", value: .log) {
+            Tab("Journal", systemImage: "book", value: .journal) {
                 MainCoordinatorView(coordinator: coordinator)
             }
 
