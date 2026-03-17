@@ -178,6 +178,8 @@
 		AA0001010000000000000013 /* WalkRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000003 /* WalkRowView.swift */; };
 		AA0001010000000000000014 /* ActiveWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000004 /* ActiveWalkView.swift */; };
 		AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000005 /* ActiveWalkViewModel.swift */; };
+		AAAA0000000000000000F9 /* IntentionSettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0000000000000000F8 /* IntentionSettingView.swift */; };
+		AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0000000000000000FA /* WalkOptionsSheet.swift */; };
 		AA0001010000000000000016 /* WalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000006 /* WalkSummaryView.swift */; };
 		AA0001010000000000000017 /* MainCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000007 /* MainCoordinatorView.swift */; };
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
@@ -193,6 +195,9 @@
 		AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */; };
 		AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */; };
 		AAAA000000000000000000E1 /* CustomPromptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000E2 /* CustomPromptEditorView.swift */; };
+		AAAA000000000000000000F1 /* IntentionHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000F2 /* IntentionHistoryStore.swift */; };
+		AAAA000000000000000000F3 /* IntentionHistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */; };
+		AAAA000000000000000000F7 /* IntentionVoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000F6 /* IntentionVoiceRecorder.swift */; };
 		AAAA00000000000000000EL1 /* ElevationProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000EL2 /* ElevationProfileView.swift */; };
 		AAAA00000000000000000MB1 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000MB3 /* MapboxMaps */; };
 		AAAA00000000000000000MF1 /* RouteSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF2 /* RouteSegment.swift */; };
@@ -445,6 +450,8 @@
 		AA0001010000000000000003 /* WalkRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkRowView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000004 /* ActiveWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000005 /* ActiveWalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkViewModel.swift; sourceTree = "<group>"; };
+		AAAA0000000000000000F8 /* IntentionSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionSettingView.swift; sourceTree = "<group>"; };
+		AAAA0000000000000000FA /* WalkOptionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkOptionsSheet.swift; sourceTree = "<group>"; };
 		AA0001010000000000000006 /* WalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000007 /* MainCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinatorView.swift; sourceTree = "<group>"; };
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
@@ -459,6 +466,9 @@
 		AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptStyleStore.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomPromptStyleStoreTests.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000E2 /* CustomPromptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptEditorView.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000F2 /* IntentionHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionHistoryStore.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentionHistoryStoreTests.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000F6 /* IntentionVoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionVoiceRecorder.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000EL2 /* ElevationProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevationProfileView.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF2 /* RouteSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSegment.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimAnnotation.swift; sourceTree = "<group>"; };
@@ -840,6 +850,7 @@
 				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
 				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
 				8534424C43418F78E8F15520 /* Share */,
+				AAAA000000000000000000F5 /* Intention */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1013,6 +1024,7 @@
 				B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */,
 				3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */,
 				AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */,
+				AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */,
 				BB00CC010000000000000002 /* WelcomeViewModelTests.swift */,
 				PERM000100000004 /* PermissionsViewModelTests.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */,
@@ -1112,6 +1124,15 @@
 			path = Share;
 			sourceTree = "<group>";
 		};
+		AAAA000000000000000000F5 /* Intention */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA000000000000000000F2 /* IntentionHistoryStore.swift */,
+				AAAA000000000000000000F6 /* IntentionVoiceRecorder.swift */,
+			);
+			path = Intention;
+			sourceTree = "<group>";
+		};
 		AA0001010000000000000021 /* Home */ = {
 			isa = PBXGroup;
 			children = (
@@ -1133,7 +1154,9 @@
 			children = (
 				AA0001010000000000000004 /* ActiveWalkView.swift */,
 				AA0001010000000000000005 /* ActiveWalkViewModel.swift */,
+				AAAA0000000000000000F8 /* IntentionSettingView.swift */,
 				AA00030100000000000001 /* MeditationView.swift */,
+				AAAA0000000000000000FA /* WalkOptionsSheet.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -1592,7 +1615,9 @@
 				CC00000200000000LANTRN01 /* LanternShape.swift in Sources */,
 				AA0001010000000000000014 /* ActiveWalkView.swift in Sources */,
 				AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */,
+				AAAA0000000000000000F9 /* IntentionSettingView.swift in Sources */,
 				AA00030100000000000002 /* MeditationView.swift in Sources */,
+				AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */,
 				AA0001010000000000000016 /* WalkSummaryView.swift in Sources */,
 				AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */,
 				AA00040100000000000004 /* AudioPlayerModel.swift in Sources */,
@@ -1612,6 +1637,8 @@
 				DD00CC0100000000000002 /* MeditateDetection.swift in Sources */,
 				AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */,
 				AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */,
+				AAAA000000000000000000F1 /* IntentionHistoryStore.swift in Sources */,
+				AAAA000000000000000000F7 /* IntentionVoiceRecorder.swift in Sources */,
 				AAAA000000000000000000C3 /* PromptListView.swift in Sources */,
 				AAAA000000000000000000C5 /* PromptDetailView.swift in Sources */,
 				AAAA000000000000000000E1 /* CustomPromptEditorView.swift in Sources */,
@@ -1662,6 +1689,7 @@
 				FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */,
 				4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */,
 				AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */,
+				AAAA000000000000000000F3 /* IntentionHistoryStoreTests.swift in Sources */,
 				BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */,
 				PERM000100000005 /* PermissionsViewModelTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */,

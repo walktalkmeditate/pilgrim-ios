@@ -29,7 +29,7 @@ struct MainTabView: View {
         .fullScreenCover(item: $coordinator.activeWalkViewModel, onDismiss: {
             coordinator.handleActiveWalkDismiss()
         }) { vm in
-            ActiveWalkView(viewModel: vm)
+            ActiveWalkView(viewModel: vm, onCancel: { coordinator.cancelWalk() })
         }
         .sheet(item: $coordinator.completedSnapshot, onDismiss: {
             coordinator.handleSummaryDismiss()

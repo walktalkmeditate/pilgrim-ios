@@ -6,6 +6,7 @@ struct PromptListView: View {
     let walk: WalkInterface
     let transcriptions: [UUID: String]
     let recentWalkSnippets: [PromptGenerator.WalkSnippet]
+    let intention: String?
     @State private var selectedPrompt: GeneratedPrompt?
     @State private var prompts: [GeneratedPrompt] = []
     @StateObject private var customStyleStore = CustomPromptStyleStore()
@@ -137,7 +138,8 @@ struct PromptListView: View {
                 startDate: walk.startDate,
                 placeNames: placeNames,
                 routeSpeeds: routeSpeeds,
-                recentWalkSnippets: recentWalkSnippets
+                recentWalkSnippets: recentWalkSnippets,
+                intention: intention
             )
             regenerateCustomPrompts()
         }
@@ -204,7 +206,8 @@ struct PromptListView: View {
                 startDate: walk.startDate,
                 placeNames: geocodedPlaces,
                 routeSpeeds: routeSpeeds,
-                recentWalkSnippets: recentWalkSnippets
+                recentWalkSnippets: recentWalkSnippets,
+                intention: intention
             )
         }
     }

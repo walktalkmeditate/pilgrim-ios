@@ -53,7 +53,8 @@ class MainCoordinator: ObservableObject {
         }
         Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
         let vm = ActiveWalkViewModel()
-        vm.onWalkCompleted = { [weak self] snapshot in
+        vm.onWalkCompleted = { [weak self, weak vm] snapshot in
+            snapshot.comment = vm?.intention
             DataManager.saveWalk(object: snapshot) { success, _, walk in
                 guard let self else { return }
                 if success {
@@ -67,6 +68,13 @@ class MainCoordinator: ObservableObject {
             }
         }
         activeWalkViewModel = vm
+    }
+
+    func cancelWalk() {
+        activeWalkViewModel?.cancel()
+        activeWalkViewModel = nil
+        pendingSnapshot = nil
+        Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
     }
 
     func handleActiveWalkDismiss() {

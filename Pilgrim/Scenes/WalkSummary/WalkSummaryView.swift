@@ -43,6 +43,7 @@ struct WalkSummaryView: View {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     mapSection
+                    intentionCard
                     elevationProfile
                     journeyQuote
                     durationHero
@@ -93,7 +94,7 @@ struct WalkSummaryView: View {
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
-                    PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets)
+                    PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment)
                 }
             }
             .sheet(isPresented: $showShareSheet) {
@@ -210,6 +211,25 @@ struct WalkSummaryView: View {
             ElevationProfileView(altitudes: altitudes, minAlt: minAlt, maxAlt: maxAlt)
                 .frame(height: 48)
                 .padding(.horizontal, Constants.UI.Padding.small)
+        }
+    }
+
+    @ViewBuilder
+    private var intentionCard: some View {
+        if let intention = walk.comment, !intention.isEmpty {
+            VStack(spacing: Constants.UI.Padding.small) {
+                Image(systemName: "leaf")
+                    .font(.caption)
+                    .foregroundColor(.moss)
+                Text(intention)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(Constants.UI.Padding.normal)
+            .frame(maxWidth: .infinity)
+            .background(Color.moss.opacity(0.06))
+            .cornerRadius(Constants.UI.CornerRadius.normal)
         }
     }
 

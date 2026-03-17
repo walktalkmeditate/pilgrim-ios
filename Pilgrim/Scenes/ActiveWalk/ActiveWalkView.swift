@@ -3,25 +3,35 @@ import SwiftUI
 struct ActiveWalkView: View {
 
     @ObservedObject var viewModel: ActiveWalkViewModel
+    var onCancel: (() -> Void)?
+    @StateObject private var intentionHistory = IntentionHistoryStore()
     @State private var showStopConfirmation = false
     @State private var showMeditation = false
+    @State private var showOptions = false
+    @State private var showIntention = false
+    @State private var showBackConfirmation = false
+    @State private var hasCheckedAutoIntention = false
 
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
-                ZStack(alignment: .bottom) {
-                    mapSection(height: geometry.size.height * 0.6)
-                    LinearGradient(
-                        colors: [.clear, .parchment],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 40)
+            ZStack(alignment: .top) {
+                VStack(spacing: 0) {
+                    ZStack(alignment: .bottom) {
+                        mapSection(height: geometry.size.height * 0.6)
+                        LinearGradient(
+                            colors: [.clear, .parchment],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 40)
+                    }
+
+                    statsSection
+                    Spacer(minLength: 0)
+                    controlsSection
                 }
 
-                statsSection
-                Spacer(minLength: 0)
-                controlsSection
+                mapOverlayButtons
             }
         }
         .background(Color.parchment)
@@ -32,11 +42,44 @@ struct ActiveWalkView: View {
         } message: {
             Text("This will save your walk and show the summary.")
         }
+        .alert("Leave Walk?", isPresented: $showBackConfirmation) {
+            Button("Leave", role: .destructive) { onCancel?() }
+            Button("Stay", role: .cancel) {}
+        } message: {
+            Text("This walk will not be saved.")
+        }
         .fullScreenCover(isPresented: $showMeditation) {
             MeditationView(soundManagement: viewModel.soundManagement) {
                 viewModel.endMeditationSilently()
                 showMeditation = false
             }
+        }
+        .sheet(isPresented: $showOptions) {
+            WalkOptionsSheet(
+                onSetIntention: {
+                    showOptions = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showIntention = true
+                    }
+                },
+                currentIntention: viewModel.intention
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(isPresented: $showIntention) {
+            IntentionSettingView(
+                historyStore: intentionHistory,
+                onSet: { intention in
+                    viewModel.intention = intention
+                    showIntention = false
+                },
+                onDismiss: { showIntention = false }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
         }
         .alert("Microphone Required", isPresented: $viewModel.showMicrophonePermissionNeeded) {
             Button("Settings") {
@@ -48,6 +91,43 @@ struct ActiveWalkView: View {
         } message: {
             Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
         }
+        .onAppear {
+            guard !hasCheckedAutoIntention else { return }
+            hasCheckedAutoIntention = true
+            if UserPreferences.beginWithIntention.value && viewModel.intention == nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showIntention = true
+                }
+            }
+        }
+    }
+
+    // MARK: - Map Overlay Buttons
+
+    private var mapOverlayButtons: some View {
+        HStack {
+            Button { showOptions = true } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.medium))
+                    .foregroundColor(.ink)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+            }
+
+            Spacer()
+
+            Button { showBackConfirmation = true } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.ink)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+            }
+        }
+        .padding(.horizontal, Constants.UI.Padding.normal)
+        .padding(.top, 56)
     }
 
     private func mapSection(height: CGFloat) -> some View {
@@ -65,6 +145,14 @@ struct ActiveWalkView: View {
                 Text(viewModel.duration)
                     .font(Constants.Typography.timer)
                     .foregroundColor(.ink)
+
+                if let intention = viewModel.intention {
+                    Text(intention)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog.opacity(0.4))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                }
 
                 if viewModel.currentSoundscapeName != nil || SoundscapePlayer.shared.isMuted {
                     Button {

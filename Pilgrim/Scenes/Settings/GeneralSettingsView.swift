@@ -4,9 +4,11 @@ struct GeneralSettingsView: View {
 
     @StateObject private var permissionVM = PermissionStatusViewModel()
     @State private var isMetric = UserPreferences.distanceMeasurementType.safeValue == .kilometers
+    @State private var beginWithIntention = UserPreferences.beginWithIntention.value
 
     var body: some View {
         List {
+            walkSection
             unitsSection
             permissionsSection
         }
@@ -24,6 +26,30 @@ struct GeneralSettingsView: View {
         .onAppear { permissionVM.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             permissionVM.refresh()
+        }
+    }
+
+    // MARK: - Walk
+
+    private var walkSection: some View {
+        Section {
+            Toggle(isOn: $beginWithIntention) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Begin with intention")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                    Text("Set an intention when starting a walk")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
+            }
+            .tint(.stone)
+            .onChange(of: beginWithIntention) { _, newValue in
+                UserPreferences.beginWithIntention.value = newValue
+            }
+        } header: {
+            Text("Walk")
+                .font(Constants.Typography.caption)
         }
     }
 

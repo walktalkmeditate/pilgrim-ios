@@ -208,6 +208,39 @@ final class TranscriptionService: ObservableObject {
         return Double(wordCount) / durationMinutes
     }
 
+    func transcribeAudioFile(at url: URL) async -> String? {
+        let started = await MainActor.run { () -> Bool in
+            guard !isTranscribing else { return false }
+            isTranscribing = true
+            return true
+        }
+        guard started else { return nil }
+
+        do {
+            try await ensureModelReady()
+        } catch {
+            await MainActor.run { isTranscribing = false }
+            return nil
+        }
+
+        guard let pipe = whisperKit,
+              FileManager.default.fileExists(atPath: url.path) else {
+            await MainActor.run { isTranscribing = false }
+            return nil
+        }
+
+        do {
+            let results = try await pipe.transcribe(audioPath: url.path)
+            let text = results.map(\.text).joined(separator: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            await MainActor.run { isTranscribing = false }
+            return text.isEmpty ? nil : text
+        } catch {
+            await MainActor.run { isTranscribing = false }
+            return nil
+        }
+    }
+
     @MainActor
     func unloadModel() {
         let kit = whisperKit

@@ -94,7 +94,8 @@ struct PromptGenerator {
         startDate: Date,
         placeNames: [PlaceContext] = [],
         routeSpeeds: [Double] = [],
-        recentWalkSnippets: [WalkSnippet] = []
+        recentWalkSnippets: [WalkSnippet] = [],
+        intention: String? = nil
     ) -> GeneratedPrompt {
         let combinedText = formatRecordings(recordings)
         let meditationText = formatMeditations(meditations)
@@ -152,7 +153,8 @@ struct PromptGenerator {
             metadata: metadata,
             location: location,
             pace: pace,
-            recentWalks: recentWalks
+            recentWalks: recentWalks,
+            intention: intention
         )
         return GeneratedPrompt(style: style, customStyle: nil, text: prompt)
     }
@@ -166,7 +168,8 @@ struct PromptGenerator {
         startDate: Date,
         placeNames: [PlaceContext] = [],
         routeSpeeds: [Double] = [],
-        recentWalkSnippets: [WalkSnippet] = []
+        recentWalkSnippets: [WalkSnippet] = [],
+        intention: String? = nil
     ) -> GeneratedPrompt {
         let combinedText = formatRecordings(recordings)
         let meditationText = formatMeditations(meditations)
@@ -185,7 +188,8 @@ struct PromptGenerator {
             metadata: metadata,
             location: location,
             pace: pace,
-            recentWalks: recentWalks
+            recentWalks: recentWalks,
+            intention: intention
         )
         return GeneratedPrompt(style: nil, customStyle: customStyle, text: prompt)
     }
@@ -198,7 +202,8 @@ struct PromptGenerator {
         startDate: Date,
         placeNames: [PlaceContext] = [],
         routeSpeeds: [Double] = [],
-        recentWalkSnippets: [WalkSnippet] = []
+        recentWalkSnippets: [WalkSnippet] = [],
+        intention: String? = nil
     ) -> [GeneratedPrompt] {
         PromptStyle.allCases.map { style in
             generate(
@@ -210,7 +215,8 @@ struct PromptGenerator {
                 startDate: startDate,
                 placeNames: placeNames,
                 routeSpeeds: routeSpeeds,
-                recentWalkSnippets: recentWalkSnippets
+                recentWalkSnippets: recentWalkSnippets,
+                intention: intention
             )
         }
     }
@@ -350,7 +356,7 @@ struct PromptGenerator {
 
     // MARK: - Prompt Builder
 
-    private static func buildPrompt(preamble: String, instruction: String, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?) -> String {
+    private static func buildPrompt(preamble: String, instruction: String, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?, intention: String? = nil) -> String {
         var sections = """
             \(preamble)
 
@@ -358,6 +364,10 @@ struct PromptGenerator {
 
             **Context:** \(metadata)
             """
+
+        if let intention = intention {
+            sections += "\n\n**Intention for this walk:** \"\(intention)\""
+        }
 
         if let location = location {
             sections += "\n\n\(location)"
@@ -393,12 +403,17 @@ struct PromptGenerator {
             """
         }
 
+        var fullInstruction = instruction
+        if let intention = intention {
+            fullInstruction += " The walker set this intention before walking: '\(intention)'. Let this purpose guide your response."
+        }
+
         sections += """
 
 
             ---
 
-            \(instruction)
+            \(fullInstruction)
             """
 
         return sections

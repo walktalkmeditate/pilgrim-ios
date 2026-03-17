@@ -33,6 +33,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var meditateTime: String = "0:00"
     @Published var paceHistory: [Double] = []
     @Published var currentSoundscapeName: String?
+    @Published var intention: String?
 
     private var meditationStartDate: Date?
     private var meditationIntervals: [TempActivityInterval] = []
@@ -137,6 +138,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         finalizeMeditation()
         soundManagement.onWalkEnd()
         builder.setStatus(.ready)
+    }
+
+    func cancel() {
+        sessionGuard?.stopAndCleanup()
+        soundManagement.onWalkEnd()
     }
 
     func toggleVoiceRecording() {
