@@ -159,11 +159,21 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     @discardableResult
     func addWaypoint(label: String, icon: String) -> Bool {
-        guard let location = currentLocation else { return false }
+        let lat: Double
+        let lon: Double
+        if let location = currentLocation {
+            lat = location.latitude
+            lon = location.longitude
+        } else if let last = routeCoordinates.last {
+            lat = last.latitude
+            lon = last.longitude
+        } else {
+            return false
+        }
         let waypoint = TempWaypoint(
             uuid: nil,
-            latitude: location.latitude,
-            longitude: location.longitude,
+            latitude: lat,
+            longitude: lon,
             label: label,
             icon: icon,
             timestamp: Date()

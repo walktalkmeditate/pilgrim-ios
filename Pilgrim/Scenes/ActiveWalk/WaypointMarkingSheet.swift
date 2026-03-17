@@ -9,7 +9,7 @@ struct WaypointChip: Identifiable {
         WaypointChip(label: "Peaceful", icon: "leaf"),
         WaypointChip(label: "Beautiful", icon: "eye"),
         WaypointChip(label: "Grateful", icon: "heart"),
-        WaypointChip(label: "Resting", icon: "figure.seated"),
+        WaypointChip(label: "Resting", icon: "figure.seated.side"),
         WaypointChip(label: "Inspired", icon: "sparkles"),
     ]
 }

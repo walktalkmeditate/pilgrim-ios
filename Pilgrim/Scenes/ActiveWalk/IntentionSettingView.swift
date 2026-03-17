@@ -114,8 +114,10 @@ struct IntentionSettingView: View {
                             .font(Constants.Typography.caption)
                             .foregroundColor(.ink.opacity(0.7))
                             .lineLimit(1)
+                            .truncationMode(.tail)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
+                            .frame(maxWidth: 250)
                             .background(
                                 Capsule()
                                     .fill(Color.parchmentSecondary.opacity(0.4))
