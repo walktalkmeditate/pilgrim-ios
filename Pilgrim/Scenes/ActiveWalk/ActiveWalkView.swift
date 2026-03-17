@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 struct ActiveWalkView: View {
 
@@ -162,10 +163,17 @@ struct ActiveWalkView: View {
     }
 
     private func mapSection(height: CGFloat) -> some View {
-        PilgrimMapView(
+        let waypointPins = viewModel.waypoints.map { wp in
+            PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: wp.latitude, longitude: wp.longitude),
+                kind: .waypoint(label: wp.label, icon: wp.icon)
+            )
+        }
+        return PilgrimMapView(
             showsUserLocation: true,
             followsUserLocation: true,
-            routeSegments: viewModel.routeSegments
+            routeSegments: viewModel.routeSegments,
+            pinAnnotations: waypointPins
         )
         .frame(height: height)
     }

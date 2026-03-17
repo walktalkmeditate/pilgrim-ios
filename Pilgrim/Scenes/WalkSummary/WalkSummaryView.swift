@@ -826,9 +826,7 @@ extension WalkSummaryView {
     }
 
     var waypointPinAnnotations: [PilgrimAnnotation] {
-        let wps = walk.waypoints
-        print("[WalkSummary] Waypoints count: \(wps.count)")
-        return wps.map { waypoint in
+        walk.waypoints.map { waypoint in
             PilgrimAnnotation(
                 coordinate: CLLocationCoordinate2D(latitude: waypoint.latitude, longitude: waypoint.longitude),
                 kind: .waypoint(label: waypoint.label, icon: waypoint.icon)

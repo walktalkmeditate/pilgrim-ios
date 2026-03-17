@@ -180,7 +180,6 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         )
         builder.addWaypoint(waypoint)
         waypoints.append(waypoint)
-        print("[Waypoint] Added: \(label) at (\(lat), \(lon)). VM count: \(waypoints.count)")
         return true
     }
 

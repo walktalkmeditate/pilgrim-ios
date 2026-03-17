@@ -217,8 +217,6 @@ struct PilgrimMapView: UIViewRepresentable {
         guard let circleManager = coordinator.circleManager else { return }
 
         var circles: [CircleAnnotation] = []
-        let waypointCount = pinAnnotations.filter { if case .waypoint = $0.kind { return true } else { return false } }.count
-        print("[PilgrimMapView] applyAnnotations: \(pinAnnotations.count) total, \(waypointCount) waypoints")
 
         for pin in pinAnnotations {
             if case .endPoint = pin.kind {
@@ -250,11 +248,11 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeWidth = 1.5
                 circle.circleStrokeOpacity = 1.0
             case .waypoint:
-                circle.circleRadius = 14
-                circle.circleColor = StyleColor(.init(red: 1, green: 0, blue: 0, alpha: 1))
-                circle.circleOpacity = 1.0
-                circle.circleStrokeColor = StyleColor(.init(red: 1, green: 1, blue: 1, alpha: 1))
-                circle.circleStrokeWidth = 3
+                circle.circleRadius = 9
+                circle.circleColor = StyleColor(UIColor.stone)
+                circle.circleOpacity = 0.9
+                circle.circleStrokeColor = StyleColor(UIColor.parchment)
+                circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
             case .startPoint:
                 circle.circleRadius = 6
