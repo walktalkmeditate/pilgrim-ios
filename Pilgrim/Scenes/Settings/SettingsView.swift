@@ -82,5 +82,6 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, Constants.UI.Padding.breathingRoom)
         .padding(.bottom, Constants.UI.Padding.normal)
+        .background(Color.parchment)
     }
 }

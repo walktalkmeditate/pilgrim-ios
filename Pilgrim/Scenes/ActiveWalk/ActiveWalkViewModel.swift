@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import CombineExt
 import CoreLocation
+import AVFoundation
 
 class ActiveWalkViewModel: ObservableObject, Identifiable {
 
@@ -139,6 +140,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func toggleVoiceRecording() {
+        if !voiceRecordingManagement.isRecording
+            && AVAudioSession.sharedInstance().recordPermission == .denied {
+            showMicrophonePermissionNeeded = true
+            return
+        }
         voiceRecordingManagement.toggleRecording()
     }
 
@@ -204,11 +210,6 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         voiceRecordingManagement.$audioLevel
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.audioLevel = $0 }
-            .store(in: &cancellables)
-
-        voiceRecordingManagement.$microphonePermissionNeeded
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.showMicrophonePermissionNeeded = $0 }
             .store(in: &cancellables)
 
         let voiceRecordings = builder.voiceRecordingsPublisher
