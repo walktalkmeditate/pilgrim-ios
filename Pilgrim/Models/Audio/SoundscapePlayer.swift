@@ -11,6 +11,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
 
     private var activePlayer: AVAudioPlayer?
     private var targetVolume: Float = 0.4
+    var currentTargetVolume: Float { targetVolume }
     private let coordinator = AudioSessionCoordinator.shared
     private let fileStore = AudioFileStore.shared
 

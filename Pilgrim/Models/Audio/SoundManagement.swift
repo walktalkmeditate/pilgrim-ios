@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-final class SoundManagement {
+final class SoundManagement: ObservableObject {
 
     private let bellPlayer = BellPlayer.shared
     private let soundscapePlayer = SoundscapePlayer.shared
@@ -9,6 +9,23 @@ final class SoundManagement {
     private let fileStore = AudioFileStore.shared
     private var pendingSoundscapeStart: DispatchWorkItem?
     private var pendingEndBell: DispatchWorkItem?
+
+    @Published private(set) var isSoundscapePlaying = false
+    private var soundscapeCancellable: AnyCancellable?
+
+    init() {
+        soundscapeCancellable = soundscapePlayer.$isPlaying
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.isSoundscapePlaying, on: self)
+    }
+
+    func toggleSoundscape() {
+        if soundscapePlayer.isPlaying {
+            stopSoundscape()
+        } else {
+            startSoundscape()
+        }
+    }
 
     private var isSoundsEnabled: Bool {
         UserPreferences.soundsEnabled.value

@@ -85,4 +85,9 @@ enum Config {
         static let manifestURL = URL(string: "https://cdn.pilgrimapp.org/audio/manifest.json")!
     }
 
+    enum VoiceGuide {
+        static let manifestURL = URL(string: "https://cdn.pilgrimapp.org/voiceguide/manifest.json")!
+        static let baseURL = URL(string: "https://cdn.pilgrimapp.org/voiceguide")!
+    }
+
 }

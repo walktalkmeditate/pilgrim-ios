@@ -44,6 +44,11 @@ struct UserPreferences {
     static let selectedSoundscapeId = UserPreference.Optional<String>(key: "selectedSoundscapeId", defaultValue: "gentle-stream")
     static let breathRhythm = UserPreference.Required<Int>(key: "breathRhythm", defaultValue: 0)
 
+    static let voiceGuideEnabled = UserPreference.Required<Bool>(key: "voiceGuideEnabled", defaultValue: false)
+    static let selectedVoiceGuidePackId = UserPreference.Optional<String>(key: "selectedVoiceGuidePackId")
+    static let voiceGuideVolume = UserPreference.Required<Double>(key: "voiceGuideVolume", defaultValue: 0.8)
+    static let voiceGuideDuckLevel = UserPreference.Required<Double>(key: "voiceGuideDuckLevel", defaultValue: 0.15)
+
     static let beginWithIntention = UserPreference.Required<Bool>(key: "beginWithIntention", defaultValue: false)
 
     static let dynamicVoiceEnabled = UserPreference.Required<Bool>(key: "dynamicVoiceEnabled", defaultValue: true)

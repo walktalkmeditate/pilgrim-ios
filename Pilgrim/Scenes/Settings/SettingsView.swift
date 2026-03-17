@@ -44,6 +44,19 @@ struct SettingsView: View {
                         Text("Talks")
                             .font(Constants.Typography.body)
                     }
+
+                    NavigationLink {
+                        VoiceGuideSettingsView()
+                    } label: {
+                        HStack {
+                            Text("Voice Guide")
+                                .font(Constants.Typography.body)
+                            Spacer()
+                            Text(UserPreferences.voiceGuideEnabled.value ? "On" : "Off")
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
+                        }
+                    }
                 } header: {
                     Text("Audio")
                         .font(Constants.Typography.caption)
