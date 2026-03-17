@@ -76,6 +76,8 @@ public protocol WalkInterface: DataInterface {
     var activityIntervals: [ActivityIntervalInterface] { get }
     /// An optional favicon rawValue identifying a special icon for this walk.
     var favicon: String? { get }
+    /// A reference to `Waypoint`s associated with this walk.
+    var waypoints: [WaypointInterface] { get }
 
 }
 
@@ -107,5 +109,6 @@ public extension WalkInterface {
     var voiceRecordings: [VoiceRecordingInterface] { throwOnAccess() }
     var activityIntervals: [ActivityIntervalInterface] { [] }
     var favicon: String? { nil }
+    var waypoints: [WaypointInterface] { [] }
 
 }

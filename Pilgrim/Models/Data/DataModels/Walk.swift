@@ -143,6 +143,7 @@ extension Walk: WalkInterface {
     public var heartRates: [HeartRateDataSampleInterface] { threadSafeSyncReturn { self._heartRates.value } }
     public var activityIntervals: [ActivityIntervalInterface] { threadSafeSyncReturn { self._activityIntervals.value } }
     public var favicon: String? { threadSafeSyncReturn { self._favicon.value } }
+    public var waypoints: [WaypointInterface] { [] }
 
 }
 
