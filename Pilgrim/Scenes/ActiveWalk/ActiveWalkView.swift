@@ -9,6 +9,7 @@ struct ActiveWalkView: View {
     @State private var showMeditation = false
     @State private var showOptions = false
     @State private var showIntention = false
+    @State private var showWaypoint = false
     @State private var showBackConfirmation = false
     @State private var hasCheckedAutoIntention = false
 
@@ -62,7 +63,14 @@ struct ActiveWalkView: View {
                         showIntention = true
                     }
                 },
-                currentIntention: viewModel.intention
+                onDropWaypoint: {
+                    showOptions = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showWaypoint = true
+                    }
+                },
+                currentIntention: viewModel.intention,
+                waypointCount: viewModel.waypoints.count
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
@@ -76,6 +84,18 @@ struct ActiveWalkView: View {
                     showIntention = false
                 },
                 onDismiss: { showIntention = false }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(isPresented: $showWaypoint) {
+            WaypointMarkingSheet(
+                onMark: { label, icon in
+                    viewModel.addWaypoint(label: label, icon: icon)
+                    showWaypoint = false
+                },
+                onDismiss: { showWaypoint = false }
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
