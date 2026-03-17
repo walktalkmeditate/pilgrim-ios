@@ -164,7 +164,7 @@ struct FeedbackView: View {
         errorMessage = nil
         isSubmitting = true
 
-        Task {
+        Task { @MainActor in
             do {
                 try await FeedbackService.submit(
                     category: category.apiValue,

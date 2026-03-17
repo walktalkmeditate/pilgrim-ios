@@ -180,6 +180,7 @@ struct WalkStartView: View {
             Text(selectedMode.isAvailable ? selectedMode.subtitle : "coming soon")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog.opacity(0.5))
+                .contentTransition(.opacity)
                 .animation(.easeInOut(duration: 0.3), value: selectedMode)
         }
     }
