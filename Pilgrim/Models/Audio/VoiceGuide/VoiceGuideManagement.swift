@@ -102,6 +102,10 @@ final class VoiceGuideManagement: ObservableObject {
     }
 
     private func playPrompt(_ prompt: VoiceGuidePrompt, packId: String, generation: Int) {
+        guard VoiceGuideFileStore.shared.isAvailable(prompt, packId: packId) else {
+            scheduler?.markPlayed(prompt.id)
+            return
+        }
         player.play(prompt: prompt, packId: packId) { [weak self] in
             guard let self, self.generation == generation else { return }
             self.scheduler?.markPlayed(prompt.id)
@@ -133,6 +137,12 @@ final class VoiceGuideManagement: ObservableObject {
             dict = existing
         }
         dict[packId] = Array(scheduler.playedPromptIds)
+
+        let knownPacks = Set(VoiceGuideManifestService.shared.packs.map(\.id))
+        if !knownPacks.isEmpty {
+            dict = dict.filter { knownPacks.contains($0.key) }
+        }
+
         if let data = try? JSONEncoder().encode(dict) {
             try? data.write(to: historyFileURL)
         }

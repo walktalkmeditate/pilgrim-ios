@@ -11,7 +11,6 @@ final class VoiceGuideScheduler {
     }
 
     private let pack: VoiceGuidePack
-    private let fileStore = VoiceGuideFileStore.shared
     private var cancellables: [AnyCancellable] = []
 
     private var walkState = WalkState()
@@ -73,6 +72,8 @@ final class VoiceGuideScheduler {
         isPlaying = true
     }
 
+    func testTick() { tick() }
+
     private func tick() {
         guard walkState.status == .recording,
               !walkState.isRecordingVoice,
@@ -91,7 +92,6 @@ final class VoiceGuideScheduler {
         }
 
         guard let prompt = nextPrompt() else { return }
-        guard fileStore.isAvailable(prompt, packId: pack.id) else { return }
 
         markPlaybackStarted()
         onShouldPlay?(prompt)

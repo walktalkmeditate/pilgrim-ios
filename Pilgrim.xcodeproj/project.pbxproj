@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
+		0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
 		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
@@ -151,6 +152,7 @@
 		22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */; };
 		2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D23FF60A762C30296A69E6 /* ComputationTests.swift */; };
 		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
+		3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */; };
 		3DF4B121DEE87CA7EBB26207 /* VoiceGuideSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */; };
 		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
 		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
@@ -273,6 +275,7 @@
 		F1A2B3C4D5E6F7A8B9C0D1E7 /* FaviconSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */; };
 		F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */; };
 		FA9B9D71DB2B3EA84CC73FEE /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */; };
+		FB767A6007B826D951706B85 /* VoiceGuideHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */; };
 		FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */; };
 		PERM000100000003 /* PermissionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000002 /* PermissionsViewModel.swift */; };
 		PERM000100000005 /* PermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000004 /* PermissionsViewModelTests.swift */; };
@@ -291,6 +294,7 @@
 
 /* Begin PBXFileReference section */
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
+		0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestTests.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		16BE9557700152F043C359DC /* WalkShareView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareView.swift; sourceTree = "<group>"; };
 		1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDownloadManager.swift; sourceTree = "<group>"; };
@@ -445,6 +449,7 @@
 		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
 		4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceSparklineView.swift; sourceTree = "<group>"; };
 		4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteShapeView.swift; sourceTree = "<group>"; };
+		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
 		5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideDownloadManager.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManagement.swift; sourceTree = "<group>"; };
@@ -456,6 +461,7 @@
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareViewModel.swift; sourceTree = "<group>"; };
 		90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
+		90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideSchedulerTests.swift; sourceTree = "<group>"; };
 		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
@@ -1061,6 +1067,9 @@
 				BB00CC010000000000000002 /* WelcomeViewModelTests.swift */,
 				PERM000100000004 /* PermissionsViewModelTests.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */,
+				90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */,
+				0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */,
+				4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1758,6 +1767,9 @@
 				BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */,
 				PERM000100000005 /* PermissionsViewModelTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */,
+				0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */,
+				3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */,
+				FB767A6007B826D951706B85 /* VoiceGuideHistoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
