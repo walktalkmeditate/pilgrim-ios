@@ -748,7 +748,16 @@ extension WalkSummaryView {
     }
 
     var allPinAnnotations: [PilgrimAnnotation] {
-        startEndAnnotations + meditationPinAnnotations + voicePinAnnotations
+        startEndAnnotations + meditationPinAnnotations + voicePinAnnotations + waypointPinAnnotations
+    }
+
+    var waypointPinAnnotations: [PilgrimAnnotation] {
+        walk.waypoints.map { waypoint in
+            PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: waypoint.latitude, longitude: waypoint.longitude),
+                kind: .waypoint(label: waypoint.label, icon: waypoint.icon)
+            )
+        }
     }
 
     var startEndAnnotations: [PilgrimAnnotation] {

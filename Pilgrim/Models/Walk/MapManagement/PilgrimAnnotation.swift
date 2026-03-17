@@ -8,6 +8,7 @@ struct PilgrimAnnotation: Identifiable {
     enum Kind {
         case meditation(duration: TimeInterval)
         case voiceRecording(label: String)
+        case waypoint(label: String, icon: String)
         case startPoint
         case endPoint
     }

@@ -247,6 +247,13 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeColor = StyleColor(UIColor.rust)
                 circle.circleStrokeWidth = 1.5
                 circle.circleStrokeOpacity = 1.0
+            case .waypoint:
+                circle.circleRadius = 7
+                circle.circleColor = StyleColor(UIColor.stone)
+                circle.circleOpacity = 0.8
+                circle.circleStrokeColor = StyleColor(UIColor.parchment)
+                circle.circleStrokeWidth = 1.5
+                circle.circleStrokeOpacity = 1.0
             case .startPoint:
                 circle.circleRadius = 6
                 circle.circleColor = StyleColor(UIColor.parchment)
