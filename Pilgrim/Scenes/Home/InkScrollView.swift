@@ -194,16 +194,18 @@ struct InkScrollView: View {
         isNewest: Bool,
         sceneryView: AnyView?
     ) -> some View {
-        WalkDotView(
-            snapshot: snapshot,
-            position: position,
-            opacity: opacity,
-            onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
-            sceneryView: sceneryView
-        )
-        .overlay {
+        ZStack {
+            WalkDotView(
+                snapshot: snapshot,
+                position: position,
+                opacity: opacity,
+                onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
+                sceneryView: sceneryView
+            )
+
             if isNewest {
                 newestDotEffects(snapshot: snapshot)
+                    .position(position)
             }
         }
         .simultaneousGesture(
