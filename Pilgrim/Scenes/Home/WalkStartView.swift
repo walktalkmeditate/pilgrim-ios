@@ -165,16 +165,10 @@ struct WalkStartView: View {
                         selectedMode = mode
                     } label: {
                         VStack(spacing: Constants.UI.Padding.xs) {
-                            HStack(spacing: 4) {
-                                Text(mode.rawValue.uppercased())
-                                    .font(Constants.Typography.button)
-                                    .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
-                                if !mode.isAvailable && mode == selectedMode {
-                                    Text("soon")
-                                        .font(Constants.Typography.caption)
-                                        .foregroundColor(.fog.opacity(0.3))
-                                }
-                            }
+                            Text(mode.rawValue.uppercased())
+                                .font(Constants.Typography.button)
+                                .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
+                                .fixedSize()
                             Rectangle()
                                 .frame(height: 2)
                                 .foregroundColor(mode == selectedMode ? .stone : .clear)
@@ -183,7 +177,7 @@ struct WalkStartView: View {
                 }
             }
 
-            Text(selectedMode.subtitle)
+            Text(selectedMode.isAvailable ? selectedMode.subtitle : "coming soon")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog.opacity(0.5))
                 .animation(.easeInOut(duration: 0.3), value: selectedMode)
