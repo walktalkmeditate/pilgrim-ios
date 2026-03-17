@@ -81,6 +81,7 @@ struct InkScrollView: View {
                     emptyState(width: width)
                 }
             }
+            .transaction { $0.animation = nil }
         }
         .frame(width: width, height: renderer.totalHeight)
         .onAppear {
@@ -101,6 +102,7 @@ struct InkScrollView: View {
                 if isNewest {
                     newestDotEffects(snapshot: snapshot)
                         .position(position.center)
+                        .transaction { $0.animation = nil }
                 }
 
                 self.dotContent(
