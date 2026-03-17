@@ -24,9 +24,14 @@ struct WalkStartView: View {
             content
         }
         .onAppear {
-            currentQuote = WelcomeViewModel.quotePool.randomElement() ?? WelcomeViewModel.quotePool[0]
+            currentQuote = selectedMode.quotes.randomElement() ?? ""
             lunarPhase = LunarPhase.current()
             runEntrance()
+        }
+        .onChange(of: selectedMode) { _, mode in
+            withAnimation(.easeInOut(duration: 0.4)) {
+                currentQuote = mode.quotes.randomElement() ?? ""
+            }
         }
         .onDisappear {
             entranceGeneration += 1
@@ -117,13 +122,15 @@ struct WalkStartView: View {
                     .foregroundColor(.parchment)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.stone)
+                    .background(selectedMode.isAvailable ? Color.stone : Color.fog.opacity(0.2))
                     .cornerRadius(Constants.UI.CornerRadius.normal)
             }
-            .shadow(color: .stone.opacity(0.2), radius: 8, x: 0, y: 3)
-            .shadow(color: .stone.opacity(0.12 * glowScale), radius: 20 * glowScale, x: 0, y: 0)
+            .disabled(!selectedMode.isAvailable)
+            .shadow(color: .stone.opacity(selectedMode.isAvailable ? 0.2 : 0), radius: 8, x: 0, y: 3)
+            .shadow(color: .stone.opacity(selectedMode.isAvailable ? 0.12 * glowScale : 0), radius: 20 * glowScale, x: 0, y: 0)
             .opacity(showButton ? 1 : 0)
             .offset(y: showButton ? 0 : 20)
+            .animation(.easeInOut(duration: 0.3), value: selectedMode.isAvailable)
             .accessibilityLabel("Begin your journey")
         }
         .padding(.horizontal, Constants.UI.Padding.big)
@@ -151,18 +158,35 @@ struct WalkStartView: View {
     // MARK: - Mode Selector
 
     private var modeSelector: some View {
-        HStack(spacing: Constants.UI.Padding.big) {
-            ForEach(WalkMode.allCases, id: \.self) { mode in
-                VStack(spacing: Constants.UI.Padding.xs) {
-                    Text(mode.rawValue.uppercased())
-                        .font(Constants.Typography.button)
-                        .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
-
-                    Rectangle()
-                        .frame(height: 2)
-                        .foregroundColor(mode == selectedMode ? .stone : .clear)
+        VStack(spacing: Constants.UI.Padding.small) {
+            HStack(spacing: Constants.UI.Padding.big) {
+                ForEach(WalkMode.allCases, id: \.self) { mode in
+                    Button {
+                        selectedMode = mode
+                    } label: {
+                        VStack(spacing: Constants.UI.Padding.xs) {
+                            HStack(spacing: 4) {
+                                Text(mode.rawValue.uppercased())
+                                    .font(Constants.Typography.button)
+                                    .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
+                                if !mode.isAvailable && mode == selectedMode {
+                                    Text("soon")
+                                        .font(Constants.Typography.caption)
+                                        .foregroundColor(.fog.opacity(0.3))
+                                }
+                            }
+                            Rectangle()
+                                .frame(height: 2)
+                                .foregroundColor(mode == selectedMode ? .stone : .clear)
+                        }
+                    }
                 }
             }
+
+            Text(selectedMode.subtitle)
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog.opacity(0.5))
+                .animation(.easeInOut(duration: 0.3), value: selectedMode)
         }
     }
 

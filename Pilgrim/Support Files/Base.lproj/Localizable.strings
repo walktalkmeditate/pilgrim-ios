@@ -171,6 +171,16 @@
 "Welcome.Quote.6" = "The journey of a thousand miles\nbegins beneath your feet";
 "Welcome.Begin" = "Begin";
 
+// Together quotes
+"Together.Quote.1" = "We walk together,\nthough our paths differ";
+"Together.Quote.2" = "In good company,\nthe road seems shorter";
+"Together.Quote.3" = "Side by side,\nstep by step";
+
+// Seek quotes
+"Seek.Quote.1" = "What you seek\nis seeking you";
+"Seek.Quote.2" = "Wander where\nthe wi-fi is weak";
+"Seek.Quote.3" = "The real voyage of discovery\nis seeing with new eyes";
+
 // Permissions - Preparing for the Journey
 "Permissions.Headline" = "Prepare for the journey";
 "Permissions.Subtitle" = "Pilgrim walks best with these";
