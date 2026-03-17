@@ -98,11 +98,15 @@ struct InkScrollView: View {
                 let isNewest = index == 0
                 let scenery = self.sceneryForDot(snapshot: snapshot, position: position.center, viewportHeight: viewportHeight)
 
+                if isNewest {
+                    newestDotEffects(snapshot: snapshot)
+                        .position(position.center)
+                }
+
                 self.dotContent(
                     snapshot: snapshot,
                     position: position.center,
                     opacity: opacity,
-                    isNewest: isNewest,
                     sceneryView: scenery
                 )
                 .opacity(hasAppeared ? 1 : 0)
@@ -191,24 +195,15 @@ struct InkScrollView: View {
         snapshot: WalkSnapshot,
         position: CGPoint,
         opacity: Double,
-        isNewest: Bool,
         sceneryView: AnyView?
     ) -> some View {
-        ZStack {
-            WalkDotView(
-                snapshot: snapshot,
-                position: position,
-                opacity: opacity,
-                onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
-                sceneryView: sceneryView
-            )
-
-            if isNewest {
-                newestDotEffects(snapshot: snapshot)
-                    .position(position)
-                    .animation(nil, value: hasAppeared)
-            }
-        }
+        WalkDotView(
+            snapshot: snapshot,
+            position: position,
+            opacity: opacity,
+            onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
+            sceneryView: sceneryView
+        )
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.4)
                 .onEnded { _ in
