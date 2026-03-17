@@ -90,13 +90,13 @@ struct MeditationView: View {
             breathPickerSheet
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
-                .presentationBackground(Color.ink.opacity(0.95))
+                .presentationBackground(Color.parchment.opacity(0.95))
         }
         .sheet(isPresented: $showSoundscapePicker) {
             soundscapePickerSheet
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
-                .presentationBackground(Color.ink.opacity(0.95))
+                .presentationBackground(Color.parchment.opacity(0.95))
         }
         .statusBarHidden()
         .animation(.easeInOut(duration: 1.5), value: closingPhase)
@@ -334,7 +334,7 @@ struct MeditationView: View {
         VStack(spacing: 16) {
             Text("Soundscape")
                 .font(Constants.Typography.heading)
-                .foregroundColor(Color.parchment.opacity(0.8))
+                .foregroundColor(Color.ink.opacity(0.8))
                 .padding(.top, 12)
 
             ScrollView {
@@ -352,7 +352,7 @@ struct MeditationView: View {
                             HStack {
                                 Text(scape.displayName)
                                     .font(Constants.Typography.body)
-                                    .foregroundColor(Color.parchment.opacity(0.9))
+                                    .foregroundColor(Color.ink.opacity(0.9))
                                 Spacer()
                                 if isSelected {
                                     Image(systemName: "checkmark")
@@ -380,7 +380,7 @@ struct MeditationView: View {
                         HStack {
                             Text("None")
                                 .font(Constants.Typography.body)
-                                .foregroundColor(Color.parchment.opacity(0.5))
+                                .foregroundColor(Color.ink.opacity(0.5))
                             Spacer()
                             if noneSelected {
                                 Image(systemName: "checkmark")
@@ -405,7 +405,7 @@ struct MeditationView: View {
         VStack(spacing: 16) {
             Text("Breath Rhythm")
                 .font(Constants.Typography.heading)
-                .foregroundColor(Color.parchment.opacity(0.8))
+                .foregroundColor(Color.ink.opacity(0.8))
                 .padding(.top, 12)
 
             ScrollView {
@@ -426,7 +426,7 @@ struct MeditationView: View {
                                     HStack(spacing: 8) {
                                         Text(r.name)
                                             .font(Constants.Typography.body)
-                                            .foregroundColor(Color.parchment.opacity(0.9))
+                                            .foregroundColor(Color.ink.opacity(0.9))
                                         Text(r.label)
                                             .font(Constants.Typography.caption)
                                             .foregroundColor(Color.fog.opacity(0.4))
