@@ -704,14 +704,15 @@ private struct BreathingPulseView: View {
 
 private struct SonarRingView: View {
     let color: Color
-    @State private var animating = false
 
     var body: some View {
         Circle()
-            .stroke(color.opacity(animating ? 0 : 0.5), lineWidth: 1.5)
+            .stroke(color, lineWidth: 1.5)
             .frame(width: 28, height: 28)
-            .scaleEffect(animating ? 2.0 : 0.8)
-            .animation(.easeOut(duration: 2.0).repeatForever(autoreverses: false), value: animating)
-            .onAppear { animating = true }
+            .phaseAnimator([false, true]) { content, phase in
+                content
+                    .scaleEffect(phase ? 2.0 : 0.8)
+                    .opacity(phase ? 0 : 0.5)
+            } animation: { _ in .easeOut(duration: 2.0) }
     }
 }
