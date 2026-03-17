@@ -47,6 +47,8 @@ public enum TempV4 {
         public var meditateDuration: Double
         public var favicon: String?
 
+        var _waypoints: [TempV4.Waypoint]
+
         var _heartRates: [TempV4.WorkoutHeartRateDataSample]
         var _routeData: [TempV4.WorkoutRouteDataSample]
         var _pauses: [TempV4.WorkoutPause]
@@ -60,9 +62,10 @@ public enum TempV4 {
         public var workoutEvents: [WalkEventInterface] { _workoutEvents }
         public var voiceRecordings: [VoiceRecordingInterface] { _voiceRecordings }
         public var activityIntervals: [ActivityIntervalInterface] { _activityIntervals }
+        public var waypoints: [WaypointInterface] { _waypoints }
         public var events: [EventInterface] { throwOnAccess() }
         
-        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = [], favicon: String? = nil) {
+        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = [], favicon: String? = nil, waypoints: [TempV4.Waypoint] = []) {
             self.uuid = uuid
             self.workoutType = workoutType
             self.distance = distance
@@ -89,8 +92,40 @@ public enum TempV4 {
             self._voiceRecordings = voiceRecordings
             self._activityIntervals = activityIntervals
             self.favicon = favicon
+            self._waypoints = waypoints
         }
         
+        public required init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            uuid = try container.decodeIfPresent(UUID.self, forKey: .uuid)
+            workoutType = try container.decode(Walk.WalkType.self, forKey: .workoutType)
+            distance = try container.decode(Double.self, forKey: .distance)
+            steps = try container.decodeIfPresent(Int.self, forKey: .steps)
+            startDate = try container.decode(Date.self, forKey: .startDate)
+            endDate = try container.decode(Date.self, forKey: .endDate)
+            burnedEnergy = try container.decodeIfPresent(Double.self, forKey: .burnedEnergy)
+            isRace = try container.decode(Bool.self, forKey: .isRace)
+            comment = try container.decodeIfPresent(String.self, forKey: .comment)
+            isUserModified = try container.decode(Bool.self, forKey: .isUserModified)
+            healthKitUUID = try container.decodeIfPresent(UUID.self, forKey: .healthKitUUID)
+            finishedRecording = try container.decode(Bool.self, forKey: .finishedRecording)
+            ascend = try container.decode(Double.self, forKey: .ascend)
+            descend = try container.decode(Double.self, forKey: .descend)
+            activeDuration = try container.decode(Double.self, forKey: .activeDuration)
+            pauseDuration = try container.decode(Double.self, forKey: .pauseDuration)
+            dayIdentifier = try container.decode(String.self, forKey: .dayIdentifier)
+            talkDuration = try container.decode(Double.self, forKey: .talkDuration)
+            meditateDuration = try container.decode(Double.self, forKey: .meditateDuration)
+            favicon = try container.decodeIfPresent(String.self, forKey: .favicon)
+            _waypoints = try container.decodeIfPresent([TempV4.Waypoint].self, forKey: ._waypoints) ?? []
+            _heartRates = try container.decode([TempV4.WorkoutHeartRateDataSample].self, forKey: ._heartRates)
+            _routeData = try container.decode([TempV4.WorkoutRouteDataSample].self, forKey: ._routeData)
+            _pauses = try container.decode([TempV4.WorkoutPause].self, forKey: ._pauses)
+            _workoutEvents = try container.decode([TempV4.WorkoutEvent].self, forKey: ._workoutEvents)
+            _voiceRecordings = try container.decodeIfPresent([TempV4.VoiceRecording].self, forKey: ._voiceRecordings) ?? []
+            _activityIntervals = try container.decodeIfPresent([TempV4.ActivityInterval].self, forKey: ._activityIntervals) ?? []
+        }
+
         public func replaceActivityIntervals(_ intervals: [TempV4.ActivityInterval]) {
             _activityIntervals = intervals
         }

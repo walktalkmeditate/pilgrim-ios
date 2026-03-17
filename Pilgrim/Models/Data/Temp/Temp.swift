@@ -55,7 +55,8 @@ extension TempWalk: WalkInterface, Identifiable {
             workoutEvents: object.workoutEvents.map { .init(from: $0) },
             voiceRecordings: object.voiceRecordings.map { .init(from: $0) },
             activityIntervals: object.activityIntervals.map { .init(from: $0) },
-            favicon: object.favicon
+            favicon: object.favicon,
+            waypoints: object.waypoints.map { TempV4.Waypoint(uuid: $0.uuid, latitude: $0.latitude, longitude: $0.longitude, label: $0.label, icon: $0.icon, timestamp: $0.timestamp) }
         )
     }
 }
@@ -149,6 +150,21 @@ extension TempActivityInterval: ActivityIntervalInterface {
             activityType: object.activityType,
             startDate: object.startDate,
             endDate: object.endDate
+        )
+    }
+}
+
+public typealias TempWaypoint = TempV4.Waypoint
+extension TempWaypoint {
+
+    convenience init(from object: WaypointInterface) {
+        self.init(
+            uuid: object.uuid,
+            latitude: object.latitude,
+            longitude: object.longitude,
+            label: object.label,
+            icon: object.icon,
+            timestamp: object.timestamp
         )
     }
 }
