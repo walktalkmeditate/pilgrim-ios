@@ -40,7 +40,7 @@ struct IntentionSettingView: View {
                 .padding(.bottom, Constants.UI.Padding.big)
         }
         .padding(.horizontal, Constants.UI.Padding.big)
-        .onChange(of: recorder.transcribedText) { transcribed in
+        .onChange(of: recorder.transcribedText) { _, transcribed in
             if let transcribed {
                 text = String(transcribed.prefix(maxCharacters))
             }
@@ -64,7 +64,7 @@ struct IntentionSettingView: View {
                 .foregroundColor(.ink)
                 .lineLimit(3)
                 .focused($isTextFieldFocused)
-                .onChange(of: text) { newValue in
+                .onChange(of: text) { _, newValue in
                     if newValue.count > maxCharacters {
                         text = String(newValue.prefix(maxCharacters))
                     }

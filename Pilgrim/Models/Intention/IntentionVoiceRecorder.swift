@@ -104,6 +104,7 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
             self.timeRemaining -= 1
             if self.timeRemaining <= 0 {
                 self.stopRecording()
+                Task { await self.transcribe() }
             }
         }
     }
