@@ -122,8 +122,9 @@ final class TranscriptionService: ObservableObject {
 
             do {
                 let transcriptionResults = try await pipe.transcribe(audioPath: audioURL.path)
-                let text = transcriptionResults.map(\.text).joined(separator: " ")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let text = cleanTranscription(
+                    transcriptionResults.map(\.text).joined(separator: " ")
+                )
                 if !text.isEmpty {
                     results[uuid] = text
                     DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text)
@@ -173,8 +174,9 @@ final class TranscriptionService: ObservableObject {
 
         do {
             let results = try await pipe.transcribe(audioPath: audioURL.path)
-            let text = results.map(\.text).joined(separator: " ")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = cleanTranscription(
+                results.map(\.text).joined(separator: " ")
+            )
             await MainActor.run { state = .completed; isTranscribing = false }
             if !text.isEmpty {
                 DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text)
@@ -208,6 +210,18 @@ final class TranscriptionService: ObservableObject {
         return Double(wordCount) / durationMinutes
     }
 
+    private static let whisperArtifacts = ["[BLANK_AUDIO]", "[NO_SPEECH]", "(blank_audio)", "(no_speech)"]
+
+    private func cleanTranscription(_ text: String) -> String {
+        var cleaned = text
+        for artifact in Self.whisperArtifacts {
+            cleaned = cleaned.replacingOccurrences(of: artifact, with: "")
+        }
+        return cleaned
+            .replacingOccurrences(of: "  +", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     func transcribeAudioFile(at url: URL) async -> String? {
         let started = await MainActor.run { () -> Bool in
             guard !isTranscribing else { return false }
@@ -231,8 +245,9 @@ final class TranscriptionService: ObservableObject {
 
         do {
             let results = try await pipe.transcribe(audioPath: url.path)
-            let text = results.map(\.text).joined(separator: " ")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = cleanTranscription(
+                results.map(\.text).joined(separator: " ")
+            )
             await MainActor.run { isTranscribing = false }
             return text.isEmpty ? nil : text
         } catch {
