@@ -8,7 +8,8 @@ final class VoiceGuideManagement: ObservableObject {
 
     private var scheduler: VoiceGuideScheduler?
     private let player = VoiceGuidePlayer.shared
-    private var cancellables: [AnyCancellable] = []
+    private var walkStateBindings: [AnyCancellable] = []
+    private var schedulerCancellables: [AnyCancellable] = []
     private var generation = 0
     private var currentPackId: String?
 
@@ -45,7 +46,7 @@ final class VoiceGuideManagement: ObservableObject {
             persistHistory(for: packId, scheduler: scheduler)
         }
         scheduler = nil
-        cancellables.removeAll()
+        schedulerCancellables.removeAll()
         isActive = false
         isPaused = false
         currentPackId = nil
@@ -74,12 +75,12 @@ final class VoiceGuideManagement: ObservableObject {
         statusPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in self?.scheduler?.updateStatus(status) }
-            .store(in: &cancellables)
+            .store(in: &walkStateBindings)
 
         startDatePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] date in self?.scheduler?.updateWalkStartDate(date) }
-            .store(in: &cancellables)
+            .store(in: &walkStateBindings)
 
         isRecordingVoicePublisher
             .receive(on: DispatchQueue.main)
@@ -87,7 +88,7 @@ final class VoiceGuideManagement: ObservableObject {
                 if recording { self?.player.stop() }
                 self?.scheduler?.updateIsRecordingVoice(recording)
             }
-            .store(in: &cancellables)
+            .store(in: &walkStateBindings)
 
         isMeditatingPublisher
             .receive(on: DispatchQueue.main)
@@ -97,7 +98,7 @@ final class VoiceGuideManagement: ObservableObject {
                 else { self.resumeGuide() }
                 self.scheduler?.updateIsMeditating(meditating)
             }
-            .store(in: &cancellables)
+            .store(in: &walkStateBindings)
     }
 
     private func playPrompt(_ prompt: VoiceGuidePrompt, packId: String, generation: Int) {

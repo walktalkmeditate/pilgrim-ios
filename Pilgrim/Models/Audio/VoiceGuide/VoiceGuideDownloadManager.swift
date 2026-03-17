@@ -37,6 +37,7 @@ final class VoiceGuideDownloadManager: ObservableObject {
 
             var completed = 0
             for prompt in missing {
+                guard !Task.isCancelled else { break }
                 let success = await download(prompt: prompt, packId: pack.id)
                 if !success {
                     _ = await download(prompt: prompt, packId: pack.id)
