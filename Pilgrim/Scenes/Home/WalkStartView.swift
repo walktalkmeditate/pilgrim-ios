@@ -12,7 +12,6 @@ struct WalkStartView: View {
     @State private var showLogo = false
     @State private var showQuote = false
     @State private var showMoon = false
-    @State private var showButton = false
     @State private var glowScale: CGFloat = 1.0
     @State private var entranceGeneration = 0
 
@@ -26,6 +25,7 @@ struct WalkStartView: View {
         .onAppear {
             currentQuote = selectedMode.quotes.randomElement() ?? ""
             lunarPhase = LunarPhase.current()
+            breathing = true
             runEntrance()
         }
         .onChange(of: selectedMode) { _, mode in
@@ -39,7 +39,6 @@ struct WalkStartView: View {
             showLogo = false
             showQuote = false
             showMoon = false
-            showButton = false
             glowScale = 1.0
         }
     }
@@ -109,12 +108,10 @@ struct WalkStartView: View {
             Spacer()
 
             footprintPair
-                .opacity(showButton ? 1 : 0)
                 .padding(.bottom, Constants.UI.Padding.normal)
 
             modeSelector
                 .padding(.bottom, Constants.UI.Padding.normal)
-                .opacity(showButton ? 1 : 0)
 
             Button(action: { onStartWalk(selectedMode) }) {
                 Text(LS["Welcome.Begin"])
@@ -128,8 +125,6 @@ struct WalkStartView: View {
             .disabled(!selectedMode.isAvailable)
             .shadow(color: .stone.opacity(selectedMode.isAvailable ? 0.2 : 0), radius: 8, x: 0, y: 3)
             .shadow(color: .stone.opacity(selectedMode.isAvailable ? 0.12 * glowScale : 0), radius: 20 * glowScale, x: 0, y: 0)
-            .opacity(showButton ? 1 : 0)
-            .offset(y: showButton ? 0 : 20)
             .animation(.easeInOut(duration: 0.3), value: selectedMode.isAvailable)
             .accessibilityLabel("Begin your journey")
         }
@@ -188,12 +183,10 @@ struct WalkStartView: View {
     // MARK: - Entrance
 
     private func runEntrance() {
-        let reduceMotion = UIAccessibility.isReduceMotionEnabled
-        if reduceMotion {
+        if UIAccessibility.isReduceMotionEnabled {
             showLogo = true
             showQuote = true
             showMoon = true
-            showButton = true
             breathing = true
             return
         }
@@ -209,10 +202,6 @@ struct WalkStartView: View {
 
         withAnimation(.easeOut(duration: 0.5).delay(0.6)) {
             showMoon = true
-        }
-
-        withAnimation(.easeOut(duration: 0.5).delay(0.8)) {
-            showButton = true
         }
 
         let generation = entranceGeneration
