@@ -42,9 +42,7 @@ struct InkScrollView: View {
             .overlay(expandCard)
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 1.2).delay(0.2)) {
-                hasAppeared = true
-            }
+            hasAppeared = true
         }
     }
 
@@ -66,6 +64,7 @@ struct InkScrollView: View {
                         .fill(segmentColor.opacity(segmentOpacity))
                         .blur(radius: 0.6)
                         .opacity(hasAppeared ? 1 : 0)
+                        .animation(.easeOut(duration: 1.2).delay(0.2), value: hasAppeared)
                 }
 
             }
