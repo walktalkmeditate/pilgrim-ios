@@ -21,6 +21,8 @@ struct WalkSummaryView: View {
     init(walk: WalkInterface) {
         self.walk = walk
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
+        _cachedSegments = State(initialValue: Self.computeSegments(for: walk))
+        _cachedAnnotations = State(initialValue: Self.computeAnnotations(for: walk))
     }
     @State private var cameraBounds: MapCameraBounds?
     @State private var cameraCenter: CLLocationCoordinate2D?
@@ -84,8 +86,6 @@ struct WalkSummaryView: View {
             }
             .onAppear {
                 loadExistingTranscriptions()
-                cachedSegments = activityColoredSegments
-                cachedAnnotations = allPinAnnotations
                 recentWalkSnippets = computeRecentWalkSnippets()
                 milestone = computeMilestone()
                 startRevealSequence()
@@ -703,6 +703,76 @@ struct WalkSummaryView: View {
 // MARK: - Route Segments & Annotations
 
 extension WalkSummaryView {
+
+    static func computeSegments(for walk: WalkInterface) -> [RouteSegment] {
+        let samples = walk.routeData
+        guard samples.count > 1 else { return [] }
+
+        var segments: [(type: String, indices: [Int])] = []
+        var currentType = activityType(for: samples[0], in: walk)
+        var currentIndices = [0]
+
+        for i in 1..<samples.count {
+            let type = activityType(for: samples[i], in: walk)
+            if type == currentType {
+                currentIndices.append(i)
+            } else {
+                currentIndices.append(i)
+                segments.append((type: currentType, indices: currentIndices))
+                currentType = type
+                currentIndices = [i]
+            }
+        }
+        segments.append((type: currentType, indices: currentIndices))
+
+        return segments.map { segment in
+            let coords = segment.indices.map { i in
+                CLLocationCoordinate2D(latitude: samples[i].latitude, longitude: samples[i].longitude)
+            }
+            return RouteSegment(coordinates: coords, activityType: segment.type)
+        }
+    }
+
+    static func computeAnnotations(for walk: WalkInterface) -> [PilgrimAnnotation] {
+        var pins: [PilgrimAnnotation] = []
+
+        if let first = walk.routeData.first {
+            pins.append(PilgrimAnnotation(coordinate: CLLocationCoordinate2D(latitude: first.latitude, longitude: first.longitude), kind: .startPoint))
+        }
+        if let last = walk.routeData.last, walk.routeData.count > 1 {
+            pins.append(PilgrimAnnotation(coordinate: CLLocationCoordinate2D(latitude: last.latitude, longitude: last.longitude), kind: .endPoint))
+        }
+
+        let routeSamples = walk.routeData
+        for interval in walk.activityIntervals where interval.activityType == .meditation {
+            if let closest = routeSamples.min(by: { abs($0.timestamp.timeIntervalSince(interval.startDate)) < abs($1.timestamp.timeIntervalSince(interval.startDate)) }) {
+                pins.append(PilgrimAnnotation(coordinate: CLLocationCoordinate2D(latitude: closest.latitude, longitude: closest.longitude), kind: .meditation(duration: interval.duration)))
+            }
+        }
+
+        for recording in walk.voiceRecordings {
+            if let closest = routeSamples.min(by: { abs($0.timestamp.timeIntervalSince(recording.startDate)) < abs($1.timestamp.timeIntervalSince(recording.startDate)) }) {
+                pins.append(PilgrimAnnotation(coordinate: CLLocationCoordinate2D(latitude: closest.latitude, longitude: closest.longitude), kind: .voiceRecording(label: "Recording")))
+            }
+        }
+
+        for waypoint in walk.waypoints {
+            pins.append(PilgrimAnnotation(coordinate: CLLocationCoordinate2D(latitude: waypoint.latitude, longitude: waypoint.longitude), kind: .waypoint(label: waypoint.label, icon: waypoint.icon)))
+        }
+
+        return pins
+    }
+
+    private static func activityType(for sample: RouteDataSampleInterface, in walk: WalkInterface) -> String {
+        let timestamp = sample.timestamp
+        for interval in walk.activityIntervals where interval.activityType == .meditation {
+            if timestamp >= interval.startDate && timestamp <= interval.endDate { return "meditating" }
+        }
+        for recording in walk.voiceRecordings {
+            if timestamp >= recording.startDate && timestamp <= recording.endDate { return "talking" }
+        }
+        return "walking"
+    }
 
     var activityColoredSegments: [RouteSegment] {
         let samples = walk.routeData
