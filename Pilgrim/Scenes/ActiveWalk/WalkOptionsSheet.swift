@@ -2,9 +2,7 @@ import SwiftUI
 
 struct WalkOptionsSheet: View {
 
-    let onSetIntention: () -> Void
     let onDropWaypoint: () -> Void
-    let currentIntention: String?
     let waypointCount: Int
 
     var body: some View {
@@ -15,14 +13,6 @@ struct WalkOptionsSheet: View {
                 .padding(.top, 12)
 
             VStack(spacing: 6) {
-                optionRow(
-                    icon: "leaf",
-                    title: "Set Intention",
-                    subtitle: currentIntention
-                ) {
-                    onSetIntention()
-                }
-
                 optionRow(
                     icon: "mappin",
                     title: "Drop Waypoint",

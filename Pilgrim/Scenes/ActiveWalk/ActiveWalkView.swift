@@ -59,19 +59,12 @@ struct ActiveWalkView: View {
         }
         .sheet(isPresented: $showOptions) {
             WalkOptionsSheet(
-                onSetIntention: {
-                    showOptions = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showIntention = true
-                    }
-                },
                 onDropWaypoint: {
                     showOptions = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         showWaypoint = true
                     }
                 },
-                currentIntention: viewModel.intention,
                 waypointCount: viewModel.waypoints.count
             )
             .presentationDetents([.medium])
@@ -145,6 +138,16 @@ struct ActiveWalkView: View {
                     .frame(width: 36, height: 36)
                     .background(.ultraThinMaterial)
                     .clipShape(Circle())
+                    .background(
+                        Circle()
+                            .fill(Color.stone.opacity(0.15))
+                            .frame(width: 36, height: 36)
+                            .phaseAnimator([false, true]) { content, phase in
+                                content
+                                    .scaleEffect(phase ? 1.6 : 1.0)
+                                    .opacity(phase ? 0 : 0.4)
+                            } animation: { _ in .easeInOut(duration: 2.0) }
+                    )
             }
 
             Spacer()
