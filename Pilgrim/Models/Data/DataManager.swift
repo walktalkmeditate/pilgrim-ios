@@ -52,7 +52,7 @@ struct DataManager {
      - parameter migration: the closure being called on the event of a migration happening, including a `Progress` object indicating the progress of the migration
      - warning: If this method fails it does so in a fatal error, the app will crash as a result.
      */
-    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV5.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
+    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV6.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -304,6 +304,17 @@ struct DataManager {
             interval._endDate .= tempInterval.endDate
             interval._workout .= walk
         }
+
+        for tempWaypoint in source.waypoints {
+            let waypoint = transaction.create(Into<Waypoint>())
+            waypoint._uuid .= tempWaypoint.uuid ?? UUID()
+            waypoint._latitude .= tempWaypoint.latitude
+            waypoint._longitude .= tempWaypoint.longitude
+            waypoint._label .= tempWaypoint.label
+            waypoint._icon .= tempWaypoint.icon
+            waypoint._timestamp .= tempWaypoint.timestamp
+            waypoint._workout .= walk
+        }
     }
 
     private static func persistNewRelatedEntities(
@@ -370,6 +381,17 @@ struct DataManager {
             interval._startDate .= tempInterval.startDate
             interval._endDate .= tempInterval.endDate
             interval._workout .= walk
+        }
+
+        for tempWaypoint in source.waypoints where tempWaypoint.uuid == nil {
+            let waypoint = transaction.create(Into<Waypoint>())
+            waypoint._uuid .= tempWaypoint.uuid ?? UUID()
+            waypoint._latitude .= tempWaypoint.latitude
+            waypoint._longitude .= tempWaypoint.longitude
+            waypoint._label .= tempWaypoint.label
+            waypoint._icon .= tempWaypoint.icon
+            waypoint._timestamp .= tempWaypoint.timestamp
+            waypoint._workout .= walk
         }
     }
 
@@ -785,6 +807,7 @@ struct DataManager {
                 try transaction.deleteAll(From<HeartRateDataSample>())
                 try transaction.deleteAll(From<VoiceRecording>())
                 try transaction.deleteAll(From<ActivityInterval>())
+                try transaction.deleteAll(From<Waypoint>())
                 try transaction.deleteAll(From<Event>())
             } catch {
                 deletionError = error as? CoreStoreError

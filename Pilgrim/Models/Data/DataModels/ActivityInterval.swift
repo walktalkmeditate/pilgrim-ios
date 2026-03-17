@@ -1,7 +1,7 @@
 import Foundation
 import CoreStore
 
-public typealias ActivityInterval = PilgrimV5.ActivityInterval
+public typealias ActivityInterval = PilgrimV6.ActivityInterval
 
 extension PilgrimV2.ActivityInterval {
 
