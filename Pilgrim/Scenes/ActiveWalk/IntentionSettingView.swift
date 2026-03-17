@@ -11,7 +11,6 @@ struct IntentionSettingView: View {
     @FocusState private var isTextFieldFocused: Bool
 
     private let maxCharacters = 140
-    private var canShowVoice: Bool { TranscriptionService.shared.isModelDownloaded }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -76,19 +75,17 @@ struct IntentionSettingView: View {
                 )
 
             HStack {
-                if canShowVoice {
-                    Button {
-                        isTextFieldFocused = false
-                        recorder.startRecording()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "mic")
-                                .font(.caption)
-                            Text("Voice")
-                                .font(Constants.Typography.caption)
-                        }
-                        .foregroundColor(.fog)
+                Button {
+                    isTextFieldFocused = false
+                    recorder.startRecording()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "mic")
+                            .font(.caption)
+                        Text("Voice")
+                            .font(Constants.Typography.caption)
                     }
+                    .foregroundColor(.fog)
                 }
 
                 Spacer()
