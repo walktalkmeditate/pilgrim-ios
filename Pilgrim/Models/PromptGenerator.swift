@@ -437,7 +437,7 @@ struct PromptGenerator {
 
         if !waypoints.isEmpty {
             let lines = waypoints.map { wp in
-                "[\(timeFormatter.string(from: wp.timestamp))] \(wp.label)"
+                "[\(timeFormatter.string(from: wp.timestamp)), GPS: \(formatCoord(wp.coordinate.lat, wp.coordinate.lon))] \(wp.label)"
             }.joined(separator: "\n")
             sections += "\n\n**Waypoints marked during walk:**\n\(lines)"
         }

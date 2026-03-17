@@ -11,6 +11,7 @@ struct WaypointChip: Identifiable {
         WaypointChip(label: "Grateful", icon: "heart"),
         WaypointChip(label: "Resting", icon: "figure.seated.side"),
         WaypointChip(label: "Inspired", icon: "sparkles"),
+        WaypointChip(label: "Arrived", icon: "flag.fill"),
     ]
 }
 
