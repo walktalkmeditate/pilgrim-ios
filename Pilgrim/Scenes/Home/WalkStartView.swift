@@ -4,7 +4,7 @@ struct WalkStartView: View {
 
     let onStartWalk: (WalkMode) -> Void
 
-    @State private var selectedMode: WalkMode = .solo
+    @State private var selectedMode: WalkMode = .wander
     @State private var currentQuote: String = ""
     @State private var breathing = false
     @State private var ambientOffset: CGSize = .zero

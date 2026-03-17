@@ -44,7 +44,7 @@ class MainCoordinator: ObservableObject {
         }
     }
 
-    func startWalk(mode: WalkMode = .solo) {
+    func startWalk(mode: WalkMode = .wander) {
         guard activeWalkViewModel == nil else { return }
         let locationStatus = CLLocationManager().authorizationStatus
         if locationStatus == .denied || locationStatus == .restricted {
