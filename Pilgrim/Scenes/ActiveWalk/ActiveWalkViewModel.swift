@@ -34,6 +34,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var paceHistory: [Double] = []
     @Published var currentSoundscapeName: String?
     @Published var intention: String?
+    @Published var waypoints: [TempWaypoint] = []
 
     private var meditationStartDate: Date?
     private var meditationIntervals: [TempActivityInterval] = []
@@ -152,6 +153,22 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             return
         }
         voiceRecordingManagement.toggleRecording()
+    }
+
+    // MARK: - Waypoints
+
+    func addWaypoint(label: String, icon: String) {
+        guard let location = currentLocation else { return }
+        let waypoint = TempWaypoint(
+            uuid: nil,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            label: label,
+            icon: icon,
+            timestamp: Date()
+        )
+        builder.addWaypoint(waypoint)
+        waypoints.append(waypoint)
     }
 
     // MARK: - Meditation
