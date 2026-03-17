@@ -366,7 +366,7 @@ struct PromptGenerator {
             """
 
         if let intention = intention {
-            sections += "\n\n**Intention for this walk:** \"\(intention)\""
+            sections += "\n\n**The walker's intention:** \"\(intention)\"\nThis intention was set deliberately before the walk began. It represents what the walker chose to carry with them. Let it be the lens through which you interpret everything below."
         }
 
         if let location = location {
@@ -405,7 +405,7 @@ struct PromptGenerator {
 
         var fullInstruction = instruction
         if let intention = intention {
-            fullInstruction += " The walker set this intention before walking: '\(intention)'. Let this purpose guide your response."
+            fullInstruction += " Ground your response in the walker's stated intention: '\(intention)'. Return to it. Help them see how their walk — its pace, its pauses, its moments — spoke to this purpose."
         }
 
         sections += """
