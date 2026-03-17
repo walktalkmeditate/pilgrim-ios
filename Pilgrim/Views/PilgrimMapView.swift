@@ -217,6 +217,8 @@ struct PilgrimMapView: UIViewRepresentable {
         guard let circleManager = coordinator.circleManager else { return }
 
         var circles: [CircleAnnotation] = []
+        let waypointCount = pinAnnotations.filter { if case .waypoint = $0.kind { return true } else { return false } }.count
+        print("[PilgrimMapView] applyAnnotations: \(pinAnnotations.count) total, \(waypointCount) waypoints")
 
         for pin in pinAnnotations {
             if case .endPoint = pin.kind {
