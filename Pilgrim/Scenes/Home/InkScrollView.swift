@@ -206,6 +206,7 @@ struct InkScrollView: View {
             if isNewest {
                 newestDotEffects(snapshot: snapshot)
                     .position(position)
+                    .animation(nil, value: hasAppeared)
             }
         }
         .simultaneousGesture(
