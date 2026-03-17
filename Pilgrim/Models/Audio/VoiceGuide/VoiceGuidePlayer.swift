@@ -9,7 +9,7 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
     private let soundscapePlayer = SoundscapePlayer.shared
     private let fileStore = VoiceGuideFileStore.shared
 
-    private var preDuckVolume: Float = 0
+    private var preDuckVolume: Float?
     private var onFinished: (() -> Void)?
     private var lastPromptId: String?
     private var lastPackId: String?
@@ -29,7 +29,8 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
         lastPromptId = prompt.id
         lastPackId = packId
 
-        preDuckVolume = soundscapePlayer.currentTargetVolume
+        let currentVolume = soundscapePlayer.currentTargetVolume
+        preDuckVolume = currentVolume
         let duckLevel = Float(UserPreferences.voiceGuideDuckLevel.value)
         soundscapePlayer.setVolume(duckLevel, animated: true)
 
@@ -44,13 +45,13 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
             player = p
         } catch {
             print("[VoiceGuidePlayer] Playback error: \(error)")
-            soundscapePlayer.setVolume(preDuckVolume, animated: true)
-            coordinator.deactivate(consumer: "voiceguide")
+            restoreAndDeactivate()
             self.onFinished = nil
         }
     }
 
     func stop() {
+        guard player != nil else { return }
         player?.stop()
         player = nil
         restoreAndDeactivate()
@@ -75,9 +76,9 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
     }
 
     private func restoreAndDeactivate() {
-        if preDuckVolume > 0 {
-            soundscapePlayer.setVolume(preDuckVolume, animated: true)
-            preDuckVolume = 0
+        if let volume = preDuckVolume {
+            soundscapePlayer.setVolume(volume, animated: true)
+            preDuckVolume = nil
         }
         coordinator.deactivate(consumer: "voiceguide")
     }

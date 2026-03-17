@@ -16,7 +16,7 @@ final class SoundManagement: ObservableObject {
     init() {
         soundscapeCancellable = soundscapePlayer.$isPlaying
             .receive(on: DispatchQueue.main)
-            .assign(to: \.isSoundscapePlaying, on: self)
+            .sink { [weak self] in self?.isSoundscapePlaying = $0 }
     }
 
     func toggleSoundscape() {

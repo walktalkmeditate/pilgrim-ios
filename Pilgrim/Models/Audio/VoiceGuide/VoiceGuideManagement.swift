@@ -92,9 +92,10 @@ final class VoiceGuideManagement: ObservableObject {
         isMeditatingPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] meditating in
-                if meditating { self?.pauseGuide() }
-                else { self?.resumeGuide() }
-                self?.scheduler?.updateIsMeditating(meditating)
+                guard let self, self.isActive else { return }
+                if meditating { self.pauseGuide() }
+                else { self.resumeGuide() }
+                self.scheduler?.updateIsMeditating(meditating)
             }
             .store(in: &cancellables)
     }

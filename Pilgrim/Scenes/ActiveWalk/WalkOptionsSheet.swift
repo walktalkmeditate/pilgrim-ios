@@ -84,7 +84,7 @@ struct WalkOptionsSheet: View {
                     optionRow(
                         icon: isVoiceGuidePaused ? "play.circle" : "pause.circle",
                         title: "Voice Guide",
-                        subtitle: isVoiceGuidePaused ? "Paused — \(voiceGuidePackName!)" : voiceGuidePackName
+                        subtitle: isVoiceGuidePaused ? "Paused — \(voiceGuidePackName ?? "")" : voiceGuidePackName
                     ) {
                         onToggleVoiceGuide?()
                     }
