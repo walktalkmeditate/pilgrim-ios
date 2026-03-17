@@ -71,7 +71,7 @@ struct PromptListView: View {
         .sheet(isPresented: $showEditor) {
             CustomPromptEditorView(store: customStyleStore, editingStyle: editingStyle)
         }
-        .onChange(of: showEditor) { showing in
+        .onChange(of: showEditor) { _, showing in
             if !showing { regenerateCustomPrompts() }
         }
         .onAppear { generatePrompts() }
