@@ -63,9 +63,7 @@ struct WalkSummaryView: View {
                     if !walk.voiceRecordings.isEmpty {
                         recordingsSection
                     }
-                    if !transcriptions.isEmpty {
-                        promptsButton
-                    }
+                    promptsButton
                     detailsSection
                     shareCard
                 }
@@ -125,9 +123,15 @@ struct WalkSummaryView: View {
                     Text("Generate AI Prompts")
                         .font(Constants.Typography.heading)
                         .foregroundColor(.ink)
-                    Text("\(transcriptions.count) transcription\(transcriptions.count == 1 ? "" : "s") available")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
+                    if transcriptions.isEmpty {
+                        Text("Reflect on your walk")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    } else {
+                        Text("\(transcriptions.count) transcription\(transcriptions.count == 1 ? "" : "s") available")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
