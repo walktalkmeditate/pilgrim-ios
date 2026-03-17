@@ -2,7 +2,10 @@ import SwiftUI
 
 struct WalkOptionsSheet: View {
 
-    let onDropWaypoint: () -> Void
+    let isRecording: Bool
+    var onSetIntention: (() -> Void)?
+    var onDropWaypoint: (() -> Void)?
+    let currentIntention: String?
     let waypointCount: Int
 
     var body: some View {
@@ -13,12 +16,24 @@ struct WalkOptionsSheet: View {
                 .padding(.top, 12)
 
             VStack(spacing: 6) {
-                optionRow(
-                    icon: "mappin",
-                    title: "Drop Waypoint",
-                    subtitle: waypointCount > 0 ? "\(waypointCount) marked" : nil
-                ) {
-                    onDropWaypoint()
+                if !isRecording, let onSetIntention {
+                    optionRow(
+                        icon: "leaf",
+                        title: "Set Intention",
+                        subtitle: currentIntention
+                    ) {
+                        onSetIntention()
+                    }
+                }
+
+                if isRecording, let onDropWaypoint {
+                    optionRow(
+                        icon: "mappin",
+                        title: "Drop Waypoint",
+                        subtitle: waypointCount > 0 ? "\(waypointCount) marked" : nil
+                    ) {
+                        onDropWaypoint()
+                    }
                 }
             }
             .padding(.horizontal, Constants.UI.Padding.normal)
