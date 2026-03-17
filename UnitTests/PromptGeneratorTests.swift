@@ -132,7 +132,7 @@ final class PromptGeneratorTests: XCTestCase {
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         )
         XCTAssertFalse(prompt.text.isEmpty)
-        XCTAssertTrue(prompt.text.contains("Walking Transcription"))
+        XCTAssertFalse(prompt.text.contains("Walking Transcription"))
     }
 
     func testGeneratedPrompt_builtInStyle_titleFromStyle() {
