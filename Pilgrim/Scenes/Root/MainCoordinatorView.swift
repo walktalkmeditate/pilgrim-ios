@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreLocation
 
 class MainCoordinator: ObservableObject {
 
@@ -7,6 +8,7 @@ class MainCoordinator: ObservableObject {
     @Published var activeWalkViewModel: ActiveWalkViewModel?
     @Published var completedSnapshot: TempWalk?
     @Published var showSaveError = false
+    @Published var showLocationDenied = false
     @Published var recoveredWalkDate: Date?
 
     private var pendingSnapshot: TempWalk?
@@ -36,8 +38,19 @@ class MainCoordinator: ObservableObject {
         bannerDismissWork?.cancel()
     }
 
+    func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+
     func startWalk(mode: WalkMode = .solo) {
         guard activeWalkViewModel == nil else { return }
+        let locationStatus = CLLocationManager().authorizationStatus
+        if locationStatus == .denied || locationStatus == .restricted {
+            showLocationDenied = true
+            return
+        }
         Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
         let vm = ActiveWalkViewModel()
         vm.onWalkCompleted = { [weak self] snapshot in

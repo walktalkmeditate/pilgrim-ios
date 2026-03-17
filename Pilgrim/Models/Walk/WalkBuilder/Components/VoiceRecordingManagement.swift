@@ -19,6 +19,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     @Published public private(set) var isRecording = false
     @Published public private(set) var recordingStartDate: Date?
     @Published public private(set) var audioLevel: Float = 0
+    @Published public var microphonePermissionNeeded = false
 
     private var meteringTimer: Timer?
 
@@ -198,6 +199,11 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         if isRecording {
             stopRecording()
         } else {
+            let micStatus = AVAudioSession.sharedInstance().recordPermission
+            if micStatus == .denied {
+                microphonePermissionNeeded = true
+                return
+            }
             startRecording()
         }
     }

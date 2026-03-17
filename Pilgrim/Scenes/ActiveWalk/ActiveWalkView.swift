@@ -38,6 +38,16 @@ struct ActiveWalkView: View {
                 showMeditation = false
             }
         }
+        .alert("Microphone Required", isPresented: $viewModel.showMicrophonePermissionNeeded) {
+            Button("Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
+        }
     }
 
     private func mapSection(height: CGFloat) -> some View {

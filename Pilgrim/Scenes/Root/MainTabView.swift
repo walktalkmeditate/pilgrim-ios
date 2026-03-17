@@ -43,6 +43,12 @@ struct MainTabView: View {
         } message: {
             Text("Your walk could not be saved. Please try again.")
         }
+        .alert("Location Required", isPresented: $coordinator.showLocationDenied) {
+            Button("Settings", action: coordinator.openSettings)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Pilgrim needs location access to track your route. Please enable it in Settings.")
+        }
         .overlay(alignment: .top) {
             if let date = coordinator.recoveredWalkDate {
                 RecoveryBanner(date: date)

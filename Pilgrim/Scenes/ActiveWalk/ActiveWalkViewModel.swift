@@ -25,6 +25,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published private(set) var routeSegments: [RouteSegment] = []
     @Published var isRecordingVoice = false
     @Published var audioLevel: Float = 0
+    @Published var showMicrophonePermissionNeeded = false
     @Published var isMeditating = false
     @Published var walkTime: String = "0:00"
     @Published var talkTime: String = "0:00"
@@ -203,6 +204,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         voiceRecordingManagement.$audioLevel
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.audioLevel = $0 }
+            .store(in: &cancellables)
+
+        voiceRecordingManagement.$microphonePermissionNeeded
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.showMicrophonePermissionNeeded = $0 }
             .store(in: &cancellables)
 
         let voiceRecordings = builder.voiceRecordingsPublisher
