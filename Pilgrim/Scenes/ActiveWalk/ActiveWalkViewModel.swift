@@ -157,8 +157,9 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     // MARK: - Waypoints
 
-    func addWaypoint(label: String, icon: String) {
-        guard let location = currentLocation else { return }
+    @discardableResult
+    func addWaypoint(label: String, icon: String) -> Bool {
+        guard let location = currentLocation else { return false }
         let waypoint = TempWaypoint(
             uuid: nil,
             latitude: location.latitude,
@@ -169,6 +170,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         )
         builder.addWaypoint(waypoint)
         waypoints.append(waypoint)
+        return true
     }
 
     // MARK: - Meditation

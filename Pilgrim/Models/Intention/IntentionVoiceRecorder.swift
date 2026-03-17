@@ -69,6 +69,7 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
         guard let url = recordingURL else { return nil }
         await MainActor.run { isTranscribing = true }
         let result = await TranscriptionService.shared.transcribeAudioFile(at: url)
+        deleteTempFile()
         await MainActor.run {
             isTranscribing = false
             transcribedText = result

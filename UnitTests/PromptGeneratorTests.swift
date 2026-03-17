@@ -319,6 +319,69 @@ final class PromptGeneratorTests: XCTestCase {
 
     // MARK: - Task 10: Custom Prompt Generation
 
+    func testGenerateCustom_silentWalk_usesSilentPreamble() {
+        let custom = CustomPromptStyle(id: UUID(), title: "Letter", icon: "envelope.fill", instruction: "Write a letter")
+        let prompt = PromptGenerator.generateCustom(
+            customStyle: custom,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        )
+        XCTAssertTrue(prompt.text.contains("silence"))
+        XCTAssertFalse(prompt.text.contains("voice recordings captured"))
+    }
+
+    // MARK: - Silent Walk Prompts
+
+    func testGenerate_silentWalk_usesSilentPreamble() {
+        for style in PromptStyle.allCases {
+            let prompt = PromptGenerator.generate(
+                style: style,
+                recordings: [],
+                meditations: [],
+                duration: 1800,
+                distance: 2000,
+                startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+            )
+            XCTAssertFalse(prompt.text.contains("Walking Transcription"), "Silent \(style) should not have Walking Transcription")
+            XCTAssertFalse(prompt.text.isEmpty, "Silent \(style) should produce output")
+        }
+    }
+
+    func testGenerate_withIntention_containsIntentionFraming() {
+        let prompt = PromptGenerator.generate(
+            style: .contemplative,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            intention: "Find stillness"
+        )
+        XCTAssertTrue(prompt.text.contains("The walker's intention"))
+        XCTAssertTrue(prompt.text.contains("Find stillness"))
+        XCTAssertTrue(prompt.text.contains("Ground your response"))
+    }
+
+    func testGenerate_withWaypoints_containsWaypointSection() {
+        let waypoints = [
+            PromptGenerator.WaypointContext(label: "Peaceful", icon: "leaf", timestamp: DateFactory.makeDate(2024, 6, 15, 9, 10, 0), coordinate: (lat: 40.0, lon: -74.0))
+        ]
+        let prompt = PromptGenerator.generate(
+            style: .reflective,
+            recordings: [],
+            meditations: [],
+            duration: 1800,
+            distance: 2000,
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            waypoints: waypoints
+        )
+        XCTAssertTrue(prompt.text.contains("Waypoints marked during walk"))
+        XCTAssertTrue(prompt.text.contains("Peaceful"))
+    }
+
     func testGenerateCustom_usesCustomInstruction() {
         let custom = CustomPromptStyle(id: UUID(), title: "Letter", icon: "envelope.fill", instruction: "Write this as a letter to my future self")
         let prompt = PromptGenerator.generateCustom(

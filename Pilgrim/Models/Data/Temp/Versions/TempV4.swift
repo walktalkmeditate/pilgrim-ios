@@ -95,6 +95,15 @@ public enum TempV4 {
             self._waypoints = waypoints
         }
         
+        private enum CodingKeys: String, CodingKey {
+            case uuid, workoutType, distance, steps, startDate, endDate
+            case burnedEnergy, isRace, comment, isUserModified, healthKitUUID
+            case finishedRecording, ascend, descend, activeDuration, pauseDuration
+            case dayIdentifier, talkDuration, meditateDuration, favicon
+            case _waypoints, _heartRates, _routeData, _pauses
+            case _workoutEvents, _voiceRecordings, _activityIntervals
+        }
+
         public required init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             uuid = try container.decodeIfPresent(UUID.self, forKey: .uuid)

@@ -11,6 +11,7 @@ struct ActiveWalkView: View {
     @State private var showIntention = false
     @State private var showWaypoint = false
     @State private var showBackConfirmation = false
+    @State private var showWaypointFailed = false
     @State private var hasCheckedAutoIntention = false
 
     var body: some View {
@@ -92,14 +93,24 @@ struct ActiveWalkView: View {
         .sheet(isPresented: $showWaypoint) {
             WaypointMarkingSheet(
                 onMark: { label, icon in
-                    viewModel.addWaypoint(label: label, icon: icon)
+                    let success = viewModel.addWaypoint(label: label, icon: icon)
                     showWaypoint = false
+                    if !success {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            showWaypointFailed = true
+                        }
+                    }
                 },
                 onDismiss: { showWaypoint = false }
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .alert("Location Unavailable", isPresented: $showWaypointFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Waiting for a GPS fix. Try again in a moment.")
         }
         .alert("Microphone Required", isPresented: $viewModel.showMicrophonePermissionNeeded) {
             Button("Settings") {
@@ -169,7 +180,7 @@ struct ActiveWalkView: View {
                 if let intention = viewModel.intention {
                     Text(intention)
                         .font(Constants.Typography.caption)
-                        .foregroundColor(.fog.opacity(0.4))
+                        .foregroundColor(.fog.opacity(0.6))
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
                 }

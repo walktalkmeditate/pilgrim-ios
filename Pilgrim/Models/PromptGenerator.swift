@@ -231,7 +231,9 @@ struct PromptGenerator {
         let pace = formatPaceContext(speeds: routeSpeeds)
         let recentWalks = formatRecentWalks(recentWalkSnippets)
 
-        let preamble = "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
+        let preamble = recordings.isEmpty
+            ? "This walk was taken in silence — no words were spoken, only movement. The walker chose presence over expression, letting the body speak through pace, pauses, and the places it was drawn to."
+            : "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
 
         let prompt = buildPrompt(
             preamble: preamble,
