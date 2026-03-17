@@ -256,6 +256,8 @@
 		PERM000100000007 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000006 /* PermissionsView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */; };
+		B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */; };
+		B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -524,6 +526,8 @@
 		PERM000100000006 /* PermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModelTests.swift; sourceTree = "<group>"; };
+		B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
+		B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -818,6 +822,7 @@
 				22DBFBD42348ABC800DE6E92 /* Walk */,
 				22DBFBD32348AB8000DE6E92 /* Data */,
 				3A2B6107FC73A26AFA4F2434 /* Audio */,
+				B4C5D6E7F8A9B0C1D2E3F4A9 /* Feedback */,
 				22A2D43423E313A3003580EC /* Formatting */,
 				22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */,
 				22BD1F41247463DF00415A06 /* ApplicationState.swift */,
@@ -1195,8 +1200,17 @@
 				D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */,
 				A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */,
+				B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		B4C5D6E7F8A9B0C1D2E3F4A9 /* Feedback */ = {
+			isa = PBXGroup;
+			children = (
+				B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */,
+			);
+			path = Feedback;
 			sourceTree = "<group>";
 		};
 		F0F0F00300000000AABBCC00 /* Fonts */ = {
@@ -1627,6 +1641,8 @@
 				C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */,
 				A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */,
+				B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */,
+				B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

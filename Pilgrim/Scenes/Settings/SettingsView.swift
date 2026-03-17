@@ -48,6 +48,15 @@ struct SettingsView: View {
                     Text("Audio")
                         .font(Constants.Typography.caption)
                 }
+
+                Section {
+                    NavigationLink {
+                        FeedbackView()
+                    } label: {
+                        Text("Leave a Trail Note")
+                            .font(Constants.Typography.body)
+                    }
+                }
             }
             .scrollContentBackground(.hidden)
             .background(Color.parchment)

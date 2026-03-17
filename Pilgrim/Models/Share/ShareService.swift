@@ -70,6 +70,10 @@ enum ShareService {
         return ShareResult(url: result.url, id: result.id)
     }
 
+    static func deviceTokenForFeedback() -> String {
+        deviceToken()
+    }
+
     private static func deviceToken() -> String {
         if let existing = readKeychainToken() {
             return existing
