@@ -130,6 +130,13 @@ struct PromptListView: View {
                 .sorted { $0.startDate < $1.startDate }
                 .map { PromptGenerator.MeditationContext(startDate: $0.startDate, endDate: $0.endDate, duration: $0.duration) }
 
+            let waypointContexts = walk.waypoints.map { wp in
+                PromptGenerator.WaypointContext(
+                    label: wp.label, icon: wp.icon, timestamp: wp.timestamp,
+                    coordinate: (lat: wp.latitude, lon: wp.longitude)
+                )
+            }
+
             prompts = PromptGenerator.generateAll(
                 recordings: recordings,
                 meditations: meditations,
@@ -139,7 +146,8 @@ struct PromptListView: View {
                 placeNames: placeNames,
                 routeSpeeds: routeSpeeds,
                 recentWalkSnippets: recentWalkSnippets,
-                intention: intention
+                intention: intention,
+                waypoints: waypointContexts
             )
             regenerateCustomPrompts()
         }
@@ -196,6 +204,13 @@ struct PromptListView: View {
             .sorted { $0.startDate < $1.startDate }
             .map { PromptGenerator.MeditationContext(startDate: $0.startDate, endDate: $0.endDate, duration: $0.duration) }
 
+        let waypointContexts = walk.waypoints.map { wp in
+            PromptGenerator.WaypointContext(
+                label: wp.label, icon: wp.icon, timestamp: wp.timestamp,
+                coordinate: (lat: wp.latitude, lon: wp.longitude)
+            )
+        }
+
         customPrompts = customStyleStore.styles.map { customStyle in
             PromptGenerator.generateCustom(
                 customStyle: customStyle,
@@ -207,7 +222,8 @@ struct PromptListView: View {
                 placeNames: geocodedPlaces,
                 routeSpeeds: routeSpeeds,
                 recentWalkSnippets: recentWalkSnippets,
-                intention: intention
+                intention: intention,
+                waypoints: waypointContexts
             )
         }
     }
