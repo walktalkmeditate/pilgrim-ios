@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		WTHRSVC0000000000000001 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000002 /* WeatherService.swift */; };
 		WTHRSVC0000000000000005 /* WeatherKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000004 /* WeatherKit.framework */; settings = {ATTRIBUTES = (Required, ); }; };
+		WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHOVR0000000000000002 /* WeatherOverlayView.swift */; };
+		WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHVIG0000000000000002 /* WeatherVignetteView.swift */; };
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
 		0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
@@ -299,6 +301,8 @@
 /* Begin PBXFileReference section */
 		WTHRSVC0000000000000002 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		WTHRSVC0000000000000004 /* WeatherKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WeatherKit.framework; path = System/Library/Frameworks/WeatherKit.framework; sourceTree = SDKROOT; };
+		WTHOVR0000000000000002 /* WeatherOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayView.swift; sourceTree = "<group>"; };
+		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
 		0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestTests.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
@@ -876,6 +880,8 @@
 			isa = PBXGroup;
 			children = (
 				WTHRSVC0000000000000002 /* WeatherService.swift */,
+				WTHOVR0000000000000002 /* WeatherOverlayView.swift */,
+				WTHVIG0000000000000002 /* WeatherVignetteView.swift */,
 			);
 			path = Weather;
 			sourceTree = "<group>";
@@ -1767,6 +1773,8 @@
 				E45CCFD6C6A29B3BC03CF2AB /* VoiceGuideManagement.swift in Sources */,
 				3DF4B121DEE87CA7EBB26207 /* VoiceGuideSettingsView.swift in Sources */,
 				WTHRSVC0000000000000001 /* WeatherService.swift in Sources */,
+				WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */,
+				WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

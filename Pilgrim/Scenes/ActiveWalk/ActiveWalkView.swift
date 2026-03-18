@@ -24,6 +24,9 @@ struct ActiveWalkView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
+                WeatherOverlayView(condition: viewModel.weatherSnapshot?.condition)
+                    .ignoresSafeArea()
+
                 VStack(spacing: 0) {
                     ZStack(alignment: .bottom) {
                         mapSection(height: geometry.size.height * 0.6)
@@ -36,6 +39,10 @@ struct ActiveWalkView: View {
 
                         HStack(spacing: 6) {
                             Spacer()
+                            WeatherVignetteView(
+                                snapshot: viewModel.weatherSnapshot,
+                                imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
+                            )
                             if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
                                 audioIndicator(
                                     icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
