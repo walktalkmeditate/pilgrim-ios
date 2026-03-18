@@ -99,20 +99,17 @@ struct InkScrollView: View {
                 let isNewest = index == 0
                 let scenery = self.sceneryForDot(snapshot: snapshot, position: position.center, viewportHeight: viewportHeight)
 
-                if isNewest {
-                    newestDotEffects(snapshot: snapshot)
-                        .frame(width: 60, height: 60)
-                        .position(x: position.center.x, y: position.center.y)
-                        .animation(nil, value: position.center.x)
-                        .animation(nil, value: position.center.y)
-                }
-
                 self.dotContent(
                     snapshot: snapshot,
                     position: position.center,
                     opacity: opacity,
                     sceneryView: scenery
                 )
+                .background {
+                    if isNewest {
+                        newestDotEffects(snapshot: snapshot)
+                    }
+                }
                 .opacity(hasAppeared ? 1 : 0)
                 .animation(
                     .easeOut(duration: 0.5).delay(Double(index) * 0.03 + 0.3),
