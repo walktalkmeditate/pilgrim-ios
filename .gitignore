@@ -93,6 +93,7 @@ Secrets.xcconfig
 
 # Superpowers
 .superpowers/
+.worktrees/
 
 
 # AppCode

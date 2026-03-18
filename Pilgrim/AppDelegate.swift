@@ -39,6 +39,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 
                 self.appLaunchState = .done
                 AudioManifestService.shared.syncIfNeeded()
+                VoiceGuideManifestService.shared.syncIfNeeded()
 
                 // check permissions
                 // show changelog

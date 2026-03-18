@@ -14,6 +14,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     private let liveStats: LiveStats
     let voiceRecordingManagement: VoiceRecordingManagement
     let soundManagement = SoundManagement()
+    let voiceGuideManagement = VoiceGuideManagement()
     private var sessionGuard: WalkSessionGuard?
 
     @Published var status: WalkBuilder.Status = .waiting
@@ -33,6 +34,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var meditateTime: String = "0:00"
     @Published var paceHistory: [Double] = []
     @Published var currentSoundscapeName: String?
+    @Published var voiceGuidePackName: String?
+    @Published var isVoiceGuidePaused = false
     @Published var intention: String?
     @Published var waypoints: [TempWaypoint] = []
 
@@ -67,6 +70,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         bindLiveStats()
         bindTimers()
         bindSoundscape()
+        bindVoiceGuide()
         bindCompletedRecordings()
 
         let guard_ = WalkSessionGuard()
@@ -128,6 +132,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     func startRecording() {
         builder.setStatus(.recording)
         soundManagement.onWalkStart()
+        startVoiceGuideIfEnabled()
     }
 
     func resume() {
@@ -138,12 +143,14 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         sessionGuard?.stopAndCleanup()
         finalizeMeditation()
         soundManagement.onWalkEnd()
+        voiceGuideManagement.stopGuiding()
         builder.setStatus(.ready)
     }
 
     func cancel() {
         sessionGuard?.stopAndCleanup()
         soundManagement.onWalkEnd()
+        voiceGuideManagement.stopGuiding()
     }
 
     func toggleVoiceRecording() {
@@ -294,6 +301,32 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .map { $0?.displayName }
             .sink { [weak self] in self?.currentSoundscapeName = $0 }
             .store(in: &cancellables)
+    }
+
+    private func bindVoiceGuide() {
+        voiceGuideManagement.bindWalkState(
+            statusPublisher: builder.statusPublisher,
+            startDatePublisher: builder.startDatePublisher,
+            isRecordingVoicePublisher: voiceRecordingManagement.$isRecording.eraseToAnyPublisher(),
+            isMeditatingPublisher: $isMeditating.eraseToAnyPublisher()
+        )
+
+        voiceGuideManagement.$isActive
+            .combineLatest(voiceGuideManagement.$isPaused)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isActive, isPaused in
+                self?.voiceGuidePackName = isActive ? self?.voiceGuideManagement.packName : nil
+                self?.isVoiceGuidePaused = isPaused
+            }
+            .store(in: &cancellables)
+    }
+
+    private func startVoiceGuideIfEnabled() {
+        guard UserPreferences.voiceGuideEnabled.value,
+              let packId = UserPreferences.selectedVoiceGuidePackId.value,
+              let pack = VoiceGuideManifestService.shared.pack(byId: packId),
+              VoiceGuideFileStore.shared.isPackDownloaded(pack) else { return }
+        voiceGuideManagement.startGuiding(pack: pack)
     }
 
     private func activityType(at timestamp: Date) -> String {

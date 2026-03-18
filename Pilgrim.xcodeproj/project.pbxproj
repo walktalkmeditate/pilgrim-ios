@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
+		0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
 		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
@@ -151,24 +152,32 @@
 		22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */; };
 		2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D23FF60A762C30296A69E6 /* ComputationTests.swift */; };
 		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
+		3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */; };
+		3DF4B121DEE87CA7EBB26207 /* VoiceGuideSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */; };
 		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
 		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
 		487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */; };
 		4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
+		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
 		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
 		6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */; };
 		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
 		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
 		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
+		6F8AA2EEEDD08C727B89AB94 /* VoiceGuideScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */; };
 		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
 		76B622EBDD59AD9489586120 /* DateFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */; };
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
+		86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */; };
 		8A200FA63DDEC6D859F1C4EE /* WalkShareViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */; };
 		9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA57CE96EE3401595264807 /* ActivityInterval.swift */; };
 		9A477336A61C4C38B9D4F13C /* RouteDownsampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */; };
 		9D37F522C28D84C1E1ECCDCC /* AudioDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */; };
 		A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PilgrimV3.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */; };
+		A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */; };
 		A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */; };
 		A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */; };
 		AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */; };
@@ -178,8 +187,6 @@
 		AA0001010000000000000013 /* WalkRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000003 /* WalkRowView.swift */; };
 		AA0001010000000000000014 /* ActiveWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000004 /* ActiveWalkView.swift */; };
 		AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000005 /* ActiveWalkViewModel.swift */; };
-		AAAA0000000000000000F9 /* IntentionSettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0000000000000000F8 /* IntentionSettingView.swift */; };
-		AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0000000000000000FA /* WalkOptionsSheet.swift */; };
 		AA0001010000000000000016 /* WalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000006 /* WalkSummaryView.swift */; };
 		AA0001010000000000000017 /* MainCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000007 /* MainCoordinatorView.swift */; };
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
@@ -197,7 +204,6 @@
 		AAAA000000000000000000E1 /* CustomPromptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000E2 /* CustomPromptEditorView.swift */; };
 		AAAA000000000000000000F1 /* IntentionHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000F2 /* IntentionHistoryStore.swift */; };
 		AAAA000000000000000000F3 /* IntentionHistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */; };
-		BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000B /* WaypointCodableTests.swift */; };
 		AAAA000000000000000000F7 /* IntentionVoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000F6 /* IntentionVoiceRecorder.swift */; };
 		AAAA00000000000000000EL1 /* ElevationProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000EL2 /* ElevationProfileView.swift */; };
 		AAAA00000000000000000MB1 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000MB3 /* MapboxMaps */; };
@@ -205,12 +211,23 @@
 		AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */; };
 		AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */; };
 		AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF8 /* PilgrimMapView.swift */; };
+		AAAA0000000000000000F9 /* IntentionSettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0000000000000000F8 /* IntentionSettingView.swift */; };
+		AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0000000000000000FA /* WalkOptionsSheet.swift */; };
 		AABB000100000002 /* WelcomeAnimationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB000100000001 /* WelcomeAnimationState.swift */; };
 		ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */; };
+		B0261DB7EE2F64C26CF7A41F /* VoiceGuideFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */; };
 		B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */; };
+		B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */; };
+		B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */; };
 		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
 		BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00CC010000000000000002 /* WelcomeViewModelTests.swift */; };
+		BBBB000000000000000002 /* WaypointInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000001 /* WaypointInterface.swift */; };
+		BBBB000000000000000004 /* TempWaypoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000003 /* TempWaypoint.swift */; };
+		BBBB000000000000000006 /* PilgrimV6.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000005 /* PilgrimV6.swift */; };
+		BBBB000000000000000008 /* Waypoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000007 /* Waypoint.swift */; };
+		BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000009 /* WaypointMarkingSheet.swift */; };
+		BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000B /* WaypointCodableTests.swift */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
@@ -232,7 +249,6 @@
 		CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENIV01 /* SceneryItemView.swift */; };
 		CC00000200000000SEASON01 /* SeasonalColorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SEASON01 /* SeasonalColorEngine.swift */; };
 		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
-		A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */; };
 		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
 		CC00000200000000TREESH01 /* TreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TREESH01 /* TreeShape.swift */; };
 		CC00000200000000WINTRT01 /* WinterTreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WINTRT01 /* WinterTreeShape.swift */; };
@@ -241,9 +257,12 @@
 		CC00000200000000WKSTRT01 /* WalkStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKSTRT01 /* WalkStartView.swift */; };
 		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
 		CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */; };
+		D62B90461A22862A8FDA006C /* VoiceGuideDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */; };
 		DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */; };
 		DBC54AC76144B10493D3E481 /* WalkShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE9557700152F043C359DC /* WalkShareView.swift */; };
 		DD00CC0100000000000002 /* MeditateDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00CC0100000000000001 /* MeditateDetection.swift */; };
+		E27871EF9A01D3D3C6093554 /* VoiceGuidePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7E64FC89078569CF45F03 /* VoiceGuidePlayer.swift */; };
+		E45CCFD6C6A29B3BC03CF2AB /* VoiceGuideManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */; };
 		EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */; };
 		EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */; };
 		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
@@ -256,19 +275,11 @@
 		F1A2B3C4D5E6F7A8B9C0D1E7 /* FaviconSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */; };
 		F28633E25671B876232C0F34 /* BackupSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */; };
 		FA9B9D71DB2B3EA84CC73FEE /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */; };
+		FB767A6007B826D951706B85 /* VoiceGuideHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */; };
 		FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */; };
 		PERM000100000003 /* PermissionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000002 /* PermissionsViewModel.swift */; };
 		PERM000100000005 /* PermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000004 /* PermissionsViewModelTests.swift */; };
 		PERM000100000007 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000006 /* PermissionsView.swift */; };
-		A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */; };
-		A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */; };
-		B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */; };
-		B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */; };
-		BBBB000000000000000002 /* WaypointInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000001 /* WaypointInterface.swift */; };
-		BBBB000000000000000004 /* TempWaypoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000003 /* TempWaypoint.swift */; };
-		BBBB000000000000000006 /* PilgrimV6.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000005 /* PilgrimV6.swift */; };
-		BBBB000000000000000008 /* Waypoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000007 /* Waypoint.swift */; };
-		BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000009 /* WaypointMarkingSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -283,6 +294,7 @@
 
 /* Begin PBXFileReference section */
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
+		0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestTests.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		16BE9557700152F043C359DC /* WalkShareView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareView.swift; sourceTree = "<group>"; };
 		1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDownloadManager.swift; sourceTree = "<group>"; };
@@ -437,16 +449,25 @@
 		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
 		4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceSparklineView.swift; sourceTree = "<group>"; };
 		4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteShapeView.swift; sourceTree = "<group>"; };
+		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
+		5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideDownloadManager.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
+		65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManagement.swift; sourceTree = "<group>"; };
 		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
 		721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Combine.swift"; sourceTree = "<group>"; };
+		74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestService.swift; sourceTree = "<group>"; };
+		75F7E64FC89078569CF45F03 /* VoiceGuidePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuidePlayer.swift; sourceTree = "<group>"; };
 		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareViewModel.swift; sourceTree = "<group>"; };
 		90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
+		90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideSchedulerTests.swift; sourceTree = "<group>"; };
 		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModelTests.swift; sourceTree = "<group>"; };
+		A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV5.swift; sourceTree = "<group>"; };
 		A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkCheckpoint.swift; sourceTree = "<group>"; };
 		AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FootprintShape.swift; sourceTree = "<group>"; };
@@ -456,8 +477,6 @@
 		AA0001010000000000000003 /* WalkRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkRowView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000004 /* ActiveWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000005 /* ActiveWalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkViewModel.swift; sourceTree = "<group>"; };
-		AAAA0000000000000000F8 /* IntentionSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionSettingView.swift; sourceTree = "<group>"; };
-		AAAA0000000000000000FA /* WalkOptionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkOptionsSheet.swift; sourceTree = "<group>"; };
 		AA0001010000000000000006 /* WalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000007 /* MainCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinatorView.swift; sourceTree = "<group>"; };
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
@@ -474,21 +493,32 @@
 		AAAA000000000000000000E2 /* CustomPromptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptEditorView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000F2 /* IntentionHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionHistoryStore.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentionHistoryStoreTests.swift; sourceTree = "<group>"; };
-		BBBB00000000000000000B /* WaypointCodableTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WaypointCodableTests.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000F6 /* IntentionVoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionVoiceRecorder.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000EL2 /* ElevationProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevationProfileView.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF2 /* RouteSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSegment.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimAnnotation.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapStyle.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF8 /* PilgrimMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapView.swift; sourceTree = "<group>"; };
+		AAAA0000000000000000F8 /* IntentionSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionSettingView.swift; sourceTree = "<group>"; };
+		AAAA0000000000000000FA /* WalkOptionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkOptionsSheet.swift; sourceTree = "<group>"; };
 		AABB000100000001 /* WelcomeAnimationState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeAnimationState.swift; sourceTree = "<group>"; };
 		B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewWalkComputationTests.swift; sourceTree = "<group>"; };
+		B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideScheduler.swift; sourceTree = "<group>"; };
+		B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
+		B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
 		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
 		BB00CC010000000000000002 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
+		BBBB000000000000000001 /* WaypointInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointInterface.swift; sourceTree = "<group>"; };
+		BBBB000000000000000003 /* TempWaypoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempWaypoint.swift; sourceTree = "<group>"; };
+		BBBB000000000000000005 /* PilgrimV6.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV6.swift; sourceTree = "<group>"; };
+		BBBB000000000000000007 /* Waypoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Waypoint.swift; sourceTree = "<group>"; };
+		BBBB000000000000000009 /* WaypointMarkingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointMarkingSheet.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000B /* WaypointCodableTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WaypointCodableTests.swift; sourceTree = "<group>"; };
 		BREATH000000000000000001 /* BreathTransitionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BreathTransitionView.swift; sourceTree = "<group>"; };
 		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
 		C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.release.xcconfig"; sourceTree = "<group>"; };
 		C2D23FF60A762C30296A69E6 /* ComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComputationTests.swift; sourceTree = "<group>"; };
+		C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifest.swift; sourceTree = "<group>"; };
 		C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEnhancer.swift; sourceTree = "<group>"; };
 		C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UnitTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineBar.swift; sourceTree = "<group>"; };
@@ -510,7 +540,6 @@
 		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
 		CC00000100000000SEASON01 /* SeasonalColorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonalColorEngine.swift; sourceTree = "<group>"; };
 		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
 		CC00000100000000TREESH01 /* TreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeShape.swift; sourceTree = "<group>"; };
 		CC00000100000000WINTRT01 /* WinterTreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinterTreeShape.swift; sourceTree = "<group>"; };
@@ -518,6 +547,7 @@
 		CC00000100000000WKMODE01 /* WalkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMode.swift; sourceTree = "<group>"; };
 		CC00000100000000WKSTRT01 /* WalkStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStartView.swift; sourceTree = "<group>"; };
 		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
+		CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideFileStore.swift; sourceTree = "<group>"; };
 		D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayload.swift; sourceTree = "<group>"; };
 		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityListView.swift; sourceTree = "<group>"; };
@@ -538,18 +568,10 @@
 		F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV4.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconSelectorView.swift; sourceTree = "<group>"; };
 		F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkSettingsView.swift; sourceTree = "<group>"; };
+		FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideSettingsView.swift; sourceTree = "<group>"; };
 		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
 		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
 		PERM000100000006 /* PermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModel.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModelTests.swift; sourceTree = "<group>"; };
-		B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
-		B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
-		BBBB000000000000000001 /* WaypointInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointInterface.swift; sourceTree = "<group>"; };
-		BBBB000000000000000003 /* TempWaypoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempWaypoint.swift; sourceTree = "<group>"; };
-		BBBB000000000000000005 /* PilgrimV6.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV6.swift; sourceTree = "<group>"; };
-		BBBB000000000000000007 /* Waypoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Waypoint.swift; sourceTree = "<group>"; };
-		BBBB000000000000000009 /* WaypointMarkingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointMarkingSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1045,6 +1067,9 @@
 				BB00CC010000000000000002 /* WelcomeViewModelTests.swift */,
 				PERM000100000004 /* PermissionsViewModelTests.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */,
+				90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */,
+				0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */,
+				4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1090,6 +1115,21 @@
 			path = WalkBuilder;
 			sourceTree = "<group>";
 		};
+		2C6F3C28CC1CE020CCEF6F19 /* VoiceGuide */ = {
+			isa = PBXGroup;
+			children = (
+				C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */,
+				74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */,
+				CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */,
+				5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */,
+				75F7E64FC89078569CF45F03 /* VoiceGuidePlayer.swift */,
+				B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */,
+				65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */,
+			);
+			name = VoiceGuide;
+			path = VoiceGuide;
+			sourceTree = "<group>";
+		};
 		3A2B6107FC73A26AFA4F2434 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
@@ -1104,6 +1144,7 @@
 				C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */,
 				8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */,
 				EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */,
+				2C6F3C28CC1CE020CCEF6F19 /* VoiceGuide */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -1139,15 +1180,6 @@
 			);
 			name = Share;
 			path = Share;
-			sourceTree = "<group>";
-		};
-		AAAA000000000000000000F5 /* Intention */ = {
-			isa = PBXGroup;
-			children = (
-				AAAA000000000000000000F2 /* IntentionHistoryStore.swift */,
-				AAAA000000000000000000F6 /* IntentionVoiceRecorder.swift */,
-			);
-			path = Intention;
 			sourceTree = "<group>";
 		};
 		AA0001010000000000000021 /* Home */ = {
@@ -1205,6 +1237,23 @@
 			path = Prompts;
 			sourceTree = "<group>";
 		};
+		AAAA000000000000000000F5 /* Intention */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA000000000000000000F2 /* IntentionHistoryStore.swift */,
+				AAAA000000000000000000F6 /* IntentionVoiceRecorder.swift */,
+			);
+			path = Intention;
+			sourceTree = "<group>";
+		};
+		B4C5D6E7F8A9B0C1D2E3F4A9 /* Feedback */ = {
+			isa = PBXGroup;
+			children = (
+				B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */,
+			);
+			path = Feedback;
+			sourceTree = "<group>";
+		};
 		BA69BA2459A15E9F0E7493C3 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -1242,16 +1291,9 @@
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */,
 				A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */,
 				B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */,
+				FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */,
 			);
 			path = Settings;
-			sourceTree = "<group>";
-		};
-		B4C5D6E7F8A9B0C1D2E3F4A9 /* Feedback */ = {
-			isa = PBXGroup;
-			children = (
-				B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */,
-			);
-			path = Feedback;
 			sourceTree = "<group>";
 		};
 		F0F0F00300000000AABBCC00 /* Fonts */ = {
@@ -1693,6 +1735,14 @@
 				BBBB000000000000000006 /* PilgrimV6.swift in Sources */,
 				BBBB000000000000000008 /* Waypoint.swift in Sources */,
 				BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */,
+				86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */,
+				52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */,
+				B0261DB7EE2F64C26CF7A41F /* VoiceGuideFileStore.swift in Sources */,
+				D62B90461A22862A8FDA006C /* VoiceGuideDownloadManager.swift in Sources */,
+				E27871EF9A01D3D3C6093554 /* VoiceGuidePlayer.swift in Sources */,
+				6F8AA2EEEDD08C727B89AB94 /* VoiceGuideScheduler.swift in Sources */,
+				E45CCFD6C6A29B3BC03CF2AB /* VoiceGuideManagement.swift in Sources */,
+				3DF4B121DEE87CA7EBB26207 /* VoiceGuideSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1717,6 +1767,9 @@
 				BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */,
 				PERM000100000005 /* PermissionsViewModelTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */,
+				0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */,
+				3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */,
+				FB767A6007B826D951706B85 /* VoiceGuideHistoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

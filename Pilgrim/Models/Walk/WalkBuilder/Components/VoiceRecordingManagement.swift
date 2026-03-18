@@ -81,6 +81,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     public func startRecording() {
         guard isWalkActive, !isRecording else { return }
 
+        VoiceGuidePlayer.shared.stop()
         configureAudioSession()
 
         guard let dir = ensureRecordingsDirectory() else { return }

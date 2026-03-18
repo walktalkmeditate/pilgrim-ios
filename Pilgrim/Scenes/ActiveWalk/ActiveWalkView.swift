@@ -73,7 +73,21 @@ struct ActiveWalkView: View {
                     }
                 },
                 currentIntention: viewModel.intention,
-                waypointCount: viewModel.waypoints.count
+                waypointCount: viewModel.waypoints.count,
+                soundscapeName: viewModel.currentSoundscapeName,
+                isSoundscapeMuted: SoundscapePlayer.shared.isMuted,
+                onToggleSoundscape: { SoundscapePlayer.shared.toggleMute() },
+                voiceGuidePackName: viewModel.voiceGuidePackName,
+                isVoiceGuidePaused: viewModel.isVoiceGuidePaused,
+                hasLastPrompt: viewModel.voiceGuideManagement.hasLastPrompt,
+                onToggleVoiceGuide: {
+                    if viewModel.voiceGuideManagement.isPaused {
+                        viewModel.voiceGuideManagement.resumeGuide()
+                    } else {
+                        viewModel.voiceGuideManagement.pauseGuide()
+                    }
+                },
+                onReplayPrompt: { viewModel.voiceGuideManagement.replayLastPrompt() }
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
@@ -203,6 +217,12 @@ struct ActiveWalkView: View {
                         .foregroundColor(.fog.opacity(0.6))
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
+                }
+
+                if let guideName = viewModel.voiceGuidePackName {
+                    Text("Guide: \(guideName)")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog.opacity(0.6))
                 }
 
                 if viewModel.currentSoundscapeName != nil || SoundscapePlayer.shared.isMuted {

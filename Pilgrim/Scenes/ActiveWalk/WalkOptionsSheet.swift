@@ -8,6 +8,16 @@ struct WalkOptionsSheet: View {
     let currentIntention: String?
     let waypointCount: Int
 
+    var soundscapeName: String?
+    var isSoundscapeMuted: Bool = false
+    var onToggleSoundscape: (() -> Void)?
+
+    var voiceGuidePackName: String?
+    var isVoiceGuidePaused: Bool = false
+    var hasLastPrompt: Bool = false
+    var onToggleVoiceGuide: (() -> Void)?
+    var onReplayPrompt: (() -> Void)?
+
     var body: some View {
         VStack(spacing: 0) {
             Text("Options")
@@ -35,11 +45,61 @@ struct WalkOptionsSheet: View {
                         onDropWaypoint()
                     }
                 }
+
+                if isRecording {
+                    audioSection
+                }
             }
             .padding(.horizontal, Constants.UI.Padding.normal)
             .padding(.top, Constants.UI.Padding.big)
 
             Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private var audioSection: some View {
+        let hasSoundscape = soundscapeName != nil || isSoundscapeMuted
+        let hasVoiceGuide = voiceGuidePackName != nil
+
+        if hasSoundscape || hasVoiceGuide {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Audio")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog.opacity(0.5))
+                    .padding(.top, 8)
+                    .padding(.leading, 4)
+
+                if hasSoundscape {
+                    optionRow(
+                        icon: isSoundscapeMuted ? "speaker.slash" : "speaker.wave.2",
+                        title: "Soundscape",
+                        subtitle: isSoundscapeMuted ? "Paused" : soundscapeName
+                    ) {
+                        onToggleSoundscape?()
+                    }
+                }
+
+                if hasVoiceGuide {
+                    optionRow(
+                        icon: isVoiceGuidePaused ? "play.circle" : "pause.circle",
+                        title: "Voice Guide",
+                        subtitle: isVoiceGuidePaused ? "Paused — \(voiceGuidePackName ?? "")" : voiceGuidePackName
+                    ) {
+                        onToggleVoiceGuide?()
+                    }
+
+                    if hasLastPrompt {
+                        optionRow(
+                            icon: "arrow.counterclockwise",
+                            title: "Replay Last Prompt",
+                            subtitle: nil
+                        ) {
+                            onReplayPrompt?()
+                        }
+                    }
+                }
+            }
         }
     }
 
