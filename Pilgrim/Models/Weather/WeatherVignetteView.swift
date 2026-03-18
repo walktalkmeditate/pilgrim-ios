@@ -34,10 +34,14 @@ struct WeatherVignetteView: View {
                     .font(Constants.Typography.caption)
             }
         }
-        .foregroundColor(.fog)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.ultraThinMaterial, in: Capsule())
+        .foregroundColor(.ink)
+        .padding(.horizontal, Constants.UI.Padding.small)
+        .padding(.vertical, Constants.UI.Padding.xs)
+        .background(
+            Capsule()
+                .fill(Color.parchmentSecondary)
+                .shadow(color: .ink.opacity(0.08), radius: 4, y: 2)
+        )
     }
 
 }
