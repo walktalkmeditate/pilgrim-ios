@@ -103,14 +103,9 @@ struct InkScrollView: View {
                     snapshot: snapshot,
                     position: position.center,
                     opacity: opacity,
-                    sceneryView: scenery
+                    sceneryView: scenery,
+                    isNewest: isNewest
                 )
-                .overlay {
-                    if isNewest {
-                        newestDotEffects(snapshot: snapshot)
-                            .frame(width: 60, height: 60)
-                    }
-                }
                 .opacity(hasAppeared ? 1 : 0)
                 .animation(
                     .easeOut(duration: 0.5).delay(Double(index) * 0.03 + 0.3),
@@ -197,12 +192,14 @@ struct InkScrollView: View {
         snapshot: WalkSnapshot,
         position: CGPoint,
         opacity: Double,
-        sceneryView: AnyView?
+        sceneryView: AnyView?,
+        isNewest: Bool = false
     ) -> some View {
         WalkDotView(
             snapshot: snapshot,
             position: position,
             opacity: opacity,
+            isNewest: isNewest,
             onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
             sceneryView: sceneryView
         )
@@ -223,17 +220,6 @@ struct InkScrollView: View {
                 expandedSnapshot = snapshot
             }
         }
-    }
-
-    // MARK: - Newest dot ring
-
-    private func newestDotEffects(snapshot: WalkSnapshot) -> some View {
-        let color = dotSeasonalColor(for: snapshot)
-        return ZStack {
-            BreathingPulseView(color: color)
-            SonarRingView(color: color)
-        }
-        .allowsHitTesting(false)
     }
 
     private func dotSeasonalColor(for snapshot: WalkSnapshot) -> Color {
@@ -685,6 +671,7 @@ struct InkScrollView: View {
                 snapshot: snap,
                 position: .zero,
                 opacity: 1,
+                isNewest: false,
                 onTap: { _ in },
                 sceneryView: nil
             )
@@ -697,7 +684,7 @@ struct InkScrollView: View {
 
 }
 
-private struct BreathingPulseView: View {
+struct BreathingPulseView: View {
     let color: Color
 
     var body: some View {
@@ -712,7 +699,7 @@ private struct BreathingPulseView: View {
     }
 }
 
-private struct SonarRingView: View {
+struct SonarRingView: View {
     let color: Color
 
     var body: some View {

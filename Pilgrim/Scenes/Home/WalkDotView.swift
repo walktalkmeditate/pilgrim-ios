@@ -5,6 +5,7 @@ struct WalkDotView: View {
     let snapshot: WalkSnapshot
     let position: CGPoint
     let opacity: Double
+    let isNewest: Bool
     let onTap: (UUID) -> Void
     let sceneryView: AnyView?
 
@@ -15,6 +16,11 @@ struct WalkDotView: View {
         let size = dotSize
 
         ZStack {
+            if isNewest {
+                BreathingPulseView(color: dotColor)
+                SonarRingView(color: dotColor)
+            }
+
             if let scenery = sceneryView {
                 scenery
             }
