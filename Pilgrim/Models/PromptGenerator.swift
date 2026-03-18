@@ -83,7 +83,7 @@ struct PromptGenerator {
         let date: Date
         let placeName: String?
         let transcriptionPreview: String
-        let weatherCondition: String?
+        var weatherCondition: String? = nil
     }
 
     struct WaypointContext {
