@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: macos-15
@@ -24,13 +28,23 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/cache@v4
+        id: pods-cache
         with:
           path: Pods
           key: pods-${{ hashFiles('Podfile.lock') }}
           restore-keys: pods-
 
       - name: Install CocoaPods
+        if: steps.pods-cache.outputs.cache-hit != 'true'
         run: pod install
+
+      - uses: actions/cache@v4
+        with:
+          path: DerivedData
+          key: deriveddata-${{ hashFiles('Pilgrim.xcworkspace/contents.xcworkspacedata', 'Podfile.lock') }}-${{ github.sha }}
+          restore-keys: |
+            deriveddata-${{ hashFiles('Pilgrim.xcworkspace/contents.xcworkspacedata', 'Podfile.lock') }}-
+            deriveddata-
 
       - name: Run tests
         run: |
@@ -39,6 +53,7 @@ jobs:
             -scheme Pilgrim \
             -sdk iphonesimulator \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -derivedDataPath DerivedData \
             -resultBundlePath TestResults.xcresult
 
       - name: Upload test results
