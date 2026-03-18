@@ -20,6 +20,7 @@ struct WalkStartView: View {
     @State private var seekFloatOffset: CGFloat = 0
     @State private var footprintBreathScale: CGFloat = 1.0
     @State private var togetherDriftOffset: CGSize = .zero
+    @State private var togetherCompanionsVisible = false
 
     @State private var lunarPhase = LunarPhase.current()
 
@@ -75,6 +76,7 @@ struct WalkStartView: View {
             seekFloatOffset = 0
             footprintBreathScale = 1.0
             togetherDriftOffset = .zero
+            togetherCompanionsVisible = false
         }
     }
 
@@ -114,8 +116,23 @@ struct WalkStartView: View {
                     }
                 }
             }
+            modeAtmosphere
         }
         .ignoresSafeArea()
+    }
+
+    private var modeAtmosphere: some View {
+        Group {
+            switch selectedMode {
+            case .wander:
+                Color.clear
+            case .together:
+                Color.dawn.opacity(0.01)
+            case .seek:
+                Color.fog.opacity(0.01)
+            }
+        }
+        .animation(.easeInOut(duration: 0.6), value: selectedMode)
     }
 
     // MARK: - Content
@@ -146,13 +163,14 @@ struct WalkStartView: View {
                 .padding(.bottom, Constants.UI.Padding.normal)
 
             Button(action: { onStartWalk(selectedMode) }) {
-                Text(LS["Welcome.Begin"])
+                Text(selectedMode.buttonLabel)
                     .font(Constants.Typography.button)
                     .foregroundColor(.parchment)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(selectedMode.isAvailable ? Color.stone : Color.fog.opacity(0.2))
                     .cornerRadius(Constants.UI.CornerRadius.normal)
+                    .contentTransition(.interpolate)
             }
             .disabled(!selectedMode.isAvailable)
             .shadow(color: .stone.opacity(selectedMode.isAvailable ? 0.2 : 0), radius: 8, x: 0, y: 3)
@@ -213,6 +231,7 @@ struct WalkStartView: View {
                 x: -14 + togetherDriftOffset.width,
                 y: -10 + togetherDriftOffset.height
             )
+            .opacity(togetherCompanionsVisible ? 1 : 0)
 
             HStack(spacing: 2) {
                 FootprintShape()
@@ -229,6 +248,7 @@ struct WalkStartView: View {
                 x: 12 - togetherDriftOffset.width,
                 y: -8 - togetherDriftOffset.height
             )
+            .opacity(togetherCompanionsVisible ? 1 : 0)
 
             HStack(spacing: 2) {
                 FootprintShape()
@@ -244,13 +264,20 @@ struct WalkStartView: View {
         }
         .frame(width: 60, height: 50)
         .onAppear {
-            guard !UIAccessibility.isReduceMotionEnabled else { return }
+            if UIAccessibility.isReduceMotionEnabled {
+                togetherCompanionsVisible = true
+                return
+            }
+            withAnimation(.easeOut(duration: 0.3).delay(0.1)) {
+                togetherCompanionsVisible = true
+            }
             withAnimation(.easeInOut(duration: 6.0).repeatForever(autoreverses: true)) {
                 togetherDriftOffset = CGSize(width: 1, height: 0.5)
             }
         }
         .onDisappear {
             togetherDriftOffset = .zero
+            togetherCompanionsVisible = false
         }
     }
 

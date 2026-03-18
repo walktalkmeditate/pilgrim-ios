@@ -11,6 +11,14 @@ enum WalkMode: String, CaseIterable {
         }
     }
 
+    var buttonLabel: String {
+        switch self {
+        case .wander: return "Wander"
+        case .together: return "Walk Together"
+        case .seek: return "Seek"
+        }
+    }
+
     var isAvailable: Bool {
         self == .wander
     }
