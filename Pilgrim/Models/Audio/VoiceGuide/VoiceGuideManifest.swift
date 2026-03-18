@@ -35,4 +35,20 @@ struct VoiceGuidePrompt: Codable, Identifiable {
     let durationSec: Double
     let fileSizeBytes: Int
     let r2Key: String
+    let phase: String?
+
+    init(id: String, seq: Int, durationSec: Double, fileSizeBytes: Int, r2Key: String, phase: String? = nil) {
+        self.id = id
+        self.seq = seq
+        self.durationSec = durationSec
+        self.fileSizeBytes = fileSizeBytes
+        self.r2Key = r2Key
+        self.phase = phase
+    }
+}
+
+enum PromptPhase: String {
+    case settling
+    case deepening
+    case closing
 }
