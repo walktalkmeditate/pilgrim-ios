@@ -15,6 +15,7 @@ struct ActiveWalkView: View {
     @State private var showWaypointFailed = false
     @State private var hasCheckedAutoIntention = false
     @State private var weatherGreeting: String?
+    @State private var greetingGeneration = 0
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -101,8 +102,11 @@ struct ActiveWalkView: View {
             case .wind: greeting = "The wind at your back"
             case .haze: greeting = "A hazy veil over the world"
             }
+            greetingGeneration += 1
+            let gen = greetingGeneration
             withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+                guard greetingGeneration == gen else { return }
                 withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
             }
         }

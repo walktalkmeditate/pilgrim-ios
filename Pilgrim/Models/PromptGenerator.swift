@@ -407,23 +407,14 @@ struct PromptGenerator {
               let temp = walk.weatherTemperature else { return nil }
 
         let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
-        let tempStr = imperial ? String(format: "%.0f°F", temp * 9 / 5 + 32) : String(format: "%.0f°C", temp)
-        var parts = [condition.label, tempStr]
+        var parts = [condition.label, WeatherSnapshot.formatTemperature(temp, imperial: imperial)]
 
         if let humidity = walk.weatherHumidity {
             parts.append("humidity \(Int(humidity * 100))%")
         }
 
         if let wind = walk.weatherWindSpeed {
-            let desc: String
-            switch wind {
-            case ..<2: desc = "calm"
-            case 2..<5: desc = "gentle breeze"
-            case 5..<10: desc = "moderate wind"
-            case 10..<15: desc = "strong wind"
-            default: desc = "very strong wind"
-            }
-            parts.append(desc)
+            parts.append(WeatherSnapshot.describeWind(wind))
         }
 
         return "Weather: \(parts.joined(separator: ", "))"

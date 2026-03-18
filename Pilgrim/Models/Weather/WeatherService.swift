@@ -55,10 +55,24 @@ struct WeatherSnapshot: Codable {
     }
 
     func formattedTemperature(imperial: Bool) -> String {
+        Self.formatTemperature(temperature, imperial: imperial)
+    }
+
+    static func formatTemperature(_ celsius: Double, imperial: Bool) -> String {
         if imperial {
-            return String(format: "%.0f°F", temperature * 9 / 5 + 32)
+            return String(format: "%.0f°F", celsius * 9 / 5 + 32)
         }
-        return String(format: "%.0f°C", temperature)
+        return String(format: "%.0f°C", celsius)
+    }
+
+    static func describeWind(_ metersPerSecond: Double) -> String {
+        switch metersPerSecond {
+        case ..<2: return "calm"
+        case 2..<5: return "gentle breeze"
+        case 5..<10: return "moderate wind"
+        case 10..<15: return "strong wind"
+        default: return "very strong wind"
+        }
     }
 }
 

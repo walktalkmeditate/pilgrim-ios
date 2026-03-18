@@ -409,11 +409,10 @@ struct WalkSummaryView: View {
            let cond = WeatherCondition(rawValue: condStr),
            let temp = walk.weatherTemperature {
             let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
-            let tempStr = imperial ? String(format: "%.0f°F", temp * 9 / 5 + 32) : String(format: "%.0f°C", temp)
             HStack(spacing: Constants.UI.Padding.xs) {
                 Image(systemName: cond.icon)
                     .font(Constants.Typography.caption)
-                Text("\(cond.label), \(tempStr)")
+                Text("\(cond.label), \(WeatherSnapshot.formatTemperature(temp, imperial: imperial))")
                     .font(Constants.Typography.caption)
             }
             .foregroundColor(.fog)

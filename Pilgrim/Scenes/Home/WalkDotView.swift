@@ -193,7 +193,7 @@ private struct RippleEffectView: View {
                 .stroke(color.opacity(0.15), lineWidth: 1.5)
                 .frame(width: dotSize + 16, height: dotSize + 16)
         } else {
-            TimelineView(.animation(minimumInterval: 1.0 / 20)) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 10)) { timeline in
                 let time = timeline.date.timeIntervalSinceReferenceDate
                 Canvas { context, size in
                     let center = CGPoint(x: size.width / 2, y: size.height / 2)
