@@ -453,6 +453,7 @@ public class WalkBuilder: ApplicationStateObserver {
         activityIntervalsRelay.accept([])
         waypointsRelay.accept([])
         lastPause = nil
+        weatherSnapshot = nil
         resetRelay.accept(nil)
     }
     
