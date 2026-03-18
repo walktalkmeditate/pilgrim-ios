@@ -683,33 +683,3 @@ struct InkScrollView: View {
     }
 
 }
-
-struct BreathingPulseView: View {
-    let color: Color
-
-    var body: some View {
-        Circle()
-            .fill(color.opacity(0.08))
-            .frame(width: 50, height: 50)
-            .phaseAnimator([false, true]) { content, phase in
-                content
-                    .scaleEffect(phase ? 1.3 : 1.0)
-                    .opacity(phase ? 0.0 : 0.15)
-            } animation: { _ in .easeInOut(duration: 2.5) }
-    }
-}
-
-struct SonarRingView: View {
-    let color: Color
-
-    var body: some View {
-        Circle()
-            .stroke(color, lineWidth: 1.5)
-            .frame(width: 28, height: 28)
-            .phaseAnimator([false, true]) { content, phase in
-                content
-                    .scaleEffect(phase ? 2.0 : 1.0)
-                    .opacity(phase ? 0 : 0.5)
-            } animation: { _ in .easeOut(duration: 2.0) }
-    }
-}
