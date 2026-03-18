@@ -103,10 +103,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             clLocation = nil
         }
         guard let location = clLocation else { return }
-        Task {
+        Task { [weak self] in
             let snapshot = await WeatherService.shared.fetchCurrent(for: location)
             await MainActor.run {
-                self.weatherSnapshot = snapshot
+                self?.weatherSnapshot = snapshot
             }
         }
     }

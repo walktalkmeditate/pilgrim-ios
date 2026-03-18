@@ -402,7 +402,9 @@ struct PromptGenerator {
               let condition = WeatherCondition(rawValue: conditionStr),
               let temp = walk.weatherTemperature else { return nil }
 
-        var parts = [condition.label, String(format: "%.0f°C", temp)]
+        let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+        let tempStr = imperial ? String(format: "%.0f°F", temp * 9 / 5 + 32) : String(format: "%.0f°C", temp)
+        var parts = [condition.label, tempStr]
 
         if let humidity = walk.weatherHumidity {
             parts.append("humidity \(Int(humidity * 100))%")

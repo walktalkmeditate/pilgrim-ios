@@ -179,19 +179,29 @@ private struct RainCanvas: View {
 private struct LightningFlashView: View {
 
     @State private var flashOpacity: Double = 0
+    @State private var generation = 0
 
     var body: some View {
         Color.white.opacity(flashOpacity)
-            .onAppear { runFlashCycle() }
+            .onAppear {
+                generation += 1
+                runFlashCycle(generation: generation)
+            }
+            .onDisappear {
+                generation += 1
+                flashOpacity = 0
+            }
     }
 
-    private func runFlashCycle() {
+    private func runFlashCycle(generation gen: Int) {
         let delay = Double.random(in: 10...14)
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            guard generation == gen else { return }
             withAnimation(.easeIn(duration: 0.05)) { flashOpacity = 0.06 }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                guard generation == gen else { return }
                 withAnimation(.easeOut(duration: 0.05)) { flashOpacity = 0 }
-                runFlashCycle()
+                runFlashCycle(generation: gen)
             }
         }
     }
