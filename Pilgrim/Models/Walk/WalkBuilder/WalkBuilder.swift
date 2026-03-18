@@ -103,7 +103,9 @@ public class WalkBuilder: ApplicationStateObserver {
     public func addWaypoint(_ waypoint: TempWaypoint) {
         waypointsRelay.accept(waypointsRelay.value + [waypoint])
     }
-    
+
+    var weatherSnapshot: WeatherSnapshot?
+
     // MARK: - Initialisation
     
     /**
@@ -391,7 +393,11 @@ public class WalkBuilder: ApplicationStateObserver {
             workoutEvents: [],
             voiceRecordings: voiceRecordingsRelay.value,
             activityIntervals: activityIntervalsRelay.value,
-            waypoints: waypointsRelay.value
+            waypoints: waypointsRelay.value,
+            weatherCondition: weatherSnapshot?.condition.rawValue,
+            weatherTemperature: weatherSnapshot?.temperature,
+            weatherHumidity: weatherSnapshot?.humidity,
+            weatherWindSpeed: weatherSnapshot?.windSpeed
         )
     }
 
@@ -419,10 +425,14 @@ public class WalkBuilder: ApplicationStateObserver {
             workoutEvents: [],
             voiceRecordings: voiceRecordingsRelay.value,
             activityIntervals: activityIntervalsRelay.value,
-            waypoints: waypointsRelay.value
+            waypoints: waypointsRelay.value,
+            weatherCondition: weatherSnapshot?.condition.rawValue,
+            weatherTemperature: weatherSnapshot?.temperature,
+            weatherHumidity: weatherSnapshot?.humidity,
+            weatherWindSpeed: weatherSnapshot?.windSpeed
         )
     }
-    
+
     // MARK: - Preparation
     
     /// Resets the `WalkBuilder` and it's components and prepares them for another recording.

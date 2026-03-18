@@ -64,14 +64,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
         builder.onSnapshotCreated = { [weak self] snapshot in
             DispatchQueue.main.async {
-                guard let self else { return }
-                if let weather = self.weatherSnapshot {
-                    snapshot.weatherCondition = weather.condition.rawValue
-                    snapshot.weatherTemperature = weather.temperature
-                    snapshot.weatherHumidity = weather.humidity
-                    snapshot.weatherWindSpeed = weather.windSpeed
-                }
-                self.onWalkCompleted?(snapshot)
+                self?.onWalkCompleted?(snapshot)
             }
         }
 
@@ -89,11 +82,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         self.sessionGuard = guard_
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            self?.fetchWeather()
+            self?.fetchWeather(retryOnFailure: true)
         }
     }
 
-    func fetchWeather() {
+    func fetchWeather(retryOnFailure: Bool = false) {
         let clLocation: CLLocation?
         if let sample = currentLocation {
             clLocation = CLLocation(latitude: sample.latitude, longitude: sample.longitude)
@@ -102,11 +95,27 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         } else {
             clLocation = nil
         }
-        guard let location = clLocation else { return }
+
+        guard let location = clLocation else {
+            if retryOnFailure {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+                    self?.fetchWeather(retryOnFailure: false)
+                }
+            }
+            return
+        }
+
         Task { [weak self] in
             let snapshot = await WeatherService.shared.fetchCurrent(for: location)
             await MainActor.run {
-                self?.weatherSnapshot = snapshot
+                if let snapshot {
+                    self?.weatherSnapshot = snapshot
+                    self?.builder.weatherSnapshot = snapshot
+                } else if retryOnFailure {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+                        self?.fetchWeather(retryOnFailure: false)
+                    }
+                }
             }
         }
     }

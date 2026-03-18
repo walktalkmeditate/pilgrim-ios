@@ -2,7 +2,7 @@ import Foundation
 import WeatherKit
 import CoreLocation
 
-enum WeatherCondition: String, Codable, CaseIterable {
+enum WeatherCondition: String, Codable {
     case clear, partlyCloudy, overcast
     case lightRain, heavyRain, thunderstorm
     case snow, fog, wind, haze
@@ -44,8 +44,14 @@ struct WeatherSnapshot: Codable {
     let humidity: Double
     let windSpeed: Double
 
-    var description: String {
-        "\(condition.label), \(String(format: "%.0f", temperature))°C"
+    var windDescription: String {
+        switch windSpeed {
+        case ..<2: return "calm"
+        case 2..<5: return "gentle breeze"
+        case 5..<10: return "moderate wind"
+        case 10..<15: return "strong wind"
+        default: return "very strong wind"
+        }
     }
 
     func formattedTemperature(imperial: Bool) -> String {

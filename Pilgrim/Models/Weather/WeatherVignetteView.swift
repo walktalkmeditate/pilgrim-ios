@@ -13,6 +13,8 @@ struct WeatherVignetteView: View {
                 content(for: snapshot)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Weather: \(snapshot.condition.label), \(snapshot.formattedTemperature(imperial: imperial))")
+            .accessibilityHint("Double tap to expand weather details")
         }
     }
 
@@ -28,7 +30,7 @@ struct WeatherVignetteView: View {
                 Text("\(Int(snapshot.humidity * 100))%")
                     .font(Constants.Typography.caption)
 
-                Text(windDescription(snapshot.windSpeed))
+                Text(snapshot.windDescription)
                     .font(Constants.Typography.caption)
             }
         }
@@ -38,13 +40,4 @@ struct WeatherVignetteView: View {
         .background(.ultraThinMaterial, in: Capsule())
     }
 
-    private func windDescription(_ ms: Double) -> String {
-        switch ms {
-        case ..<2: return "calm"
-        case 2..<5: return "gentle"
-        case 5..<10: return "moderate"
-        case 10..<15: return "strong"
-        default: return "very strong"
-        }
-    }
 }

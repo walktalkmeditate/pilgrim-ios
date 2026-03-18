@@ -4,9 +4,7 @@ struct WeatherOverlayView: View {
 
     let condition: WeatherCondition?
 
-    private var reduceMotion: Bool {
-        UIAccessibility.isReduceMotionEnabled
-    }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if let condition {
