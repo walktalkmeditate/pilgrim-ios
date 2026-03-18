@@ -38,7 +38,9 @@ struct WalkStartView: View {
         }
         .onChange(of: selectedMode) { _, newMode in
             if UIAccessibility.isReduceMotionEnabled {
-                activeMode = newMode
+                withAnimation(.linear(duration: 0.2)) {
+                    activeMode = newMode
+                }
                 return
             }
             transitionGeneration += 1
