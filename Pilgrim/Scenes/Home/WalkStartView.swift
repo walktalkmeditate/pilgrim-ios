@@ -14,6 +14,9 @@ struct WalkStartView: View {
     @State private var showMoon = false
     @State private var glowScale: CGFloat = 1.0
     @State private var entranceGeneration = 0
+    @State private var activeMode: WalkMode = .wander
+    @State private var footprintVisible = true
+    @State private var transitionGeneration = 0
 
     @State private var lunarPhase = LunarPhase.current()
 
@@ -33,6 +36,24 @@ struct WalkStartView: View {
                 currentQuote = mode.quotes.randomElement() ?? ""
             }
         }
+        .onChange(of: selectedMode) { _, newMode in
+            if UIAccessibility.isReduceMotionEnabled {
+                activeMode = newMode
+                return
+            }
+            transitionGeneration += 1
+            let gen = transitionGeneration
+            withAnimation(.easeIn(duration: 0.3)) {
+                footprintVisible = false
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                guard transitionGeneration == gen else { return }
+                activeMode = newMode
+                withAnimation(.easeOut(duration: 0.3)) {
+                    footprintVisible = true
+                }
+            }
+        }
         .onDisappear {
             entranceGeneration += 1
             breathing = false
@@ -40,6 +61,9 @@ struct WalkStartView: View {
             showQuote = false
             showMoon = false
             glowScale = 1.0
+            transitionGeneration += 1
+            footprintVisible = true
+            activeMode = .wander
         }
     }
 
@@ -107,7 +131,7 @@ struct WalkStartView: View {
 
             Spacer()
 
-            footprintPair
+            footprintDisplay
                 .padding(.bottom, Constants.UI.Padding.normal)
 
             modeSelector
@@ -132,22 +156,112 @@ struct WalkStartView: View {
         .padding(.bottom, Constants.UI.Padding.big)
     }
 
-    // MARK: - Footprint Pair
+    // MARK: - Footprint Display
 
-    private var footprintPair: some View {
+    private var footprintDisplay: some View {
+        Group {
+            switch activeMode {
+            case .wander: wanderFootprints
+            case .together: togetherFootprints
+            case .seek: seekFootprints
+            }
+        }
+        .scaleEffect(footprintVisible ? 1.0 : 1.08)
+        .opacity(footprintVisible ? 1.0 : 0.0)
+        .accessibilityHidden(true)
+    }
+
+    private var wanderFootprints: some View {
         HStack(spacing: 2) {
             FootprintShape()
                 .fill(Color.ink.opacity(0.08))
                 .frame(width: 16, height: 26)
                 .scaleEffect(x: -1)
                 .rotationEffect(.degrees(-12))
-
             FootprintShape()
                 .fill(Color.ink.opacity(0.06))
                 .frame(width: 16, height: 26)
                 .rotationEffect(.degrees(12))
         }
-        .accessibilityHidden(true)
+    }
+
+    private var togetherFootprints: some View {
+        ZStack {
+            HStack(spacing: 2) {
+                FootprintShape()
+                    .fill(Color.ink.opacity(0.06))
+                    .frame(width: 14, height: 22)
+                    .scaleEffect(x: -1)
+                    .rotationEffect(.degrees(-18))
+                FootprintShape()
+                    .fill(Color.ink.opacity(0.05))
+                    .frame(width: 14, height: 22)
+                    .rotationEffect(.degrees(6))
+            }
+            .offset(x: -14, y: -10)
+
+            HStack(spacing: 2) {
+                FootprintShape()
+                    .fill(Color.ink.opacity(0.05))
+                    .frame(width: 14, height: 22)
+                    .scaleEffect(x: -1)
+                    .rotationEffect(.degrees(8))
+                FootprintShape()
+                    .fill(Color.ink.opacity(0.04))
+                    .frame(width: 14, height: 22)
+                    .rotationEffect(.degrees(-16))
+            }
+            .offset(x: 12, y: -8)
+
+            HStack(spacing: 2) {
+                FootprintShape()
+                    .fill(Color.ink.opacity(0.10))
+                    .frame(width: 16, height: 26)
+                    .scaleEffect(x: -1)
+                    .rotationEffect(.degrees(-12))
+                FootprintShape()
+                    .fill(Color.ink.opacity(0.08))
+                    .frame(width: 16, height: 26)
+                    .rotationEffect(.degrees(12))
+            }
+        }
+        .frame(width: 60, height: 50)
+    }
+
+    private var seekFootprints: some View {
+        HStack(spacing: 2) {
+            FootprintShape()
+                .fill(Color.ink.opacity(0.10))
+                .frame(width: 16, height: 26)
+                .scaleEffect(x: -1)
+                .rotationEffect(.degrees(-12))
+
+            dissolvingDots
+                .frame(width: 16, height: 30)
+                .rotationEffect(.degrees(12))
+        }
+    }
+
+    private var dissolvingDots: some View {
+        Canvas { context, size in
+            let dots: [(x: CGFloat, y: CGFloat, r: CGFloat, a: Double)] = [
+                (0.5, 0.85, 2.5, 0.08),
+                (0.3, 0.65, 2.0, 0.07),
+                (0.7, 0.55, 2.0, 0.06),
+                (0.4, 0.38, 1.5, 0.04),
+                (0.6, 0.20, 1.5, 0.03),
+                (0.5, 0.05, 1.0, 0.02),
+            ]
+            for dot in dots {
+                let rect = CGRect(
+                    x: size.width * dot.x - dot.r,
+                    y: size.height * dot.y - dot.r,
+                    width: dot.r * 2,
+                    height: dot.r * 2
+                )
+                context.fill(Circle().path(in: rect), with: .color(.ink.opacity(dot.a)))
+            }
+        }
     }
 
     // MARK: - Mode Selector
