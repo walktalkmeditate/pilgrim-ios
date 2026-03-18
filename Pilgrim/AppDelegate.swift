@@ -70,6 +70,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             }
         )
         
+        #if DEBUG
+        if let weatherArg = ProcessInfo.processInfo.environment["DEBUG_WEATHER"] {
+            WeatherService.debugOverride = WeatherCondition(rawValue: weatherArg)
+            print("[DEBUG] Weather override: \(weatherArg)")
+        }
+        #endif
+
         return true
     }
 
