@@ -3,10 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		WTHRSVC0000000000000001 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000002 /* WeatherService.swift */; };
+		WTHRSVC0000000000000005 /* WeatherKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000004 /* WeatherKit.framework */; settings = {ATTRIBUTES = (Required, ); }; };
+		WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHOVR0000000000000002 /* WeatherOverlayView.swift */; };
+		WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHVIG0000000000000002 /* WeatherVignetteView.swift */; };
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
 		0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
@@ -219,8 +223,6 @@
 		B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */; };
 		B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */; };
 		B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */; };
-		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
-		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
 		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
 		BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00CC010000000000000002 /* WelcomeViewModelTests.swift */; };
@@ -233,6 +235,8 @@
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
+		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
+		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
 		CC00000200000000BTRFLY01 /* ButterflyShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000BTRFLY01 /* ButterflyShape.swift */; };
 		CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000CALLIG01 /* CalligraphyPathRenderer.swift */; };
 		CC00000200000000DEBUGS01 /* DebugDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */; };
@@ -295,6 +299,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		WTHRSVC0000000000000002 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		WTHRSVC0000000000000004 /* WeatherKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WeatherKit.framework; path = System/Library/Frameworks/WeatherKit.framework; sourceTree = SDKROOT; };
+		WTHOVR0000000000000002 /* WeatherOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayView.swift; sourceTree = "<group>"; };
+		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
 		0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestTests.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
@@ -508,8 +516,6 @@
 		B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideScheduler.swift; sourceTree = "<group>"; };
 		B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
 		B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
-		CC00000100000000ABOUTV01 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
-		CC00000100000000SAFARV01 /* SafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
 		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
 		BB00CC010000000000000002 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
 		BBBB000000000000000001 /* WaypointInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointInterface.swift; sourceTree = "<group>"; };
@@ -526,6 +532,7 @@
 		C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEnhancer.swift; sourceTree = "<group>"; };
 		C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UnitTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineBar.swift; sourceTree = "<group>"; };
+		CC00000100000000ABOUTV01 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		CC00000100000000BTRFLY01 /* ButterflyShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButterflyShape.swift; sourceTree = "<group>"; };
 		CC00000100000000CALLIG01 /* CalligraphyPathRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalligraphyPathRenderer.swift; sourceTree = "<group>"; };
 		CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugDataSeeder.swift; sourceTree = "<group>"; };
@@ -540,6 +547,7 @@
 		CC00000100000000MOONPV01 /* MoonPhaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonPhaseView.swift; sourceTree = "<group>"; };
 		CC00000100000000MOONSH01 /* MoonShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonShape.swift; sourceTree = "<group>"; };
 		CC00000100000000MOUNTN01 /* MountainShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MountainShape.swift; sourceTree = "<group>"; };
+		CC00000100000000SAFARV01 /* SafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
 		CC00000100000000SCENER01 /* SceneryGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryGenerator.swift; sourceTree = "<group>"; };
 		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
 		CC00000100000000SEASON01 /* SeasonalColorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonalColorEngine.swift; sourceTree = "<group>"; };
@@ -583,6 +591,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				WTHRSVC0000000000000005 /* WeatherKit.framework in Frameworks */,
 				AAAA000000000000000000A1 /* WhisperKit in Frameworks */,
 				AAAA00000000000000000MB1 /* MapboxMaps in Frameworks */,
 				50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */,
@@ -860,10 +869,21 @@
 		22B6CF6B22CA0841002D2FB0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				WTHRSVC0000000000000004 /* WeatherKit.framework */,
 				D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */,
 				C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		WTHRSVC0000000000000003 /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				WTHRSVC0000000000000002 /* WeatherService.swift */,
+				WTHOVR0000000000000002 /* WeatherOverlayView.swift */,
+				WTHVIG0000000000000002 /* WeatherVignetteView.swift */,
+			);
+			path = Weather;
 			sourceTree = "<group>";
 		};
 		22B6CF7422CA0A28002D2FB0 /* Models */ = {
@@ -875,6 +895,7 @@
 				22DBFBD32348AB8000DE6E92 /* Data */,
 				3A2B6107FC73A26AFA4F2434 /* Audio */,
 				B4C5D6E7F8A9B0C1D2E3F4A9 /* Feedback */,
+				WTHRSVC0000000000000003 /* Weather */,
 				22A2D43423E313A3003580EC /* Formatting */,
 				22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */,
 				22BD1F41247463DF00415A06 /* ApplicationState.swift */,
@@ -1131,7 +1152,6 @@
 				B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */,
 				65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */,
 			);
-			name = VoiceGuide;
 			path = VoiceGuide;
 			sourceTree = "<group>";
 		};
@@ -1161,7 +1181,6 @@
 				4181215714A52E71449BC390 /* WalkDataFactory.swift */,
 				721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */,
 			);
-			name = Helpers;
 			path = Helpers;
 			sourceTree = "<group>";
 		};
@@ -1172,7 +1191,6 @@
 				8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */,
 				4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */,
 			);
-			name = WalkShare;
 			path = WalkShare;
 			sourceTree = "<group>";
 		};
@@ -1183,7 +1201,6 @@
 				E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */,
 				5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */,
 			);
-			name = Share;
 			path = Share;
 			sourceTree = "<group>";
 		};
@@ -1477,9 +1494,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Pilgrim/Pods-Pilgrim-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Pilgrim/Pods-Pilgrim-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1751,6 +1772,9 @@
 				6F8AA2EEEDD08C727B89AB94 /* VoiceGuideScheduler.swift in Sources */,
 				E45CCFD6C6A29B3BC03CF2AB /* VoiceGuideManagement.swift in Sources */,
 				3DF4B121DEE87CA7EBB26207 /* VoiceGuideSettingsView.swift in Sources */,
+				WTHRSVC0000000000000001 /* WeatherService.swift in Sources */,
+				WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */,
+				WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1957,7 +1981,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = QT27QDFZ7N;
+				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				INFOPLIST_FILE = "$(SRCROOT)/Pilgrim/Support Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1982,7 +2006,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = QT27QDFZ7N;
+				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				INFOPLIST_FILE = "$(SRCROOT)/Pilgrim/Support Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

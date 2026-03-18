@@ -5,6 +5,7 @@ struct WalkDotView: View {
     let snapshot: WalkSnapshot
     let position: CGPoint
     let opacity: Double
+    let isNewest: Bool
     let onTap: (UUID) -> Void
     let sceneryView: AnyView?
 
@@ -15,6 +16,10 @@ struct WalkDotView: View {
         let size = dotSize
 
         ZStack {
+            if isNewest {
+                RippleEffectView(color: dotColor, dotSize: size)
+            }
+
             if let scenery = sceneryView {
                 scenery
             }
@@ -172,5 +177,61 @@ struct WalkDotView: View {
         let m = (total % 3600) / 60
         if h > 0 { return "\(h)h \(m)m" }
         return "\(m)m"
+    }
+}
+
+// MARK: - Ripple Effect (TimelineView-based, no phaseAnimator)
+
+private struct RippleEffectView: View {
+
+    let color: Color
+    let dotSize: CGFloat
+
+    var body: some View {
+        if UIAccessibility.isReduceMotionEnabled {
+            Circle()
+                .stroke(color.opacity(0.15), lineWidth: 1.5)
+                .frame(width: dotSize + 16, height: dotSize + 16)
+        } else {
+            TimelineView(.animation(minimumInterval: 1.0 / 10)) { timeline in
+                let time = timeline.date.timeIntervalSinceReferenceDate
+                Canvas { context, size in
+                    let center = CGPoint(x: size.width / 2, y: size.height / 2)
+
+                    for i in 0..<2 {
+                        let phase = (time * 0.4 + Double(i) * 0.5)
+                            .truncatingRemainder(dividingBy: 1.0)
+                        let radius = dotSize * 0.5 + phase * dotSize * 1.2
+                        let opacity = (1.0 - phase) * 0.2
+                        let rect = CGRect(
+                            x: center.x - radius,
+                            y: center.y - radius,
+                            width: radius * 2,
+                            height: radius * 2
+                        )
+                        context.stroke(
+                            Circle().path(in: rect),
+                            with: .color(color.opacity(opacity)),
+                            lineWidth: 1.5 * (1.0 - phase * 0.5)
+                        )
+                    }
+
+                    let breathPhase = sin(time * 1.2) * 0.5 + 0.5
+                    let glowRadius = dotSize * 1.5
+                    let glowRect = CGRect(
+                        x: center.x - glowRadius,
+                        y: center.y - glowRadius,
+                        width: glowRadius * 2,
+                        height: glowRadius * 2
+                    )
+                    context.fill(
+                        Circle().path(in: glowRect),
+                        with: .color(color.opacity(0.04 + breathPhase * 0.04))
+                    )
+                }
+                .frame(width: dotSize * 4, height: dotSize * 4)
+            }
+            .allowsHitTesting(false)
+        }
     }
 }

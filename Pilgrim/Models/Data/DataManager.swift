@@ -210,6 +210,10 @@ struct DataManager {
                 walk._meditateDuration .= object.meditateDuration
 
                 walk._favicon .= object.favicon
+                walk._weatherCondition .= object.weatherCondition
+                walk._weatherTemperature .= object.weatherTemperature
+                walk._weatherHumidity .= object.weatherHumidity
+                walk._weatherWindSpeed .= object.weatherWindSpeed
 
                 persistRelatedEntities(from: object, to: walk, in: transaction)
                 walks.append(walk)
@@ -446,6 +450,10 @@ struct DataManager {
                 walk._talkDuration .= object.talkDuration
                 walk._meditateDuration .= object.meditateDuration
                 walk._favicon .= object.favicon
+                walk._weatherCondition .= object.weatherCondition
+                walk._weatherTemperature .= object.weatherTemperature
+                walk._weatherHumidity .= object.weatherHumidity
+                walk._weatherWindSpeed .= object.weatherWindSpeed
 
                 persistNewRelatedEntities(from: object, to: walk, in: transaction)
                 return walk

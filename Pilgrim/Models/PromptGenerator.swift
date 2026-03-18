@@ -83,6 +83,7 @@ struct PromptGenerator {
         let date: Date
         let placeName: String?
         let transcriptionPreview: String
+        var weatherCondition: String? = nil
     }
 
     struct WaypointContext {
@@ -103,7 +104,8 @@ struct PromptGenerator {
         routeSpeeds: [Double] = [],
         recentWalkSnippets: [WalkSnippet] = [],
         intention: String? = nil,
-        waypoints: [WaypointContext] = []
+        waypoints: [WaypointContext] = [],
+        weather: String? = nil
     ) -> GeneratedPrompt {
         let combinedText = formatRecordings(recordings)
         let meditationText = formatMeditations(meditations)
@@ -206,7 +208,8 @@ struct PromptGenerator {
             pace: pace,
             recentWalks: recentWalks,
             intention: intention,
-            waypoints: waypoints
+            waypoints: waypoints,
+            weather: weather
         )
         return GeneratedPrompt(style: style, customStyle: nil, text: prompt)
     }
@@ -222,7 +225,8 @@ struct PromptGenerator {
         routeSpeeds: [Double] = [],
         recentWalkSnippets: [WalkSnippet] = [],
         intention: String? = nil,
-        waypoints: [WaypointContext] = []
+        waypoints: [WaypointContext] = [],
+        weather: String? = nil
     ) -> GeneratedPrompt {
         let combinedText = formatRecordings(recordings)
         let meditationText = formatMeditations(meditations)
@@ -245,7 +249,8 @@ struct PromptGenerator {
             pace: pace,
             recentWalks: recentWalks,
             intention: intention,
-            waypoints: waypoints
+            waypoints: waypoints,
+            weather: weather
         )
         return GeneratedPrompt(style: nil, customStyle: customStyle, text: prompt)
     }
@@ -260,7 +265,8 @@ struct PromptGenerator {
         routeSpeeds: [Double] = [],
         recentWalkSnippets: [WalkSnippet] = [],
         intention: String? = nil,
-        waypoints: [WaypointContext] = []
+        waypoints: [WaypointContext] = [],
+        weather: String? = nil
     ) -> [GeneratedPrompt] {
         PromptStyle.allCases.map { style in
             generate(
@@ -274,7 +280,8 @@ struct PromptGenerator {
                 routeSpeeds: routeSpeeds,
                 recentWalkSnippets: recentWalkSnippets,
                 intention: intention,
-                waypoints: waypoints
+                waypoints: waypoints,
+                weather: weather
             )
         }
     }
@@ -383,12 +390,34 @@ struct PromptGenerator {
         guard !snippets.isEmpty else { return nil }
         let lines = snippets.map { snippet in
             let dateStr = shortDateFormatter.string(from: snippet.date)
+            let weatherStr = snippet.weatherCondition
+                .flatMap { WeatherCondition(rawValue: $0)?.label.lowercased() }
+                .map { " in \($0)" } ?? ""
             if let place = snippet.placeName {
-                return "[\(dateStr) – \(place)] \"\(snippet.transcriptionPreview)\""
+                return "[\(dateStr) – \(place)\(weatherStr)] \"\(snippet.transcriptionPreview)\""
             }
-            return "[\(dateStr)] \"\(snippet.transcriptionPreview)\""
+            return "[\(dateStr)\(weatherStr)] \"\(snippet.transcriptionPreview)\""
         }
         return "**Recent Walk Context (for continuity):**\n\n" + lines.joined(separator: "\n\n")
+    }
+
+    static func formatWeather(_ walk: WalkInterface) -> String? {
+        guard let conditionStr = walk.weatherCondition,
+              let condition = WeatherCondition(rawValue: conditionStr),
+              let temp = walk.weatherTemperature else { return nil }
+
+        let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+        var parts = [condition.label, WeatherSnapshot.formatTemperature(temp, imperial: imperial)]
+
+        if let humidity = walk.weatherHumidity {
+            parts.append("humidity \(Int(humidity * 100))%")
+        }
+
+        if let wind = walk.weatherWindSpeed {
+            parts.append(WeatherSnapshot.describeWind(wind))
+        }
+
+        return "Weather: \(parts.joined(separator: ", "))"
     }
 
     private static func formatMetadata(duration: Double, distance: Double, startDate: Date) -> String {
@@ -414,7 +443,7 @@ struct PromptGenerator {
 
     // MARK: - Prompt Builder
 
-    private static func buildPrompt(preamble: String, instruction: String, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?, intention: String? = nil, waypoints: [WaypointContext] = []) -> String {
+    private static func buildPrompt(preamble: String, instruction: String, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?, intention: String? = nil, waypoints: [WaypointContext] = [], weather: String? = nil) -> String {
         var sections = """
             \(preamble)
 
@@ -422,6 +451,10 @@ struct PromptGenerator {
 
             **Context:** \(metadata)
             """
+
+        if let weather = weather {
+            sections += " | \(weather)"
+        }
 
         if let intention = intention {
             sections += "\n\n**The walker's intention:** \"\(intention)\"\nThis intention was set deliberately before the walk began. It represents what the walker chose to carry with them. Let it be the lens through which you interpret everything below."

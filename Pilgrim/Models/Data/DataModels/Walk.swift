@@ -144,6 +144,10 @@ extension Walk: WalkInterface {
     public var activityIntervals: [ActivityIntervalInterface] { threadSafeSyncReturn { self._activityIntervals.value } }
     public var favicon: String? { threadSafeSyncReturn { self._favicon.value } }
     public var waypoints: [WaypointInterface] { threadSafeSyncReturn { Array(self._waypoints.value) as [WaypointInterface] } }
+    public var weatherCondition: String? { threadSafeSyncReturn { self._weatherCondition.value } }
+    public var weatherTemperature: Double? { threadSafeSyncReturn { self._weatherTemperature.value } }
+    public var weatherHumidity: Double? { threadSafeSyncReturn { self._weatherHumidity.value } }
+    public var weatherWindSpeed: Double? { threadSafeSyncReturn { self._weatherWindSpeed.value } }
 
 }
 
@@ -180,7 +184,11 @@ extension Walk: TempValueConvertible {
                 voiceRecordings: self._voiceRecordings.value.map { $0.asTemp },
                 activityIntervals: self._activityIntervals.value.map { $0.asTemp },
                 favicon: self._favicon.value,
-                waypoints: self._waypoints.value.map { $0.asTemp }
+                waypoints: self._waypoints.value.map { $0.asTemp },
+                weatherCondition: self._weatherCondition.value,
+                weatherTemperature: self._weatherTemperature.value,
+                weatherHumidity: self._weatherHumidity.value,
+                weatherWindSpeed: self._weatherWindSpeed.value
             )
         }
     }

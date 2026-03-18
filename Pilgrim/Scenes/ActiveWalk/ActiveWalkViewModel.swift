@@ -38,6 +38,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var isVoiceGuidePaused = false
     @Published var intention: String?
     @Published var waypoints: [TempWaypoint] = []
+    @Published var weatherSnapshot: WeatherSnapshot?
 
     private var meditationStartDate: Date?
     private var meditationIntervals: [TempActivityInterval] = []
@@ -79,6 +80,44 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         guard_.viewModel = self
         guard_.start()
         self.sessionGuard = guard_
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            self?.fetchWeather(retryOnFailure: true)
+        }
+    }
+
+    func fetchWeather(retryOnFailure: Bool = false) {
+        let clLocation: CLLocation?
+        if let sample = currentLocation {
+            clLocation = CLLocation(latitude: sample.latitude, longitude: sample.longitude)
+        } else if let coord = routeCoordinates.last {
+            clLocation = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
+        } else {
+            clLocation = nil
+        }
+
+        guard let location = clLocation else {
+            if retryOnFailure {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+                    self?.fetchWeather(retryOnFailure: false)
+                }
+            }
+            return
+        }
+
+        Task { [weak self] in
+            let snapshot = await WeatherService.shared.fetchCurrent(for: location)
+            await MainActor.run {
+                if let snapshot {
+                    self?.weatherSnapshot = snapshot
+                    self?.builder.weatherSnapshot = snapshot
+                } else if retryOnFailure {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+                        self?.fetchWeather(retryOnFailure: false)
+                    }
+                }
+            }
+        }
     }
 
     private func bindLiveStats() {

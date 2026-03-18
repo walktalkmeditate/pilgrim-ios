@@ -14,6 +14,8 @@ struct ActiveWalkView: View {
     @State private var showBackConfirmation = false
     @State private var showWaypointFailed = false
     @State private var hasCheckedAutoIntention = false
+    @State private var weatherGreeting: String?
+    @State private var greetingGeneration = 0
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -24,6 +26,9 @@ struct ActiveWalkView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
+                WeatherOverlayView(condition: viewModel.weatherSnapshot?.condition)
+                    .ignoresSafeArea()
+
                 VStack(spacing: 0) {
                     ZStack(alignment: .bottom) {
                         mapSection(height: geometry.size.height * 0.6)
@@ -36,6 +41,10 @@ struct ActiveWalkView: View {
 
                         HStack(spacing: 6) {
                             Spacer()
+                            WeatherVignetteView(
+                                snapshot: viewModel.weatherSnapshot,
+                                imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
+                            )
                             if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
                                 audioIndicator(
                                     icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
@@ -57,6 +66,15 @@ struct ActiveWalkView: View {
                         }
                         .padding(.trailing, Constants.UI.Padding.normal)
                         .padding(.bottom, 48)
+
+                        if let weatherGreeting {
+                            Text(weatherGreeting)
+                                .font(Constants.Typography.body.italic())
+                                .foregroundColor(.ink.opacity(0.5))
+                                .multilineTextAlignment(.center)
+                                .transition(.opacity)
+                                .allowsHitTesting(false)
+                        }
                     }
 
                     statsSection
@@ -69,6 +87,29 @@ struct ActiveWalkView: View {
         }
         .background(Color.parchment)
         .ignoresSafeArea(edges: .top)
+        .onChange(of: viewModel.weatherSnapshot?.condition) { _, condition in
+            guard let condition, weatherGreeting == nil else { return }
+            let greeting: String
+            switch condition {
+            case .clear: greeting = "A clear day for wandering"
+            case .partlyCloudy: greeting = "Walking under shifting skies"
+            case .overcast: greeting = "Soft light on the path"
+            case .lightRain: greeting = "Walking into the rain"
+            case .heavyRain: greeting = "The sky walks with you"
+            case .thunderstorm: greeting = "Thunder on the horizon"
+            case .snow: greeting = "Snow on the path"
+            case .fog: greeting = "Walking into the mist"
+            case .wind: greeting = "The wind at your back"
+            case .haze: greeting = "A hazy veil over the world"
+            }
+            greetingGeneration += 1
+            let gen = greetingGeneration
+            withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+                guard greetingGeneration == gen else { return }
+                withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
+            }
+        }
         .alert("End Walk?", isPresented: $showStopConfirmation) {
             Button("End Walk", role: .destructive) { viewModel.stop() }
             Button("Cancel", role: .cancel) {}
@@ -351,10 +392,13 @@ struct ActiveWalkView: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.caption2)
-                .foregroundColor(.parchment.opacity(0.8))
+                .foregroundColor(.ink)
                 .frame(width: 28, height: 28)
-                .background(.ultraThinMaterial)
-                .clipShape(Circle())
+                .background(
+                    Circle()
+                        .fill(Color.parchmentSecondary)
+                        .shadow(color: .ink.opacity(0.08), radius: 4, y: 2)
+                )
         }
     }
 

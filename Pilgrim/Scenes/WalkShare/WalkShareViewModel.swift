@@ -186,7 +186,9 @@ final class WalkShareViewModel: ObservableObject {
             elevationDescent: toggleElevation ? walk.descend : nil,
             steps: toggleSteps ? walk.steps : nil,
             meditateDuration: toggleActivityBreakdown ? walk.meditateDuration : nil,
-            talkDuration: toggleActivityBreakdown ? walk.talkDuration : nil
+            talkDuration: toggleActivityBreakdown ? walk.talkDuration : nil,
+            weatherCondition: walk.weatherCondition,
+            weatherTemperature: walk.weatherTemperature
         )
 
         let formatter = ISO8601DateFormatter()

@@ -53,6 +53,7 @@ struct WalkSummaryView: View {
                         milestoneCallout(milestone)
                     }
                     statsRow
+                    weatherLine
                     timeBreakdown
                     FaviconSelectorView(selection: $selectedFavicon)
                         .onChange(of: selectedFavicon) { _, newValue in
@@ -159,7 +160,7 @@ struct WalkSummaryView: View {
                     .compactMap { $0.transcription }
                     .joined(separator: " ")
                 let preview = allText.truncatedAtWordBoundary()
-                return PromptGenerator.WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview)
+                return PromptGenerator.WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview, weatherCondition: w.weatherCondition)
             }
     }
 
@@ -400,6 +401,24 @@ struct WalkSummaryView: View {
                 .foregroundColor(.fog)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var weatherLine: some View {
+        if let condStr = walk.weatherCondition,
+           let cond = WeatherCondition(rawValue: condStr),
+           let temp = walk.weatherTemperature {
+            let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+            HStack(spacing: Constants.UI.Padding.xs) {
+                Image(systemName: cond.icon)
+                    .font(Constants.Typography.caption)
+                Text("\(cond.label), \(WeatherSnapshot.formatTemperature(temp, imperial: imperial))")
+                    .font(Constants.Typography.caption)
+            }
+            .foregroundColor(.fog)
+            .opacity(revealPhase == .revealed ? 1 : 0)
+            .animation(.easeIn(duration: 0.6).delay(0.2), value: revealPhase)
+        }
     }
 
     private var timeBreakdown: some View {

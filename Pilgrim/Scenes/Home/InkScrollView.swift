@@ -99,17 +99,12 @@ struct InkScrollView: View {
                 let isNewest = index == 0
                 let scenery = self.sceneryForDot(snapshot: snapshot, position: position.center, viewportHeight: viewportHeight)
 
-                if isNewest {
-                    newestDotEffects(snapshot: snapshot)
-                        .position(position.center)
-                        .transaction { $0.animation = nil }
-                }
-
                 self.dotContent(
                     snapshot: snapshot,
                     position: position.center,
                     opacity: opacity,
-                    sceneryView: scenery
+                    sceneryView: scenery,
+                    isNewest: isNewest
                 )
                 .opacity(hasAppeared ? 1 : 0)
                 .animation(
@@ -197,12 +192,14 @@ struct InkScrollView: View {
         snapshot: WalkSnapshot,
         position: CGPoint,
         opacity: Double,
-        sceneryView: AnyView?
+        sceneryView: AnyView?,
+        isNewest: Bool = false
     ) -> some View {
         WalkDotView(
             snapshot: snapshot,
             position: position,
             opacity: opacity,
+            isNewest: isNewest,
             onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
             sceneryView: sceneryView
         )
@@ -223,17 +220,6 @@ struct InkScrollView: View {
                 expandedSnapshot = snapshot
             }
         }
-    }
-
-    // MARK: - Newest dot ring
-
-    private func newestDotEffects(snapshot: WalkSnapshot) -> some View {
-        let color = dotSeasonalColor(for: snapshot)
-        return ZStack {
-            BreathingPulseView(color: color)
-            SonarRingView(color: color)
-        }
-        .allowsHitTesting(false)
     }
 
     private func dotSeasonalColor(for snapshot: WalkSnapshot) -> Color {
@@ -279,6 +265,13 @@ struct InkScrollView: View {
                         Text(Self.expandDateFormatter.string(from: snapshot.startDate))
                             .font(Constants.Typography.annotation)
                             .foregroundColor(.ink)
+
+                        if let condStr = snapshot.weatherCondition,
+                           let cond = WeatherCondition(rawValue: condStr) {
+                            Image(systemName: cond.icon)
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
+                        }
 
                         Spacer()
 
@@ -432,6 +425,54 @@ struct InkScrollView: View {
         return 1.0 - normalized * 0.5
     }
 
+    // MARK: - Weather mood
+
+    private static func weatherAdjustedColor(_ color: Color, condition: String?) -> Color {
+        guard let condStr = condition,
+              let cond = WeatherCondition(rawValue: condStr) else { return color }
+
+        let uiColor = UIColor(color)
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        uiColor.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+
+        switch cond {
+        case .clear:
+            h += 0.02
+            b = min(b * 1.05, 1)
+        case .partlyCloudy:
+            break
+        case .overcast:
+            s *= 0.85
+            b *= 0.95
+        case .lightRain:
+            h -= 0.01
+            b *= 0.88
+        case .heavyRain:
+            h -= 0.02
+            b *= 0.80
+        case .thunderstorm:
+            s *= 0.7
+            b *= 0.75
+        case .snow:
+            h += 0.03
+            b = min(b * 1.05, 1)
+            s *= 0.85
+        case .fog:
+            s *= 0.6
+            b *= 0.9
+        case .wind:
+            break
+        case .haze:
+            h += 0.02
+            s *= 0.85
+        }
+
+        return Color(hue: Double((h + 1).truncatingRemainder(dividingBy: 1)),
+                      saturation: Double(max(0, min(s, 1))),
+                      brightness: Double(max(0, min(b, 1))),
+                      opacity: Double(a))
+    }
+
     // MARK: - Scenery
 
     private func sceneryForDot(snapshot: WalkSnapshot, position: CGPoint, viewportHeight: CGFloat) -> AnyView? {
@@ -439,11 +480,12 @@ struct InkScrollView: View {
             return nil
         }
 
-        let tintColor = Color(uiColor: SeasonalColorEngine.seasonalColor(
+        let baseTint = Color(uiColor: SeasonalColorEngine.seasonalColor(
             named: placement.tintColorName,
             intensity: .full,
             on: snapshot.startDate
         ))
+        let tintColor = Self.weatherAdjustedColor(baseTint, condition: snapshot.weatherCondition)
 
         let baseSize: CGFloat = 32
         var h: UInt64 = 14695981039346656037
@@ -678,6 +720,7 @@ struct InkScrollView: View {
                 snapshot: snap,
                 position: .zero,
                 opacity: 1,
+                isNewest: false,
                 onTap: { _ in },
                 sceneryView: nil
             )
@@ -688,34 +731,4 @@ struct InkScrollView: View {
         hapticState.milestonePositions = milestonePositions.map { $0.yPosition }
     }
 
-}
-
-private struct BreathingPulseView: View {
-    let color: Color
-
-    var body: some View {
-        Circle()
-            .fill(color.opacity(0.08))
-            .frame(width: 50, height: 50)
-            .phaseAnimator([false, true]) { content, phase in
-                content
-                    .scaleEffect(phase ? 1.3 : 0.9)
-                    .opacity(phase ? 0.0 : 0.15)
-            } animation: { _ in .easeInOut(duration: 2.5) }
-    }
-}
-
-private struct SonarRingView: View {
-    let color: Color
-
-    var body: some View {
-        Circle()
-            .stroke(color, lineWidth: 1.5)
-            .frame(width: 28, height: 28)
-            .phaseAnimator([false, true]) { content, phase in
-                content
-                    .scaleEffect(phase ? 2.0 : 0.8)
-                    .opacity(phase ? 0 : 0.5)
-            } animation: { _ in .easeOut(duration: 2.0) }
-    }
 }

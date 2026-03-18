@@ -273,7 +273,11 @@ class WalkSessionGuard {
             workoutEvents: walk._workoutEvents,
             voiceRecordings: walk._voiceRecordings,
             activityIntervals: walk._activityIntervals,
-            waypoints: walk._waypoints
+            waypoints: walk._waypoints,
+            weatherCondition: walk.weatherCondition,
+            weatherTemperature: walk.weatherTemperature,
+            weatherHumidity: walk.weatherHumidity,
+            weatherWindSpeed: walk.weatherWindSpeed
         )
         recovered.uuid = checkpoint.walkUUID
 
