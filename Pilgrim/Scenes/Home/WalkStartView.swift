@@ -18,8 +18,12 @@ struct WalkStartView: View {
     @State private var footprintVisible = true
     @State private var transitionGeneration = 0
     @State private var seekFloatOffset: CGFloat = 0
+    @State private var footprintBreathScale: CGFloat = 1.0
+    @State private var togetherDriftOffset: CGSize = .zero
 
     @State private var lunarPhase = LunarPhase.current()
+
+    private let haptic = UIImpactFeedbackGenerator(style: .light)
 
     var body: some View {
         ZStack {
@@ -52,6 +56,7 @@ struct WalkStartView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                 guard transitionGeneration == gen else { return }
                 activeMode = newMode
+                haptic.impactOccurred()
                 withAnimation(.easeOut(duration: 0.3)) {
                     footprintVisible = true
                 }
@@ -68,6 +73,8 @@ struct WalkStartView: View {
             footprintVisible = true
             activeMode = .wander
             seekFloatOffset = 0
+            footprintBreathScale = 1.0
+            togetherDriftOffset = .zero
         }
     }
 
@@ -170,7 +177,7 @@ struct WalkStartView: View {
             }
         }
         .frame(width: 60, height: 50)
-        .scaleEffect(isActive && footprintVisible ? 1.0 : (isActive ? 1.08 : 0.92))
+        .scaleEffect(isActive && footprintVisible ? footprintBreathScale : (isActive ? 1.08 : 0.92))
         .opacity(isActive && footprintVisible ? 1.0 : 0.0)
         .accessibilityHidden(true)
     }
@@ -202,7 +209,10 @@ struct WalkStartView: View {
                     .frame(width: 14, height: 22)
                     .rotationEffect(.degrees(6))
             }
-            .offset(x: -14, y: -10)
+            .offset(
+                x: -14 + togetherDriftOffset.width,
+                y: -10 + togetherDriftOffset.height
+            )
 
             HStack(spacing: 2) {
                 FootprintShape()
@@ -215,7 +225,10 @@ struct WalkStartView: View {
                     .frame(width: 14, height: 22)
                     .rotationEffect(.degrees(-16))
             }
-            .offset(x: 12, y: -8)
+            .offset(
+                x: 12 - togetherDriftOffset.width,
+                y: -8 - togetherDriftOffset.height
+            )
 
             HStack(spacing: 2) {
                 FootprintShape()
@@ -230,6 +243,15 @@ struct WalkStartView: View {
             }
         }
         .frame(width: 60, height: 50)
+        .onAppear {
+            guard !UIAccessibility.isReduceMotionEnabled else { return }
+            withAnimation(.easeInOut(duration: 6.0).repeatForever(autoreverses: true)) {
+                togetherDriftOffset = CGSize(width: 1, height: 0.5)
+            }
+        }
+        .onDisappear {
+            togetherDriftOffset = .zero
+        }
     }
 
     private var seekFootprints: some View {
@@ -295,9 +317,8 @@ struct WalkStartView: View {
                                     .font(Constants.Typography.button)
                                     .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
                                     .fixedSize()
-                                Rectangle()
+                                trailUnderline(for: mode)
                                     .frame(height: 2)
-                                    .foregroundColor(mode == selectedMode ? .stone : .clear)
                             }
                         }
                     }
@@ -309,6 +330,34 @@ struct WalkStartView: View {
                 .foregroundColor(.fog.opacity(0.5))
                 .contentTransition(.opacity)
                 .animation(.easeInOut(duration: 0.3), value: selectedMode)
+        }
+    }
+
+    @ViewBuilder
+    private func trailUnderline(for mode: WalkMode) -> some View {
+        if mode == selectedMode {
+            switch mode {
+            case .wander:
+                LinearGradient(
+                    colors: [.stone, .stone.opacity(0.2)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            case .together:
+                LinearGradient(
+                    colors: [.stone.opacity(0.3), .stone, .stone.opacity(0.3)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            case .seek:
+                LinearGradient(
+                    colors: [.stone.opacity(0.2), .stone],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+        } else {
+            Color.clear
         }
     }
 
@@ -341,6 +390,7 @@ struct WalkStartView: View {
             guard entranceGeneration == generation else { return }
             withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
                 glowScale = 1.05
+                footprintBreathScale = 1.01
             }
         }
     }
