@@ -147,7 +147,8 @@ struct PromptListView: View {
                 routeSpeeds: routeSpeeds,
                 recentWalkSnippets: recentWalkSnippets,
                 intention: intention,
-                waypoints: waypointContexts
+                waypoints: waypointContexts,
+                weather: PromptGenerator.formatWeather(walk)
             )
             regenerateCustomPrompts()
         }
@@ -223,7 +224,8 @@ struct PromptListView: View {
                 routeSpeeds: routeSpeeds,
                 recentWalkSnippets: recentWalkSnippets,
                 intention: intention,
-                waypoints: waypointContexts
+                waypoints: waypointContexts,
+                weather: PromptGenerator.formatWeather(walk)
             )
         }
     }
