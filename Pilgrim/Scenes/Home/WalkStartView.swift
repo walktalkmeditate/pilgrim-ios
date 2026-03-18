@@ -17,6 +17,7 @@ struct WalkStartView: View {
     @State private var activeMode: WalkMode = .wander
     @State private var footprintVisible = true
     @State private var transitionGeneration = 0
+    @State private var seekFloatOffset: CGFloat = 0
 
     @State private var lunarPhase = LunarPhase.current()
 
@@ -66,6 +67,7 @@ struct WalkStartView: View {
             transitionGeneration += 1
             footprintVisible = true
             activeMode = .wander
+            seekFloatOffset = 0
         }
     }
 
@@ -241,6 +243,16 @@ struct WalkStartView: View {
             dissolvingDots
                 .frame(width: 16, height: 30)
                 .rotationEffect(.degrees(12))
+                .offset(y: seekFloatOffset)
+                .onAppear {
+                    guard !UIAccessibility.isReduceMotionEnabled else { return }
+                    withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
+                        seekFloatOffset = -2
+                    }
+                }
+                .onDisappear {
+                    seekFloatOffset = 0
+                }
         }
     }
 
