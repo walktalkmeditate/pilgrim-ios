@@ -200,11 +200,16 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         meditationStartDate = Date()
         isMeditating = true
         soundManagement.onMeditationStart()
+        locationManagement.adjustPower(
+            accuracy: kCLLocationAccuracyHundredMeters,
+            distanceFilter: 50
+        )
     }
 
     func endMeditationSilently() {
         finalizeMeditation()
         isMeditating = false
+        locationManagement.restoreDefaultPower()
     }
 
     func checkpointActivityIntervals() -> [TempActivityInterval] {
