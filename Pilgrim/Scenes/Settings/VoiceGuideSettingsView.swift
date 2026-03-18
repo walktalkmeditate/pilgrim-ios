@@ -172,6 +172,14 @@ struct VoiceGuideSettingsView: View {
                             .foregroundColor(.stone)
                     }
                     .buttonStyle(.plain)
+                    .onChange(of: downloadManager.activeDownloads) { _, active in
+                        if !active.contains(pack.id),
+                           fileStore.isPackDownloaded(pack),
+                           selectedPackId == nil {
+                            selectedPackId = pack.id
+                            UserPreferences.selectedVoiceGuidePackId.value = pack.id
+                        }
+                    }
                 } else if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundColor(.stone)
