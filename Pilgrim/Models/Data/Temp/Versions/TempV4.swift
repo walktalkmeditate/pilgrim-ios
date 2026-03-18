@@ -46,6 +46,10 @@ public enum TempV4 {
         public var talkDuration: Double
         public var meditateDuration: Double
         public var favicon: String?
+        public var weatherCondition: String?
+        public var weatherTemperature: Double?
+        public var weatherHumidity: Double?
+        public var weatherWindSpeed: Double?
 
         var _waypoints: [TempV4.Waypoint]
 
@@ -65,7 +69,7 @@ public enum TempV4 {
         public var waypoints: [WaypointInterface] { _waypoints }
         public var events: [EventInterface] { throwOnAccess() }
         
-        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = [], favicon: String? = nil, waypoints: [TempV4.Waypoint] = []) {
+        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = [], favicon: String? = nil, waypoints: [TempV4.Waypoint] = [], weatherCondition: String? = nil, weatherTemperature: Double? = nil, weatherHumidity: Double? = nil, weatherWindSpeed: Double? = nil) {
             self.uuid = uuid
             self.workoutType = workoutType
             self.distance = distance
@@ -93,6 +97,10 @@ public enum TempV4 {
             self._activityIntervals = activityIntervals
             self.favicon = favicon
             self._waypoints = waypoints
+            self.weatherCondition = weatherCondition
+            self.weatherTemperature = weatherTemperature
+            self.weatherHumidity = weatherHumidity
+            self.weatherWindSpeed = weatherWindSpeed
         }
         
         private enum CodingKeys: String, CodingKey {
@@ -100,6 +108,7 @@ public enum TempV4 {
             case burnedEnergy, isRace, comment, isUserModified, healthKitUUID
             case finishedRecording, ascend, descend, activeDuration, pauseDuration
             case dayIdentifier, talkDuration, meditateDuration, favicon
+            case weatherCondition, weatherTemperature, weatherHumidity, weatherWindSpeed
             case _waypoints, _heartRates, _routeData, _pauses
             case _workoutEvents, _voiceRecordings, _activityIntervals
         }
@@ -126,6 +135,10 @@ public enum TempV4 {
             talkDuration = try container.decode(Double.self, forKey: .talkDuration)
             meditateDuration = try container.decode(Double.self, forKey: .meditateDuration)
             favicon = try container.decodeIfPresent(String.self, forKey: .favicon)
+            weatherCondition = try container.decodeIfPresent(String.self, forKey: .weatherCondition)
+            weatherTemperature = try container.decodeIfPresent(Double.self, forKey: .weatherTemperature)
+            weatherHumidity = try container.decodeIfPresent(Double.self, forKey: .weatherHumidity)
+            weatherWindSpeed = try container.decodeIfPresent(Double.self, forKey: .weatherWindSpeed)
             _waypoints = try container.decodeIfPresent([TempV4.Waypoint].self, forKey: ._waypoints) ?? []
             _heartRates = try container.decode([TempV4.WorkoutHeartRateDataSample].self, forKey: ._heartRates)
             _routeData = try container.decode([TempV4.WorkoutRouteDataSample].self, forKey: ._routeData)
