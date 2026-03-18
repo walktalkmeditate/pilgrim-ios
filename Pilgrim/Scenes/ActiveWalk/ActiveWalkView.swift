@@ -388,10 +388,13 @@ struct ActiveWalkView: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.caption2)
-                .foregroundColor(.parchment.opacity(0.8))
+                .foregroundColor(.ink)
                 .frame(width: 28, height: 28)
-                .background(.ultraThinMaterial)
-                .clipShape(Circle())
+                .background(
+                    Circle()
+                        .fill(Color.parchmentSecondary)
+                        .shadow(color: .ink.opacity(0.08), radius: 4, y: 2)
+                )
         }
     }
 
