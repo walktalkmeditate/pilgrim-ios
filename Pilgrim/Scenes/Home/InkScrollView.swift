@@ -425,6 +425,54 @@ struct InkScrollView: View {
         return 1.0 - normalized * 0.5
     }
 
+    // MARK: - Weather mood
+
+    private static func weatherAdjustedColor(_ color: Color, condition: String?) -> Color {
+        guard let condStr = condition,
+              let cond = WeatherCondition(rawValue: condStr) else { return color }
+
+        let uiColor = UIColor(color)
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        uiColor.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+
+        switch cond {
+        case .clear:
+            h += 0.02
+            b = min(b * 1.05, 1)
+        case .partlyCloudy:
+            break
+        case .overcast:
+            s *= 0.85
+            b *= 0.95
+        case .lightRain:
+            h -= 0.01
+            b *= 0.88
+        case .heavyRain:
+            h -= 0.02
+            b *= 0.80
+        case .thunderstorm:
+            s *= 0.7
+            b *= 0.75
+        case .snow:
+            h += 0.03
+            b = min(b * 1.05, 1)
+            s *= 0.85
+        case .fog:
+            s *= 0.6
+            b *= 0.9
+        case .wind:
+            break
+        case .haze:
+            h += 0.02
+            s *= 0.85
+        }
+
+        return Color(hue: Double((h + 1).truncatingRemainder(dividingBy: 1)),
+                      saturation: Double(max(0, min(s, 1))),
+                      brightness: Double(max(0, min(b, 1))),
+                      opacity: Double(a))
+    }
+
     // MARK: - Scenery
 
     private func sceneryForDot(snapshot: WalkSnapshot, position: CGPoint, viewportHeight: CGFloat) -> AnyView? {
@@ -432,11 +480,12 @@ struct InkScrollView: View {
             return nil
         }
 
-        let tintColor = Color(uiColor: SeasonalColorEngine.seasonalColor(
+        let baseTint = Color(uiColor: SeasonalColorEngine.seasonalColor(
             named: placement.tintColorName,
             intensity: .full,
             on: snapshot.startDate
         ))
+        let tintColor = Self.weatherAdjustedColor(baseTint, condition: snapshot.weatherCondition)
 
         let baseSize: CGFloat = 32
         var h: UInt64 = 14695981039346656037
