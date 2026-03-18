@@ -70,6 +70,15 @@ struct SettingsView: View {
                             .font(Constants.Typography.body)
                     }
                 }
+
+                Section {
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        Text("About")
+                            .font(Constants.Typography.body)
+                    }
+                }
             }
             .scrollContentBackground(.hidden)
             .background(Color.parchment)
@@ -93,17 +102,12 @@ struct SettingsView: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 4) {
-            Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")
-                .font(Constants.Typography.caption)
-                .foregroundColor(.fog.opacity(0.3))
-            Text("crafted with intention")
-                .font(Constants.Typography.body.italic())
-                .foregroundColor(.fog.opacity(0.25))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, Constants.UI.Padding.breathingRoom)
-        .padding(.bottom, Constants.UI.Padding.normal)
-        .background(Color.parchment)
+        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")
+            .font(Constants.Typography.caption)
+            .foregroundColor(.fog.opacity(0.3))
+            .frame(maxWidth: .infinity)
+            .padding(.top, Constants.UI.Padding.breathingRoom)
+            .padding(.bottom, Constants.UI.Padding.normal)
+            .background(Color.parchment)
     }
 }

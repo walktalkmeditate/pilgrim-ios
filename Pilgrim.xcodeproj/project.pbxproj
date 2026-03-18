@@ -219,6 +219,8 @@
 		B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */; };
 		B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */; };
 		B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */; };
+		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
+		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
 		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
 		BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00CC010000000000000002 /* WelcomeViewModelTests.swift */; };
@@ -506,6 +508,8 @@
 		B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideScheduler.swift; sourceTree = "<group>"; };
 		B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
 		B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
+		CC00000100000000ABOUTV01 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		CC00000100000000SAFARV01 /* SafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
 		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
 		BB00CC010000000000000002 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
 		BBBB000000000000000001 /* WaypointInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointInterface.swift; sourceTree = "<group>"; };
@@ -957,6 +961,7 @@
 				22BC99382941D9A800D9B1A5 /* WalkCard.swift */,
 				22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */,
 				CC00000100000000MOONPV01 /* MoonPhaseView.swift */,
+				CC00000100000000SAFARV01 /* SafariView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1291,6 +1296,7 @@
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */,
 				A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */,
 				B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */,
+				CC00000100000000ABOUTV01 /* AboutView.swift */,
 				FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */,
 			);
 			path = Settings;
@@ -1730,6 +1736,8 @@
 				A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */,
 				B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */,
 				B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */,
+				CC00000100000000ABOUTV02 /* AboutView.swift in Sources */,
+				CC00000100000000SAFARV02 /* SafariView.swift in Sources */,
 				BBBB000000000000000002 /* WaypointInterface.swift in Sources */,
 				BBBB000000000000000004 /* TempWaypoint.swift in Sources */,
 				BBBB000000000000000006 /* PilgrimV6.swift in Sources */,
