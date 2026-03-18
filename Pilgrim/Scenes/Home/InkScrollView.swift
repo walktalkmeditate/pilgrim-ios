@@ -706,7 +706,7 @@ private struct BreathingPulseView: View {
             .frame(width: 50, height: 50)
             .phaseAnimator([false, true]) { content, phase in
                 content
-                    .scaleEffect(phase ? 1.3 : 0.9)
+                    .scaleEffect(phase ? 1.3 : 1.0)
                     .opacity(phase ? 0.0 : 0.15)
             } animation: { _ in .easeInOut(duration: 2.5) }
     }
@@ -721,7 +721,7 @@ private struct SonarRingView: View {
             .frame(width: 28, height: 28)
             .phaseAnimator([false, true]) { content, phase in
                 content
-                    .scaleEffect(phase ? 2.0 : 0.8)
+                    .scaleEffect(phase ? 2.0 : 1.0)
                     .opacity(phase ? 0 : 0.5)
             } animation: { _ in .easeOut(duration: 2.0) }
     }
