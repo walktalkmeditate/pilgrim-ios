@@ -53,6 +53,7 @@ struct WalkSummaryView: View {
                         milestoneCallout(milestone)
                     }
                     statsRow
+                    weatherLine
                     timeBreakdown
                     FaviconSelectorView(selection: $selectedFavicon)
                         .onChange(of: selectedFavicon) { _, newValue in
@@ -400,6 +401,25 @@ struct WalkSummaryView: View {
                 .foregroundColor(.fog)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var weatherLine: some View {
+        if let condStr = walk.weatherCondition,
+           let cond = WeatherCondition(rawValue: condStr),
+           let temp = walk.weatherTemperature {
+            let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+            let snapshot = WeatherSnapshot(condition: cond, temperature: temp, humidity: 0, windSpeed: 0)
+            HStack(spacing: Constants.UI.Padding.xs) {
+                Image(systemName: cond.icon)
+                    .font(.system(size: 12))
+                Text("\(cond.label), \(snapshot.formattedTemperature(imperial: imperial))")
+                    .font(Constants.Typography.caption)
+            }
+            .foregroundColor(.fog)
+            .opacity(revealPhase == .revealed ? 1 : 0)
+            .animation(.easeIn(duration: 0.6).delay(0.2), value: revealPhase)
+        }
     }
 
     private var timeBreakdown: some View {
