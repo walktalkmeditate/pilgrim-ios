@@ -3,8 +3,22 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.superpowers/**'
+      - 'LICENSE'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.superpowers/**'
+      - 'LICENSE'
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -24,13 +38,35 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/cache@v4
+        id: pods-cache
         with:
           path: Pods
           key: pods-${{ hashFiles('Podfile.lock') }}
           restore-keys: pods-
 
       - name: Install CocoaPods
+        if: steps.pods-cache.outputs.cache-hit != 'true'
         run: pod install
+
+      - uses: actions/cache@v4
+        with:
+          path: DerivedData
+          key: deriveddata-${{ hashFiles('Pilgrim.xcworkspace/contents.xcworkspacedata', 'Podfile.lock') }}-${{ github.sha }}
+          restore-keys: |
+            deriveddata-${{ hashFiles('Pilgrim.xcworkspace/contents.xcworkspacedata', 'Podfile.lock') }}-
+            deriveddata-
+
+      - name: Boot simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for runtime, devices in data['devices'].items():
+              for d in devices:
+                  if 'iPhone 16 Pro' in d['name'] and d['isAvailable']:
+                      print(d['udid']); sys.exit()
+          ")
+          xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
 
       - name: Run tests
         run: |
@@ -39,7 +75,11 @@ jobs:
             -scheme Pilgrim \
             -sdk iphonesimulator \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-            -resultBundlePath TestResults.xcresult
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Upload test results
         if: failure()
