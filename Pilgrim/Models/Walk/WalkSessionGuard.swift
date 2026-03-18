@@ -255,7 +255,7 @@ class WalkSessionGuard {
         let recordingDirUUID = extractRecordingDirectoryUUID(from: walk) ?? checkpoint.walkUUID
         reconnectOrphanedRecordings(walk: walk, walkUUID: recordingDirUUID)
 
-        print("\(tag) RECOVERY — saving walk: start=\(walk.startDate), end=\(walk.endDate), routes=\(walk.routeData.count), pauses=\(walk.pauses.count), recordings=\(walk.voiceRecordings.count), intervals=\(walk.activityIntervals.count)")
+        print("\(tag) RECOVERY — saving walk: start=\(walk.startDate), end=\(walk.endDate), routes=\(walk.routeData.count), pauses=\(walk.pauses.count), recordings=\(walk.voiceRecordings.count), intervals=\(walk.activityIntervals.count), waypoints=\(walk.waypoints.count)")
 
         let recovered = NewWalk(
             workoutType: walk.workoutType,
@@ -272,7 +272,8 @@ class WalkSessionGuard {
             pauses: walk._pauses,
             workoutEvents: walk._workoutEvents,
             voiceRecordings: walk._voiceRecordings,
-            activityIntervals: walk._activityIntervals
+            activityIntervals: walk._activityIntervals,
+            waypoints: walk._waypoints
         )
         recovered.uuid = checkpoint.walkUUID
 

@@ -258,7 +258,11 @@ struct InkScrollView: View {
             let seasonColor = dotSeasonalColor(for: snapshot)
 
             VStack {
-                Spacer()
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.25)) { expandedSnapshot = nil }
+                    }
 
                 VStack(spacing: 10) {
                     HStack {
@@ -330,9 +334,6 @@ struct InkScrollView: View {
                 .padding(.horizontal, Constants.UI.Padding.normal)
                 .padding(.bottom, 8)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-                .onTapGesture {
-                    withAnimation(.spring(duration: 0.25)) { expandedSnapshot = nil }
-                }
             }
         }
     }
