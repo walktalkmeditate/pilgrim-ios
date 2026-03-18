@@ -135,9 +135,6 @@ struct WalkStartView: View {
 
             Spacer()
 
-            footprintDisplay
-                .padding(.bottom, Constants.UI.Padding.normal)
-
             modeSelector
                 .padding(.bottom, Constants.UI.Padding.normal)
 
@@ -162,16 +159,19 @@ struct WalkStartView: View {
 
     // MARK: - Footprint Display
 
-    private var footprintDisplay: some View {
+    @ViewBuilder
+    private func footprintForMode(_ mode: WalkMode) -> some View {
+        let isActive = mode == activeMode
         Group {
-            switch activeMode {
+            switch mode {
             case .wander: wanderFootprints
             case .together: togetherFootprints
             case .seek: seekFootprints
             }
         }
-        .scaleEffect(footprintVisible ? 1.0 : 1.08)
-        .opacity(footprintVisible ? 1.0 : 0.0)
+        .frame(width: 60, height: 50)
+        .scaleEffect(isActive && footprintVisible ? 1.0 : (isActive ? 1.08 : 0.92))
+        .opacity(isActive && footprintVisible ? 1.0 : 0.0)
         .accessibilityHidden(true)
     }
 
@@ -282,19 +282,23 @@ struct WalkStartView: View {
 
     private var modeSelector: some View {
         VStack(spacing: Constants.UI.Padding.small) {
-            HStack(spacing: Constants.UI.Padding.big) {
+            HStack(spacing: Constants.UI.Padding.normal) {
                 ForEach(WalkMode.allCases, id: \.self) { mode in
                     Button {
                         selectedMode = mode
                     } label: {
-                        VStack(spacing: Constants.UI.Padding.xs) {
-                            Text(mode.rawValue.uppercased())
-                                .font(Constants.Typography.button)
-                                .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
-                                .fixedSize()
-                            Rectangle()
-                                .frame(height: 2)
-                                .foregroundColor(mode == selectedMode ? .stone : .clear)
+                        VStack(spacing: Constants.UI.Padding.small) {
+                            footprintForMode(mode)
+
+                            VStack(spacing: Constants.UI.Padding.xs) {
+                                Text(mode.rawValue.uppercased())
+                                    .font(Constants.Typography.button)
+                                    .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
+                                    .fixedSize()
+                                Rectangle()
+                                    .frame(height: 2)
+                                    .foregroundColor(mode == selectedMode ? .stone : .clear)
+                            }
                         }
                     }
                 }
