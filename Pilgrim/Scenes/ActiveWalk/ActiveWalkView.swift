@@ -95,6 +95,13 @@ struct ActiveWalkView: View {
                 soundscapeName: selectedSoundscapeName,
                 isSoundscapePlaying: SoundscapePlayer.shared.isPlaying,
                 onToggleSoundscape: { viewModel.soundManagement.toggleSoundscape() },
+                onSelectSoundscape: { scapeId in
+                    UserPreferences.selectedSoundscapeId.value = scapeId
+                    if let asset = AudioManifestService.shared.asset(byId: scapeId),
+                       AudioFileStore.shared.isAvailable(asset) {
+                        SoundscapePlayer.shared.play(asset, volume: Float(UserPreferences.soundscapeVolume.value))
+                    }
+                },
                 voiceGuidePackName: viewModel.voiceGuidePackName,
                 isVoiceGuidePaused: viewModel.isVoiceGuidePaused,
                 hasLastPrompt: viewModel.voiceGuideManagement.hasLastPrompt,

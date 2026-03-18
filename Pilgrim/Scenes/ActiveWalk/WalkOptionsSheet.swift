@@ -11,6 +11,7 @@ struct WalkOptionsSheet: View {
     var soundscapeName: String?
     var isSoundscapePlaying: Bool = false
     var onToggleSoundscape: (() -> Void)?
+    var onSelectSoundscape: ((String) -> Void)?
 
     var voiceGuidePackName: String?
     var isVoiceGuidePaused: Bool = false
@@ -77,6 +78,17 @@ struct WalkOptionsSheet: View {
                         subtitle: isSoundscapePlaying ? soundscapeName : "Off"
                     ) {
                         onToggleSoundscape?()
+                    }
+                    .contextMenu {
+                        ForEach(AudioManifestService.shared.soundscapes) { scape in
+                            Button {
+                                onSelectSoundscape?(scape.id)
+                            } label: {
+                                Label(scape.displayName, systemImage:
+                                    UserPreferences.selectedSoundscapeId.value == scape.id
+                                    ? "checkmark" : "speaker.wave.2")
+                            }
+                        }
                     }
                 }
 
