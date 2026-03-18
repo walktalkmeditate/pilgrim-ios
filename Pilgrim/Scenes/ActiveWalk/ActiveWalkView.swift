@@ -36,11 +36,23 @@ struct ActiveWalkView: View {
 
                         HStack(spacing: 6) {
                             Spacer()
-                            if SoundscapePlayer.shared.isPlaying {
-                                audioIndicator(icon: "speaker.wave.2")
+                            if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
+                                audioIndicator(
+                                    icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
+                                ) {
+                                    SoundscapePlayer.shared.toggleMute()
+                                }
                             }
                             if viewModel.voiceGuidePackName != nil {
-                                audioIndicator(icon: viewModel.voiceGuideManagement.isPaused ? "pause.circle" : "waveform")
+                                audioIndicator(
+                                    icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
+                                ) {
+                                    if viewModel.voiceGuideManagement.isPaused {
+                                        viewModel.voiceGuideManagement.resumeGuide()
+                                    } else {
+                                        viewModel.voiceGuideManagement.pauseGuide()
+                                    }
+                                }
                             }
                         }
                         .padding(.trailing, Constants.UI.Padding.normal)
@@ -329,8 +341,8 @@ struct ActiveWalkView: View {
         .padding(.bottom, Constants.UI.Padding.normal)
     }
 
-    private func audioIndicator(icon: String) -> some View {
-        Button { showOptions = true } label: {
+    private func audioIndicator(icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Image(systemName: icon)
                 .font(.caption2)
                 .foregroundColor(.parchment.opacity(0.8))
