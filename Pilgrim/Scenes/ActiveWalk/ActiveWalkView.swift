@@ -33,6 +33,18 @@ struct ActiveWalkView: View {
                             endPoint: .bottom
                         )
                         .frame(height: 40)
+
+                        HStack(spacing: 6) {
+                            Spacer()
+                            if SoundscapePlayer.shared.isPlaying {
+                                audioIndicator(icon: "speaker.wave.2")
+                            }
+                            if viewModel.voiceGuidePackName != nil {
+                                audioIndicator(icon: viewModel.voiceGuideManagement.isPaused ? "pause.circle" : "waveform")
+                            }
+                        }
+                        .padding(.trailing, Constants.UI.Padding.normal)
+                        .padding(.bottom, 48)
                     }
 
                     statsSection
@@ -225,23 +237,8 @@ struct ActiveWalkView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                if viewModel.currentSoundscapeName != nil || SoundscapePlayer.shared.isMuted {
-                    Button {
-                        SoundscapePlayer.shared.toggleMute()
-                    } label: {
-                        if SoundscapePlayer.shared.isMuted {
-                            Text("♪ Paused")
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(.fog.opacity(0.5))
-                                .strikethrough(color: .fog.opacity(0.5))
-                        } else if let name = viewModel.currentSoundscapeName {
-                            Text("♪ \(name)")
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(.fog)
-                        }
-                    }
-                    .transition(.opacity)
-                }
+
+
             }
             .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)
 
@@ -323,6 +320,17 @@ struct ActiveWalkView: View {
         }
         .padding(Constants.UI.Padding.normal)
         .padding(.bottom, Constants.UI.Padding.normal)
+    }
+
+    private func audioIndicator(icon: String) -> some View {
+        Button { showOptions = true } label: {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundColor(.parchment.opacity(0.8))
+                .frame(width: 28, height: 28)
+                .background(.ultraThinMaterial)
+                .clipShape(Circle())
+        }
     }
 
     private func actionButton(_ title: String, systemImage: String, color: Color, isFilled: Bool = false, action: @escaping () -> Void) -> some View {
