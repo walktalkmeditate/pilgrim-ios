@@ -9,7 +9,7 @@ struct WalkOptionsSheet: View {
     let waypointCount: Int
 
     var soundscapeName: String?
-    var isSoundscapeMuted: Bool = false
+    var isSoundscapePlaying: Bool = false
     var onToggleSoundscape: (() -> Void)?
 
     var voiceGuidePackName: String?
@@ -59,7 +59,7 @@ struct WalkOptionsSheet: View {
 
     @ViewBuilder
     private var audioSection: some View {
-        let hasSoundscape = soundscapeName != nil || isSoundscapeMuted
+        let hasSoundscape = soundscapeName != nil
         let hasVoiceGuide = voiceGuidePackName != nil
 
         if hasSoundscape || hasVoiceGuide {
@@ -72,9 +72,9 @@ struct WalkOptionsSheet: View {
 
                 if hasSoundscape {
                     optionRow(
-                        icon: isSoundscapeMuted ? "speaker.slash" : "speaker.wave.2",
+                        icon: isSoundscapePlaying ? "speaker.wave.2" : "speaker.slash",
                         title: "Soundscape",
-                        subtitle: isSoundscapeMuted ? "Paused" : soundscapeName
+                        subtitle: isSoundscapePlaying ? soundscapeName : "Off"
                     ) {
                         onToggleSoundscape?()
                     }

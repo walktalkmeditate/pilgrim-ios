@@ -15,6 +15,12 @@ struct ActiveWalkView: View {
     @State private var showWaypointFailed = false
     @State private var hasCheckedAutoIntention = false
 
+    private var selectedSoundscapeName: String? {
+        guard UserPreferences.soundsEnabled.value,
+              let id = UserPreferences.selectedSoundscapeId.value else { return nil }
+        return AudioManifestService.shared.asset(byId: id)?.displayName
+    }
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
@@ -74,9 +80,9 @@ struct ActiveWalkView: View {
                 },
                 currentIntention: viewModel.intention,
                 waypointCount: viewModel.waypoints.count,
-                soundscapeName: viewModel.currentSoundscapeName,
-                isSoundscapeMuted: SoundscapePlayer.shared.isMuted,
-                onToggleSoundscape: { SoundscapePlayer.shared.toggleMute() },
+                soundscapeName: selectedSoundscapeName,
+                isSoundscapePlaying: SoundscapePlayer.shared.isPlaying,
+                onToggleSoundscape: { viewModel.soundManagement.toggleSoundscape() },
                 voiceGuidePackName: viewModel.voiceGuidePackName,
                 isVoiceGuidePaused: viewModel.isVoiceGuidePaused,
                 hasLastPrompt: viewModel.voiceGuideManagement.hasLastPrompt,
@@ -217,12 +223,6 @@ struct ActiveWalkView: View {
                         .foregroundColor(.fog.opacity(0.6))
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
-                }
-
-                if let guideName = viewModel.voiceGuidePackName {
-                    Text("Guide: \(guideName)")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog.opacity(0.6))
                 }
 
                 if viewModel.currentSoundscapeName != nil || SoundscapePlayer.shared.isMuted {
