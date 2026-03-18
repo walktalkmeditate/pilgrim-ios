@@ -87,19 +87,6 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func fetchWeather(retryOnFailure: Bool = false) {
-        #if DEBUG
-        if WeatherService.debugOverride != nil {
-            Task { [weak self] in
-                let snapshot = await WeatherService.shared.fetchCurrent(for: CLLocation(latitude: 0, longitude: 0))
-                await MainActor.run {
-                    self?.weatherSnapshot = snapshot
-                    self?.builder.weatherSnapshot = snapshot
-                }
-            }
-            return
-        }
-        #endif
-
         let clLocation: CLLocation?
         if let sample = currentLocation {
             clLocation = CLLocation(latitude: sample.latitude, longitude: sample.longitude)

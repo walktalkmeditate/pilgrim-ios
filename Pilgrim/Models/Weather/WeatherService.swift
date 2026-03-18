@@ -68,23 +68,7 @@ final class WeatherService {
     private let service = WeatherKit.WeatherService.shared
     private init() {}
 
-    #if DEBUG
-    static var debugOverride: WeatherCondition?
-    #endif
-
     func fetchCurrent(for location: CLLocation) async -> WeatherSnapshot? {
-        #if DEBUG
-        if let override = Self.debugOverride {
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            return WeatherSnapshot(
-                condition: override,
-                temperature: 14,
-                humidity: 0.72,
-                windSpeed: override == .wind ? 12 : 3.5
-            )
-        }
-        #endif
-
         do {
             let weather = try await service.weather(for: location, including: .current)
             let windSpeedMS = weather.wind.speed.converted(to: .metersPerSecond).value
