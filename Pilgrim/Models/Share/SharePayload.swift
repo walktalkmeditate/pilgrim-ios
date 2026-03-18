@@ -21,6 +21,8 @@ struct SharePayload: Encodable {
         let steps: Int?
         let meditateDuration: Double?
         let talkDuration: Double?
+        let weatherCondition: String?
+        let weatherTemperature: Double?
 
         enum CodingKeys: String, CodingKey {
             case distance
@@ -30,6 +32,8 @@ struct SharePayload: Encodable {
             case steps
             case meditateDuration = "meditate_duration"
             case talkDuration = "talk_duration"
+            case weatherCondition = "weather_condition"
+            case weatherTemperature = "weather_temperature"
         }
     }
 

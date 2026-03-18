@@ -14,6 +14,7 @@ struct ActiveWalkView: View {
     @State private var showBackConfirmation = false
     @State private var showWaypointFailed = false
     @State private var hasCheckedAutoIntention = false
+    @State private var weatherGreeting: String?
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -64,6 +65,15 @@ struct ActiveWalkView: View {
                         }
                         .padding(.trailing, Constants.UI.Padding.normal)
                         .padding(.bottom, 48)
+
+                        if let weatherGreeting {
+                            Text(weatherGreeting)
+                                .font(Constants.Typography.body.italic())
+                                .foregroundColor(.ink.opacity(0.5))
+                                .multilineTextAlignment(.center)
+                                .transition(.opacity)
+                                .allowsHitTesting(false)
+                        }
                     }
 
                     statsSection
@@ -76,6 +86,26 @@ struct ActiveWalkView: View {
         }
         .background(Color.parchment)
         .ignoresSafeArea(edges: .top)
+        .onChange(of: viewModel.weatherSnapshot?.condition) { _, condition in
+            guard let condition, weatherGreeting == nil else { return }
+            let greeting: String
+            switch condition {
+            case .clear: greeting = "A clear day for wandering"
+            case .partlyCloudy: greeting = "Walking under shifting skies"
+            case .overcast: greeting = "Soft light on the path"
+            case .lightRain: greeting = "Walking into the rain"
+            case .heavyRain: greeting = "The sky walks with you"
+            case .thunderstorm: greeting = "Thunder on the horizon"
+            case .snow: greeting = "Snow on the path"
+            case .fog: greeting = "Walking into the mist"
+            case .wind: greeting = "The wind at your back"
+            case .haze: greeting = "A hazy veil over the world"
+            }
+            withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+                withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
+            }
+        }
         .alert("End Walk?", isPresented: $showStopConfirmation) {
             Button("End Walk", role: .destructive) { viewModel.stop() }
             Button("Cancel", role: .cancel) {}

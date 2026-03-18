@@ -280,6 +280,13 @@ struct InkScrollView: View {
                             .font(Constants.Typography.annotation)
                             .foregroundColor(.ink)
 
+                        if let condStr = snapshot.weatherCondition,
+                           let cond = WeatherCondition(rawValue: condStr) {
+                            Image(systemName: cond.icon)
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
+                        }
+
                         Spacer()
 
                         if snapshot.isShared {

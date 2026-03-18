@@ -83,6 +83,7 @@ struct PromptGenerator {
         let date: Date
         let placeName: String?
         let transcriptionPreview: String
+        let weatherCondition: String?
     }
 
     struct WaypointContext {
@@ -389,10 +390,13 @@ struct PromptGenerator {
         guard !snippets.isEmpty else { return nil }
         let lines = snippets.map { snippet in
             let dateStr = shortDateFormatter.string(from: snippet.date)
+            let weatherStr = snippet.weatherCondition
+                .flatMap { WeatherCondition(rawValue: $0)?.label.lowercased() }
+                .map { " in \($0)" } ?? ""
             if let place = snippet.placeName {
-                return "[\(dateStr) – \(place)] \"\(snippet.transcriptionPreview)\""
+                return "[\(dateStr) – \(place)\(weatherStr)] \"\(snippet.transcriptionPreview)\""
             }
-            return "[\(dateStr)] \"\(snippet.transcriptionPreview)\""
+            return "[\(dateStr)\(weatherStr)] \"\(snippet.transcriptionPreview)\""
         }
         return "**Recent Walk Context (for continuity):**\n\n" + lines.joined(separator: "\n\n")
     }
