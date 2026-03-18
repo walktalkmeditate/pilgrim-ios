@@ -124,6 +124,12 @@ struct ActiveWalkView: View {
                         viewModel.voiceGuideManagement.pauseGuide()
                     }
                 },
+                onSelectVoiceGuide: { packId in
+                    UserPreferences.selectedVoiceGuidePackId.value = packId
+                    if let pack = VoiceGuideManifestService.shared.pack(byId: packId) {
+                        viewModel.voiceGuideManagement.startGuiding(pack: pack)
+                    }
+                },
                 onReplayPrompt: { viewModel.voiceGuideManagement.replayLastPrompt() }
             )
             .presentationDetents([.medium])

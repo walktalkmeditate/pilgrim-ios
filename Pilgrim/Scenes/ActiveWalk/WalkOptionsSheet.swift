@@ -17,6 +17,7 @@ struct WalkOptionsSheet: View {
     var isVoiceGuidePaused: Bool = false
     var hasLastPrompt: Bool = false
     var onToggleVoiceGuide: (() -> Void)?
+    var onSelectVoiceGuide: ((String) -> Void)?
     var onReplayPrompt: (() -> Void)?
 
     var body: some View {
@@ -99,6 +100,21 @@ struct WalkOptionsSheet: View {
                         subtitle: isVoiceGuidePaused ? "Paused — \(voiceGuidePackName ?? "")" : voiceGuidePackName
                     ) {
                         onToggleVoiceGuide?()
+                    }
+                    .contextMenu {
+                        let downloadedPacks = VoiceGuideManifestService.shared.packs
+                            .filter { VoiceGuideFileStore.shared.isPackDownloaded($0) }
+                        if downloadedPacks.count > 1 {
+                            ForEach(downloadedPacks) { pack in
+                                Button {
+                                    onSelectVoiceGuide?(pack.id)
+                                } label: {
+                                    Label(pack.name, systemImage:
+                                        UserPreferences.selectedVoiceGuidePackId.value == pack.id
+                                        ? "checkmark" : pack.iconName)
+                                }
+                            }
+                        }
                     }
 
                     if hasLastPrompt {
