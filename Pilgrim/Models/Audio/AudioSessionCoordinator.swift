@@ -15,7 +15,14 @@ final class AudioSessionCoordinator {
     private var activeConsumers: Set<String> = []
     private let queue = DispatchQueue(label: "AudioSessionCoordinator")
 
-    private init() {}
+    private init() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleInterruption),
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
+        )
+    }
 
     func activate(for mode: Mode, consumer: String) {
         queue.sync {
@@ -29,6 +36,26 @@ final class AudioSessionCoordinator {
             activeConsumers.remove(consumer)
             if activeConsumers.isEmpty {
                 applyMode(.idle)
+            }
+        }
+    }
+
+    @objc private func handleInterruption(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+
+        if type == .ended {
+            let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+            if options.contains(.shouldResume) || currentMode != .idle {
+                queue.sync {
+                    guard currentMode != .idle else { return }
+                    applyMode(currentMode)
+                }
+                print("[AudioSessionCoordinator] Resumed after interruption")
             }
         }
     }
