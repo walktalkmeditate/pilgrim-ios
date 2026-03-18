@@ -101,8 +101,10 @@ struct InkScrollView: View {
 
                 if isNewest {
                     newestDotEffects(snapshot: snapshot)
-                        .position(position.center)
-                        .transaction { $0.animation = nil }
+                        .frame(width: 60, height: 60)
+                        .position(x: position.center.x, y: position.center.y)
+                        .animation(nil, value: position.center.x)
+                        .animation(nil, value: position.center.y)
                 }
 
                 self.dotContent(
