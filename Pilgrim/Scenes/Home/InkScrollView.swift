@@ -105,9 +105,10 @@ struct InkScrollView: View {
                     opacity: opacity,
                     sceneryView: scenery
                 )
-                .background {
+                .overlay {
                     if isNewest {
                         newestDotEffects(snapshot: snapshot)
+                            .frame(width: 60, height: 60)
                     }
                 }
                 .opacity(hasAppeared ? 1 : 0)
