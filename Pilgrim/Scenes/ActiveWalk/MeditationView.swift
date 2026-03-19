@@ -93,6 +93,10 @@ struct MeditationView: View {
             spawnParticles()
         }
         .onDisappear {
+            meditationGuide?.stopGuiding()
+            meditationGuide = nil
+            voicePlayingCancellable?.cancel()
+            voicePlayingCancellable = nil
             isActive = false
             clock.stop()
         }
@@ -556,6 +560,7 @@ struct MeditationView: View {
         mgmt.startGuiding(pack: pack)
         meditationGuide = mgmt
         voicePlayingCancellable = mgmt.$isVoicePlaying
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [self] playing in
                 if playing { onVoiceStart() } else { onVoiceEnd() }
@@ -659,17 +664,17 @@ struct MeditationView: View {
     // MARK: - Voice Playback
 
     private func onVoiceStart() {
+        breathSpeedMultiplier = 2.0
         withAnimation(.easeInOut(duration: 2.0)) {
             voiceSoften = 1.0
-            breathSpeedMultiplier = 2.0
         }
         emitVoiceRings()
     }
 
     private func onVoiceEnd() {
+        breathSpeedMultiplier = 1.0
         withAnimation(.easeInOut(duration: 3.0)) {
             voiceSoften = 0
-            breathSpeedMultiplier = 1.0
         }
         fadeOutVoiceRings()
     }
