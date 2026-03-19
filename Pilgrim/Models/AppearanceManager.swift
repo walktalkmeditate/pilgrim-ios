@@ -3,7 +3,7 @@ import Combine
 
 final class AppearanceManager: ObservableObject {
 
-    @Published var resolvedScheme: ColorScheme?
+    @Published private(set) var resolvedScheme: ColorScheme?
 
     private var cancellables = Set<AnyCancellable>()
 

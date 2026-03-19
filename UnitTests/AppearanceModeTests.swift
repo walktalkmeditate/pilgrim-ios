@@ -63,6 +63,15 @@ final class AppearanceManagerTests: XCTestCase {
         XCTAssertEqual(manager.resolvedScheme, .dark)
     }
 
+    func testResolvedScheme_updatesWhenPreferenceChanges() {
+        UserPreferences.appearanceMode.value = "system"
+        let manager = AppearanceManager()
+        XCTAssertNil(manager.resolvedScheme)
+
+        UserPreferences.appearanceMode.value = "dark"
+        XCTAssertEqual(manager.resolvedScheme, .dark)
+    }
+
     func testResolvedScheme_invalidValue_fallsBackToNil() {
         UserPreferences.appearanceMode.value = "bogus"
         let manager = AppearanceManager()
