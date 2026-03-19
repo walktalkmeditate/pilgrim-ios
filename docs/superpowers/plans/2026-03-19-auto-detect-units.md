@@ -32,6 +32,8 @@
 
 - [ ] **Step 1: Write failing tests for the shared method**
 
+**Note:** The new test file must be registered in `Pilgrim.xcodeproj/project.pbxproj` (PBXFileReference, PBXBuildFile, group membership, test target Sources build phase) for Xcode to compile it. Follow the pattern used for `AppearanceModeTests.swift`.
+
 In `UnitTests/UnitSystemTests.swift`:
 
 ```swift
@@ -74,9 +76,29 @@ final class UnitSystemTests: XCTestCase {
         XCTAssertEqual(UserPreferences.altitudeMeasurementType.value, .feet)
     }
 
+    func testApplyUnitSystem_metric_setsMinutesPerKilometer() {
+        UserPreferences.applyUnitSystem(metric: true)
+        XCTAssertEqual(UserPreferences.speedMeasurementType.value, .minutesPerLengthUnit(from: .kilometers))
+    }
+
+    func testApplyUnitSystem_metric_setsKilograms() {
+        UserPreferences.applyUnitSystem(metric: true)
+        XCTAssertEqual(UserPreferences.weightMeasurementType.value, .kilograms)
+    }
+
     func testApplyUnitSystem_imperial_setsKilocalories() {
         UserPreferences.applyUnitSystem(metric: false)
         XCTAssertEqual(UserPreferences.energyMeasurementType.value, .kilocalories)
+    }
+
+    func testApplyUnitSystem_imperial_setsMinutesPerMile() {
+        UserPreferences.applyUnitSystem(metric: false)
+        XCTAssertEqual(UserPreferences.speedMeasurementType.value, .minutesPerLengthUnit(from: .miles))
+    }
+
+    func testApplyUnitSystem_imperial_setsPounds() {
+        UserPreferences.applyUnitSystem(metric: false)
+        XCTAssertEqual(UserPreferences.weightMeasurementType.value, .pounds)
     }
 }
 ```
@@ -113,7 +135,7 @@ In `Pilgrim/Models/Preferences/UserPreferences.swift`, add after the `reset()` f
 
 Run: `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/UnitSystemTests 2>&1 | tail -20`
 
-Expected: All 6 tests PASS.
+Expected: All 10 tests PASS.
 
 - [ ] **Step 5: Update GeneralSettingsView to use shared method**
 
