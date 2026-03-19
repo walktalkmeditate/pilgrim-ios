@@ -27,6 +27,7 @@ struct WalkSnippet {
     let placeName: String?
     let transcriptionPreview: String
     var weatherCondition: String? = nil
+    var celestialSummary: String? = nil
 }
 
 struct WaypointContext {

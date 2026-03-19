@@ -6,18 +6,18 @@ enum ZodiacSign: Int, CaseIterable {
 
     var symbol: String {
         switch self {
-        case .aries: return "\u{2648}"
-        case .taurus: return "\u{2649}"
-        case .gemini: return "\u{264A}"
-        case .cancer: return "\u{264B}"
-        case .leo: return "\u{264C}"
-        case .virgo: return "\u{264D}"
-        case .libra: return "\u{264E}"
-        case .scorpio: return "\u{264F}"
-        case .sagittarius: return "\u{2650}"
-        case .capricorn: return "\u{2651}"
-        case .aquarius: return "\u{2652}"
-        case .pisces: return "\u{2653}"
+        case .aries: return "\u{2648}\u{FE0E}"
+        case .taurus: return "\u{2649}\u{FE0E}"
+        case .gemini: return "\u{264A}\u{FE0E}"
+        case .cancer: return "\u{264B}\u{FE0E}"
+        case .leo: return "\u{264C}\u{FE0E}"
+        case .virgo: return "\u{264D}\u{FE0E}"
+        case .libra: return "\u{264E}\u{FE0E}"
+        case .scorpio: return "\u{264F}\u{FE0E}"
+        case .sagittarius: return "\u{2650}\u{FE0E}"
+        case .capricorn: return "\u{2651}\u{FE0E}"
+        case .aquarius: return "\u{2652}\u{FE0E}"
+        case .pisces: return "\u{2653}\u{FE0E}"
         }
     }
 
@@ -88,13 +88,13 @@ enum Planet: Int, CaseIterable {
 
     var symbol: String {
         switch self {
-        case .sun: return "\u{2609}"
-        case .moon: return "\u{263D}"
-        case .mercury: return "\u{263F}"
-        case .venus: return "\u{2640}"
-        case .mars: return "\u{2642}"
-        case .jupiter: return "\u{2643}"
-        case .saturn: return "\u{2644}"
+        case .sun: return "\u{2609}\u{FE0E}"
+        case .moon: return "\u{263D}\u{FE0E}"
+        case .mercury: return "\u{263F}\u{FE0E}"
+        case .venus: return "\u{2640}\u{FE0E}"
+        case .mars: return "\u{2642}\u{FE0E}"
+        case .jupiter: return "\u{2643}\u{FE0E}"
+        case .saturn: return "\u{2644}\u{FE0E}"
         }
     }
 

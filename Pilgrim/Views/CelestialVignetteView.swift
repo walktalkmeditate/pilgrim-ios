@@ -17,28 +17,12 @@ struct CelestialVignetteView: View {
 
     private var content: some View {
         HStack(spacing: 4) {
-            Text(snapshot.planetaryHour.planet.symbol)
-                .font(Constants.Typography.caption)
-            Text(moonSignGlyph)
-                .font(Constants.Typography.caption)
+            symbolText(snapshot.planetaryHour.planet.symbol)
+            symbolText(moonSignGlyph)
 
             if expanded {
-                Text(sunDescription)
-                    .font(Constants.Typography.caption)
-                Text(moonDescription)
-                    .font(Constants.Typography.caption)
-                Text("Hour of \(snapshot.planetaryHour.planet.name)")
-                    .font(Constants.Typography.caption)
-                if !snapshot.retrogradePlanets.isEmpty {
-                    Text(retrogradeText)
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                }
-                if let dominant = snapshot.elementBalance.dominant {
-                    Text(dominant.rawValue.capitalized)
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                }
+                symbolText(compactSummary)
+                    .foregroundColor(.fog)
             }
         }
         .foregroundColor(.ink)
@@ -51,6 +35,11 @@ struct CelestialVignetteView: View {
         )
     }
 
+    private func symbolText(_ string: String) -> some View {
+        Text(string)
+            .font(.system(size: 12))
+    }
+
     private var moonSignGlyph: String {
         let pos = snapshot.system == .tropical
             ? snapshot.position(for: .moon)?.tropical
@@ -58,27 +47,40 @@ struct CelestialVignetteView: View {
         return pos?.sign.symbol ?? ""
     }
 
-    private var sunDescription: String {
-        guard let pos = snapshot.position(for: .sun) else { return "" }
-        let zodiac = snapshot.system == .tropical ? pos.tropical : pos.sidereal
-        return "\(pos.planet.symbol) \(zodiac.sign.name) \(Int(zodiac.degree))\u{00B0}"
-    }
+    private var compactSummary: String {
+        var parts: [String] = []
 
-    private var moonDescription: String {
-        guard let pos = snapshot.position(for: .moon) else { return "" }
-        let zodiac = snapshot.system == .tropical ? pos.tropical : pos.sidereal
-        return "\(pos.planet.symbol) \(zodiac.sign.name) \(Int(zodiac.degree))\u{00B0}"
-    }
+        if let sun = snapshot.position(for: .sun) {
+            let z = snapshot.system == .tropical ? sun.tropical : sun.sidereal
+            parts.append("\(sun.planet.symbol)\(z.sign.symbol)")
+        }
 
-    private var retrogradeText: String {
-        snapshot.retrogradePlanets.map { "\($0.symbol)Rx" }.joined(separator: " ")
+        let retrogrades = snapshot.retrogradePlanets
+        if !retrogrades.isEmpty {
+            parts.append(retrogrades.map { "\($0.symbol)Rx" }.joined(separator: " "))
+        }
+
+        return parts.joined(separator: " ")
     }
 
     private var accessibilityText: String {
-        var parts = [sunDescription, moonDescription, "Hour of \(snapshot.planetaryHour.planet.name)"]
+        var parts: [String] = []
+
+        if let sun = snapshot.position(for: .sun) {
+            let z = snapshot.system == .tropical ? sun.tropical : sun.sidereal
+            parts.append("Sun in \(z.sign.name)")
+        }
+        if let moon = snapshot.position(for: .moon) {
+            let z = snapshot.system == .tropical ? moon.tropical : moon.sidereal
+            parts.append("Moon in \(z.sign.name)")
+        }
+
+        parts.append("Hour of \(snapshot.planetaryHour.planet.name)")
+
         if !snapshot.retrogradePlanets.isEmpty {
             parts.append("\(snapshot.retrogradePlanets.map { $0.name }.joined(separator: ", ")) retrograde")
         }
+
         return parts.joined(separator: ", ")
     }
 }

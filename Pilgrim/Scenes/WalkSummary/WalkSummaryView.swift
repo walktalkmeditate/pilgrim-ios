@@ -158,6 +158,9 @@ struct WalkSummaryView: View {
                 .tweak { $0.fetchLimit = 20 }
         ) else { return [] }
 
+        let celestialEnabled = UserPreferences.celestialAwarenessEnabled.value
+        let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+
         return walks
             .filter { w in w.voiceRecordings.contains { $0.transcription != nil } }
             .prefix(3)
@@ -166,7 +169,16 @@ struct WalkSummaryView: View {
                     .compactMap { $0.transcription }
                     .joined(separator: " ")
                 let preview = allText.truncatedAtWordBoundary()
-                return WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview, weatherCondition: w.weatherCondition)
+
+                var celestialSummary: String?
+                if celestialEnabled {
+                    let snap = CelestialCalculator.snapshot(for: w.startDate, system: system)
+                    let sunSign = (system == .tropical ? snap.position(for: .sun)?.tropical : snap.position(for: .sun)?.sidereal)?.sign.name ?? ""
+                    let moonSign = (system == .tropical ? snap.position(for: .moon)?.tropical : snap.position(for: .moon)?.sidereal)?.sign.name ?? ""
+                    celestialSummary = "Sun in \(sunSign), Moon in \(moonSign)"
+                }
+
+                return WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview, weatherCondition: w.weatherCondition, celestialSummary: celestialSummary)
             }
     }
 
@@ -350,6 +362,18 @@ struct WalkSummaryView: View {
     // MARK: - Milestones
 
     private func computeMilestone() -> String? {
+        if UserPreferences.celestialAwarenessEnabled.value {
+            let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+            let sunLon = CelestialCalculator.solarLongitude(
+                T: CelestialCalculator.julianCenturies(
+                    from: CelestialCalculator.julianDayNumber(from: walk.startDate)
+                )
+            )
+            if let marker = CelestialCalculator.seasonalMarker(sunLongitude: sunLon) {
+                return "You walked on the \(marker.name)"
+            }
+        }
+
         guard let walks = try? DataManager.dataStack.fetchAll(
             From<Walk>()
                 .where(\._startDate < walk.startDate)

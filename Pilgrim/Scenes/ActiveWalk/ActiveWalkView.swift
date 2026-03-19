@@ -42,35 +42,41 @@ struct ActiveWalkView: View {
                         )
                         .frame(height: 40)
 
-                        HStack(spacing: 6) {
-                            Spacer()
-                            if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
-                                CelestialVignetteView(snapshot: celestialSnapshot)
-                            }
-                            WeatherVignetteView(
-                                snapshot: viewModel.weatherSnapshot,
-                                imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
-                            )
-                            if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
-                                audioIndicator(
-                                    icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
-                                ) {
-                                    SoundscapePlayer.shared.toggleMute()
+                        HStack {
+                            HStack(spacing: 6) {
+                                if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
+                                    audioIndicator(
+                                        icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
+                                    ) {
+                                        SoundscapePlayer.shared.toggleMute()
+                                    }
                                 }
-                            }
-                            if viewModel.voiceGuidePackName != nil {
-                                audioIndicator(
-                                    icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
-                                ) {
-                                    if viewModel.voiceGuideManagement.isPaused {
-                                        viewModel.voiceGuideManagement.resumeGuide()
-                                    } else {
-                                        viewModel.voiceGuideManagement.pauseGuide()
+                                if viewModel.voiceGuidePackName != nil {
+                                    audioIndicator(
+                                        icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
+                                    ) {
+                                        if viewModel.voiceGuideManagement.isPaused {
+                                            viewModel.voiceGuideManagement.resumeGuide()
+                                        } else {
+                                            viewModel.voiceGuideManagement.pauseGuide()
+                                        }
                                     }
                                 }
                             }
+
+                            Spacer()
+
+                            HStack(spacing: 6) {
+                                if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
+                                    CelestialVignetteView(snapshot: celestialSnapshot)
+                                }
+                                WeatherVignetteView(
+                                    snapshot: viewModel.weatherSnapshot,
+                                    imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
+                                )
+                            }
                         }
-                        .padding(.trailing, Constants.UI.Padding.normal)
+                        .padding(.horizontal, Constants.UI.Padding.normal)
                         .padding(.bottom, 48)
 
                         VStack(spacing: 4) {
@@ -104,7 +110,8 @@ struct ActiveWalkView: View {
         .background(Color.parchment)
         .ignoresSafeArea(edges: .top)
         .onChange(of: viewModel.weatherSnapshot?.condition) { _, condition in
-            guard let condition, weatherGreeting == nil else { return }
+            guard let condition, weatherGreeting == nil,
+                  viewModel.status == .recording else { return }
             let greeting: String
             switch condition {
             case .clear: greeting = "A clear day for wandering"
@@ -124,6 +131,34 @@ struct ActiveWalkView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
                 guard greetingGeneration == gen else { return }
                 withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
+            }
+        }
+        .onChange(of: viewModel.status) { _, newStatus in
+            guard newStatus == .recording else { return }
+            if let condition = viewModel.weatherSnapshot?.condition, weatherGreeting == nil {
+                let greeting: String
+                switch condition {
+                case .clear: greeting = "A clear day for wandering"
+                case .partlyCloudy: greeting = "Walking under shifting skies"
+                case .overcast: greeting = "Soft light on the path"
+                case .lightRain: greeting = "Walking into the rain"
+                case .heavyRain: greeting = "The sky walks with you"
+                case .thunderstorm: greeting = "Thunder on the horizon"
+                case .snow: greeting = "Snow on the path"
+                case .fog: greeting = "Walking into the mist"
+                case .wind: greeting = "The wind at your back"
+                case .haze: greeting = "A hazy veil over the world"
+                }
+                greetingGeneration += 1
+                let gen = greetingGeneration
+                withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+                    guard greetingGeneration == gen else { return }
+                    withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
+                }
+            }
+            if let snapshot = celestialSnapshot {
+                showCelestialGreeting(snapshot: snapshot)
             }
         }
         .alert("End Walk?", isPresented: $showStopConfirmation) {
@@ -248,9 +283,7 @@ struct ActiveWalkView: View {
             }
             if UserPreferences.celestialAwarenessEnabled.value {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
-                let snapshot = CelestialCalculator.snapshot(for: Date(), system: system)
-                celestialSnapshot = snapshot
-                showCelestialGreeting(snapshot: snapshot)
+                celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
             }
         }
     }

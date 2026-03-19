@@ -75,6 +75,7 @@ struct InkScrollView: View {
 
             Group {
                 dateLabels(positions: positions, viewportWidth: width)
+                lunarMarkers(positions: positions, viewportWidth: width)
                 milestoneMarkers(width: width, positions: positions)
 
                 if snapshots.isEmpty {
@@ -266,13 +267,6 @@ struct InkScrollView: View {
                             .font(Constants.Typography.annotation)
                             .foregroundColor(.ink)
 
-                        if let condStr = snapshot.weatherCondition,
-                           let cond = WeatherCondition(rawValue: condStr) {
-                            Image(systemName: cond.icon)
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(.fog)
-                        }
-
                         Spacer()
 
                         if snapshot.isShared {
@@ -280,6 +274,26 @@ struct InkScrollView: View {
                                 .font(.system(size: 10))
                                 .foregroundColor(.stone)
                                 .opacity(0.5)
+                        }
+
+                        if UserPreferences.celestialAwarenessEnabled.value {
+                            let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+                            let celestial = CelestialCalculator.snapshot(for: snapshot.startDate, system: system)
+                            let moonSign = system == .tropical
+                                ? celestial.position(for: .moon)?.tropical.sign
+                                : celestial.position(for: .moon)?.sidereal.sign
+                            if let moonSign {
+                                Text("\(celestial.planetaryHour.planet.symbol)\(moonSign.symbol)")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.fog)
+                            }
+                        }
+
+                        if let condStr = snapshot.weatherCondition,
+                           let cond = WeatherCondition(rawValue: condStr) {
+                            Image(systemName: cond.icon)
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
                         }
                     }
 
@@ -628,6 +642,72 @@ struct InkScrollView: View {
         f.setLocalizedDateFormatFromTemplate("MMM")
         return f
     }()
+
+    // MARK: - Lunar Markers
+
+    private func lunarMarkers(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat) -> some View {
+        let markers = computeLunarMarkers(positions: positions, viewportWidth: viewportWidth)
+        return ForEach(markers, id: \.id) { marker in
+            MoonPhaseShape(illumination: marker.illumination, isWaxing: marker.isWaxing)
+                .fill(Color.fog.opacity(0.2))
+                .frame(width: 8, height: 8)
+                .position(x: marker.x, y: marker.y)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private struct LunarMarker: Identifiable {
+        let id: String
+        let x: CGFloat
+        let y: CGFloat
+        let illumination: Double
+        let isWaxing: Bool
+    }
+
+    private func computeLunarMarkers(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat) -> [LunarMarker] {
+        guard snapshots.count >= 2 else { return [] }
+
+        var markers: [LunarMarker] = []
+        let calendar = Calendar.current
+
+        for i in 0..<(snapshots.count - 1) {
+            guard i + 1 < positions.count else { continue }
+            let dateA = snapshots[i].startDate
+            let dateB = snapshots[i + 1].startDate
+            let posA = positions[i]
+            let posB = positions[i + 1]
+
+            var checkDate = dateA
+            while checkDate <= dateB {
+                let phase = LunarPhase.current(date: checkDate)
+                let isNewMoon = phase.illumination < 0.03
+                let isFullMoon = phase.illumination > 0.97
+
+                if isNewMoon || isFullMoon {
+                    let totalInterval = dateB.timeIntervalSince(dateA)
+                    let fraction = totalInterval > 0
+                        ? checkDate.timeIntervalSince(dateA) / totalInterval
+                        : 0.5
+                    let y = posA.yOffset + CGFloat(fraction) * (posB.yOffset - posA.yOffset)
+                    let midX = posA.center.x + CGFloat(fraction) * (posB.center.x - posA.center.x)
+                    let markerX: CGFloat = midX > viewportWidth / 2 ? midX - 20 : midX + 20
+
+                    markers.append(LunarMarker(
+                        id: "\(i)-\(isFullMoon ? "full" : "new")",
+                        x: markerX,
+                        y: y,
+                        illumination: phase.illumination,
+                        isWaxing: phase.isWaxing
+                    ))
+                    break
+                }
+
+                checkDate = calendar.date(byAdding: .day, value: 1, to: checkDate)!
+            }
+        }
+
+        return markers
+    }
 
     // MARK: - Empty state
 

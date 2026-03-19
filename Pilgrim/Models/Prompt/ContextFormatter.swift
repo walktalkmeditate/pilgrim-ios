@@ -85,10 +85,11 @@ enum ContextFormatter {
             let weatherStr = snippet.weatherCondition
                 .flatMap { WeatherCondition(rawValue: $0)?.label.lowercased() }
                 .map { " in \($0)" } ?? ""
+            let celestialStr = snippet.celestialSummary.map { ", \($0)" } ?? ""
             if let place = snippet.placeName {
-                return "[\(dateStr) – \(place)\(weatherStr)] \"\(snippet.transcriptionPreview)\""
+                return "[\(dateStr) – \(place)\(weatherStr)\(celestialStr)] \"\(snippet.transcriptionPreview)\""
             }
-            return "[\(dateStr)\(weatherStr)] \"\(snippet.transcriptionPreview)\""
+            return "[\(dateStr)\(weatherStr)\(celestialStr)] \"\(snippet.transcriptionPreview)\""
         }
         return "**Recent Walk Context (for continuity):**\n\n" + lines.joined(separator: "\n\n")
     }
