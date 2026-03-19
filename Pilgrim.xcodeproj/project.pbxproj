@@ -256,6 +256,7 @@
 		CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000INKSCR01 /* InkScrollView.swift */; };
 		CC00000200000000LANTRN01 /* LanternShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LANTRN01 /* LanternShape.swift */; };
 		CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPEAR01 /* AppearanceMode.swift */; };
+		CC00000200000000APPMGR01 /* AppearanceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPMGR01 /* AppearanceManager.swift */; };
 		CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPRTST1 /* AppearanceModeTests.swift */; };
 		CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRPH01 /* LunarPhase.swift */; };
 		CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */; };
@@ -566,6 +567,7 @@
 		CC00000100000000INKSCR01 /* InkScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InkScrollView.swift; sourceTree = "<group>"; };
 		CC00000100000000LANTRN01 /* LanternShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanternShape.swift; sourceTree = "<group>"; };
 		CC00000100000000APPEAR01 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
+		CC00000100000000APPMGR01 /* AppearanceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceManager.swift; sourceTree = "<group>"; };
 		CC00000100000000APPRTST1 /* AppearanceModeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppearanceModeTests.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRPH01 /* LunarPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarPhase.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunarPhaseTests.swift; sourceTree = "<group>"; };
@@ -919,6 +921,7 @@
 				22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */,
 				22BD1F41247463DF00415A06 /* ApplicationState.swift */,
 				CC00000100000000APPEAR01 /* AppearanceMode.swift */,
+				CC00000100000000APPMGR01 /* AppearanceManager.swift */,
 				22877541234A73060078CE12 /* LS.swift */,
 				2227C643234B6EF400CFE31A /* Config.swift */,
 				22BC994A2941DA3400D9B1A5 /* Constants.swift */,
@@ -1863,6 +1866,7 @@
 				785609582C94A30C974B0F72 /* PilgrimPackageImporter.swift in Sources */,
 				11C747B0EAF53D9F444C6243 /* DataSettingsView.swift in Sources */,
 				CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */,
+				CC00000200000000APPMGR01 /* AppearanceManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

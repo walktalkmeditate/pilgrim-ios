@@ -32,3 +32,40 @@ final class AppearanceModeTests: XCTestCase {
         XCTAssertEqual(AppearanceMode.dark.resolvedScheme, .dark)
     }
 }
+
+final class AppearanceManagerTests: XCTestCase {
+
+    override func tearDown() {
+        super.tearDown()
+        UserPreferences.appearanceMode.value = "system"
+    }
+
+    func testPreferenceDefault_isSystem() {
+        UserPreferences.appearanceMode.delete()
+        XCTAssertEqual(UserPreferences.appearanceMode.value, "system")
+    }
+
+    func testResolvedScheme_defaultIsNil() {
+        UserPreferences.appearanceMode.value = "system"
+        let manager = AppearanceManager()
+        XCTAssertNil(manager.resolvedScheme)
+    }
+
+    func testResolvedScheme_light_returnsLight() {
+        UserPreferences.appearanceMode.value = "light"
+        let manager = AppearanceManager()
+        XCTAssertEqual(manager.resolvedScheme, .light)
+    }
+
+    func testResolvedScheme_dark_returnsDark() {
+        UserPreferences.appearanceMode.value = "dark"
+        let manager = AppearanceManager()
+        XCTAssertEqual(manager.resolvedScheme, .dark)
+    }
+
+    func testResolvedScheme_invalidValue_fallsBackToNil() {
+        UserPreferences.appearanceMode.value = "bogus"
+        let manager = AppearanceManager()
+        XCTAssertNil(manager.resolvedScheme)
+    }
+}
