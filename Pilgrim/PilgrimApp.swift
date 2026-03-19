@@ -25,10 +25,12 @@ import SwiftUI
 struct PilgrimApp: App {
     
     @UIApplicationDelegateAdaptor var delegate: AppDelegate
-    
+    @StateObject private var appearanceManager = AppearanceManager()
+
     var body: some Scene {
         WindowGroup {
             RootCoordinatorView(viewModel: RootCoordinatorViewModel())
+                .preferredColorScheme(appearanceManager.resolvedScheme)
         }
     }
 }
