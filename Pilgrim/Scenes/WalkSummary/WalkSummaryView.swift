@@ -158,9 +158,6 @@ struct WalkSummaryView: View {
                 .tweak { $0.fetchLimit = 20 }
         ) else { return [] }
 
-        let celestialEnabled = UserPreferences.celestialAwarenessEnabled.value
-        let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
-
         return walks
             .filter { w in w.voiceRecordings.contains { $0.transcription != nil } }
             .prefix(3)
@@ -169,15 +166,14 @@ struct WalkSummaryView: View {
                     .compactMap { $0.transcription }
                     .joined(separator: " ")
                 let preview = allText.truncatedAtWordBoundary()
-
                 var celestialSummary: String?
-                if celestialEnabled {
+                if UserPreferences.celestialAwarenessEnabled.value {
+                    let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                     let snap = CelestialCalculator.snapshot(for: w.startDate, system: system)
                     let sunSign = (system == .tropical ? snap.position(for: .sun)?.tropical : snap.position(for: .sun)?.sidereal)?.sign.name ?? ""
                     let moonSign = (system == .tropical ? snap.position(for: .moon)?.tropical : snap.position(for: .moon)?.sidereal)?.sign.name ?? ""
                     celestialSummary = "Sun in \(sunSign), Moon in \(moonSign)"
                 }
-
                 return WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview, weatherCondition: w.weatherCondition, celestialSummary: celestialSummary)
             }
     }
@@ -364,10 +360,7 @@ struct WalkSummaryView: View {
     private func computeMilestone() -> String? {
         if UserPreferences.celestialAwarenessEnabled.value {
             let sunLon = CelestialCalculator.solarLongitude(
-                T: CelestialCalculator.julianCenturies(
-                    from: CelestialCalculator.julianDayNumber(from: walk.startDate)
-                )
-            )
+                T: CelestialCalculator.julianCenturies(from: CelestialCalculator.julianDayNumber(from: walk.startDate)))
             if let marker = CelestialCalculator.seasonalMarker(sunLongitude: sunLon) {
                 return "You walked on the \(marker.name)"
             }
@@ -455,7 +448,6 @@ struct WalkSummaryView: View {
         if let snapshot = cachedCelestialSnapshot {
             let moonPos = snapshot.position(for: .moon)
             let zodiac = snapshot.system == .tropical ? moonPos?.tropical : moonPos?.sidereal
-
             HStack(spacing: Constants.UI.Padding.xs) {
                 if let zodiac {
                     Text("Moon in \(zodiac.sign.name)")

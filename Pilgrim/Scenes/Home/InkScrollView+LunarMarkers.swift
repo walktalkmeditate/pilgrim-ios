@@ -2,6 +2,16 @@ import SwiftUI
 
 extension InkScrollView {
 
+    func lunarMarkers(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat) -> some View {
+        let markers = computeLunarMarkers(positions: positions, viewportWidth: viewportWidth)
+        return ForEach(markers, id: \.id) { marker in
+            LunarMarkerDot(isFullMoon: marker.illumination > 0.5)
+                .frame(width: 10, height: 10)
+                .position(x: marker.x, y: marker.y)
+                .accessibilityHidden(true)
+        }
+    }
+
     struct LunarMarkerDot: View {
         let isFullMoon: Bool
         @Environment(\.colorScheme) private var colorScheme
