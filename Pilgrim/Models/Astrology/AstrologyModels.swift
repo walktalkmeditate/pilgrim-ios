@@ -129,7 +129,10 @@ struct ElementBalance {
     let counts: [ZodiacSign.Element: Int]
 
     var dominant: ZodiacSign.Element? {
-        counts.max(by: { $0.value < $1.value })?.key
+        guard let maxCount = counts.values.max() else { return nil }
+        let leaders = counts.filter { $0.value == maxCount }
+        guard leaders.count == 1 else { return nil }
+        return leaders.first?.key
     }
 }
 

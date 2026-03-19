@@ -1,10 +1,6 @@
 import Foundation
 
 struct ContemplativeVoice: PromptVoice {
-    let title = "Contemplative"
-    let icon = "leaf.fill"
-    let voiceDescription = "Sit with what emerged from movement"
-
     func preamble(hasSpeech: Bool) -> String {
         hasSpeech
             ? "During a walking meditation, these words arose naturally from the rhythm of movement and breath. They were not planned or curated — they emerged as the body moved through space."
@@ -19,10 +15,6 @@ struct ContemplativeVoice: PromptVoice {
 }
 
 struct ReflectiveVoice: PromptVoice {
-    let title = "Reflective"
-    let icon = "eye.fill"
-    let voiceDescription = "Identify patterns and emotional undercurrents"
-
     func preamble(hasSpeech: Bool) -> String {
         hasSpeech
             ? "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
@@ -37,10 +29,6 @@ struct ReflectiveVoice: PromptVoice {
 }
 
 struct CreativeVoice: PromptVoice {
-    let title = "Creative"
-    let icon = "paintbrush.fill"
-    let voiceDescription = "Transform thoughts into poetry or metaphor"
-
     func preamble(hasSpeech: Bool) -> String {
         hasSpeech
             ? "A walker spoke these words into the open air while moving through the world. They are raw material — fragments of observation, feeling, and thought gathered by a body in motion."
@@ -55,10 +43,6 @@ struct CreativeVoice: PromptVoice {
 }
 
 struct GratitudeVoice: PromptVoice {
-    let title = "Gratitude"
-    let icon = "heart.fill"
-    let voiceDescription = "Find thanksgiving in observations"
-
     func preamble(hasSpeech: Bool) -> String {
         hasSpeech
             ? "These words were spoken during a walk — a time of moving through the world with awareness. Somewhere in these observations and thoughts are seeds of gratitude, even if not explicitly stated."
@@ -73,10 +57,6 @@ struct GratitudeVoice: PromptVoice {
 }
 
 struct PhilosophicalVoice: PromptVoice {
-    let title = "Philosophical"
-    let icon = "books.vertical.fill"
-    let voiceDescription = "Explore deeper meaning and wisdom"
-
     func preamble(hasSpeech: Bool) -> String {
         hasSpeech
             ? "Walking has long been a companion to philosophical thought — from Aristotle's peripatetic school to Kierkegaard's daily constitutionals. These words emerged during such a walk, where movement and thought intertwined."
@@ -91,10 +71,6 @@ struct PhilosophicalVoice: PromptVoice {
 }
 
 struct JournalingVoice: PromptVoice {
-    let title = "Journaling"
-    let icon = "pencil.and.scribble"
-    let voiceDescription = "Structure raw thoughts into a journal entry"
-
     func preamble(hasSpeech: Bool) -> String {
         hasSpeech
             ? "The following are raw, unedited voice recordings from a walk. They capture thoughts as they occurred — scattered, honest, and in the moment."

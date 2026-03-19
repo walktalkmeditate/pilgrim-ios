@@ -8,8 +8,6 @@ struct CustomPromptStyle: Codable, Identifiable {
 }
 
 extension CustomPromptStyle: PromptVoice {
-    var voiceDescription: String { instruction }
-
     func preamble(hasSpeech: Bool) -> String {
         hasSpeech
             ? "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."

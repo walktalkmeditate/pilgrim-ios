@@ -33,6 +33,7 @@ struct WalkSummaryView: View {
     @State private var recentWalkSnippets: [WalkSnippet] = []
     @State private var revealPhase: RevealPhase = .hidden
     @State private var milestone: String?
+    @State private var cachedCelestialSnapshot: CelestialSnapshot?
 
     private enum RevealPhase {
         case hidden, zoomed, revealed
@@ -90,6 +91,10 @@ struct WalkSummaryView: View {
                 loadExistingTranscriptions()
                 recentWalkSnippets = computeRecentWalkSnippets()
                 milestone = computeMilestone()
+                if UserPreferences.celestialAwarenessEnabled.value {
+                    let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+                    cachedCelestialSnapshot = CelestialCalculator.snapshot(for: walk.startDate, system: system)
+                }
                 startRevealSequence()
             }
             .sheet(isPresented: $showPrompts) {
@@ -424,11 +429,9 @@ struct WalkSummaryView: View {
 
     @ViewBuilder
     private var celestialLine: some View {
-        if UserPreferences.celestialAwarenessEnabled.value {
-            let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
-            let snapshot = CelestialCalculator.snapshot(for: walk.startDate, system: system)
+        if let snapshot = cachedCelestialSnapshot {
             let moonPos = snapshot.position(for: .moon)
-            let zodiac = system == .tropical ? moonPos?.tropical : moonPos?.sidereal
+            let zodiac = snapshot.system == .tropical ? moonPos?.tropical : moonPos?.sidereal
 
             HStack(spacing: Constants.UI.Padding.xs) {
                 if let zodiac {

@@ -11,9 +11,10 @@ enum CelestialCalculator {
         }
 
         let sunLon = solarLongitude(T: T)
-        let hour = planetaryHour(date: date, sunLongitude: sunLon)
+        let hour = planetaryHour(date: date)
         let balance = elementBalance(positions: positions, system: system)
         let marker = seasonalMarker(sunLongitude: sunLon)
+
 
         return CelestialSnapshot(
             positions: positions,
@@ -168,7 +169,7 @@ enum CelestialCalculator {
 
     // MARK: - Zodiac Position
 
-    static func zodiacPosition(longitude: Double, system: ZodiacSystem = .tropical) -> ZodiacPosition {
+    static func zodiacPosition(longitude: Double) -> ZodiacPosition {
         let normalizedLon = normalize(longitude)
         let signIndex = Int(normalizedLon / 30.0) % 12
         let degree = normalizedLon - Double(signIndex) * 30.0
@@ -190,7 +191,7 @@ enum CelestialCalculator {
 
     // MARK: - Planetary Hours (Chaldean Sequence)
 
-    static func planetaryHour(date: Date, sunLongitude: Double) -> PlanetaryHour {
+    static func planetaryHour(date: Date) -> PlanetaryHour {
         let calendar = Calendar.current
 
         let weekday = calendar.component(.weekday, from: date)
@@ -275,10 +276,10 @@ enum CelestialCalculator {
 
     private static func planetaryPosition(for planet: Planet, T: Double, system: ZodiacSystem) -> PlanetaryPosition {
         let lon = longitude(for: planet, T: T)
-        let tropicalPos = zodiacPosition(longitude: lon, system: .tropical)
+        let tropicalPos = zodiacPosition(longitude: lon)
 
         let siderealLon = normalize(lon - ayanamsa(T: T))
-        let siderealPos = zodiacPosition(longitude: siderealLon, system: .tropical)
+        let siderealPos = zodiacPosition(longitude: siderealLon)
 
         let activeLon = system == .tropical ? lon : siderealLon
         return PlanetaryPosition(

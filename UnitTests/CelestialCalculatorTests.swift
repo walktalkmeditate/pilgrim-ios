@@ -157,6 +157,88 @@ final class CelestialCalculatorTests: XCTestCase {
         let sunPos = snapshot.position(for: .sun)!
         XCTAssertNotEqual(sunPos.tropical.sign, sunPos.sidereal.sign)
     }
+
+    // MARK: - Element Balance Ties
+
+    func testElementBalance_dominant_nilOnTie() {
+        let positions = [
+            makePlanetaryPosition(.sun, sign: .aries),
+            makePlanetaryPosition(.moon, sign: .cancer),
+            makePlanetaryPosition(.mercury, sign: .gemini),
+            makePlanetaryPosition(.venus, sign: .taurus),
+            makePlanetaryPosition(.mars, sign: .leo),
+            makePlanetaryPosition(.jupiter, sign: .libra),
+            makePlanetaryPosition(.saturn, sign: .scorpio),
+        ]
+        let balance = CelestialCalculator.elementBalance(positions: positions)
+        XCTAssertEqual(balance.counts.values.reduce(0, +), 7)
+        let maxCount = balance.counts.values.max()!
+        let tiedCount = balance.counts.values.filter { $0 == maxCount }.count
+        if tiedCount > 1 {
+            XCTAssertNil(balance.dominant)
+        }
+    }
+
+    func testElementBalance_dominant_clearWinner() {
+        let positions = [
+            makePlanetaryPosition(.sun, sign: .aries),
+            makePlanetaryPosition(.moon, sign: .leo),
+            makePlanetaryPosition(.mercury, sign: .sagittarius),
+            makePlanetaryPosition(.venus, sign: .aries),
+            makePlanetaryPosition(.mars, sign: .cancer),
+            makePlanetaryPosition(.jupiter, sign: .gemini),
+            makePlanetaryPosition(.saturn, sign: .taurus),
+        ]
+        let balance = CelestialCalculator.elementBalance(positions: positions)
+        XCTAssertEqual(balance.dominant, .fire)
+    }
+
+    // MARK: - Format Celestial
+
+    func testFormatCelestial_containsSystemLabel() {
+        let date = DateFactory.makeUTCDate(2024, 6, 15, 12, 0, 0)
+        let snapshot = CelestialCalculator.snapshot(for: date, system: .tropical)
+        let text = ContextFormatter.formatCelestial(snapshot)
+        XCTAssertTrue(text.contains("Tropical"))
+    }
+
+    func testFormatCelestial_sidereal_containsSiderealLabel() {
+        let date = DateFactory.makeUTCDate(2024, 6, 15, 12, 0, 0)
+        let snapshot = CelestialCalculator.snapshot(for: date, system: .sidereal)
+        let text = ContextFormatter.formatCelestial(snapshot)
+        XCTAssertTrue(text.contains("Sidereal"))
+    }
+
+    func testFormatCelestial_containsHourOfPlanet() {
+        let date = DateFactory.makeUTCDate(2024, 6, 15, 12, 0, 0)
+        let snapshot = CelestialCalculator.snapshot(for: date)
+        let text = ContextFormatter.formatCelestial(snapshot)
+        XCTAssertTrue(text.contains("Hour of"))
+    }
+
+    func testFormatCelestial_containsAllPlanetNames() {
+        let date = DateFactory.makeUTCDate(2024, 6, 15, 12, 0, 0)
+        let snapshot = CelestialCalculator.snapshot(for: date)
+        let text = ContextFormatter.formatCelestial(snapshot)
+        for planet in Planet.allCases {
+            XCTAssertTrue(text.contains(planet.name), "\(planet.name) should appear in celestial format")
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func makePlanetaryPosition(_ planet: Planet, sign: ZodiacSign) -> PlanetaryPosition {
+        let degree = 15.0
+        let longitude = Double(sign.rawValue) * 30.0 + degree
+        return PlanetaryPosition(
+            planet: planet,
+            longitude: longitude,
+            tropical: ZodiacPosition(sign: sign, degree: degree),
+            sidereal: ZodiacPosition(sign: sign, degree: degree),
+            isRetrograde: false,
+            isIngress: false
+        )
+    }
 }
 
 extension DateFactory {
