@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 struct MeditationView: View {
 
@@ -27,6 +28,10 @@ struct MeditationView: View {
     @State private var hasDismissed = false
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
+    @State private var voiceRings: [VoiceRing] = []
+    @State private var breathSpeedMultiplier: Double = 1.0
+    @State private var voiceSoften: Double = 0
+    @State private var voicePlayingCancellable: AnyCancellable?
     @StateObject private var clock = SessionClock()
     @ObservedObject private var soundscapePlayer = SoundscapePlayer.shared
     @ObservedObject private var manifestService = VoiceGuideManifestService.shared
@@ -42,6 +47,7 @@ struct MeditationView: View {
             background
             particleLayer
             rippleLayer
+            voiceRingLayer
 
             VStack(spacing: 0) {
                 Spacer()
@@ -174,6 +180,20 @@ struct MeditationView: View {
         .allowsHitTesting(false)
     }
 
+    private var voiceRingLayer: some View {
+        GeometryReader { geo in
+            let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.35)
+            ForEach(voiceRings) { ring in
+                Circle()
+                    .stroke(Color.moss.opacity(ring.opacity), lineWidth: 1)
+                    .frame(width: ring.size, height: ring.size)
+                    .scaleEffect(x: 1.0 + ring.irregularity * 0.04, y: 1.0 - ring.irregularity * 0.02)
+                    .position(center)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
     private func emitRipple() {
         guard !rhythm.isNone else { return }
         if rippleRings.count > 3 { rippleRings.removeFirst() }
@@ -201,8 +221,8 @@ struct MeditationView: View {
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.moss.opacity(0.5),
-                            Color.moss.opacity(0.15),
+                            Color.moss.opacity(0.5 - voiceSoften * 0.15),
+                            Color.moss.opacity(0.15 - voiceSoften * 0.05),
                             Color.moss.opacity(0.0)
                         ],
                         center: .center,
@@ -446,6 +466,8 @@ struct MeditationView: View {
                 selectedGuidePackId = nil
                 meditationGuide?.stopGuiding()
                 meditationGuide = nil
+                voicePlayingCancellable?.cancel()
+                voicePlayingCancellable = nil
             } label: {
                 guideRow(name: "Off", subtitle: "Meditate in silence", isSelected: selectedGuidePackId == nil)
             }
@@ -533,6 +555,11 @@ struct MeditationView: View {
         let mgmt = MeditationGuideManagement()
         mgmt.startGuiding(pack: pack)
         meditationGuide = mgmt
+        voicePlayingCancellable = mgmt.$isVoicePlaying
+            .receive(on: DispatchQueue.main)
+            .sink { [self] playing in
+                if playing { onVoiceStart() } else { onVoiceEnd() }
+            }
     }
 
     // MARK: - Breath Rhythm Section
@@ -597,6 +624,8 @@ struct MeditationView: View {
         guard !isClosing else { return }
         meditationGuide?.stopGuiding()
         meditationGuide = nil
+        voicePlayingCancellable?.cancel()
+        voicePlayingCancellable = nil
 
         isClosing = true
         isActive = false
@@ -627,6 +656,48 @@ struct MeditationView: View {
         }
     }
 
+    // MARK: - Voice Playback
+
+    private func onVoiceStart() {
+        withAnimation(.easeInOut(duration: 2.0)) {
+            voiceSoften = 1.0
+            breathSpeedMultiplier = 2.0
+        }
+        emitVoiceRings()
+    }
+
+    private func onVoiceEnd() {
+        withAnimation(.easeInOut(duration: 3.0)) {
+            voiceSoften = 0
+            breathSpeedMultiplier = 1.0
+        }
+        fadeOutVoiceRings()
+    }
+
+    private func emitVoiceRings() {
+        voiceRings.removeAll()
+        for i in 0..<4 {
+            let ring = VoiceRing(
+                id: UUID(),
+                size: CGFloat(180 + i * 40) * circleScale,
+                opacity: 0.15 - Double(i) * 0.03,
+                irregularity: CGFloat.random(in: -1...1)
+            )
+            voiceRings.append(ring)
+        }
+    }
+
+    private func fadeOutVoiceRings() {
+        withAnimation(.easeOut(duration: 1.5)) {
+            for i in voiceRings.indices {
+                voiceRings[i].opacity = 0
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            voiceRings.removeAll()
+        }
+    }
+
     // MARK: - Breath Cycle
 
     private func startBreathCycle() {
@@ -652,10 +723,11 @@ struct MeditationView: View {
             checkMilestone()
         }
         phase = .inhale
-        withAnimation(.easeInOut(duration: rhythm.inhale)) {
+        let duration = rhythm.inhale * breathSpeedMultiplier
+        withAnimation(.easeInOut(duration: duration)) {
             circleScale = 1.0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.inhale) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             guard self.isActive, self.breathGeneration == gen else { return }
             self.emitRipple()
             if self.rhythm.holdIn > 0 {
@@ -687,7 +759,8 @@ struct MeditationView: View {
         phase = .holdIn
         holdIntensity = 1.0
         isHolding = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdIn) {
+        let duration = rhythm.holdIn * breathSpeedMultiplier
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             guard self.isActive, self.breathGeneration == gen else { return }
             self.isHolding = false
             self.breathOut()
@@ -698,10 +771,11 @@ struct MeditationView: View {
         guard isActive else { return }
         let gen = breathGeneration
         phase = .exhale
-        withAnimation(.easeInOut(duration: rhythm.exhale)) {
+        let duration = rhythm.exhale * breathSpeedMultiplier
+        withAnimation(.easeInOut(duration: duration)) {
             circleScale = 0.45
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.exhale) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             guard self.isActive, self.breathGeneration == gen else { return }
             if self.rhythm.holdOut > 0 {
                 self.holdAfterExhale()
@@ -717,7 +791,8 @@ struct MeditationView: View {
         phase = .holdOut
         holdIntensity = 0.6
         isHolding = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdOut) {
+        let duration = rhythm.holdOut * breathSpeedMultiplier
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             guard self.isActive, self.breathGeneration == gen else { return }
             self.isHolding = false
             self.breathIn()
@@ -797,4 +872,11 @@ struct RippleRing: Identifiable {
     let id: UUID
     var size: CGFloat
     var opacity: Double
+}
+
+struct VoiceRing: Identifiable {
+    let id: UUID
+    var size: CGFloat
+    var opacity: Double
+    var irregularity: CGFloat
 }
