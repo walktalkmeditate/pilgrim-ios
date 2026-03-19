@@ -7,9 +7,11 @@ struct GeneralSettingsView: View {
     @State private var beginWithIntention = UserPreferences.beginWithIntention.value
     @State private var celestialAwareness = UserPreferences.celestialAwarenessEnabled.value
     @State private var zodiacSystem = UserPreferences.zodiacSystem.value
+    @State private var appearanceMode = UserPreferences.appearanceMode.value
 
     var body: some View {
         List {
+            appearanceSection
             walkSection
             celestialSection
             unitsSection
@@ -29,6 +31,34 @@ struct GeneralSettingsView: View {
         .onAppear { permissionVM.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             permissionVM.refresh()
+        }
+    }
+
+    // MARK: - Appearance
+
+    private var appearanceSection: some View {
+        Section {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Appearance")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                }
+                Spacer()
+                Picker("", selection: $appearanceMode) {
+                    Text("System").tag("system")
+                    Text("Light").tag("light")
+                    Text("Dark").tag("dark")
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 180)
+                .onChange(of: appearanceMode) { _, newValue in
+                    UserPreferences.appearanceMode.value = newValue
+                }
+            }
+        } header: {
+            Text("Appearance")
+                .font(Constants.Typography.caption)
         }
     }
 
