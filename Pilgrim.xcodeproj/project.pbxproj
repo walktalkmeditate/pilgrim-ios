@@ -255,6 +255,8 @@
 		CC00000200000000HAPTIC01 /* ScrollHapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */; };
 		CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000INKSCR01 /* InkScrollView.swift */; };
 		CC00000200000000LANTRN01 /* LanternShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LANTRN01 /* LanternShape.swift */; };
+		CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPEAR01 /* AppearanceMode.swift */; };
+		CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPRTST1 /* AppearanceModeTests.swift */; };
 		CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRPH01 /* LunarPhase.swift */; };
 		CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */; };
 		CC00000200000000MAINTB01 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MAINTB01 /* MainTabView.swift */; };
@@ -563,6 +565,8 @@
 		CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollHapticEngine.swift; sourceTree = "<group>"; };
 		CC00000100000000INKSCR01 /* InkScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InkScrollView.swift; sourceTree = "<group>"; };
 		CC00000100000000LANTRN01 /* LanternShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanternShape.swift; sourceTree = "<group>"; };
+		CC00000100000000APPEAR01 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
+		CC00000100000000APPRTST1 /* AppearanceModeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppearanceModeTests.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRPH01 /* LunarPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarPhase.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunarPhaseTests.swift; sourceTree = "<group>"; };
 		CC00000100000000MAINTB01 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -914,6 +918,7 @@
 				22A2D43423E313A3003580EC /* Formatting */,
 				22BD1F3F2474638200415A06 /* ApplicationStateObservation.swift */,
 				22BD1F41247463DF00415A06 /* ApplicationState.swift */,
+				CC00000100000000APPEAR01 /* AppearanceMode.swift */,
 				22877541234A73060078CE12 /* LS.swift */,
 				2227C643234B6EF400CFE31A /* Config.swift */,
 				22BC994A2941DA3400D9B1A5 /* Constants.swift */,
@@ -1096,6 +1101,7 @@
 		22DD158A280C5BB4002CDB45 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				CC00000100000000APPRTST1 /* AppearanceModeTests.swift */,
 				22DD158B280C5BB4002CDB45 /* MigrationTests.swift */,
 				4C304343458BA5DB0C7E2372 /* Helpers */,
 				C2D23FF60A762C30296A69E6 /* ComputationTests.swift */,
@@ -1856,6 +1862,7 @@
 				F6F821BCD8CEF1926A95449F /* PilgrimPackageBuilder.swift in Sources */,
 				785609582C94A30C974B0F72 /* PilgrimPackageImporter.swift in Sources */,
 				11C747B0EAF53D9F444C6243 /* DataSettingsView.swift in Sources */,
+				CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1885,6 +1892,7 @@
 				BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */,
 				18163919B90D2DC9D6ED730F /* PilgrimPackageModelTests.swift in Sources */,
 				0E9B9341AEF918BA4BB7901C /* PilgrimPackageConverterTests.swift in Sources */,
+				CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
