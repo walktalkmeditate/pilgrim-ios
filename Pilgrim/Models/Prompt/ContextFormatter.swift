@@ -178,12 +178,6 @@ enum ContextFormatter {
             line += " | \(dominant.rawValue.capitalized) predominates"
         }
 
-        let retrogrades = snapshot.retrogradePlanets
-        if !retrogrades.isEmpty {
-            let names = retrogrades.map { $0.name }.joined(separator: ", ")
-            line += " | \(names) retrograde"
-        }
-
         let ingresses = snapshot.ingressPlanets
         for ingress in ingresses {
             let zodiac = snapshot.system == .tropical ? ingress.tropical : ingress.sidereal

@@ -12,7 +12,7 @@ enum CelestialCalculator {
 
         let sunLon = solarLongitude(T: T)
         let hour = planetaryHour(date: date, sunLongitude: sunLon)
-        let balance = elementBalance(positions: positions)
+        let balance = elementBalance(positions: positions, system: system)
         let marker = seasonalMarker(sunLongitude: sunLon)
 
         return CelestialSnapshot(
@@ -238,14 +238,14 @@ enum CelestialCalculator {
 
     // MARK: - Element Balance
 
-    static func elementBalance(positions: [PlanetaryPosition]) -> ElementBalance {
+    static func elementBalance(positions: [PlanetaryPosition], system: ZodiacSystem = .tropical) -> ElementBalance {
         var counts: [ZodiacSign.Element: Int] = [:]
         for element in ZodiacSign.Element.allCases {
             counts[element] = 0
         }
         for position in positions {
-            let element = position.tropical.sign.element
-            counts[element, default: 0] += 1
+            let sign = system == .tropical ? position.tropical.sign : position.sidereal.sign
+            counts[sign.element, default: 0] += 1
         }
         return ElementBalance(counts: counts)
     }
@@ -277,16 +277,17 @@ enum CelestialCalculator {
         let lon = longitude(for: planet, T: T)
         let tropicalPos = zodiacPosition(longitude: lon, system: .tropical)
 
-        let siderealLon = lon - ayanamsa(T: T)
-        let siderealPos = zodiacPosition(longitude: normalize(siderealLon), system: .tropical)
+        let siderealLon = normalize(lon - ayanamsa(T: T))
+        let siderealPos = zodiacPosition(longitude: siderealLon, system: .tropical)
 
+        let activeLon = system == .tropical ? lon : siderealLon
         return PlanetaryPosition(
             planet: planet,
             longitude: lon,
             tropical: tropicalPos,
             sidereal: siderealPos,
             isRetrograde: isRetrograde(planet: planet, T: T),
-            isIngress: isIngress(longitude: lon)
+            isIngress: isIngress(longitude: activeLon)
         )
     }
 

@@ -17,6 +17,7 @@ struct ActiveWalkView: View {
     @State private var weatherGreeting: String?
     @State private var celestialGreeting: String?
     @State private var greetingGeneration = 0
+    @State private var celestialGreetingGeneration = 0
     @State private var celestialSnapshot: CelestialSnapshot?
 
     private var selectedSoundscapeName: String? {
@@ -429,13 +430,13 @@ struct ActiveWalkView: View {
 
         let chosen = greeting ?? hourGreeting
 
-        greetingGeneration += 1
-        let gen = greetingGeneration
+        celestialGreetingGeneration += 1
+        let gen = celestialGreetingGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            guard greetingGeneration == gen else { return }
+            guard celestialGreetingGeneration == gen else { return }
             withAnimation(.easeIn(duration: 0.8)) { celestialGreeting = chosen }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-                guard greetingGeneration == gen else { return }
+                guard celestialGreetingGeneration == gen else { return }
                 withAnimation(.easeOut(duration: 1.0)) { celestialGreeting = nil }
             }
         }
