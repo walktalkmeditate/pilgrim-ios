@@ -38,7 +38,9 @@ final class VoiceGuideSchedulerTests: XCTestCase {
             ),
             totalDurationSec: Double(promptCount) * 5.0,
             totalSizeBytes: promptCount * 1000,
-            prompts: prompts
+            prompts: prompts,
+            meditationScheduling: nil,
+            meditationPrompts: nil
         )
     }
 
