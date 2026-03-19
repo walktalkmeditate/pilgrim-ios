@@ -5,14 +5,14 @@ struct PromptListView: View {
 
     let walk: WalkInterface
     let transcriptions: [UUID: String]
-    let recentWalkSnippets: [PromptGenerator.WalkSnippet]
+    let recentWalkSnippets: [WalkSnippet]
     let intention: String?
     @State private var selectedPrompt: GeneratedPrompt?
     @State private var prompts: [GeneratedPrompt] = []
     @StateObject private var customStyleStore = CustomPromptStyleStore()
     @State private var showEditor = false
     @State private var editingStyle: CustomPromptStyle?
-    @State private var geocodedPlaces: [PromptGenerator.PlaceContext] = []
+    @State private var activityContext: ActivityContext?
     @State private var customPrompts: [GeneratedPrompt] = []
 
     var body: some View {
@@ -106,67 +106,82 @@ struct PromptListView: View {
     private func generatePrompts() {
         guard prompts.isEmpty else { return }
         Task {
-            let routeSamples = walk.routeData
-            let placeNames = await geocodeWalkRoute(routeSamples)
-            geocodedPlaces = placeNames
-            let routeSpeeds = routeSamples.map { $0.speed }
-
-            let recordings = walk.voiceRecordings.compactMap { recording -> PromptGenerator.RecordingContext? in
-                guard let uuid = recording.uuid,
-                      let text = transcriptions[uuid] else { return nil }
-                let startCoord = closestCoordinate(to: recording.startDate, in: routeSamples)
-                let endCoord = closestCoordinate(to: recording.endDate, in: routeSamples)
-                return PromptGenerator.RecordingContext(
-                    text: text,
-                    timestamp: recording.startDate,
-                    startCoordinate: startCoord,
-                    endCoordinate: endCoord,
-                    wordsPerMinute: recording.wordsPerMinute
-                )
-            }.sorted { $0.timestamp < $1.timestamp }
-
-            let meditations = walk.activityIntervals
-                .filter { $0.activityType == .meditation }
-                .sorted { $0.startDate < $1.startDate }
-                .map { PromptGenerator.MeditationContext(startDate: $0.startDate, endDate: $0.endDate, duration: $0.duration) }
-
-            let waypointContexts = walk.waypoints.map { wp in
-                PromptGenerator.WaypointContext(
-                    label: wp.label, icon: wp.icon, timestamp: wp.timestamp,
-                    coordinate: (lat: wp.latitude, lon: wp.longitude)
-                )
-            }
-
-            prompts = PromptGenerator.generateAll(
-                recordings: recordings,
-                meditations: meditations,
-                duration: walk.activeDuration,
-                distance: walk.distance,
-                startDate: walk.startDate,
-                placeNames: placeNames,
-                routeSpeeds: routeSpeeds,
-                recentWalkSnippets: recentWalkSnippets,
-                intention: intention,
-                waypoints: waypointContexts,
-                weather: PromptGenerator.formatWeather(walk)
-            )
+            let context = await buildActivityContext()
+            activityContext = context
+            prompts = PromptGenerator.generateAll(context: context)
             regenerateCustomPrompts()
         }
     }
 
-    private func geocodeWalkRoute(_ samples: [RouteDataSampleInterface]) async -> [PromptGenerator.PlaceContext] {
+    private func buildActivityContext() async -> ActivityContext {
+        let routeSamples = walk.routeData
+        let placeNames = await geocodeWalkRoute(routeSamples)
+        let routeSpeeds = routeSamples.map { $0.speed }
+
+        let recordings = walk.voiceRecordings.compactMap { recording -> RecordingContext? in
+            guard let uuid = recording.uuid,
+                  let text = transcriptions[uuid] else { return nil }
+            let startCoord = closestCoordinate(to: recording.startDate, in: routeSamples)
+            let endCoord = closestCoordinate(to: recording.endDate, in: routeSamples)
+            return RecordingContext(
+                text: text,
+                timestamp: recording.startDate,
+                startCoordinate: startCoord,
+                endCoordinate: endCoord,
+                wordsPerMinute: recording.wordsPerMinute
+            )
+        }.sorted { $0.timestamp < $1.timestamp }
+
+        let meditations = walk.activityIntervals
+            .filter { $0.activityType == .meditation }
+            .sorted { $0.startDate < $1.startDate }
+            .map { MeditationContext(startDate: $0.startDate, endDate: $0.endDate, duration: $0.duration) }
+
+        let waypointContexts = walk.waypoints.map { wp in
+            WaypointContext(
+                label: wp.label, icon: wp.icon, timestamp: wp.timestamp,
+                coordinate: (lat: wp.latitude, lon: wp.longitude)
+            )
+        }
+
+        let celestial: CelestialSnapshot?
+        if UserPreferences.celestialAwarenessEnabled.value {
+            let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+            celestial = CelestialCalculator.snapshot(for: walk.startDate, system: system)
+        } else {
+            celestial = nil
+        }
+
+        return ActivityContext(
+            recordings: recordings,
+            meditations: meditations,
+            duration: walk.activeDuration,
+            distance: walk.distance,
+            startDate: walk.startDate,
+            placeNames: placeNames,
+            routeSpeeds: routeSpeeds,
+            recentWalkSnippets: recentWalkSnippets,
+            intention: intention,
+            waypoints: waypointContexts,
+            weather: ContextFormatter.formatWeather(walk),
+            lunarPhase: LunarPhase.current(date: walk.startDate),
+            celestial: celestial
+        )
+    }
+
+    private func geocodeWalkRoute(_ samples: [RouteDataSampleInterface]) async -> [PlaceContext] {
         guard let first = samples.first, let last = samples.last else { return [] }
         let geocoder = CLGeocoder()
-        var places: [PromptGenerator.PlaceContext] = []
+        var places: [PlaceContext] = []
 
         if let name = await reverseGeocode(geocoder: geocoder, lat: first.latitude, lon: first.longitude, delay: false) {
-            places.append(PromptGenerator.PlaceContext(name: name, coordinate: (lat: first.latitude, lon: first.longitude), role: .start))
+            places.append(PlaceContext(name: name, coordinate: (lat: first.latitude, lon: first.longitude), role: .start))
         }
 
         let distance = CLLocation(latitude: first.latitude, longitude: first.longitude)
             .distance(from: CLLocation(latitude: last.latitude, longitude: last.longitude))
         if distance > 500, let name = await reverseGeocode(geocoder: geocoder, lat: last.latitude, lon: last.longitude) {
-            places.append(PromptGenerator.PlaceContext(name: name, coordinate: (lat: last.latitude, lon: last.longitude), role: .end))
+            places.append(PlaceContext(name: name, coordinate: (lat: last.latitude, lon: last.longitude), role: .end))
         }
 
         return places
@@ -187,46 +202,9 @@ struct PromptListView: View {
     }
 
     private func regenerateCustomPrompts() {
-        let routeSamples = walk.routeData
-        let routeSpeeds = routeSamples.map { $0.speed }
-        let recordings = walk.voiceRecordings.compactMap { recording -> PromptGenerator.RecordingContext? in
-            guard let uuid = recording.uuid,
-                  let text = transcriptions[uuid] else { return nil }
-            return PromptGenerator.RecordingContext(
-                text: text,
-                timestamp: recording.startDate,
-                startCoordinate: closestCoordinate(to: recording.startDate, in: routeSamples),
-                endCoordinate: closestCoordinate(to: recording.endDate, in: routeSamples),
-                wordsPerMinute: recording.wordsPerMinute
-            )
-        }.sorted { $0.timestamp < $1.timestamp }
-        let meditations = walk.activityIntervals
-            .filter { $0.activityType == .meditation }
-            .sorted { $0.startDate < $1.startDate }
-            .map { PromptGenerator.MeditationContext(startDate: $0.startDate, endDate: $0.endDate, duration: $0.duration) }
-
-        let waypointContexts = walk.waypoints.map { wp in
-            PromptGenerator.WaypointContext(
-                label: wp.label, icon: wp.icon, timestamp: wp.timestamp,
-                coordinate: (lat: wp.latitude, lon: wp.longitude)
-            )
-        }
-
+        guard let context = activityContext else { return }
         customPrompts = customStyleStore.styles.map { customStyle in
-            PromptGenerator.generateCustom(
-                customStyle: customStyle,
-                recordings: recordings,
-                meditations: meditations,
-                duration: walk.activeDuration,
-                distance: walk.distance,
-                startDate: walk.startDate,
-                placeNames: geocodedPlaces,
-                routeSpeeds: routeSpeeds,
-                recentWalkSnippets: recentWalkSnippets,
-                intention: intention,
-                waypoints: waypointContexts,
-                weather: PromptGenerator.formatWeather(walk)
-            )
+            PromptGenerator.generateCustom(customStyle: customStyle, context: context)
         }
     }
 

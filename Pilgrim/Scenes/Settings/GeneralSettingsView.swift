@@ -5,10 +5,13 @@ struct GeneralSettingsView: View {
     @StateObject private var permissionVM = PermissionStatusViewModel()
     @State private var isMetric = UserPreferences.distanceMeasurementType.safeValue == .kilometers
     @State private var beginWithIntention = UserPreferences.beginWithIntention.value
+    @State private var celestialAwareness = UserPreferences.celestialAwarenessEnabled.value
+    @State private var zodiacSystem = UserPreferences.zodiacSystem.value
 
     var body: some View {
         List {
             walkSection
+            celestialSection
             unitsSection
             permissionsSection
         }
@@ -49,6 +52,48 @@ struct GeneralSettingsView: View {
             }
         } header: {
             Text("Walk")
+                .font(Constants.Typography.caption)
+        }
+    }
+
+    // MARK: - Celestial Awareness
+
+    private var celestialSection: some View {
+        Section {
+            Toggle(isOn: $celestialAwareness) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Celestial awareness")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                    Text("Show planetary positions and zodiac context")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
+            }
+            .tint(.stone)
+            .onChange(of: celestialAwareness) { _, newValue in
+                UserPreferences.celestialAwarenessEnabled.value = newValue
+            }
+
+            if celestialAwareness {
+                HStack {
+                    Text("Zodiac system")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                    Spacer()
+                    Picker("", selection: $zodiacSystem) {
+                        Text("Tropical").tag("tropical")
+                        Text("Sidereal").tag("sidereal")
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                    .onChange(of: zodiacSystem) { _, newValue in
+                        UserPreferences.zodiacSystem.value = newValue
+                    }
+                }
+            }
+        } header: {
+            Text("Celestial")
                 .font(Constants.Typography.caption)
         }
     }

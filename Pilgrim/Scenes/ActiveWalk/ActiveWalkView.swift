@@ -15,7 +15,9 @@ struct ActiveWalkView: View {
     @State private var showWaypointFailed = false
     @State private var hasCheckedAutoIntention = false
     @State private var weatherGreeting: String?
+    @State private var celestialGreeting: String?
     @State private var greetingGeneration = 0
+    @State private var celestialSnapshot: CelestialSnapshot?
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -41,6 +43,9 @@ struct ActiveWalkView: View {
 
                         HStack(spacing: 6) {
                             Spacer()
+                            if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
+                                CelestialVignetteView(snapshot: celestialSnapshot)
+                            }
                             WeatherVignetteView(
                                 snapshot: viewModel.weatherSnapshot,
                                 imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
@@ -67,13 +72,23 @@ struct ActiveWalkView: View {
                         .padding(.trailing, Constants.UI.Padding.normal)
                         .padding(.bottom, 48)
 
-                        if let weatherGreeting {
-                            Text(weatherGreeting)
-                                .font(Constants.Typography.body.italic())
-                                .foregroundColor(.ink.opacity(0.5))
-                                .multilineTextAlignment(.center)
-                                .transition(.opacity)
-                                .allowsHitTesting(false)
+                        VStack(spacing: 4) {
+                            if let weatherGreeting {
+                                Text(weatherGreeting)
+                                    .font(Constants.Typography.body.italic())
+                                    .foregroundColor(.ink.opacity(0.5))
+                                    .multilineTextAlignment(.center)
+                                    .transition(.opacity)
+                                    .allowsHitTesting(false)
+                            }
+                            if let celestialGreeting {
+                                Text(celestialGreeting)
+                                    .font(Constants.Typography.body.italic())
+                                    .foregroundColor(.ink.opacity(0.5))
+                                    .multilineTextAlignment(.center)
+                                    .transition(.opacity)
+                                    .allowsHitTesting(false)
+                            }
                         }
                     }
 
@@ -229,6 +244,12 @@ struct ActiveWalkView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showIntention = true
                 }
+            }
+            if UserPreferences.celestialAwarenessEnabled.value {
+                let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+                let snapshot = CelestialCalculator.snapshot(for: Date(), system: system)
+                celestialSnapshot = snapshot
+                showCelestialGreeting(snapshot: snapshot)
             }
         }
     }
@@ -386,6 +407,38 @@ struct ActiveWalkView: View {
         }
         .padding(Constants.UI.Padding.normal)
         .padding(.bottom, Constants.UI.Padding.normal)
+    }
+
+    private func showCelestialGreeting(snapshot: CelestialSnapshot) {
+        var greeting: String?
+
+        if let marker = snapshot.seasonalMarker {
+            if let sunPos = snapshot.position(for: .sun) {
+                let sign = snapshot.system == .tropical ? sunPos.tropical.sign : sunPos.sidereal.sign
+                greeting = "The Sun enters \(sign.name) today \u{2014} \(marker.name)"
+            }
+        } else if !snapshot.retrogradePlanets.isEmpty {
+            let planet = snapshot.retrogradePlanets.first!
+            greeting = "\(planet.name) turns inward"
+        } else if let moonPos = snapshot.position(for: .moon) {
+            let sign = snapshot.system == .tropical ? moonPos.tropical.sign : moonPos.sidereal.sign
+            greeting = "The Moon moves through \(sign.name)"
+        }
+
+        let hourGreeting = "Walking in the Hour of \(snapshot.planetaryHour.planet.name)"
+
+        let chosen = greeting ?? hourGreeting
+
+        greetingGeneration += 1
+        let gen = greetingGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            guard greetingGeneration == gen else { return }
+            withAnimation(.easeIn(duration: 0.8)) { celestialGreeting = chosen }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+                guard greetingGeneration == gen else { return }
+                withAnimation(.easeOut(duration: 1.0)) { celestialGreeting = nil }
+            }
+        }
     }
 
     private func audioIndicator(icon: String, action: @escaping () -> Void) -> some View {
