@@ -7,6 +7,7 @@ struct IntentionSettingView: View {
     let onDismiss: () -> Void
 
     @State private var text = ""
+    @State private var cachedSuggestions: [String] = []
     @StateObject private var recorder = IntentionVoiceRecorder()
     @FocusState private var isTextFieldFocused: Bool
 
@@ -46,6 +47,11 @@ struct IntentionSettingView: View {
                 .padding(.bottom, Constants.UI.Padding.big)
         }
         .padding(.horizontal, Constants.UI.Padding.big)
+        .onAppear {
+            if UserPreferences.celestialAwarenessEnabled.value {
+                cachedSuggestions = celestialIntentionSuggestions()
+            }
+        }
         .onChange(of: recorder.transcribedText) { _, transcribed in
             if let transcribed {
                 text = String(transcribed.prefix(maxCharacters))
@@ -107,16 +113,15 @@ struct IntentionSettingView: View {
     // MARK: - Celestial Suggestions
 
     private var celestialSuggestions: some View {
-        let suggestions = celestialIntentionSuggestions()
-        return Group {
-            if !suggestions.isEmpty {
+        Group {
+            if !cachedSuggestions.isEmpty {
                 VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
                     Text("Suggested")
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog.opacity(0.5))
 
                     FlowLayout(spacing: Constants.UI.Padding.small) {
-                        ForEach(suggestions, id: \.self) { suggestion in
+                        ForEach(cachedSuggestions, id: \.self) { suggestion in
                             Button {
                                 text = suggestion
                             } label: {

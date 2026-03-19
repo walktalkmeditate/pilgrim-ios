@@ -363,7 +363,6 @@ struct WalkSummaryView: View {
 
     private func computeMilestone() -> String? {
         if UserPreferences.celestialAwarenessEnabled.value {
-            let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
             let sunLon = CelestialCalculator.solarLongitude(
                 T: CelestialCalculator.julianCenturies(
                     from: CelestialCalculator.julianDayNumber(from: walk.startDate)
