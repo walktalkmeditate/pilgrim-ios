@@ -147,7 +147,7 @@ struct GeneralSettingsView: View {
                         applyUnitSystem(metric: metric)
                     }
                 }
-                Text(isMetric ? "km · min/km · m" : "mi · min/mi · ft")
+                Text(isMetric ? "km · min/km · m · °C" : "mi · min/mi · ft · °F")
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
@@ -241,18 +241,6 @@ struct GeneralSettingsView: View {
     // MARK: - Unit System
 
     private func applyUnitSystem(metric: Bool) {
-        if metric {
-            UserPreferences.distanceMeasurementType.value = .kilometers
-            UserPreferences.altitudeMeasurementType.value = .meters
-            UserPreferences.speedMeasurementType.value = .minutesPerLengthUnit(from: .kilometers)
-            UserPreferences.weightMeasurementType.value = .kilograms
-            UserPreferences.energyMeasurementType.value = .kilojoules
-        } else {
-            UserPreferences.distanceMeasurementType.value = .miles
-            UserPreferences.altitudeMeasurementType.value = .feet
-            UserPreferences.speedMeasurementType.value = .minutesPerLengthUnit(from: .miles)
-            UserPreferences.weightMeasurementType.value = .pounds
-            UserPreferences.energyMeasurementType.value = .kilocalories
-        }
+        UserPreferences.applyUnitSystem(metric: metric)
     }
 }

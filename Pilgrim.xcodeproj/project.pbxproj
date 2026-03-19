@@ -258,6 +258,7 @@
 		CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPEAR01 /* AppearanceMode.swift */; };
 		CC00000200000000APPMGR01 /* AppearanceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPMGR01 /* AppearanceManager.swift */; };
 		CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPRTST1 /* AppearanceModeTests.swift */; };
+		CC00000200000000UNTSTS01 /* UnitSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000UNTSTS01 /* UnitSystemTests.swift */; };
 		CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRPH01 /* LunarPhase.swift */; };
 		CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */; };
 		CC00000200000000MAINTB01 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MAINTB01 /* MainTabView.swift */; };
@@ -569,6 +570,7 @@
 		CC00000100000000APPEAR01 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
 		CC00000100000000APPMGR01 /* AppearanceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceManager.swift; sourceTree = "<group>"; };
 		CC00000100000000APPRTST1 /* AppearanceModeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppearanceModeTests.swift; sourceTree = "<group>"; };
+		CC00000100000000UNTSTS01 /* UnitSystemTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UnitSystemTests.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRPH01 /* LunarPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarPhase.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunarPhaseTests.swift; sourceTree = "<group>"; };
 		CC00000100000000MAINTB01 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -1125,6 +1127,7 @@
 				2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */,
 				DDD8506242AA6CD81468A74B /* PilgrimPackageModelTests.swift */,
 				EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */,
+				CC00000100000000UNTSTS01 /* UnitSystemTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1897,6 +1900,7 @@
 				18163919B90D2DC9D6ED730F /* PilgrimPackageModelTests.swift in Sources */,
 				0E9B9341AEF918BA4BB7901C /* PilgrimPackageConverterTests.swift in Sources */,
 				CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */,
+				CC00000200000000UNTSTS01 /* UnitSystemTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

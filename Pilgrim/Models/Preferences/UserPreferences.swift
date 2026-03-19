@@ -70,4 +70,20 @@ struct UserPreferences {
         UserDefaults.standard.synchronize()
     }
 
+    static func applyUnitSystem(metric: Bool) {
+        if metric {
+            distanceMeasurementType.value = .kilometers
+            altitudeMeasurementType.value = .meters
+            speedMeasurementType.value = .minutesPerLengthUnit(from: .kilometers)
+            weightMeasurementType.value = .kilograms
+            energyMeasurementType.value = .kilojoules
+        } else {
+            distanceMeasurementType.value = .miles
+            altitudeMeasurementType.value = .feet
+            speedMeasurementType.value = .minutesPerLengthUnit(from: .miles)
+            weightMeasurementType.value = .pounds
+            energyMeasurementType.value = .kilocalories
+        }
+    }
+
 }

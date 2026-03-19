@@ -36,4 +36,13 @@ class UnitConverterInverse: UnitConverter {
     override func value(fromBaseUnitValue baseUnitValue: Double) -> Double {
         return coefficient / baseUnitValue
     }
+
+    override var hash: Int {
+        return coefficient.hashValue
+    }
+
+    override func isEqual(_ object: Any?) -> Bool {
+        guard let other = object as? UnitConverterInverse else { return false }
+        return coefficient == other.coefficient
+    }
 }
