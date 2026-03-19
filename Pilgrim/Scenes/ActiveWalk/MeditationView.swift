@@ -16,7 +16,9 @@ struct MeditationView: View {
     @State private var isHolding = false
     @State private var holdIntensity: Double = 0
     @State private var closingPhrase = ""
-    @State private var showBreathPicker = false
+    @State private var showMeditationOptions = false
+    @State private var meditationGuide: MeditationGuideManagement?
+    @State private var selectedGuidePackId: String?
     @State private var showSoundscapePicker = false
     @State private var selectedRhythmId: Int = UserPreferences.breathRhythm.value
     @State private var breathCount: Int = 0
@@ -27,6 +29,8 @@ struct MeditationView: View {
     @State private var rippleRings: [RippleRing] = []
     @StateObject private var clock = SessionClock()
     @ObservedObject private var soundscapePlayer = SoundscapePlayer.shared
+    @ObservedObject private var manifestService = VoiceGuideManifestService.shared
+    @ObservedObject private var downloadManager = VoiceGuideDownloadManager.shared
 
     private var rhythm: BreathRhythm {
         guard selectedRhythmId >= 0 && selectedRhythmId < BreathRhythm.all.count else { return BreathRhythm.all[0] }
@@ -47,7 +51,7 @@ struct MeditationView: View {
                     .scaleEffect(closingPhase == .dissolving ? 0.1 : 1)
                     .onLongPressGesture(minimumDuration: 1.0) {
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                        showBreathPicker = true
+                        showMeditationOptions = true
                     }
 
                 if closingPhase == .summary {
@@ -86,8 +90,8 @@ struct MeditationView: View {
             isActive = false
             clock.stop()
         }
-        .sheet(isPresented: $showBreathPicker) {
-            breathPickerSheet
+        .sheet(isPresented: $showMeditationOptions) {
+            meditationOptionsSheet
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.parchment.opacity(0.95))
@@ -399,61 +403,190 @@ struct MeditationView: View {
         }
     }
 
-    // MARK: - Breath Picker
+    // MARK: - Meditation Options Sheet
 
-    private var breathPickerSheet: some View {
+    private var meditationOptionsSheet: some View {
         VStack(spacing: 16) {
-            Text("Breath Rhythm")
+            Text(showsVoiceGuideSection ? "Meditation Options" : "Breath Rhythm")
                 .font(Constants.Typography.heading)
                 .foregroundColor(Color.ink.opacity(0.8))
                 .padding(.top, 12)
 
             ScrollView {
                 VStack(spacing: 6) {
-                    ForEach(BreathRhythm.all) { r in
-                        Button {
-                            selectedRhythmId = r.id
-                            UserPreferences.breathRhythm.value = r.id
-                            isActive = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                isActive = true
-                                startBreathCycle()
-                            }
-                            showBreathPicker = false
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 8) {
-                                        Text(r.name)
-                                            .font(Constants.Typography.body)
-                                            .foregroundColor(Color.ink.opacity(0.9))
-                                        Text(r.label)
-                                            .font(Constants.Typography.caption)
-                                            .foregroundColor(Color.fog.opacity(0.4))
-                                    }
-                                    Text(r.description)
+                    if showsVoiceGuideSection {
+                        voiceGuideSection
+                        Divider()
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                    }
+                    breathRhythmSection
+                }
+                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    private var showsVoiceGuideSection: Bool {
+        UserPreferences.voiceGuideEnabled.value &&
+        manifestService.packs.contains(where: \.hasMeditationGuide)
+    }
+
+    // MARK: - Voice Guide Section
+
+    private var voiceGuideSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("VOICE GUIDE")
+                .font(Constants.Typography.caption)
+                .foregroundColor(Color.fog.opacity(0.4))
+                .tracking(1)
+                .padding(.leading, 4)
+
+            Button {
+                selectedGuidePackId = nil
+                meditationGuide?.stopGuiding()
+                meditationGuide = nil
+            } label: {
+                guideRow(name: "Off", subtitle: "Meditate in silence", isSelected: selectedGuidePackId == nil)
+            }
+
+            ForEach(manifestService.packs.filter(\.hasMeditationGuide)) { pack in
+                let isDownloaded = VoiceGuideFileStore.shared.isPackDownloaded(pack)
+                let isDownloading = downloadManager.activeDownloads.contains(pack.id)
+
+                Button {
+                    if isDownloaded {
+                        selectGuidePack(pack)
+                    } else if !isDownloading {
+                        downloadManager.downloadPack(pack)
+                    }
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(pack.name)
+                                .font(Constants.Typography.body)
+                                .foregroundColor(Color.ink.opacity(isDownloaded ? 0.9 : 0.4))
+                            if !isDownloaded {
+                                if isDownloading, let progress = downloadManager.downloadProgress[pack.id] {
+                                    SwiftUI.ProgressView(value: progress)
+                                        .tint(.moss)
+                                } else {
+                                    Text("Not downloaded")
                                         .font(Constants.Typography.caption)
                                         .foregroundColor(Color.fog.opacity(0.35))
                                 }
-                                Spacer()
-                                if selectedRhythmId == r.id {
-                                    Image(systemName: "checkmark")
-                                        .font(.caption)
-                                        .foregroundColor(.moss)
-                                }
+                            } else {
+                                Text(pack.tagline)
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(Color.fog.opacity(0.35))
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background(
-                                selectedRhythmId == r.id
-                                    ? Color.moss.opacity(0.08)
-                                    : Color.clear
-                            )
-                            .cornerRadius(10)
+                        }
+                        Spacer()
+                        if selectedGuidePackId == pack.id {
+                            Image(systemName: "checkmark")
+                                .font(.caption)
+                                .foregroundColor(.moss)
+                        } else if !isDownloaded && !isDownloading {
+                            Image(systemName: "arrow.down.circle")
+                                .font(.caption)
+                                .foregroundColor(Color.fog.opacity(0.3))
                         }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        selectedGuidePackId == pack.id
+                            ? Color.moss.opacity(0.08)
+                            : Color.clear
+                    )
+                    .cornerRadius(10)
                 }
-                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    private func guideRow(name: String, subtitle: String, isSelected: Bool) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(Color.ink.opacity(0.9))
+                Text(subtitle)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(Color.fog.opacity(0.35))
+            }
+            Spacer()
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.caption)
+                    .foregroundColor(.moss)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(isSelected ? Color.moss.opacity(0.08) : Color.clear)
+        .cornerRadius(10)
+    }
+
+    private func selectGuidePack(_ pack: VoiceGuidePack) {
+        selectedGuidePackId = pack.id
+        let mgmt = MeditationGuideManagement()
+        mgmt.startGuiding(pack: pack)
+        meditationGuide = mgmt
+    }
+
+    // MARK: - Breath Rhythm Section
+
+    private var breathRhythmSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if showsVoiceGuideSection {
+                Text("BREATH RHYTHM")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(Color.fog.opacity(0.4))
+                    .tracking(1)
+                    .padding(.leading, 4)
+            }
+            ForEach(BreathRhythm.all) { r in
+                Button {
+                    selectedRhythmId = r.id
+                    UserPreferences.breathRhythm.value = r.id
+                    isActive = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isActive = true
+                        startBreathCycle()
+                    }
+                    showMeditationOptions = false
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                Text(r.name)
+                                    .font(Constants.Typography.body)
+                                    .foregroundColor(Color.ink.opacity(0.9))
+                                Text(r.label)
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(Color.fog.opacity(0.4))
+                            }
+                            Text(r.description)
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(Color.fog.opacity(0.35))
+                        }
+                        Spacer()
+                        if selectedRhythmId == r.id {
+                            Image(systemName: "checkmark")
+                                .font(.caption)
+                                .foregroundColor(.moss)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        selectedRhythmId == r.id
+                            ? Color.moss.opacity(0.08)
+                            : Color.clear
+                    )
+                    .cornerRadius(10)
+                }
             }
         }
     }
@@ -462,6 +595,9 @@ struct MeditationView: View {
 
     private func beginClosingCeremony() {
         guard !isClosing else { return }
+        meditationGuide?.stopGuiding()
+        meditationGuide = nil
+
         isClosing = true
         isActive = false
         clock.stop()
