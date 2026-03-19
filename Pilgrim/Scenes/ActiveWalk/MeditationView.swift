@@ -93,10 +93,10 @@ struct MeditationView: View {
             spawnParticles()
         }
         .onDisappear {
-            meditationGuide?.stopGuiding()
-            meditationGuide = nil
             voicePlayingCancellable?.cancel()
             voicePlayingCancellable = nil
+            meditationGuide?.stopGuiding()
+            meditationGuide = nil
             isActive = false
             clock.stop()
         }
@@ -629,10 +629,10 @@ struct MeditationView: View {
 
     private func beginClosingCeremony() {
         guard !isClosing else { return }
-        meditationGuide?.stopGuiding()
-        meditationGuide = nil
         voicePlayingCancellable?.cancel()
         voicePlayingCancellable = nil
+        meditationGuide?.stopGuiding()
+        meditationGuide = nil
 
         isClosing = true
         isActive = false

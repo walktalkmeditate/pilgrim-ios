@@ -54,14 +54,16 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
         guard player != nil else { return }
         player?.stop()
         player = nil
+        onFinished = nil
         restoreAndDeactivate()
     }
 
     func replayLast() {
         guard let promptId = lastPromptId,
               let packId = lastPackId,
-              let pack = VoiceGuideManifestService.shared.pack(byId: packId),
-              let prompt = pack.prompts.first(where: { $0.id == promptId }) else { return }
+              let pack = VoiceGuideManifestService.shared.pack(byId: packId) else { return }
+        let allPrompts = pack.prompts + (pack.meditationPrompts ?? [])
+        guard let prompt = allPrompts.first(where: { $0.id == promptId }) else { return }
         play(prompt: prompt, packId: packId)
     }
 
