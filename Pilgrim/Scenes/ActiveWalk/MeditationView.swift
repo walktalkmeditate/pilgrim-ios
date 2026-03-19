@@ -276,7 +276,13 @@ struct MeditationView: View {
     private var soundscapeLabel: some View {
         if let name = selectedSoundscapeName {
             Button {
+                let wasMuted = soundscapePlayer.isMuted
                 soundscapePlayer.toggleMute()
+                if !wasMuted {
+                    meditationGuide?.pauseGuide()
+                } else {
+                    meditationGuide?.resumeGuide()
+                }
             } label: {
                 if soundscapePlayer.isMuted {
                     Text("♪ Paused")

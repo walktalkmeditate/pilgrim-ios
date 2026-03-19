@@ -41,6 +41,18 @@ final class MeditationGuideManagement: ObservableObject {
         sched.start()
     }
 
+    func pauseGuide() {
+        scheduler?.pause()
+        if isVoicePlaying {
+            player.stop()
+            isVoicePlaying = false
+        }
+    }
+
+    func resumeGuide() {
+        scheduler?.resume()
+    }
+
     func stopGuiding() {
         scheduler?.stop()
         player.stop()

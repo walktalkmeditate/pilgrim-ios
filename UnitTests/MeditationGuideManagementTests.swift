@@ -55,6 +55,24 @@ final class MeditationGuideManagementTests: XCTestCase {
         XCTAssertFalse(mgmt.isVoicePlaying)
     }
 
+    func testPauseGuide_resetsIsVoicePlaying() {
+        let mgmt = MeditationGuideManagement()
+        mgmt.startGuiding(pack: makePack())
+
+        mgmt.pauseGuide()
+        XCTAssertTrue(mgmt.isActive, "Pause should not deactivate the guide")
+        XCTAssertFalse(mgmt.isVoicePlaying, "Pause should reset voice playing state")
+    }
+
+    func testResumeGuide_keepIsActive() {
+        let mgmt = MeditationGuideManagement()
+        mgmt.startGuiding(pack: makePack())
+        mgmt.pauseGuide()
+
+        mgmt.resumeGuide()
+        XCTAssertTrue(mgmt.isActive)
+    }
+
     func testRestartGuiding_resetsIsVoicePlaying() {
         let mgmt = MeditationGuideManagement()
         mgmt.startGuiding(pack: makePack())
