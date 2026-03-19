@@ -6,6 +6,7 @@ def data_pods
   pod 'CombineExt'
   pod 'CoreStore'
   pod 'CoreGPX'
+  pod 'ZIPFoundation'
 end
 
 target 'Pilgrim' do

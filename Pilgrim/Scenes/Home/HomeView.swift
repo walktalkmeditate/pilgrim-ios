@@ -46,6 +46,7 @@ struct HomeView: View {
             }
             .onAppear {
                 unitKey = UserPreferences.distanceMeasurementType.safeValue.symbol
+                viewModel.loadWalks()
             }
         }
     }

@@ -208,24 +208,6 @@ class SettingsModel {
             title: LS["Settings.DataPreferences"],
             message: LS["Settings.DataPreferences.Message"],
             settings: [
-                TitleSetting(
-                    title: LS["Settings.CreateBackup"],
-                    doesRedirect: true,
-                    selectAction: { (setting, controller, cell) in
-                        ExportManager.displayShareAlert(for: .all, on: controller)
-                    }
-                ),
-                TitleSetting(
-                    title: LS["Settings.ImportBackupData"],
-                    doesRedirect: true,
-                    selectAction: { (setting, controller, cell) in
-                        /*let picker = UIDocumentPickerViewController(documentTypes: ["de.tadris.orbup"], in: .import)
-                        let delegate = BackupDocumentPickerDelegate(on: controller)
-                        picker.modalPresentationStyle = .formSheet
-                        picker.delegate = delegate
-                        controller.present(picker, animated: true)*/
-                    }
-                ),
                 ButtonSetting(
                     title: LS["Settings.DeleteAllData"],
                     selectAction: { (setting, controller, cell) in

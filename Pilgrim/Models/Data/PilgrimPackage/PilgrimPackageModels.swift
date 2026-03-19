@@ -1,0 +1,276 @@
+import Foundation
+
+// MARK: - Date Coding
+
+enum PilgrimDateCoding {
+    static func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return encoder
+    }
+
+    static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return decoder
+    }
+}
+
+// MARK: - Manifest
+
+struct PilgrimManifest: Codable {
+    let schemaVersion: String
+    let exportDate: Date
+    let appVersion: String
+    let walkCount: Int
+    let preferences: PilgrimPreferences
+    let customPromptStyles: [PilgrimCustomPromptStyle]
+    let intentions: [String]
+    let events: [PilgrimEvent]
+}
+
+struct PilgrimPreferences: Codable {
+    let distanceUnit: String
+    let altitudeUnit: String
+    let speedUnit: String
+    let energyUnit: String
+    let celestialAwareness: Bool
+    let zodiacSystem: String
+    let beginWithIntention: Bool
+}
+
+struct PilgrimCustomPromptStyle: Codable {
+    let id: UUID
+    let title: String
+    let icon: String
+    let instruction: String
+}
+
+struct PilgrimEvent: Codable {
+    let id: UUID
+    let title: String
+    let comment: String?
+    let startDate: Date?
+    let endDate: Date?
+    let walkIds: [UUID]
+}
+
+// MARK: - Walk
+
+struct PilgrimWalk: Codable {
+    let schemaVersion: String
+    let id: UUID
+    let type: String
+    let startDate: Date
+    let endDate: Date
+    let stats: PilgrimStats
+    let weather: PilgrimWeather?
+    let route: GeoJSONFeatureCollection
+    let pauses: [PilgrimPause]
+    let activities: [PilgrimActivity]
+    let voiceRecordings: [PilgrimVoiceRecording]
+    let intention: String?
+    let reflection: PilgrimReflection?
+    let heartRates: [PilgrimHeartRate]
+    let workoutEvents: [PilgrimWorkoutEvent]
+    let favicon: String?
+    let isRace: Bool
+    let isUserModified: Bool
+    let finishedRecording: Bool
+}
+
+struct PilgrimStats: Codable {
+    let distance: Double
+    let steps: Int?
+    let activeDuration: Double
+    let pauseDuration: Double
+    let ascent: Double
+    let descent: Double
+    let burnedEnergy: Double?
+    let talkDuration: Double
+    let meditateDuration: Double
+}
+
+struct PilgrimWeather: Codable {
+    let temperature: Double
+    let condition: String
+    let humidity: Double?
+    let windSpeed: Double?
+}
+
+// MARK: - GeoJSON
+
+struct GeoJSONFeatureCollection: Codable {
+    let type: String
+    let features: [GeoJSONFeature]
+
+    init(features: [GeoJSONFeature]) {
+        self.type = "FeatureCollection"
+        self.features = features
+    }
+}
+
+struct GeoJSONFeature: Codable {
+    let type: String
+    let geometry: GeoJSONGeometry
+    let properties: GeoJSONProperties
+
+    init(geometry: GeoJSONGeometry, properties: GeoJSONProperties) {
+        self.type = "Feature"
+        self.geometry = geometry
+        self.properties = properties
+    }
+}
+
+struct GeoJSONGeometry: Codable {
+    let type: String
+    let coordinates: AnyCodableCoordinates
+}
+
+enum AnyCodableCoordinates: Codable {
+    case point([Double])
+    case lineString([[Double]])
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .point(let coords):
+            try container.encode(coords)
+        case .lineString(let coords):
+            try container.encode(coords)
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let lineString = try? container.decode([[Double]].self) {
+            self = .lineString(lineString)
+        } else if let point = try? container.decode([Double].self) {
+            self = .point(point)
+        } else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Coordinates must be [Double] or [[Double]]"
+            )
+        }
+    }
+}
+
+struct GeoJSONProperties: Codable {
+    let timestamps: [Date]?
+    let speeds: [Double]?
+    let directions: [Double]?
+    let horizontalAccuracies: [Double]?
+    let verticalAccuracies: [Double]?
+
+    let markerType: String?
+    let label: String?
+    let icon: String?
+    let timestamp: Date?
+
+    init(
+        timestamps: [Date]? = nil,
+        speeds: [Double]? = nil,
+        directions: [Double]? = nil,
+        horizontalAccuracies: [Double]? = nil,
+        verticalAccuracies: [Double]? = nil,
+        markerType: String? = nil,
+        label: String? = nil,
+        icon: String? = nil,
+        timestamp: Date? = nil
+    ) {
+        self.timestamps = timestamps
+        self.speeds = speeds
+        self.directions = directions
+        self.horizontalAccuracies = horizontalAccuracies
+        self.verticalAccuracies = verticalAccuracies
+        self.markerType = markerType
+        self.label = label
+        self.icon = icon
+        self.timestamp = timestamp
+    }
+}
+
+// MARK: - Pauses & Activities
+
+struct PilgrimPause: Codable {
+    let startDate: Date
+    let endDate: Date
+    let type: String
+}
+
+struct PilgrimActivity: Codable {
+    let type: String
+    let startDate: Date
+    let endDate: Date
+}
+
+// MARK: - Voice Recordings
+
+struct PilgrimVoiceRecording: Codable {
+    let startDate: Date
+    let endDate: Date
+    let duration: Double
+    let transcription: String?
+    let wordsPerMinute: Double?
+    let isEnhanced: Bool
+}
+
+// MARK: - Heart Rate
+
+struct PilgrimHeartRate: Codable {
+    let timestamp: Date
+    let heartRate: Int
+}
+
+// MARK: - Workout Events
+
+struct PilgrimWorkoutEvent: Codable {
+    let timestamp: Date
+    let type: String
+}
+
+// MARK: - Reflection & Celestial
+
+struct PilgrimReflection: Codable {
+    let style: String?
+    let text: String?
+    let celestialContext: PilgrimCelestialContext?
+}
+
+struct PilgrimCelestialContext: Codable {
+    let lunarPhase: PilgrimLunarPhase
+    let planetaryPositions: [PilgrimPlanetaryPosition]
+    let planetaryHour: PilgrimPlanetaryHour
+    let elementBalance: PilgrimElementBalance
+    let seasonalMarker: String?
+    let zodiacSystem: String
+}
+
+struct PilgrimLunarPhase: Codable {
+    let name: String
+    let illumination: Double
+    let age: Double
+    let isWaxing: Bool
+}
+
+struct PilgrimPlanetaryPosition: Codable {
+    let planet: String
+    let sign: String
+    let degree: Double
+    let isRetrograde: Bool
+}
+
+struct PilgrimPlanetaryHour: Codable {
+    let planet: String
+    let planetaryDay: String
+}
+
+struct PilgrimElementBalance: Codable {
+    let fire: Int
+    let earth: Int
+    let air: Int
+    let water: Int
+    let dominant: String?
+}

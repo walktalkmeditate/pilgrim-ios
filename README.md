@@ -18,7 +18,7 @@ Walking is more than exercise. It's how we think, process, and create. Pilgrim t
 - **AI Writing Prompts** — Context-aware prompts generated from your transcriptions and walk data across six styles (contemplative, reflective, creative, gratitude, philosophical, journaling)
 - **Walk Summary** — Post-walk view with route map, stats, recordings, and prompts
 - **Privacy First** — All data stays on your device. No accounts, no servers, no tracking
-- **Backup & Export** — Export walks as GPX files or Pilgrim Backup (.orbup)
+- **Backup & Export** — Export walks as .pilgrim data packages or GPX files
 
 ## Building
 

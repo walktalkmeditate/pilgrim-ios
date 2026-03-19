@@ -74,16 +74,16 @@
 				<string>public.data</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Pilgrim Backup</string>
+			<string>Pilgrim Data Package</string>
 			<key>UTTypeIconFiles</key>
 			<array/>
 			<key>UTTypeIdentifier</key>
-			<string>de.tadris.orbup</string>
+			<string>org.walktalkmeditate.pilgrim</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>orbup</string>
+					<string>pilgrim</string>
 				</array>
 			</dict>
 		</dict>
@@ -119,16 +119,16 @@
 				<string>public.data</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Pilgrim Backup</string>
+			<string>Pilgrim Data Package</string>
 			<key>UTTypeIconFiles</key>
 			<array/>
 			<key>UTTypeIdentifier</key>
-			<string>de.tadris.orbup</string>
+			<string>org.walktalkmeditate.pilgrim</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>orbup</string>
+					<string>pilgrim</string>
 				</array>
 			</dict>
 		</dict>

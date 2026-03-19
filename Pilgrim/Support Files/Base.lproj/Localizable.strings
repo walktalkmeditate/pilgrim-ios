@@ -83,13 +83,7 @@
 "Settings.DisplayRollingSpeed" = "Display Rolling Speed";
 "Settings.RecordingPreferences.Message" = "Should you experience any kind of crashes or similar behaviour while recording a walk, you should try to turn 'Show Map' to off, because most of these crashes known were related to the map drawing too much power.\n\nIf 'Display Pace' is enabled instead of showing the speed the pace is shown. Should 'Display Rolling Speed' be on the speed or pace displayed are an average of the last kilometer, if not the current speed or the total pace are shown.";
 "Settings.DataPreferences" = "Data Preferences";
-"Settings.DataPreferences.Message" = "Backups in Pilgrim are just files that you do not need special tools to insert into the app or transfer to another device. They stay local unless you save them in the cloud.\n\nWhen creating a backup you will be presented with a '.orbup' file that you can share to whatever other app you want. Be aware that the data inside of that file is not encrypted, sending it to someone or uploading it to a service can compromise your privacy.\n\nTo import a backup just select a '.orbup' file from wherever you previously saved it, the app will then import all the walks contained in the backup, making sure there are no duplicates automatically.";
-"Settings.CreateBackup" = "Create Backup";
-"Settings.ImportBackupData" = "Import Backup Data";
-"Settings.ImportBackupData.Success" = "The unique walks from your backup were imported, walks that already exist in this app's database were left out.";
-"Settings.ImportBackupData.Error" = "Could not properly read the backup, please reach out to support for additional information.";
-"Settings.ImportBackupData.Message" = "Importing unique walks";
-"Settings.ExportBackupData.Message" = "Exporting walks";
+"Settings.DataPreferences.Message" = "Export your walks as a .pilgrim data package. The file stays local unless you choose to share it.";
 "Settings.DeleteAllData" = "Delete all data";
 "Settings.DeleteAll.Confirmation.Title" = "Delete Everything?";
 "Settings.DeleteAll.Confirmation.Message" = "Are you sure you want to delete all the data stored by this app? This includes any of the walks you recorded and all the settings you made. No data can be restored if not backed up and your settings will be permanently lost.";
@@ -153,11 +147,7 @@
 "MapView.MapType.Satellite" = "Satellite";
 "MapView.MapTypeAlert.Title" = "Map Type";
 "MapView.MapTypeAlert.Message" = "Please choose the type of map you want to have displayed.";
-"ShareAlert.Title" = "Export Your Walk";
-"ShareAlert.Message" = "Please choose how to export your walk from the options below. If you feel like an option is missing feel free to reach out and suggest it.";
 "ShareAlert.GPXExport" = "GPX File";
-"ShareAlert.PilgrimBackup" = "Pilgrim Backup";
-"ExportManager.BackupError" = "The app failed to create a backup, please contact the support.";
 "ExportManager.GPXError" = "The app failed to create a GPX file, please contact the support.";
 "Changelog" = "Changelog";
 "Keep" = "Keep";

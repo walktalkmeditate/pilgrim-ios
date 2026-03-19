@@ -64,6 +64,13 @@ struct SettingsView: View {
 
                 Section {
                     NavigationLink {
+                        DataSettingsView()
+                    } label: {
+                        Text("Data")
+                            .font(Constants.Typography.body)
+                    }
+
+                    NavigationLink {
                         FeedbackView()
                     } label: {
                         Text("Leave a Trail Note")
