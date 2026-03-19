@@ -12,25 +12,34 @@ struct PromptDetailView: View {
 
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Constants.UI.Padding.big) {
-                    HStack {
-                        Image(systemName: prompt.icon)
-                            .font(.title2)
-                            .foregroundColor(.stone)
-                        Text(prompt.title)
-                            .font(Constants.Typography.displayMedium)
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Constants.UI.Padding.big) {
+                        HStack {
+                            Image(systemName: prompt.icon)
+                                .font(.title2)
+                                .foregroundColor(.stone)
+                            Text(prompt.title)
+                                .font(Constants.Typography.displayMedium)
+                                .foregroundColor(.ink)
+                        }
+
+                        Text(prompt.text)
+                            .font(Constants.Typography.body)
                             .foregroundColor(.ink)
+                            .textSelection(.enabled)
                     }
-
-                    Text(prompt.text)
-                        .font(Constants.Typography.body)
-                        .foregroundColor(.ink)
-                        .textSelection(.enabled)
-
-                    actionButtons
+                    .padding(Constants.UI.Padding.normal)
+                    .padding(.bottom, Constants.UI.Padding.normal)
                 }
-                .padding(Constants.UI.Padding.normal)
+
+                Divider()
+                    .foregroundColor(.fog.opacity(0.2))
+
+                actionButtons
+                    .padding(.horizontal, Constants.UI.Padding.normal)
+                    .padding(.top, Constants.UI.Padding.small)
+                    .padding(.bottom, Constants.UI.Padding.normal)
             }
             .background(Color.parchment)
             .navigationBarTitleDisplayMode(.inline)

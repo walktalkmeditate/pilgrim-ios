@@ -51,6 +51,9 @@ struct UserPreferences {
 
     static let beginWithIntention = UserPreference.Required<Bool>(key: "beginWithIntention", defaultValue: false)
 
+    static let celestialAwarenessEnabled = UserPreference.Required<Bool>(key: "celestialAwarenessEnabled", defaultValue: false)
+    static let zodiacSystem = UserPreference.Required<String>(key: "zodiacSystem", defaultValue: "tropical")
+
     static let dynamicVoiceEnabled = UserPreference.Required<Bool>(key: "dynamicVoiceEnabled", defaultValue: true)
     static let autoTranscribe = UserPreference.Required<Bool>(key: "autoTranscribe", defaultValue: false)
 

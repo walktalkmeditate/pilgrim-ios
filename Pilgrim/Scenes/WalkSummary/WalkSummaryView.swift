@@ -30,9 +30,10 @@ struct WalkSummaryView: View {
     @State private var cameraDuration: TimeInterval = 0.4
     @State private var cachedSegments: [RouteSegment] = []
     @State private var cachedAnnotations: [PilgrimAnnotation] = []
-    @State private var recentWalkSnippets: [PromptGenerator.WalkSnippet] = []
+    @State private var recentWalkSnippets: [WalkSnippet] = []
     @State private var revealPhase: RevealPhase = .hidden
     @State private var milestone: String?
+    @State private var cachedCelestialSnapshot: CelestialSnapshot?
 
     private enum RevealPhase {
         case hidden, zoomed, revealed
@@ -54,6 +55,7 @@ struct WalkSummaryView: View {
                     }
                     statsRow
                     weatherLine
+                    celestialLine
                     timeBreakdown
                     FaviconSelectorView(selection: $selectedFavicon)
                         .onChange(of: selectedFavicon) { _, newValue in
@@ -89,6 +91,10 @@ struct WalkSummaryView: View {
                 loadExistingTranscriptions()
                 recentWalkSnippets = computeRecentWalkSnippets()
                 milestone = computeMilestone()
+                if UserPreferences.celestialAwarenessEnabled.value {
+                    let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+                    cachedCelestialSnapshot = CelestialCalculator.snapshot(for: walk.startDate, system: system)
+                }
                 startRevealSequence()
             }
             .sheet(isPresented: $showPrompts) {
@@ -144,7 +150,7 @@ struct WalkSummaryView: View {
         }
     }
 
-    private func computeRecentWalkSnippets() -> [PromptGenerator.WalkSnippet] {
+    private func computeRecentWalkSnippets() -> [WalkSnippet] {
         guard let walks = try? DataManager.dataStack.fetchAll(
             From<Walk>()
                 .where(\._startDate < walk.startDate)
@@ -160,7 +166,15 @@ struct WalkSummaryView: View {
                     .compactMap { $0.transcription }
                     .joined(separator: " ")
                 let preview = allText.truncatedAtWordBoundary()
-                return PromptGenerator.WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview, weatherCondition: w.weatherCondition)
+                var celestialSummary: String?
+                if UserPreferences.celestialAwarenessEnabled.value {
+                    let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+                    let snap = CelestialCalculator.snapshot(for: w.startDate, system: system)
+                    let sunSign = (system == .tropical ? snap.position(for: .sun)?.tropical : snap.position(for: .sun)?.sidereal)?.sign.name ?? ""
+                    let moonSign = (system == .tropical ? snap.position(for: .moon)?.tropical : snap.position(for: .moon)?.sidereal)?.sign.name ?? ""
+                    celestialSummary = "Sun in \(sunSign), Moon in \(moonSign)"
+                }
+                return WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview, weatherCondition: w.weatherCondition, celestialSummary: celestialSummary)
             }
     }
 
@@ -344,6 +358,14 @@ struct WalkSummaryView: View {
     // MARK: - Milestones
 
     private func computeMilestone() -> String? {
+        if UserPreferences.celestialAwarenessEnabled.value {
+            let sunLon = CelestialCalculator.solarLongitude(
+                T: CelestialCalculator.julianCenturies(from: CelestialCalculator.julianDayNumber(from: walk.startDate)))
+            if let marker = CelestialCalculator.seasonalMarker(sunLongitude: sunLon) {
+                return "You walked on the \(marker.name)"
+            }
+        }
+
         guard let walks = try? DataManager.dataStack.fetchAll(
             From<Walk>()
                 .where(\._startDate < walk.startDate)
@@ -418,6 +440,29 @@ struct WalkSummaryView: View {
             .foregroundColor(.fog)
             .opacity(revealPhase == .revealed ? 1 : 0)
             .animation(.easeIn(duration: 0.6).delay(0.2), value: revealPhase)
+        }
+    }
+
+    @ViewBuilder
+    private var celestialLine: some View {
+        if let snapshot = cachedCelestialSnapshot {
+            let moonPos = snapshot.position(for: .moon)
+            let zodiac = snapshot.system == .tropical ? moonPos?.tropical : moonPos?.sidereal
+            HStack(spacing: Constants.UI.Padding.xs) {
+                if let zodiac {
+                    Text("Moon in \(zodiac.sign.name)")
+                        .font(Constants.Typography.caption)
+                }
+                Text("Hour of \(snapshot.planetaryHour.planet.name)")
+                    .font(Constants.Typography.caption)
+                if let dominant = snapshot.elementBalance.dominant {
+                    Text("\(dominant.rawValue.capitalized) predominates")
+                        .font(Constants.Typography.caption)
+                }
+            }
+            .foregroundColor(.fog)
+            .opacity(revealPhase == .revealed ? 1 : 0)
+            .animation(.easeIn(duration: 0.6).delay(0.3), value: revealPhase)
         }
     }
 

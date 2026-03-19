@@ -7,6 +7,18 @@ struct CustomPromptStyle: Codable, Identifiable {
     var instruction: String
 }
 
+extension CustomPromptStyle: PromptVoice {
+    func preamble(hasSpeech: Bool) -> String {
+        hasSpeech
+            ? "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
+            : "This walk was taken in silence — no words were spoken, only movement. The walker chose presence over expression, letting the body speak through pace, pauses, and the places it was drawn to."
+    }
+
+    func instruction(hasSpeech: Bool) -> String {
+        instruction
+    }
+}
+
 final class CustomPromptStyleStore: ObservableObject {
     static let maxStyles = 3
 

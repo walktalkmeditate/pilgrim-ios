@@ -7,6 +7,7 @@ struct IntentionSettingView: View {
     let onDismiss: () -> Void
 
     @State private var text = ""
+    @State private var cachedSuggestions: [String] = []
     @StateObject private var recorder = IntentionVoiceRecorder()
     @FocusState private var isTextFieldFocused: Bool
 
@@ -27,9 +28,16 @@ struct IntentionSettingView: View {
                 textInputSection
                     .padding(.top, Constants.UI.Padding.big)
 
-                if !historyStore.intentions.isEmpty && text.isEmpty {
-                    historySection
-                        .padding(.top, Constants.UI.Padding.normal)
+                if text.isEmpty {
+                    if UserPreferences.celestialAwarenessEnabled.value {
+                        celestialSuggestions
+                            .padding(.top, Constants.UI.Padding.normal)
+                    }
+
+                    if !historyStore.intentions.isEmpty {
+                        historySection
+                            .padding(.top, Constants.UI.Padding.normal)
+                    }
                 }
             }
 
@@ -39,6 +47,11 @@ struct IntentionSettingView: View {
                 .padding(.bottom, Constants.UI.Padding.big)
         }
         .padding(.horizontal, Constants.UI.Padding.big)
+        .onAppear {
+            if UserPreferences.celestialAwarenessEnabled.value {
+                cachedSuggestions = celestialIntentionSuggestions()
+            }
+        }
         .onChange(of: recorder.transcribedText) { _, transcribed in
             if let transcribed {
                 text = String(transcribed.prefix(maxCharacters))
@@ -95,6 +108,87 @@ struct IntentionSettingView: View {
                     .foregroundColor(.fog.opacity(0.5))
             }
         }
+    }
+
+    // MARK: - Celestial Suggestions
+
+    private var celestialSuggestions: some View {
+        Group {
+            if !cachedSuggestions.isEmpty {
+                VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+                    Text("Suggested")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog.opacity(0.5))
+
+                    FlowLayout(spacing: Constants.UI.Padding.small) {
+                        ForEach(cachedSuggestions, id: \.self) { suggestion in
+                            Button {
+                                text = suggestion
+                            } label: {
+                                Text(suggestion)
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(.ink.opacity(0.7))
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .frame(maxWidth: 250)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.dawn.opacity(0.15))
+                                    )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func celestialIntentionSuggestions() -> [String] {
+        let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+        let snapshot = CelestialCalculator.snapshot(for: Date(), system: system)
+        var suggestions: [String] = []
+
+        if let marker = snapshot.seasonalMarker {
+            switch marker {
+            case .springEquinox: suggestions.append("Cross a threshold")
+            case .summerSolstice: suggestions.append("Walk in fullness")
+            case .autumnEquinox: suggestions.append("Find balance")
+            case .winterSolstice: suggestions.append("Honor the stillness")
+            case .imbolc: suggestions.append("Notice what's stirring")
+            case .beltane: suggestions.append("Celebrate what's alive")
+            case .lughnasadh: suggestions.append("Gather what you've grown")
+            case .samhain: suggestions.append("Remember what matters")
+            }
+        }
+
+        let retrogrades = snapshot.retrogradePlanets
+        if retrogrades.contains(.mercury) {
+            suggestions.append("Revisit something left unsaid")
+        } else if retrogrades.contains(.venus) {
+            suggestions.append("Reconsider what you value")
+        } else if retrogrades.contains(.mars) {
+            suggestions.append("Slow down, redirect energy")
+        }
+
+        let lunar = LunarPhase.current()
+        if lunar.illumination > 0.97 {
+            suggestions.append("Release what no longer serves")
+        } else if lunar.illumination < 0.03 {
+            suggestions.append("Plant a seed of beginning")
+        }
+
+        if let dominant = snapshot.elementBalance.dominant {
+            switch dominant {
+            case .water: suggestions.append("Follow what flows")
+            case .fire: suggestions.append("Walk with purpose")
+            case .earth: suggestions.append("Feel the ground beneath you")
+            case .air: suggestions.append("Let thoughts move freely")
+            }
+        }
+
+        return Array(suggestions.prefix(3))
     }
 
     // MARK: - History Suggestions

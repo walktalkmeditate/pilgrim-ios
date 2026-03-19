@@ -8,6 +8,7 @@ struct InkScrollView: View {
     @State private var previewSnapshot: WalkSnapshot?
     @State private var previewPosition: CGPoint = .zero
     @State private var expandedSnapshot: WalkSnapshot?
+    @State private var expandedCelestial: CelestialSnapshot?
     @State private var hapticState = ScrollHapticState()
     @State private var hasAppeared = false
     @State private var statMode: StatMode = .walks
@@ -75,6 +76,7 @@ struct InkScrollView: View {
 
             Group {
                 dateLabels(positions: positions, viewportWidth: width)
+                lunarMarkers(positions: positions, viewportWidth: width)
                 milestoneMarkers(width: width, positions: positions)
 
                 if snapshots.isEmpty {
@@ -216,8 +218,15 @@ struct InkScrollView: View {
         withAnimation(.spring(duration: 0.3)) {
             if expandedSnapshot?.id == id {
                 expandedSnapshot = nil
+                expandedCelestial = nil
             } else {
                 expandedSnapshot = snapshot
+                if UserPreferences.celestialAwarenessEnabled.value {
+                    let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+                    expandedCelestial = CelestialCalculator.snapshot(for: snapshot.startDate, system: system)
+                } else {
+                    expandedCelestial = nil
+                }
             }
         }
     }
@@ -266,13 +275,6 @@ struct InkScrollView: View {
                             .font(Constants.Typography.annotation)
                             .foregroundColor(.ink)
 
-                        if let condStr = snapshot.weatherCondition,
-                           let cond = WeatherCondition(rawValue: condStr) {
-                            Image(systemName: cond.icon)
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(.fog)
-                        }
-
                         Spacer()
 
                         if snapshot.isShared {
@@ -280,6 +282,24 @@ struct InkScrollView: View {
                                 .font(.system(size: 10))
                                 .foregroundColor(.stone)
                                 .opacity(0.5)
+                        }
+
+                        if let celestial = expandedCelestial {
+                            let moonSign = celestial.system == .tropical
+                                ? celestial.position(for: .moon)?.tropical.sign
+                                : celestial.position(for: .moon)?.sidereal.sign
+                            if let moonSign {
+                                Text("\(celestial.planetaryHour.planet.symbol)\(moonSign.symbol)")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.fog)
+                            }
+                        }
+
+                        if let condStr = snapshot.weatherCondition,
+                           let cond = WeatherCondition(rawValue: condStr) {
+                            Image(systemName: cond.icon)
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.fog)
                         }
                     }
 

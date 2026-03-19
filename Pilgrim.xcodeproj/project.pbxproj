@@ -7,15 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		WTHRSVC0000000000000001 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000002 /* WeatherService.swift */; };
-		WTHRSVC0000000000000005 /* WeatherKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000004 /* WeatherKit.framework */; settings = {ATTRIBUTES = (Required, ); }; };
-		WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHOVR0000000000000002 /* WeatherOverlayView.swift */; };
-		WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHVIG0000000000000002 /* WeatherVignetteView.swift */; };
+		016C147EEB766219648BE07F /* PromptVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD98EC76665031455843D5C /* PromptVoice.swift */; };
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
 		0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
 		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
+		0AA343D1A7FB780905B6A20F /* ActivityContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12245A2A15EE8E64818B6D3F /* ActivityContext.swift */; };
+		0AF0FF1EDA75BDC6A3A3D2A6 /* PromptAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6EA04337299ABAFFB2644FC /* PromptAssembler.swift */; };
 		0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */; };
 		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
 		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
@@ -156,23 +155,29 @@
 		22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */; };
 		2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D23FF60A762C30296A69E6 /* ComputationTests.swift */; };
 		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
+		327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */; };
+		37049E79926C85FEE92366A2 /* GeneratedPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */; };
 		3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */; };
 		3DF4B121DEE87CA7EBB26207 /* VoiceGuideSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */; };
 		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
+		44B04EE19F844EACEBD0DB0F /* CelestialCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */; };
 		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
 		487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */; };
 		4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
+		56ED2CA2C618854F7461544B /* CelestialVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */; };
 		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
 		6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */; };
 		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
 		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
 		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
 		6F8AA2EEEDD08C727B89AB94 /* VoiceGuideScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */; };
+		73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */; };
 		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
 		76B622EBDD59AD9489586120 /* DateFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */; };
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
+		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
 		86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */; };
 		8A200FA63DDEC6D859F1C4EE /* WalkShareViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */; };
 		9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA57CE96EE3401595264807 /* ActivityInterval.swift */; };
@@ -183,6 +188,7 @@
 		A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */; };
 		A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */; };
 		A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */; };
+		A6174D54B988350284152396 /* AstrologyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008E97D4312732C8F271886C /* AstrologyModels.swift */; };
 		A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */; };
 		AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */; };
 		AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */; };
@@ -232,6 +238,7 @@
 		BBBB000000000000000008 /* Waypoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000007 /* Waypoint.swift */; };
 		BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000009 /* WaypointMarkingSheet.swift */; };
 		BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000B /* WaypointCodableTests.swift */; };
+		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
@@ -269,8 +276,10 @@
 		DD00CC0100000000000002 /* MeditateDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00CC0100000000000001 /* MeditateDetection.swift */; };
 		E27871EF9A01D3D3C6093554 /* VoiceGuidePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7E64FC89078569CF45F03 /* VoiceGuidePlayer.swift */; };
 		E45CCFD6C6A29B3BC03CF2AB /* VoiceGuideManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */; };
+		E68F52E5A8F0C2714A4F2390 /* PromptStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1825CBE5A81CE064675082D /* PromptStyle.swift */; };
 		EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */; };
 		EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */; };
+		EF5593C014B2591704A20D11 /* ContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD4237D6467ED96F4E54E50 /* ContextFormatter.swift */; };
 		F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */; };
 		F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */; };
 		F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */; };
@@ -286,6 +295,10 @@
 		PERM000100000003 /* PermissionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000002 /* PermissionsViewModel.swift */; };
 		PERM000100000005 /* PermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000004 /* PermissionsViewModelTests.swift */; };
 		PERM000100000007 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000006 /* PermissionsView.swift */; };
+		WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHOVR0000000000000002 /* WeatherOverlayView.swift */; };
+		WTHRSVC0000000000000001 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000002 /* WeatherService.swift */; };
+		WTHRSVC0000000000000005 /* WeatherKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000004 /* WeatherKit.framework */; settings = {ATTRIBUTES = (Required, ); }; };
+		WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHVIG0000000000000002 /* WeatherVignetteView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -299,13 +312,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		WTHRSVC0000000000000002 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
-		WTHRSVC0000000000000004 /* WeatherKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WeatherKit.framework; path = System/Library/Frameworks/WeatherKit.framework; sourceTree = SDKROOT; };
-		WTHOVR0000000000000002 /* WeatherOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayView.swift; sourceTree = "<group>"; };
-		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
+		008E97D4312732C8F271886C /* AstrologyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstrologyModels.swift; sourceTree = "<group>"; };
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
 		0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestTests.swift; sourceTree = "<group>"; };
+		0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculator.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
+		12245A2A15EE8E64818B6D3F /* ActivityContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityContext.swift; sourceTree = "<group>"; };
+		14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialVignetteView.swift; sourceTree = "<group>"; };
 		16BE9557700152F043C359DC /* WalkShareView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareView.swift; sourceTree = "<group>"; };
 		1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDownloadManager.swift; sourceTree = "<group>"; };
 		1AB8B7996545B4CEF51D686E /* BackupSerializationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackupSerializationTests.swift; sourceTree = "<group>"; };
@@ -451,7 +464,9 @@
 		22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomByteFormatting.swift; sourceTree = "<group>"; };
 		263D620E1DB30C5FCA0143CC /* SoundManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManagement.swift; sourceTree = "<group>"; };
 		2722224F049B455DB473E7C9 /* PilgrimV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV2.swift; sourceTree = "<group>"; };
+		2BD4237D6467ED96F4E54E50 /* ContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContextFormatter.swift; sourceTree = "<group>"; };
 		2CA2B0038D4875801C41DE26 /* AudioAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAsset.swift; sourceTree = "<group>"; };
+		2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculatorTests.swift; sourceTree = "<group>"; };
 		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
 		3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityIntervalTests.swift; sourceTree = "<group>"; };
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
@@ -468,12 +483,14 @@
 		74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestService.swift; sourceTree = "<group>"; };
 		75F7E64FC89078569CF45F03 /* VoiceGuidePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuidePlayer.swift; sourceTree = "<group>"; };
 		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
+		862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPromptVoices.swift; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareViewModel.swift; sourceTree = "<group>"; };
 		90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
 		90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideSchedulerTests.swift; sourceTree = "<group>"; };
 		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
+		9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "InkScrollView+LunarMarkers.swift"; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModelTests.swift; sourceTree = "<group>"; };
@@ -531,6 +548,7 @@
 		C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifest.swift; sourceTree = "<group>"; };
 		C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEnhancer.swift; sourceTree = "<group>"; };
 		C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UnitTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6EA04337299ABAFFB2644FC /* PromptAssembler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptAssembler.swift; sourceTree = "<group>"; };
 		C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineBar.swift; sourceTree = "<group>"; };
 		CC00000100000000ABOUTV01 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		CC00000100000000BTRFLY01 /* ButterflyShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButterflyShape.swift; sourceTree = "<group>"; };
@@ -559,6 +577,7 @@
 		CC00000100000000WKMODE01 /* WalkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMode.swift; sourceTree = "<group>"; };
 		CC00000100000000WKSTRT01 /* WalkStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStartView.swift; sourceTree = "<group>"; };
 		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
+		CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeneratedPrompt.swift; sourceTree = "<group>"; };
 		CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideFileStore.swift; sourceTree = "<group>"; };
 		D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayload.swift; sourceTree = "<group>"; };
 		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -567,6 +586,9 @@
 		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
+		DDD98EC76665031455843D5C /* PromptVoice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptVoice.swift; sourceTree = "<group>"; };
+		E1825CBE5A81CE064675082D /* PromptStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptStyle.swift; sourceTree = "<group>"; };
+		E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptContextTypes.swift; sourceTree = "<group>"; };
 		E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderStatusTests.swift; sourceTree = "<group>"; };
 		E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteDownsampler.swift; sourceTree = "<group>"; };
 		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
@@ -584,6 +606,10 @@
 		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
 		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
 		PERM000100000006 /* PermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
+		WTHOVR0000000000000002 /* WeatherOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayView.swift; sourceTree = "<group>"; };
+		WTHRSVC0000000000000002 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		WTHRSVC0000000000000004 /* WeatherKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WeatherKit.framework; path = System/Library/Frameworks/WeatherKit.framework; sourceTree = SDKROOT; };
+		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -876,16 +902,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		WTHRSVC0000000000000003 /* Weather */ = {
-			isa = PBXGroup;
-			children = (
-				WTHRSVC0000000000000002 /* WeatherService.swift */,
-				WTHOVR0000000000000002 /* WeatherOverlayView.swift */,
-				WTHVIG0000000000000002 /* WeatherVignetteView.swift */,
-			);
-			path = Weather;
-			sourceTree = "<group>";
-		};
 		22B6CF7422CA0A28002D2FB0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -914,6 +930,8 @@
 				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
 				8534424C43418F78E8F15520 /* Share */,
 				AAAA000000000000000000F5 /* Intention */,
+				867117AF847684253BE2DFDE /* Prompt */,
+				5AF23B8551BD6D061A516BDA /* Astrology */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -983,6 +1001,7 @@
 				22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */,
 				CC00000100000000MOONPV01 /* MoonPhaseView.swift */,
 				CC00000100000000SAFARV01 /* SafariView.swift */,
+				14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1096,6 +1115,7 @@
 				90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */,
 				0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */,
 				4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */,
+				2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1184,6 +1204,16 @@
 			path = Helpers;
 			sourceTree = "<group>";
 		};
+		5AF23B8551BD6D061A516BDA /* Astrology */ = {
+			isa = PBXGroup;
+			children = (
+				008E97D4312732C8F271886C /* AstrologyModels.swift */,
+				0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */,
+			);
+			name = Astrology;
+			path = Astrology;
+			sourceTree = "<group>";
+		};
 		5F0241D04FDB88FFB08D690B /* WalkShare */ = {
 			isa = PBXGroup;
 			children = (
@@ -1204,6 +1234,22 @@
 			path = Share;
 			sourceTree = "<group>";
 		};
+		867117AF847684253BE2DFDE /* Prompt */ = {
+			isa = PBXGroup;
+			children = (
+				E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */,
+				E1825CBE5A81CE064675082D /* PromptStyle.swift */,
+				CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */,
+				2BD4237D6467ED96F4E54E50 /* ContextFormatter.swift */,
+				DDD98EC76665031455843D5C /* PromptVoice.swift */,
+				862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */,
+				12245A2A15EE8E64818B6D3F /* ActivityContext.swift */,
+				C6EA04337299ABAFFB2644FC /* PromptAssembler.swift */,
+			);
+			name = Prompt;
+			path = Prompt;
+			sourceTree = "<group>";
+		};
 		AA0001010000000000000021 /* Home */ = {
 			isa = PBXGroup;
 			children = (
@@ -1216,6 +1262,7 @@
 				CC00000100000000HAPTIC01 /* ScrollHapticEngine.swift */,
 				CC00000100000000MILEST01 /* MilestoneMarkerView.swift */,
 				CC00000100000000WKSTRT01 /* WalkStartView.swift */,
+				9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -1338,6 +1385,16 @@
 				PERM000100000006 /* PermissionsView.swift */,
 			);
 			path = Permissions;
+			sourceTree = "<group>";
+		};
+		WTHRSVC0000000000000003 /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				WTHRSVC0000000000000002 /* WeatherService.swift */,
+				WTHOVR0000000000000002 /* WeatherOverlayView.swift */,
+				WTHVIG0000000000000002 /* WeatherVignetteView.swift */,
+			);
+			path = Weather;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1494,13 +1551,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Pilgrim/Pods-Pilgrim-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Pilgrim/Pods-Pilgrim-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1775,6 +1828,18 @@
 				WTHRSVC0000000000000001 /* WeatherService.swift in Sources */,
 				WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */,
 				WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */,
+				73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */,
+				E68F52E5A8F0C2714A4F2390 /* PromptStyle.swift in Sources */,
+				37049E79926C85FEE92366A2 /* GeneratedPrompt.swift in Sources */,
+				EF5593C014B2591704A20D11 /* ContextFormatter.swift in Sources */,
+				016C147EEB766219648BE07F /* PromptVoice.swift in Sources */,
+				8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */,
+				0AA343D1A7FB780905B6A20F /* ActivityContext.swift in Sources */,
+				0AF0FF1EDA75BDC6A3A3D2A6 /* PromptAssembler.swift in Sources */,
+				A6174D54B988350284152396 /* AstrologyModels.swift in Sources */,
+				44B04EE19F844EACEBD0DB0F /* CelestialCalculator.swift in Sources */,
+				56ED2CA2C618854F7461544B /* CelestialVignetteView.swift in Sources */,
+				327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1802,6 +1867,7 @@
 				0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */,
 				3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */,
 				FB767A6007B826D951706B85 /* VoiceGuideHistoryTests.swift in Sources */,
+				BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

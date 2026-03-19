@@ -1,97 +1,31 @@
 import Foundation
 
-enum PromptStyle: String, CaseIterable, Identifiable {
-    case contemplative
-    case reflective
-    case creative
-    case gratitude
-    case philosophical
-    case journaling
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .contemplative: return "Contemplative"
-        case .reflective: return "Reflective"
-        case .creative: return "Creative"
-        case .gratitude: return "Gratitude"
-        case .philosophical: return "Philosophical"
-        case .journaling: return "Journaling"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .contemplative: return "leaf.fill"
-        case .reflective: return "eye.fill"
-        case .creative: return "paintbrush.fill"
-        case .gratitude: return "heart.fill"
-        case .philosophical: return "books.vertical.fill"
-        case .journaling: return "pencil.and.scribble"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .contemplative: return "Sit with what emerged from movement"
-        case .reflective: return "Identify patterns and emotional undercurrents"
-        case .creative: return "Transform thoughts into poetry or metaphor"
-        case .gratitude: return "Find thanksgiving in observations"
-        case .philosophical: return "Explore deeper meaning and wisdom"
-        case .journaling: return "Structure raw thoughts into a journal entry"
-        }
-    }
-}
-
-struct GeneratedPrompt: Identifiable {
-    let id = UUID()
-    let style: PromptStyle?
-    let customStyle: CustomPromptStyle?
-    let text: String
-
-    var title: String { customStyle?.title ?? style?.title ?? "" }
-    var icon: String { customStyle?.icon ?? style?.icon ?? "questionmark" }
-    var subtitle: String { customStyle?.instruction ?? style?.description ?? "" }
-}
-
 struct PromptGenerator {
 
-    struct RecordingContext {
-        let text: String
-        let timestamp: Date
-        let startCoordinate: (lat: Double, lon: Double)?
-        let endCoordinate: (lat: Double, lon: Double)?
-        let wordsPerMinute: Double?
+    typealias RecordingContext = Pilgrim.RecordingContext
+    typealias MeditationContext = Pilgrim.MeditationContext
+    typealias PlaceRole = Pilgrim.PlaceRole
+    typealias PlaceContext = Pilgrim.PlaceContext
+    typealias WalkSnippet = Pilgrim.WalkSnippet
+    typealias WaypointContext = Pilgrim.WaypointContext
+
+    // MARK: - ActivityContext API
+
+    static func generate(style: PromptStyle, context: ActivityContext) -> GeneratedPrompt {
+        let text = PromptAssembler.assemble(context: context, voice: style.voice)
+        return GeneratedPrompt(style: style, customStyle: nil, text: text)
     }
 
-    struct MeditationContext {
-        let startDate: Date
-        let endDate: Date
-        let duration: TimeInterval
+    static func generateCustom(customStyle: CustomPromptStyle, context: ActivityContext) -> GeneratedPrompt {
+        let text = PromptAssembler.assemble(context: context, voice: customStyle)
+        return GeneratedPrompt(style: nil, customStyle: customStyle, text: text)
     }
 
-    enum PlaceRole { case start, end }
-
-    struct PlaceContext {
-        let name: String
-        let coordinate: (lat: Double, lon: Double)
-        let role: PlaceRole
+    static func generateAll(context: ActivityContext) -> [GeneratedPrompt] {
+        PromptStyle.allCases.map { generate(style: $0, context: context) }
     }
 
-    struct WalkSnippet {
-        let date: Date
-        let placeName: String?
-        let transcriptionPreview: String
-        var weatherCondition: String? = nil
-    }
-
-    struct WaypointContext {
-        let label: String
-        let icon: String
-        let timestamp: Date
-        let coordinate: (lat: Double, lon: Double)
-    }
+    // MARK: - Legacy Parameter-Spreading API
 
     static func generate(
         style: PromptStyle,
@@ -107,111 +41,15 @@ struct PromptGenerator {
         waypoints: [WaypointContext] = [],
         weather: String? = nil
     ) -> GeneratedPrompt {
-        let combinedText = formatRecordings(recordings)
-        let meditationText = formatMeditations(meditations)
-        let metadata = formatMetadata(duration: duration, distance: distance, startDate: startDate)
-        let location = formatPlaceNames(placeNames)
-        let pace = formatPaceContext(speeds: routeSpeeds)
-        let recentWalks = formatRecentWalks(recentWalkSnippets)
-        let hasSpeech = !recordings.isEmpty
-
-        let preamble: String
-        let instruction: String
-
-        switch style {
-        case .contemplative:
-            if hasSpeech {
-                preamble = "During a walking meditation, these words arose naturally from the rhythm of movement and breath. They were not planned or curated — they emerged as the body moved through space."
-                instruction = """
-                    Please receive these walking thoughts with gentleness. Help me sit with what emerged, without rushing to analyze or fix. What was my body and spirit trying to tell me through these words? What wants to be noticed, held, or simply acknowledged? Respond in a contemplative, unhurried tone.
-                    """
-            } else {
-                preamble = "This walk was taken in silence — no words were spoken, only movement. The walker chose presence over expression, letting the body speak through pace, pauses, and the places it was drawn to."
-                instruction = """
-                    Reflect on what this silent walk might reveal. What does its rhythm suggest? Its pauses, its waypoints, its duration? Help the walker see what their body and feet were saying when their voice was still. Respond in a contemplative, unhurried tone.
-                    """
-            }
-
-        case .reflective:
-            if hasSpeech {
-                preamble = "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
-                instruction = """
-                    Please analyze these walking reflections for patterns, recurring themes, and emotional undercurrents. What connections do you see between the different moments? What might I be processing or working through? What contradictions or tensions are present? Offer observations that help me understand myself better.
-                    """
-            } else {
-                preamble = "A walk taken without words. The walker moved through the world in observation, letting thoughts form and dissolve without voicing them."
-                instruction = """
-                    Read the shape of this walk — its pace, its pauses, its waypoints — as you would read a text. What patterns do you see? What might the walker have been processing? What does the choice of silence itself suggest? Offer observations that help them understand themselves.
-                    """
-            }
-
-        case .creative:
-            if hasSpeech {
-                preamble = "A walker spoke these words into the open air while moving through the world. They are raw material — fragments of observation, feeling, and thought gathered by a body in motion."
-                instruction = """
-                    Transform these walking fragments into something creative. You might compose a poem, write a short prose piece, create a series of haiku, or craft a brief narrative. Let the rhythm of the walk inform the rhythm of the writing. Preserve the essence but elevate the expression.
-                    """
-            } else {
-                preamble = "A silent walk — no spoken words, only footsteps marking time and space. The raw material here is movement itself: the distance covered, the pace kept, the places the walker paused or marked."
-                instruction = """
-                    Transform this silent walk into something creative. Let the rhythm of the steps become the rhythm of the writing. You might compose a poem from the walk's shape, write a meditation on silence and motion, or craft a piece that gives voice to what the walker's feet were saying. Preserve the quietness but give it form.
-                    """
-            }
-
-        case .gratitude:
-            if hasSpeech {
-                preamble = "These words were spoken during a walk — a time of moving through the world with awareness. Somewhere in these observations and thoughts are seeds of gratitude, even if not explicitly stated."
-                instruction = """
-                    Help me find the gratitude woven through these walking thoughts. What am I thankful for, even if I didn't say it directly? What blessings are hiding in my observations? What can I appreciate about this moment in my life, this body that walks, this world I moved through? Frame your response as a practice of thanksgiving.
-                    """
-            } else {
-                preamble = "This walk was taken in silence — a choice to simply be present with the world rather than narrate it."
-                instruction = """
-                    Find the gratitude hidden in this silent walk. What is the walker thankful for, even without saying it? The body that carried them, the ground beneath their feet, the places they marked as meaningful, the time they gave themselves. Frame your response as a practice of thanksgiving for the walk itself.
-                    """
-            }
-
-        case .philosophical:
-            if hasSpeech {
-                preamble = "Walking has long been a companion to philosophical thought — from Aristotle's peripatetic school to Kierkegaard's daily constitutionals. These words emerged during such a walk, where movement and thought intertwined."
-                instruction = """
-                    Engage with these walking thoughts philosophically. What deeper questions are being asked? What assumptions about life, meaning, or existence are being explored? Connect my observations to broader wisdom traditions, philosophical concepts, or universal human experiences. Help me think more deeply about what I was already beginning to think.
-                    """
-            } else {
-                preamble = "Walking in silence has a long philosophical tradition — from Zen walking meditation to Kierkegaard's solitary constitutionals. This walk carries that lineage, choosing wordless presence over verbal reflection."
-                instruction = """
-                    Engage with this silent walk philosophically. What does the act of walking without speaking suggest about the walker's relationship to thought, language, and presence? Connect the walk's physical details — its duration, pace, waypoints — to broader questions about consciousness, embodiment, and meaning.
-                    """
-            }
-
-        case .journaling:
-            if hasSpeech {
-                preamble = "The following are raw, unedited voice recordings from a walk. They capture thoughts as they occurred — scattered, honest, and in the moment."
-                instruction = """
-                    Help me turn these scattered walking thoughts into a coherent journal entry. Organize the themes, add transitions between ideas, and create a narrative flow while preserving my authentic voice. The result should read as a thoughtful, personal journal entry that I could return to and understand. Include a brief summary of the walk's key themes at the end.
-                    """
-            } else {
-                preamble = "The following is a walk taken without voice recordings. No words were spoken — only footsteps, pauses, and marked waypoints tell the story."
-                instruction = """
-                    Help the walker create a journal entry from this silent walk. Use the walk's metadata — its timing, distance, pace, waypoints, and any meditation sessions — to reconstruct a narrative. What was the walk like? What might the walker have been thinking? Create a reflective entry they could return to, written in second person ('You walked...').
-                    """
-            }
-        }
-
-        let prompt = buildPrompt(
-            preamble: preamble,
-            instruction: instruction,
-            transcription: combinedText,
-            meditations: meditationText,
-            metadata: metadata,
-            location: location,
-            pace: pace,
-            recentWalks: recentWalks,
-            intention: intention,
-            waypoints: waypoints,
-            weather: weather
+        let context = ActivityContext(
+            recordings: recordings, meditations: meditations,
+            duration: duration, distance: distance, startDate: startDate,
+            placeNames: placeNames, routeSpeeds: routeSpeeds,
+            recentWalkSnippets: recentWalkSnippets, intention: intention,
+            waypoints: waypoints, weather: weather,
+            lunarPhase: LunarPhase.current(date: startDate), celestial: nil
         )
-        return GeneratedPrompt(style: style, customStyle: nil, text: prompt)
+        return generate(style: style, context: context)
     }
 
     static func generateCustom(
@@ -228,31 +66,15 @@ struct PromptGenerator {
         waypoints: [WaypointContext] = [],
         weather: String? = nil
     ) -> GeneratedPrompt {
-        let combinedText = formatRecordings(recordings)
-        let meditationText = formatMeditations(meditations)
-        let metadata = formatMetadata(duration: duration, distance: distance, startDate: startDate)
-        let location = formatPlaceNames(placeNames)
-        let pace = formatPaceContext(speeds: routeSpeeds)
-        let recentWalks = formatRecentWalks(recentWalkSnippets)
-
-        let preamble = recordings.isEmpty
-            ? "This walk was taken in silence — no words were spoken, only movement. The walker chose presence over expression, letting the body speak through pace, pauses, and the places it was drawn to."
-            : "These are voice recordings captured during a walk, transcribed as spoken. They represent unfiltered thoughts, observations, and feelings that surfaced while moving."
-
-        let prompt = buildPrompt(
-            preamble: preamble,
-            instruction: customStyle.instruction,
-            transcription: combinedText,
-            meditations: meditationText,
-            metadata: metadata,
-            location: location,
-            pace: pace,
-            recentWalks: recentWalks,
-            intention: intention,
-            waypoints: waypoints,
-            weather: weather
+        let context = ActivityContext(
+            recordings: recordings, meditations: meditations,
+            duration: duration, distance: distance, startDate: startDate,
+            placeNames: placeNames, routeSpeeds: routeSpeeds,
+            recentWalkSnippets: recentWalkSnippets, intention: intention,
+            waypoints: waypoints, weather: weather,
+            lunarPhase: LunarPhase.current(date: startDate), celestial: nil
         )
-        return GeneratedPrompt(style: nil, customStyle: customStyle, text: prompt)
+        return generateCustom(customStyle: customStyle, context: context)
     }
 
     static func generateAll(
@@ -268,255 +90,19 @@ struct PromptGenerator {
         waypoints: [WaypointContext] = [],
         weather: String? = nil
     ) -> [GeneratedPrompt] {
-        PromptStyle.allCases.map { style in
-            generate(
-                style: style,
-                recordings: recordings,
-                meditations: meditations,
-                duration: duration,
-                distance: distance,
-                startDate: startDate,
-                placeNames: placeNames,
-                routeSpeeds: routeSpeeds,
-                recentWalkSnippets: recentWalkSnippets,
-                intention: intention,
-                waypoints: waypoints,
-                weather: weather
-            )
-        }
-    }
-
-    private static let timeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.timeStyle = .short
-        return f
-    }()
-
-    private static let dateTimeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .short
-        return f
-    }()
-
-    private static func formatRecordings(_ recordings: [RecordingContext]) -> String {
-        return recordings.map { item in
-            var header = "[\(timeFormatter.string(from: item.timestamp))]"
-            if let start = item.startCoordinate {
-                header += " [GPS: \(formatCoord(start.lat, start.lon))"
-                if let end = item.endCoordinate, end.lat != start.lat || end.lon != start.lon {
-                    header += " → \(formatCoord(end.lat, end.lon))"
-                }
-                header += "]"
-            }
-            if let wpm = item.wordsPerMinute {
-                header += " [~\(Int(wpm)) wpm, \(speakingPaceLabel(wpm))]"
-            }
-            return "\(header) \(item.text)"
-        }.joined(separator: "\n\n")
-    }
-
-    private static func formatPlaceNames(_ places: [PlaceContext]) -> String? {
-        guard !places.isEmpty else { return nil }
-        let start = places.first { $0.role == .start }
-        let end = places.first { $0.role == .end }
-        if let start = start, let end = end {
-            return "**Location:** Started near \(start.name) → ended near \(end.name)"
-        } else if let start = start {
-            return "**Location:** Near \(start.name)"
-        }
-        return nil
-    }
-
-    private static func speakingPaceLabel(_ wpm: Double) -> String {
-        switch wpm {
-        case ..<100: return "slow/thoughtful"
-        case 100..<140: return "measured"
-        case 140..<170: return "conversational"
-        default: return "rapid/energized"
-        }
-    }
-
-    private static func formatCoord(_ lat: Double, _ lon: Double) -> String {
-        String(format: "%.5f, %.5f", lat, lon)
-    }
-
-    private static let distanceFormatter: MeasurementFormatter = {
-        let f = MeasurementFormatter()
-        f.unitOptions = .naturalScale
-        f.numberFormatter.maximumFractionDigits = 1
-        return f
-    }()
-
-    private static func formatMeditations(_ meditations: [MeditationContext]) -> String? {
-        guard !meditations.isEmpty else { return nil }
-        let lines = meditations.map { m in
-            let durationSec = Int(m.duration)
-            let durationStr = durationSec < 60 ? "\(durationSec) sec" : "\(durationSec / 60) min \(durationSec % 60) sec"
-            return "[\(timeFormatter.string(from: m.startDate)) – \(timeFormatter.string(from: m.endDate))] Meditated for \(durationStr)"
-        }
-        return lines.joined(separator: "\n")
-    }
-
-    private static func formatPaceContext(speeds: [Double]) -> String? {
-        let moving = speeds.filter { $0 >= 0.3 }
-        guard moving.count >= 10 else { return nil }
-        let avgSpeed = moving.reduce(0, +) / Double(moving.count)
-        guard let minSpeed = moving.min(), let maxSpeed = moving.max() else { return nil }
-        let avgPace = formatPace(metersPerSecond: avgSpeed)
-        let slowPace = formatPace(metersPerSecond: minSpeed)
-        let fastPace = formatPace(metersPerSecond: maxSpeed)
-        return "**Pace:** Average \(avgPace) (range: \(fastPace)–\(slowPace))"
-    }
-
-    private static func formatPace(metersPerSecond: Double) -> String {
-        guard metersPerSecond > 0 else { return "—" }
-        let usesMiles = Locale.current.measurementSystem == .us
-        let metersPerUnit: Double = usesMiles ? 1609.34 : 1000.0
-        let label = usesMiles ? "min/mi" : "min/km"
-        let secondsPerUnit = metersPerUnit / metersPerSecond
-        let minutes = Int(secondsPerUnit) / 60
-        let seconds = Int(secondsPerUnit) % 60
-        return String(format: "%d:%02d %@", minutes, seconds, label)
-    }
-
-    private static let shortDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return f
-    }()
-
-    private static func formatRecentWalks(_ snippets: [WalkSnippet]) -> String? {
-        guard !snippets.isEmpty else { return nil }
-        let lines = snippets.map { snippet in
-            let dateStr = shortDateFormatter.string(from: snippet.date)
-            let weatherStr = snippet.weatherCondition
-                .flatMap { WeatherCondition(rawValue: $0)?.label.lowercased() }
-                .map { " in \($0)" } ?? ""
-            if let place = snippet.placeName {
-                return "[\(dateStr) – \(place)\(weatherStr)] \"\(snippet.transcriptionPreview)\""
-            }
-            return "[\(dateStr)\(weatherStr)] \"\(snippet.transcriptionPreview)\""
-        }
-        return "**Recent Walk Context (for continuity):**\n\n" + lines.joined(separator: "\n\n")
+        let context = ActivityContext(
+            recordings: recordings, meditations: meditations,
+            duration: duration, distance: distance, startDate: startDate,
+            placeNames: placeNames, routeSpeeds: routeSpeeds,
+            recentWalkSnippets: recentWalkSnippets, intention: intention,
+            waypoints: waypoints, weather: weather,
+            lunarPhase: LunarPhase.current(date: startDate), celestial: nil
+        )
+        return generateAll(context: context)
     }
 
     static func formatWeather(_ walk: WalkInterface) -> String? {
-        guard let conditionStr = walk.weatherCondition,
-              let condition = WeatherCondition(rawValue: conditionStr),
-              let temp = walk.weatherTemperature else { return nil }
-
-        let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
-        var parts = [condition.label, WeatherSnapshot.formatTemperature(temp, imperial: imperial)]
-
-        if let humidity = walk.weatherHumidity {
-            parts.append("humidity \(Int(humidity * 100))%")
-        }
-
-        if let wind = walk.weatherWindSpeed {
-            parts.append(WeatherSnapshot.describeWind(wind))
-        }
-
-        return "Weather: \(parts.joined(separator: ", "))"
-    }
-
-    private static func formatMetadata(duration: Double, distance: Double, startDate: Date) -> String {
-        let durationMin = Int(duration / 60)
-        let distanceStr = distanceFormatter.string(from: Measurement(value: distance, unit: UnitLength.meters))
-        let timeOfDay = timeOfDayDescription(startDate)
-
-        let lunar = LunarPhase.current(date: startDate)
-        return "Walk duration: \(durationMin) minutes | Distance: \(distanceStr) | Time: \(timeOfDay) on \(dateTimeFormatter.string(from: startDate)) | Moon: \(lunar.name) (\(Int(round(lunar.illumination * 100)))% illumination)"
-    }
-
-    private static func timeOfDayDescription(_ date: Date) -> String {
-        let hour = Calendar.current.component(.hour, from: date)
-        switch hour {
-        case 5..<9: return "early morning"
-        case 9..<12: return "morning"
-        case 12..<14: return "midday"
-        case 14..<17: return "afternoon"
-        case 17..<20: return "evening"
-        default: return "night"
-        }
-    }
-
-    // MARK: - Prompt Builder
-
-    private static func buildPrompt(preamble: String, instruction: String, transcription: String, meditations: String?, metadata: String, location: String?, pace: String?, recentWalks: String?, intention: String? = nil, waypoints: [WaypointContext] = [], weather: String? = nil) -> String {
-        var sections = """
-            \(preamble)
-
-            ---
-
-            **Context:** \(metadata)
-            """
-
-        if let weather = weather {
-            sections += " | \(weather)"
-        }
-
-        if let intention = intention {
-            sections += "\n\n**The walker's intention:** \"\(intention)\"\nThis intention was set deliberately before the walk began. It represents what the walker chose to carry with them. Let it be the lens through which you interpret everything below."
-        }
-
-        if let location = location {
-            sections += "\n\n\(location)"
-        }
-
-        if let pace = pace {
-            sections += "\n\n\(pace)"
-        }
-
-        if !waypoints.isEmpty {
-            let lines = waypoints.map { wp in
-                "[\(timeFormatter.string(from: wp.timestamp)), GPS: \(formatCoord(wp.coordinate.lat, wp.coordinate.lon))] \(wp.label)"
-            }.joined(separator: "\n")
-            sections += "\n\n**Waypoints marked during walk:**\n\(lines)"
-        }
-
-        if !transcription.isEmpty {
-            sections += """
-
-
-            **Walking Transcription:**
-
-            \(transcription)
-            """
-        }
-
-        if let meditations = meditations {
-            sections += """
-
-
-            **Meditation Sessions:**
-
-            \(meditations)
-            """
-        }
-
-        if let recentWalks = recentWalks {
-            sections += """
-
-
-            \(recentWalks)
-            """
-        }
-
-        var fullInstruction = instruction
-        if let intention = intention {
-            fullInstruction += " Ground your response in the walker's stated intention: '\(intention)'. Return to it. Help them see how their walk — its pace, its pauses, its moments — spoke to this purpose."
-        }
-
-        sections += """
-
-
-            ---
-
-            \(fullInstruction)
-            """
-
-        return sections
+        ContextFormatter.formatWeather(walk)
     }
 }
 

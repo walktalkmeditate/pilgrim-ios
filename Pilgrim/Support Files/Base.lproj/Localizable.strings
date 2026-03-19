@@ -221,3 +221,10 @@
 "Recordings.Enhanced" = "Enhanced";
 "Recordings.Unavailable" = "Recording unavailable";
 "Recordings.Retranscribe" = "Retranscribe";
+
+// Celestial Awareness
+"Settings.CelestialAwareness" = "Celestial awareness";
+"Settings.CelestialAwareness.Caption" = "Show planetary positions and zodiac context";
+"Settings.ZodiacSystem" = "Zodiac system";
+"Settings.ZodiacSystem.Tropical" = "Tropical";
+"Settings.ZodiacSystem.Sidereal" = "Sidereal";
