@@ -25,7 +25,8 @@ final class VoiceGuideDownloadManager: ObservableObject {
         downloadProgress[pack.id] = 0
 
         let task = Task {
-            let missing = pack.prompts.filter { !fileStore.isAvailable($0, packId: pack.id) }
+            let allPrompts = pack.prompts + (pack.meditationPrompts ?? [])
+            let missing = allPrompts.filter { !fileStore.isAvailable($0, packId: pack.id) }
             let total = missing.count
             guard total > 0 else {
                 await MainActor.run {
