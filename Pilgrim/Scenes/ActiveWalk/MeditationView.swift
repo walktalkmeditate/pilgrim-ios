@@ -555,6 +555,8 @@ struct MeditationView: View {
     }
 
     private func selectGuidePack(_ pack: VoiceGuidePack) {
+        meditationGuide?.stopGuiding()
+        voicePlayingCancellable?.cancel()
         selectedGuidePackId = pack.id
         let mgmt = MeditationGuideManagement()
         mgmt.startGuiding(pack: pack)
