@@ -89,12 +89,15 @@ struct SeasonalColorEngine {
         let date = debugDateOverride ?? Date()
         let hemisphere = storedHemisphere
 
-        guard let base = UIColor(named: name) else {
+        guard UIColor(named: name) != nil else {
             return .gray
         }
 
-        let resolved = base.resolvedColor(with: .current)
-        return applySeasonalShift(to: resolved, intensity: intensity, on: date, hemisphere: hemisphere)
+        return UIColor { traitCollection in
+            let base = UIColor(named: name)!
+            let resolved = base.resolvedColor(with: traitCollection)
+            return applySeasonalShift(to: resolved, intensity: intensity, on: date, hemisphere: hemisphere)
+        }
     }
 
     static func seasonalColor(
@@ -105,12 +108,15 @@ struct SeasonalColorEngine {
     ) -> UIColor {
         let hem = hemisphere ?? storedHemisphere
 
-        guard let base = UIColor(named: name) else {
+        guard UIColor(named: name) != nil else {
             return .gray
         }
 
-        let resolved = base.resolvedColor(with: .current)
-        return applySeasonalShift(to: resolved, intensity: intensity, on: date, hemisphere: hem)
+        return UIColor { traitCollection in
+            let base = UIColor(named: name)!
+            let resolved = base.resolvedColor(with: traitCollection)
+            return applySeasonalShift(to: resolved, intensity: intensity, on: date, hemisphere: hem)
+        }
     }
 
     // MARK: - Private
