@@ -22,8 +22,12 @@ final class VoiceGuideFileStore {
     }
 
     func isPackDownloaded(_ pack: VoiceGuidePack) -> Bool {
-        let allPrompts = pack.prompts + (pack.meditationPrompts ?? [])
-        return allPrompts.allSatisfy { isAvailable($0, packId: pack.id) }
+        pack.prompts.allSatisfy { isAvailable($0, packId: pack.id) }
+    }
+
+    func isMeditationDownloaded(_ pack: VoiceGuidePack) -> Bool {
+        guard let medPrompts = pack.meditationPrompts, !medPrompts.isEmpty else { return false }
+        return medPrompts.allSatisfy { isAvailable($0, packId: pack.id) }
     }
 
     func destinationURL(for prompt: VoiceGuidePrompt, packId: String) -> URL {

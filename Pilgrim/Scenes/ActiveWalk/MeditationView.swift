@@ -483,7 +483,7 @@ struct MeditationView: View {
             }
 
             ForEach(manifestService.packs.filter(\.hasMeditationGuide)) { pack in
-                let isDownloaded = VoiceGuideFileStore.shared.isPackDownloaded(pack)
+                let isDownloaded = VoiceGuideFileStore.shared.isMeditationDownloaded(pack)
                 let isDownloading = downloadManager.activeDownloads.contains(pack.id)
 
                 Button {
