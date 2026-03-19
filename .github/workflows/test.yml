@@ -45,7 +45,6 @@ jobs:
           restore-keys: pods-
 
       - name: Install CocoaPods
-        if: steps.pods-cache.outputs.cache-hit != 'true'
         run: pod install
 
       - uses: actions/cache@v4
