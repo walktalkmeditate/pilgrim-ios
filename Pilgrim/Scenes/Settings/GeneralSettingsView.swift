@@ -39,11 +39,9 @@ struct GeneralSettingsView: View {
     private var appearanceSection: some View {
         Section {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Appearance")
-                        .font(Constants.Typography.body)
-                        .foregroundColor(.ink)
-                }
+                Text("Appearance")
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
                 Spacer()
                 Picker("", selection: $appearanceMode) {
                     Text("System").tag("system")

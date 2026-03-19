@@ -11,6 +11,7 @@ final class AppearanceManager: ObservableObject {
         resolvedScheme = Self.resolve(UserPreferences.appearanceMode.value)
 
         UserPreferences.appearanceMode.publisher
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] newValue in
                 guard let self else { return }
                 let newScheme = Self.resolve(newValue)

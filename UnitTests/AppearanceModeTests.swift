@@ -68,7 +68,15 @@ final class AppearanceManagerTests: XCTestCase {
         let manager = AppearanceManager()
         XCTAssertNil(manager.resolvedScheme)
 
+        let exp = expectation(description: "scheme updates")
+        let cancellable = manager.$resolvedScheme
+            .dropFirst()
+            .sink { _ in exp.fulfill() }
+
         UserPreferences.appearanceMode.value = "dark"
+        waitForExpectations(timeout: 1.0)
+        cancellable.cancel()
+
         XCTAssertEqual(manager.resolvedScheme, .dark)
     }
 
