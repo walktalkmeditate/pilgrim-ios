@@ -36,8 +36,8 @@ public class AltitudeManagement: WalkBuilderComponent {
     private func startUpdating() {
         guard CMAltimeter.isRelativeAltitudeAvailable() else { return }
         
-        self.altimeter.startRelativeAltitudeUpdates(to: OperationQueue.main) { (altitudeData, error) in
-            guard let altitudeData = altitudeData else { return }
+        self.altimeter.startRelativeAltitudeUpdates(to: OperationQueue.main) { [weak self] (altitudeData, error) in
+            guard let self, let altitudeData = altitudeData else { return }
             let differenceInMeters = Double(truncating: altitudeData.relativeAltitude)
             let altitude = AltitudeSample(timestamp: Date(), altitude: differenceInMeters)
             self.altitudesRelay.accept(self.altitudesRelay.value + [altitude])

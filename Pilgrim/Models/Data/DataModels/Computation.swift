@@ -95,7 +95,7 @@ class Computation {
             pauseDuration += duration
         }
         
-        return (totalDuration - pauseDuration, pauseDuration)
+        return (max(0, totalDuration - pauseDuration), pauseDuration)
         
     }
     

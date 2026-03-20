@@ -49,6 +49,9 @@ final class SoundscapePlayer: NSObject, ObservableObject {
     }
 
     func stop(fadeDuration: TimeInterval = 2.0) {
+        fadingOutPlayer?.stop()
+        fadingOutPlayer = nil
+
         guard let player = activePlayer else { return }
         isPlaying = false
         currentAsset = nil
@@ -119,6 +122,9 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             }
         } catch {
             print("[SoundscapePlayer] Crossfade error: \(error)")
+            fadingOutPlayer?.stop()
+            fadingOutPlayer = nil
+            coordinator.deactivate(consumer: "soundscape")
         }
     }
 }

@@ -29,7 +29,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Pilgrim uses the microphone to record voice notes during your walks</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Pilgrim needs your location to track your walking route</string>
+	<string>Pilgrim needs continuous location access to track your walking route in the background while you walk</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pilgrim needs your location to track your walking route</string>
 	<key>NSMotionUsageDescription</key>
@@ -76,60 +76,18 @@
 			<key>UTTypeIconFiles</key>
 			<array/>
 			<key>UTTypeIdentifier</key>
-			<string>org.walktalkmeditate.pilgrim</string>
+			<string>org.walktalkmeditate.pilgrim.package</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
 					<string>pilgrim</string>
 				</array>
-			</dict>
-		</dict>
-		<dict>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.xml</string>
-			</array>
-			<key>UTTypeDescription</key>
-			<string>GPS Exchange Format (GPX)</string>
-			<key>UTTypeIconFiles</key>
-			<array/>
-			<key>UTTypeIdentifier</key>
-			<string>com.topografix.gpx</string>
-			<key>UTTypeReferenceURL</key>
-			<string>http://www.topografix.com/GPX</string>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>gpx</string>
-				</array>
-				<key>public.mime-type</key>
-				<string>application/gpx.xml</string>
 			</dict>
 		</dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
-		<dict>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.data</string>
-			</array>
-			<key>UTTypeDescription</key>
-			<string>Pilgrim Data Package</string>
-			<key>UTTypeIconFiles</key>
-			<array/>
-			<key>UTTypeIdentifier</key>
-			<string>org.walktalkmeditate.pilgrim</string>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>pilgrim</string>
-				</array>
-			</dict>
-		</dict>
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>

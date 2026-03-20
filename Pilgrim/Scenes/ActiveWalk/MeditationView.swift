@@ -98,6 +98,7 @@ struct MeditationView: View {
             voicePlayingCancellable = nil
             meditationGuide?.stopGuiding()
             meditationGuide = nil
+            isClosing = false
             isActive = false
             clock.stop()
         }

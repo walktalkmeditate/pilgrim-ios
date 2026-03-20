@@ -449,7 +449,7 @@ final class PilgrimPackageConverterTests: XCTestCase {
             descend: 45.0,
             activeDuration: 3600.0,
             pauseDuration: 120.0,
-            dayIdentifier: "2024-03-09",
+            dayIdentifier: "20240309",
             talkDuration: 180.0,
             meditateDuration: 300.0,
             heartRates: heartRates,

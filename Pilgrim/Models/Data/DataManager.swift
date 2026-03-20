@@ -801,36 +801,26 @@ struct DataManager {
      */
     public static func deleteAll(completion: @escaping (_ success: Bool, _ error: DataManager.DeleteError?) -> Void) {
 
-        var deletionError: CoreStoreError?
-
         let allRecordingPaths: [String] = (try? dataStack.fetchAll(From<VoiceRecording>()))?.compactMap { $0._fileRelativePath.value } ?? []
 
         dataStack.perform(asynchronous: { (transaction) -> Void in
 
-            do {
-                try transaction.deleteAll(From<Walk>())
-                try transaction.deleteAll(From<WalkPause>())
-                try transaction.deleteAll(From<WalkEvent>())
-                try transaction.deleteAll(From<RouteDataSample>())
-                try transaction.deleteAll(From<HeartRateDataSample>())
-                try transaction.deleteAll(From<VoiceRecording>())
-                try transaction.deleteAll(From<ActivityInterval>())
-                try transaction.deleteAll(From<Waypoint>())
-                try transaction.deleteAll(From<Event>())
-            } catch {
-                deletionError = error as? CoreStoreError
-            }
+            try transaction.deleteAll(From<Walk>())
+            try transaction.deleteAll(From<WalkPause>())
+            try transaction.deleteAll(From<WalkEvent>())
+            try transaction.deleteAll(From<RouteDataSample>())
+            try transaction.deleteAll(From<HeartRateDataSample>())
+            try transaction.deleteAll(From<VoiceRecording>())
+            try transaction.deleteAll(From<ActivityInterval>())
+            try transaction.deleteAll(From<Waypoint>())
+            try transaction.deleteAll(From<Event>())
 
         }) { (result) in
             switch result {
-            case .success(_):
+            case .success:
                 cleanupRecordingFiles(relativePaths: allRecordingPaths)
                 cleanupEmptyRecordingsDirectory()
-                if let error = deletionError {
-                    completion(true, .databaseError(error: error))
-                } else {
-                    completion(true, nil)
-                }
+                completion(true, nil)
             case .failure(let error):
                 completion(false, .databaseError(error: error))
             }

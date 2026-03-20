@@ -45,14 +45,15 @@ class StepCounter: WalkBuilderComponent {
             return
         }
         
-        self.pedometer.startUpdates(from: date) { (data, error) in
-            
+        self.pedometer.startUpdates(from: date) { [weak self] (data, error) in
+            guard let self else { return }
+
             guard self.shouldRecord else {
                 self.stepsBeforeLastPause = self.stepsRelay.value
                 self.pedometer.stopUpdates()
                 return
             }
-            
+
             let steps = Int(truncating: data?.numberOfSteps ?? 0) + (self.stepsBeforeLastPause ?? 0)
             self.stepsRelay.accept(steps)
         }

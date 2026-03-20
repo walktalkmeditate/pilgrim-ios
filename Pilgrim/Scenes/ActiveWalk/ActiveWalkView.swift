@@ -451,8 +451,7 @@ struct ActiveWalkView: View {
                 let sign = snapshot.system == .tropical ? sunPos.tropical.sign : sunPos.sidereal.sign
                 greeting = "The Sun enters \(sign.name) today \u{2014} \(marker.name)"
             }
-        } else if !snapshot.retrogradePlanets.isEmpty {
-            let planet = snapshot.retrogradePlanets.first!
+        } else if let planet = snapshot.retrogradePlanets.first {
             greeting = "\(planet.name) turns inward"
         } else if let moonPos = snapshot.position(for: .moon) {
             let sign = snapshot.system == .tropical ? moonPos.tropical.sign : moonPos.sidereal.sign
