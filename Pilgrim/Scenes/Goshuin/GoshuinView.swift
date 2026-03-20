@@ -6,7 +6,7 @@ struct GoshuinView: View {
     let onSelectWalk: (UUID) -> Void
 
     @State private var activeFilter: WalkFavicon?
-    @State private var shareItem: NamedImageItem?
+    @State private var shareURL: URL?
     @Environment(\.dismiss) private var dismiss
 
     private var filteredWalks: [Walk] {
@@ -37,8 +37,8 @@ struct GoshuinView: View {
                         .foregroundColor(.stone)
                 }
             }
-            .sheet(item: $shareItem) { item in
-                ShareSheet(items: [item])
+            .sheet(item: $shareURL) { url in
+                ShareSheet(items: [url])
             }
         }
     }
@@ -160,8 +160,8 @@ struct GoshuinView: View {
                     }
                 }
             }
-            let item = NamedImageItem(image: image, filename: "pilgrim-goshuin")
-            await MainActor.run { shareItem = item }
+            let url = WalkSharingButtons.writeToTemp(image: image, name: "pilgrim-goshuin-\(UUID().uuidString.prefix(8))")
+            await MainActor.run { shareURL = url }
         }
     }
 }

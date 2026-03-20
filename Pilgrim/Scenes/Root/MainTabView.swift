@@ -7,7 +7,7 @@ enum MainTab {
 struct MainTabView: View {
 
     @State private var selectedTab: MainTab = .path
-    @State private var sealShareItem: NamedImageItem?
+    @State private var sealShareURL: URL?
     @StateObject private var coordinator = MainCoordinator()
 
     var body: some View {
@@ -58,9 +58,9 @@ struct MainTabView: View {
                         coordinator.handleSealRevealDismiss()
                     },
                     onShareSeal: { image in
-                        let item = NamedImageItem(image: image, filename: "pilgrim-seal")
+                        let url = WalkSharingButtons.writeToTemp(image: image, name: "pilgrim-seal-\(walk.uuid?.uuidString.prefix(8) ?? "share")")
                         coordinator.handleSealRevealDismiss()
-                        sealShareItem = item
+                        sealShareURL = url
                     }
                 )
                 .transition(.opacity)
@@ -68,8 +68,8 @@ struct MainTabView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: coordinator.showSealReveal)
-        .sheet(item: $sealShareItem) { item in
-            ShareSheet(items: [item])
+        .sheet(item: $sealShareURL) { url in
+            ShareSheet(items: [url])
         }
         .overlay(alignment: .top) {
             if let date = coordinator.recoveredWalkDate {

@@ -4,12 +4,12 @@ struct WalkSharingButtons: View {
 
     let walk: WalkInterface
     @State private var showJourneySheet = false
-    @State private var shareItem: NamedImageItem?
+    @State private var shareURL: URL?
     @State private var isGenerating = false
 
-    private static let dateFormatter: DateFormatter = {
+    private static let dateTimeFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
+        f.dateFormat = "yyyy-MM-dd-HHmm"
         return f
     }()
 
@@ -30,8 +30,8 @@ struct WalkSharingButtons: View {
             .sheet(isPresented: $showJourneySheet) {
                 WalkShareView(walk: walk)
             }
-            .sheet(item: $shareItem) { item in
-                ShareSheet(items: [item])
+            .sheet(item: $shareURL) { url in
+                ShareSheet(items: [url])
             }
         }
     }
@@ -47,13 +47,13 @@ struct WalkSharingButtons: View {
                 subtitle: "Share as image"
             ) {
                 isGenerating = true
-                let dateSuffix = Self.dateFormatter.string(from: walk.startDate)
+                let suffix = Self.dateTimeFormatter.string(from: walk.startDate)
                 Task.detached(priority: .userInitiated) {
                     let image = SealGenerator.generate(for: walk, size: 512)
-                    let item = NamedImageItem(image: image, filename: "pilgrim-seal-\(dateSuffix)")
+                    let url = Self.writeToTemp(image: image, name: "pilgrim-seal-\(suffix)")
                     await MainActor.run {
                         isGenerating = false
-                        shareItem = item
+                        shareURL = url
                     }
                 }
             }
@@ -63,13 +63,13 @@ struct WalkSharingButtons: View {
                 subtitle: "Share as postcard"
             ) {
                 isGenerating = true
-                let dateSuffix = Self.dateFormatter.string(from: walk.startDate)
+                let suffix = Self.dateTimeFormatter.string(from: walk.startDate)
                 Task.detached(priority: .userInitiated) {
                     let image = EtegamiGenerator.generate(for: walk)
-                    let item = NamedImageItem(image: image, filename: "pilgrim-etegami-\(dateSuffix)")
+                    let url = Self.writeToTemp(image: image, name: "pilgrim-etegami-\(suffix)")
                     await MainActor.run {
                         isGenerating = false
-                        shareItem = item
+                        shareURL = url
                     }
                 }
             }
@@ -144,33 +144,16 @@ struct WalkSharingButtons: View {
                 .tracking(1.0)
         }
     }
+
+    // MARK: - File Helpers
+
+    static func writeToTemp(image: UIImage, name: String) -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).png")
+        try? image.pngData()?.write(to: url, options: .atomic)
+        return url
+    }
 }
 
-// MARK: - Named Image Item Provider
-
-class NamedImageItem: NSObject, UIActivityItemSource, Identifiable {
-    let image: UIImage
-    let filename: String
-    let id = UUID()
-
-    init(image: UIImage, filename: String) {
-        self.image = image
-        self.filename = filename
-    }
-
-    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
-        image
-    }
-
-    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
-        image
-    }
-
-    func activityViewController(_ activityViewController: UIActivityViewController, dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
-        "public.png"
-    }
-
-    func activityViewController(_ activityViewController: UIActivityViewController, subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
-        filename
-    }
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
 }
