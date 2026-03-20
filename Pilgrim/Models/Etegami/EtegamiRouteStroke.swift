@@ -124,8 +124,8 @@ enum EtegamiRouteStroke {
         guard projectedPoints.count > 1 else { return }
 
         ctx.saveGState()
-        ctx.setLineCap(.round)
-        ctx.setLineJoin(.round)
+        ctx.setLineCap(.butt)
+        ctx.setLineJoin(.bevel)
         ctx.setStrokeColor(color.withAlphaComponent(opacity).cgColor)
         ctx.setLineWidth(lineWidth)
 
