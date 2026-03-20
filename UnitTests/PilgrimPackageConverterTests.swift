@@ -259,90 +259,15 @@ final class PilgrimPackageConverterTests: XCTestCase {
 
     // MARK: - Round Trip (Export then Import)
 
-    func testRoundTrip_fullWalk() {
-        let walkId = UUID()
-        let start = Date(timeIntervalSince1970: 1710000000.456)
-        let end = Date(timeIntervalSince1970: 1710003600.789)
+    func testRoundTrip_coreFields() {
+        let (original, restored) = makeRoundTripPair()
 
-        let routeSample = TempRouteDataSample(
-            uuid: UUID(), timestamp: start,
-            latitude: 37.7749, longitude: -122.4194, altitude: 15.5,
-            horizontalAccuracy: 5.0, verticalAccuracy: 3.0,
-            speed: 1.4, direction: 270.0
-        )
-        let pause = TempWalkPause(
-            uuid: UUID(),
-            startDate: Date(timeIntervalSince1970: 1710001800),
-            endDate: Date(timeIntervalSince1970: 1710001860),
-            pauseType: .manual
-        )
-        let hr = TempHeartRateDataSample(uuid: UUID(), heartRate: 142, timestamp: start)
-        let event = TempWalkEvent(uuid: UUID(), eventType: .lap, timestamp: start)
-        let activity = TempActivityInterval(
-            uuid: UUID(), activityType: .meditation,
-            startDate: Date(timeIntervalSince1970: 1710002000),
-            endDate: Date(timeIntervalSince1970: 1710002300)
-        )
-        let recording = TempVoiceRecording(
-            uuid: UUID(),
-            startDate: start, endDate: Date(timeIntervalSince1970: 1710000045),
-            duration: 45.0, fileRelativePath: "Recordings/a/b.m4a",
-            transcription: "Hello trail", wordsPerMinute: 100.0, isEnhanced: true
-        )
-        let waypoint = TempWaypoint(
-            uuid: UUID(), latitude: 37.78, longitude: -122.41,
-            label: "Oak", icon: "tree", timestamp: start
-        )
-
-        let original = TempWalk(
-            uuid: walkId,
-            workoutType: .walking,
-            distance: 5000.0,
-            steps: 6500,
-            startDate: start,
-            endDate: end,
-            burnedEnergy: 250.0,
-            isRace: true,
-            comment: "Be present",
-            isUserModified: true,
-            healthKitUUID: nil,
-            finishedRecording: true,
-            ascend: 50.0,
-            descend: 45.0,
-            activeDuration: 3600.0,
-            pauseDuration: 120.0,
-            dayIdentifier: "2024-03-09",
-            talkDuration: 180.0,
-            meditateDuration: 300.0,
-            heartRates: [hr],
-            routeData: [routeSample],
-            pauses: [pause],
-            workoutEvents: [event],
-            voiceRecordings: [recording],
-            activityIntervals: [activity],
-            favicon: "flame",
-            waypoints: [waypoint],
-            weatherCondition: "clear",
-            weatherTemperature: 22.5,
-            weatherHumidity: 0.6,
-            weatherWindSpeed: 3.1
-        )
-
-        let exported = PilgrimPackageConverter.convert(walk: original, system: .tropical, celestialEnabled: false)!
-
-        let encoder = PilgrimDateCoding.makeEncoder()
-        let decoder = PilgrimDateCoding.makeDecoder()
-        let json = try! encoder.encode(exported)
-        let reimported = try! decoder.decode(PilgrimWalk.self, from: json)
-
-        let restored = PilgrimPackageConverter.convertToTemp(walk: reimported)
-
-        XCTAssertEqual(restored.uuid, walkId)
+        XCTAssertEqual(restored.uuid, original.uuid)
         XCTAssertEqual(restored.workoutType, .walking)
         XCTAssertEqual(restored.distance, 5000.0, accuracy: 0.01)
         XCTAssertEqual(restored.steps, 6500)
-        XCTAssertEqual(restored.startDate.timeIntervalSince1970, start.timeIntervalSince1970, accuracy: 0.001)
-        XCTAssertEqual(restored.endDate.timeIntervalSince1970, end.timeIntervalSince1970, accuracy: 0.001)
+        XCTAssertEqual(restored.startDate.timeIntervalSince1970, original.startDate.timeIntervalSince1970, accuracy: 0.001)
+        XCTAssertEqual(restored.endDate.timeIntervalSince1970, original.endDate.timeIntervalSince1970, accuracy: 0.001)
         XCTAssertEqual(restored.burnedEnergy, 250.0)
         XCTAssertTrue(restored.isRace)
         XCTAssertEqual(restored.comment, "Be present")
@@ -355,20 +280,32 @@ final class PilgrimPackageConverterTests: XCTestCase {
         XCTAssertEqual(restored.talkDuration, 180.0, accuracy: 0.01)
         XCTAssertEqual(restored.meditateDuration, 300.0, accuracy: 0.01)
         XCTAssertEqual(restored.favicon, "flame")
+    }
+
+    func testRoundTrip_weather() {
+        let (_, restored) = makeRoundTripPair()
 
         XCTAssertEqual(restored.weatherCondition, "clear")
         XCTAssertEqual(restored.weatherTemperature, 22.5)
         XCTAssertEqual(restored.weatherHumidity, 0.6)
         XCTAssertEqual(restored.weatherWindSpeed, 3.1)
+    }
+
+    func testRoundTrip_routeData() {
+        let (_, restored) = makeRoundTripPair()
 
         XCTAssertEqual(restored.routeData.count, 1)
-        let restoredSample = restored.routeData[0]
-        XCTAssertEqual(restoredSample.latitude, 37.7749, accuracy: 0.0001)
-        XCTAssertEqual(restoredSample.longitude, -122.4194, accuracy: 0.0001)
-        XCTAssertEqual(restoredSample.altitude, 15.5, accuracy: 0.01)
-        XCTAssertEqual(restoredSample.speed, 1.4, accuracy: 0.01)
-        XCTAssertEqual(restoredSample.direction, 270.0, accuracy: 0.01)
-        XCTAssertEqual(restoredSample.horizontalAccuracy, 5.0, accuracy: 0.01)
+        let sample = restored.routeData[0]
+        XCTAssertEqual(sample.latitude, 37.7749, accuracy: 0.0001)
+        XCTAssertEqual(sample.longitude, -122.4194, accuracy: 0.0001)
+        XCTAssertEqual(sample.altitude, 15.5, accuracy: 0.01)
+        XCTAssertEqual(sample.speed, 1.4, accuracy: 0.01)
+        XCTAssertEqual(sample.direction, 270.0, accuracy: 0.01)
+        XCTAssertEqual(sample.horizontalAccuracy, 5.0, accuracy: 0.01)
+    }
+
+    func testRoundTrip_collections() {
+        let (_, restored) = makeRoundTripPair()
 
         XCTAssertEqual(restored.pauses.count, 1)
         XCTAssertEqual(restored.pauses[0].pauseType, .manual)
@@ -419,6 +356,63 @@ final class PilgrimPackageConverterTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makeRoundTripPair() -> (original: TempWalk, restored: TempWalk) {
+        let start = Date(timeIntervalSince1970: 1710000000.456)
+        let end = Date(timeIntervalSince1970: 1710003600.789)
+
+        let original = makeTestWalk(
+            routeData: [TempRouteDataSample(
+                uuid: UUID(), timestamp: start,
+                latitude: 37.7749, longitude: -122.4194, altitude: 15.5,
+                horizontalAccuracy: 5.0, verticalAccuracy: 3.0,
+                speed: 1.4, direction: 270.0
+            )],
+            pauses: [TempWalkPause(
+                uuid: UUID(),
+                startDate: Date(timeIntervalSince1970: 1710001800),
+                endDate: Date(timeIntervalSince1970: 1710001860),
+                pauseType: .manual
+            )],
+            workoutEvents: [TempWalkEvent(uuid: UUID(), eventType: .lap, timestamp: start)],
+            voiceRecordings: [TempVoiceRecording(
+                uuid: UUID(),
+                startDate: start, endDate: Date(timeIntervalSince1970: 1710000045),
+                duration: 45.0, fileRelativePath: "Recordings/a/b.m4a",
+                transcription: "Hello trail", wordsPerMinute: 100.0, isEnhanced: true
+            )],
+            activityIntervals: [TempActivityInterval(
+                uuid: UUID(), activityType: .meditation,
+                startDate: Date(timeIntervalSince1970: 1710002000),
+                endDate: Date(timeIntervalSince1970: 1710002300)
+            )],
+            heartRates: [TempHeartRateDataSample(uuid: UUID(), heartRate: 142, timestamp: start)],
+            waypoints: [TempWaypoint(
+                uuid: UUID(), latitude: 37.78, longitude: -122.41,
+                label: "Oak", icon: "tree", timestamp: start
+            )],
+            isRace: true,
+            isUserModified: true,
+            favicon: "flame",
+            weatherCondition: "clear",
+            weatherTemperature: 22.5,
+            weatherHumidity: 0.6,
+            weatherWindSpeed: 3.1
+        )
+
+        var mutableOriginal = original
+        mutableOriginal.startDate = start
+        mutableOriginal.endDate = end
+
+        let exported = PilgrimPackageConverter.convert(walk: mutableOriginal, system: .tropical, celestialEnabled: false)!
+        let encoder = PilgrimDateCoding.makeEncoder()
+        let decoder = PilgrimDateCoding.makeDecoder()
+        let json = try! encoder.encode(exported)
+        let reimported = try! decoder.decode(PilgrimWalk.self, from: json)
+        let restored = PilgrimPackageConverter.convertToTemp(walk: reimported)
+
+        return (mutableOriginal, restored)
+    }
 
     private func makeTestWalk(
         uuid: UUID? = UUID(),
