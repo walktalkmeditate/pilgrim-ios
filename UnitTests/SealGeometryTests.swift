@@ -56,4 +56,24 @@ final class SealGeometryTests: XCTestCase {
         XCTAssertEqual(geo1.radialLines.count, geo2.radialLines.count)
         XCTAssertEqual(geo1.rotation, geo2.rotation)
     }
+
+    func testRenderer_producesNonEmptyImage() {
+        let bytes: [UInt8] = (0..<32).map { UInt8($0 * 8) }
+        let geo = SealGeometry(bytes: bytes, size: 512, meditateRatio: 0.3, talkRatio: 0.1)
+        let input = SealRenderer.Input(
+            geometry: geo,
+            color: .brown,
+            season: "Spring",
+            year: 2026,
+            timeOfDay: "Morning",
+            displayDistance: "5.2",
+            unitLabel: "KM",
+            routePoints: [(35.68, 139.76), (35.69, 139.77), (35.70, 139.78)],
+            altitudes: Array(stride(from: 100.0, through: 200.0, by: 10.0)),
+            weatherCondition: "rain"
+        )
+        let image = SealRenderer.render(input: input)
+        XCTAssertEqual(image.size.width, 512)
+        XCTAssertEqual(image.size.height, 512)
+    }
 }
