@@ -29,6 +29,7 @@ struct MeditationView: View {
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
     @State private var voiceRings: [VoiceRing] = []
+    @State private var voiceRingPulse = false
     @State private var breathSpeedMultiplier: Double = 1.0
     @State private var voiceSoften: Double = 0
     @State private var voicePlayingCancellable: AnyCancellable?
@@ -187,15 +188,18 @@ struct MeditationView: View {
     private var voiceRingLayer: some View {
         GeometryReader { geo in
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.35)
+            let pulseScale: CGFloat = voiceRingPulse ? 1.04 : 0.97
+            let pulseOpacity: Double = voiceRingPulse ? 1.0 : 0.6
             ForEach(voiceRings) { ring in
                 Circle()
-                    .stroke(Color.moss.opacity(ring.opacity), lineWidth: 1)
+                    .stroke(Color.moss.opacity(ring.opacity * pulseOpacity), lineWidth: 1)
                     .frame(width: ring.size, height: ring.size)
-                    .scaleEffect(x: 1.0 + ring.irregularity * 0.04, y: 1.0 - ring.irregularity * 0.02)
+                    .scaleEffect(pulseScale + ring.irregularity * 0.02)
                     .position(center)
             }
         }
         .allowsHitTesting(false)
+        .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: voiceRingPulse)
     }
 
     private func emitRipple() {
@@ -677,10 +681,12 @@ struct MeditationView: View {
             voiceSoften = 1.0
         }
         emitVoiceRings()
+        voiceRingPulse = true
     }
 
     private func onVoiceEnd() {
         breathSpeedMultiplier = 1.0
+        voiceRingPulse = false
         withAnimation(.easeInOut(duration: 3.0)) {
             voiceSoften = 0
         }
