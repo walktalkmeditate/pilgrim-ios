@@ -93,8 +93,8 @@ enum EtegamiRouteStroke {
         for i in 0..<min(count, altitudes.count - 1) {
             let delta = altitudes[i + 1] - altitudes[i]
             let normalized = CGFloat(abs(delta) / range)
-            let multiplier: CGFloat = delta > 0 ? 1.0 + normalized * 1.5 : 1.0 - normalized * 0.4
-            widths.append(baseWidth * max(multiplier, 0.5))
+            let multiplier: CGFloat = delta > 0 ? 1.0 + normalized * 1.0 : 1.0 - normalized * 0.3
+            widths.append(baseWidth * min(max(multiplier, 0.5), 2.0))
         }
         while widths.count < count { widths.append(baseWidth) }
         return widths
@@ -161,7 +161,7 @@ enum EtegamiRouteStroke {
         case .meditation:
             for ring in 1...3 {
                 let r = CGFloat(ring) * 14
-                let alpha = 0.2 / CGFloat(ring)
+                let alpha = 0.3 / CGFloat(ring)
                 ctx.setStrokeColor(color.withAlphaComponent(alpha).cgColor)
                 ctx.setLineWidth(0.8)
                 ctx.strokeEllipse(in: CGRect(

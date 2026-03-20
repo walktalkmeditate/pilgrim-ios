@@ -58,13 +58,16 @@ enum EtegamiRenderer {
             let sealCenter = input.sealPosition
             drawSealGlow(ctx: cgCtx, center: sealCenter, radius: sealSize / 2, color: input.inkColor)
 
-            // 9. Seal image
+            // 9. Seal shadow + image
             let sealRect = CGRect(
                 x: sealCenter.x - sealSize / 2,
                 y: sealCenter.y - sealSize / 2,
                 width: sealSize, height: sealSize
             )
+            cgCtx.saveGState()
+            cgCtx.setShadow(offset: CGSize(width: 0, height: 4), blur: 12, color: UIColor.black.withAlphaComponent(0.1).cgColor)
             input.sealImage.draw(in: sealRect)
+            cgCtx.restoreGState()
 
             // 10. Haiku text
             drawHaiku(ctx: cgCtx, text: input.haikuText, inkColor: input.inkColor)
@@ -101,7 +104,7 @@ enum EtegamiRenderer {
 
         // Glow pass
         let glowWidths = EtegamiRouteStroke.computeStrokeWidths(
-            altitudes: smoothedAltitudes, baseWidth: 30, count: segmentCount
+            altitudes: smoothedAltitudes, baseWidth: 24, count: segmentCount
         )
         EtegamiRouteStroke.draw(
             ctx: ctx,
@@ -115,7 +118,7 @@ enum EtegamiRenderer {
 
         // Crisp pass
         let widths = EtegamiRouteStroke.computeStrokeWidths(
-            altitudes: smoothedAltitudes, baseWidth: 10, count: segmentCount
+            altitudes: smoothedAltitudes, baseWidth: 8, count: segmentCount
         )
         EtegamiRouteStroke.draw(
             ctx: ctx,
