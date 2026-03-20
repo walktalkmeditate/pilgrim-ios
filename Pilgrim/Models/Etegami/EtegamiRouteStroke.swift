@@ -167,13 +167,27 @@ enum EtegamiRouteStroke {
 
         ctx.restoreGState()
 
-        for marker in activityMarkers {
-            var resolved = marker
-            if let idx = marker.routeIndex {
-                let smoothedIdx = min(idx * 8, projectedPoints.count - 1)
-                resolved = ActivityMarker(type: marker.type, position: projectedPoints[smoothedIdx], routeIndex: idx)
+        var resolvedMarkers: [ActivityMarker] = activityMarkers.map { marker in
+            guard let idx = marker.routeIndex else { return marker }
+            let smoothedIdx = min(idx * 8, projectedPoints.count - 1)
+            return ActivityMarker(type: marker.type, position: projectedPoints[smoothedIdx], routeIndex: idx)
+        }
+
+        let meditationPositions = Set(resolvedMarkers.filter { $0.type == .meditation }.map { "\(Int($0.position.x)),\(Int($0.position.y))" })
+        resolvedMarkers = resolvedMarkers.map { marker in
+            guard marker.type == .voice else { return marker }
+            let key = "\(Int(marker.position.x)),\(Int(marker.position.y))"
+            if meditationPositions.contains(key) {
+                return ActivityMarker(type: .voice, position: CGPoint(x: marker.position.x + 30, y: marker.position.y - 20), routeIndex: marker.routeIndex)
             }
-            drawActivityMarker(ctx: ctx, marker: resolved, color: color)
+            return marker
+        }
+
+        for marker in resolvedMarkers.filter({ $0.type == .meditation }) {
+            drawActivityMarker(ctx: ctx, marker: marker, color: color)
+        }
+        for marker in resolvedMarkers.filter({ $0.type == .voice }) {
+            drawActivityMarker(ctx: ctx, marker: marker, color: color)
         }
     }
 
