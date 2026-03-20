@@ -289,11 +289,17 @@ enum GoshuinShareRenderer {
             ?? UIFont(name: "Helvetica", size: 12)
             ?? UIFont.systemFont(ofSize: 12)
 
+        let totalRows = (selected.count + columns - 1) / columns
+
         for (index, walk) in selected.enumerated() {
             let col = index % columns
             let row = index / columns
 
-            let baseX = gridOriginX + CGFloat(col) * (sealSize + spacing)
+            let itemsInThisRow = (row == totalRows - 1) ? (selected.count - row * columns) : columns
+            let rowWidth = CGFloat(itemsInThisRow) * sealSize + CGFloat(max(itemsInThisRow - 1, 0)) * spacing
+            let rowOriginX = (canvasSize.width - rowWidth) / 2
+
+            let baseX = rowOriginX + CGFloat(col) * (sealSize + spacing)
             let baseY = gridOriginY + CGFloat(row) * (sealSize + rowSpacing)
 
             let offsetX = CGFloat.random(in: -8...8, using: &rng)
