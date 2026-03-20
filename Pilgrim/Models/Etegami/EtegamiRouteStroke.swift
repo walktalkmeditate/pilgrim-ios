@@ -154,8 +154,8 @@ enum EtegamiRouteStroke {
         switch marker.type {
         case .meditation:
             for ring in 1...3 {
-                let r = CGFloat(ring) * 8
-                let alpha = 0.15 / CGFloat(ring)
+                let r = CGFloat(ring) * 14
+                let alpha = 0.2 / CGFloat(ring)
                 ctx.setStrokeColor(color.withAlphaComponent(alpha).cgColor)
                 ctx.setLineWidth(0.8)
                 ctx.strokeEllipse(in: CGRect(

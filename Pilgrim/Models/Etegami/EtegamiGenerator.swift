@@ -43,9 +43,20 @@ enum EtegamiGenerator {
 
         let distanceKm = walk.distance / 1000
         let isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
-        let displayDistance = isImperial
-            ? String(format: "%.1f", distanceKm * 0.621371)
-            : String(format: "%.1f", distanceKm)
+        let distanceText = isImperial
+            ? String(format: "%.1f mi", distanceKm * 0.621371)
+            : String(format: "%.1f km", distanceKm)
+
+        let durationMinutes = Int(walk.activeDuration / 60)
+        let durationText = durationMinutes < 60
+            ? "\(durationMinutes) min"
+            : String(format: "%dh %dm", durationMinutes / 60, durationMinutes % 60)
+
+        let elevationText: String? = walk.ascend > 1
+            ? (isImperial
+                ? String(format: "%.0fft \u{2191}", walk.ascend * 3.28084)
+                : String(format: "%.0fm \u{2191}", walk.ascend))
+            : nil
 
         let input = EtegamiRenderer.Input(
             routePoints: routePoints,
@@ -58,7 +69,9 @@ enum EtegamiGenerator {
             timeOfDay: timeOfDay,
             inkColor: inkColor,
             paperColor: paperColor,
-            displayDistance: displayDistance
+            distanceText: distanceText,
+            durationText: durationText,
+            elevationText: elevationText
         )
 
         return EtegamiRenderer.render(input: input)

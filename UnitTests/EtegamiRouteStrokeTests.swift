@@ -56,7 +56,9 @@ final class EtegamiRouteStrokeTests: XCTestCase {
             timeOfDay: "Morning",
             inkColor: .brown,
             paperColor: UIColor(hex: "#F5F0E8"),
-            displayDistance: "3.2"
+            distanceText: "3.2 km",
+            durationText: "45 min",
+            elevationText: "120m \u{2191}"
         )
         let image = EtegamiRenderer.render(input: input)
         XCTAssertEqual(image.size.width, 1080)
