@@ -25,6 +25,11 @@ final class VoiceGuideFileStore {
         pack.prompts.allSatisfy { isAvailable($0, packId: pack.id) }
     }
 
+    func isMeditationDownloaded(_ pack: VoiceGuidePack) -> Bool {
+        guard let medPrompts = pack.meditationPrompts, !medPrompts.isEmpty else { return false }
+        return medPrompts.allSatisfy { isAvailable($0, packId: pack.id) }
+    }
+
     func destinationURL(for prompt: VoiceGuidePrompt, packId: String) -> URL {
         let dir = baseDirectory.appendingPathComponent(packId, isDirectory: true)
         try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)

@@ -385,37 +385,7 @@ struct SoundSettingsView: View {
     }
 
     private var breathRhythmPickerContent: some View {
-        Section {
-            ForEach(BreathRhythm.all) { r in
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 8) {
-                            Text(r.name)
-                                .font(Constants.Typography.body)
-                                .foregroundColor(.ink)
-                            if !r.isNone {
-                                Text(r.label)
-                                    .font(Constants.Typography.caption)
-                                    .foregroundColor(.fog)
-                            }
-                        }
-                        Text(r.description)
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.fog)
-                    }
-                    Spacer()
-                    if breathRhythm == r.id {
-                        Image(systemName: "checkmark")
-                            .foregroundColor(.stone)
-                    }
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    breathRhythm = r.id
-                    UserPreferences.breathRhythm.value = r.id
-                }
-            }
-        }
+        BreathRhythmPickerSection(selection: $breathRhythm)
     }
 
     // MARK: - Helpers
@@ -482,6 +452,45 @@ enum PickerType: String, Identifiable {
         case .meditationStartBell, .meditationEndBell: return "for meditation"
         case .soundscape: return "during meditation"
         case .breathRhythm: return "for meditation"
+        }
+    }
+}
+
+private struct BreathRhythmPickerSection: View {
+
+    @Binding var selection: Int
+
+    var body: some View {
+        Section {
+            ForEach(BreathRhythm.all) { r in
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 8) {
+                            Text(r.name)
+                                .font(Constants.Typography.body)
+                                .foregroundColor(.ink)
+                            if !r.isNone {
+                                Text(r.label)
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(.fog)
+                            }
+                        }
+                        Text(r.description)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                    Spacer()
+                    if selection == r.id {
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.stone)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selection = r.id
+                    UserPreferences.breathRhythm.value = r.id
+                }
+            }
         }
     }
 }

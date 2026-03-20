@@ -1,6 +1,11 @@
 import Foundation
 import Combine
 
+enum SchedulerContext {
+    case walk
+    case meditation
+}
+
 final class VoiceGuideScheduler {
 
     struct WalkState {
@@ -10,10 +15,13 @@ final class VoiceGuideScheduler {
         var walkStartDate: Date?
     }
 
-    private static let settlingThresholdSec: TimeInterval = 20 * 60
-    private static let closingThresholdSec: TimeInterval = 45 * 60
+    private let prompts: [VoiceGuidePrompt]
+    private let scheduling: PromptDensity
+    private let context: SchedulerContext
+    private let settlingThresholdSec: TimeInterval
+    private let closingThresholdSec: TimeInterval
+    private var startDate: Date?
 
-    private let pack: VoiceGuidePack
     private var cancellables: [AnyCancellable] = []
 
     private var walkState = WalkState()
@@ -26,8 +34,20 @@ final class VoiceGuideScheduler {
 
     var onShouldPlay: ((VoiceGuidePrompt) -> Void)?
 
-    init(pack: VoiceGuidePack) {
-        self.pack = pack
+    init(
+        prompts: [VoiceGuidePrompt],
+        scheduling: PromptDensity,
+        context: SchedulerContext = .walk,
+        startDate: Date? = nil,
+        settlingThresholdSec: TimeInterval = 20 * 60,
+        closingThresholdSec: TimeInterval = 45 * 60
+    ) {
+        self.prompts = prompts
+        self.scheduling = scheduling
+        self.context = context
+        self.startDate = startDate
+        self.settlingThresholdSec = settlingThresholdSec
+        self.closingThresholdSec = closingThresholdSec
         drawNextInterval()
     }
 
@@ -84,18 +104,29 @@ final class VoiceGuideScheduler {
     func testTick() { tick() }
 
     private func tick() {
-        guard walkState.status == .recording,
-              !walkState.isRecordingVoice,
-              !walkState.isMeditating,
-              !isPaused,
-              !isPlaying else { return }
+        switch context {
+        case .walk:
+            guard walkState.status == .recording,
+                  !walkState.isRecordingVoice,
+                  !walkState.isMeditating,
+                  !isPaused,
+                  !isPlaying else { return }
+        case .meditation:
+            guard !isPaused, !isPlaying else { return }
+        }
 
         if let silenceUntil, Date() < silenceUntil { return }
 
-        guard let startDate = walkState.walkStartDate else { return }
+        let effectiveStartDate: Date?
+        switch context {
+        case .walk: effectiveStartDate = walkState.walkStartDate
+        case .meditation: effectiveStartDate = startDate
+        }
+
+        guard let startDate = effectiveStartDate else { return }
 
         let elapsed = Date().timeIntervalSince(startDate)
-        guard elapsed >= TimeInterval(pack.scheduling.initialDelaySec) else { return }
+        guard elapsed >= TimeInterval(scheduling.initialDelaySec) else { return }
 
         if let lastTime = lastPromptTime {
             let sinceLast = Date().timeIntervalSince(lastTime)
@@ -110,7 +141,7 @@ final class VoiceGuideScheduler {
 
     private func nextPrompt(elapsed: TimeInterval) -> VoiceGuidePrompt? {
         let currentPhase = phase(for: elapsed)
-        let sorted = pack.prompts.sorted { $0.seq < $1.seq }
+        let sorted = prompts.sorted { $0.seq < $1.seq }
 
         let phaseFiltered = sorted.filter { prompt in
             guard let promptPhase = prompt.phase else { return true }
@@ -133,17 +164,17 @@ final class VoiceGuideScheduler {
     }
 
     private func phase(for elapsed: TimeInterval) -> PromptPhase {
-        if elapsed < Self.settlingThresholdSec {
+        if elapsed < settlingThresholdSec {
             return .settling
-        } else if elapsed >= Self.closingThresholdSec {
+        } else if elapsed >= closingThresholdSec {
             return .closing
         }
         return .deepening
     }
 
     private func drawNextInterval() {
-        let min = pack.scheduling.densityMinSec
-        let max = pack.scheduling.densityMaxSec
+        let min = scheduling.densityMinSec
+        let max = scheduling.densityMaxSec
         nextIntervalSec = TimeInterval(Int.random(in: min...max))
     }
 }
