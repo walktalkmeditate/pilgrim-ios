@@ -178,6 +178,7 @@
 		D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D201 /* SealRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D200 /* SealRenderer.swift */; };
 		CC11DD22EE33FF44AA55BB66 /* SealCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* SealCache.swift */; };
+		DD22EE33FF44AA55BB66CC11 /* SealGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* SealGenerator.swift */; };
 		F9A0B1C2D3E4F5A6B7C8D9E0 /* SealGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */; };
 		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
 		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
@@ -499,6 +500,7 @@
 		E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometry.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D200 /* SealRenderer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealRenderer.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* SealCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealCache.swift; sourceTree = "<group>"; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* SealGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGenerator.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometryTests.swift; sourceTree = "<group>"; };
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManagement.swift; sourceTree = "<group>"; };
@@ -1270,6 +1272,7 @@
 				E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */,
 				F1A2B3C4D5E6F7A8B9C0D200 /* SealRenderer.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* SealCache.swift */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* SealGenerator.swift */,
 			);
 			path = Seal;
 			sourceTree = "<group>";
@@ -1871,6 +1874,7 @@
 				D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D201 /* SealRenderer.swift in Sources */,
 				CC11DD22EE33FF44AA55BB66 /* SealCache.swift in Sources */,
+				DD22EE33FF44AA55BB66CC11 /* SealGenerator.swift in Sources */,
 				C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */,
 				A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */,
