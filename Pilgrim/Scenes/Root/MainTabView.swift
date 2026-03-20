@@ -17,14 +17,17 @@ struct MainTabView: View {
                     coordinator.startWalk(mode: mode)
                 })
             }
+            .accessibilityIdentifier("tab_path")
 
             Tab("Journal", systemImage: "book", value: .journal) {
                 MainCoordinatorView(coordinator: coordinator)
             }
+            .accessibilityIdentifier("tab_journal")
 
             Tab("Settings", systemImage: "gearshape", value: .settings) {
                 SettingsView()
             }
+            .accessibilityIdentifier("tab_settings")
         }
         .tint(.stone)
         .fullScreenCover(item: $coordinator.activeWalkViewModel, onDismiss: {

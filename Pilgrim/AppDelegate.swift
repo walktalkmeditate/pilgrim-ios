@@ -41,6 +41,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 AudioManifestService.shared.syncIfNeeded()
                 VoiceGuideManifestService.shared.syncIfNeeded()
 
+                #if DEBUG
+                if CommandLine.arguments.contains("--demo-mode") {
+                    self.seedDemoData()
+                }
+                #endif
+
 
             }, migration: { _ in
 
@@ -73,6 +79,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         }
         WalkSessionGuard.active?.checkpointNow()
     }
+
+    #if DEBUG
+    private func seedDemoData() {
+        UserPreferences.isSetUp.value = true
+        DataManager.deleteAll { _, _ in
+            ScreenshotDataSeeder.seed { count in
+                print("[DemoMode] Seeded \(count) walks")
+            }
+        }
+    }
+    #endif
 
     enum AppLaunchState {
         case loading

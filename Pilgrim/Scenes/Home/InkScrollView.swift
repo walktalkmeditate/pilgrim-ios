@@ -332,6 +332,7 @@ struct InkScrollView: View {
                             .background(Color.stone.opacity(0.8))
                             .clipShape(Capsule())
                     }
+                    .accessibilityIdentifier("walk_details_button")
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity)
