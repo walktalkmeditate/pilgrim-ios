@@ -26,6 +26,7 @@ final class SealCache {
     static let shared = SealCache()
 
     private let hybridStorage: HybridStorage<String, UIImage>?
+    private let queue = DispatchQueue(label: "org.walktalkmeditate.pilgrim.sealcache", attributes: .concurrent)
 
     private init() {
         let diskConfig = DiskConfig(
@@ -51,24 +52,32 @@ final class SealCache {
     }
 
     func seal(for walkUUID: String) -> UIImage? {
-        guard let storage = hybridStorage else { return nil }
-        return try? storage.object(forKey: sealKey(walkUUID))
+        queue.sync {
+            guard let storage = hybridStorage else { return nil }
+            return try? storage.object(forKey: sealKey(walkUUID))
+        }
     }
 
     func thumbnail(for walkUUID: String) -> UIImage? {
-        guard let storage = hybridStorage else { return nil }
-        return try? storage.object(forKey: thumbnailKey(walkUUID))
+        queue.sync {
+            guard let storage = hybridStorage else { return nil }
+            return try? storage.object(forKey: thumbnailKey(walkUUID))
+        }
     }
 
     func store(seal: UIImage, for walkUUID: String) {
-        guard let storage = hybridStorage else { return }
-        try? storage.setObject(seal, forKey: sealKey(walkUUID))
-        let thumb = seal.preparingThumbnail(of: CGSize(width: 128, height: 128)) ?? seal
-        try? storage.setObject(thumb, forKey: thumbnailKey(walkUUID))
+        queue.async(flags: .barrier) { [self] in
+            guard let storage = hybridStorage else { return }
+            try? storage.setObject(seal, forKey: sealKey(walkUUID))
+            let thumb = seal.preparingThumbnail(of: CGSize(width: 128, height: 128)) ?? seal
+            try? storage.setObject(thumb, forKey: thumbnailKey(walkUUID))
+        }
     }
 
     func clear() {
-        try? hybridStorage?.removeAll()
+        queue.async(flags: .barrier) { [self] in
+            try? hybridStorage?.removeAll()
+        }
     }
 
     private func sealKey(_ uuid: String) -> String { "seal-\(uuid)" }
