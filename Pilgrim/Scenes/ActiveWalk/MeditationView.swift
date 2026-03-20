@@ -692,8 +692,8 @@ struct MeditationView: View {
         for i in 0..<4 {
             let ring = VoiceRing(
                 id: UUID(),
-                size: CGFloat(180 + i * 40) * circleScale,
-                opacity: 0.15 - Double(i) * 0.03,
+                size: CGFloat(300 + i * 50),
+                opacity: 0.12 - Double(i) * 0.02,
                 irregularity: CGFloat.random(in: -1...1)
             )
             voiceRings.append(ring)
