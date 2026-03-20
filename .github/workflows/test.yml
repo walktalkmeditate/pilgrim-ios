@@ -45,7 +45,9 @@ jobs:
           restore-keys: pods-
 
       - name: Install CocoaPods
-        run: pod install
+        run: |
+          gem install cocoapods --no-document
+          pod install
 
       - uses: actions/cache@v4
         with:
@@ -62,7 +64,7 @@ jobs:
           data = json.load(sys.stdin)
           for runtime, devices in data['devices'].items():
               for d in devices:
-                  if 'iPhone 16 Pro' in d['name'] and d['isAvailable']:
+                  if 'iPhone' in d['name'] and 'Pro' in d['name'] and d['isAvailable']:
                       print(d['udid']); sys.exit()
           ")
           xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
@@ -73,7 +75,8 @@ jobs:
             -workspace Pilgrim.xcworkspace \
             -scheme Pilgrim \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -skip-testing:ScreenshotTests \
             -derivedDataPath DerivedData \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO \

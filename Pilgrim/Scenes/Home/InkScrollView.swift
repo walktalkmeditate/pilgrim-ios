@@ -205,6 +205,7 @@ struct InkScrollView: View {
             onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
             sceneryView: sceneryView
         )
+        .accessibilityIdentifier("walk_dot_\(snapshot.id.uuidString.prefix(8))")
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.4)
                 .onEnded { _ in

@@ -16,31 +16,32 @@ final class AppStoreScreenshots: ScreenshotTestCase {
         tapTab("Journal")
         Thread.sleep(forTimeInterval: 2)
 
-        let window = app.windows.firstMatch
-
-        for yOffset in stride(from: 0.3, through: 0.7, by: 0.1) {
-            let dot = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: yOffset))
-            dot.tap()
-            Thread.sleep(forTimeInterval: 0.5)
-
-            let detailsButton = app.buttons["walk_details_button"].firstMatch
-            if detailsButton.exists {
-                detailsButton.tap()
-                Thread.sleep(forTimeInterval: 3)
-                capture("04_walk_summary")
-
-                app.swipeUp()
-                Thread.sleep(forTimeInterval: 1)
-                capture("05_walk_stats")
-
-                app.swipeUp()
-                Thread.sleep(forTimeInterval: 1)
-                capture("06_walk_activity")
-                return
-            }
+        let dots = app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH 'walk_dot_'"))
+        guard dots.count > 0 else {
+            capture("04_walk_summary_fallback")
+            return
         }
 
-        capture("04_walk_summary_fallback")
+        dots.element(boundBy: 0).tap()
+        Thread.sleep(forTimeInterval: 1)
+
+        let detailsButton = app.buttons["walk_details_button"].firstMatch
+        guard detailsButton.waitForExistence(timeout: 3) else {
+            capture("04_walk_summary_fallback")
+            return
+        }
+
+        detailsButton.tap()
+        Thread.sleep(forTimeInterval: 3)
+        capture("04_walk_summary")
+
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        capture("05_walk_stats")
+
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        capture("06_walk_activity")
     }
 
     func test04_JournalAndGoshuin() {
