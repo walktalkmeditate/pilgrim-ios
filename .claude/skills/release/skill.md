@@ -1,0 +1,102 @@
+---
+name: release
+description: Pilgrim iOS release management — readiness checks, version bumping, changelog generation, App Store submission, and post-release coordination. Use when preparing, shipping, or managing app releases.
+user_invocable: true
+---
+
+# Pilgrim Release Manager
+
+Manage the full release lifecycle for the Pilgrim iOS app.
+
+## Subcommands
+
+The user may invoke `/release` with an optional subcommand:
+- `/release check` — readiness audit
+- `/release prepare` — bump version, generate changelog, commit
+- `/release ship` — archive, upload, tag, push
+- `/release notes` — generate App Store "What's New" text
+- `/release` (no subcommand) — guided full release flow
+
+## `/release check` — Readiness Audit
+
+Run a comprehensive pre-release check:
+
+1. Run `scripts/release.sh check` to validate build, tests, and lint
+2. Read `Pilgrim.xcodeproj/project.pbxproj` to confirm version and build numbers
+3. Check for uncommitted changes via `git status`
+4. Check that `Pilgrim/PrivacyInfo.xcprivacy` exists and is in the Xcode project
+5. Verify `Pilgrim/Support Files/Info.plist` has no deprecated or incorrect values
+6. Check for any TODO or FIXME in recently changed files
+7. Report findings in a clear pass/fail checklist
+
+## `/release prepare` — Prepare Release
+
+1. Ask the user what type of release this is:
+   - **Patch** (1.0.x) — bug fixes only
+   - **Minor** (1.x.0) — new features, backwards compatible
+   - **Major** (x.0.0) — breaking changes or major milestone
+2. Determine the new version number from current `MARKETING_VERSION` in pbxproj
+3. Run `scripts/release.sh bump` to increment the build number
+4. If the marketing version is changing, update `MARKETING_VERSION` in the pbxproj (both Debug and Release configurations for the Pilgrim target)
+5. Generate a changelog from commits since the last tag:
+   ```bash
+   git log $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD --oneline --no-merges
+   ```
+6. Show the changelog to the user for review
+7. Commit the version bump with message: `release: prepare v{version}`
+
+## `/release ship` — Ship Release
+
+1. Run `scripts/release.sh check` first — abort if it fails
+2. Run `scripts/release.sh archive`
+3. Run `scripts/release.sh export`
+4. Ask the user to confirm before uploading:
+   - Show the version, build number, and archive path
+   - Confirm they have App Store Connect API credentials set
+5. Run `scripts/release.sh upload` (or skip if user hasn't set up API keys yet)
+6. Run `scripts/release.sh tag v{version}`
+7. Ask the user if they want to push the tag and commit
+8. Remind the user to:
+   - Fill in App Store Connect metadata (screenshots, description, "What's New")
+   - Submit for App Review
+
+## `/release notes` — Generate App Store Notes
+
+1. Get commits since the last tag:
+   ```bash
+   git log $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD --oneline --no-merges
+   ```
+2. Read the commit messages and categorize changes into user-facing language
+3. Draft "What's New" text in Pilgrim's voice — concise, warm, no marketing speak
+4. Format for App Store (4000 character limit, but aim for 2-3 short paragraphs)
+5. Present to the user for review and copy
+
+Example tone:
+```
+Quieter walks, smoother paths.
+
+- Breathing animation now pauses when you leave the app
+- Walk history loads more gracefully
+- Fixed a timing issue with voice transcription
+
+Walk well.
+```
+
+## `/release` (no subcommand) — Guided Flow
+
+Walk the user through the full release process interactively:
+
+1. Run the check audit
+2. If issues found, help fix them before continuing
+3. Ask about version bump type and prepare the release
+4. Ship when ready
+5. Generate release notes
+6. Offer to create a GitHub Release with the notes
+
+## Important Notes
+
+- The release script is at `scripts/release.sh` — use it for mechanical build steps
+- ExportOptions are at `scripts/ExportOptions.plist` (team ID: YCF2TGZAX8)
+- Never force-push or amend commits during release
+- Always confirm with the user before uploading to App Store Connect or pushing tags
+- The landing page repo is at `../pilgrim-landing` — after a release, consider updating the "Coming soon" text on pilgrimapp.org
