@@ -207,7 +207,6 @@
 		A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PilgrimV3.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */; };
-		A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */; };
 		A5B6C7D8E9F0A1B2C3D4E5F7 /* PilgrimV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */; };
 		A6174D54B988350284152396 /* AstrologyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008E97D4312732C8F271886C /* AstrologyModels.swift */; };
 		A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */; };
@@ -262,7 +261,6 @@
 		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
-		C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */; };
 		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
 		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
 		CC00000200000000BTRFLY01 /* ButterflyShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000BTRFLY01 /* ButterflyShape.swift */; };
@@ -288,6 +286,13 @@
 		CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENIV01 /* SceneryItemView.swift */; };
 		CC00000200000000SEASON01 /* SeasonalColorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SEASON01 /* SeasonalColorEngine.swift */; };
 		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
+		CC01000100000000SCSTYB01 /* SettingsCardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */; };
+		CC01000100000000PRACSH01 /* PracticeSummaryHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */; };
+		CC01000100000000PRACCB01 /* PracticeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACCR01 /* PracticeCard.swift */; };
+		CC01000100000000ATMOCB01 /* AtmosphereCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000ATMOCR01 /* AtmosphereCard.swift */; };
+		CC01000100000000VOICCB01 /* VoiceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000VOICCR01 /* VoiceCard.swift */; };
+		CC01000100000000PERMCB01 /* PermissionsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PERMCR01 /* PermissionsCard.swift */; };
+		CC01000100000000DATACB01 /* DataCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000DATACR01 /* DataCard.swift */; };
 		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
 		CC00000200000000TREESH01 /* TreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TREESH01 /* TreeShape.swift */; };
 		CC00000200000000WINTRT01 /* WinterTreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WINTRT01 /* WinterTreeShape.swift */; };
@@ -549,7 +554,6 @@
 		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusViewModelTests.swift; sourceTree = "<group>"; };
-		A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV5.swift; sourceTree = "<group>"; };
 		A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkCheckpoint.swift; sourceTree = "<group>"; };
 		AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FootprintShape.swift; sourceTree = "<group>"; };
@@ -631,6 +635,13 @@
 		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
 		CC00000100000000SEASON01 /* SeasonalColorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonalColorEngine.swift; sourceTree = "<group>"; };
 		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCardStyle.swift; sourceTree = "<group>"; };
+		CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSummaryHeader.swift; sourceTree = "<group>"; };
+		CC01000100000000PRACCR01 /* PracticeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeCard.swift; sourceTree = "<group>"; };
+		CC01000100000000ATMOCR01 /* AtmosphereCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtmosphereCard.swift; sourceTree = "<group>"; };
+		CC01000100000000VOICCR01 /* VoiceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCard.swift; sourceTree = "<group>"; };
+		CC01000100000000PERMCR01 /* PermissionsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsCard.swift; sourceTree = "<group>"; };
+		CC01000100000000DATACR01 /* DataCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataCard.swift; sourceTree = "<group>"; };
 		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
 		CC00000100000000TREESH01 /* TreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeShape.swift; sourceTree = "<group>"; };
 		CC00000100000000WINTRT01 /* WinterTreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinterTreeShape.swift; sourceTree = "<group>"; };
@@ -665,7 +676,6 @@
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkFavicon.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV4.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconSelectorView.swift; sourceTree = "<group>"; };
-		F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkSettingsView.swift; sourceTree = "<group>"; };
 		FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideSettingsView.swift; sourceTree = "<group>"; };
 		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
 		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
@@ -1494,17 +1504,30 @@
 			isa = PBXGroup;
 			children = (
 				CC00000100000000SETTVW01 /* SettingsView.swift */,
+				CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */,
+				CC01000100000000SETSGRP1 /* SettingsCards */,
 				0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */,
-				F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */,
-				A3B7C9D1E5F2A8B4C0D6E2F1 /* GeneralSettingsView.swift */,
 				B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */,
 				CC00000100000000ABOUTV01 /* AboutView.swift */,
 				FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */,
 				F1066617851420CAB7B50442 /* DataSettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		CC01000100000000SETSGRP1 /* SettingsCards */ = {
+			isa = PBXGroup;
+			children = (
+				CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */,
+				CC01000100000000PRACCR01 /* PracticeCard.swift */,
+				CC01000100000000ATMOCR01 /* AtmosphereCard.swift */,
+				CC01000100000000VOICCR01 /* VoiceCard.swift */,
+				CC01000100000000PERMCR01 /* PermissionsCard.swift */,
+				CC01000100000000DATACR01 /* DataCard.swift */,
+			);
+			path = SettingsCards;
 			sourceTree = "<group>";
 		};
 		F0F0F00300000000AABBCC00 /* Fonts */ = {
@@ -1879,6 +1902,13 @@
 				CC00000200000000SEEDRG01 /* SeededRNG.swift in Sources */,
 				CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */,
 				CC00000200000000SETTVW01 /* SettingsView.swift in Sources */,
+				CC01000100000000SCSTYB01 /* SettingsCardStyle.swift in Sources */,
+				CC01000100000000PRACSH01 /* PracticeSummaryHeader.swift in Sources */,
+				CC01000100000000PRACCB01 /* PracticeCard.swift in Sources */,
+				CC01000100000000ATMOCB01 /* AtmosphereCard.swift in Sources */,
+				CC01000100000000VOICCB01 /* VoiceCard.swift in Sources */,
+				CC01000100000000PERMCB01 /* PermissionsCard.swift in Sources */,
+				CC01000100000000DATACB01 /* DataCard.swift in Sources */,
 				CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */,
 				CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */,
 				CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */,
@@ -1934,7 +1964,6 @@
 				EE07C2075CD444E6833A365D /* VoiceEnhancer.swift in Sources */,
 				5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */,
 				A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */,
-				C8297CD567634F8E9D97738B /* TalkSettingsView.swift in Sources */,
 				B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E3 /* WalkFavicon.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E5 /* PilgrimV4.swift in Sources */,
@@ -1959,7 +1988,6 @@
 				CC55DD66EE77FF88AA99BB05 /* EtegamiGenerator.swift in Sources */,
 				C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */,
-				A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */,
 				B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */,
 				B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */,
 				CC00000100000000ABOUTV02 /* AboutView.swift in Sources */,
