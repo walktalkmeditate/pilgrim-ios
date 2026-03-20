@@ -66,7 +66,7 @@ struct GoshuinView: View {
             HStack(spacing: 4) {
                 if let fav = favicon {
                     Image(systemName: fav.icon)
-                        .font(.system(size: 12))
+                        .font(Constants.Typography.caption)
                 }
                 Text(label)
                     .font(Constants.Typography.caption)
@@ -112,7 +112,7 @@ struct GoshuinView: View {
     private var emptyState: some View {
         VStack(spacing: Constants.UI.Padding.normal) {
             Image(systemName: "seal")
-                .font(.system(size: 40))
+                .font(Constants.Typography.displayLarge)
                 .foregroundStyle(Color.fog.opacity(0.4))
             Text("Your goshuin will fill as you walk")
                 .font(Constants.Typography.body)
@@ -140,7 +140,7 @@ struct GoshuinView: View {
         let size = CGSize(width: 1080, height: 1080)
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
-            UIColor(Color.parchment).setFill()
+            (UIColor(named: "parchment") ?? UIColor.systemBackground).setFill()
             ctx.fill(CGRect(origin: .zero, size: size))
 
             let seals = Array(filteredWalks.prefix(36))

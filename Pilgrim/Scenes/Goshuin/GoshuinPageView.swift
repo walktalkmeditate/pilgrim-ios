@@ -41,17 +41,7 @@ struct GoshuinPageView: View {
                         .frame(width: 136, height: 136)
                 }
 
-                if let uuid = walk.uuid?.uuidString,
-                   let thumb = SealCache.shared.thumbnail(for: uuid) {
-                    Image(uiImage: thumb)
-                        .resizable()
-                        .frame(width: 128, height: 128)
-                        .clipShape(Circle())
-                } else {
-                    Circle()
-                        .fill(Color.fog.opacity(0.2))
-                        .frame(width: 128, height: 128)
-                }
+                SealThumbnailView(walk: walk)
             }
             .onTapGesture {
                 if let uuid = walk.uuid { onSelectWalk(uuid) }
@@ -70,6 +60,38 @@ struct GoshuinPageView: View {
         return Color.parchment.overlay(patina)
     }
 
+}
+
+private struct SealThumbnailView: View {
+    let walk: WalkInterface
+    @State private var thumbnail: UIImage?
+
+    var body: some View {
+        Group {
+            if let thumbnail {
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .frame(width: 128, height: 128)
+                    .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(Color.fog.opacity(0.2))
+                    .frame(width: 128, height: 128)
+            }
+        }
+        .onAppear { loadIfNeeded() }
+    }
+
+    private func loadIfNeeded() {
+        guard thumbnail == nil else { return }
+        Task.detached(priority: .utility) {
+            let thumb = SealGenerator.thumbnail(for: walk)
+            await MainActor.run { thumbnail = thumb }
+        }
+    }
+}
+
+extension GoshuinPageView {
     private var patinaColor: Color {
         switch totalWalkCount {
         case 0...10:  return Color.clear
