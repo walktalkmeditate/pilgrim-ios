@@ -41,6 +41,7 @@ enum SealHashComputer {
 
     static func hexToBytes(_ hex: String) -> [UInt8] {
         var bytes: [UInt8] = []
+        guard hex.count % 2 == 0 else { return bytes }
         var index = hex.startIndex
         while index < hex.endIndex {
             let nextIndex = hex.index(index, offsetBy: 2)

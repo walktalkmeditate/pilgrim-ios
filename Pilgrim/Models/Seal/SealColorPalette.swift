@@ -29,7 +29,7 @@ enum SealColorPalette {
     // Neutral (Unmarked)
     static let stone     = SealColor(light: UIColor(hex: "#8B7355"), dark: UIColor(hex: "#B8976E"), cssVar: "--stone")
     static let dawn      = SealColor(light: UIColor(hex: "#C4956A"), dark: UIColor(hex: "#D4A87A"), cssVar: "--dawn")
-    static let fog       = SealColor(light: UIColor(hex: "#B8AFA2"), dark: UIColor(hex: "#6B6359"), cssVar: "--fog")
+    static let fog       = SealColor(light: UIColor(hex: "#6B6359"), dark: UIColor(hex: "#B8AFA2"), cssVar: "--fog")
 
     static let warmColors    = [rust, ember, sienna, copper]
     static let coolColors    = [moss, sage, seaGlass, mist]

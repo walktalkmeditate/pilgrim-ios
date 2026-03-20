@@ -319,12 +319,12 @@ enum SealRenderer {
         ]
         let attrString = NSAttributedString(string: text, attributes: attributes)
         let line = CTLineCreateWithAttributedString(attrString)
-        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        guard let runs = CTLineGetGlyphRuns(line) as? [CTRun] else { return }
 
         var glyphEntries: [(glyph: CGGlyph, width: CGFloat, font: CTFont)] = []
         for run in runs {
             let runAttrs = CTRunGetAttributes(run) as NSDictionary
-            let runFont = (runAttrs[kCTFontAttributeName] as! CTFont)
+            guard let runFont = runAttrs[kCTFontAttributeName] as! CTFont? else { continue }
 
             let glyphCount = CTRunGetGlyphCount(run)
             var glyphs = [CGGlyph](repeating: 0, count: glyphCount)

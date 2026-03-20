@@ -77,7 +77,7 @@ enum EtegamiRenderer {
         paragraphStyle.lineSpacing = 8
 
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont(name: "CormorantGaramond-Light", size: 36) ?? UIFont.systemFont(ofSize: 36),
+            .font: UIFont(name: "CormorantGaramond-Light", size: 36) ?? UIFont(name: "Georgia", size: 36) ?? UIFont.systemFont(ofSize: 36),
             .foregroundColor: inkColor.withAlphaComponent(0.6),
             .paragraphStyle: paragraphStyle
         ]
@@ -89,7 +89,7 @@ enum EtegamiRenderer {
 
     private static func drawProvenance(ctx: CGContext, inkColor: UIColor) {
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont(name: "Lato-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14),
+            .font: UIFont(name: "Lato-Regular", size: 14) ?? UIFont(name: "Helvetica", size: 14) ?? UIFont.systemFont(ofSize: 14),
             .foregroundColor: inkColor.withAlphaComponent(0.25)
         ]
 

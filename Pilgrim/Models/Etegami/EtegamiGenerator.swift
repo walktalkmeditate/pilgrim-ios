@@ -16,12 +16,15 @@ enum EtegamiGenerator {
         }
         let altitudes = walk.routeData.map(\.altitude)
 
+        let routeBounds = CGRect(x: 80, y: 300, width: 920, height: 900)
+        let projectedPoints = EtegamiRouteStroke.projectRoute(routePoints, into: routeBounds)
+
         let activityMarkers = buildActivityMarkers(
-            walk: walk, routePoints: routePoints
+            walk: walk, projectedPoints: projectedPoints
         )
 
         let sealImage = SealGenerator.generate(for: walk, size: 160)
-        let sealPosition = sealEndpoint(routePoints: routePoints)
+        let sealPosition = projectedPoints.last ?? CGPoint(x: routeBounds.maxX - 40, y: routeBounds.maxY - 40)
 
         let primaryActivity = determinePrimaryActivity(walk: walk)
         let moonPhase: LunarPhase? = UserPreferences.celestialAwarenessEnabled.value
@@ -78,15 +81,13 @@ enum EtegamiGenerator {
 
     private static func buildActivityMarkers(
         walk: WalkInterface,
-        routePoints: [(lat: Double, lon: Double)]
+        projectedPoints: [CGPoint]
     ) -> [EtegamiRouteStroke.ActivityMarker] {
         let routeData = walk.routeData
-        guard !routeData.isEmpty, !routePoints.isEmpty else { return [] }
+        guard !routeData.isEmpty, !projectedPoints.isEmpty else { return [] }
 
         let timestamps = routeData.map(\.timestamp)
-        let routeBounds = CGRect(x: 80, y: 300, width: 920, height: 900)
-        let projected = EtegamiRouteStroke.projectRoute(routePoints, into: routeBounds)
-        guard projected.count == routePoints.count else { return [] }
+        let projected = projectedPoints
 
         var markers: [EtegamiRouteStroke.ActivityMarker] = []
 
@@ -144,16 +145,4 @@ enum EtegamiGenerator {
         return .walking
     }
 
-    // MARK: - Seal placement
-
-    private static func sealEndpoint(
-        routePoints: [(lat: Double, lon: Double)]
-    ) -> CGPoint {
-        let routeBounds = CGRect(x: 80, y: 300, width: 920, height: 900)
-        let projected = EtegamiRouteStroke.projectRoute(routePoints, into: routeBounds)
-        guard let last = projected.last else {
-            return CGPoint(x: routeBounds.maxX - 40, y: routeBounds.maxY - 40)
-        }
-        return last
-    }
 }
