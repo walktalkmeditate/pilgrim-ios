@@ -35,6 +35,10 @@ struct GoshuinPageView: View {
 
         return VStack(spacing: 4) {
             ZStack {
+                Circle()
+                    .fill(Color.ink.opacity(0.04))
+                    .frame(width: 132, height: 132)
+
                 if isMilestone {
                     Circle()
                         .stroke(Color.dawn.opacity(0.5), lineWidth: 2)

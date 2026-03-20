@@ -11,9 +11,10 @@ struct GoshuinFAB: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(Color.parchmentSecondary)
+                    .fill(Color.parchmentTertiary)
                     .frame(width: 56, height: 56)
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                    .overlay(Circle().stroke(Color.stone.opacity(0.3), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
 
                 if let thumbnail {
                     Image(uiImage: thumbnail)

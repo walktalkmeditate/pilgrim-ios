@@ -6,8 +6,14 @@ struct GoshuinView: View {
     let onSelectWalk: (UUID) -> Void
 
     @State private var activeFilter: WalkFavicon?
-    @State private var shareImage: UIImage?
+    @State private var shareURL: URL?
     @Environment(\.dismiss) private var dismiss
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     private var filteredWalks: [Walk] {
         guard let filter = activeFilter else { return walks }
@@ -37,8 +43,8 @@ struct GoshuinView: View {
                         .foregroundColor(.stone)
                 }
             }
-            .sheet(item: $shareImage) { image in
-                ShareSheet(items: [image])
+            .sheet(item: $shareURL) { url in
+                ShareSheet(items: [url])
             }
         }
     }
@@ -138,6 +144,7 @@ struct GoshuinView: View {
 
     private func renderShareImage() {
         let walksToRender = Array(filteredWalks.prefix(36))
+        let dateSuffix = Self.dateFormatter.string(from: Date())
         Task.detached(priority: .userInitiated) {
             let size = CGSize(width: 1080, height: 1080)
             let renderer = UIGraphicsImageRenderer(size: size)
@@ -160,7 +167,10 @@ struct GoshuinView: View {
                     }
                 }
             }
-            await MainActor.run { shareImage = image }
+            let filename = "pilgrim-goshuin-\(dateSuffix).png"
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+            try? image.pngData()?.write(to: url)
+            await MainActor.run { shareURL = url }
         }
     }
 }

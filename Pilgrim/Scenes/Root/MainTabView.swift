@@ -7,7 +7,13 @@ enum MainTab {
 struct MainTabView: View {
 
     @State private var selectedTab: MainTab = .path
-    @State private var sealShareImage: UIImage?
+    @State private var sealShareURL: URL?
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
     @StateObject private var coordinator = MainCoordinator()
 
     var body: some View {
@@ -58,8 +64,12 @@ struct MainTabView: View {
                         coordinator.handleSealRevealDismiss()
                     },
                     onShareSeal: { image in
+                        let dateSuffix = Self.dateFormatter.string(from: walk.startDate)
+                        let filename = "pilgrim-seal-\(dateSuffix).png"
+                        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+                        try? image.pngData()?.write(to: url)
                         coordinator.handleSealRevealDismiss()
-                        sealShareImage = image
+                        sealShareURL = url
                     }
                 )
                 .transition(.opacity)
@@ -67,8 +77,8 @@ struct MainTabView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: coordinator.showSealReveal)
-        .sheet(item: $sealShareImage) { image in
-            ShareSheet(items: [image])
+        .sheet(item: $sealShareURL) { url in
+            ShareSheet(items: [url])
         }
         .overlay(alignment: .top) {
             if let date = coordinator.recoveredWalkDate {

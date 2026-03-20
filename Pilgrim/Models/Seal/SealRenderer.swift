@@ -257,7 +257,7 @@ enum SealRenderer {
             let endAngle = atan2(arc.endPoint.y - cy, arc.endPoint.x - cx)
 
             ctx.saveGState()
-            ctx.setStrokeColor(input.color.withAlphaComponent(0.5).cgColor)
+            ctx.setStrokeColor(input.color.withAlphaComponent(0.65).cgColor)
             ctx.setLineWidth(0.8)
             ctx.setLineCap(.round)
             ctx.addArc(center: CGPoint(x: cx, y: cy), radius: arc.radius,
@@ -388,7 +388,7 @@ enum SealRenderer {
         ]
         let unitAttrs: [NSAttributedString.Key: Any] = [
             .font: unitFont,
-            .foregroundColor: input.color.withAlphaComponent(0.7)
+            .foregroundColor: input.color.withAlphaComponent(0.9)
         ]
 
         let distStr = NSAttributedString(string: input.displayDistance, attributes: distAttrs)

@@ -59,8 +59,8 @@ struct SealGeometry {
             let dashByte = bytes[6 + (i % 6)]
             let dashLen: CGFloat? = i == 0 ? nil : CGFloat(2 + Int(dashByte) % 8)
             let gapLen: CGFloat? = i == 0 ? nil : CGFloat(1 + Int(dashByte >> 4) % 6)
-            let strokeW: CGFloat = i == 0 ? 1.5 : 0.8 + CGFloat(Int(bytes[i]) % 3) * 0.3
-            let opacity: CGFloat = 0.7 - CGFloat(i) * 0.06
+            let strokeW: CGFloat = i == 0 ? 2.0 : 0.8 + CGFloat(Int(bytes[i]) % 3) * 0.3
+            let opacity: CGFloat = 0.9 - CGFloat(i) * 0.05
 
             computedRings.append(Ring(radius: r, strokeWidth: strokeW, opacity: opacity, dashLength: dashLen, gapLength: gapLen))
         }
@@ -84,7 +84,7 @@ struct SealGeometry {
             let y2 = cy + sin(rad) * outerR * outerExtent
 
             let strokeW: CGFloat = 0.5 + CGFloat(Int(bytes[i % 32]) % 3) * 0.3
-            let opacity: CGFloat = 0.3 + CGFloat(bytes[(i + 12) % 32]) / 255.0 * 0.3
+            let opacity: CGFloat = 0.5 + CGFloat(bytes[(i + 12) % 32]) / 255.0 * 0.3
 
             computedLines.append(RadialLine(
                 innerPoint: CGPoint(x: x1, y: y1),
