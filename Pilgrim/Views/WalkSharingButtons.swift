@@ -47,9 +47,10 @@ struct WalkSharingButtons: View {
                 subtitle: "Share as image"
             ) {
                 isGenerating = true
+                let input = SealInput(walk: walk)
                 let suffix = Self.dateTimeFormatter.string(from: walk.startDate)
                 Task.detached(priority: .userInitiated) {
-                    let image = SealGenerator.generate(for: walk, size: 512)
+                    let image = SealGenerator.generate(from: input, size: 512)
                     let url = Self.writeToTemp(image: image, name: "pilgrim-seal-\(suffix)")
                     await MainActor.run {
                         isGenerating = false
@@ -63,9 +64,10 @@ struct WalkSharingButtons: View {
                 subtitle: "Share as postcard"
             ) {
                 isGenerating = true
+                let input = SealInput(walk: walk)
                 let suffix = Self.dateTimeFormatter.string(from: walk.startDate)
                 Task.detached(priority: .userInitiated) {
-                    let image = EtegamiGenerator.generate(for: walk)
+                    let image = EtegamiGenerator.generate(from: input)
                     let url = Self.writeToTemp(image: image, name: "pilgrim-etegami-\(suffix)")
                     await MainActor.run {
                         isGenerating = false
@@ -75,6 +77,7 @@ struct WalkSharingButtons: View {
             }
             Spacer()
         }
+        .disabled(isGenerating)
         .overlay {
             if isGenerating {
                 SwiftUI.ProgressView()

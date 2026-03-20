@@ -2,65 +2,60 @@ import UIKit
 
 enum EtegamiGenerator {
 
-    static func generate(for walk: WalkInterface) -> UIImage {
+    static func generate(from input: SealInput) -> UIImage {
         let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: walk.startDate)
-        let latitude = walk.routeData.first?.latitude ?? 0
+        let hour = calendar.component(.hour, from: input.startDate)
+        let latitude = input.routePoints.first?.lat ?? 0
 
-        let season = SealTimeHelpers.season(for: walk.startDate, latitude: latitude)
+        let season = SealTimeHelpers.season(for: input.startDate, latitude: latitude)
         let timeOfDay = SealTimeHelpers.timeOfDay(for: hour)
         let (paperColor, inkColor) = colors(for: hour)
 
-        let routePoints: [(lat: Double, lon: Double)] = walk.routeData.map {
-            (lat: $0.latitude, lon: $0.longitude)
-        }
-        let altitudes = walk.routeData.map(\.altitude)
-
         let routeBounds = CGRect(x: 100, y: 200, width: 880, height: 900)
-        let projectedPoints = EtegamiRouteStroke.projectRoute(routePoints, into: routeBounds)
+        let projectedPoints = EtegamiRouteStroke.projectRoute(input.routePoints, into: routeBounds)
 
         let activityMarkers = buildActivityMarkers(
-            walk: walk, projectedPoints: projectedPoints
+            input: input, projectedPoints: projectedPoints
         )
 
-        let sealImage = SealGenerator.generate(for: walk, size: 160)
+        let sealImage = SealGenerator.generate(from: input, size: 160)
         let sealPosition = CGPoint(x: 160, y: 1200)
 
-        let primaryActivity = determinePrimaryActivity(walk: walk)
+        let primaryActivity = determinePrimaryActivity(input: input)
         let moonPhase: LunarPhase? = UserPreferences.celestialAwarenessEnabled.value
-            ? LunarPhase.current(date: walk.startDate) : nil
+            ? LunarPhase.current(date: input.startDate) : nil
 
         let haikuText = EtegamiTextGenerator.generate(
-            intention: walk.comment,
+            intention: input.comment,
             reflection: nil,
             season: season,
             timeOfDay: timeOfDay,
-            durationMinutes: Int(walk.activeDuration / 60),
+            durationMinutes: Int(input.activeDuration / 60),
             moonPhaseName: moonPhase?.name,
-            weatherCondition: walk.weatherCondition,
+            weatherCondition: input.weatherCondition,
             primaryActivity: primaryActivity
         )
 
-        let distanceKm = walk.distance / 1000
+        let distanceKm = input.distance / 1000
         let isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
         let distanceText = isImperial
             ? String(format: "%.1f mi", distanceKm * 0.621371)
             : String(format: "%.1f km", distanceKm)
 
-        let durationMinutes = Int(walk.activeDuration / 60)
+        let durationMinutes = Int(input.activeDuration / 60)
         let durationText = durationMinutes < 60
             ? "\(durationMinutes) min"
             : String(format: "%dh %dm", durationMinutes / 60, durationMinutes % 60)
 
-        let elevationText: String? = walk.ascend > 1
+        let elevationText: String? = input.ascend > 1
             ? (isImperial
-                ? String(format: "%.0fft \u{2191}", walk.ascend * 3.28084)
-                : String(format: "%.0fm \u{2191}", walk.ascend))
+                ? String(format: "%.0fft \u{2191}", input.ascend * 3.28084)
+                : String(format: "%.0fm \u{2191}", input.ascend))
             : nil
 
-        let input = EtegamiRenderer.Input(
-            routePoints: routePoints,
-            altitudes: altitudes,
+        let renderInput = EtegamiRenderer.Input(
+            routePoints: input.routePoints,
+            altitudes: input.altitudes,
             activityMarkers: activityMarkers,
             sealImage: sealImage,
             sealPosition: sealPosition,
@@ -74,7 +69,11 @@ enum EtegamiGenerator {
             elevationText: elevationText
         )
 
-        return EtegamiRenderer.render(input: input)
+        return EtegamiRenderer.render(input: renderInput)
+    }
+
+    static func generate(for walk: WalkInterface) -> UIImage {
+        generate(from: SealInput(walk: walk))
     }
 
     // MARK: - Time-of-day palette
@@ -100,18 +99,17 @@ enum EtegamiGenerator {
     // MARK: - Activity markers
 
     private static func buildActivityMarkers(
-        walk: WalkInterface,
+        input: SealInput,
         projectedPoints: [CGPoint]
     ) -> [EtegamiRouteStroke.ActivityMarker] {
-        let routeData = walk.routeData
-        guard !routeData.isEmpty, !projectedPoints.isEmpty else { return [] }
+        let timestamps = input.routeTimestamps
+        guard !timestamps.isEmpty, !projectedPoints.isEmpty else { return [] }
 
-        let timestamps = routeData.map(\.timestamp)
         let projected = projectedPoints
 
         var markers: [EtegamiRouteStroke.ActivityMarker] = []
 
-        for interval in walk.activityIntervals where interval.activityType == .meditation {
+        for interval in input.activityIntervals where interval.type == .meditation {
             let midDate = Date(
                 timeIntervalSince1970: (interval.startDate.timeIntervalSince1970
                     + interval.endDate.timeIntervalSince1970) / 2
@@ -121,8 +119,8 @@ enum EtegamiGenerator {
             }
         }
 
-        for recording in walk.voiceRecordings {
-            if let idx = closestIndex(for: recording.startDate, in: timestamps) {
+        for startDate in input.voiceRecordingStartDates {
+            if let idx = closestIndex(for: startDate, in: timestamps) {
                 markers.append(.init(type: .voice, position: projected[idx], routeIndex: idx))
             }
         }
@@ -148,13 +146,13 @@ enum EtegamiGenerator {
     // MARK: - Primary activity
 
     private static func determinePrimaryActivity(
-        walk: WalkInterface
+        input: SealInput
     ) -> EtegamiTextGenerator.PrimaryActivity {
-        let active = walk.activeDuration
+        let active = input.activeDuration
         guard active > 0 else { return .walking }
 
-        let meditateRatio = walk.meditateDuration / active
-        let talkRatio = walk.talkDuration / active
+        let meditateRatio = input.meditateDuration / active
+        let talkRatio = input.talkDuration / active
         let threshold = 0.3
 
         if meditateRatio > talkRatio, meditateRatio > threshold {

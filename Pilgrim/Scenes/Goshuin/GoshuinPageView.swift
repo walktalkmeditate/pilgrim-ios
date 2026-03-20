@@ -88,9 +88,9 @@ private struct SealThumbnailView: View {
 
     private func loadIfNeeded() async {
         guard thumbnail == nil else { return }
-        let walk = walk
+        let input = SealInput(walk: walk)
         let thumb = await Task.detached(priority: .utility) {
-            SealGenerator.thumbnail(for: walk)
+            SealGenerator.thumbnail(from: input)
         }.value
         thumbnail = thumb
     }

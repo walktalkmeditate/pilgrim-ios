@@ -137,10 +137,10 @@ struct GoshuinView: View {
     }
 
     private func renderShareImage() {
-        let walksForImage = Array(filteredWalks)
-        let allWalks = Array(walks)
+        let inputs = filteredWalks.map { SealInput(walk: $0) }
+        let allInputs = walks.map { SealInput(walk: $0) }
         Task.detached(priority: .userInitiated) {
-            let input = GoshuinShareRenderer.Input(walks: walksForImage, allWalks: allWalks)
+            let input = GoshuinShareRenderer.Input(walks: inputs, allWalks: allInputs)
             let image = GoshuinShareRenderer.render(input: input)
             let url = WalkSharingButtons.writeToTemp(image: image, name: "pilgrim-goshuin-\(UUID().uuidString.prefix(8))")
             await MainActor.run { shareURL = url }

@@ -28,14 +28,15 @@ struct GoshuinFAB: View {
                 }
             }
         }
-        .onAppear { loadThumbnail() }
+        .task { await loadThumbnail() }
     }
 
-    private func loadThumbnail() {
+    private func loadThumbnail() async {
         guard let walk = latestWalk else { return }
-        Task.detached(priority: .background) {
-            let thumb = SealGenerator.thumbnail(for: walk)
-            await MainActor.run { thumbnail = thumb }
-        }
+        let input = SealInput(walk: walk)
+        let thumb = await Task.detached(priority: .background) {
+            SealGenerator.thumbnail(from: input)
+        }.value
+        thumbnail = thumb
     }
 }

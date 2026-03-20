@@ -66,7 +66,7 @@ final class SealCache {
     }
 
     func store(seal: UIImage, for walkUUID: String) {
-        queue.sync { [self] in
+        queue.async { [self] in
             guard let storage = hybridStorage else { return }
             try? storage.setObject(seal, forKey: sealKey(walkUUID))
             let thumb = seal.preparingThumbnail(of: CGSize(width: 128, height: 128)) ?? seal

@@ -64,6 +64,60 @@ enum GoshuinMilestones {
         return milestones
     }
 
+    static func detect(
+        walkCount: Int,
+        walkIndex: Int,
+        input: SealInput?,
+        allInputs: [SealInput]
+    ) -> Set<Milestone> {
+        var milestones: Set<Milestone> = []
+        let walkNumber = walkIndex + 1
+
+        if walkNumber == 1 {
+            milestones.insert(.firstWalk)
+        }
+
+        if walkNumber % 10 == 0 {
+            milestones.insert(.nthWalk(walkNumber))
+        }
+
+        guard let input = input, !allInputs.isEmpty else { return milestones }
+
+        if let longest = allInputs.max(by: { $0.distance < $1.distance }),
+           let walkUUID = input.uuid, let longestUUID = longest.uuid,
+           walkUUID == longestUUID {
+            milestones.insert(.longestWalk)
+        }
+
+        if let longestMed = allInputs.filter({ $0.meditateDuration > 0 })
+            .max(by: { $0.meditateDuration < $1.meditateDuration }),
+           let walkUUID = input.uuid, let medUUID = longestMed.uuid,
+           walkUUID == medUUID {
+            milestones.insert(.longestMeditation)
+        }
+
+        let calendar = Calendar.current
+        let walkYear = calendar.component(.year, from: input.startDate)
+        let latitude = input.routePoints.first?.lat ?? 0
+        let season = SealTimeHelpers.season(for: input.startDate, latitude: latitude)
+
+        let isFirstOfSeason = !allInputs.contains { other in
+            guard let otherUUID = other.uuid, let walkUUID = input.uuid,
+                  otherUUID != walkUUID,
+                  other.startDate < input.startDate else { return false }
+            let otherLat = other.routePoints.first?.lat ?? 0
+            let otherSeason = SealTimeHelpers.season(for: other.startDate, latitude: otherLat)
+            let otherYear = calendar.component(.year, from: other.startDate)
+            return otherSeason == season && otherYear == walkYear
+        }
+
+        if isFirstOfSeason {
+            milestones.insert(.firstOfSeason(season))
+        }
+
+        return milestones
+    }
+
     static func label(for milestone: Milestone) -> String {
         switch milestone {
         case .firstWalk: return "First Walk"

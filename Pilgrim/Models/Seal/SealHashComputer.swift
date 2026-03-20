@@ -54,21 +54,22 @@ enum SealHashComputer {
         return bytes
     }
 
-    static func computeHashFromWalk(_ walk: WalkInterface) -> String {
-        let routePoints: [RoutePoint] = walk.routeData.map {
-            (lat: $0.latitude, lon: $0.longitude)
-        }
+    static func computeHashFromInput(_ input: SealInput) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
-        let startDate = formatter.string(from: walk.startDate)
+        let startDate = formatter.string(from: input.startDate)
 
         return computeHash(
-            routePoints: routePoints,
-            distance: walk.distance,
-            activeDuration: walk.activeDuration,
-            meditateDuration: walk.meditateDuration,
-            talkDuration: walk.talkDuration,
+            routePoints: input.routePoints,
+            distance: input.distance,
+            activeDuration: input.activeDuration,
+            meditateDuration: input.meditateDuration,
+            talkDuration: input.talkDuration,
             startDate: startDate
         )
+    }
+
+    static func computeHashFromWalk(_ walk: WalkInterface) -> String {
+        computeHashFromInput(SealInput(walk: walk))
     }
 }

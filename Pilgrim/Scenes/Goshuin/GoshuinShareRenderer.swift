@@ -3,8 +3,8 @@ import UIKit
 enum GoshuinShareRenderer {
 
     struct Input {
-        let walks: [WalkInterface]
-        let allWalks: [WalkInterface]
+        let walks: [SealInput]
+        let allWalks: [SealInput]
     }
 
     private static let canvasSize = CGSize(width: 1080, height: 1920)
@@ -41,11 +41,11 @@ enum GoshuinShareRenderer {
     // MARK: - Seal Selection
 
     private static func selectSeals(
-        from walks: [WalkInterface],
-        allWalks: [WalkInterface]
-    ) -> [WalkInterface] {
-        var result: [WalkInterface] = []
-        var includedUUIDs: Set<UUID> = []
+        from walks: [SealInput],
+        allWalks: [SealInput]
+    ) -> [SealInput] {
+        var result: [SealInput] = []
+        var includedUUIDs: Set<String> = []
 
         let sortedByDate = walks.sorted { $0.startDate < $1.startDate }
 
@@ -55,8 +55,8 @@ enum GoshuinShareRenderer {
                 walkCount: allWalks.count,
                 walkIndex: allWalks.firstIndex(where: { $0.uuid == walk.uuid })
                     .map { $0 } ?? index,
-                walk: walk,
-                allWalks: allWalks
+                input: walk,
+                allInputs: allWalks
             )
             guard !milestones.isEmpty, let uuid = walk.uuid else { continue }
             if includedUUIDs.insert(uuid).inserted {
@@ -77,18 +77,18 @@ enum GoshuinShareRenderer {
     }
 
     private static func buildMilestoneMap(
-        selected: [WalkInterface],
-        allWalks: [WalkInterface]
-    ) -> [UUID: String] {
-        var map: [UUID: String] = [:]
+        selected: [SealInput],
+        allWalks: [SealInput]
+    ) -> [String: String] {
+        var map: [String: String] = [:]
         for walk in selected {
             guard let uuid = walk.uuid else { continue }
             let index = allWalks.firstIndex(where: { $0.uuid == uuid }) ?? 0
             let milestones = GoshuinMilestones.detect(
                 walkCount: allWalks.count,
                 walkIndex: index,
-                walk: walk,
-                allWalks: allWalks
+                input: walk,
+                allInputs: allWalks
             )
             if let first = milestones.first {
                 map[uuid] = GoshuinMilestones.label(for: first)
@@ -105,7 +105,7 @@ enum GoshuinShareRenderer {
         let seasonLabel: String
     }
 
-    private static func computeStats(walks: [WalkInterface]) -> Stats {
+    private static func computeStats(walks: [SealInput]) -> Stats {
         let totalDistance = walks.reduce(0.0) { $0 + $1.distance }
         let isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
 
@@ -135,13 +135,13 @@ enum GoshuinShareRenderer {
         )
     }
 
-    private static func deriveSeasonLabel(from walks: [WalkInterface]) -> String {
+    private static func deriveSeasonLabel(from walks: [SealInput]) -> String {
         guard let latest = walks.max(by: { $0.startDate < $1.startDate }) else {
             return ""
         }
         let calendar = Calendar.current
         let year = calendar.component(.year, from: latest.startDate)
-        let latitude = latest.routeData.first?.latitude ?? 0
+        let latitude = latest.routePoints.first?.lat ?? 0
         let season = SealTimeHelpers.season(for: latest.startDate, latitude: latitude)
         return "\(season) \(year)"
     }
@@ -242,8 +242,8 @@ enum GoshuinShareRenderer {
 
     // MARK: - Seals
 
-    private static func tintColor(for walk: WalkInterface) -> UIColor {
-        let favicon = walk.favicon.flatMap { WalkFavicon(rawValue: $0) }
+    private static func tintColor(for input: SealInput) -> UIColor {
+        let favicon = input.favicon.flatMap { WalkFavicon(rawValue: $0) }
         switch favicon {
         case .flame: return UIColor(hex: "#A0634B")
         case .leaf:  return UIColor(hex: "#7A8B6F")
@@ -254,8 +254,8 @@ enum GoshuinShareRenderer {
 
     private static func drawSeals(
         ctx: CGContext,
-        selected: [WalkInterface],
-        milestoneMap: [UUID: String],
+        selected: [SealInput],
+        milestoneMap: [String: String],
         inkColor: UIColor,
         sealCount: Int
     ) {
@@ -291,7 +291,7 @@ enum GoshuinShareRenderer {
 
         let totalRows = (selected.count + columns - 1) / columns
 
-        for (index, walk) in selected.enumerated() {
+        for (index, input) in selected.enumerated() {
             let col = index % columns
             let row = index / columns
 
@@ -309,14 +309,14 @@ enum GoshuinShareRenderer {
             let centerX = baseX + sealSize / 2 + offsetX
             let centerY = baseY + sealSize / 2 + offsetY
 
-            let uuid = walk.uuid
+            let uuid = input.uuid
             let isMilestone = uuid.flatMap { milestoneMap[$0] } != nil
 
             ctx.saveGState()
             ctx.translateBy(x: centerX, y: centerY)
             ctx.rotate(by: rotation)
 
-            let tint = tintColor(for: walk)
+            let tint = tintColor(for: input)
             let tintCircleRect = CGRect(
                 x: -sealSize / 2 - 4,
                 y: -sealSize / 2 - 4,
@@ -345,7 +345,7 @@ enum GoshuinShareRenderer {
                 height: sealSize
             )
 
-            let sealImage = loadSealImage(for: walk, sealSize: sealSize)
+            let sealImage = loadSealImage(for: input, sealSize: sealSize)
             sealImage.draw(in: sealRect)
             sealImage.draw(in: sealRect, blendMode: .normal, alpha: 0.3)
 
@@ -367,12 +367,12 @@ enum GoshuinShareRenderer {
         }
     }
 
-    private static func loadSealImage(for walk: WalkInterface, sealSize: CGFloat) -> UIImage {
-        if let uuid = walk.uuid?.uuidString,
+    private static func loadSealImage(for input: SealInput, sealSize: CGFloat) -> UIImage {
+        if let uuid = input.uuid,
            let cached = SealCache.shared.seal(for: uuid) {
             return cached
         }
-        return SealGenerator.generate(for: walk, size: sealSize)
+        return SealGenerator.generate(from: input, size: sealSize)
     }
 
     // MARK: - Colophon
