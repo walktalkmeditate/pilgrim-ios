@@ -41,26 +41,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 AudioManifestService.shared.syncIfNeeded()
                 VoiceGuideManifestService.shared.syncIfNeeded()
 
-                // check permissions
-                // show changelog
-                //
-                
-                // self.checkPermissionStatus(controller: controller) {
-                //     guard UserPreferences.isSetUp.value else { return }
-                //     HealthStoreManager.setupObservers()
-                //
-                //     if AppDelegate.lastVersion.value != Config.version && AppDelegate.lastVersion.value != nil {
-                //
-                //         if let changeLog = Config.changeLogs[Config.version] {
-                //             // show changelog
-                //         }
-                //
-                //         AppDelegate.lastVersion.value = Config.version
-                //
-                //     } else if AppDelegate.lastVersion.value == nil {
-                //         AppDelegate.lastVersion.value = Config.version
-                //     }
-                // }
 
             }, migration: { _ in
 

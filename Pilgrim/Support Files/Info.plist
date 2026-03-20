@@ -30,8 +30,6 @@
 	<string>Pilgrim uses the microphone to record voice notes during your walks</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Pilgrim needs your location to track your walking route</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Pilgrim needs your location to track your walking route</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pilgrim needs your location to track your walking route</string>
 	<key>NSMotionUsageDescription</key>
