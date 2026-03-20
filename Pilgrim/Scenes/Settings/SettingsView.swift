@@ -1,98 +1,33 @@
 import SwiftUI
+import CoreStore
 
 struct SettingsView: View {
 
     @StateObject private var permissionVM = PermissionStatusViewModel()
+    @State private var walkCount = 0
+    @State private var totalDistance: Double = 0
+    @State private var totalMeditationSeconds: TimeInterval = 0
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    NavigationLink {
-                        GeneralSettingsView()
-                    } label: {
-                        HStack {
-                            Text("General")
-                                .font(Constants.Typography.body)
-                            Spacer()
-                            if permissionVM.needsAttention {
-                                Circle()
-                                    .fill(Color.rust)
-                                    .frame(width: 8, height: 8)
-                            }
-                        }
-                    }
+            ScrollView {
+                VStack(spacing: Constants.UI.Padding.big) {
+                    PracticeSummaryHeader(
+                        walkCount: walkCount,
+                        totalDistanceMeters: totalDistance,
+                        totalMeditationSeconds: totalMeditationSeconds
+                    )
+                    PracticeCard()
+                    AtmosphereCard()
+                    VoiceCard()
+                    PermissionsCard(permissionVM: permissionVM)
+                    DataCard()
+                    aboutLink
                 }
-
-                Section {
-                    NavigationLink {
-                        SoundSettingsView()
-                    } label: {
-                        HStack {
-                            Text("Sounds")
-                                .font(Constants.Typography.body)
-                            Spacer()
-                            Text(UserPreferences.soundsEnabled.value ? "On" : "Off")
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(.fog)
-                        }
-                    }
-
-                    NavigationLink {
-                        TalkSettingsView()
-                    } label: {
-                        Text("Talks")
-                            .font(Constants.Typography.body)
-                    }
-
-                    NavigationLink {
-                        VoiceGuideSettingsView()
-                    } label: {
-                        HStack {
-                            Text("Voice Guide")
-                                .font(Constants.Typography.body)
-                            Spacer()
-                            Text(UserPreferences.voiceGuideEnabled.value ? "On" : "Off")
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(.fog)
-                        }
-                    }
-                } header: {
-                    Text("Audio")
-                        .font(Constants.Typography.caption)
-                }
-
-                Section {
-                    NavigationLink {
-                        DataSettingsView()
-                    } label: {
-                        Text("Data")
-                            .font(Constants.Typography.body)
-                    }
-
-                    NavigationLink {
-                        FeedbackView()
-                    } label: {
-                        Text("Leave a Trail Note")
-                            .font(Constants.Typography.body)
-                    }
-                }
-
-                Section {
-                    NavigationLink {
-                        AboutView()
-                    } label: {
-                        Text("About")
-                            .font(Constants.Typography.body)
-                    }
-                }
+                .padding(.horizontal, Constants.UI.Padding.normal)
+                .padding(.bottom, Constants.UI.Padding.breathingRoom)
             }
-            .scrollContentBackground(.hidden)
             .background(Color.parchment)
-            .safeAreaInset(edge: .bottom) {
-                footer
-            }
-            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -101,20 +36,38 @@ struct SettingsView: View {
                         .foregroundColor(.ink)
                 }
             }
-            .onAppear { permissionVM.refresh() }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            .onAppear {
                 permissionVM.refresh()
+                loadStats()
             }
         }
     }
 
-    private var footer: some View {
-        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")
-            .font(Constants.Typography.caption)
-            .foregroundColor(.fog.opacity(0.3))
-            .frame(maxWidth: .infinity)
-            .padding(.top, Constants.UI.Padding.breathingRoom)
-            .padding(.bottom, Constants.UI.Padding.normal)
-            .background(Color.parchment)
+    // MARK: - About
+
+    private var aboutLink: some View {
+        NavigationLink {
+            AboutView()
+        } label: {
+            settingNavRow(label: "About")
+        }
+        .settingsCard()
+    }
+
+    // MARK: - Stats
+
+    private func loadStats() {
+        do {
+            let walks = try DataManager.dataStack.fetchAll(
+                From<Walk>()
+            )
+            walkCount = walks.count
+            totalDistance = walks.reduce(0.0) { $0 + $1.distance }
+            totalMeditationSeconds = walks.reduce(0.0) { $0 + $1.meditateDuration }
+        } catch {
+            walkCount = 0
+            totalDistance = 0
+            totalMeditationSeconds = 0
+        }
     }
 }
