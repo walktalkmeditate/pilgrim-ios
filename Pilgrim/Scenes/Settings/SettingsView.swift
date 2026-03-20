@@ -66,6 +66,9 @@ struct SettingsView: View {
                     aboutBreathing = true
                 }
             }
+            .onDisappear {
+                aboutBreathing = false
+            }
         }
     }
 
@@ -98,12 +101,19 @@ struct SettingsView: View {
                     .font(Constants.Typography.body)
                     .foregroundColor(.ink)
                 Spacer()
+                Text(appVersion)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
                 Image(systemName: "chevron.right")
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
         }
         .settingsCard()
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     }
 
     // MARK: - Stats
