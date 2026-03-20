@@ -5,6 +5,7 @@ struct HomeView: View {
 
     @ObservedObject var viewModel: HomeViewModel
     @State private var selectedWalk: Walk?
+    @State private var showGoshuin = false
     @State private var unitKey: String = UserPreferences.distanceMeasurementType.safeValue.symbol
 
     var body: some View {
@@ -36,8 +37,26 @@ struct HomeView: View {
                 #endif
             }
             .navigationBarTitleDisplayMode(.inline)
+            .overlay(alignment: .bottomTrailing) {
+                if !viewModel.walks.isEmpty {
+                    GoshuinFAB(
+                        latestWalk: viewModel.walks.first,
+                        action: { showGoshuin = true }
+                    )
+                    .padding(.trailing, Constants.UI.Padding.normal)
+                    .padding(.bottom, Constants.UI.Padding.big)
+                }
+            }
             .sheet(item: $selectedWalk) { walk in
                 WalkSummaryView(walk: walk)
+            }
+            .sheet(isPresented: $showGoshuin) {
+                GoshuinView(
+                    walks: viewModel.walks,
+                    onSelectWalk: { uuid in
+                        selectedWalk = viewModel.walk(for: uuid)
+                    }
+                )
             }
             .onChange(of: selectedWalk) { old, new in
                 if old != nil && new == nil {

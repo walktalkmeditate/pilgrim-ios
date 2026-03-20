@@ -180,16 +180,25 @@ final class WalkShareViewModel: ObservableObject {
         if toggleSteps { toggledStats.append("steps") }
 
         let stats = SharePayload.Stats(
-            distance: toggleDistance ? walk.distance : nil,
-            activeDuration: toggleDuration ? walk.activeDuration : nil,
+            distance: walk.distance,
+            activeDuration: walk.activeDuration,
             elevationAscent: toggleElevation ? walk.ascend : nil,
             elevationDescent: toggleElevation ? walk.descend : nil,
             steps: toggleSteps ? walk.steps : nil,
-            meditateDuration: toggleActivityBreakdown ? walk.meditateDuration : nil,
-            talkDuration: toggleActivityBreakdown ? walk.talkDuration : nil,
+            meditateDuration: walk.meditateDuration,
+            talkDuration: walk.talkDuration,
             weatherCondition: walk.weatherCondition,
             weatherTemperature: walk.weatherTemperature
         )
+
+        let markValue: String? = {
+            guard let faviconStr = walk.favicon, let fav = WalkFavicon(rawValue: faviconStr) else { return nil }
+            switch fav {
+            case .flame: return "transformative"
+            case .leaf:  return "peaceful"
+            case .star:  return "extraordinary"
+            }
+        }()
 
         let formatter = ISO8601DateFormatter()
 
@@ -203,7 +212,8 @@ final class WalkShareViewModel: ObservableObject {
             startDate: formatter.string(from: walk.startDate),
             toggledStats: toggledStats,
             placeStart: placeStart,
-            placeEnd: placeEnd
+            placeEnd: placeEnd,
+            mark: markValue
         )
     }
 }

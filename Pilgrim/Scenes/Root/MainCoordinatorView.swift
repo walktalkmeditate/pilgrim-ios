@@ -7,6 +7,8 @@ class MainCoordinator: ObservableObject {
     let homeViewModel = HomeViewModel()
     @Published var activeWalkViewModel: ActiveWalkViewModel?
     @Published var completedSnapshot: TempWalk?
+    @Published var showSealReveal = false
+    @Published var sealRevealWalk: TempWalk?
     @Published var showSaveError = false
     @Published var showLocationDenied = false
     @Published var recoveredWalkDate: Date?
@@ -80,9 +82,18 @@ class MainCoordinator: ObservableObject {
     func handleActiveWalkDismiss() {
         if let snapshot = pendingSnapshot {
             pendingSnapshot = nil
-            completedSnapshot = snapshot
+            sealRevealWalk = snapshot
+            showSealReveal = true
         } else {
             Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
+        }
+    }
+
+    func handleSealRevealDismiss() {
+        showSealReveal = false
+        if let walk = sealRevealWalk {
+            completedSnapshot = walk
+            sealRevealWalk = nil
         }
     }
 

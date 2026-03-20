@@ -12,6 +12,7 @@ struct SharePayload: Encodable {
     let toggledStats: [String]
     let placeStart: String?
     let placeEnd: String?
+    let mark: String?
 
     struct Stats: Encodable {
         let distance: Double?
@@ -64,5 +65,6 @@ struct SharePayload: Encodable {
         case toggledStats = "toggled_stats"
         case placeStart = "place_start"
         case placeEnd = "place_end"
+        case mark
     }
 }

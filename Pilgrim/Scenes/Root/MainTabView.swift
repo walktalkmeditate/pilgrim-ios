@@ -7,6 +7,7 @@ enum MainTab {
 struct MainTabView: View {
 
     @State private var selectedTab: MainTab = .path
+    @State private var sealShareURL: URL?
     @StateObject private var coordinator = MainCoordinator()
 
     var body: some View {
@@ -48,6 +49,27 @@ struct MainTabView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Pilgrim needs location access to track your route. Please enable it in Settings.")
+        }
+        .overlay {
+            if coordinator.showSealReveal, let walk = coordinator.sealRevealWalk {
+                SealRevealView(
+                    walk: walk,
+                    onDismiss: {
+                        coordinator.handleSealRevealDismiss()
+                    },
+                    onShareSeal: { image in
+                        let url = WalkSharingButtons.writeToTemp(image: image, name: "pilgrim-seal-\(walk.uuid?.uuidString.prefix(8) ?? "share")")
+                        coordinator.handleSealRevealDismiss()
+                        sealShareURL = url
+                    }
+                )
+                .transition(.opacity)
+                .zIndex(100)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: coordinator.showSealReveal)
+        .sheet(item: $sealShareURL) { url in
+            ShareSheet(items: [url])
         }
         .overlay(alignment: .top) {
             if let date = coordinator.recoveredWalkDate {

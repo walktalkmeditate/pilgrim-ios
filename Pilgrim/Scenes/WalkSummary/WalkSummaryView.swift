@@ -16,8 +16,6 @@ struct WalkSummaryView: View {
     @State private var pathToDelete: String?
     @State private var showDeleteConfirmation = false
     @State private var waveforms: [UUID: [Float]] = [:]
-    @State private var showShareSheet = false
-
     init(walk: WalkInterface) {
         self.walk = walk
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
@@ -101,9 +99,6 @@ struct WalkSummaryView: View {
                 NavigationView {
                     PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment)
                 }
-            }
-            .sheet(isPresented: $showShareSheet) {
-                WalkShareView(walk: walk)
             }
         }
     }
@@ -735,31 +730,8 @@ struct WalkSummaryView: View {
         }
     }
 
-    @ViewBuilder
     private var shareCard: some View {
-        if walk.routeData.count >= 2 {
-            Button {
-                showShareSheet = true
-            } label: {
-                VStack(spacing: Constants.UI.Padding.small) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 20))
-                        .foregroundColor(.stone)
-                    Text("Share this walk")
-                        .font(Constants.Typography.heading)
-                        .foregroundColor(.ink)
-                    Text("Create a beautiful page to share with others")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Constants.UI.Padding.big)
-                .padding(.horizontal, Constants.UI.Padding.normal)
-                .background(Color.parchmentSecondary)
-                .cornerRadius(Constants.UI.CornerRadius.normal)
-            }
-        }
+        WalkSharingButtons(walk: walk)
     }
 
 }
