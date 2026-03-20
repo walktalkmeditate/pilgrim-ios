@@ -4,7 +4,7 @@ struct WalkSharingButtons: View {
 
     let walk: WalkInterface
     @State private var showJourneySheet = false
-    @State private var shareURL: URL?
+    @State private var shareItem: NamedImageItem?
     @State private var isGenerating = false
 
     private static let dateFormatter: DateFormatter = {
@@ -30,8 +30,8 @@ struct WalkSharingButtons: View {
             .sheet(isPresented: $showJourneySheet) {
                 WalkShareView(walk: walk)
             }
-            .sheet(item: $shareURL) { url in
-                ShareSheet(items: [url])
+            .sheet(item: $shareItem) { item in
+                ShareSheet(items: [item])
             }
         }
     }
@@ -50,10 +50,10 @@ struct WalkSharingButtons: View {
                 let dateSuffix = Self.dateFormatter.string(from: walk.startDate)
                 Task.detached(priority: .userInitiated) {
                     let image = SealGenerator.generate(for: walk, size: 512)
-                    let url = shareableURL(image: image, name: "pilgrim-seal-\(dateSuffix)")
+                    let item = NamedImageItem(image: image, filename: "pilgrim-seal-\(dateSuffix)")
                     await MainActor.run {
                         isGenerating = false
-                        shareURL = url
+                        shareItem = item
                     }
                 }
             }
@@ -66,10 +66,10 @@ struct WalkSharingButtons: View {
                 let dateSuffix = Self.dateFormatter.string(from: walk.startDate)
                 Task.detached(priority: .userInitiated) {
                     let image = EtegamiGenerator.generate(for: walk)
-                    let url = shareableURL(image: image, name: "pilgrim-etegami-\(dateSuffix)")
+                    let item = NamedImageItem(image: image, filename: "pilgrim-etegami-\(dateSuffix)")
                     await MainActor.run {
                         isGenerating = false
-                        shareURL = url
+                        shareItem = item
                     }
                 }
             }
@@ -146,15 +146,31 @@ struct WalkSharingButtons: View {
     }
 }
 
-// MARK: - Shareable File
+// MARK: - Named Image Item Provider
 
-private func shareableURL(image: UIImage, name: String) -> URL {
-    let filename = "\(name).png"
-    let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-    try? image.pngData()?.write(to: url)
-    return url
-}
+class NamedImageItem: NSObject, UIActivityItemSource, Identifiable {
+    let image: UIImage
+    let filename: String
+    let id = UUID()
 
-extension URL: @retroactive Identifiable {
-    public var id: String { absoluteString }
+    init(image: UIImage, filename: String) {
+        self.image = image
+        self.filename = filename
+    }
+
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        image
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        image
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
+        "public.png"
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
+        filename
+    }
 }
