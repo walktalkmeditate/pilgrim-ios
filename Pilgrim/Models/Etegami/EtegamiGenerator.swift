@@ -117,13 +117,13 @@ enum EtegamiGenerator {
                     + interval.endDate.timeIntervalSince1970) / 2
             )
             if let idx = closestIndex(for: midDate, in: timestamps) {
-                markers.append(.init(type: .meditation, position: projected[idx]))
+                markers.append(.init(type: .meditation, position: projected[idx], routeIndex: idx))
             }
         }
 
         for recording in walk.voiceRecordings {
             if let idx = closestIndex(for: recording.startDate, in: timestamps) {
-                markers.append(.init(type: .voice, position: projected[idx]))
+                markers.append(.init(type: .voice, position: projected[idx], routeIndex: idx))
             }
         }
 

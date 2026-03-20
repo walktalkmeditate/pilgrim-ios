@@ -6,6 +6,7 @@ enum EtegamiRouteStroke {
         enum MarkerType { case meditation, voice }
         let type: MarkerType
         let position: CGPoint
+        let routeIndex: Int?
     }
 
     static func smoothRoute(_ points: [CGPoint], subdivisions: Int = 8) -> [CGPoint] {
@@ -143,7 +144,12 @@ enum EtegamiRouteStroke {
         ctx.restoreGState()
 
         for marker in activityMarkers {
-            drawActivityMarker(ctx: ctx, marker: marker, color: color)
+            var resolved = marker
+            if let idx = marker.routeIndex {
+                let smoothedIdx = min(idx * 8, projectedPoints.count - 1)
+                resolved = ActivityMarker(type: marker.type, position: projectedPoints[smoothedIdx], routeIndex: idx)
+            }
+            drawActivityMarker(ctx: ctx, marker: resolved, color: color)
         }
     }
 
@@ -164,12 +170,13 @@ enum EtegamiRouteStroke {
                 ))
             }
         case .voice:
-            ctx.setStrokeColor(color.withAlphaComponent(0.2).cgColor)
-            ctx.setLineWidth(0.6)
-            let waveWidth: CGFloat = 12
+            ctx.setStrokeColor(color.withAlphaComponent(0.3).cgColor)
+            ctx.setLineWidth(1.2)
+            let waveWidth: CGFloat = 28
+            let spacing: CGFloat = waveWidth / 5
             for i in 0..<5 {
-                let x = marker.position.x - waveWidth / 2 + CGFloat(i) * 3
-                let h: CGFloat = CGFloat([2, 5, 8, 5, 2][i])
+                let x = marker.position.x - waveWidth / 2 + CGFloat(i) * spacing
+                let h: CGFloat = CGFloat([4, 10, 16, 10, 4][i])
                 ctx.move(to: CGPoint(x: x, y: marker.position.y - h))
                 ctx.addLine(to: CGPoint(x: x, y: marker.position.y + h))
             }
