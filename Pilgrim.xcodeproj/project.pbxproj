@@ -177,6 +177,9 @@
 		FF22BB33CC44DD55EE66FF77 /* EtegamiRouteStrokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF22BB33CC44DD55EE66FF88 /* EtegamiRouteStrokeTests.swift */; };
 		AA33BB44CC55DD66EE77FF88 /* EtegamiTextGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */; };
 		BB44CC55DD66EE77FF88AA99 /* EtegamiTextGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB44CC55DD66EE77FF88AABB /* EtegamiTextGeneratorTests.swift */; };
+		CC55DD66EE77FF88AA99BB01 /* EtegamiMoonPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC55DD66EE77FF88AA99BB02 /* EtegamiMoonPhase.swift */; };
+		CC55DD66EE77FF88AA99BB03 /* EtegamiRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC55DD66EE77FF88AA99BB04 /* EtegamiRenderer.swift */; };
+		CC55DD66EE77FF88AA99BB05 /* EtegamiGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC55DD66EE77FF88AA99BB06 /* EtegamiGenerator.swift */; };
 		B3C4D5E6F7A8B9C0D1E2F3A4 /* SealColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B5C6D7E8F9A0B1C2D3E4F5 /* SealColorPalette.swift */; };
 		C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */; };
 		D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */; };
@@ -503,6 +506,9 @@
 		FF22BB33CC44DD55EE66FF88 /* EtegamiRouteStrokeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiRouteStrokeTests.swift; sourceTree = "<group>"; };
 		AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiTextGenerator.swift; sourceTree = "<group>"; };
 		BB44CC55DD66EE77FF88AABB /* EtegamiTextGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiTextGeneratorTests.swift; sourceTree = "<group>"; };
+		CC55DD66EE77FF88AA99BB02 /* EtegamiMoonPhase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiMoonPhase.swift; sourceTree = "<group>"; };
+		CC55DD66EE77FF88AA99BB04 /* EtegamiRenderer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiRenderer.swift; sourceTree = "<group>"; };
+		CC55DD66EE77FF88AA99BB06 /* EtegamiGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiGenerator.swift; sourceTree = "<group>"; };
 		A4B5C6D7E8F9A0B1C2D3E4F5 /* SealColorPalette.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPalette.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
 		E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometry.swift; sourceTree = "<group>"; };
@@ -1291,6 +1297,9 @@
 		AA11BB22CC33DD44EE55FF66 /* Etegami */ = {
 			isa = PBXGroup;
 			children = (
+				CC55DD66EE77FF88AA99BB06 /* EtegamiGenerator.swift */,
+				CC55DD66EE77FF88AA99BB02 /* EtegamiMoonPhase.swift */,
+				CC55DD66EE77FF88AA99BB04 /* EtegamiRenderer.swift */,
 				EE11AA22BB33CC44DD55EE77 /* EtegamiRouteStroke.swift */,
 				AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */,
 			);
@@ -1897,6 +1906,9 @@
 				DD22EE33FF44AA55BB66CC11 /* SealGenerator.swift in Sources */,
 				EE11AA22BB33CC44DD55EE66 /* EtegamiRouteStroke.swift in Sources */,
 				AA33BB44CC55DD66EE77FF88 /* EtegamiTextGenerator.swift in Sources */,
+				CC55DD66EE77FF88AA99BB01 /* EtegamiMoonPhase.swift in Sources */,
+				CC55DD66EE77FF88AA99BB03 /* EtegamiRenderer.swift in Sources */,
+				CC55DD66EE77FF88AA99BB05 /* EtegamiGenerator.swift in Sources */,
 				C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */,
 				A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */,

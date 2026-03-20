@@ -43,4 +43,22 @@ final class EtegamiRouteStrokeTests: XCTestCase {
         XCTAssertEqual(widths[0], 4.0)
         XCTAssertEqual(widths[1], 4.0)
     }
+
+    func testEtegamiRenderer_producesCorrectSize() {
+        let input = EtegamiRenderer.Input(
+            routePoints: [(35.68, 139.76), (35.69, 139.77), (35.70, 139.78)],
+            altitudes: [100, 120, 140],
+            activityMarkers: [],
+            sealImage: UIImage(),
+            sealPosition: CGPoint(x: 500, y: 800),
+            haikuText: "spring morning walk\nforty minutes in silence\nalong the trail",
+            moonPhase: nil,
+            timeOfDay: "Morning",
+            inkColor: .brown,
+            paperColor: UIColor(hex: "#F5F0E8")
+        )
+        let image = EtegamiRenderer.render(input: input)
+        XCTAssertEqual(image.size.width, 1080)
+        XCTAssertEqual(image.size.height, 1920)
+    }
 }
