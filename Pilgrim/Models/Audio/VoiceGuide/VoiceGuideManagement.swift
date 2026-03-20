@@ -27,7 +27,11 @@ final class VoiceGuideManagement: ObservableObject {
         let capturedGeneration = generation
         currentPackId = pack.id
 
-        let sched = VoiceGuideScheduler(pack: pack)
+        let sched = VoiceGuideScheduler(
+            prompts: pack.prompts,
+            scheduling: pack.scheduling,
+            context: .walk
+        )
         sched.setPlayedHistory(loadHistory(for: pack.id))
         sched.onShouldPlay = { [weak self] prompt in
             self?.playPrompt(prompt, packId: pack.id, generation: capturedGeneration)

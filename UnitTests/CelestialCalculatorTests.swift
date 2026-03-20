@@ -168,7 +168,7 @@ final class CelestialCalculatorTests: XCTestCase {
             makePlanetaryPosition(.venus, sign: .taurus),
             makePlanetaryPosition(.mars, sign: .leo),
             makePlanetaryPosition(.jupiter, sign: .libra),
-            makePlanetaryPosition(.saturn, sign: .scorpio),
+            makePlanetaryPosition(.saturn, sign: .scorpio)
         ]
         let balance = CelestialCalculator.elementBalance(positions: positions)
         XCTAssertEqual(balance.counts.values.reduce(0, +), 7)
@@ -187,7 +187,7 @@ final class CelestialCalculatorTests: XCTestCase {
             makePlanetaryPosition(.venus, sign: .aries),
             makePlanetaryPosition(.mars, sign: .cancer),
             makePlanetaryPosition(.jupiter, sign: .gemini),
-            makePlanetaryPosition(.saturn, sign: .taurus),
+            makePlanetaryPosition(.saturn, sign: .taurus)
         ]
         let balance = CelestialCalculator.elementBalance(positions: positions)
         XCTAssertEqual(balance.dominant, .fire)

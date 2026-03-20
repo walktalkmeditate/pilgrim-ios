@@ -19,6 +19,12 @@ struct VoiceGuidePack: Codable, Identifiable {
     let totalDurationSec: Double
     let totalSizeBytes: Int
     let prompts: [VoiceGuidePrompt]
+    let meditationScheduling: PromptDensity?
+    let meditationPrompts: [VoiceGuidePrompt]?
+
+    var hasMeditationGuide: Bool {
+        !(meditationPrompts ?? []).isEmpty
+    }
 }
 
 struct PromptDensity: Codable {

@@ -3,7 +3,7 @@ import XCTest
 
 final class VoiceGuideManifestTests: XCTestCase {
 
-    private let sampleJSON = """
+    private let sampleJSON = Data("""
     {
       "version": "2026-03-17T00:00:00Z",
       "packs": [
@@ -45,7 +45,7 @@ final class VoiceGuideManifestTests: XCTestCase {
         }
       ]
     }
-    """.data(using: .utf8)!
+    """.utf8)
 
     func testDecodeManifest() throws {
         let manifest = try JSONDecoder().decode(VoiceGuideManifest.self, from: sampleJSON)
@@ -101,10 +101,79 @@ final class VoiceGuideManifestTests: XCTestCase {
         XCTAssertEqual(decoded.packs[0].prompts.count, manifest.packs[0].prompts.count)
     }
 
+    private let meditationJSON = Data("""
+    {
+      "version": "1",
+      "packs": [
+        {
+          "id": "test",
+          "version": "1",
+          "name": "Test",
+          "tagline": "t",
+          "description": "d",
+          "theme": "t",
+          "iconName": "star",
+          "type": "voiceGuide",
+          "walkTypes": ["wander"],
+          "scheduling": {
+            "densityMinSec": 180,
+            "densityMaxSec": 420,
+            "minSpacingSec": 120,
+            "initialDelaySec": 60,
+            "walkEndBufferSec": 300
+          },
+          "totalDurationSec": 100,
+          "totalSizeBytes": 50000,
+          "prompts": [
+            {"id": "w01", "seq": 1, "durationSec": 10, "fileSizeBytes": 5000, "r2Key": "voiceguide/test/w01.aac"}
+          ],
+          "meditationScheduling": {
+            "densityMinSec": 90,
+            "densityMaxSec": 180,
+            "minSpacingSec": 60,
+            "initialDelaySec": 30,
+            "walkEndBufferSec": 0
+          },
+          "meditationPrompts": [
+            {"id": "m01", "seq": 1, "durationSec": 15, "fileSizeBytes": 7000, "r2Key": "voiceguide/test/m01.aac", "phase": "settling"}
+          ]
+        }
+      ]
+    }
+    """.utf8)
+
+    func testDecodeMeditationPrompts() throws {
+        let manifest = try JSONDecoder().decode(VoiceGuideManifest.self, from: meditationJSON)
+        let pack = manifest.packs[0]
+
+        XCTAssertNotNil(pack.meditationPrompts)
+        XCTAssertEqual(pack.meditationPrompts?.count, 1)
+        XCTAssertEqual(pack.meditationPrompts?[0].id, "m01")
+        XCTAssertEqual(pack.meditationPrompts?[0].phase, "settling")
+        XCTAssertNotNil(pack.meditationScheduling)
+        XCTAssertEqual(pack.meditationScheduling?.densityMinSec, 90)
+        XCTAssertEqual(pack.meditationScheduling?.initialDelaySec, 30)
+    }
+
+    func testHasMeditationGuide() throws {
+        let manifest = try JSONDecoder().decode(VoiceGuideManifest.self, from: meditationJSON)
+        XCTAssertTrue(manifest.packs[0].hasMeditationGuide)
+
+        let noMeditation = try JSONDecoder().decode(VoiceGuideManifest.self, from: sampleJSON)
+        XCTAssertFalse(noMeditation.packs[0].hasMeditationGuide)
+    }
+
+    func testMeditationFieldsOptional_existingJSONStillDecodes() throws {
+        let manifest = try JSONDecoder().decode(VoiceGuideManifest.self, from: sampleJSON)
+        let pack = manifest.packs[0]
+        XCTAssertNil(pack.meditationPrompts)
+        XCTAssertNil(pack.meditationScheduling)
+    }
+
     func testEmptyPacksDecodes() throws {
-        let json = """
+        let json = Data("""
         {"version": "1", "packs": []}
-        """.data(using: .utf8)!
+        """.utf8)
         let manifest = try JSONDecoder().decode(VoiceGuideManifest.self, from: json)
         XCTAssertTrue(manifest.packs.isEmpty)
     }

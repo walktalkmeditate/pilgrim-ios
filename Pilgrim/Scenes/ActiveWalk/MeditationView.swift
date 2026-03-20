@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 struct MeditationView: View {
 
@@ -16,7 +17,9 @@ struct MeditationView: View {
     @State private var isHolding = false
     @State private var holdIntensity: Double = 0
     @State private var closingPhrase = ""
-    @State private var showBreathPicker = false
+    @State private var showMeditationOptions = false
+    @State private var meditationGuide: MeditationGuideManagement?
+    @State private var selectedGuidePackId: String?
     @State private var showSoundscapePicker = false
     @State private var selectedRhythmId: Int = UserPreferences.breathRhythm.value
     @State private var breathCount: Int = 0
@@ -25,8 +28,15 @@ struct MeditationView: View {
     @State private var hasDismissed = false
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
+    @State private var voiceRings: [VoiceRing] = []
+    @State private var voiceRingPulse = false
+    @State private var breathSpeedMultiplier: Double = 1.0
+    @State private var voiceSoften: Double = 0
+    @State private var voicePlayingCancellable: AnyCancellable?
     @StateObject private var clock = SessionClock()
     @ObservedObject private var soundscapePlayer = SoundscapePlayer.shared
+    @ObservedObject private var manifestService = VoiceGuideManifestService.shared
+    @ObservedObject private var downloadManager = VoiceGuideDownloadManager.shared
 
     private var rhythm: BreathRhythm {
         guard selectedRhythmId >= 0 && selectedRhythmId < BreathRhythm.all.count else { return BreathRhythm.all[0] }
@@ -38,6 +48,7 @@ struct MeditationView: View {
             background
             particleLayer
             rippleLayer
+            voiceRingLayer
 
             VStack(spacing: 0) {
                 Spacer()
@@ -47,7 +58,7 @@ struct MeditationView: View {
                     .scaleEffect(closingPhase == .dissolving ? 0.1 : 1)
                     .onLongPressGesture(minimumDuration: 1.0) {
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                        showBreathPicker = true
+                        showMeditationOptions = true
                     }
 
                 if closingPhase == .summary {
@@ -83,11 +94,15 @@ struct MeditationView: View {
             spawnParticles()
         }
         .onDisappear {
+            voicePlayingCancellable?.cancel()
+            voicePlayingCancellable = nil
+            meditationGuide?.stopGuiding()
+            meditationGuide = nil
             isActive = false
             clock.stop()
         }
-        .sheet(isPresented: $showBreathPicker) {
-            breathPickerSheet
+        .sheet(isPresented: $showMeditationOptions) {
+            meditationOptionsSheet
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.parchment.opacity(0.95))
@@ -170,6 +185,23 @@ struct MeditationView: View {
         .allowsHitTesting(false)
     }
 
+    private var voiceRingLayer: some View {
+        GeometryReader { geo in
+            let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.35)
+            let pulseScale: CGFloat = voiceRingPulse ? 1.04 : 0.97
+            let pulseOpacity: Double = voiceRingPulse ? 1.0 : 0.6
+            ForEach(voiceRings) { ring in
+                Circle()
+                    .stroke(Color.moss.opacity(ring.opacity * pulseOpacity), lineWidth: 1)
+                    .frame(width: ring.size, height: ring.size)
+                    .scaleEffect(pulseScale + ring.irregularity * 0.02)
+                    .position(center)
+            }
+        }
+        .allowsHitTesting(false)
+        .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: voiceRingPulse)
+    }
+
     private func emitRipple() {
         guard !rhythm.isNone else { return }
         if rippleRings.count > 3 { rippleRings.removeFirst() }
@@ -197,8 +229,8 @@ struct MeditationView: View {
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.moss.opacity(0.5),
-                            Color.moss.opacity(0.15),
+                            Color.moss.opacity(0.5 - voiceSoften * 0.15),
+                            Color.moss.opacity(0.15 - voiceSoften * 0.05),
                             Color.moss.opacity(0.0)
                         ],
                         center: .center,
@@ -248,7 +280,13 @@ struct MeditationView: View {
     private var soundscapeLabel: some View {
         if let name = selectedSoundscapeName {
             Button {
+                let wasMuted = soundscapePlayer.isMuted
                 soundscapePlayer.toggleMute()
+                if !wasMuted {
+                    meditationGuide?.pauseGuide()
+                } else {
+                    meditationGuide?.resumeGuide()
+                }
             } label: {
                 if soundscapePlayer.isMuted {
                     Text("♪ Paused")
@@ -399,61 +437,200 @@ struct MeditationView: View {
         }
     }
 
-    // MARK: - Breath Picker
+    // MARK: - Meditation Options Sheet
 
-    private var breathPickerSheet: some View {
+    private var meditationOptionsSheet: some View {
         VStack(spacing: 16) {
-            Text("Breath Rhythm")
+            Text(showsVoiceGuideSection ? "Meditation Options" : "Breath Rhythm")
                 .font(Constants.Typography.heading)
                 .foregroundColor(Color.ink.opacity(0.8))
                 .padding(.top, 12)
 
             ScrollView {
                 VStack(spacing: 6) {
-                    ForEach(BreathRhythm.all) { r in
-                        Button {
-                            selectedRhythmId = r.id
-                            UserPreferences.breathRhythm.value = r.id
-                            isActive = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                isActive = true
-                                startBreathCycle()
-                            }
-                            showBreathPicker = false
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 8) {
-                                        Text(r.name)
-                                            .font(Constants.Typography.body)
-                                            .foregroundColor(Color.ink.opacity(0.9))
-                                        Text(r.label)
-                                            .font(Constants.Typography.caption)
-                                            .foregroundColor(Color.fog.opacity(0.4))
-                                    }
-                                    Text(r.description)
+                    if showsVoiceGuideSection {
+                        voiceGuideSection
+                        Divider()
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                    }
+                    breathRhythmSection
+                }
+                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    private var showsVoiceGuideSection: Bool {
+        UserPreferences.voiceGuideEnabled.value &&
+        manifestService.packs.contains(where: \.hasMeditationGuide)
+    }
+
+    // MARK: - Voice Guide Section
+
+    private var voiceGuideSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("VOICE GUIDE")
+                .font(Constants.Typography.caption)
+                .foregroundColor(Color.fog.opacity(0.4))
+                .tracking(1)
+                .padding(.leading, 4)
+
+            Button {
+                selectedGuidePackId = nil
+                meditationGuide?.stopGuiding()
+                meditationGuide = nil
+                voicePlayingCancellable?.cancel()
+                voicePlayingCancellable = nil
+            } label: {
+                guideRow(name: "Off", subtitle: "Meditate in silence", isSelected: selectedGuidePackId == nil)
+            }
+
+            ForEach(manifestService.packs.filter(\.hasMeditationGuide)) { pack in
+                let isDownloaded = VoiceGuideFileStore.shared.isMeditationDownloaded(pack)
+                let isDownloading = downloadManager.activeDownloads.contains(pack.id)
+
+                Button {
+                    if isDownloaded {
+                        selectGuidePack(pack)
+                    } else if !isDownloading {
+                        downloadManager.downloadPack(pack)
+                    }
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(pack.name)
+                                .font(Constants.Typography.body)
+                                .foregroundColor(Color.ink.opacity(isDownloaded ? 0.9 : 0.4))
+                            if !isDownloaded {
+                                if isDownloading, let progress = downloadManager.downloadProgress[pack.id] {
+                                    SwiftUI.ProgressView(value: progress)
+                                        .tint(.moss)
+                                } else {
+                                    Text("Not downloaded")
                                         .font(Constants.Typography.caption)
                                         .foregroundColor(Color.fog.opacity(0.35))
                                 }
-                                Spacer()
-                                if selectedRhythmId == r.id {
-                                    Image(systemName: "checkmark")
-                                        .font(.caption)
-                                        .foregroundColor(.moss)
-                                }
+                            } else {
+                                Text(pack.tagline)
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(Color.fog.opacity(0.35))
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background(
-                                selectedRhythmId == r.id
-                                    ? Color.moss.opacity(0.08)
-                                    : Color.clear
-                            )
-                            .cornerRadius(10)
+                        }
+                        Spacer()
+                        if selectedGuidePackId == pack.id {
+                            Image(systemName: "checkmark")
+                                .font(.caption)
+                                .foregroundColor(.moss)
+                        } else if !isDownloaded && !isDownloading {
+                            Image(systemName: "arrow.down.circle")
+                                .font(.caption)
+                                .foregroundColor(Color.fog.opacity(0.3))
                         }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        selectedGuidePackId == pack.id
+                            ? Color.moss.opacity(0.08)
+                            : Color.clear
+                    )
+                    .cornerRadius(10)
                 }
-                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    private func guideRow(name: String, subtitle: String, isSelected: Bool) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(Color.ink.opacity(0.9))
+                Text(subtitle)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(Color.fog.opacity(0.35))
+            }
+            Spacer()
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.caption)
+                    .foregroundColor(.moss)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(isSelected ? Color.moss.opacity(0.08) : Color.clear)
+        .cornerRadius(10)
+    }
+
+    private func selectGuidePack(_ pack: VoiceGuidePack) {
+        meditationGuide?.stopGuiding()
+        voicePlayingCancellable?.cancel()
+        selectedGuidePackId = pack.id
+        let mgmt = MeditationGuideManagement()
+        mgmt.startGuiding(pack: pack)
+        meditationGuide = mgmt
+        voicePlayingCancellable = mgmt.$isVoicePlaying
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [self] playing in
+                if playing { onVoiceStart() } else { onVoiceEnd() }
+            }
+    }
+
+    // MARK: - Breath Rhythm Section
+
+    private var breathRhythmSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if showsVoiceGuideSection {
+                Text("BREATH RHYTHM")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(Color.fog.opacity(0.4))
+                    .tracking(1)
+                    .padding(.leading, 4)
+            }
+            ForEach(BreathRhythm.all) { r in
+                Button {
+                    selectedRhythmId = r.id
+                    UserPreferences.breathRhythm.value = r.id
+                    isActive = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isActive = true
+                        startBreathCycle()
+                    }
+                    showMeditationOptions = false
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                Text(r.name)
+                                    .font(Constants.Typography.body)
+                                    .foregroundColor(Color.ink.opacity(0.9))
+                                Text(r.label)
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(Color.fog.opacity(0.4))
+                            }
+                            Text(r.description)
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(Color.fog.opacity(0.35))
+                        }
+                        Spacer()
+                        if selectedRhythmId == r.id {
+                            Image(systemName: "checkmark")
+                                .font(.caption)
+                                .foregroundColor(.moss)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        selectedRhythmId == r.id
+                            ? Color.moss.opacity(0.08)
+                            : Color.clear
+                    )
+                    .cornerRadius(10)
+                }
             }
         }
     }
@@ -462,6 +639,11 @@ struct MeditationView: View {
 
     private func beginClosingCeremony() {
         guard !isClosing else { return }
+        voicePlayingCancellable?.cancel()
+        voicePlayingCancellable = nil
+        meditationGuide?.stopGuiding()
+        meditationGuide = nil
+
         isClosing = true
         isActive = false
         clock.stop()
@@ -491,6 +673,50 @@ struct MeditationView: View {
         }
     }
 
+    // MARK: - Voice Playback
+
+    private func onVoiceStart() {
+        breathSpeedMultiplier = 2.0
+        withAnimation(.easeInOut(duration: 2.0)) {
+            voiceSoften = 1.0
+        }
+        emitVoiceRings()
+        voiceRingPulse = true
+    }
+
+    private func onVoiceEnd() {
+        breathSpeedMultiplier = 1.0
+        voiceRingPulse = false
+        withAnimation(.easeInOut(duration: 3.0)) {
+            voiceSoften = 0
+        }
+        fadeOutVoiceRings()
+    }
+
+    private func emitVoiceRings() {
+        voiceRings.removeAll()
+        for i in 0..<4 {
+            let ring = VoiceRing(
+                id: UUID(),
+                size: CGFloat(300 + i * 50),
+                opacity: 0.12 - Double(i) * 0.02,
+                irregularity: CGFloat.random(in: -1...1)
+            )
+            voiceRings.append(ring)
+        }
+    }
+
+    private func fadeOutVoiceRings() {
+        withAnimation(.easeOut(duration: 1.5)) {
+            for i in voiceRings.indices {
+                voiceRings[i].opacity = 0
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            voiceRings.removeAll()
+        }
+    }
+
     // MARK: - Breath Cycle
 
     private func startBreathCycle() {
@@ -516,10 +742,11 @@ struct MeditationView: View {
             checkMilestone()
         }
         phase = .inhale
-        withAnimation(.easeInOut(duration: rhythm.inhale)) {
+        let duration = rhythm.inhale * breathSpeedMultiplier
+        withAnimation(.easeInOut(duration: duration)) {
             circleScale = 1.0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.inhale) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             guard self.isActive, self.breathGeneration == gen else { return }
             self.emitRipple()
             if self.rhythm.holdIn > 0 {
@@ -551,7 +778,8 @@ struct MeditationView: View {
         phase = .holdIn
         holdIntensity = 1.0
         isHolding = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdIn) {
+        let duration = rhythm.holdIn * breathSpeedMultiplier
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             guard self.isActive, self.breathGeneration == gen else { return }
             self.isHolding = false
             self.breathOut()
@@ -562,10 +790,11 @@ struct MeditationView: View {
         guard isActive else { return }
         let gen = breathGeneration
         phase = .exhale
-        withAnimation(.easeInOut(duration: rhythm.exhale)) {
+        let duration = rhythm.exhale * breathSpeedMultiplier
+        withAnimation(.easeInOut(duration: duration)) {
             circleScale = 0.45
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.exhale) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             guard self.isActive, self.breathGeneration == gen else { return }
             if self.rhythm.holdOut > 0 {
                 self.holdAfterExhale()
@@ -581,7 +810,8 @@ struct MeditationView: View {
         phase = .holdOut
         holdIntensity = 0.6
         isHolding = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + rhythm.holdOut) {
+        let duration = rhythm.holdOut * breathSpeedMultiplier
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             guard self.isActive, self.breathGeneration == gen else { return }
             self.isHolding = false
             self.breathIn()
@@ -661,4 +891,11 @@ struct RippleRing: Identifiable {
     let id: UUID
     var size: CGFloat
     var opacity: Double
+}
+
+struct VoiceRing: Identifiable {
+    let id: UUID
+    var size: CGFloat
+    var opacity: Double
+    var irregularity: CGFloat
 }
