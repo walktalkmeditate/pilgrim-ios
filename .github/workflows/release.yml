@@ -16,7 +16,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install CocoaPods
-        run: pod install
+        run: |
+          gem install cocoapods --no-document
+          pod install
 
       - name: Configure secrets
         env:
