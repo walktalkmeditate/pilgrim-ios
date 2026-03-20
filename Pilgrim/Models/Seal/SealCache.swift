@@ -26,7 +26,7 @@ final class SealCache {
     static let shared = SealCache()
 
     private let hybridStorage: HybridStorage<String, UIImage>?
-    private let queue = DispatchQueue(label: "org.walktalkmeditate.pilgrim.sealcache", attributes: .concurrent)
+    private let queue = DispatchQueue(label: "org.walktalkmeditate.pilgrim.sealcache")
 
     private init() {
         let diskConfig = DiskConfig(
@@ -66,7 +66,7 @@ final class SealCache {
     }
 
     func store(seal: UIImage, for walkUUID: String) {
-        queue.async(flags: .barrier) { [self] in
+        queue.sync { [self] in
             guard let storage = hybridStorage else { return }
             try? storage.setObject(seal, forKey: sealKey(walkUUID))
             let thumb = seal.preparingThumbnail(of: CGSize(width: 128, height: 128)) ?? seal
@@ -75,7 +75,7 @@ final class SealCache {
     }
 
     func clear() {
-        queue.async(flags: .barrier) { [self] in
+        queue.sync { [self] in
             try? hybridStorage?.removeAll()
         }
     }
