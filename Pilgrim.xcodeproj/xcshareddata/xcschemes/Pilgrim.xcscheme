@@ -47,6 +47,17 @@
                ReferencedContainer = "container:Pilgrim.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "56E07B152F6DDEDE004EBC44"
+               BuildableName = "ScreenshotTests.xctest"
+               BlueprintName = "ScreenshotTests"
+               ReferencedContainer = "container:Pilgrim.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

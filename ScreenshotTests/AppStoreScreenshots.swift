@@ -2,43 +2,76 @@ import XCTest
 
 final class AppStoreScreenshots: ScreenshotTestCase {
 
+    // MARK: - Light Mode Screens
+
     func test01_PathTab() {
-        tapTab("tab_path")
         Thread.sleep(forTimeInterval: 2)
         capture("01_path_walk_start")
     }
 
-    func test02_JournalTab() {
-        tapTab("tab_journal")
-        Thread.sleep(forTimeInterval: 2)
-        capture("02_journal_walk_history")
+    func test02_ActiveWalk() {
+        startWalkAndCapture(prefix: "")
     }
 
-    func test03_WalkSummary() {
-        tapTab("tab_journal")
+    func test04_WalkSummary() {
+        tapTab("Journal")
         Thread.sleep(forTimeInterval: 2)
 
-        let firstDot = app.otherElements.matching(identifier: "walk_dot").firstMatch
-        if firstDot.waitForExistence(timeout: 3) {
-            firstDot.tap()
+        let window = app.windows.firstMatch
+
+        for yOffset in stride(from: 0.3, through: 0.7, by: 0.1) {
+            let dot = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: yOffset))
+            dot.tap()
             Thread.sleep(forTimeInterval: 0.5)
+
+            let detailsButton = app.buttons["walk_details_button"].firstMatch
+            if detailsButton.exists {
+                detailsButton.tap()
+                Thread.sleep(forTimeInterval: 3)
+                capture("04_walk_summary")
+
+                app.swipeUp()
+                Thread.sleep(forTimeInterval: 1)
+                capture("05_walk_summary_voice")
+
+                app.swipeUp()
+                Thread.sleep(forTimeInterval: 0.5)
+                capture("05b_walk_summary_details")
+                return
+            }
         }
 
-        let detailsButton = app.buttons["walk_details_button"].firstMatch
-        if detailsButton.waitForExistence(timeout: 3) {
-            detailsButton.tap()
-            Thread.sleep(forTimeInterval: 2)
-            capture("03_walk_summary")
-
-            app.swipeUp()
-            Thread.sleep(forTimeInterval: 0.5)
-            capture("03b_walk_summary_scrolled")
-        }
+        capture("04_walk_summary_fallback")
     }
 
-    func test04_Settings() {
-        tapTab("tab_settings")
+    // MARK: - Dark Mode Screens (Meditation + Journal + Settings)
+
+    func test03_Meditation_Dark() {
+        switchToDarkMode()
+        startWalkAndCapture(prefix: "dark_")
+    }
+
+    func test06_Journal_Dark() {
+        switchToDarkMode()
+        tapTab("Journal")
         Thread.sleep(forTimeInterval: 2)
-        capture("04_settings")
+        capture("06_journal_dark")
+    }
+
+    func test07_Settings_Dark() {
+        switchToDarkMode()
+        tapTab("Settings")
+        Thread.sleep(forTimeInterval: 2)
+        capture("07_settings_dark")
+    }
+
+    private func switchToDarkMode() {
+        tapTab("Settings")
+        Thread.sleep(forTimeInterval: 1)
+        let darkButton = app.buttons["Dark"]
+        if darkButton.waitForExistence(timeout: 3) {
+            darkButton.tap()
+            Thread.sleep(forTimeInterval: 1)
+        }
     }
 }

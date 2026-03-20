@@ -37,15 +37,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         DataManager.setup(
             completion: { _ in
                 
-                self.appLaunchState = .done
                 AudioManifestService.shared.syncIfNeeded()
                 VoiceGuideManifestService.shared.syncIfNeeded()
 
                 #if DEBUG
                 if CommandLine.arguments.contains("--demo-mode") {
-                    self.seedDemoData()
+                    self.seedDemoData {
+                        self.appLaunchState = .done
+                    }
+                    return
                 }
                 #endif
+
+                self.appLaunchState = .done
 
 
             }, migration: { _ in
@@ -81,11 +85,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     }
 
     #if DEBUG
-    private func seedDemoData() {
+    private func seedDemoData(completion: @escaping () -> Void) {
         UserPreferences.isSetUp.value = true
         DataManager.deleteAll { _, _ in
             ScreenshotDataSeeder.seed { count in
                 print("[DemoMode] Seeded \(count) walks")
+                DispatchQueue.main.async {
+                    completion()
+                }
             }
         }
     }

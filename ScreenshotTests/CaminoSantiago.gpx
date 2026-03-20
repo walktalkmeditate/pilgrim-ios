@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Pilgrim Screenshots"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Camino de Santiago — Final Approach</name>
+    <desc>The last kilometers approaching the Cathedral of Santiago de Compostela</desc>
+  </metadata>
+  <trk>
+    <name>Camino Final Stage</name>
+    <trkseg>
+      <!-- Monte do Gozo — first sight of Santiago -->
+      <trkpt lat="42.8872" lon="-8.5108"><ele>370</ele><time>2026-03-20T07:00:00Z</time></trkpt>
+      <trkpt lat="42.8865" lon="-8.5125"><ele>365</ele><time>2026-03-20T07:01:00Z</time></trkpt>
+      <trkpt lat="42.8858" lon="-8.5142"><ele>358</ele><time>2026-03-20T07:02:00Z</time></trkpt>
+      <trkpt lat="42.8850" lon="-8.5160"><ele>350</ele><time>2026-03-20T07:03:00Z</time></trkpt>
+      <trkpt lat="42.8842" lon="-8.5178"><ele>340</ele><time>2026-03-20T07:04:00Z</time></trkpt>
+      <!-- Descending toward the city -->
+      <trkpt lat="42.8835" lon="-8.5195"><ele>328</ele><time>2026-03-20T07:05:00Z</time></trkpt>
+      <trkpt lat="42.8828" lon="-8.5212"><ele>315</ele><time>2026-03-20T07:06:00Z</time></trkpt>
+      <trkpt lat="42.8820" lon="-8.5230"><ele>302</ele><time>2026-03-20T07:07:00Z</time></trkpt>
+      <trkpt lat="42.8812" lon="-8.5248"><ele>290</ele><time>2026-03-20T07:08:00Z</time></trkpt>
+      <trkpt lat="42.8805" lon="-8.5265"><ele>278</ele><time>2026-03-20T07:09:00Z</time></trkpt>
+      <!-- Entering Santiago suburbs -->
+      <trkpt lat="42.8798" lon="-8.5282"><ele>268</ele><time>2026-03-20T07:10:00Z</time></trkpt>
+      <trkpt lat="42.8790" lon="-8.5300"><ele>260</ele><time>2026-03-20T07:11:00Z</time></trkpt>
+      <trkpt lat="42.8782" lon="-8.5318"><ele>255</ele><time>2026-03-20T07:12:00Z</time></trkpt>
+      <trkpt lat="42.8775" lon="-8.5335"><ele>250</ele><time>2026-03-20T07:13:00Z</time></trkpt>
+      <trkpt lat="42.8768" lon="-8.5352"><ele>248</ele><time>2026-03-20T07:14:00Z</time></trkpt>
+      <!-- Walking through old town streets -->
+      <trkpt lat="42.8760" lon="-8.5368"><ele>245</ele><time>2026-03-20T07:15:00Z</time></trkpt>
+      <trkpt lat="42.8755" lon="-8.5380"><ele>243</ele><time>2026-03-20T07:16:00Z</time></trkpt>
+      <trkpt lat="42.8750" lon="-8.5392"><ele>242</ele><time>2026-03-20T07:17:00Z</time></trkpt>
+      <trkpt lat="42.8745" lon="-8.5405"><ele>241</ele><time>2026-03-20T07:18:00Z</time></trkpt>
+      <trkpt lat="42.8740" lon="-8.5418"><ele>240</ele><time>2026-03-20T07:19:00Z</time></trkpt>
+      <!-- Approaching Praza do Obradoiro -->
+      <trkpt lat="42.8735" lon="-8.5430"><ele>239</ele><time>2026-03-20T07:20:00Z</time></trkpt>
+      <trkpt lat="42.8730" lon="-8.5440"><ele>238</ele><time>2026-03-20T07:21:00Z</time></trkpt>
+      <trkpt lat="42.8726" lon="-8.5448"><ele>237</ele><time>2026-03-20T07:22:00Z</time></trkpt>
+      <trkpt lat="42.8722" lon="-8.5453"><ele>236</ele><time>2026-03-20T07:23:00Z</time></trkpt>
+      <!-- Cathedral of Santiago de Compostela -->
+      <trkpt lat="42.8806" lon="-8.5446"><ele>235</ele><time>2026-03-20T07:24:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

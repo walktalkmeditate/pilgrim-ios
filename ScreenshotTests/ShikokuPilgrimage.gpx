@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Pilgrim Screenshots"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Shikoku Pilgrimage — Temple 1 to Temple 2</name>
+    <desc>Ryōzenji to Gokurakuji along the Shikoku 88 Temple circuit in Tokushima</desc>
+  </metadata>
+  <trk>
+    <name>Shikoku Henro</name>
+    <trkseg>
+      <!-- Temple 1: Ryōzenji (霊山寺) -->
+      <trkpt lat="34.1594" lon="134.5062"><ele>12</ele><time>2026-03-20T06:00:00Z</time></trkpt>
+      <trkpt lat="34.1590" lon="134.5055"><ele>14</ele><time>2026-03-20T06:01:00Z</time></trkpt>
+      <trkpt lat="34.1585" lon="134.5045"><ele>16</ele><time>2026-03-20T06:02:00Z</time></trkpt>
+      <trkpt lat="34.1580" lon="134.5035"><ele>18</ele><time>2026-03-20T06:03:00Z</time></trkpt>
+      <trkpt lat="34.1575" lon="134.5025"><ele>20</ele><time>2026-03-20T06:04:00Z</time></trkpt>
+      <!-- Walking through rice paddies -->
+      <trkpt lat="34.1568" lon="134.5015"><ele>18</ele><time>2026-03-20T06:05:00Z</time></trkpt>
+      <trkpt lat="34.1560" lon="134.5005"><ele>16</ele><time>2026-03-20T06:06:00Z</time></trkpt>
+      <trkpt lat="34.1552" lon="134.4995"><ele>15</ele><time>2026-03-20T06:07:00Z</time></trkpt>
+      <trkpt lat="34.1545" lon="134.4985"><ele>14</ele><time>2026-03-20T06:08:00Z</time></trkpt>
+      <trkpt lat="34.1538" lon="134.4975"><ele>13</ele><time>2026-03-20T06:09:00Z</time></trkpt>
+      <!-- Rural road toward Gokurakuji -->
+      <trkpt lat="34.1530" lon="134.4965"><ele>12</ele><time>2026-03-20T06:10:00Z</time></trkpt>
+      <trkpt lat="34.1522" lon="134.4955"><ele>14</ele><time>2026-03-20T06:11:00Z</time></trkpt>
+      <trkpt lat="34.1515" lon="134.4945"><ele>18</ele><time>2026-03-20T06:12:00Z</time></trkpt>
+      <trkpt lat="34.1508" lon="134.4935"><ele>22</ele><time>2026-03-20T06:13:00Z</time></trkpt>
+      <trkpt lat="34.1500" lon="134.4925"><ele>28</ele><time>2026-03-20T06:14:00Z</time></trkpt>
+      <!-- Approaching the temple gate -->
+      <trkpt lat="34.1492" lon="134.4915"><ele>32</ele><time>2026-03-20T06:15:00Z</time></trkpt>
+      <trkpt lat="34.1485" lon="134.4905"><ele>35</ele><time>2026-03-20T06:16:00Z</time></trkpt>
+      <trkpt lat="34.1478" lon="134.4898"><ele>38</ele><time>2026-03-20T06:17:00Z</time></trkpt>
+      <trkpt lat="34.1472" lon="134.4892"><ele>40</ele><time>2026-03-20T06:18:00Z</time></trkpt>
+      <!-- Temple 2: Gokurakuji (極楽寺) -->
+      <trkpt lat="34.1468" lon="134.4888"><ele>42</ele><time>2026-03-20T06:19:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

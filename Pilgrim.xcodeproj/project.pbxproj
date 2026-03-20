@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -171,6 +171,7 @@
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
 		56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */; };
+		56E07B2C2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */; };
 		56ED2CA2C618854F7461544B /* CelestialVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */; };
 		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
 		6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */; };
@@ -351,6 +352,13 @@
 			remoteGlobalIDString = 22B6CF5222CA0814002D2FB0;
 			remoteInfo = Pilgrim;
 		};
+		56E07B1C2F6DDEDE004EBC44 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 22B6CF4B22CA0814002D2FB0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 22B6CF5222CA0814002D2FB0;
+			remoteInfo = Pilgrim;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -515,6 +523,8 @@
 		4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteShapeView.swift; sourceTree = "<group>"; };
 		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
 		56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Pilgrim/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		56E07B162F6DDEDE004EBC44 /* ScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataSeeder.swift; sourceTree = "<group>"; };
 		5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideDownloadManager.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
@@ -696,6 +706,10 @@
 		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		56E07B172F6DDEDE004EBC44 /* ScreenshotTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ScreenshotTests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		22B6CF5022CA0814002D2FB0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -713,6 +727,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		56E07B132F6DDEDE004EBC44 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -938,6 +959,7 @@
 			children = (
 				22B6CF5522CA0814002D2FB0 /* Pilgrim */,
 				22DD158A280C5BB4002CDB45 /* UnitTests */,
+				56E07B172F6DDEDE004EBC44 /* ScreenshotTests */,
 				22B6CF5422CA0814002D2FB0 /* Products */,
 				22B6CF6B22CA0841002D2FB0 /* Frameworks */,
 				BA69BA2459A15E9F0E7493C3 /* Pods */,
@@ -950,6 +972,7 @@
 			children = (
 				22B6CF5322CA0814002D2FB0 /* Pilgrim.app */,
 				22DD1589280C5BB4002CDB45 /* UnitTests.xctest */,
+				56E07B162F6DDEDE004EBC44 /* ScreenshotTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1006,6 +1029,7 @@
 				AAAA000000000000000000B2 /* TranscriptionService.swift */,
 				22834F792542239800057FEB /* HelperMethods.swift */,
 				AAAA000000000000000000C2 /* PromptGenerator.swift */,
+				56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */,
 				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
 				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
 				CC00000100000000SEEDRG01 /* SeededRNG.swift */,
@@ -1606,13 +1630,36 @@
 			productReference = 22DD1589280C5BB4002CDB45 /* UnitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		56E07B152F6DDEDE004EBC44 /* ScreenshotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 56E07B1E2F6DDEDE004EBC44 /* Build configuration list for PBXNativeTarget "ScreenshotTests" */;
+			buildPhases = (
+				56E07B122F6DDEDE004EBC44 /* Sources */,
+				56E07B132F6DDEDE004EBC44 /* Frameworks */,
+				56E07B142F6DDEDE004EBC44 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				56E07B1D2F6DDEDE004EBC44 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				56E07B172F6DDEDE004EBC44 /* ScreenshotTests */,
+			);
+			name = ScreenshotTests;
+			packageProductDependencies = (
+			);
+			productName = ScreenshotTests;
+			productReference = 56E07B162F6DDEDE004EBC44 /* ScreenshotTests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		22B6CF4B22CA0814002D2FB0 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1330;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 1200;
 				ORGANIZATIONNAME = "Tim Fraedrich";
 				TargetAttributes = {
@@ -1629,6 +1676,10 @@
 					};
 					22DD1588280C5BB4002CDB45 = {
 						CreatedOnToolsVersion = 13.3.1;
+						TestTargetID = 22B6CF5222CA0814002D2FB0;
+					};
+					56E07B152F6DDEDE004EBC44 = {
+						CreatedOnToolsVersion = 26.3;
 						TestTargetID = 22B6CF5222CA0814002D2FB0;
 					};
 				};
@@ -1652,6 +1703,7 @@
 			targets = (
 				22B6CF5222CA0814002D2FB0 /* Pilgrim */,
 				22DD1588280C5BB4002CDB45 /* UnitTests */,
+				56E07B152F6DDEDE004EBC44 /* ScreenshotTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1677,6 +1729,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		22DD1587280C5BB4002CDB45 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		56E07B142F6DDEDE004EBC44 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1794,6 +1853,7 @@
 				2288F6B422E0FB5C0014471C /* UIColor.swift in Sources */,
 				221436C12443960A0010D82B /* UnitCount.swift in Sources */,
 				22BC993C2941D9A800D9B1A5 /* RoundedButton.swift in Sources */,
+				56E07B2C2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift in Sources */,
 				22FEA0AD24CDD4CA0007CA9C /* FileManager.swift in Sources */,
 				22DBFBE12349362900DE6E92 /* UserPreferences.swift in Sources */,
 				2287753E234A3DF60078CE12 /* TextInputSetting.swift in Sources */,
@@ -2081,6 +2141,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		56E07B122F6DDEDE004EBC44 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -2088,6 +2155,11 @@
 			isa = PBXTargetDependency;
 			target = 22B6CF5222CA0814002D2FB0 /* Pilgrim */;
 			targetProxy = 22DD158D280C5BB4002CDB45 /* PBXContainerItemProxy */;
+		};
+		56E07B1D2F6DDEDE004EBC44 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 22B6CF5222CA0814002D2FB0 /* Pilgrim */;
+			targetProxy = 56E07B1C2F6DDEDE004EBC44 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2339,6 +2411,59 @@
 			};
 			name = Release;
 		};
+		56E07B1F2F6DDEDE004EBC44 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YCF2TGZAX8;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.ScreenshotTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Pilgrim;
+			};
+			name = Debug;
+		};
+		56E07B202F6DDEDE004EBC44 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YCF2TGZAX8;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.ScreenshotTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Pilgrim;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2365,6 +2490,15 @@
 			buildConfigurations = (
 				22DD158F280C5BB4002CDB45 /* Debug */,
 				22DD1590280C5BB4002CDB45 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		56E07B1E2F6DDEDE004EBC44 /* Build configuration list for PBXNativeTarget "ScreenshotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				56E07B1F2F6DDEDE004EBC44 /* Debug */,
+				56E07B202F6DDEDE004EBC44 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
