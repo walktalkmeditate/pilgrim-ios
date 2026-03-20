@@ -160,30 +160,13 @@ struct VoiceGuideSettingsView: View {
 
                 Spacer()
 
-                if isDownloading {
-                    SwiftUI.ProgressView(value: progress)
-                        .tint(.stone)
-                        .frame(width: 40)
-                } else if !isDownloaded {
-                    Button {
-                        downloadManager.downloadPack(pack)
-                    } label: {
-                        Image(systemName: "arrow.down.circle")
-                            .foregroundColor(.stone)
-                    }
-                    .buttonStyle(.plain)
-                    .onChange(of: downloadManager.activeDownloads) { _, active in
-                        if !active.contains(pack.id),
-                           fileStore.isPackDownloaded(pack),
-                           selectedPackId == nil {
-                            selectedPackId = pack.id
-                            UserPreferences.selectedVoiceGuidePackId.value = pack.id
-                        }
-                    }
-                } else if isSelected {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(.stone)
-                }
+                packTrailingContent(
+                    pack: pack,
+                    isDownloading: isDownloading,
+                    isDownloaded: isDownloaded,
+                    isSelected: isSelected,
+                    progress: progress
+                )
             }
         }
         .swipeActions(edge: .trailing) {
@@ -198,6 +181,40 @@ struct VoiceGuideSettingsView: View {
                     Label("Delete", systemImage: "trash")
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func packTrailingContent(
+        pack: VoiceGuidePack,
+        isDownloading: Bool,
+        isDownloaded: Bool,
+        isSelected: Bool,
+        progress: Double
+    ) -> some View {
+        if isDownloading {
+            SwiftUI.ProgressView(value: progress)
+                .tint(.stone)
+                .frame(width: 40)
+        } else if !isDownloaded {
+            Button {
+                downloadManager.downloadPack(pack)
+            } label: {
+                Image(systemName: "arrow.down.circle")
+                    .foregroundColor(.stone)
+            }
+            .buttonStyle(.plain)
+            .onChange(of: downloadManager.activeDownloads) { _, active in
+                if !active.contains(pack.id),
+                   fileStore.isPackDownloaded(pack),
+                   selectedPackId == nil {
+                    selectedPackId = pack.id
+                    UserPreferences.selectedVoiceGuidePackId.value = pack.id
+                }
+            }
+        } else if isSelected {
+            Image(systemName: "checkmark")
+                .foregroundColor(.stone)
         }
     }
 }

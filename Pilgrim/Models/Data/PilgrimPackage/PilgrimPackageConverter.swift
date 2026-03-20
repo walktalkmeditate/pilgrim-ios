@@ -274,7 +274,46 @@ enum PilgrimPackageConverter {
 
     static func convertToTemp(walk: PilgrimWalk) -> TempWalk {
         let walkType: Walk.WalkType = walk.type == "walking" ? .walking : .unknown
+        let (routeData, waypoints) = convertRouteData(from: walk)
+        let related = convertRelatedData(from: walk)
+        let dayIdentifier = CustomDateFormatting.dayIdentifier(forDate: walk.startDate)
 
+        return TempWalk(
+            uuid: walk.id,
+            workoutType: walkType,
+            distance: walk.stats.distance,
+            steps: walk.stats.steps,
+            startDate: walk.startDate,
+            endDate: walk.endDate,
+            burnedEnergy: walk.stats.burnedEnergy,
+            isRace: walk.isRace,
+            comment: walk.intention,
+            isUserModified: walk.isUserModified,
+            healthKitUUID: nil,
+            finishedRecording: walk.finishedRecording,
+            ascend: walk.stats.ascent,
+            descend: walk.stats.descent,
+            activeDuration: walk.stats.activeDuration,
+            pauseDuration: walk.stats.pauseDuration,
+            dayIdentifier: dayIdentifier,
+            talkDuration: walk.stats.talkDuration,
+            meditateDuration: walk.stats.meditateDuration,
+            heartRates: related.heartRates,
+            routeData: routeData,
+            pauses: related.pauses,
+            workoutEvents: related.workoutEvents,
+            voiceRecordings: related.voiceRecordings,
+            activityIntervals: related.activities,
+            favicon: walk.favicon,
+            waypoints: waypoints,
+            weatherCondition: walk.weather?.condition,
+            weatherTemperature: walk.weather?.temperature,
+            weatherHumidity: walk.weather?.humidity,
+            weatherWindSpeed: walk.weather?.windSpeed
+        )
+    }
+
+    private static func convertRouteData(from walk: PilgrimWalk) -> ([TempRouteDataSample], [TempWaypoint]) {
         var routeData: [TempRouteDataSample] = []
         var waypoints: [TempWaypoint] = []
 
@@ -325,6 +364,16 @@ enum PilgrimPackageConverter {
             }
         }
 
+        return (routeData, waypoints)
+    }
+
+    private static func convertRelatedData(from walk: PilgrimWalk) -> (
+        pauses: [TempWalkPause],
+        activities: [TempActivityInterval],
+        voiceRecordings: [TempVoiceRecording],
+        heartRates: [TempHeartRateDataSample],
+        workoutEvents: [TempWalkEvent]
+    ) {
         let pauses = walk.pauses.map { pause in
             TempWalkPause(
                 uuid: UUID(),
@@ -372,41 +421,7 @@ enum PilgrimPackageConverter {
             )
         }
 
-        let dayIdentifier = CustomDateFormatting.dayIdentifier(forDate: walk.startDate)
-
-        return TempWalk(
-            uuid: walk.id,
-            workoutType: walkType,
-            distance: walk.stats.distance,
-            steps: walk.stats.steps,
-            startDate: walk.startDate,
-            endDate: walk.endDate,
-            burnedEnergy: walk.stats.burnedEnergy,
-            isRace: walk.isRace,
-            comment: walk.intention,
-            isUserModified: walk.isUserModified,
-            healthKitUUID: nil,
-            finishedRecording: walk.finishedRecording,
-            ascend: walk.stats.ascent,
-            descend: walk.stats.descent,
-            activeDuration: walk.stats.activeDuration,
-            pauseDuration: walk.stats.pauseDuration,
-            dayIdentifier: dayIdentifier,
-            talkDuration: walk.stats.talkDuration,
-            meditateDuration: walk.stats.meditateDuration,
-            heartRates: heartRates,
-            routeData: routeData,
-            pauses: pauses,
-            workoutEvents: workoutEvents,
-            voiceRecordings: voiceRecordings,
-            activityIntervals: activities,
-            favicon: walk.favicon,
-            waypoints: waypoints,
-            weatherCondition: walk.weather?.condition,
-            weatherTemperature: walk.weather?.temperature,
-            weatherHumidity: walk.weather?.humidity,
-            weatherWindSpeed: walk.weather?.windSpeed
-        )
+        return (pauses, activities, voiceRecordings, heartRates, workoutEvents)
     }
 
     static func convertEvents(_ events: [PilgrimEvent]) -> [TempEvent] {
