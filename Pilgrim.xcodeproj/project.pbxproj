@@ -288,6 +288,8 @@
 		CC00000200000000SCENIV01 /* SceneryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SCENIV01 /* SceneryItemView.swift */; };
 		CC00000200000000SEASON01 /* SeasonalColorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SEASON01 /* SeasonalColorEngine.swift */; };
 		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
+		CC01000100000000SCSTYB01 /* SettingsCardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */; };
+		CC01000100000000PRACSH01 /* PracticeSummaryHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */; };
 		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
 		CC00000200000000TREESH01 /* TreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TREESH01 /* TreeShape.swift */; };
 		CC00000200000000WINTRT01 /* WinterTreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WINTRT01 /* WinterTreeShape.swift */; };
@@ -631,6 +633,8 @@
 		CC00000100000000SCENIV01 /* SceneryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneryItemView.swift; sourceTree = "<group>"; };
 		CC00000100000000SEASON01 /* SeasonalColorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonalColorEngine.swift; sourceTree = "<group>"; };
 		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCardStyle.swift; sourceTree = "<group>"; };
+		CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSummaryHeader.swift; sourceTree = "<group>"; };
 		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
 		CC00000100000000TREESH01 /* TreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeShape.swift; sourceTree = "<group>"; };
 		CC00000100000000WINTRT01 /* WinterTreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinterTreeShape.swift; sourceTree = "<group>"; };
@@ -1494,6 +1498,8 @@
 			isa = PBXGroup;
 			children = (
 				CC00000100000000SETTVW01 /* SettingsView.swift */,
+				CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */,
+				CC01000100000000SETSGRP1 /* SettingsCards */,
 				0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */,
 				F1EF72AE69CD4C1599071304 /* TalkSettingsView.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */,
@@ -1505,6 +1511,14 @@
 				F1066617851420CAB7B50442 /* DataSettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		CC01000100000000SETSGRP1 /* SettingsCards */ = {
+			isa = PBXGroup;
+			children = (
+				CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */,
+			);
+			path = SettingsCards;
 			sourceTree = "<group>";
 		};
 		F0F0F00300000000AABBCC00 /* Fonts */ = {
@@ -1879,6 +1893,8 @@
 				CC00000200000000SEEDRG01 /* SeededRNG.swift in Sources */,
 				CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */,
 				CC00000200000000SETTVW01 /* SettingsView.swift in Sources */,
+				CC01000100000000SCSTYB01 /* SettingsCardStyle.swift in Sources */,
+				CC01000100000000PRACSH01 /* PracticeSummaryHeader.swift in Sources */,
 				CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */,
 				CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */,
 				CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */,
