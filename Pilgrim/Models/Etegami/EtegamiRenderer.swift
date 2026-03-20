@@ -102,18 +102,14 @@ enum EtegamiRenderer {
         )
         let tapers = EtegamiRouteStroke.computeTaperMultipliers(count: segmentCount)
 
-        // Glow pass
-        let glowWidths = EtegamiRouteStroke.computeStrokeWidths(
-            altitudes: smoothedAltitudes, baseWidth: 24, count: segmentCount
-        )
-        EtegamiRouteStroke.draw(
+        // Glow pass (single continuous path — no segment dots)
+        EtegamiRouteStroke.drawGlow(
             ctx: ctx,
             projectedPoints: centered,
-            strokeWidths: glowWidths,
+            lineWidth: 24,
             taperMultipliers: tapers,
             color: input.inkColor,
-            opacity: 0.15,
-            activityMarkers: []
+            opacity: 0.12
         )
 
         // Crisp pass

@@ -113,6 +113,30 @@ enum EtegamiRouteStroke {
         }
     }
 
+    static func drawGlow(
+        ctx: CGContext,
+        projectedPoints: [CGPoint],
+        lineWidth: CGFloat,
+        taperMultipliers: [CGFloat],
+        color: UIColor,
+        opacity: CGFloat
+    ) {
+        guard projectedPoints.count > 1 else { return }
+
+        ctx.saveGState()
+        ctx.setLineCap(.round)
+        ctx.setLineJoin(.round)
+        ctx.setStrokeColor(color.withAlphaComponent(opacity).cgColor)
+        ctx.setLineWidth(lineWidth)
+
+        ctx.move(to: projectedPoints[0])
+        for i in 1..<projectedPoints.count {
+            ctx.addLine(to: projectedPoints[i])
+        }
+        ctx.strokePath()
+        ctx.restoreGState()
+    }
+
     static func draw(
         ctx: CGContext,
         projectedPoints: [CGPoint],
