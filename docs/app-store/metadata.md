@@ -57,7 +57,12 @@ Open source. Free forever. No subscriptions.
 
 pilgrimapp.org
 
-## What's New (v1.0.0)
+## What's New
+
+Current version's release notes. Replace (don't append) each release.
+The `/release notes` skill can generate these from git history.
+
+### v1.0.0
 
 The first step.
 
