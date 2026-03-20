@@ -31,20 +31,36 @@ class ScreenshotTestCase: XCTestCase {
         tapTab("Path")
         Thread.sleep(forTimeInterval: 1)
 
-        let wanderButton = app.buttons["Wander"]
-        guard wanderButton.waitForExistence(timeout: 3) else { return }
-        wanderButton.tap()
+        var walkButton = app.buttons["start_walk_button"]
+        if !walkButton.waitForExistence(timeout: 3) {
+            walkButton = app.buttons["Wander"]
+        }
+        if !walkButton.waitForExistence(timeout: 3) {
+            walkButton = app.buttons["Begin your journey"]
+        }
+        guard walkButton.waitForExistence(timeout: 3), walkButton.isHittable else {
+            capture("\(prefix)02_walk_start_fallback")
+            return
+        }
+        walkButton.tap()
 
         handlePermissionAlerts()
+        Thread.sleep(forTimeInterval: 2)
+        handlePermissionAlerts()
 
-        Thread.sleep(forTimeInterval: 5)
-        capture("\(prefix)05_active_walk")
+        let startButton = app.buttons["Start"]
+        if startButton.waitForExistence(timeout: 5) {
+            startButton.tap()
+            Thread.sleep(forTimeInterval: 8)
+        }
+
+        capture("\(prefix)02_active_walk")
 
         let meditateButton = app.buttons["Meditate"]
         if meditateButton.waitForExistence(timeout: 3) {
             meditateButton.tap()
             Thread.sleep(forTimeInterval: 3)
-            capture("\(prefix)06_meditation")
+            capture("\(prefix)03_meditation")
 
             let closeButton = app.buttons["Close"]
             if closeButton.waitForExistence(timeout: 2) {
@@ -62,6 +78,8 @@ class ScreenshotTestCase: XCTestCase {
             if confirmEnd.waitForExistence(timeout: 2) {
                 confirmEnd.tap()
             }
+            Thread.sleep(forTimeInterval: 3)
+            capture("\(prefix)08_goshuin_seal")
         }
     }
 

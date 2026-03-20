@@ -177,6 +177,7 @@ struct WalkStartView: View {
             .shadow(color: .stone.opacity(selectedMode.isAvailable ? 0.12 * glowScale : 0), radius: 20 * glowScale, x: 0, y: 0)
             .animation(.easeInOut(duration: 0.3), value: selectedMode.isAvailable)
             .accessibilityLabel("Begin your journey")
+            .accessibilityIdentifier("start_walk_button")
         }
         .padding(.horizontal, Constants.UI.Padding.big)
         .padding(.bottom, Constants.UI.Padding.big)

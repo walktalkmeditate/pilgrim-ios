@@ -28,6 +28,7 @@ struct GoshuinFAB: View {
                 }
             }
         }
+        .accessibilityIdentifier("goshuin_fab")
         .task { await loadThumbnail() }
     }
 

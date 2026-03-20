@@ -2,18 +2,17 @@ import XCTest
 
 final class AppStoreScreenshots: ScreenshotTestCase {
 
-    // MARK: - Light Mode Screens
-
-    func test01_PathTab() {
+    func test01_WalkStart() {
         Thread.sleep(forTimeInterval: 2)
-        capture("01_path_walk_start")
+        capture("01_walk_start")
     }
 
-    func test02_ActiveWalk() {
+    func test02_ActiveWalkAndMeditation() {
+        switchToDarkMode()
         startWalkAndCapture(prefix: "")
     }
 
-    func test04_WalkSummary() {
+    func test03_WalkSummary() {
         tapTab("Journal")
         Thread.sleep(forTimeInterval: 2)
 
@@ -32,11 +31,11 @@ final class AppStoreScreenshots: ScreenshotTestCase {
 
                 app.swipeUp()
                 Thread.sleep(forTimeInterval: 1)
-                capture("05_walk_summary_voice")
+                capture("05_walk_stats")
 
                 app.swipeUp()
-                Thread.sleep(forTimeInterval: 0.5)
-                capture("05b_walk_summary_details")
+                Thread.sleep(forTimeInterval: 1)
+                capture("06_walk_activity")
                 return
             }
         }
@@ -44,25 +43,29 @@ final class AppStoreScreenshots: ScreenshotTestCase {
         capture("04_walk_summary_fallback")
     }
 
-    // MARK: - Dark Mode Screens (Meditation + Journal + Settings)
-
-    func test03_Meditation_Dark() {
+    func test04_JournalAndGoshuin() {
         switchToDarkMode()
-        startWalkAndCapture(prefix: "dark_")
-    }
 
-    func test06_Journal_Dark() {
-        switchToDarkMode()
         tapTab("Journal")
         Thread.sleep(forTimeInterval: 2)
-        capture("06_journal_dark")
+        capture("07_journal")
+
+        let goshuinFab = app.buttons["goshuin_fab"]
+        if goshuinFab.waitForExistence(timeout: 3) {
+            goshuinFab.tap()
+            Thread.sleep(forTimeInterval: 3)
+            capture("08_goshuin")
+
+            app.buttons["Done"].firstMatch.tap()
+            Thread.sleep(forTimeInterval: 1)
+        }
     }
 
-    func test07_Settings_Dark() {
+    func test05_Settings() {
         switchToDarkMode()
         tapTab("Settings")
         Thread.sleep(forTimeInterval: 2)
-        capture("07_settings_dark")
+        capture("09_settings")
     }
 
     private func switchToDarkMode() {
