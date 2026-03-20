@@ -28,7 +28,8 @@ struct PracticeSummaryHeader: View {
     }
 
     private var seasonLabel: String {
-        let season = SealTimeHelpers.season(for: Date(), latitude: 0)
+        let hemisphereHint: Double = (UserPreferences.hemisphereOverride.value ?? 1) >= 0 ? 1 : -1
+        let season = SealTimeHelpers.season(for: Date(), latitude: hemisphereHint)
         let year = Calendar.current.component(.year, from: Date())
         return "\(season) \(year)"
     }

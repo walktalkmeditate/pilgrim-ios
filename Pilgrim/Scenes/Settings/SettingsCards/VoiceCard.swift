@@ -81,10 +81,11 @@ struct VoiceCard: View {
             if transcriptionService.isModelDownloaded {
                 UserPreferences.autoTranscribe.value = true
             } else {
+                let userIntent = enabled
                 Task {
                     do {
                         try await transcriptionService.ensureModelReady()
-                        if autoTranscribe {
+                        if userIntent {
                             UserPreferences.autoTranscribe.value = true
                         }
                     } catch {
