@@ -18,7 +18,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "This app needs your location to track walks";
-"NSLocationAlwaysUsageDescription" = "This app needs your location to track walks";
-"NSLocationWhenInUseUsageDescription" = "This app needs your location to track walks";
-"NSMotionUsageDescription" = "This app needs motion tracking to record steps during a walk";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Pilgrim needs continuous location access to track your walking route in the background while you walk";
+"NSLocationWhenInUseUsageDescription" = "Pilgrim needs your location to track your walking route";
+"NSMotionUsageDescription" = "Pilgrim uses motion tracking to count your steps during walks";
+"NSMicrophoneUsageDescription" = "Pilgrim uses the microphone to record voice notes during your walks";

@@ -85,12 +85,12 @@ class WalkStats {
         self.activeDuration = WalkStats.just(walk.activeDuration, unit: UnitDuration.seconds)
         self.pauseDuration = WalkStats.just(walk.pauseDuration, unit: UnitDuration.seconds)
 
-        self.averageSpeed = WalkStats.just(walk.distance / walk.activeDuration, unit: UnitSpeed.metersPerSecond)
+        self.averageSpeed = WalkStats.just(walk.activeDuration > 0 ? walk.distance / walk.activeDuration : 0, unit: UnitSpeed.metersPerSecond)
         self.topSpeed = WalkStats.just(walk.routeData.max{ $0.speed > $1.speed }?.speed, unit: UnitSpeed.metersPerSecond)
         self.speedOverTime = WalkStats.unitSeries(from: walk, samples: \Walk._routeData, metric: \RouteDataSample._speed.value, desiredUnit: UserPreferences.speedMeasurementType.safeValue)
 
         self.burnedEnergy = WalkStats.just(walk.burnedEnergy, unit: UnitEnergy.standardUnit)
-        self.burnedEnergyPerMinute = WalkStats.just((walk.burnedEnergy ?? 0) / (walk.activeDuration / 60), unit: UnitPower.energyPerMinute(from: .kilocalories)) // find better solution
+        self.burnedEnergyPerMinute = WalkStats.just(walk.activeDuration > 0 ? (walk.burnedEnergy ?? 0) / (walk.activeDuration / 60) : 0, unit: UnitPower.energyPerMinute(from: .kilocalories))
 
         self.averageHeartRate = WalkStats.just(Double(walk.heartRates.map { $0.heartRate }.reduce(0, +) / walk.heartRates.count), unit: UnitCount.count, type: .count)
         self.heartRateOverTime = WalkStats.series(from: walk, samples: \Walk._heartRates.value, metric: \HeartRateDataSample._heartRate.value)

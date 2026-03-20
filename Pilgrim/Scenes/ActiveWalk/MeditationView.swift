@@ -101,6 +101,10 @@ struct MeditationView: View {
             isClosing = false
             isActive = false
             clock.stop()
+            if !hasDismissed {
+                hasDismissed = true
+                onDismiss()
+            }
         }
         .sheet(isPresented: $showMeditationOptions) {
             meditationOptionsSheet
