@@ -8,6 +8,47 @@ enum EtegamiRouteStroke {
         let position: CGPoint
     }
 
+    static func smoothRoute(_ points: [CGPoint], subdivisions: Int = 8) -> [CGPoint] {
+        guard points.count >= 3 else { return points }
+        var smoothed: [CGPoint] = []
+        for i in 0..<points.count - 1 {
+            let p0 = points[max(i - 1, 0)]
+            let p1 = points[i]
+            let p2 = points[min(i + 1, points.count - 1)]
+            let p3 = points[min(i + 2, points.count - 1)]
+            for s in 0..<subdivisions {
+                let t = CGFloat(s) / CGFloat(subdivisions)
+                let tt = t * t
+                let ttt = tt * t
+                let x = 0.5 * ((2 * p1.x) +
+                               (-p0.x + p2.x) * t +
+                               (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * tt +
+                               (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * ttt)
+                let y = 0.5 * ((2 * p1.y) +
+                               (-p0.y + p2.y) * t +
+                               (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * tt +
+                               (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * ttt)
+                smoothed.append(CGPoint(x: x, y: y))
+            }
+        }
+        smoothed.append(points.last!)
+        return smoothed
+    }
+
+    static func interpolateAltitudes(_ altitudes: [Double], originalCount: Int, smoothedCount: Int) -> [Double] {
+        guard altitudes.count >= 2, originalCount >= 2, smoothedCount > 0 else {
+            return [Double](repeating: altitudes.first ?? 0, count: smoothedCount)
+        }
+        var result: [Double] = []
+        for i in 0..<smoothedCount {
+            let t = Double(i) / Double(max(smoothedCount - 1, 1)) * Double(altitudes.count - 1)
+            let lower = min(Int(t), altitudes.count - 2)
+            let frac = t - Double(lower)
+            result.append(altitudes[lower] + frac * (altitudes[lower + 1] - altitudes[lower]))
+        }
+        return result
+    }
+
     static func projectRoute(
         _ points: [(lat: Double, lon: Double)],
         into bounds: CGRect

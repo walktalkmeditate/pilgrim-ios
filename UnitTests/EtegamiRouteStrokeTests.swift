@@ -55,7 +55,8 @@ final class EtegamiRouteStrokeTests: XCTestCase {
             moonPhase: nil,
             timeOfDay: "Morning",
             inkColor: .brown,
-            paperColor: UIColor(hex: "#F5F0E8")
+            paperColor: UIColor(hex: "#F5F0E8"),
+            displayDistance: "3.2"
         )
         let image = EtegamiRenderer.render(input: input)
         XCTAssertEqual(image.size.width, 1080)

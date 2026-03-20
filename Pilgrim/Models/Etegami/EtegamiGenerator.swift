@@ -16,7 +16,7 @@ enum EtegamiGenerator {
         }
         let altitudes = walk.routeData.map(\.altitude)
 
-        let routeBounds = CGRect(x: 80, y: 300, width: 920, height: 900)
+        let routeBounds = CGRect(x: 100, y: 200, width: 880, height: 900)
         let projectedPoints = EtegamiRouteStroke.projectRoute(routePoints, into: routeBounds)
 
         let activityMarkers = buildActivityMarkers(
@@ -24,7 +24,7 @@ enum EtegamiGenerator {
         )
 
         let sealImage = SealGenerator.generate(for: walk, size: 160)
-        let sealPosition = projectedPoints.last ?? CGPoint(x: routeBounds.maxX - 40, y: routeBounds.maxY - 40)
+        let sealPosition = CGPoint(x: 160, y: 1200)
 
         let primaryActivity = determinePrimaryActivity(walk: walk)
         let moonPhase: LunarPhase? = UserPreferences.celestialAwarenessEnabled.value
@@ -41,6 +41,12 @@ enum EtegamiGenerator {
             primaryActivity: primaryActivity
         )
 
+        let distanceKm = walk.distance / 1000
+        let isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+        let displayDistance = isImperial
+            ? String(format: "%.1f", distanceKm * 0.621371)
+            : String(format: "%.1f", distanceKm)
+
         let input = EtegamiRenderer.Input(
             routePoints: routePoints,
             altitudes: altitudes,
@@ -51,7 +57,8 @@ enum EtegamiGenerator {
             moonPhase: moonPhase,
             timeOfDay: timeOfDay,
             inkColor: inkColor,
-            paperColor: paperColor
+            paperColor: paperColor,
+            displayDistance: displayDistance
         )
 
         return EtegamiRenderer.render(input: input)

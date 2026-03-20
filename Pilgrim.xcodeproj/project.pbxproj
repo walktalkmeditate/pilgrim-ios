@@ -277,6 +277,7 @@
 		CC00000200000000UNTSTS01 /* UnitSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000UNTSTS01 /* UnitSystemTests.swift */; };
 		CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRPH01 /* LunarPhase.swift */; };
 		CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */; };
+		CC00000200000000SEEDRG01 /* SeededRNG.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SEEDRG01 /* SeededRNG.swift */; };
 		CC00000200000000MAINTB01 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MAINTB01 /* MainTabView.swift */; };
 		CC00000200000000MILEST01 /* MilestoneMarkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MILEST01 /* MilestoneMarkerView.swift */; };
 		CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MOONPV01 /* MoonPhaseView.swift */; };
@@ -616,6 +617,7 @@
 		CC00000100000000UNTSTS01 /* UnitSystemTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UnitSystemTests.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRPH01 /* LunarPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarPhase.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunarPhaseTests.swift; sourceTree = "<group>"; };
+		CC00000100000000SEEDRG01 /* SeededRNG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededRNG.swift; sourceTree = "<group>"; };
 		CC00000100000000MAINTB01 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		CC00000100000000MILEST01 /* MilestoneMarkerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneMarkerView.swift; sourceTree = "<group>"; };
 		CC00000100000000MOONPV01 /* MoonPhaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonPhaseView.swift; sourceTree = "<group>"; };
@@ -989,6 +991,7 @@
 				AAAA000000000000000000C2 /* PromptGenerator.swift */,
 				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
 				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
+				CC00000100000000SEEDRG01 /* SeededRNG.swift */,
 				8534424C43418F78E8F15520 /* Share */,
 				499729B7A6894D15BED563EE /* Seal */,
 				AA11BB22CC33DD44EE55FF66 /* Etegami */,
@@ -1867,6 +1870,7 @@
 				CC00000200000000WKSTRT01 /* WalkStartView.swift in Sources */,
 				CC00000200000000WKMODE01 /* WalkMode.swift in Sources */,
 				CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */,
+				CC00000200000000SEEDRG01 /* SeededRNG.swift in Sources */,
 				CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */,
 				CC00000200000000SETTVW01 /* SettingsView.swift in Sources */,
 				CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */,
