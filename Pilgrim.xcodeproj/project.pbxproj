@@ -175,6 +175,8 @@
 		0F2670E277C94DDDB875E31C /* SealHashComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */; };
 		B3C4D5E6F7A8B9C0D1E2F3A4 /* SealColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B5C6D7E8F9A0B1C2D3E4F5 /* SealColorPalette.swift */; };
 		C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */; };
+		D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */; };
+		F9A0B1C2D3E4F5A6B7C8D9E0 /* SealGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */; };
 		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
 		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
 		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
@@ -492,6 +494,8 @@
 		E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealHashComputerTests.swift; sourceTree = "<group>"; };
 		A4B5C6D7E8F9A0B1C2D3E4F5 /* SealColorPalette.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPalette.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
+		E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometry.swift; sourceTree = "<group>"; };
+		A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometryTests.swift; sourceTree = "<group>"; };
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973C /* MeditationGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagement.swift; sourceTree = "<group>"; };
@@ -1141,6 +1145,7 @@
 				2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */,
 				E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */,
 				D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */,
+				A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */,
 				DDD8506242AA6CD81468A74B /* PilgrimPackageModelTests.swift */,
 				EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */,
 				CC00000100000000UNTSTS01 /* UnitSystemTests.swift */,
@@ -1258,6 +1263,7 @@
 			children = (
 				AAC0595CA15C420FA33BFD87 /* SealHashComputer.swift */,
 				A4B5C6D7E8F9A0B1C2D3E4F5 /* SealColorPalette.swift */,
+				E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */,
 			);
 			path = Seal;
 			sourceTree = "<group>";
@@ -1856,6 +1862,7 @@
 				6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */,
 				E9FD884A3895457CBF231700 /* SealHashComputer.swift in Sources */,
 				B3C4D5E6F7A8B9C0D1E2F3A4 /* SealColorPalette.swift in Sources */,
+				D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */,
 				C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* PermissionStatusViewModel.swift in Sources */,
 				A3B7C9D1E5F2A8B4C0D6E2F2 /* GeneralSettingsView.swift in Sources */,
@@ -1929,6 +1936,7 @@
 				BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */,
 				0F2670E277C94DDDB875E31C /* SealHashComputerTests.swift in Sources */,
 				C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */,
+				F9A0B1C2D3E4F5A6B7C8D9E0 /* SealGeometryTests.swift in Sources */,
 				18163919B90D2DC9D6ED730F /* PilgrimPackageModelTests.swift in Sources */,
 				0E9B9341AEF918BA4BB7901C /* PilgrimPackageConverterTests.swift in Sources */,
 				CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */,
