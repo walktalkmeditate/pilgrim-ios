@@ -29,6 +29,13 @@ enum GoshuinShareRenderer {
             drawInnerBorder(ctx: cgCtx, inkColor: inkColor)
             drawHeader(stats: stats, inkColor: inkColor)
             drawSeals(ctx: cgCtx, selected: selected, milestoneMap: milestoneMap, inkColor: inkColor)
+            drawFootprint(
+                ctx: cgCtx,
+                center: CGPoint(x: canvasSize.width / 2, y: canvasSize.height - 240),
+                height: 24,
+                color: inkColor.withAlphaComponent(0.15)
+            )
+            drawTagline(ctx: cgCtx, centerX: canvasSize.width / 2, y: canvasSize.height - 210, inkColor: inkColor)
             drawProvenance(ctx: cgCtx, inkColor: inkColor)
         }
     }
@@ -347,6 +354,37 @@ enum GoshuinShareRenderer {
             return cached
         }
         return SealGenerator.generate(for: walk, size: sealSize)
+    }
+
+    // MARK: - Colophon
+
+    private static func drawFootprint(ctx: CGContext, center: CGPoint, height: CGFloat, color: UIColor) {
+        ctx.saveGState()
+        let scale = height / 32
+        let shapeWidth: CGFloat = 16
+        ctx.translateBy(x: center.x - (shapeWidth * scale) / 2, y: center.y - height / 2)
+        ctx.scaleBy(x: scale, y: scale)
+        ctx.setFillColor(color.cgColor)
+        ctx.fillEllipse(in: CGRect(x: 1, y: 12, width: 14, height: 20))
+        ctx.fillEllipse(in: CGRect(x: 1.5, y: 2, width: 3.5, height: 4.5))
+        ctx.fillEllipse(in: CGRect(x: 5.5, y: 0, width: 3.2, height: 4))
+        ctx.fillEllipse(in: CGRect(x: 9, y: 0.5, width: 3.2, height: 4))
+        ctx.fillEllipse(in: CGRect(x: 12, y: 2.5, width: 3, height: 3.5))
+        ctx.restoreGState()
+    }
+
+    private static func drawTagline(ctx: CGContext, centerX: CGFloat, y: CGFloat, inkColor: UIColor) {
+        let font = UIFont(name: "CormorantGaramond-LightItalic", size: 24)
+            ?? UIFont(name: "CormorantGaramond-Italic", size: 24)
+            ?? UIFont(name: "Georgia-Italic", size: 24)
+            ?? UIFont.italicSystemFont(ofSize: 24)
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: inkColor.withAlphaComponent(0.25)
+        ]
+        let text = "Every walk is a small pilgrimage." as NSString
+        let size = text.size(withAttributes: attrs)
+        text.draw(at: CGPoint(x: centerX - size.width / 2, y: y), withAttributes: attrs)
     }
 
     // MARK: - Provenance
