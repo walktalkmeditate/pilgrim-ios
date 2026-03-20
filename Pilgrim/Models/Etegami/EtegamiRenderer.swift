@@ -37,7 +37,7 @@ enum EtegamiRenderer {
 
             drawRoute(ctx: cgCtx, input: input)
 
-            let sealSize: CGFloat = 80
+            let sealSize: CGFloat = 140
             let sealRect = CGRect(
                 x: input.sealPosition.x - sealSize / 2,
                 y: input.sealPosition.y - sealSize / 2,
@@ -56,7 +56,7 @@ enum EtegamiRenderer {
 
         let segmentCount = projected.count - 1
         let widths = EtegamiRouteStroke.computeStrokeWidths(
-            altitudes: input.altitudes, baseWidth: 4, count: segmentCount
+            altitudes: input.altitudes, baseWidth: 10, count: segmentCount
         )
         let tapers = EtegamiRouteStroke.computeTaperMultipliers(count: segmentCount)
 
@@ -66,7 +66,7 @@ enum EtegamiRenderer {
             strokeWidths: widths,
             taperMultipliers: tapers,
             color: input.inkColor,
-            opacity: 0.7,
+            opacity: 0.9,
             activityMarkers: input.activityMarkers
         )
     }
@@ -78,7 +78,7 @@ enum EtegamiRenderer {
 
         let attrs: [NSAttributedString.Key: Any] = [
             .font: UIFont(name: "CormorantGaramond-Light", size: 36) ?? UIFont(name: "Georgia", size: 36) ?? UIFont.systemFont(ofSize: 36),
-            .foregroundColor: inkColor.withAlphaComponent(0.6),
+            .foregroundColor: inkColor.withAlphaComponent(0.85),
             .paragraphStyle: paragraphStyle
         ]
 
@@ -90,7 +90,7 @@ enum EtegamiRenderer {
     private static func drawProvenance(ctx: CGContext, inkColor: UIColor) {
         let attrs: [NSAttributedString.Key: Any] = [
             .font: UIFont(name: "Lato-Regular", size: 14) ?? UIFont(name: "Helvetica", size: 14) ?? UIFont.systemFont(ofSize: 14),
-            .foregroundColor: inkColor.withAlphaComponent(0.25)
+            .foregroundColor: inkColor.withAlphaComponent(0.4)
         ]
 
         let text = "pilgrimapp.org" as NSString

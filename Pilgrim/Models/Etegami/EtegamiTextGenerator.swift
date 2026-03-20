@@ -34,11 +34,17 @@ enum EtegamiTextGenerator {
 
         let durationText: String
         if durationMinutes < 60 {
-            durationText = "\(durationMinutes) minutes"
+            durationText = durationMinutes == 1 ? "1 minute" : "\(durationMinutes) minutes"
         } else {
             let hours = durationMinutes / 60
             let mins = durationMinutes % 60
-            durationText = mins > 0 ? "\(hours) hours \(mins) minutes" : "\(hours) hours"
+            let hourText = hours == 1 ? "1 hour" : "\(hours) hours"
+            if mins > 0 {
+                let minText = mins == 1 ? "1 minute" : "\(mins) minutes"
+                durationText = "\(hourText) \(minText)"
+            } else {
+                durationText = hourText
+            }
         }
 
         let activityText: String
