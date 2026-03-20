@@ -330,6 +330,8 @@
 		GOSHUIN0000000000000001 /* GoshuinMilestones.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000002 /* GoshuinMilestones.swift */; };
 		GOSHUIN0000000000000003 /* GoshuinPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000004 /* GoshuinPageView.swift */; };
 		GOSHUIN0000000000000005 /* GoshuinMilestonesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000006 /* GoshuinMilestonesTests.swift */; };
+		GOSHUIN0000000000000010 /* GoshuinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000011 /* GoshuinView.swift */; };
+		GOSHUIN0000000000000012 /* GoshuinFAB.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000013 /* GoshuinFAB.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -672,6 +674,8 @@
 		GOSHUIN0000000000000002 /* GoshuinMilestones.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinMilestones.swift; sourceTree = "<group>"; };
 		GOSHUIN0000000000000004 /* GoshuinPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinPageView.swift; sourceTree = "<group>"; };
 		GOSHUIN0000000000000006 /* GoshuinMilestonesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinMilestonesTests.swift; sourceTree = "<group>"; };
+		GOSHUIN0000000000000011 /* GoshuinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinView.swift; sourceTree = "<group>"; };
+		GOSHUIN0000000000000013 /* GoshuinFAB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinFAB.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1306,8 +1310,10 @@
 		GOSHUIN0000000000000007 /* Goshuin */ = {
 			isa = PBXGroup;
 			children = (
+				GOSHUIN0000000000000013 /* GoshuinFAB.swift */,
 				GOSHUIN0000000000000002 /* GoshuinMilestones.swift */,
 				GOSHUIN0000000000000004 /* GoshuinPageView.swift */,
+				GOSHUIN0000000000000011 /* GoshuinView.swift */,
 			);
 			path = Goshuin;
 			sourceTree = "<group>";
@@ -1987,6 +1993,8 @@
 				WLKSHRBTN00000000000001 /* WalkSharingButtons.swift in Sources */,
 				GOSHUIN0000000000000001 /* GoshuinMilestones.swift in Sources */,
 				GOSHUIN0000000000000003 /* GoshuinPageView.swift in Sources */,
+				GOSHUIN0000000000000010 /* GoshuinView.swift in Sources */,
+				GOSHUIN0000000000000012 /* GoshuinFAB.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
