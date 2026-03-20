@@ -325,6 +325,8 @@
 		WTHRSVC0000000000000001 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000002 /* WeatherService.swift */; };
 		WTHRSVC0000000000000005 /* WeatherKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000004 /* WeatherKit.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHVIG0000000000000002 /* WeatherVignetteView.swift */; };
+		SEALRVL000000000000001 /* SealRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SEALRVL000000000000002 /* SealRevealView.swift */; };
+		WLKSHRBTN00000000000001 /* WalkSharingButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -662,6 +664,8 @@
 		WTHRSVC0000000000000002 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		WTHRSVC0000000000000004 /* WeatherKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WeatherKit.framework; path = System/Library/Frameworks/WeatherKit.framework; sourceTree = SDKROOT; };
 		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
+		SEALRVL000000000000002 /* SealRevealView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SealRevealView.swift; sourceTree = "<group>"; };
+		WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSharingButtons.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -738,6 +742,7 @@
 				22BC99182941D97F00D9B1A5 /* Setup */,
 				AAAA000000000000000000C7 /* Prompts */,
 				5F0241D04FDB88FFB08D690B /* WalkShare */,
+				SEALRVL000000000000003 /* SealReveal */,
 			);
 			path = Scenes;
 			sourceTree = "<group>";
@@ -1049,6 +1054,7 @@
 				CC00000100000000MOONPV01 /* MoonPhaseView.swift */,
 				CC00000100000000SAFARV01 /* SafariView.swift */,
 				14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */,
+				WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1279,6 +1285,14 @@
 				4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */,
 			);
 			path = WalkShare;
+			sourceTree = "<group>";
+		};
+		SEALRVL000000000000003 /* SealReveal */ = {
+			isa = PBXGroup;
+			children = (
+				SEALRVL000000000000002 /* SealRevealView.swift */,
+			);
+			path = SealReveal;
 			sourceTree = "<group>";
 		};
 		499729B7A6894D15BED563EE /* Seal */ = {
@@ -1952,6 +1966,8 @@
 				11C747B0EAF53D9F444C6243 /* DataSettingsView.swift in Sources */,
 				CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */,
 				CC00000200000000APPMGR01 /* AppearanceManager.swift in Sources */,
+				SEALRVL000000000000001 /* SealRevealView.swift in Sources */,
+				WLKSHRBTN00000000000001 /* WalkSharingButtons.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
