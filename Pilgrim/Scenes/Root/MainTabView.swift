@@ -49,6 +49,22 @@ struct MainTabView: View {
         } message: {
             Text("Pilgrim needs location access to track your route. Please enable it in Settings.")
         }
+        .overlay {
+            if coordinator.showSealReveal, let walk = coordinator.sealRevealWalk {
+                SealRevealView(
+                    walk: walk,
+                    onDismiss: {
+                        coordinator.handleSealRevealDismiss()
+                    },
+                    onShareSeal: { _ in
+                        coordinator.handleSealRevealDismiss()
+                    }
+                )
+                .transition(.opacity)
+                .zIndex(100)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: coordinator.showSealReveal)
         .overlay(alignment: .top) {
             if let date = coordinator.recoveredWalkDate {
                 RecoveryBanner(date: date)
