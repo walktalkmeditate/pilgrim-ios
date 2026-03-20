@@ -7,6 +7,7 @@ enum MainTab {
 struct MainTabView: View {
 
     @State private var selectedTab: MainTab = .path
+    @State private var sealShareImage: UIImage?
     @StateObject private var coordinator = MainCoordinator()
 
     var body: some View {
@@ -56,8 +57,9 @@ struct MainTabView: View {
                     onDismiss: {
                         coordinator.handleSealRevealDismiss()
                     },
-                    onShareSeal: { _ in
+                    onShareSeal: { image in
                         coordinator.handleSealRevealDismiss()
+                        sealShareImage = image
                     }
                 )
                 .transition(.opacity)
@@ -65,6 +67,9 @@ struct MainTabView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: coordinator.showSealReveal)
+        .sheet(item: $sealShareImage) { image in
+            ShareSheet(items: [image])
+        }
         .overlay(alignment: .top) {
             if let date = coordinator.recoveredWalkDate {
                 RecoveryBanner(date: date)

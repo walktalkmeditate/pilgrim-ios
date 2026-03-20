@@ -58,7 +58,7 @@ struct WalkSharingButtons: View {
         Button(action: action) {
             VStack(spacing: Constants.UI.Padding.xs) {
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(Constants.Typography.heading)
                 Text(label)
                     .font(Constants.Typography.caption)
             }

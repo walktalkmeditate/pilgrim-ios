@@ -9,6 +9,7 @@ struct SealRevealView: View {
 
     @State private var phase: AnimationPhase = .hidden
     @State private var autoDismissTask: Task<Void, Never>?
+    @State private var cachedSealImage: UIImage?
 
     private enum AnimationPhase {
         case hidden, pressing, revealed
@@ -24,7 +25,7 @@ struct SealRevealView: View {
                 .ignoresSafeArea()
                 .onTapGesture { dismiss() }
 
-            sealImage
+            sealImageView
                 .scaleEffect(scale)
                 .opacity(opacity)
                 .shadow(
@@ -37,12 +38,15 @@ struct SealRevealView: View {
         .onDisappear { autoDismissTask?.cancel() }
     }
 
-    private var sealImage: some View {
-        Image(uiImage: SealGenerator.generate(for: walk, size: 512))
-            .resizable()
-            .interpolation(.high)
-            .aspectRatio(contentMode: .fit)
-            .frame(width: sealSize, height: sealSize)
+    @ViewBuilder
+    private var sealImageView: some View {
+        if let image = cachedSealImage {
+            Image(uiImage: image)
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: sealSize, height: sealSize)
+        }
     }
 
     private var scale: CGFloat {
@@ -64,6 +68,7 @@ struct SealRevealView: View {
     // MARK: - Animation
 
     private func startAnimation() {
+        cachedSealImage = SealGenerator.generate(for: walk, size: 512)
         haptic.prepare()
 
         withAnimation(.easeIn(duration: 0.2)) {
@@ -91,7 +96,7 @@ struct SealRevealView: View {
 
     private func shareSeal() {
         autoDismissTask?.cancel()
-        let image = SealGenerator.generate(for: walk, size: 512)
+        guard let image = cachedSealImage else { return }
         onShareSeal(image)
     }
 }
