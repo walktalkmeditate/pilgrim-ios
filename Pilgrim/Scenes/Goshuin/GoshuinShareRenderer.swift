@@ -9,8 +9,6 @@ enum GoshuinShareRenderer {
 
     private static let canvasSize = CGSize(width: 1080, height: 1920)
     private static let borderInset: CGFloat = 40
-    private static let sealSize: CGFloat = 220
-    private static let columns = 3
     private static let maxSeals = 12
 
     static func render(input: Input) -> UIImage {
@@ -28,7 +26,7 @@ enum GoshuinShareRenderer {
             drawPaperGrain(ctx: cgCtx, inkColor: inkColor)
             drawInnerBorder(ctx: cgCtx, inkColor: inkColor)
             drawHeader(stats: stats, inkColor: inkColor)
-            drawSeals(ctx: cgCtx, selected: selected, milestoneMap: milestoneMap, inkColor: inkColor)
+            drawSeals(ctx: cgCtx, selected: selected, milestoneMap: milestoneMap, inkColor: inkColor, sealCount: selected.count)
             drawFootprint(
                 ctx: cgCtx,
                 center: CGPoint(x: canvasSize.width / 2, y: canvasSize.height - 240),
@@ -258,14 +256,29 @@ enum GoshuinShareRenderer {
         ctx: CGContext,
         selected: [WalkInterface],
         milestoneMap: [UUID: String],
-        inkColor: UIColor
+        inkColor: UIColor,
+        sealCount: Int
     ) {
         guard !selected.isEmpty else { return }
 
-        let cellWidth = sealSize + 30
-        let cellHeight = sealSize + 40
-        let gridWidth = CGFloat(columns) * cellWidth
-        let gridOriginX = (canvasSize.width - gridWidth) / 2
+        let sealSize: CGFloat
+        let columns: Int
+        switch sealCount {
+        case 1...3:
+            sealSize = 280
+            columns = min(sealCount, 3)
+        case 4...6:
+            sealSize = 250
+            columns = 3
+        default:
+            sealSize = 220
+            columns = 3
+        }
+
+        let spacing: CGFloat = 30
+        let rowSpacing: CGFloat = 40
+        let totalGridWidth = CGFloat(columns) * sealSize + CGFloat(columns - 1) * spacing
+        let gridOriginX = (canvasSize.width - totalGridWidth) / 2
         let gridOriginY: CGFloat = 275
 
         var rng = SeededRNG(seed: UInt64(selected.count))
@@ -280,8 +293,8 @@ enum GoshuinShareRenderer {
             let col = index % columns
             let row = index / columns
 
-            let baseX = gridOriginX + CGFloat(col) * cellWidth + (cellWidth - sealSize) / 2
-            let baseY = gridOriginY + CGFloat(row) * cellHeight
+            let baseX = gridOriginX + CGFloat(col) * (sealSize + spacing)
+            let baseY = gridOriginY + CGFloat(row) * (sealSize + rowSpacing)
 
             let offsetX = CGFloat.random(in: -8...8, using: &rng)
             let offsetY = CGFloat.random(in: -8...8, using: &rng)
@@ -326,7 +339,7 @@ enum GoshuinShareRenderer {
                 height: sealSize
             )
 
-            let sealImage = loadSealImage(for: walk)
+            let sealImage = loadSealImage(for: walk, sealSize: sealSize)
             sealImage.draw(in: sealRect)
             sealImage.draw(in: sealRect, blendMode: .normal, alpha: 0.3)
 
@@ -348,7 +361,7 @@ enum GoshuinShareRenderer {
         }
     }
 
-    private static func loadSealImage(for walk: WalkInterface) -> UIImage {
+    private static func loadSealImage(for walk: WalkInterface, sealSize: CGFloat) -> UIImage {
         if let uuid = walk.uuid?.uuidString,
            let cached = SealCache.shared.seal(for: uuid) {
             return cached
@@ -360,16 +373,22 @@ enum GoshuinShareRenderer {
 
     private static func drawFootprint(ctx: CGContext, center: CGPoint, height: CGFloat, color: UIColor) {
         ctx.saveGState()
-        let scale = height / 32
-        let shapeWidth: CGFloat = 16
-        ctx.translateBy(x: center.x - (shapeWidth * scale) / 2, y: center.y - height / 2)
-        ctx.scaleBy(x: scale, y: scale)
+        let w = height * 0.6
+        let h = height
+        let originX = center.x - w / 2
+        let originY = center.y - h / 2
+
         ctx.setFillColor(color.cgColor)
-        ctx.fillEllipse(in: CGRect(x: 1, y: 12, width: 14, height: 20))
-        ctx.fillEllipse(in: CGRect(x: 1.5, y: 2, width: 3.5, height: 4.5))
-        ctx.fillEllipse(in: CGRect(x: 5.5, y: 0, width: 3.2, height: 4))
-        ctx.fillEllipse(in: CGRect(x: 9, y: 0.5, width: 3.2, height: 4))
-        ctx.fillEllipse(in: CGRect(x: 12, y: 2.5, width: 3, height: 3.5))
+
+        ctx.fillEllipse(in: CGRect(x: originX + w * 0.22, y: originY + h * 0.75, width: w * 0.50, height: h * 0.25))
+        ctx.fillEllipse(in: CGRect(x: originX + w * 0.50, y: originY + h * 0.48, width: w * 0.22, height: h * 0.34))
+        ctx.fillEllipse(in: CGRect(x: originX + w * 0.08, y: originY + h * 0.38, width: w * 0.62, height: h * 0.22))
+        ctx.fillEllipse(in: CGRect(x: originX + w * 0.10, y: originY + h * 0.18, width: w * 0.24, height: h * 0.24))
+        ctx.fillEllipse(in: CGRect(x: originX + w * 0.32, y: originY + h * 0.10, width: w * 0.18, height: h * 0.22))
+        ctx.fillEllipse(in: CGRect(x: originX + w * 0.48, y: originY + h * 0.06, width: w * 0.16, height: h * 0.20))
+        ctx.fillEllipse(in: CGRect(x: originX + w * 0.62, y: originY + h * 0.10, width: w * 0.14, height: h * 0.18))
+        ctx.fillEllipse(in: CGRect(x: originX + w * 0.72, y: originY + h * 0.18, width: w * 0.12, height: h * 0.14))
+
         ctx.restoreGState()
     }
 
