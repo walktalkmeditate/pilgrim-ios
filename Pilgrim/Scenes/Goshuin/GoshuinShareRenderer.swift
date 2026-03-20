@@ -237,6 +237,16 @@ enum GoshuinShareRenderer {
 
     // MARK: - Seals
 
+    private static func tintColor(for walk: WalkInterface) -> UIColor {
+        let favicon = walk.favicon.flatMap { WalkFavicon(rawValue: $0) }
+        switch favicon {
+        case .flame: return UIColor(hex: "#A0634B")
+        case .leaf:  return UIColor(hex: "#7A8B6F")
+        case .star:  return UIColor(hex: "#4B5A78")
+        case nil:    return UIColor(hex: "#8B7355")
+        }
+    }
+
     private static func drawSeals(
         ctx: CGContext,
         selected: [WalkInterface],
@@ -245,15 +255,11 @@ enum GoshuinShareRenderer {
     ) {
         guard !selected.isEmpty else { return }
 
-        let rows = (selected.count + columns - 1) / columns
         let cellWidth = sealSize + 30
         let cellHeight = sealSize + 40
         let gridWidth = CGFloat(columns) * cellWidth
-        let gridHeight = CGFloat(rows) * cellHeight
         let gridOriginX = (canvasSize.width - gridWidth) / 2
-        let availableTop: CGFloat = 260
-        let availableBottom: CGFloat = canvasSize.height - 120
-        let gridOriginY = availableTop + (availableBottom - availableTop - gridHeight) / 2
+        let gridOriginY: CGFloat = 275
 
         var rng = SeededRNG(seed: UInt64(selected.count))
 
@@ -284,6 +290,16 @@ enum GoshuinShareRenderer {
             ctx.translateBy(x: centerX, y: centerY)
             ctx.rotate(by: rotation)
 
+            let tint = tintColor(for: walk)
+            let tintCircleRect = CGRect(
+                x: -sealSize / 2 - 4,
+                y: -sealSize / 2 - 4,
+                width: sealSize + 8,
+                height: sealSize + 8
+            )
+            ctx.setFillColor(tint.withAlphaComponent(0.08).cgColor)
+            ctx.fillEllipse(in: tintCircleRect)
+
             if isMilestone {
                 let ringRect = CGRect(
                     x: -sealSize / 2 - 4,
@@ -305,6 +321,7 @@ enum GoshuinShareRenderer {
 
             let sealImage = loadSealImage(for: walk)
             sealImage.draw(in: sealRect)
+            sealImage.draw(in: sealRect, blendMode: .normal, alpha: 0.3)
 
             ctx.restoreGState()
 
