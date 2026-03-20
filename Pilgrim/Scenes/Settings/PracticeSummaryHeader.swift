@@ -7,9 +7,15 @@ struct PracticeSummaryHeader: View {
 
     var body: some View {
         VStack(spacing: Constants.UI.Padding.small) {
-            Text(seasonLabel)
-                .font(Constants.Typography.caption)
-                .foregroundColor(.fog)
+            HStack(spacing: Constants.UI.Padding.xs) {
+                Text(seasonLabel)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+                Image(systemName: seasonSymbol)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+                    .opacity(0.3)
+            }
 
             if walkCount > 0 {
                 Text(statsLine)
@@ -32,6 +38,17 @@ struct PracticeSummaryHeader: View {
         let season = SealTimeHelpers.season(for: Date(), latitude: hemisphereHint)
         let year = Calendar.current.component(.year, from: Date())
         return "\(season) \(year)"
+    }
+
+    private var seasonSymbol: String {
+        let hemisphereHint: Double = (UserPreferences.hemisphereOverride.value ?? 1) >= 0 ? 1 : -1
+        let season = SealTimeHelpers.season(for: Date(), latitude: hemisphereHint)
+        switch season {
+        case "Spring": return "leaf.fill"
+        case "Summer": return "sun.max.fill"
+        case "Autumn": return "wind"
+        default:       return "snowflake"
+        }
     }
 
     private var statsLine: String {
