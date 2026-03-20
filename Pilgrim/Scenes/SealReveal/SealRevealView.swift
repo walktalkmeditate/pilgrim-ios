@@ -69,8 +69,9 @@ struct SealRevealView: View {
 
     private func startAnimation() {
         haptic.prepare()
+        let input = SealInput(walk: walk)
         Task.detached(priority: .userInitiated) {
-            let image = SealGenerator.generate(for: walk, size: 512)
+            let image = SealGenerator.generate(from: input, size: 512)
             await MainActor.run {
                 cachedSealImage = image
                 performStampAnimation()
