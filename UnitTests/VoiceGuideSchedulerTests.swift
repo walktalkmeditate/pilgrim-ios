@@ -286,7 +286,7 @@ final class VoiceGuideSchedulerTests: XCTestCase {
         let prompts = [
             VoiceGuidePrompt(id: "s1", seq: 1, durationSec: 5, fileSizeBytes: 1000, r2Key: "x", phase: "settling"),
             VoiceGuidePrompt(id: "d1", seq: 2, durationSec: 5, fileSizeBytes: 1000, r2Key: "x", phase: "deepening"),
-            VoiceGuidePrompt(id: "c1", seq: 3, durationSec: 5, fileSizeBytes: 1000, r2Key: "x", phase: "closing"),
+            VoiceGuidePrompt(id: "c1", seq: 3, durationSec: 5, fileSizeBytes: 1000, r2Key: "x", phase: "closing")
         ]
         let scheduler = VoiceGuideScheduler(
             prompts: prompts,

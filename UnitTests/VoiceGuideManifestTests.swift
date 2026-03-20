@@ -3,7 +3,7 @@ import XCTest
 
 final class VoiceGuideManifestTests: XCTestCase {
 
-    private let sampleJSON = """
+    private let sampleJSON = Data("""
     {
       "version": "2026-03-17T00:00:00Z",
       "packs": [
@@ -45,7 +45,7 @@ final class VoiceGuideManifestTests: XCTestCase {
         }
       ]
     }
-    """.data(using: .utf8)!
+    """.utf8)
 
     func testDecodeManifest() throws {
         let manifest = try JSONDecoder().decode(VoiceGuideManifest.self, from: sampleJSON)
@@ -101,7 +101,7 @@ final class VoiceGuideManifestTests: XCTestCase {
         XCTAssertEqual(decoded.packs[0].prompts.count, manifest.packs[0].prompts.count)
     }
 
-    private let meditationJSON = """
+    private let meditationJSON = Data("""
     {
       "version": "1",
       "packs": [
@@ -140,7 +140,7 @@ final class VoiceGuideManifestTests: XCTestCase {
         }
       ]
     }
-    """.data(using: .utf8)!
+    """.utf8)
 
     func testDecodeMeditationPrompts() throws {
         let manifest = try JSONDecoder().decode(VoiceGuideManifest.self, from: meditationJSON)
@@ -171,9 +171,9 @@ final class VoiceGuideManifestTests: XCTestCase {
     }
 
     func testEmptyPacksDecodes() throws {
-        let json = """
+        let json = Data("""
         {"version": "1", "packs": []}
-        """.data(using: .utf8)!
+        """.utf8)
         let manifest = try JSONDecoder().decode(VoiceGuideManifest.self, from: json)
         XCTAssertTrue(manifest.packs.isEmpty)
     }

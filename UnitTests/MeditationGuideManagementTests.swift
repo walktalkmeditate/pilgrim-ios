@@ -9,7 +9,7 @@ final class MeditationGuideManagementTests: XCTestCase {
         ]
         let medPrompts = [
             VoiceGuidePrompt(id: "m01", seq: 1, durationSec: 5, fileSizeBytes: 1000, r2Key: "x"),
-            VoiceGuidePrompt(id: "m02", seq: 2, durationSec: 5, fileSizeBytes: 1000, r2Key: "x"),
+            VoiceGuidePrompt(id: "m02", seq: 2, durationSec: 5, fileSizeBytes: 1000, r2Key: "x")
         ]
         return VoiceGuidePack(
             id: "test",
