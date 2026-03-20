@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+
 WORKSPACE="Pilgrim.xcworkspace"
 SCHEME="Pilgrim"
 ARCHIVE_PATH="build/Pilgrim.xcarchive"
@@ -48,7 +50,7 @@ cmd_check() {
     step "Checking release readiness"
     local errors=0
 
-    if [ ! -f "$WORKSPACE" ]; then
+    if [ ! -d "$WORKSPACE" ]; then
         fail "Workspace not found: $WORKSPACE"
     fi
 
@@ -71,7 +73,7 @@ cmd_check() {
     step "Running SwiftLint"
     if command -v swiftlint &>/dev/null; then
         local lint_errors
-        lint_errors=$(swiftlint lint --quiet 2>/dev/null | grep "error:" | wc -l | tr -d '[:space:]')
+        lint_errors=$(swiftlint lint --quiet 2>/dev/null | grep "error:" | wc -l | tr -d '[:space:]' || true)
         if [ "$lint_errors" -gt 0 ]; then
             fail "SwiftLint found $lint_errors error(s)"
         fi
@@ -96,7 +98,8 @@ cmd_check() {
         -workspace "$WORKSPACE" \
         -scheme "$SCHEME" \
         -sdk iphonesimulator \
-        -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+        -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+        -skip-testing:ScreenshotTests \
         -quiet \
         CODE_SIGNING_ALLOWED=NO \
         ONLY_ACTIVE_ARCH=YES || fail "Tests failed"

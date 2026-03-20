@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CocoaPods
+        run: pod install
+
+      - name: Configure secrets
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          echo "MAPBOX_ACCESS_TOKEN = $MAPBOX_ACCESS_TOKEN" > Secrets.xcconfig
+
+      - name: Write API key
+        env:
+          API_KEY_P8: ${{ secrets.APP_STORE_API_KEY_P8 }}
+          API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
+        run: |
+          mkdir -p ~/.private_keys
+          echo "$API_KEY_P8" > ~/.private_keys/AuthKey_${API_KEY_ID}.p8
+
+      - name: Bump build number
+        run: |
+          CURRENT=$(grep -m1 'CURRENT_PROJECT_VERSION' Pilgrim.xcodeproj/project.pbxproj | sed 's/.*= *\(.*\);/\1/' | tr -d '[:space:]')
+          NEW=$((CURRENT + 1))
+          sed -i '' "s/CURRENT_PROJECT_VERSION = $CURRENT;/CURRENT_PROJECT_VERSION = $NEW;/g" Pilgrim.xcodeproj/project.pbxproj
+          echo "BUILD_NUMBER=$NEW" >> "$GITHUB_ENV"
+          echo "Bumped build number: $CURRENT → $NEW"
+
+      - name: Archive
+        env:
+          API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
+        run: |
+          xcodebuild archive \
+            -workspace Pilgrim.xcworkspace \
+            -scheme Pilgrim \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath build/Pilgrim.xcarchive \
+            -authenticationKeyPath ~/.private_keys/AuthKey_${API_KEY_ID}.p8 \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_ISSUER_ID" \
+            -allowProvisioningUpdates \
+            -quiet
+
+      - name: Export
+        env:
+          API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/Pilgrim.xcarchive \
+            -exportOptionsPlist scripts/ExportOptions.plist \
+            -exportPath build/Export \
+            -authenticationKeyPath ~/.private_keys/AuthKey_${API_KEY_ID}.p8 \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_ISSUER_ID" \
+            -allowProvisioningUpdates \
+            -quiet
+
+      - name: Upload to App Store Connect
+        env:
+          API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app \
+            --type ios \
+            --file build/Export/Pilgrim.ipa \
+            --apiKey "$API_KEY_ID" \
+            --apiIssuer "$API_ISSUER_ID"
+
+      - name: Print result
+        run: |
+          VERSION=$(grep -m1 'MARKETING_VERSION' Pilgrim.xcodeproj/project.pbxproj | sed 's/.*= *\(.*\);/\1/' | tr -d '[:space:]')
+          echo "Released v$VERSION (build $BUILD_NUMBER)"
