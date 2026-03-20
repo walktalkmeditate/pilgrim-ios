@@ -68,9 +68,17 @@ struct SealRevealView: View {
     // MARK: - Animation
 
     private func startAnimation() {
-        cachedSealImage = SealGenerator.generate(for: walk, size: 512)
         haptic.prepare()
+        Task.detached(priority: .userInitiated) {
+            let image = SealGenerator.generate(for: walk, size: 512)
+            await MainActor.run {
+                cachedSealImage = image
+                performStampAnimation()
+            }
+        }
+    }
 
+    private func performStampAnimation() {
         withAnimation(.easeIn(duration: 0.2)) {
             phase = .pressing
         }

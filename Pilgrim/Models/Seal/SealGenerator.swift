@@ -63,6 +63,11 @@ enum SealGenerator {
         }
         let altitudes = walk.routeData.map(\.altitude)
 
+        let weatherSeed = UInt64(bytes[0])
+            | (UInt64(bytes[1]) << 8)
+            | (UInt64(bytes[2]) << 16)
+            | (UInt64(bytes[3]) << 24)
+
         let input = SealRenderer.Input(
             geometry: geo,
             color: color,
@@ -73,7 +78,8 @@ enum SealGenerator {
             unitLabel: unitLabel,
             routePoints: routePoints.count > 1 ? routePoints : nil,
             altitudes: altitudes.count > 10 ? altitudes : nil,
-            weatherCondition: walk.weatherCondition
+            weatherCondition: walk.weatherCondition,
+            weatherSeed: weatherSeed
         )
 
         let image = SealRenderer.render(input: input, size: size)

@@ -67,10 +67,27 @@ enum GoshuinMilestones {
     static func label(for milestone: Milestone) -> String {
         switch milestone {
         case .firstWalk: return "First Walk"
-        case .nthWalk(let n): return "\(n)th Walk"
+        case .nthWalk(let n): return "\(ordinal(n)) Walk"
         case .longestWalk: return "Longest Walk"
         case .longestMeditation: return "Longest Meditation"
         case .firstOfSeason(let s): return "First of \(s)"
         }
+    }
+
+    private static func ordinal(_ n: Int) -> String {
+        let suffix: String
+        let ones = n % 10
+        let tens = (n / 10) % 10
+        if tens == 1 {
+            suffix = "th"
+        } else {
+            switch ones {
+            case 1: suffix = "st"
+            case 2: suffix = "nd"
+            case 3: suffix = "rd"
+            default: suffix = "th"
+            }
+        }
+        return "\(n)\(suffix)"
     }
 }

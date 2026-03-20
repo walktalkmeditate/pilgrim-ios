@@ -22,7 +22,7 @@ struct GoshuinFAB: View {
                         .clipShape(Circle())
                 } else {
                     Image(systemName: "seal")
-                        .font(.system(size: 20))
+                        .font(Constants.Typography.statValue)
                         .foregroundStyle(Color.stone)
                 }
             }

@@ -63,9 +63,9 @@ enum EtegamiRouteStroke {
         let taperZone = max(Int(Double(count) * 0.1), 1)
         return (0..<count).map { i in
             if i < taperZone {
-                return CGFloat(i) / CGFloat(taperZone)
+                return max(CGFloat(i) / CGFloat(taperZone), 0.15)
             } else if i >= count - taperZone {
-                return CGFloat(count - 1 - i) / CGFloat(taperZone)
+                return max(CGFloat(count - 1 - i) / CGFloat(taperZone), 0.15)
             }
             return 1.0
         }

@@ -5,6 +5,7 @@ struct WalkSharingButtons: View {
     let walk: WalkInterface
     @State private var showJourneySheet = false
     @State private var shareImage: UIImage?
+    @State private var isGenerating = false
 
     private var hasRoute: Bool {
         walk.routeData.count >= 2
@@ -38,15 +39,35 @@ struct WalkSharingButtons: View {
                 icon: "seal.fill",
                 label: "Seal"
             ) {
-                shareImage = SealGenerator.generate(for: walk, size: 512)
+                isGenerating = true
+                Task.detached(priority: .userInitiated) {
+                    let image = SealGenerator.generate(for: walk, size: 512)
+                    await MainActor.run {
+                        isGenerating = false
+                        shareImage = image
+                    }
+                }
             }
             shareButton(
                 icon: "paintbrush.pointed.fill",
                 label: "Etegami"
             ) {
-                shareImage = EtegamiGenerator.generate(for: walk)
+                isGenerating = true
+                Task.detached(priority: .userInitiated) {
+                    let image = EtegamiGenerator.generate(for: walk)
+                    await MainActor.run {
+                        isGenerating = false
+                        shareImage = image
+                    }
+                }
             }
             Spacer()
+        }
+        .overlay {
+            if isGenerating {
+                SwiftUI.ProgressView()
+                    .tint(.stone)
+            }
         }
     }
 
@@ -84,7 +105,7 @@ struct WalkSharingButtons: View {
             } label: {
                 HStack(spacing: Constants.UI.Padding.small) {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 16))
+                        .font(Constants.Typography.body)
                     Text("Share Journey")
                         .font(Constants.Typography.button)
                 }

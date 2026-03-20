@@ -35,7 +35,7 @@ final class SealCache {
         )
 
         let memoryConfig = MemoryConfig(
-            expiry: .date(Date().addingTimeInterval(15 * 60)),
+            expiry: .seconds(900),
             countLimit: 50,
             totalCostLimit: 0
         )

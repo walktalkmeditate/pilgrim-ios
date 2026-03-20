@@ -137,28 +137,30 @@ struct GoshuinView: View {
     }
 
     private func renderShareImage() {
-        let size = CGSize(width: 1080, height: 1080)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let image = renderer.image { ctx in
-            (UIColor(named: "parchment") ?? UIColor.systemBackground).setFill()
-            ctx.fill(CGRect(origin: .zero, size: size))
+        let walksToRender = Array(filteredWalks.prefix(36))
+        Task.detached(priority: .userInitiated) {
+            let size = CGSize(width: 1080, height: 1080)
+            let renderer = UIGraphicsImageRenderer(size: size)
+            let image = renderer.image { ctx in
+                (UIColor(named: "parchment") ?? UIColor.systemBackground).setFill()
+                ctx.fill(CGRect(origin: .zero, size: size))
 
-            let seals = Array(filteredWalks.prefix(36))
-            let cols = 6
-            let cellSize: CGFloat = 150
-            let padding: CGFloat = (size.width - CGFloat(cols) * cellSize) / CGFloat(cols + 1)
+                let cols = 6
+                let cellSize: CGFloat = 150
+                let padding: CGFloat = (size.width - CGFloat(cols) * cellSize) / CGFloat(cols + 1)
 
-            for (i, walk) in seals.enumerated() {
-                let col = i % cols
-                let row = i / cols
-                let x = padding + CGFloat(col) * (cellSize + padding)
-                let y = padding + CGFloat(row) * (cellSize + padding)
+                for (i, walk) in walksToRender.enumerated() {
+                    let col = i % cols
+                    let row = i / cols
+                    let x = padding + CGFloat(col) * (cellSize + padding)
+                    let y = padding + CGFloat(row) * (cellSize + padding)
 
-                if let thumb = SealCache.shared.thumbnail(for: walk.uuid?.uuidString ?? "") {
-                    thumb.draw(in: CGRect(x: x, y: y, width: cellSize, height: cellSize))
+                    if let thumb = SealCache.shared.thumbnail(for: walk.uuid?.uuidString ?? "") {
+                        thumb.draw(in: CGRect(x: x, y: y, width: cellSize, height: cellSize))
+                    }
                 }
             }
+            await MainActor.run { shareImage = image }
         }
-        shareImage = image
     }
 }

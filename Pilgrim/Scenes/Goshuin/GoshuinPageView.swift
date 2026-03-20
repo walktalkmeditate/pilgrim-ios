@@ -79,15 +79,16 @@ private struct SealThumbnailView: View {
                     .frame(width: 128, height: 128)
             }
         }
-        .onAppear { loadIfNeeded() }
+        .task { await loadIfNeeded() }
     }
 
-    private func loadIfNeeded() {
+    private func loadIfNeeded() async {
         guard thumbnail == nil else { return }
-        Task.detached(priority: .utility) {
-            let thumb = SealGenerator.thumbnail(for: walk)
-            await MainActor.run { thumbnail = thumb }
-        }
+        let walk = walk
+        let thumb = await Task.detached(priority: .utility) {
+            SealGenerator.thumbnail(for: walk)
+        }.value
+        thumbnail = thumb
     }
 }
 

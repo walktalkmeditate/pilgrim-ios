@@ -15,6 +15,7 @@ enum SealRenderer {
         let routePoints: [(lat: Double, lon: Double)]?
         let altitudes: [Double]?
         let weatherCondition: String?
+        let weatherSeed: UInt64
     }
 
     static func render(input: Input, size: CGFloat = 512) -> UIImage {
@@ -60,8 +61,7 @@ enum SealRenderer {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         color.getRed(&r, green: &g, blue: &b, alpha: &a)
 
-        let seed: UInt64 = 42
-        var rng = SeededRNG(seed: seed)
+        var rng = SeededRNG(seed: input.weatherSeed)
 
         switch condition {
         case "rain":
