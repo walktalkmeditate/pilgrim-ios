@@ -124,6 +124,9 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             print("[SoundscapePlayer] Crossfade error: \(error)")
             fadingOutPlayer?.stop()
             fadingOutPlayer = nil
+            activePlayer = nil
+            isPlaying = false
+            currentAsset = nil
             coordinator.deactivate(consumer: "soundscape")
         }
     }
