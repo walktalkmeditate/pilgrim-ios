@@ -290,6 +290,9 @@
 		CC00000200000000SETTVW01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SETTVW01 /* SettingsView.swift */; };
 		CC01000100000000SCSTYB01 /* SettingsCardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */; };
 		CC01000100000000PRACSH01 /* PracticeSummaryHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */; };
+		CC01000100000000PRACCB01 /* PracticeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACCR01 /* PracticeCard.swift */; };
+		CC01000100000000ATMOCB01 /* AtmosphereCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000ATMOCR01 /* AtmosphereCard.swift */; };
+		CC01000100000000VOICCB01 /* VoiceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000VOICCR01 /* VoiceCard.swift */; };
 		CC00000200000000TORIIG01 /* ToriiGateShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TORIIG01 /* ToriiGateShape.swift */; };
 		CC00000200000000TREESH01 /* TreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000TREESH01 /* TreeShape.swift */; };
 		CC00000200000000WINTRT01 /* WinterTreeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WINTRT01 /* WinterTreeShape.swift */; };
@@ -635,6 +638,9 @@
 		CC00000100000000SETTVW01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCardStyle.swift; sourceTree = "<group>"; };
 		CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSummaryHeader.swift; sourceTree = "<group>"; };
+		CC01000100000000PRACCR01 /* PracticeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeCard.swift; sourceTree = "<group>"; };
+		CC01000100000000ATMOCR01 /* AtmosphereCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtmosphereCard.swift; sourceTree = "<group>"; };
+		CC01000100000000VOICCR01 /* VoiceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCard.swift; sourceTree = "<group>"; };
 		CC00000100000000TORIIG01 /* ToriiGateShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToriiGateShape.swift; sourceTree = "<group>"; };
 		CC00000100000000TREESH01 /* TreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeShape.swift; sourceTree = "<group>"; };
 		CC00000100000000WINTRT01 /* WinterTreeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinterTreeShape.swift; sourceTree = "<group>"; };
@@ -1517,6 +1523,9 @@
 			isa = PBXGroup;
 			children = (
 				CC01000100000000SCSTYR01 /* SettingsCardStyle.swift */,
+				CC01000100000000PRACCR01 /* PracticeCard.swift */,
+				CC01000100000000ATMOCR01 /* AtmosphereCard.swift */,
+				CC01000100000000VOICCR01 /* VoiceCard.swift */,
 			);
 			path = SettingsCards;
 			sourceTree = "<group>";
@@ -1895,6 +1904,9 @@
 				CC00000200000000SETTVW01 /* SettingsView.swift in Sources */,
 				CC01000100000000SCSTYB01 /* SettingsCardStyle.swift in Sources */,
 				CC01000100000000PRACSH01 /* PracticeSummaryHeader.swift in Sources */,
+				CC01000100000000PRACCB01 /* PracticeCard.swift in Sources */,
+				CC01000100000000ATMOCB01 /* AtmosphereCard.swift in Sources */,
+				CC01000100000000VOICCB01 /* VoiceCard.swift in Sources */,
 				CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */,
 				CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */,
 				CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */,
