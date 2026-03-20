@@ -327,6 +327,9 @@
 		WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHVIG0000000000000002 /* WeatherVignetteView.swift */; };
 		SEALRVL000000000000001 /* SealRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SEALRVL000000000000002 /* SealRevealView.swift */; };
 		WLKSHRBTN00000000000001 /* WalkSharingButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */; };
+		GOSHUIN0000000000000001 /* GoshuinMilestones.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000002 /* GoshuinMilestones.swift */; };
+		GOSHUIN0000000000000003 /* GoshuinPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000004 /* GoshuinPageView.swift */; };
+		GOSHUIN0000000000000005 /* GoshuinMilestonesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000006 /* GoshuinMilestonesTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -666,6 +669,9 @@
 		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
 		SEALRVL000000000000002 /* SealRevealView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SealRevealView.swift; sourceTree = "<group>"; };
 		WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSharingButtons.swift; sourceTree = "<group>"; };
+		GOSHUIN0000000000000002 /* GoshuinMilestones.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinMilestones.swift; sourceTree = "<group>"; };
+		GOSHUIN0000000000000004 /* GoshuinPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinPageView.swift; sourceTree = "<group>"; };
+		GOSHUIN0000000000000006 /* GoshuinMilestonesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinMilestonesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -743,6 +749,7 @@
 				AAAA000000000000000000C7 /* Prompts */,
 				5F0241D04FDB88FFB08D690B /* WalkShare */,
 				SEALRVL000000000000003 /* SealReveal */,
+				GOSHUIN0000000000000007 /* Goshuin */,
 			);
 			path = Scenes;
 			sourceTree = "<group>";
@@ -1178,6 +1185,7 @@
 				DDD8506242AA6CD81468A74B /* PilgrimPackageModelTests.swift */,
 				EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */,
 				CC00000100000000UNTSTS01 /* UnitSystemTests.swift */,
+				GOSHUIN0000000000000006 /* GoshuinMilestonesTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1293,6 +1301,15 @@
 				SEALRVL000000000000002 /* SealRevealView.swift */,
 			);
 			path = SealReveal;
+			sourceTree = "<group>";
+		};
+		GOSHUIN0000000000000007 /* Goshuin */ = {
+			isa = PBXGroup;
+			children = (
+				GOSHUIN0000000000000002 /* GoshuinMilestones.swift */,
+				GOSHUIN0000000000000004 /* GoshuinPageView.swift */,
+			);
+			path = Goshuin;
 			sourceTree = "<group>";
 		};
 		499729B7A6894D15BED563EE /* Seal */ = {
@@ -1968,6 +1985,8 @@
 				CC00000200000000APPMGR01 /* AppearanceManager.swift in Sources */,
 				SEALRVL000000000000001 /* SealRevealView.swift in Sources */,
 				WLKSHRBTN00000000000001 /* WalkSharingButtons.swift in Sources */,
+				GOSHUIN0000000000000001 /* GoshuinMilestones.swift in Sources */,
+				GOSHUIN0000000000000003 /* GoshuinPageView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2005,6 +2024,7 @@
 				0E9B9341AEF918BA4BB7901C /* PilgrimPackageConverterTests.swift in Sources */,
 				CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */,
 				CC00000200000000UNTSTS01 /* UnitSystemTests.swift in Sources */,
+				GOSHUIN0000000000000005 /* GoshuinMilestonesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
