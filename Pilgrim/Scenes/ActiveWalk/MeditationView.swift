@@ -92,6 +92,7 @@ struct MeditationView: View {
         .onAppear {
             startBreathCycle()
             spawnParticles()
+            autoStartGuideIfEnabled()
         }
         .onDisappear {
             voicePlayingCancellable?.cancel()
@@ -487,6 +488,7 @@ struct MeditationView: View {
                 meditationGuide = nil
                 voicePlayingCancellable?.cancel()
                 voicePlayingCancellable = nil
+                UserPreferences.meditationGuideEnabled.value = false
             } label: {
                 guideRow(name: "Off", subtitle: "Meditate in silence", isSelected: selectedGuidePackId == nil)
             }
@@ -569,10 +571,21 @@ struct MeditationView: View {
         .cornerRadius(10)
     }
 
+    private func autoStartGuideIfEnabled() {
+        guard UserPreferences.voiceGuideEnabled.value,
+              UserPreferences.meditationGuideEnabled.value,
+              let packId = UserPreferences.selectedVoiceGuidePackId.value,
+              let pack = manifestService.packs.first(where: { $0.id == packId }),
+              pack.hasMeditationGuide,
+              VoiceGuideFileStore.shared.isMeditationDownloaded(pack) else { return }
+        selectGuidePack(pack)
+    }
+
     private func selectGuidePack(_ pack: VoiceGuidePack) {
         meditationGuide?.stopGuiding()
         voicePlayingCancellable?.cancel()
         selectedGuidePackId = pack.id
+        UserPreferences.meditationGuideEnabled.value = true
         let mgmt = MeditationGuideManagement()
         mgmt.startGuiding(pack: pack)
         meditationGuide = mgmt

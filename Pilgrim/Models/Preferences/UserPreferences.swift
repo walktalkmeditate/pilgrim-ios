@@ -46,6 +46,7 @@ struct UserPreferences {
 
     static let voiceGuideEnabled = UserPreference.Required<Bool>(key: "voiceGuideEnabled", defaultValue: false)
     static let selectedVoiceGuidePackId = UserPreference.Optional<String>(key: "selectedVoiceGuidePackId")
+    static let meditationGuideEnabled = UserPreference.Required<Bool>(key: "meditationGuideEnabled", defaultValue: true)
     static let voiceGuideVolume = UserPreference.Required<Double>(key: "voiceGuideVolume", defaultValue: 0.8)
     static let voiceGuideDuckLevel = UserPreference.Required<Double>(key: "voiceGuideDuckLevel", defaultValue: 0.15)
 
