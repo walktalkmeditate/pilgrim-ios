@@ -37,5 +37,9 @@ struct AtmosphereCard: View {
         }
         .settingsCard()
         .animation(.easeInOut(duration: 0.2), value: soundsEnabled)
+        .onAppear {
+            soundsEnabled = UserPreferences.soundsEnabled.value
+            appearanceMode = UserPreferences.appearanceMode.value
+        }
     }
 }

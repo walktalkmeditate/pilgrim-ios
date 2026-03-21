@@ -46,6 +46,11 @@ struct SoundSettingsView: View {
         .sheet(item: $activePicker) { picker in
             pickerSheet(for: picker)
         }
+        .onAppear {
+            soundsEnabled = UserPreferences.soundsEnabled.value
+            hapticEnabled = UserPreferences.bellHapticEnabled.value
+            soundscapeVolume = UserPreferences.soundscapeVolume.value
+        }
         .onDisappear {
             bellPlayer.stop()
             soundscapePlayer.stop()
