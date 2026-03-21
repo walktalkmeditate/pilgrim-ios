@@ -95,6 +95,11 @@ struct WalkSummaryView: View {
                 }
                 startRevealSequence()
             }
+            .onChange(of: transcriptionService.state) { _, newState in
+                if newState == .completed {
+                    reloadTranscriptionsFromDatabase()
+                }
+            }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
                     PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment)
@@ -175,6 +180,18 @@ struct WalkSummaryView: View {
 
     private func loadExistingTranscriptions() {
         for recording in walk.voiceRecordings {
+            if let uuid = recording.uuid, let text = recording.transcription {
+                transcriptions[uuid] = text
+            }
+        }
+    }
+
+    private func reloadTranscriptionsFromDatabase() {
+        guard let walkUUID = walk.uuid else { return }
+        guard let dbWalk = try? DataManager.dataStack.fetchOne(
+            From<Walk>().where(\._uuid == walkUUID)
+        ) else { return }
+        for recording in dbWalk.voiceRecordings {
             if let uuid = recording.uuid, let text = recording.transcription {
                 transcriptions[uuid] = text
             }
