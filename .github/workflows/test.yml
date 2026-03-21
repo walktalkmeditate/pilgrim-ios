@@ -32,60 +32,7 @@ jobs:
       - name: Lint
         run: swiftlint lint --reporter github-actions-logging
 
-  test:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/cache@v4
-        id: pods-cache
-        with:
-          path: Pods
-          key: pods-${{ hashFiles('Podfile.lock') }}
-          restore-keys: pods-
-
-      - name: Install CocoaPods
-        run: |
-          gem install cocoapods --no-document
-          pod install
-
-      - uses: actions/cache@v4
-        with:
-          path: DerivedData
-          key: deriveddata-${{ hashFiles('Pilgrim.xcworkspace/contents.xcworkspacedata', 'Podfile.lock') }}-${{ github.sha }}
-          restore-keys: |
-            deriveddata-${{ hashFiles('Pilgrim.xcworkspace/contents.xcworkspacedata', 'Podfile.lock') }}-
-            deriveddata-
-
-      - name: Boot simulator
-        run: |
-          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c "
-          import json, sys
-          data = json.load(sys.stdin)
-          for runtime, devices in data['devices'].items():
-              for d in devices:
-                  if 'iPhone' in d['name'] and 'Pro' in d['name'] and d['isAvailable']:
-                      print(d['udid']); sys.exit()
-          ")
-          xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
-
-      - name: Run tests
-        run: |
-          xcodebuild test \
-            -workspace Pilgrim.xcworkspace \
-            -scheme Pilgrim \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-            -skip-testing:ScreenshotTests \
-            -derivedDataPath DerivedData \
-            -resultBundlePath TestResults.xcresult \
-            CODE_SIGNING_ALLOWED=NO \
-            ONLY_ACTIVE_ARCH=YES \
-            COMPILER_INDEX_STORE_ENABLE=NO
-
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: TestResults.xcresult
+  # test:
+  #   Disabled until CocoaPods supports Xcode 26 project object version 70.
+  #   Tracking: https://github.com/CocoaPods/CocoaPods/issues/12889
+  #   Re-enable when pod install works on CI runners with Xcode 26.
