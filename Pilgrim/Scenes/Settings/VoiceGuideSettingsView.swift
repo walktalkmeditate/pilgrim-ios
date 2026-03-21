@@ -37,6 +37,8 @@ struct VoiceGuideSettingsView: View {
             }
         }
         .onAppear {
+            enabled = UserPreferences.voiceGuideEnabled.value
+            selectedPackId = UserPreferences.selectedVoiceGuidePackId.value
             manifestService.syncIfNeeded()
         }
     }

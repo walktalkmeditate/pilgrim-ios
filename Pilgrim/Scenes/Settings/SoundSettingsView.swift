@@ -19,7 +19,7 @@ struct SoundSettingsView: View {
     @State private var activePicker: PickerType?
 
     private let bellPlayer = BellPlayer.shared
-    private let soundscapePlayer = SoundscapePlayer.shared
+    @ObservedObject private var soundscapePlayer = SoundscapePlayer.shared
     private let fileStore = AudioFileStore.shared
 
     var body: some View {

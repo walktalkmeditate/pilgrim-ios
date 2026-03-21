@@ -71,7 +71,10 @@ struct VoiceCard: View {
         }
         .settingsCard()
         .animation(.easeInOut(duration: 0.2), value: voiceGuideEnabled)
-        .onAppear { refreshStats() }
+        .onAppear {
+            voiceGuideEnabled = UserPreferences.voiceGuideEnabled.value
+            refreshStats()
+        }
     }
 
     // MARK: - Auto-Transcribe
