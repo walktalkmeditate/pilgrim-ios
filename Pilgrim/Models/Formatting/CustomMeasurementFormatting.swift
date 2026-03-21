@@ -24,10 +24,10 @@ import Foundation
 class CustomMeasurementFormatting {
     
     static func string(forMeasurement measurement: NSMeasurement, type: FormattingMeasurementType = .auto, rounding: FormattingRoundingType = .twoDigits) -> String {
-        
+
         let formatter = MeasurementFormatter()
         formatter.unitOptions = .providedUnit
-        
+
         switch rounding {
         case .wholeNumbers:
             formatter.numberFormatter.roundingIncrement = 1
@@ -40,31 +40,48 @@ class CustomMeasurementFormatting {
         case .none:
             break
         }
-        
+
         let type = type == .auto ? FormattingMeasurementType(for: measurement.unit) : type
-        
+
         switch type {
         case .clock, .pace:
-            let seconds = measurement.converting(to: UnitDuration.seconds).value
+            let seconds = safeMeasurementValue(measurement, to: UnitDuration.seconds)
             let timeFormatter = DateComponentsFormatter()
             timeFormatter.unitsStyle = .positional
             timeFormatter.allowedUnits = type == .pace ? [.minute, .second] : [.hour, .minute, .second]
             timeFormatter.zeroFormattingBehavior = .pad
             return timeFormatter.string(from: seconds) ?? "Error"
         case .distance:
-            return formatter.string(from: measurement.converting(to: UserPreferences.distanceMeasurementType.safeValue))
+            return safeFormattedString(formatter, measurement: measurement, to: UserPreferences.distanceMeasurementType.safeValue)
         case .altitude:
-            return formatter.string(from: measurement.converting(to: UserPreferences.altitudeMeasurementType.safeValue))
+            return safeFormattedString(formatter, measurement: measurement, to: UserPreferences.altitudeMeasurementType.safeValue)
         case .speed:
-            return formatter.string(from: measurement.converting(to: UserPreferences.speedMeasurementType.safeValue))
+            return safeFormattedString(formatter, measurement: measurement, to: UserPreferences.speedMeasurementType.safeValue)
         case .energy:
-            return formatter.string(from: measurement.converting(to: UserPreferences.energyMeasurementType.safeValue))
+            return safeFormattedString(formatter, measurement: measurement, to: UserPreferences.energyMeasurementType.safeValue)
         case .weight:
-            return formatter.string(from: measurement.converting(to: UserPreferences.weightMeasurementType.safeValue))
+            return safeFormattedString(formatter, measurement: measurement, to: UserPreferences.weightMeasurementType.safeValue)
         default:
-            formatter.unitOptions = .naturalScale
-            return formatter.string(from: measurement as Measurement)
+            return formatter.string(from: Measurement(value: measurement.doubleValue, unit: measurement.unit))
         }
+    }
+
+    private static func canConvert(_ measurement: NSMeasurement, to target: Unit) -> Bool {
+        guard let sourceDimension = measurement.unit as? Dimension,
+              let targetDimension = target as? Dimension else { return false }
+        return type(of: sourceDimension) == type(of: targetDimension)
+    }
+
+    private static func safeMeasurementValue(_ measurement: NSMeasurement, to target: Unit) -> Double {
+        guard canConvert(measurement, to: target) else { return measurement.doubleValue }
+        return measurement.converting(to: target).value
+    }
+
+    private static func safeFormattedString(_ formatter: MeasurementFormatter, measurement: NSMeasurement, to target: Unit) -> String {
+        guard canConvert(measurement, to: target) else {
+            return formatter.string(from: Measurement(value: measurement.doubleValue, unit: measurement.unit))
+        }
+        return formatter.string(from: measurement.converting(to: target))
     }
     
     static func string(forUnit unit: Unit, short: Bool = false) -> String {
