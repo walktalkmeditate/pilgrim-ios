@@ -30,8 +30,9 @@ usage() {
     echo "  archive         Build the release archive"
     echo "  export          Export the archive for App Store upload"
     echo "  upload          Upload to App Store Connect"
-    echo "  tag <version>   Create a git tag (e.g., tag v1.0.0)"
-    echo "  release         Run full pipeline: check → bump → archive → export → upload → tag"
+    echo "  changelog        Generate release notes from git log since last tag"
+    echo "  tag <version>   Create a git tag and GitHub Release"
+    echo "  release         Full pipeline: check → bump → commit → archive → upload → changelog → tag"
     echo ""
     echo "Options:"
     echo "  --version X.Y.Z Set the marketing version (for bump and release)"
@@ -234,6 +235,83 @@ cmd_tag() {
     fi
 }
 
+cmd_changelog() {
+    local last_tag
+    last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+    local range
+    if [ -n "$last_tag" ]; then
+        range="$last_tag..HEAD"
+        step "Changelog since $last_tag"
+    else
+        range="HEAD"
+        step "Changelog (all commits — no previous tag found)"
+    fi
+
+    local feats="" fixes="" styles=""
+
+    while IFS= read -r line; do
+        local msg="${line#* }"
+        local clean
+        case "$msg" in
+            feat:*|feat\(*)
+                clean=$(echo "$msg" | sed 's/^feat([^)]*): *//;s/^feat: *//')
+                feats="$feats- $clean
+" ;;
+            fix:*|fix\(*)
+                clean=$(echo "$msg" | sed 's/^fix([^)]*): *//;s/^fix: *//')
+                fixes="$fixes- $clean
+" ;;
+            style:*|style\(*)
+                clean=$(echo "$msg" | sed 's/^style([^)]*): *//;s/^style: *//')
+                styles="$styles- $clean
+" ;;
+        esac
+    done < <(git log "$range" --oneline --no-merges 2>/dev/null)
+
+    mkdir -p build
+
+    # Developer changelog (GitHub Release)
+    {
+        echo "# Pilgrim $(current_marketing_version)"
+        echo ""
+        if [ -n "$feats" ]; then
+            echo "## What's New"
+            echo "$feats"
+        fi
+        if [ -n "$fixes" ]; then
+            echo "## Bug Fixes"
+            echo "$fixes"
+        fi
+        if [ -n "$styles" ]; then
+            echo "## Visual Polish"
+            echo "$styles"
+        fi
+    } > build/changelog.md
+
+    # App Store release notes (user-friendly)
+    {
+        if [ -n "$feats" ]; then echo "$feats"; fi
+        if [ -n "$fixes" ]; then echo "$fixes"; fi
+    } | sed 's/^ *- */- /' | \
+        sed 's/@State/state/g; s/@Published/state/g; s/@ObservedObject/state/g' | \
+        sed 's/[A-Z][a-zA-Z]*View//g; s/[A-Z][a-zA-Z]*Card//g; s/[A-Z][a-zA-Z]*Manager//g' | \
+        sed 's/[A-Z][a-zA-Z]*ViewModel//g; s/[A-Z][a-zA-Z]*Player//g' | \
+        sed 's/ — Phase [0-9]*//g' | \
+        sed 's/  */ /g; s/ ,/,/g; s/ \././g' | \
+        sed '/^- *$/d; /^$/d' > build/releasenotes.txt
+
+    pass "Developer changelog: build/changelog.md"
+    pass "App Store notes:     build/releasenotes.txt"
+
+    echo ""
+    echo -e "${BOLD}--- GitHub Release ---${NC}"
+    cat build/changelog.md
+    echo ""
+    echo -e "${BOLD}--- App Store Release Notes ---${NC}"
+    cat build/releasenotes.txt
+}
+
 cmd_release() {
     local version
     version="${NEW_VERSION:-$(current_marketing_version)}"
@@ -259,11 +337,12 @@ cmd_release() {
     cmd_archive
     cmd_export
     cmd_upload
+    cmd_changelog
     cmd_tag "v$version"
 
     echo -e "\n${GREEN}${BOLD}Release v$version ($build) complete!${NC}"
     echo ""
-    echo "Next: fill in release notes in App Store Connect and submit for review."
+    echo "App Store release notes are in build/releasenotes.txt — paste into App Store Connect."
 }
 
 DRY_RUN=0
@@ -287,6 +366,7 @@ case "$COMMAND" in
     archive) cmd_archive ;;
     export)  cmd_export ;;
     upload)  cmd_upload ;;
+    changelog) cmd_changelog ;;
     tag)     [ -z "$ARG1" ] && fail "Usage: release.sh tag <version>" ; cmd_tag "$ARG1" ;;
     release) cmd_release ;;
     *)       usage ;;
