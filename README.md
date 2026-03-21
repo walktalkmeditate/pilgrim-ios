@@ -27,6 +27,8 @@ A pilgrimage app for iOS. Track your walks, capture voice reflections, sit in me
 </tr>
 </table>
 
+App Store previews are in [`docs/previews/`](docs/previews/).
+
 ---
 
 ## What Pilgrim Is
