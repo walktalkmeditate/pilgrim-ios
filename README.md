@@ -83,7 +83,7 @@ In Japan, pilgrims collect *goshuin* — vermilion ink stamps given at temples a
 
 **Sharing**
 
-An etegami-style postcard, a live-generated HTML walk page (ephemeral, no login), or a GPX export. The walk is yours to keep or share as you see fit.
+Share a walk as a goshuin seal image, a hand-painted etegami postcard, or an ephemeral HTML walk page (no login required). The walk is yours to keep or share as you see fit.
 
 **Seasonal design**
 
