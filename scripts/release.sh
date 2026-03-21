@@ -34,7 +34,13 @@ usage() {
     echo "  release         Run full pipeline: check → bump → archive → export → upload → tag"
     echo ""
     echo "Options:"
+    echo "  --version X.Y.Z Set the marketing version (for bump and release)"
     echo "  --dry-run       Show what would happen without making changes"
+    echo ""
+    echo "Examples:"
+    echo "  scripts/release.sh bump                    # build 5 → 6"
+    echo "  scripts/release.sh bump --version 1.0.1    # build 5 → 6, version → 1.0.1"
+    echo "  scripts/release.sh release --version 1.0.1 # full release pipeline"
     exit 1
 }
 
@@ -111,6 +117,8 @@ cmd_check() {
 cmd_bump() {
     local current
     current=$(current_build_number)
+    local current_version
+    current_version=$(current_marketing_version)
     local new_build="${1:-$((current + 1))}"
 
     step "Bumping build number: $current → $new_build"
@@ -122,6 +130,12 @@ cmd_bump() {
 
     sed -i '' "s/CURRENT_PROJECT_VERSION = $current;/CURRENT_PROJECT_VERSION = $new_build;/g" "$PBXPROJ"
     pass "Build number updated to $new_build"
+
+    if [ -n "$NEW_VERSION" ]; then
+        step "Setting marketing version: $current_version → $NEW_VERSION"
+        sed -i '' "s/MARKETING_VERSION = $current_version;/MARKETING_VERSION = $NEW_VERSION;/g" "$PBXPROJ"
+        pass "Marketing version updated to $NEW_VERSION"
+    fi
 }
 
 cmd_archive() {
@@ -206,39 +220,62 @@ cmd_tag() {
     fi
 
     git tag -a "$tag" -m "Release $tag"
-    pass "Tag $tag created (push with: git push origin $tag)"
+    git push origin "$tag"
+    pass "Tag $tag created and pushed"
+
+    if command -v gh &>/dev/null; then
+        step "Creating GitHub Release"
+        gh release create "$tag" \
+            --title "Pilgrim $tag" \
+            --generate-notes || warn "GitHub Release creation failed (non-fatal)"
+        pass "GitHub Release created"
+    else
+        warn "gh CLI not installed — create GitHub Release manually"
+    fi
 }
 
 cmd_release() {
     local version
-    version=$(current_marketing_version)
+    version="${NEW_VERSION:-$(current_marketing_version)}"
 
     echo -e "${BOLD}Pilgrim Release Pipeline — v$version${NC}"
+    echo ""
+    echo "This will: check → bump → commit → archive → export → upload → tag → GitHub Release"
+    echo ""
+    read -p "Continue? (y/N) " confirm
+    [ "$confirm" = "y" ] || [ "$confirm" = "Y" ] || exit 0
 
     cmd_check
     cmd_bump
+
+    step "Committing version bump"
+    local build
+    build=$(current_build_number)
+    git add "$PBXPROJ"
+    git commit -m "release: v$version (build $build)"
+    git push origin main
+    pass "Committed and pushed"
+
     cmd_archive
     cmd_export
     cmd_upload
     cmd_tag "v$version"
 
-    local build
-    build=$(current_build_number)
     echo -e "\n${GREEN}${BOLD}Release v$version ($build) complete!${NC}"
-    echo "Don't forget to:"
-    echo "  1. git add -A && git commit -m 'release: v$version'"
-    echo "  2. git push origin main --tags"
-    echo "  3. Fill in App Store Connect metadata"
+    echo ""
+    echo "Next: fill in release notes in App Store Connect and submit for review."
 }
 
 DRY_RUN=0
+NEW_VERSION=""
 ARGS=()
-for arg in "$@"; do
-    if [ "$arg" = "--dry-run" ]; then
-        DRY_RUN=1
-    else
-        ARGS+=("$arg")
-    fi
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --dry-run) DRY_RUN=1 ;;
+        --version) NEW_VERSION="$2"; shift ;;
+        *) ARGS+=("$1") ;;
+    esac
+    shift
 done
 
 COMMAND="${ARGS[0]:-}"
