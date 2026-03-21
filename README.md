@@ -61,9 +61,13 @@ Tap to record a voice note at any moment on the walk. Each recording is timestam
 
 A dedicated meditation mode with an animated breathing circle. Set the rhythm (inhale, hold, exhale, rest). Meditation time is tracked separately and shown alongside walk time in the summary.
 
+**Voice guides**
+
+Downloadable meditation guide packs with spoken prompts during walks and meditation. Ambient soundscapes — forest, rain, ocean — play in the background. Customizable bells mark the start and end of walks and meditation sessions.
+
 **AI writing prompts**
 
-Six prompt styles — contemplative, reflective, creative, gratitude, philosophical, journaling — generated from your transcriptions and walk context. The model runs locally. Nothing leaves the device.
+Six prompt styles — contemplative, reflective, creative, gratitude, philosophical, journaling — generated from your transcriptions and walk context. Copy them into your favorite AI and turn a walk into writing.
 
 **Celestial awareness**
 
