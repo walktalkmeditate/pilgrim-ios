@@ -102,7 +102,7 @@ Export as `.pilgrim` packages (full data, importable) or GPX (route only, compat
 Every feature that could require a network call has been built to work without one.
 
 - Transcription: on-device via WhisperKit
-- Writing prompts: on-device language model
+- Writing prompts: generated on-device from walk context, copy into your own AI
 - Maps: Mapbox with no user-identifying requests
 - Weather: Apple WeatherKit (no personal account linked)
 - Walk data: stored in CoreData on the device
