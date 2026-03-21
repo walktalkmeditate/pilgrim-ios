@@ -87,16 +87,28 @@ final class WeatherService {
             let weather = try await service.weather(for: location, including: .current)
             let windSpeedMS = weather.wind.speed.converted(to: .metersPerSecond).value
             let condition = mapCondition(weather.condition, windSpeed: windSpeedMS)
-            return WeatherSnapshot(
+            let snapshot = WeatherSnapshot(
                 condition: condition,
                 temperature: weather.temperature.converted(to: .celsius).value,
                 humidity: weather.humidity,
                 windSpeed: windSpeedMS
             )
+            return snapshot
         } catch {
-            print("[WeatherService] Failed to fetch weather: \(error.localizedDescription)")
+            return await fetchViaREST(location: location)
+        }
+    }
+
+    private func fetchViaREST(location: CLLocation) async -> WeatherSnapshot? {
+        guard WeatherKitREST.shared.isConfigured else {
+            print("[WeatherService] REST fallback not configured")
             return nil
         }
+        let snapshot = await WeatherKitREST.shared.fetchCurrent(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude
+        )
+        return snapshot
     }
 
     private func mapCondition(_ condition: WeatherKit.WeatherCondition, windSpeed: Double) -> WeatherCondition {

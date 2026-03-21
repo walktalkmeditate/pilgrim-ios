@@ -24,6 +24,12 @@
 	<false/>
 	<key>MBXAccessToken</key>
 	<string>$(MAPBOX_ACCESS_TOKEN)</string>
+	<key>WeatherKitKeyID</key>
+	<string>$(WEATHERKIT_KEY_ID)</string>
+	<key>WeatherKitTeamID</key>
+	<string>$(WEATHERKIT_TEAM_ID)</string>
+	<key>WeatherKitPrivateKey</key>
+	<string>$(WEATHERKIT_PRIVATE_KEY)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
