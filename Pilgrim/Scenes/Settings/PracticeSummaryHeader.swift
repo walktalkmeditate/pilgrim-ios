@@ -42,6 +42,10 @@ struct PracticeSummaryHeader: View {
                     Text(collectiveStatsLine(stats))
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
+                    if stats.streakDays > 1 {
+                        StreakFlameView(days: stats.streakDays)
+                            .padding(.top, 2)
+                    }
                 }
                 .padding(.top, 4)
                 .transition(.opacity)

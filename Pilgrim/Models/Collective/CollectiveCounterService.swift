@@ -21,6 +21,8 @@ final class CollectiveCounterService: ObservableObject {
         let totalMeditationMin: Int
         let totalTalkMin: Int
         let lastWalkAt: String?
+        let streakDays: Int
+        let streakDate: String?
 
         enum CodingKeys: String, CodingKey {
             case totalWalks = "total_walks"
@@ -28,6 +30,8 @@ final class CollectiveCounterService: ObservableObject {
             case totalMeditationMin = "total_meditation_min"
             case totalTalkMin = "total_talk_min"
             case lastWalkAt = "last_walk_at"
+            case streakDays = "streak_days"
+            case streakDate = "streak_date"
         }
 
         var pilgrimageProgress: PilgrimageProgress {

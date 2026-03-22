@@ -177,6 +177,7 @@
 		56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */; };
 		56E07B2C2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */; };
 		56ED2CA2C618854F7461544B /* CelestialVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */; };
+		56EEE45C2F70788E003F4391 /* StreakFlameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EEE45B2F70788E003F4391 /* StreakFlameView.swift */; };
 		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
 		6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */; };
 		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
@@ -533,6 +534,7 @@
 		56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Pilgrim/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		56E07B162F6DDEDE004EBC44 /* ScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataSeeder.swift; sourceTree = "<group>"; };
+		56EEE45B2F70788E003F4391 /* StreakFlameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakFlameView.swift; sourceTree = "<group>"; };
 		5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideDownloadManager.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
@@ -1108,6 +1110,7 @@
 				22BC99372941D9A800D9B1A5 /* FeatureViewModel.swift */,
 				AAAA00000000000000000MF8 /* PilgrimMapView.swift */,
 				22BC99342941D9A800D9B1A5 /* MetricView.swift */,
+				56EEE45B2F70788E003F4391 /* StreakFlameView.swift */,
 				22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */,
 				22BC99332941D9A800D9B1A5 /* PermissionView.swift */,
 				22BC992C2941D9A800D9B1A5 /* PillView.swift */,
@@ -2099,6 +2102,7 @@
 				WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */,
 				WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */,
 				73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */,
+				56EEE45C2F70788E003F4391 /* StreakFlameView.swift in Sources */,
 				E68F52E5A8F0C2714A4F2390 /* PromptStyle.swift in Sources */,
 				37049E79926C85FEE92366A2 /* GeneratedPrompt.swift in Sources */,
 				EF5593C014B2591704A20D11 /* ContextFormatter.swift in Sources */,
