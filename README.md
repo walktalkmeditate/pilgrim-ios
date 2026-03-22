@@ -53,11 +53,11 @@ That's the whole thing. No more, no less.
 
 **The walk itself**
 
-GPS tracking with live pace sparkline, step counting, altitude gain, and waypoint marking. Three-way time breakdown shows how each walk split between walking, talking, and meditating — because those are genuinely different states of attention.
+GPS tracking with live pace sparkline, step counting, altitude gain, and waypoint marking. Three-way time breakdown shows how each walk split between walking, talking, and meditating — because those are genuinely different states of attention. Walk data is auto-saved periodically so nothing is lost if the app is interrupted.
 
 **Voice**
 
-Tap to record a voice note at any moment on the walk. Each recording is timestamped and pinned to a location. After the walk, WhisperKit transcribes everything on-device — no audio is ever sent to a server. The transcriptions become the raw material for writing prompts.
+Tap to record a voice note at any moment on the walk. Each recording is timestamped and pinned to a location. After the walk, WhisperKit transcribes everything on-device — no audio is ever sent to a server. Auto-transcription runs after each walk when enabled, and skips gracefully when battery is below 20%. The transcriptions become the raw material for writing prompts.
 
 **Meditation**
 
