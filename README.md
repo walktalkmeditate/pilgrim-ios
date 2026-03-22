@@ -87,6 +87,10 @@ In Japan, pilgrims collect *goshuin* — vermilion ink stamps given at temples a
 
 Share a walk as a goshuin seal image, a hand-painted etegami postcard, or an ephemeral HTML walk page (no login required). The walk is yours to keep or share as you see fit.
 
+**Walk with the collective**
+
+Opt-in anonymous counter that tracks total walks, distance, and meditation time across all pilgrims. Your Settings screen shows the collective progress mapped to real pilgrimage routes — from the Kumano Kodo to the Camino de Santiago. Sacred number milestones ring a temple bell. A streak flame tracks consecutive days someone, somewhere, has walked. The logo gently pulses when another pilgrim walked in the last hour.
+
 **Seasonal design**
 
 Colors shift with the seasons, calibrated to your hemisphere. The app looks different in November than it does in May.
