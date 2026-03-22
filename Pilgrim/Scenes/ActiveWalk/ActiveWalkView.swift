@@ -109,7 +109,7 @@ struct ActiveWalkView: View {
                         }
                     }
 
-                    if let walkKoan {
+                    if let walkKoan, viewModel.intention == nil {
                         koanView(walkKoan)
                             .padding(.horizontal, Constants.UI.Padding.big)
                             .padding(.top, 8)
@@ -305,13 +305,16 @@ struct ActiveWalkView: View {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
-                guard !viewModel.status.isActiveStatus else { return }
-                withAnimation(.easeIn(duration: 1.0)) {
-                    walkKoan = WalkKoan.generate(
-                        celestial: celestialSnapshot,
-                        weather: viewModel.weatherSnapshot
-                    )
+            if viewModel.intention == nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
+                    guard !viewModel.status.isActiveStatus else { return }
+                    guard viewModel.intention == nil else { return }
+                    withAnimation(.easeIn(duration: 1.0)) {
+                        walkKoan = WalkKoan.generate(
+                            celestial: celestialSnapshot,
+                            weather: viewModel.weatherSnapshot
+                        )
+                    }
                 }
             }
         }

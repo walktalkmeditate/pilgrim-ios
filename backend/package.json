@@ -1,0 +1,15 @@
+{
+  "name": "pilgrim-ios-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "generate": "teeny generate --local",
+    "migrate": "teeny migrate --local",
+    "dev": "teeny dev --local",
+    "build": "teeny build --local",
+    "exec": "teeny exec --local",
+    "deploy": "teeny deploy --migrate --remote"
+  },
+  "devDependencies": {
+    "teenybase": "0.0.10"
+  }
+}

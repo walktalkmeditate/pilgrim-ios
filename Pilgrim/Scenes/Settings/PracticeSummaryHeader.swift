@@ -7,6 +7,7 @@ struct PracticeSummaryHeader: View {
     var firstWalkDate: Date?
 
     @State private var statPhase = 0
+    @State private var isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
     @ObservedObject private var counterService = CollectiveCounterService.shared
 
     var body: some View {
@@ -45,22 +46,47 @@ struct PracticeSummaryHeader: View {
                 .padding(.top, 4)
                 .transition(.opacity)
             }
+
+            if let milestone = counterService.milestone {
+                Text(milestone.message)
+                    .font(Constants.Typography.body.italic())
+                    .foregroundColor(.stone)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Constants.UI.Padding.big)
+                    .padding(.vertical, Constants.UI.Padding.small)
+                    .background(Color.moss.opacity(0.08))
+                    .cornerRadius(Constants.UI.Padding.small)
+                    .padding(.top, Constants.UI.Padding.small)
+                    .transition(.opacity)
+                    .onAppear {
+                        playMilestoneBell()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
+                            withAnimation { counterService.milestone = nil }
+                        }
+                    }
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Constants.UI.Padding.big)
         .task { await counterService.fetch() }
+        .animation(.easeInOut(duration: 0.5), value: counterService.milestone?.number)
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+        }
+    }
+
+    private func playMilestoneBell() {
+        guard UserPreferences.soundsEnabled.value else { return }
+        guard let bellId = UserPreferences.walkStartBellId.value,
+              let asset = AudioManifestService.shared.asset(byId: bellId) else { return }
+        BellPlayer.shared.play(asset, volume: 0.4)
     }
 
     private func collectiveStatsLine(_ stats: CollectiveCounterService.CollectiveStats) -> String {
-        let isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
         let dist = isImperial ? stats.totalDistanceKm * 0.621371 : stats.totalDistanceKm
         let unit = isImperial ? "mi" : "km"
         let walks = stats.totalWalks.formatted()
         let distStr = String(format: "%.0f", dist)
-        let hours = stats.meditationHours
-        if hours > 0 {
-            return "\(walks) walks \u{00B7} \(distStr) \(unit) \u{00B7} \(hours) hrs stillness"
-        }
         return "\(walks) walks \u{00B7} \(distStr) \(unit)"
     }
 
@@ -78,7 +104,6 @@ struct PracticeSummaryHeader: View {
     }
 
     private var statsLine: String {
-        let isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
         let distKm = totalDistanceMeters / 1000
         let dist = isImperial ? distKm * 0.621371 : distKm
         let unit = isImperial ? "mi" : "km"

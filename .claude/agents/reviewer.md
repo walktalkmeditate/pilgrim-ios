@@ -1,0 +1,1 @@
+../app-store-review-agent/agents/reviewer.md

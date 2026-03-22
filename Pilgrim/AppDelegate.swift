@@ -39,6 +39,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 
                 AudioManifestService.shared.syncIfNeeded()
                 VoiceGuideManifestService.shared.syncIfNeeded()
+                Task { await CollectiveCounterService.shared.fetch() }
 
                 #if DEBUG
                 if CommandLine.arguments.contains("--demo-mode") {
