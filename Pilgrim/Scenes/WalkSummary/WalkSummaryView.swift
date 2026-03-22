@@ -98,6 +98,10 @@ struct WalkSummaryView: View {
                     pollForAutoTranscription()
                 }
             }
+            .onDisappear {
+                pollingTask?.cancel()
+                pollingTask = nil
+            }
             .onChange(of: transcriptionService.state) { _, newState in
                 if newState == .completed {
                     reloadTranscriptionsFromDatabase()
@@ -189,12 +193,16 @@ struct WalkSummaryView: View {
         }
     }
 
+    @State private var pollingTask: Task<Void, Never>?
+
     private func pollForAutoTranscription() {
-        Task {
+        pollingTask?.cancel()
+        pollingTask = Task {
             for _ in 0..<30 {
                 try? await Task.sleep(for: .seconds(2))
+                guard !Task.isCancelled else { return }
                 await MainActor.run { reloadTranscriptionsFromDatabase() }
-                if await !transcriptions.isEmpty { return }
+                if !transcriptions.isEmpty { return }
             }
         }
     }

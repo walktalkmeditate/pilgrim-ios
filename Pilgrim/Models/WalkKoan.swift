@@ -83,7 +83,6 @@ enum WalkKoan {
     }
 
     private static func seasonalKoan() -> String {
-        let month = Calendar.current.component(.month, from: Date())
         let hour = Calendar.current.component(.hour, from: Date())
 
         if hour < 6 {

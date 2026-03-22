@@ -20,6 +20,8 @@ struct ActiveWalkView: View {
     @State private var celestialGreetingGeneration = 0
     @State private var celestialSnapshot: CelestialSnapshot?
     @State private var walkKoan: String?
+    @State private var koanVisibleWords: Int = 0
+    @State private var koanBreathing = false
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -108,14 +110,9 @@ struct ActiveWalkView: View {
                     }
 
                     if let walkKoan {
-                        Text(walkKoan)
-                            .font(Constants.Typography.body.italic())
-                            .foregroundColor(.stone)
-                            .multilineTextAlignment(.center)
+                        koanView(walkKoan)
                             .padding(.horizontal, Constants.UI.Padding.big)
                             .padding(.top, 8)
-                            .transition(.opacity)
-                            .animation(.easeInOut, value: walkKoan)
                     }
 
                     statsSection
@@ -154,6 +151,7 @@ struct ActiveWalkView: View {
         }
         .onChange(of: viewModel.status) { _, newStatus in
             if newStatus == .recording {
+                koanBreathing = false
                 withAnimation(.easeOut(duration: 0.6)) { walkKoan = nil }
             }
             guard newStatus == .recording else { return }
@@ -307,7 +305,8 @@ struct ActiveWalkView: View {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
+                guard viewModel.status == .waiting else { return }
                 withAnimation(.easeIn(duration: 1.0)) {
                     walkKoan = WalkKoan.generate(
                         celestial: celestialSnapshot,
@@ -371,6 +370,30 @@ struct ActiveWalkView: View {
             pinAnnotations: waypointPins
         )
         .frame(height: height)
+    }
+
+    @ViewBuilder
+    private func koanView(_ text: String) -> some View {
+        let words = text.split(separator: " ").map(String.init)
+        HStack(spacing: 4) {
+            ForEach(Array(words.enumerated()), id: \.offset) { index, word in
+                Text(word)
+                    .font(Constants.Typography.body.italic())
+                    .foregroundColor(.stone)
+                    .opacity(index < koanVisibleWords ? (koanBreathing ? 0.5 : 1.0) : 0)
+                    .animation(.easeInOut(duration: 0.6).delay(Double(index) * 0.3), value: koanVisibleWords)
+                    .animation(.easeInOut(duration: 3.0), value: koanBreathing)
+            }
+        }
+        .onAppear {
+            koanVisibleWords = words.count
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(words.count) * 0.3 + 1.0) {
+                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                    koanBreathing = true
+                }
+            }
+        }
+        .transition(.opacity)
     }
 
     private var statsSection: some View {
