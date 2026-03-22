@@ -57,25 +57,38 @@ final class CollectiveCounterService: ObservableObject {
                 self.checkMilestone(decoded.totalWalks)
             }
         } catch {
-            // Stale cache is fine
+            print("[CollectiveCounter] fetch failed: \(error.localizedDescription)")
         }
     }
 
     func recordWalk(distanceKm: Double, meditationMin: Int, talkMin: Int) {
         guard UserPreferences.contributeToCollective.value else { return }
 
-        var pending = loadPending()
-        pending.walks += 1
-        pending.distanceKm += distanceKm
-        pending.meditationMin += meditationMin
-        pending.talkMin += talkMin
-        savePending(pending)
+        DispatchQueue.main.async {
+            var pending = self.loadPending()
+            pending.walks += 1
+            pending.distanceKm += distanceKm
+            pending.meditationMin += meditationMin
+            pending.talkMin += talkMin
+            self.savePending(pending)
 
-        let snapshot = pending
-        Task.detached(priority: .background) {
-            let success = await self.postCounter(snapshot)
-            if success {
-                await MainActor.run { self.clearPending() }
+            let snapshot = pending
+            Task {
+                let success = await self.postCounter(snapshot)
+                if success {
+                    await MainActor.run {
+                        var current = self.loadPending()
+                        current.walks -= snapshot.walks
+                        current.distanceKm -= snapshot.distanceKm
+                        current.meditationMin -= snapshot.meditationMin
+                        current.talkMin -= snapshot.talkMin
+                        if current.walks <= 0 {
+                            self.clearPending()
+                        } else {
+                            self.savePending(current)
+                        }
+                    }
+                }
             }
         }
     }

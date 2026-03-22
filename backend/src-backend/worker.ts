@@ -51,12 +51,12 @@ app.post('/api/counter', async (c) => {
     return c.json({ error: 'rate limited' }, 429)
   }
 
-  const body = await c.req.json<{
-    walks?: number
-    distance_km?: number
-    meditation_min?: number
-    talk_min?: number
-  }>()
+  let body: { walks?: number; distance_km?: number; meditation_min?: number; talk_min?: number }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid json' }, 400)
+  }
 
   const walks = Math.min(10, Math.max(0, Math.floor(body.walks ?? 0)))
   const distanceKm = Math.min(200, Math.max(0, body.distance_km ?? 0))
