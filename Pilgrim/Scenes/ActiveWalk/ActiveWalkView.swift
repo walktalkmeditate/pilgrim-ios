@@ -19,6 +19,7 @@ struct ActiveWalkView: View {
     @State private var greetingGeneration = 0
     @State private var celestialGreetingGeneration = 0
     @State private var celestialSnapshot: CelestialSnapshot?
+    @State private var walkKoan: String?
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -106,6 +107,17 @@ struct ActiveWalkView: View {
                         }
                     }
 
+                    if let walkKoan {
+                        Text(walkKoan)
+                            .font(Constants.Typography.body.italic())
+                            .foregroundColor(.stone)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, Constants.UI.Padding.big)
+                            .padding(.top, 8)
+                            .transition(.opacity)
+                            .animation(.easeInOut, value: walkKoan)
+                    }
+
                     statsSection
                     Spacer(minLength: 0)
                     controlsSection
@@ -141,6 +153,9 @@ struct ActiveWalkView: View {
             }
         }
         .onChange(of: viewModel.status) { _, newStatus in
+            if newStatus == .recording {
+                withAnimation(.easeOut(duration: 0.6)) { walkKoan = nil }
+            }
             guard newStatus == .recording else { return }
             if let condition = viewModel.weatherSnapshot?.condition, weatherGreeting == nil {
                 let greeting: String
@@ -291,6 +306,14 @@ struct ActiveWalkView: View {
             if UserPreferences.celestialAwarenessEnabled.value {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                withAnimation(.easeIn(duration: 1.0)) {
+                    walkKoan = WalkKoan.generate(
+                        celestial: celestialSnapshot,
+                        weather: viewModel.weatherSnapshot
+                    )
+                }
             }
         }
     }
