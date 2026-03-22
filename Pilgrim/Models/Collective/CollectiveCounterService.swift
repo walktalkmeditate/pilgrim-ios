@@ -21,7 +21,7 @@ final class CollectiveCounterService: ObservableObject {
         let totalMeditationMin: Int
         let totalTalkMin: Int
         let lastWalkAt: String?
-        let streakDays: Int
+        let streakDays: Int?
         let streakDate: String?
 
         enum CodingKeys: String, CodingKey {

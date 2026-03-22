@@ -11,12 +11,14 @@ struct StreakFlameView: View {
         HStack(spacing: 4) {
             ZStack {
                 Image(systemName: "flame.fill")
+                    .symbolRenderingMode(.monochrome)
                     .font(.system(size: 12))
                     .foregroundColor(.rust.opacity(0.5))
                     .scaleEffect(flicker1 ? 1.15 : 0.9)
                     .opacity(flicker1 ? 0.6 : 0.3)
 
                 Image(systemName: "flame.fill")
+                    .symbolRenderingMode(.monochrome)
                     .font(.system(size: 12))
                     .foregroundColor(.rust)
                     .scaleEffect(flicker2 ? 1.05 : 0.95)

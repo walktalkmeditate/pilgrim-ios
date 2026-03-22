@@ -42,8 +42,8 @@ struct PracticeSummaryHeader: View {
                     Text(collectiveStatsLine(stats))
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
-                    if stats.streakDays > 1 {
-                        StreakFlameView(days: stats.streakDays)
+                    if let streak = stats.streakDays, streak > 1 {
+                        StreakFlameView(days: streak)
                             .padding(.top, 2)
                     }
                 }
@@ -90,8 +90,9 @@ struct PracticeSummaryHeader: View {
         let dist = isImperial ? stats.totalDistanceKm * 0.621371 : stats.totalDistanceKm
         let unit = isImperial ? "mi" : "km"
         let walks = stats.totalWalks.formatted()
+        let walkLabel = stats.totalWalks == 1 ? "walk" : "walks"
         let distStr = String(format: "%.0f", dist)
-        return "\(walks) walks \u{00B7} \(distStr) \(unit)"
+        return "\(walks) \(walkLabel) \u{00B7} \(distStr) \(unit)"
     }
 
     // MARK: - Cycling Stats
@@ -111,7 +112,8 @@ struct PracticeSummaryHeader: View {
         let distKm = totalDistanceMeters / 1000
         let dist = isImperial ? distKm * 0.621371 : distKm
         let unit = isImperial ? "mi" : "km"
-        return "\(walkCount) walks \u{00B7} \(String(format: "%.0f", dist)) \(unit)"
+        let walkLabel = walkCount == 1 ? "walk" : "walks"
+        return "\(walkCount) \(walkLabel) \u{00B7} \(String(format: "%.0f", dist)) \(unit)"
     }
 
     private var meditationStatLine: String {
