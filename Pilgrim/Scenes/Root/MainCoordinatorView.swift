@@ -64,6 +64,11 @@ class MainCoordinator: ObservableObject {
                     self.pendingSnapshot = snapshot
                     self.activeWalkViewModel = nil
                     self.triggerAutoTranscription(for: snapshot)
+                    CollectiveCounterService.shared.recordWalk(
+                        distanceKm: snapshot.distance / 1000,
+                        meditationMin: Int(snapshot.meditateDuration / 60),
+                        talkMin: Int(snapshot.talkDuration / 60)
+                    )
                 } else {
                     self.showSaveError = true
                 }

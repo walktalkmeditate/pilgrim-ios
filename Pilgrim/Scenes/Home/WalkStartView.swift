@@ -18,6 +18,7 @@ struct WalkStartView: View {
     @State private var footprintVisible = true
     @State private var transitionGeneration = 0
     @State private var seekFloatOffset: CGFloat = 0
+    @State private var collectivePulse = false
     @State private var footprintBreathScale: CGFloat = 1.0
     @State private var togetherDriftOffset: CGSize = .zero
     @State private var togetherCompanionsVisible = false
@@ -141,10 +142,24 @@ struct WalkStartView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 40)
 
-            PilgrimLogoView(size: 100, breathing: $breathing)
-                .opacity(showLogo ? 1 : 0)
-                .scaleEffect(showLogo ? 1.0 : 0.95)
-                .padding(.bottom, Constants.UI.Padding.big)
+            ZStack {
+                if collectivePulse {
+                    Circle()
+                        .fill(Color.stone.opacity(collectivePulse ? 0.08 : 0))
+                        .frame(width: 140, height: 140)
+                        .scaleEffect(collectivePulse ? 1.15 : 0.9)
+                        .animation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true), value: collectivePulse)
+                }
+                PilgrimLogoView(size: 100, breathing: $breathing)
+            }
+            .opacity(showLogo ? 1 : 0)
+            .scaleEffect(showLogo ? 1.0 : 0.95)
+            .padding(.bottom, Constants.UI.Padding.big)
+            .onAppear {
+                if let stats = CollectiveCounterService.shared.stats, stats.walkedInLastHour {
+                    collectivePulse = true
+                }
+            }
 
             Text(currentQuote)
                 .font(Constants.Typography.displayMedium)

@@ -7,6 +7,7 @@ struct PracticeSummaryHeader: View {
     var firstWalkDate: Date?
 
     @State private var statPhase = 0
+    @ObservedObject private var counterService = CollectiveCounterService.shared
 
     var body: some View {
         VStack(spacing: Constants.UI.Padding.small) {
@@ -31,9 +32,36 @@ struct PracticeSummaryHeader: View {
                         }
                     }
             }
+
+            if let stats = counterService.stats, stats.totalWalks > 0 {
+                VStack(spacing: 4) {
+                    Text(stats.pilgrimageProgress.message)
+                        .font(Constants.Typography.caption.italic())
+                        .foregroundColor(.stone)
+                    Text(collectiveStatsLine(stats))
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
+                .padding(.top, 4)
+                .transition(.opacity)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Constants.UI.Padding.big)
+        .task { await counterService.fetch() }
+    }
+
+    private func collectiveStatsLine(_ stats: CollectiveCounterService.CollectiveStats) -> String {
+        let isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+        let dist = isImperial ? stats.totalDistanceKm * 0.621371 : stats.totalDistanceKm
+        let unit = isImperial ? "mi" : "km"
+        let walks = stats.totalWalks.formatted()
+        let distStr = String(format: "%.0f", dist)
+        let hours = stats.meditationHours
+        if hours > 0 {
+            return "\(walks) walks \u{00B7} \(distStr) \(unit) \u{00B7} \(hours) hrs stillness"
+        }
+        return "\(walks) walks \u{00B7} \(distStr) \(unit)"
     }
 
     // MARK: - Cycling Stats

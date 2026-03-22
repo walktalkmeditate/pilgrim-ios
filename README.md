@@ -106,6 +106,7 @@ Every feature that could require a network call has been built to work without o
 - Maps: Mapbox with no user-identifying requests
 - Weather: Apple WeatherKit (no personal account linked)
 - Walk data: stored in CoreData on the device
+- Collective counter: opt-in, sends only anonymous totals (walk count, distance, meditation time)
 
 There is no backend that knows who you are. There is no account to create. The app ships with a full privacy manifest declaring every API it uses and why.
 

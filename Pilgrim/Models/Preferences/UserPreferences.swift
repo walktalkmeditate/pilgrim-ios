@@ -50,6 +50,9 @@ struct UserPreferences {
     static let voiceGuideVolume = UserPreference.Required<Double>(key: "voiceGuideVolume", defaultValue: 0.8)
     static let voiceGuideDuckLevel = UserPreference.Required<Double>(key: "voiceGuideDuckLevel", defaultValue: 0.15)
 
+    static let contributeToCollective = UserPreference.Required<Bool>(key: "contributeToCollective", defaultValue: false)
+    static let lastSeenCollectiveWalks = UserPreference.Required<Int>(key: "lastSeenCollectiveWalks", defaultValue: 0)
+
     static let beginWithIntention = UserPreference.Required<Bool>(key: "beginWithIntention", defaultValue: false)
 
     static let celestialAwarenessEnabled = UserPreference.Required<Bool>(key: "celestialAwarenessEnabled", defaultValue: false)

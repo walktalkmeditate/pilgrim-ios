@@ -6,6 +6,7 @@ struct PracticeCard: View {
     @State private var celestialAwareness = UserPreferences.celestialAwarenessEnabled.value
     @State private var zodiacSystem = UserPreferences.zodiacSystem.value
     @State private var isMetric = UserPreferences.distanceMeasurementType.safeValue == .kilometers
+    @State private var contributeToCollective = UserPreferences.contributeToCollective.value
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
@@ -50,6 +51,16 @@ struct PracticeCard: View {
             Text(isMetric ? "km \u{00B7} min/km \u{00B7} m \u{00B7} \u{00B0}C" : "mi \u{00B7} min/mi \u{00B7} ft \u{00B7} \u{00B0}F")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
+
+            Divider()
+
+            settingToggle(
+                label: "Walk with the collective",
+                description: "Add your footsteps to the path",
+                isOn: $contributeToCollective
+            ) { newValue in
+                UserPreferences.contributeToCollective.value = newValue
+            }
         }
         .settingsCard()
         .animation(.easeInOut(duration: 0.2), value: celestialAwareness)
