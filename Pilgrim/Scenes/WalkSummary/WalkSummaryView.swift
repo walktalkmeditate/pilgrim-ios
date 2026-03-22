@@ -94,6 +94,9 @@ struct WalkSummaryView: View {
                     cachedCelestialSnapshot = CelestialCalculator.snapshot(for: walk.startDate, system: system)
                 }
                 startRevealSequence()
+                if UserPreferences.autoTranscribe.value && transcriptions.isEmpty {
+                    pollForAutoTranscription()
+                }
             }
             .onChange(of: transcriptionService.state) { _, newState in
                 if newState == .completed {
@@ -182,6 +185,16 @@ struct WalkSummaryView: View {
         for recording in walk.voiceRecordings {
             if let uuid = recording.uuid, let text = recording.transcription {
                 transcriptions[uuid] = text
+            }
+        }
+    }
+
+    private func pollForAutoTranscription() {
+        Task {
+            for _ in 0..<30 {
+                try? await Task.sleep(for: .seconds(2))
+                await MainActor.run { reloadTranscriptionsFromDatabase() }
+                if await !transcriptions.isEmpty { return }
             }
         }
     }

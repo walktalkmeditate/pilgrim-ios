@@ -20,7 +20,6 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
     private override init() { super.init() }
 
     func play(prompt: VoiceGuidePrompt, packId: String, onFinished: (() -> Void)? = nil) {
-        guard AVAudioSession.sharedInstance().category != .playAndRecord else { return }
         guard let url = fileStore.localURL(for: prompt, packId: packId) else { return }
 
         stop()
