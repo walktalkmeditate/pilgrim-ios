@@ -306,7 +306,7 @@ struct ActiveWalkView: View {
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
-                guard viewModel.status == .waiting else { return }
+                guard !viewModel.status.isActiveStatus else { return }
                 withAnimation(.easeIn(duration: 1.0)) {
                     walkKoan = WalkKoan.generate(
                         celestial: celestialSnapshot,
