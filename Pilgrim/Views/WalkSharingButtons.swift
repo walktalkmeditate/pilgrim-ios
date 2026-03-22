@@ -43,7 +43,7 @@ struct WalkSharingButtons: View {
             Spacer()
             shareButton(
                 icon: "seal.fill",
-                label: "Seal",
+                label: "Goshuin",
                 subtitle: "Share as image"
             ) {
                 isGenerating = true
