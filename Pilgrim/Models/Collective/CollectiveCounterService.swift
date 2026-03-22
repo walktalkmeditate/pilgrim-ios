@@ -38,8 +38,10 @@ final class CollectiveCounterService: ObservableObject {
             totalMeditationMin / 60
         }
 
+        private static let dateFormatter = ISO8601DateFormatter()
+
         var walkedInLastHour: Bool {
-            guard let lastWalkAt, let date = ISO8601DateFormatter().date(from: lastWalkAt) else { return false }
+            guard let lastWalkAt, let date = Self.dateFormatter.date(from: lastWalkAt) else { return false }
             return Date().timeIntervalSince(date) < 3600
         }
     }
@@ -97,7 +99,7 @@ final class CollectiveCounterService: ObservableObject {
         do {
             let (_, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse else { return false }
-            return (200...299).contains(http.statusCode) || http.statusCode == 204
+            return (200...299).contains(http.statusCode)
         } catch {
             return false
         }
@@ -109,7 +111,7 @@ final class CollectiveCounterService: ObservableObject {
 
         for number in sacredNumbers {
             if totalWalks >= number && lastSeen < number {
-                milestone = CollectiveMilestone.forNumber(number, totalWalks: totalWalks)
+                milestone = CollectiveMilestone.forNumber(number)
                 break
             }
         }

@@ -382,15 +382,13 @@ struct ActiveWalkView: View {
                     .foregroundColor(.stone)
                     .opacity(index < koanVisibleWords ? (koanBreathing ? 0.5 : 1.0) : 0)
                     .animation(.easeInOut(duration: 0.6).delay(Double(index) * 0.3), value: koanVisibleWords)
-                    .animation(.easeInOut(duration: 3.0), value: koanBreathing)
             }
         }
+        .animation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true), value: koanBreathing)
         .onAppear {
             koanVisibleWords = words.count
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(words.count) * 0.3 + 1.0) {
-                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
-                    koanBreathing = true
-                }
+                koanBreathing = true
             }
         }
         .transition(.opacity)

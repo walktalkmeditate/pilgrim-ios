@@ -52,7 +52,7 @@ struct CollectiveMilestone {
     let number: Int
     let message: String
 
-    static func forNumber(_ number: Int, totalWalks: Int) -> CollectiveMilestone {
+    static func forNumber(_ number: Int) -> CollectiveMilestone {
         let message: String
         switch number {
         case 108:

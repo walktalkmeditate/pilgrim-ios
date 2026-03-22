@@ -145,9 +145,9 @@ struct WalkStartView: View {
             ZStack {
                 if collectivePulse {
                     Circle()
-                        .fill(Color.stone.opacity(collectivePulse ? 0.08 : 0))
+                        .fill(Color.stone.opacity(0.08))
                         .frame(width: 140, height: 140)
-                        .scaleEffect(collectivePulse ? 1.15 : 0.9)
+                        .scaleEffect(1.15)
                         .animation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true), value: collectivePulse)
                 }
                 PilgrimLogoView(size: 100, breathing: $breathing)
