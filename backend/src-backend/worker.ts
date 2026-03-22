@@ -29,7 +29,7 @@ app.get('/api/counter', async (c) => {
   const db = c.env.PRIMARY_DB
   const row = await db.prepare('SELECT * FROM counter WHERE id = 1').first()
   if (!row) {
-    return c.json({ walks: 0, distance_km: 0, meditation_min: 0, talk_min: 0, last_walk_at: null })
+    return c.json({ total_walks: 0, total_distance_km: 0, total_meditation_min: 0, total_talk_min: 0, last_walk_at: null })
   }
   return c.json(row, 200, {
     'Cache-Control': 'public, max-age=10800',
@@ -58,10 +58,10 @@ app.post('/api/counter', async (c) => {
     talk_min?: number
   }>()
 
-  const walks = Math.max(0, Math.floor(body.walks ?? 0))
-  const distanceKm = Math.max(0, body.distance_km ?? 0)
-  const meditationMin = Math.max(0, Math.floor(body.meditation_min ?? 0))
-  const talkMin = Math.max(0, Math.floor(body.talk_min ?? 0))
+  const walks = Math.min(10, Math.max(0, Math.floor(body.walks ?? 0)))
+  const distanceKm = Math.min(200, Math.max(0, body.distance_km ?? 0))
+  const meditationMin = Math.min(480, Math.max(0, Math.floor(body.meditation_min ?? 0)))
+  const talkMin = Math.min(480, Math.max(0, Math.floor(body.talk_min ?? 0)))
 
   if (walks === 0 && distanceKm === 0) {
     return c.json({ error: 'nothing to count' }, 400)
@@ -74,7 +74,7 @@ app.post('/api/counter', async (c) => {
         total_distance_km = total_distance_km + ?,
         total_meditation_min = total_meditation_min + ?,
         total_talk_min = total_talk_min + ?,
-        last_walk_at = datetime('now')
+        last_walk_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
       WHERE id = 1`
     ).bind(walks, distanceKm, meditationMin, talkMin),
     db.prepare(
@@ -85,7 +85,7 @@ app.post('/api/counter', async (c) => {
     ),
   ])
 
-  return c.json({ ok: true }, 204)
+  return c.json({ ok: true })
 })
 
 export default app

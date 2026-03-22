@@ -69,13 +69,13 @@ final class CollectiveCounterService: ObservableObject {
         pending.distanceKm += distanceKm
         pending.meditationMin += meditationMin
         pending.talkMin += talkMin
+        savePending(pending)
 
-        Task.detached(priority: .background) { [self] in
-            let success = await self.postCounter(pending)
+        let snapshot = pending
+        Task.detached(priority: .background) {
+            let success = await self.postCounter(snapshot)
             if success {
-                self.clearPending()
-            } else {
-                self.savePending(pending)
+                await MainActor.run { self.clearPending() }
             }
         }
     }
@@ -112,10 +112,10 @@ final class CollectiveCounterService: ObservableObject {
         for number in sacredNumbers {
             if totalWalks >= number && lastSeen < number {
                 milestone = CollectiveMilestone.forNumber(number)
+                UserPreferences.lastSeenCollectiveWalks.value = number
                 break
             }
         }
-        UserPreferences.lastSeenCollectiveWalks.value = totalWalks
     }
 
     private func loadCachedStats() {

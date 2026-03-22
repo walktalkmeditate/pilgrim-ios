@@ -24,27 +24,21 @@ struct PilgrimageProgress {
 
         for route in routes.reversed() {
             if distanceKm >= route.km {
-                let times = distanceKm / route.km
+                let times = Int(distanceKm / route.km)
                 if times >= 2 {
                     return PilgrimageProgress(
-                        message: "Together, \(Int(times)) \(route.name)s walked.",
-                        distanceKm: distanceKm
-                    )
-                } else {
-                    return PilgrimageProgress(
-                        message: "Together, one \(route.name) complete.",
+                        message: "Together, the \(route.name) walked \(times) times.",
                         distanceKm: distanceKm
                     )
                 }
+                return PilgrimageProgress(
+                    message: "Together, one \(route.name) complete.",
+                    distanceKm: distanceKm
+                )
             }
         }
 
-        let progress = distanceKm / routes[0].km
-        let pct = Int(progress * 100)
-        return PilgrimageProgress(
-            message: "\(pct)% of our first \(routes[0].name).",
-            distanceKm: distanceKm
-        )
+        return PilgrimageProgress(message: "The first steps, taken together.", distanceKm: distanceKm)
     }
 }
 
