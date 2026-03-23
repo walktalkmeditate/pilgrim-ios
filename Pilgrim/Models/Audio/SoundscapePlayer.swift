@@ -10,10 +10,14 @@ final class SoundscapePlayer: NSObject, ObservableObject {
     @Published private(set) var isMuted = false
 
     private var activePlayer: AVAudioPlayer?
+    private var fadingOutPlayer: AVAudioPlayer?
     private var targetVolume: Float = 0.4
     var currentTargetVolume: Float { targetVolume }
     private let coordinator = AudioSessionCoordinator.shared
     private let fileStore = AudioFileStore.shared
+
+    private var loopMonitor: Timer?
+    private let crossfadeDuration: TimeInterval = 4.0
 
     private override init() { super.init() }
 
@@ -34,7 +38,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
 
         do {
             let player = try AVAudioPlayer(contentsOf: url)
-            player.numberOfLoops = -1
+            player.numberOfLoops = 0
             player.volume = 0
             player.prepareToPlay()
             player.play()
@@ -42,6 +46,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             currentAsset = asset
             isPlaying = true
             player.setVolume(volume, fadeDuration: fadeDuration)
+            startLoopMonitor()
         } catch {
             print("[SoundscapePlayer] Playback error: \(error)")
             coordinator.deactivate(consumer: "soundscape")
@@ -49,6 +54,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
     }
 
     func stop(fadeDuration: TimeInterval = 2.0) {
+        stopLoopMonitor()
         fadingOutPlayer?.stop()
         fadingOutPlayer = nil
 
@@ -94,9 +100,8 @@ final class SoundscapePlayer: NSObject, ObservableObject {
         }
     }
 
-    private var fadingOutPlayer: AVAudioPlayer?
-
     private func crossfade(to url: URL, asset: AudioAsset, volume: Float, fadeDuration: TimeInterval) {
+        stopLoopMonitor()
         fadingOutPlayer?.stop()
         fadingOutPlayer = nil
 
@@ -108,13 +113,14 @@ final class SoundscapePlayer: NSObject, ObservableObject {
 
         do {
             let newPlayer = try AVAudioPlayer(contentsOf: url)
-            newPlayer.numberOfLoops = -1
+            newPlayer.numberOfLoops = 0
             newPlayer.volume = 0
             newPlayer.prepareToPlay()
             newPlayer.play()
             activePlayer = newPlayer
             currentAsset = asset
             newPlayer.setVolume(volume, fadeDuration: fadeDuration)
+            startLoopMonitor()
 
             DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) { [weak self] in
                 self?.fadingOutPlayer?.stop()
@@ -127,6 +133,79 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             activePlayer = nil
             isPlaying = false
             currentAsset = nil
+            isMuted = false
+            stopLoopMonitor()
+            coordinator.deactivate(consumer: "soundscape")
+        }
+    }
+
+    private func startLoopMonitor() {
+        stopLoopMonitor()
+        guard let player = activePlayer else { return }
+
+        if player.duration < crossfadeDuration + 1 {
+            player.numberOfLoops = -1
+            return
+        }
+
+        loopMonitor = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.checkLoopBoundary()
+        }
+    }
+
+    private func stopLoopMonitor() {
+        loopMonitor?.invalidate()
+        loopMonitor = nil
+    }
+
+    private func checkLoopBoundary() {
+        guard let player = activePlayer else { return }
+        let remaining = player.duration - player.currentTime
+        if remaining < crossfadeDuration + 0.5 {
+            loopCrossfade()
+        }
+    }
+
+    private func loopCrossfade() {
+        stopLoopMonitor()
+
+        guard let asset = currentAsset,
+              let url = fileStore.localURL(for: asset) else {
+            stop(fadeDuration: 0)
+            return
+        }
+
+        fadingOutPlayer?.stop()
+        fadingOutPlayer = nil
+
+        let oldPlayer = activePlayer
+        fadingOutPlayer = oldPlayer
+        oldPlayer?.setVolume(0, fadeDuration: crossfadeDuration)
+
+        do {
+            let newPlayer = try AVAudioPlayer(contentsOf: url)
+            newPlayer.numberOfLoops = 0
+            newPlayer.volume = 0
+            newPlayer.prepareToPlay()
+            newPlayer.play()
+            activePlayer = newPlayer
+            let fadeTarget: Float = isMuted ? 0 : targetVolume
+            newPlayer.setVolume(fadeTarget, fadeDuration: crossfadeDuration)
+            startLoopMonitor()
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + crossfadeDuration) { [weak self] in
+                self?.fadingOutPlayer?.stop()
+                self?.fadingOutPlayer = nil
+            }
+        } catch {
+            print("[SoundscapePlayer] Loop crossfade error: \(error)")
+            fadingOutPlayer?.stop()
+            fadingOutPlayer = nil
+            activePlayer = nil
+            isPlaying = false
+            currentAsset = nil
+            isMuted = false
+            stopLoopMonitor()
             coordinator.deactivate(consumer: "soundscape")
         }
     }
