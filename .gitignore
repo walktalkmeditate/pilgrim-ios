@@ -88,6 +88,9 @@ iOSInjectionProject/
 # Secrets
 Secrets.xcconfig
 
+# Backend (Blitz/Teenybase — real API lives in pilgrim-worker)
+backend/
+
 # macOS
 .DS_Store
 
