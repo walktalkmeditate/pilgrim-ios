@@ -148,9 +148,11 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             return
         }
 
-        loopMonitor = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.checkLoopBoundary()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        loopMonitor = timer
     }
 
     private func stopLoopMonitor() {
@@ -159,7 +161,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
     }
 
     private func checkLoopBoundary() {
-        guard let player = activePlayer else { return }
+        guard let player = activePlayer, fadingOutPlayer == nil else { return }
         let remaining = player.duration - player.currentTime
         if remaining < crossfadeDuration + 0.5 {
             loopCrossfade()
