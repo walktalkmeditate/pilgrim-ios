@@ -95,9 +95,13 @@ Opt-in anonymous counter that tracks total walks, distance, and meditation time 
 
 Colors shift with the seasons, calibrated to your hemisphere. The app looks different in November than it does in May.
 
+**View My Journey**
+
+See all your walks rendered on [view.pilgrimapp.org](https://view.pilgrimapp.org) — right from the app. Your data stays on your device and is rendered locally in the browser. Nothing is uploaded.
+
 **Data portability**
 
-Export as `.pilgrim` packages (full data, importable) or GPX (route only, compatible with any mapping tool).
+Export as `.pilgrim` packages (full data, importable). Export voice recordings separately as a zip. Import on a new device anytime.
 
 ---
 
