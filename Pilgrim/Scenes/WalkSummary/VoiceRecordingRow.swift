@@ -119,12 +119,16 @@ struct VoiceRecordingRow: View {
                                 .font(Constants.Typography.body)
                                 .foregroundColor(.ink)
                                 .focused($isEditFocused)
+                                .scrollContentBackground(.hidden)
                                 .frame(minHeight: 60, maxHeight: 200)
                                 .padding(4)
                                 .background(Color.parchmentTertiary)
                                 .cornerRadius(8)
                             Button {
-                                onTranscriptionSave?(editText)
+                                let trimmed = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if !trimmed.isEmpty {
+                                    onTranscriptionSave?(trimmed)
+                                }
                                 isEditing = false
                                 isEditFocused = false
                             } label: {
