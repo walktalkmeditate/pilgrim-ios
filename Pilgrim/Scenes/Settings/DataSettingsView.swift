@@ -57,15 +57,13 @@ struct DataSettingsView: View {
 
             Section {
                 NavigationLink(destination: JourneyViewerView()) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("View My Journey")
-                            .font(Constants.Typography.body)
-                            .foregroundColor(.ink)
-                        Text("See all your walks rendered in your browser. Your data stays on your device.")
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.fog)
-                    }
+                    Text("View My Journey")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
                 }
+            } footer: {
+                Text("Opens view.pilgrimapp.org and renders all your walks in the browser. Your data stays on your device — nothing is uploaded.")
+                    .font(Constants.Typography.caption)
             }
 
             if recordingCount > 0 {

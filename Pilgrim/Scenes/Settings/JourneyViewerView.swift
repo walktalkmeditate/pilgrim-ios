@@ -128,19 +128,29 @@ struct JourneyWebView: UIViewRepresentable {
             guard !injected else { return }
             injected = true
 
-            let escaped = walksJSON
-                .replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "'", with: "\\'")
-
-            let script = "setTimeout(function() { window.pilgrimViewer.loadData(JSON.parse('\(escaped)')); }, 500);"
-            webView.evaluateJavaScript(script) { [weak self] _, error in
-                if let error {
-                    print("[JourneyViewer] JS injection failed: \(error)")
-                }
-                DispatchQueue.main.async {
+            let jsonObj = jsonObject()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                Task { @MainActor in
+                    do {
+                        _ = try await webView.callAsyncJavaScript(
+                            "window.pilgrimViewer.loadData(data)",
+                            arguments: ["data": jsonObj],
+                            contentWorld: .page
+                        )
+                    } catch {
+                        print("[JourneyViewer] JS injection failed: \(error)")
+                    }
                     self?.isLoading = false
                 }
             }
+        }
+
+        private func jsonObject() -> Any {
+            guard let data = walksJSON.data(using: .utf8),
+                  let obj = try? JSONSerialization.jsonObject(with: data) else {
+                return [:]
+            }
+            return obj
         }
     }
 }
