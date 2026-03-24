@@ -420,7 +420,7 @@ struct ActiveWalkView: View {
             HStack(spacing: Constants.UI.Padding.big) {
                 StatItem(label: "Distance", value: viewModel.distance)
                 StatItem(label: "Steps", value: viewModel.steps)
-                StatItem(label: "Speed", value: viewModel.speed)
+                StatItem(label: "Ascent", value: viewModel.ascent)
             }
 
             HStack(spacing: Constants.UI.Padding.big) {

@@ -21,7 +21,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var duration: String = "0:00"
     @Published var distance: String = UserPreferences.distanceMeasurementType.safeValue == .miles ? "0.00 mi" : "0.00 km"
     @Published var steps: String = "0"
-    @Published var speed: String = UserPreferences.speedMeasurementType.safeValue == .milesPerHour ? "0.0 mph" : "0.0 km/h"
+    @Published var ascent: String = StatsHelper.string(for: 0, unit: UnitLength.meters, type: .altitude)
     @Published var currentLocation: TempRouteDataSample?
     @Published var routeCoordinates: [CLLocationCoordinate2D] = []
     @Published private(set) var routeSegments: [RouteSegment] = []
@@ -136,9 +136,9 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .sink { [weak self] in self?.steps = $0 }
             .store(in: &cancellables)
 
-        liveStats.speed
+        liveStats.ascent
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.speed = $0 }
+            .sink { [weak self] in self?.ascent = $0 }
             .store(in: &cancellables)
 
         liveStats.currentLocation

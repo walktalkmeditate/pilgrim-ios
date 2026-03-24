@@ -52,8 +52,7 @@ class LiveStats: WalkBuilderComponent {
     fileprivate let durationRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UnitDuration.seconds, type: .clock))
     /// The relay to publish the energy burned during the walk as computed periodically.
     fileprivate let burnedEnergyRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UserPreferences.energyMeasurementType.safeValue))
-    /// The relay to publish the speed returned in meters per second.
-    fileprivate let speedRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UserPreferences.speedMeasurementType.safeValue, type: (UserPreferences.speedMeasurementType.safeValue == UnitSpeed.minutesPerLengthUnit(from: UnitLength.standardBigLocalUnit as! UnitLength)) ? .pace : .auto))
+    fileprivate let ascentRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UnitLength.meters, type: .altitude))
     
     // MARK: Binders
     
@@ -81,13 +80,18 @@ class LiveStats: WalkBuilderComponent {
         return StatsHelper.string(for: burnedEnergy, unit: UnitEnergy.standardUnit)
     }
     
-    /// Uses the most recent GPS speed for responsive display.
-    private var speedMapper: ([TempRouteDataSample], Date?, [TempWalkPause], Double) -> String? = { locations, startDate, pauses, distance in
-        guard startDate != nil else { return nil }
-
-        let speed = locations.last.map { max(0, $0.speed) } ?? 0.0
-
-        return StatsHelper.string(for: speed, unit: UnitSpeed.standardUnit)
+    private var ascentMapper: ([AltitudeManagement.AltitudeSample]) -> String = { samples in
+        guard samples.count > 1 else {
+            return StatsHelper.string(for: 0, unit: UnitLength.meters, type: .altitude)
+        }
+        var totalAscent: Double = 0
+        for i in 1..<samples.count {
+            let diff = samples[i].altitude - samples[i - 1].altitude
+            if diff > 0.3 {
+                totalAscent += diff
+            }
+        }
+        return StatsHelper.string(for: totalAscent, unit: UnitLength.meters, type: .altitude)
     }
     
     // MARK: - Publishers
@@ -102,7 +106,7 @@ class LiveStats: WalkBuilderComponent {
     var insufficientPermission: AnyPublisher<String, Never> { self.insufficientPermissionRelay.eraseToAnyPublisher() }
     var duration: AnyPublisher<String, Never> { self.durationRelay.eraseToAnyPublisher() }
     var burnedEnergy: AnyPublisher<String, Never> { self.burnedEnergyRelay.eraseToAnyPublisher() }
-    var speed: AnyPublisher<String, Never> { self.speedRelay.eraseToAnyPublisher() }
+    var ascent: AnyPublisher<String, Never> { self.ascentRelay.eraseToAnyPublisher() }
     
     // MARK: WalkBuilderComponent
     
@@ -124,10 +128,9 @@ class LiveStats: WalkBuilderComponent {
         output.heartRates.map { $0.last }.sink(receiveValue: currentHeartRateRelay.accept).store(in: &cancellables)
         output.insufficientPermission.sink(receiveValue: insufficientPermissionRelay.accept).store(in: &cancellables)
         
-        output.locations
-            .combineLatest(output.startDate, output.pauses, output.distance)
-            .compactMap(speedMapper)
-            .sink(receiveValue: speedRelay.accept)
+        output.altitudes
+            .map(ascentMapper)
+            .sink(receiveValue: ascentRelay.accept)
             .store(in: &cancellables)
         
         let periodicUpdates = Timer.TimerPublisher(interval: 1, runLoop: .main, mode: .default).autoconnect()
