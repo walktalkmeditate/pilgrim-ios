@@ -27,8 +27,6 @@ A pilgrimage app for iOS. Track your walks, capture voice reflections, sit in me
 </tr>
 </table>
 
-App Store previews are in [`docs/previews/`](docs/previews/).
-
 ---
 
 ## What Pilgrim Is
@@ -53,35 +51,31 @@ That's the whole thing. No more, no less.
 
 **The walk itself**
 
-GPS tracking with live pace sparkline, step counting, altitude gain, and waypoint marking. Three-way time breakdown shows how each walk split between walking, talking, and meditating — because those are genuinely different states of attention. Walk data is auto-saved periodically so nothing is lost if the app is interrupted.
+GPS tracking with live pace sparkline, step counting, altitude gain, and waypoint marking. Three-way time breakdown shows how each walk split between walking, talking, and meditating — because those are genuinely different states of attention. Walk data is auto-saved periodically so nothing is lost if the app is interrupted. Live weather via WeatherKit is logged with each walk.
 
 **Voice**
 
-Tap to record a voice note at any moment on the walk. Each recording is timestamped and pinned to a location. After the walk, WhisperKit transcribes everything on-device — no audio is ever sent to a server. Auto-transcription runs after each walk when enabled, and skips gracefully when battery is below 20%. The transcriptions become the raw material for writing prompts.
+Tap to record a voice note at any moment on the walk. Each recording is timestamped and pinned to a location. After the walk, WhisperKit transcribes everything on-device — no audio is ever sent to a server. Auto-transcription runs after each walk when enabled, and skips gracefully when battery is below 20%. Edit transcriptions inline to fix what WhisperKit got wrong. The transcriptions become the raw material for writing prompts.
 
 **Meditation**
 
 A dedicated meditation mode with an animated breathing circle. Set the rhythm (inhale, hold, exhale, rest). Meditation time is tracked separately and shown alongside walk time in the summary.
 
-**Voice guides**
+**Voice guides and soundscapes**
 
-Downloadable meditation guide packs with spoken prompts during walks and meditation. Ambient soundscapes — forest, rain, ocean — play in the background. Customizable bells mark the start and end of walks and meditation sessions.
+Downloadable meditation guide packs with spoken prompts during walks and meditation. Seven ambient soundscapes — forest, rain, ocean, stream, birds, fire, crickets — play seamlessly in the background with crossfade looping. Customizable bells mark the start and end of walks and meditation sessions.
 
 **AI writing prompts**
 
 Six prompt styles — contemplative, reflective, creative, gratitude, philosophical, journaling — generated from your transcriptions and walk context. Copy them into your favorite AI and turn a walk into writing.
 
-**Celestial awareness**
-
-The current moon phase, zodiac sign, and planetary hour appear in the walk context. Not because Pilgrim tells you what they mean, but because awareness of where you are in time is part of where you are in the world.
-
-**Weather**
-
-Live weather via WeatherKit. Conditions are logged with the walk.
-
 **Goshuin seals**
 
 In Japan, pilgrims collect *goshuin* — vermilion ink stamps given at temples along a route. Pilgrim generates a digital seal for each walk, derived from its unique data: distance, duration, weather, elevation. The collection grows with your practice.
+
+**Celestial awareness**
+
+Moon phase, zodiac sign, and planetary hour appear in the walk context. A contemplative koan drawn from the celestial, weather, or seasonal context appears before each walk — a seed for reflection.
 
 **Sharing**
 
@@ -91,17 +85,9 @@ Share a walk as a goshuin seal image, a hand-painted etegami postcard, or an eph
 
 Opt-in anonymous counter that tracks total walks, distance, and meditation time across all pilgrims. Your Settings screen shows the collective progress mapped to real pilgrimage routes — from the Kumano Kodo to the Camino de Santiago. Sacred number milestones ring a temple bell. A streak flame tracks consecutive days someone, somewhere, has walked. The logo gently pulses when another pilgrim walked in the last hour.
 
-**Seasonal design**
+**Your data**
 
-Colors shift with the seasons, calibrated to your hemisphere. The app looks different in November than it does in May.
-
-**View My Journey**
-
-See all your walks rendered on [view.pilgrimapp.org](https://view.pilgrimapp.org) — right from the app. Your data stays on your device and is rendered locally in the browser. Nothing is uploaded.
-
-**Data portability**
-
-Export as `.pilgrim` packages (full data, importable). Export voice recordings separately as a zip. Import on a new device anytime.
+See all your walks rendered on [view.pilgrimapp.org](https://view.pilgrimapp.org) — right from the app, nothing uploaded. Export as `.pilgrim` packages (full data, importable). Export voice recordings separately as a zip. Import on a new device anytime. Colors shift with the seasons, calibrated to your hemisphere.
 
 ---
 
@@ -124,8 +110,8 @@ There is no backend that knows who you are. There is no account to create. The a
 
 ### Requirements
 
-- Xcode 16 or later
-- iOS 18.0 deployment target
+- Xcode 26 or later
+- iOS 26.0 deployment target
 - CocoaPods (`gem install cocoapods` if needed)
 - A physical device or M-series simulator for arm64 builds
 
@@ -162,18 +148,16 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
-### Generating Screenshots
-
-The `ScreenshotTests` UI test target produces the App Store screenshots using reproducible GPX routes (Camino de Santiago and Shikoku Pilgrimage). Run with `--demo-mode` to trigger the deterministic demo data path.
-
 ### Releasing
 
 ```bash
-scripts/release.sh check     # validate the project is ready
-scripts/release.sh bump      # auto-increment build number
-scripts/release.sh archive   # build the release archive
-scripts/release.sh export    # export for App Store upload
-scripts/release.sh upload    # upload to App Store Connect
+scripts/release.sh check       # validate the project is ready
+scripts/release.sh bump        # auto-increment build number
+scripts/release.sh changelog   # generate release notes from git log
+scripts/release.sh archive     # build the release archive
+scripts/release.sh export      # export for App Store upload
+scripts/release.sh upload      # upload to App Store Connect
+scripts/release.sh release     # full pipeline with tagging and GitHub Release
 ```
 
 ---
