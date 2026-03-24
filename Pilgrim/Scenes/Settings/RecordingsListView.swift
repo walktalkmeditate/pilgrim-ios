@@ -287,20 +287,29 @@ struct RecordingsListView: View {
                 }
             }
         } else {
-            Text(text)
-                .font(Constants.Typography.body)
-                .foregroundColor(.ink)
-                .padding(Constants.UI.Padding.small)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.parchmentTertiary)
-                .cornerRadius(Constants.UI.CornerRadius.small)
-                .onTapGesture {
-                    if let uuid {
-                        editingTranscriptionText = text
-                        editingTranscriptionUUID = uuid
-                        isTranscriptionEditFocused = true
+            HStack(alignment: .top) {
+                Text(text)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                    .padding(Constants.UI.Padding.small)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.parchmentTertiary)
+                    .cornerRadius(Constants.UI.CornerRadius.small)
+                    .onTapGesture {
+                        if let uuid {
+                            editingTranscriptionText = text
+                            editingTranscriptionUUID = uuid
+                            isTranscriptionEditFocused = true
+                        }
                     }
+                Button {
+                    UIPasteboard.general.string = text
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.caption)
+                        .foregroundColor(.fog)
                 }
+            }
         }
     }
 

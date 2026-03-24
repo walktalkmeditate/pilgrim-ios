@@ -156,11 +156,22 @@ struct VoiceRecordingRow: View {
                             }
                     }
 
-                    if fileAvailable && !isEditing {
-                        Button(action: onRetranscribe) {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.caption)
-                                .foregroundColor(.fog)
+                    if !isEditing {
+                        VStack(spacing: 8) {
+                            Button {
+                                UIPasteboard.general.string = transcription
+                            } label: {
+                                Image(systemName: "doc.on.doc")
+                                    .font(.caption)
+                                    .foregroundColor(.fog)
+                            }
+                            if fileAvailable {
+                                Button(action: onRetranscribe) {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.caption)
+                                        .foregroundColor(.fog)
+                                }
+                            }
                         }
                     }
                 }
