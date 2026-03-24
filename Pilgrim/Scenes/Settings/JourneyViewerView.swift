@@ -145,6 +145,16 @@ struct JourneyWebView: UIViewRepresentable {
             }
         }
 
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            print("[JourneyViewer] Page load failed: \(error)")
+            isLoading = false
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            print("[JourneyViewer] Navigation failed: \(error)")
+            isLoading = false
+        }
+
         private func jsonObject() -> Any {
             guard let data = walksJSON.data(using: .utf8),
                   let obj = try? JSONSerialization.jsonObject(with: data) else {
