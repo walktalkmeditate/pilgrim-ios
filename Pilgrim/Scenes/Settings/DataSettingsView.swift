@@ -8,6 +8,7 @@ struct DataSettingsView: View {
     @State private var isImporting = false
     @State private var isExportingRecordings = false
     @State private var showDocumentPicker = false
+    @State private var showJourneyViewer = false
     @State private var exportURL: URL?
     @State private var alertTitle = ""
     @State private var alertMessage = ""
@@ -52,6 +53,19 @@ struct DataSettingsView: View {
             } footer: {
                 Text("Export creates a .pilgrim archive with all your walks, transcriptions, and settings. Import restores walks from a .pilgrim file.")
                     .font(Constants.Typography.caption)
+            }
+
+            Section {
+                NavigationLink(destination: JourneyViewerView()) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("View My Journey")
+                            .font(Constants.Typography.body)
+                            .foregroundColor(.ink)
+                        Text("See all your walks rendered in your browser. Your data stays on your device.")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                }
             }
 
             if recordingCount > 0 {
