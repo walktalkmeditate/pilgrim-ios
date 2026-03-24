@@ -19,7 +19,7 @@ DerivedData/
 !default.perspectivev3
 xcuserdata/
 # *.xcodeproj/
-*.xcworkspace/
+# *.xcworkspace/ — Pilgrim.xcworkspace committed for CI
 
 ## Other
 *.moved-aside
