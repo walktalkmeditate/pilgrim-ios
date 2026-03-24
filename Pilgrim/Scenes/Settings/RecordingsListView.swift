@@ -17,6 +17,9 @@ struct RecordingsListView: View {
     @State private var pathToDelete: String?
     @State private var showDeleteConfirmation = false
     @State private var expandedTranscriptions: Set<UUID> = []
+    @State private var editingTranscriptionUUID: UUID?
+    @State private var editingTranscriptionText = ""
+    @FocusState private var isTranscriptionEditFocused: Bool
 
     var body: some View {
         Group {
@@ -252,25 +255,53 @@ struct RecordingsListView: View {
         .frame(height: 32)
     }
 
+    @ViewBuilder
     private func transcriptionBlock(text: String, uuid: UUID?) -> some View {
-        let expanded = uuid.map { expandedTranscriptions.contains($0) } ?? false
-        return Text(text)
-            .font(Constants.Typography.body)
-            .foregroundColor(.ink)
-            .lineLimit(expanded ? nil : 3)
-            .padding(Constants.UI.Padding.small)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.parchmentTertiary)
-            .cornerRadius(Constants.UI.CornerRadius.small)
-            .onTapGesture {
-                if let uuid {
-                    if expandedTranscriptions.contains(uuid) {
-                        expandedTranscriptions.remove(uuid)
-                    } else {
-                        expandedTranscriptions.insert(uuid)
+        if let uuid, editingTranscriptionUUID == uuid {
+            VStack(alignment: .trailing, spacing: 4) {
+                TextEditor(text: $editingTranscriptionText)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                    .focused($isTranscriptionEditFocused)
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 60, maxHeight: 200)
+                    .padding(4)
+                    .background(Color.parchmentTertiary)
+                    .cornerRadius(Constants.UI.CornerRadius.small)
+                Button {
+                    let trimmed = editingTranscriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmed.isEmpty {
+                        transcriptionOverrides[uuid] = trimmed
+                        DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: trimmed)
                     }
+                    editingTranscriptionUUID = nil
+                    isTranscriptionEditFocused = false
+                } label: {
+                    Text("Done")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.stone)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background(Color.stone.opacity(0.12))
+                        .cornerRadius(4)
                 }
             }
+        } else {
+            Text(text)
+                .font(Constants.Typography.body)
+                .foregroundColor(.ink)
+                .padding(Constants.UI.Padding.small)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.parchmentTertiary)
+                .cornerRadius(Constants.UI.CornerRadius.small)
+                .onTapGesture {
+                    if let uuid {
+                        editingTranscriptionText = text
+                        editingTranscriptionUUID = uuid
+                        isTranscriptionEditFocused = true
+                    }
+                }
+        }
     }
 
     // MARK: - Waveform
