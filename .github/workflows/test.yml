@@ -37,18 +37,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
-
-      - name: Install CocoaPods
-        run: gem install cocoapods
-
-      - name: Pod Install
-        run: pod install
-
       - name: Copy Secrets
         run: cp Secrets.xcconfig.example Secrets.xcconfig
 

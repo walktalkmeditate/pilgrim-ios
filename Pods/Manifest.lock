@@ -1,0 +1,32 @@
+PODS:
+  - Cache (6.0.0)
+  - CombineExt (1.8.0)
+  - CoreGPX (0.9.0)
+  - CoreStore (9.0.0)
+  - ZIPFoundation (0.9.20)
+
+DEPENDENCIES:
+  - Cache
+  - CombineExt
+  - CoreGPX
+  - CoreStore
+  - ZIPFoundation
+
+SPEC REPOS:
+  trunk:
+    - Cache
+    - CombineExt
+    - CoreGPX
+    - CoreStore
+    - ZIPFoundation
+
+SPEC CHECKSUMS:
+  Cache: 4ca7e00363fca5455f26534e5607634c820ffc2d
+  CombineExt: c4daa97ef75754d8ef319bd79edeef82652f3eea
+  CoreGPX: 1381c8c47428c3a6bcac2f93d25ca1c5e3525811
+  CoreStore: 1b820cd4d929750343479fd72585283a870973f4
+  ZIPFoundation: dfd3d681c4053ff7e2f7350bc4e53b5dba3f5351
+
+PODFILE CHECKSUM: 9a2432a2fccb4c302be03d76d92551b1dff530ce
+
+COCOAPODS: 1.16.2
