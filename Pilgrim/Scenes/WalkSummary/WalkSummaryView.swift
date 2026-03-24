@@ -72,6 +72,7 @@ struct WalkSummaryView: View {
                 }
                 .padding(Constants.UI.Padding.normal)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color.parchment)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -592,6 +593,11 @@ struct WalkSummaryView: View {
                     onDelete: {
                         pathToDelete = recording.fileRelativePath
                         showDeleteConfirmation = true
+                    },
+                    onTranscriptionSave: { newText in
+                        guard let uuid = recording.uuid else { return }
+                        transcriptions[uuid] = newText
+                        DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: newText)
                     },
                     waveformSamples: recording.uuid.flatMap { waveforms[$0] }
                 )

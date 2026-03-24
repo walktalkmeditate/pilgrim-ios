@@ -16,9 +16,12 @@ struct VoiceRecordingRow: View {
     let onCycleSpeed: () -> Void
     let onRetranscribe: () -> Void
     let onDelete: () -> Void
+    let onTranscriptionSave: ((String) -> Void)?
     let waveformSamples: [Float]?
 
-    @State private var isTranscriptionExpanded = false
+    @State private var isEditing = false
+    @State private var editText = ""
+    @FocusState private var isEditFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -110,17 +113,46 @@ struct VoiceRecordingRow: View {
 
             if let transcription = transcription {
                 HStack(alignment: .top) {
-                    Text(transcription)
-                        .font(Constants.Typography.body)
-                        .foregroundColor(.ink)
-                        .lineLimit(isTranscriptionExpanded ? nil : 3)
-                        .padding(8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.parchmentTertiary)
-                        .cornerRadius(8)
-                        .onTapGesture { isTranscriptionExpanded.toggle() }
+                    if isEditing {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            TextEditor(text: $editText)
+                                .font(Constants.Typography.body)
+                                .foregroundColor(.ink)
+                                .focused($isEditFocused)
+                                .frame(minHeight: 60, maxHeight: 200)
+                                .padding(4)
+                                .background(Color.parchmentTertiary)
+                                .cornerRadius(8)
+                            Button {
+                                onTranscriptionSave?(editText)
+                                isEditing = false
+                                isEditFocused = false
+                            } label: {
+                                Text("Done")
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(.stone)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 4)
+                                    .background(Color.stone.opacity(0.12))
+                                    .cornerRadius(4)
+                            }
+                        }
+                    } else {
+                        Text(transcription)
+                            .font(Constants.Typography.body)
+                            .foregroundColor(.ink)
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.parchmentTertiary)
+                            .cornerRadius(8)
+                            .onTapGesture {
+                                editText = transcription
+                                isEditing = true
+                                isEditFocused = true
+                            }
+                    }
 
-                    if fileAvailable {
+                    if fileAvailable && !isEditing {
                         Button(action: onRetranscribe) {
                             Image(systemName: "arrow.clockwise")
                                 .font(.caption)
