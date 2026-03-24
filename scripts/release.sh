@@ -30,6 +30,7 @@ usage() {
     echo "  archive         Build the release archive"
     echo "  export          Export the archive for App Store upload"
     echo "  upload          Upload to App Store Connect"
+    echo "  whatsnew          Create/edit curated App Store release notes"
     echo "  changelog        Generate release notes from git log since last tag"
     echo "  tag <version>   Create a git tag and GitHub Release"
     echo "  release         Full pipeline: check → bump → commit → archive → upload → changelog → tag"
@@ -290,16 +291,25 @@ cmd_changelog() {
     } > build/changelog.md
 
     # App Store release notes (user-friendly)
-    {
-        if [ -n "$feats" ]; then echo "$feats"; fi
-        if [ -n "$fixes" ]; then echo "$fixes"; fi
-    } | sed 's/^ *- */- /' | \
-        sed 's/@State/state/g; s/@Published/state/g; s/@ObservedObject/state/g' | \
-        sed 's/[A-Z][a-zA-Z]*View//g; s/[A-Z][a-zA-Z]*Card//g; s/[A-Z][a-zA-Z]*Manager//g' | \
-        sed 's/[A-Z][a-zA-Z]*ViewModel//g; s/[A-Z][a-zA-Z]*Player//g' | \
-        sed 's/ — Phase [0-9]*//g' | \
-        sed 's/  */ /g; s/ ,/,/g; s/ \././g' | \
-        sed '/^- *$/d; /^$/d' > build/releasenotes.txt
+    # For v1.0.0: use the curated first-release template
+    # For patches: auto-generate from feat/fix commits
+    local version
+    version=$(current_marketing_version)
+
+    if [ -f "build/whatsnew.txt" ]; then
+        cp build/whatsnew.txt build/releasenotes.txt
+    else
+        {
+            if [ -n "$feats" ]; then echo "$feats"; fi
+            if [ -n "$fixes" ]; then echo "$fixes"; fi
+        } | sed 's/^ *- */• /' | \
+            sed 's/@[A-Za-z]*//g' | \
+            sed 's/[A-Z][a-zA-Z]*View//g; s/[A-Z][a-zA-Z]*Card//g; s/[A-Z][a-zA-Z]*Manager//g' | \
+            sed 's/[A-Z][a-zA-Z]*Player//g' | \
+            sed 's/  */ /g; s/ ,/,/g; s/ \././g' | \
+            sed '/^[•] *$/d; /^$/d' | \
+            head -8 > build/releasenotes.txt
+    fi
 
     pass "Developer changelog: build/changelog.md"
     pass "App Store notes:     build/releasenotes.txt"
@@ -310,6 +320,34 @@ cmd_changelog() {
     echo ""
     echo -e "${BOLD}--- App Store Release Notes ---${NC}"
     cat build/releasenotes.txt
+}
+
+cmd_whatsnew() {
+    local version
+    version=$(current_marketing_version)
+
+    mkdir -p build
+
+    if [ ! -f "build/whatsnew.txt" ]; then
+        cat > build/whatsnew.txt << 'TEMPLATE'
+Your first walk starts with a question.
+
+• Walk, talk, meditate — three modes of attention, one path
+• Voice recordings transcribed on-device by WhisperKit
+• Seven voice guides with meditation prompts and ambient soundscapes
+• Goshuin seals — digital pilgrimage stamps unique to each walk
+• Walk with the collective — see how far pilgrims have walked together
+• Celestial awareness — moon phases, zodiac, planetary hours
+• View your entire journey at view.pilgrimapp.org
+• Privacy-first — no accounts, no analytics, no cloud
+TEMPLATE
+        pass "Created build/whatsnew.txt — edit it, then run 'changelog'"
+    fi
+
+    echo -e "${BOLD}--- What's New (v$version) ---${NC}"
+    cat build/whatsnew.txt
+    echo ""
+    echo "Edit build/whatsnew.txt to customize. The changelog command will use it."
 }
 
 cmd_release() {
@@ -367,6 +405,7 @@ case "$COMMAND" in
     export)  cmd_export ;;
     upload)  cmd_upload ;;
     changelog) cmd_changelog ;;
+    whatsnew) cmd_whatsnew ;;
     tag)     [ -z "$ARG1" ] && fail "Usage: release.sh tag <version>" ; cmd_tag "$ARG1" ;;
     release) cmd_release ;;
     *)       usage ;;
