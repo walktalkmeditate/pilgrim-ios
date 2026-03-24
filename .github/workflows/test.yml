@@ -24,7 +24,7 @@ jobs:
   lint:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install SwiftLint
         run: brew install swiftlint
@@ -32,7 +32,33 @@ jobs:
       - name: Lint
         run: swiftlint lint --reporter github-actions-logging
 
-  # test:
-  #   Disabled until CocoaPods supports Xcode 26 project object version 70.
-  #   Tracking: https://github.com/CocoaPods/CocoaPods/issues/12889
-  #   Re-enable when pod install works on CI runners with Xcode 26.
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install CocoaPods
+        run: gem install cocoapods
+
+      - name: Pod Install
+        run: pod install
+
+      - name: Copy Secrets
+        run: cp Secrets.xcconfig.example Secrets.xcconfig
+
+      - name: Build and Test
+        run: |
+          xcodebuild test \
+            -workspace Pilgrim.xcworkspace \
+            -scheme Pilgrim \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -skip-testing:ScreenshotTests \
+            -quiet \
+            CODE_SIGNING_ALLOWED=NO

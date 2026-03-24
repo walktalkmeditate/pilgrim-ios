@@ -1,23 +1,50 @@
 name: Release
 
-# Disabled until CocoaPods supports Xcode 26 project object version 70.
-# Tracking: https://github.com/CocoaPods/CocoaPods/issues/12889
-# Re-enable when pod install works on CI runners with Xcode 26.
-
-# on:
-#   workflow_dispatch:
-
 on:
   workflow_dispatch:
     inputs:
-      note:
-        description: 'Release blocked — CocoaPods does not support Xcode 26 project format. Use local archive via Xcode Organizer.'
+      version:
+        description: 'Version to release (e.g. 1.0.1). Leave empty to use current version.'
         required: false
-        default: 'blocked'
+        default: ''
 
 jobs:
   release:
     runs-on: macos-15
-    if: false
     steps:
-      - run: echo "Blocked until CocoaPods supports object version 70"
+      - uses: actions/checkout@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install CocoaPods
+        run: gem install cocoapods
+
+      - name: Pod Install
+        run: pod install
+
+      - name: Copy Secrets
+        run: cp Secrets.xcconfig.example Secrets.xcconfig
+
+      - name: Check
+        run: scripts/release.sh check
+
+      - name: Bump
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            scripts/release.sh bump --version ${{ github.event.inputs.version }}
+          else
+            scripts/release.sh bump
+          fi
+
+      - name: Archive
+        run: scripts/release.sh archive
+
+      - name: Export
+        run: scripts/release.sh export
+
+      - name: Generate Changelog
+        run: scripts/release.sh changelog
