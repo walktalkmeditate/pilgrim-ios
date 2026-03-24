@@ -328,6 +328,7 @@ No worker. No backend. No server-side logic. The repo is the CDN.
 - **User-created routes** — draw a path, mark waypoints, contribute back to repo
 - **Collective pilgrimage tracking** — anonymous "a pilgrim has begun/completed" events
 - **Paper companion** — printable PDF fold-out map from route GeoJSON
+- **Share walk to pilgrimag.es** — when sharing a walk with a route package active, add optional `routeId` to share payload + opt-in "Add to pilgrimag.es" toggle. Walk cards appear on the corresponding route guide page on pilgrimag.es. See pilgrimag.es design spec for full details.
 
 ## Open Questions
 
