@@ -238,7 +238,8 @@ struct ActiveWalkView: View {
                 },
                 onSelectVoiceGuide: { packId in
                     UserPreferences.selectedVoiceGuidePackId.value = packId
-                    if let pack = VoiceGuideManifestService.shared.pack(byId: packId) {
+                    if let pack = VoiceGuideManifestService.shared.pack(byId: packId),
+                       VoiceGuideFileStore.shared.isPackDownloaded(pack) {
                         viewModel.voiceGuideManagement.startGuiding(pack: pack)
                     }
                 },

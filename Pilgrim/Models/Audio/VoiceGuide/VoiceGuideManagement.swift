@@ -111,7 +111,7 @@ final class VoiceGuideManagement: ObservableObject {
 
     private func playPrompt(_ prompt: VoiceGuidePrompt, packId: String, generation: Int) {
         guard VoiceGuideFileStore.shared.isAvailable(prompt, packId: packId) else {
-            scheduler?.markPlayed(prompt.id)
+            print("[VoiceGuide] Prompt \(prompt.id) unavailable — file not downloaded")
             return
         }
         player.play(prompt: prompt, packId: packId) { [weak self] in
