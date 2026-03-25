@@ -12,6 +12,8 @@
 	<dict>
 		<key>org.walktalkmeditate.pilgrim</key>
 		<string>Pilgrim App Store</string>
+		<key>org.walktalkmeditate.pilgrim.PilgrimWidget</key>
+		<string>PilgrimWidget App Store</string>
 	</dict>
 	<key>uploadSymbols</key>
 	<true/>

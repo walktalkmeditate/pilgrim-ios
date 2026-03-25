@@ -24,8 +24,6 @@ import SwiftUI
 @main
 struct PilgrimWidgetBundle: WidgetBundle {
     var body: some Widget {
-        PilgrimWidget()
-        PilgrimWidgetControl()
         PilgrimWidgetLiveActivity()
     }
 }

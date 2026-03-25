@@ -3,6 +3,14 @@ import WidgetKit
 import SwiftUI
 
 struct PilgrimWidgetLiveActivity: Widget {
+
+    private static let parchment = Color(red: 0.110, green: 0.098, blue: 0.078)
+    private static let ink = Color(red: 0.941, green: 0.922, blue: 0.882)
+    private static let fog = Color(red: 0.420, green: 0.388, blue: 0.349)
+    private static let moss = Color(red: 0.584, green: 0.659, blue: 0.533)
+    private static let rust = Color(red: 0.769, green: 0.494, blue: 0.388)
+    private static let stone = Color(red: 0.722, green: 0.592, blue: 0.431)
+
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WalkActivityAttributes.self) { context in
             lockScreenView(context: context)
@@ -14,73 +22,148 @@ struct PilgrimWidgetLiveActivity: Widget {
                         .font(.caption)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(formatDuration(context.state.activeDurationSeconds))
-                        .font(.caption.monospacedDigit())
+                    if let start = context.state.walkTimerStart {
+                        Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                            .font(.caption.monospacedDigit())
+                            .multilineTextAlignment(.trailing)
+                    } else {
+                        Text(formatDuration(context.state.activeDurationSeconds))
+                            .font(.caption.monospacedDigit())
+                    }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     if let intention = context.attributes.intention {
                         Text(intention)
-                            .font(.caption2)
+                            .font(.system(.caption2, design: .serif))
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    HStack(spacing: 12) {
-                        if context.state.isMeditating {
-                            Label("Meditating", systemImage: "circle.circle")
-                                .font(.caption2)
-                        }
-                        if context.state.isRecordingVoice {
-                            Label("Recording", systemImage: "mic.fill")
-                                .font(.caption2)
-                        }
-                        if context.state.isPaused {
-                            Label("Paused", systemImage: "pause.fill")
-                                .font(.caption2)
-                        }
-                    }
+                    expandedBottomBar(context.state)
                 }
             } compactLeading: {
-                Image(systemName: context.state.isMeditating ? "circle.circle" : "figure.walk")
-                    .foregroundColor(.green)
+                compactLeadingView(context.state)
             } compactTrailing: {
-                Text(formatDistance(context.state.distanceMeters, imperial: context.attributes.isImperial))
-                    .font(.caption2.monospacedDigit())
+                compactTrailingView(context.state, imperial: context.attributes.isImperial)
             } minimal: {
                 Image(systemName: "figure.walk")
             }
         }
     }
 
+    // MARK: - Compact Dynamic Island
+
+    @ViewBuilder
+    private func compactLeadingView(_ state: WalkActivityAttributes.ContentState) -> some View {
+        if state.isPaused {
+            Image(systemName: "pause.fill")
+                .foregroundColor(.orange)
+        } else if state.isMeditating {
+            Image(systemName: "circle.circle")
+                .foregroundColor(Self.moss)
+        } else if state.isRecordingVoice {
+            Image(systemName: "mic.fill")
+                .foregroundColor(Self.rust)
+        } else {
+            Image(systemName: "figure.walk")
+                .foregroundColor(Self.stone)
+        }
+    }
+
+    @ViewBuilder
+    private func compactTrailingView(_ state: WalkActivityAttributes.ContentState, imperial: Bool) -> some View {
+        if let start = state.meditationTimerStart {
+            Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                .font(.caption2.monospacedDigit())
+                .multilineTextAlignment(.trailing)
+                .frame(width: 48)
+        } else if let start = state.talkTimerStart {
+            Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                .font(.caption2.monospacedDigit())
+                .multilineTextAlignment(.trailing)
+                .frame(width: 48)
+        } else {
+            Text(formatDistance(state.distanceMeters, imperial: imperial))
+                .font(.caption2.monospacedDigit())
+        }
+    }
+
+    // MARK: - Expanded Dynamic Island
+
+    @ViewBuilder
+    private func expandedBottomBar(_ state: WalkActivityAttributes.ContentState) -> some View {
+        HStack(spacing: 16) {
+            if let start = state.meditationTimerStart {
+                HStack(spacing: 4) {
+                    Image(systemName: "circle.circle")
+                    Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                        .multilineTextAlignment(.leading)
+                }
+                .font(.caption2.monospacedDigit())
+                .foregroundColor(Self.moss)
+            }
+            if let start = state.talkTimerStart {
+                HStack(spacing: 4) {
+                    Image(systemName: "mic.fill")
+                    Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                        .multilineTextAlignment(.leading)
+                }
+                .font(.caption2.monospacedDigit())
+                .foregroundColor(Self.rust)
+            }
+            if state.isPaused {
+                Label("Paused", systemImage: "pause.fill")
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+            }
+        }
+    }
+
+    // MARK: - Lock Screen
+
     @ViewBuilder
     private func lockScreenView(context: ActivityViewContext<WalkActivityAttributes>) -> some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(formatDuration(context.state.activeDurationSeconds))
-                    .font(.system(.title2, design: .rounded).monospacedDigit())
-                    .foregroundColor(.primary)
-                Text("Duration")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+        VStack(spacing: 8) {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 2) {
+                    if let start = context.state.walkTimerStart {
+                        Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                            .font(.system(.title2, design: .rounded).monospacedDigit())
+                            .foregroundColor(Self.ink)
+                            .multilineTextAlignment(.leading)
+                    } else {
+                        Text(formatDuration(context.state.activeDurationSeconds))
+                            .font(.system(.title2, design: .rounded).monospacedDigit())
+                            .foregroundColor(Self.ink)
+                    }
+                    Text("Duration")
+                        .font(.system(.caption2, design: .serif))
+                        .foregroundColor(Self.fog)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(formatDistance(context.state.distanceMeters, imperial: context.attributes.isImperial))
+                        .font(.system(.title2, design: .rounded).monospacedDigit())
+                        .foregroundColor(Self.ink)
+                    Text("Distance")
+                        .font(.system(.caption2, design: .serif))
+                        .foregroundColor(Self.fog)
+                }
+
+                if context.state.isMeditating || context.state.isRecordingVoice || context.state.isPaused {
+                    stateIndicator(context.state)
+                }
             }
 
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(formatDistance(context.state.distanceMeters, imperial: context.attributes.isImperial))
-                    .font(.system(.title2, design: .rounded).monospacedDigit())
-                    .foregroundColor(.primary)
-                Text("Distance")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-
-            if context.state.isMeditating || context.state.isRecordingVoice || context.state.isPaused {
-                stateIndicator(context.state)
+            if context.state.meditationTimerStart != nil || context.state.talkTimerStart != nil {
+                activityTimerBar(context.state)
             }
         }
         .padding()
+        .background(Self.parchment)
     }
 
     @ViewBuilder
@@ -90,12 +173,43 @@ struct PilgrimWidgetLiveActivity: Widget {
                 .foregroundColor(.orange)
         } else if state.isMeditating {
             Image(systemName: "circle.circle")
-                .foregroundColor(.green)
+                .foregroundColor(Self.moss)
         } else if state.isRecordingVoice {
             Image(systemName: "mic.fill")
-                .foregroundColor(.red)
+                .foregroundColor(Self.rust)
         }
     }
+
+    @ViewBuilder
+    private func activityTimerBar(_ state: WalkActivityAttributes.ContentState) -> some View {
+        HStack(spacing: 0) {
+            if let start = state.meditationTimerStart {
+                HStack(spacing: 4) {
+                    Image(systemName: "circle.circle")
+                        .font(.caption2)
+                    Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                        .font(.system(.caption, design: .rounded).monospacedDigit())
+                        .multilineTextAlignment(.leading)
+                }
+                .foregroundColor(Self.moss)
+            }
+            if state.meditationTimerStart != nil && state.talkTimerStart != nil {
+                Spacer()
+            }
+            if let start = state.talkTimerStart {
+                HStack(spacing: 4) {
+                    Image(systemName: "mic.fill")
+                        .font(.caption2)
+                    Text(timerInterval: start...Date.distantFuture, countsDown: false)
+                        .font(.system(.caption, design: .rounded).monospacedDigit())
+                        .multilineTextAlignment(.leading)
+                }
+                .foregroundColor(Self.rust)
+            }
+        }
+    }
+
+    // MARK: - Formatting
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
         let total = Int(max(0, seconds))
@@ -127,16 +241,32 @@ struct PilgrimWidgetLiveActivity: Widget {
 } contentStates: {
     WalkActivityAttributes.ContentState(
         activeDurationSeconds: 3661,
+        walkTimerStart: Date().addingTimeInterval(-3661),
         distanceMeters: 4200,
+        meditationTimerStart: nil,
+        talkTimerStart: nil,
         isPaused: false,
         isMeditating: false,
         isRecordingVoice: false
     )
     WalkActivityAttributes.ContentState(
         activeDurationSeconds: 1200,
+        walkTimerStart: Date().addingTimeInterval(-1200),
         distanceMeters: 1500,
+        meditationTimerStart: Date().addingTimeInterval(-480),
+        talkTimerStart: nil,
         isPaused: false,
         isMeditating: true,
         isRecordingVoice: false
+    )
+    WalkActivityAttributes.ContentState(
+        activeDurationSeconds: 1800,
+        walkTimerStart: Date().addingTimeInterval(-1800),
+        distanceMeters: 2100,
+        meditationTimerStart: nil,
+        talkTimerStart: Date().addingTimeInterval(-195),
+        isPaused: false,
+        isMeditating: false,
+        isRecordingVoice: true
     )
 }

@@ -2567,8 +2567,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PilgrimWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PilgrimWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Tim Fraedrich. All rights reserved.";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025-2026 Walk Talk Meditate contributors. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2605,8 +2605,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PilgrimWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PilgrimWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Tim Fraedrich. All rights reserved.";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025-2026 Walk Talk Meditate contributors. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2637,7 +2637,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.ScreenshotTests;
@@ -2664,7 +2664,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.ScreenshotTests;

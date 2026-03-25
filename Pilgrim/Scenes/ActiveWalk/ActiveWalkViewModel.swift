@@ -336,10 +336,22 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                 self.meditateTime = self.formatTime(meditate)
                 self.walkTime = self.formatTime(walk)
 
+                let isPaused = self.status == .paused || self.status == .autoPaused
+                let walkTimerStart: Date? = isPaused ? nil : start.addingTimeInterval(pauseDuration)
+
+                let previousMeditationDuration = self.meditationIntervals.reduce(0) { $0 + $1.duration }
+                let meditationTimerStart: Date? = self.meditationStartDate?.addingTimeInterval(-previousMeditationDuration)
+
+                let previousTalkDuration = recordings.reduce(0.0) { $0 + $1.duration }
+                let talkTimerStart: Date? = self.voiceRecordingManagement.recordingStartDate?.addingTimeInterval(-previousTalkDuration)
+
                 WalkActivityManager.shared.update(
                     activeDuration: activeDuration,
+                    walkTimerStart: walkTimerStart,
                     distanceMeters: self.rawDistanceMeters,
-                    isPaused: self.status == .paused || self.status == .autoPaused,
+                    meditationTimerStart: meditationTimerStart,
+                    talkTimerStart: talkTimerStart,
+                    isPaused: isPaused,
                     isMeditating: self.isMeditating,
                     isRecordingVoice: self.isRecordingVoice
                 )

@@ -83,6 +83,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             print("[SessionGuard] APP TERMINATING — writing final checkpoint")
         }
         WalkSessionGuard.active?.checkpointNow()
+        WalkActivityManager.shared.end()
     }
 
     #if DEBUG
