@@ -20,6 +20,9 @@ final class VoiceGuideManagement: ObservableObject {
 
     var hasLastPrompt: Bool { player.hasLastPrompt }
 
+    private var lastKnownWalkStartDate: Date?
+    private var lastKnownWalkStatus: WalkBuilder.Status = .waiting
+
     func startGuiding(pack: VoiceGuidePack) {
         stopGuiding()
 
@@ -36,6 +39,10 @@ final class VoiceGuideManagement: ObservableObject {
         sched.onShouldPlay = { [weak self] prompt in
             self?.playPrompt(prompt, packId: pack.id, generation: capturedGeneration)
         }
+        if let startDate = lastKnownWalkStartDate {
+            sched.updateWalkStartDate(startDate)
+        }
+        sched.updateStatus(lastKnownWalkStatus)
         scheduler = sched
         isActive = true
         isPaused = false
@@ -78,12 +85,18 @@ final class VoiceGuideManagement: ObservableObject {
     ) {
         statusPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] status in self?.scheduler?.updateStatus(status) }
+            .sink { [weak self] status in
+                self?.lastKnownWalkStatus = status
+                self?.scheduler?.updateStatus(status)
+            }
             .store(in: &walkStateBindings)
 
         startDatePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] date in self?.scheduler?.updateWalkStartDate(date) }
+            .sink { [weak self] date in
+                self?.lastKnownWalkStartDate = date
+                self?.scheduler?.updateWalkStartDate(date)
+            }
             .store(in: &walkStateBindings)
 
         isRecordingVoicePublisher
