@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
       APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
