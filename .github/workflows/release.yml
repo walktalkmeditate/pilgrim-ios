@@ -14,6 +14,9 @@ permissions:
 jobs:
   release:
     runs-on: macos-15
+    env:
+      APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
+      APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -25,10 +28,9 @@ jobs:
       - name: Setup API Key
         env:
           API_KEY_BASE64: ${{ secrets.APP_STORE_API_KEY_BASE64 }}
-          API_KEY_ID: ${{ secrets.APP_STORE_API_KEY }}
         run: |
           mkdir -p ~/.private_keys
-          echo "$API_KEY_BASE64" | base64 -d > ~/.private_keys/AuthKey_"$API_KEY_ID".p8
+          echo "$API_KEY_BASE64" | base64 -d > ~/.private_keys/AuthKey_"$APP_STORE_API_KEY".p8
 
       - name: Bump
         env:
@@ -55,9 +57,6 @@ jobs:
         run: scripts/release.sh export
 
       - name: Upload to App Store Connect
-        env:
-          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
-          APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
         run: scripts/release.sh upload
 
       - name: Generate Changelog
