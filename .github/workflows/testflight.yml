@@ -36,6 +36,21 @@ jobs:
           mkdir -p ~/.private_keys
           echo "$API_KEY_BASE64" | base64 -d > ~/.private_keys/AuthKey_"$APP_STORE_API_KEY".p8
 
+      - name: Install Distribution Certificate
+        env:
+          CERT_BASE64: ${{ secrets.DISTRIBUTION_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.DISTRIBUTION_CERT_PASSWORD }}
+        run: |
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          echo "$CERT_BASE64" | base64 -d > "$CERT_PATH"
+          security create-keychain -p "ci" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "ci" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "ci" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
       - name: Bump Build Number
         run: scripts/release.sh bump
 
@@ -55,3 +70,7 @@ jobs:
 
       - name: Upload to App Store Connect
         run: scripts/release.sh upload
+
+      - name: Cleanup
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" 2>/dev/null || true
