@@ -29,6 +29,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var audioLevel: Float = 0
     @Published var showMicrophonePermissionNeeded = false
     @Published var isMeditating = false
+    private var rawDistanceMeters: Double = 0
     @Published var walkTime: String = "0:00"
     @Published var talkTime: String = "0:00"
     @Published var meditateTime: String = "0:00"
@@ -131,6 +132,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .sink { [weak self] in self?.distance = $0 }
             .store(in: &cancellables)
 
+        liveStats.rawDistance
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.rawDistanceMeters = $0 }
+            .store(in: &cancellables)
+
         liveStats.steps
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.steps = $0 }
@@ -172,6 +178,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         builder.setStatus(.recording)
         soundManagement.onWalkStart()
         startVoiceGuideIfEnabled()
+        WalkActivityManager.shared.start(walkStartDate: Date(), intention: intention)
     }
 
     func resume() {
@@ -183,6 +190,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         finalizeMeditation()
         soundManagement.onWalkEnd()
         voiceGuideManagement.stopGuiding()
+        WalkActivityManager.shared.end()
         builder.setStatus(.ready)
     }
 
@@ -190,6 +198,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         sessionGuard?.stopAndCleanup()
         soundManagement.onWalkEnd()
         voiceGuideManagement.stopGuiding()
+        WalkActivityManager.shared.end()
     }
 
     func toggleVoiceRecording() {
@@ -326,6 +335,14 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                 self.talkTime = self.formatTime(talk)
                 self.meditateTime = self.formatTime(meditate)
                 self.walkTime = self.formatTime(walk)
+
+                WalkActivityManager.shared.update(
+                    activeDuration: activeDuration,
+                    distanceMeters: self.rawDistanceMeters,
+                    isPaused: self.status == .paused || self.status == .autoPaused,
+                    isMeditating: self.isMeditating,
+                    isRecordingVoice: self.isRecordingVoice
+                )
             }
             .store(in: &cancellables)
     }

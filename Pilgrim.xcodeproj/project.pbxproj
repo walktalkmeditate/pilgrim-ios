@@ -171,6 +171,12 @@
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
 		567070362F733CB000FD1910 /* JourneyViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070352F733CB000FD1910 /* JourneyViewerView.swift */; };
+		567070952F74218400FD1910 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 567070942F74218400FD1910 /* WidgetKit.framework */; };
+		567070972F74218400FD1910 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 567070962F74218400FD1910 /* SwiftUI.framework */; };
+		567070A82F74218500FD1910 /* PilgrimWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 567070932F74218400FD1910 /* PilgrimWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		567070AF2F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */; };
+		567070B02F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */; };
+		567070B22F7426A500FD1910 /* WalkActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070B12F7426A500FD1910 /* WalkActivityManager.swift */; };
 		567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99D82F6F41030006A58E /* WeatherKitREST.swift */; };
 		567B99EB2F6F83200006A58E /* WalkKoan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99EA2F6F83200006A58E /* WalkKoan.swift */; };
 		567B99F72F701B8D0006A58E /* CollectiveCounterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */; };
@@ -358,6 +364,13 @@
 			remoteGlobalIDString = 22B6CF5222CA0814002D2FB0;
 			remoteInfo = Pilgrim;
 		};
+		567070A62F74218500FD1910 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 22B6CF4B22CA0814002D2FB0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 567070922F74218400FD1910;
+			remoteInfo = PilgrimWidgetExtension;
+		};
 		56E07B1C2F6DDEDE004EBC44 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 22B6CF4B22CA0814002D2FB0 /* Project object */;
@@ -366,6 +379,20 @@
 			remoteInfo = Pilgrim;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		567070A92F74218500FD1910 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				567070A82F74218500FD1910 /* PilgrimWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		008E97D4312732C8F271886C /* AstrologyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstrologyModels.swift; sourceTree = "<group>"; };
@@ -529,6 +556,11 @@
 		4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteShapeView.swift; sourceTree = "<group>"; };
 		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
 		567070352F733CB000FD1910 /* JourneyViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewerView.swift; sourceTree = "<group>"; };
+		567070932F74218400FD1910 /* PilgrimWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PilgrimWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		567070942F74218400FD1910 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		567070962F74218400FD1910 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkActivityAttributes.swift; sourceTree = "<group>"; };
+		567070B12F7426A500FD1910 /* WalkActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkActivityManager.swift; sourceTree = "<group>"; };
 		567B99D82F6F41030006A58E /* WeatherKitREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitREST.swift; sourceTree = "<group>"; };
 		567B99EA2F6F83200006A58E /* WalkKoan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkKoan.swift; sourceTree = "<group>"; };
 		567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectiveCounterService.swift; sourceTree = "<group>"; };
@@ -718,7 +750,18 @@
 		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		567070AC2F74218500FD1910 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 567070922F74218400FD1910 /* PilgrimWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		567070982F74218400FD1910 /* PilgrimWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (567070AC2F74218500FD1910 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PilgrimWidget; sourceTree = "<group>"; };
 		56E07B172F6DDEDE004EBC44 /* ScreenshotTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ScreenshotTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -739,6 +782,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		567070902F74218400FD1910 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				567070972F74218400FD1910 /* SwiftUI.framework in Frameworks */,
+				567070952F74218400FD1910 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -972,6 +1024,7 @@
 				22B6CF5522CA0814002D2FB0 /* Pilgrim */,
 				22DD158A280C5BB4002CDB45 /* UnitTests */,
 				56E07B172F6DDEDE004EBC44 /* ScreenshotTests */,
+				567070982F74218400FD1910 /* PilgrimWidget */,
 				22B6CF5422CA0814002D2FB0 /* Products */,
 				22B6CF6B22CA0841002D2FB0 /* Frameworks */,
 				BA69BA2459A15E9F0E7493C3 /* Pods */,
@@ -985,6 +1038,7 @@
 				22B6CF5322CA0814002D2FB0 /* Pilgrim.app */,
 				22DD1589280C5BB4002CDB45 /* UnitTests.xctest */,
 				56E07B162F6DDEDE004EBC44 /* ScreenshotTests.xctest */,
+				567070932F74218400FD1910 /* PilgrimWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1011,6 +1065,8 @@
 				WTHRSVC0000000000000004 /* WeatherKit.framework */,
 				D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */,
 				C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */,
+				567070942F74218400FD1910 /* WidgetKit.framework */,
+				567070962F74218400FD1910 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1198,6 +1254,8 @@
 				22FEA08E24CD37200007CA9C /* WalkBuilder */,
 				CC00000100000000WKMODE01 /* WalkMode.swift */,
 				22A0FAF224D8D4B7000292DF /* WalkCompletionActionHandler.swift */,
+				567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */,
+				567070B12F7426A500FD1910 /* WalkActivityManager.swift */,
 				225BB02E2716E61000478E09 /* StatsHelper.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */,
 				A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */,
@@ -1623,10 +1681,12 @@
 				22B6CF5022CA0814002D2FB0 /* Frameworks */,
 				22B6CF5122CA0814002D2FB0 /* Resources */,
 				3D5E2F01B156113A0EDC58E7 /* [CP] Embed Pods Frameworks */,
+				567070A92F74218500FD1910 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				567070A72F74218500FD1910 /* PBXTargetDependency */,
 			);
 			name = Pilgrim;
 			packageProductDependencies = (
@@ -1655,6 +1715,28 @@
 			productName = UnitTests;
 			productReference = 22DD1589280C5BB4002CDB45 /* UnitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		567070922F74218400FD1910 /* PilgrimWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 567070AD2F74218500FD1910 /* Build configuration list for PBXNativeTarget "PilgrimWidgetExtension" */;
+			buildPhases = (
+				5670708F2F74218400FD1910 /* Sources */,
+				567070902F74218400FD1910 /* Frameworks */,
+				567070912F74218400FD1910 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				567070982F74218400FD1910 /* PilgrimWidget */,
+			);
+			name = PilgrimWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = PilgrimWidgetExtension;
+			productReference = 567070932F74218400FD1910 /* PilgrimWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		56E07B152F6DDEDE004EBC44 /* ScreenshotTests */ = {
 			isa = PBXNativeTarget;
@@ -1704,6 +1786,9 @@
 						CreatedOnToolsVersion = 13.3.1;
 						TestTargetID = 22B6CF5222CA0814002D2FB0;
 					};
+					567070922F74218400FD1910 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					56E07B152F6DDEDE004EBC44 = {
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = 22B6CF5222CA0814002D2FB0;
@@ -1730,6 +1815,7 @@
 				22B6CF5222CA0814002D2FB0 /* Pilgrim */,
 				22DD1588280C5BB4002CDB45 /* UnitTests */,
 				56E07B152F6DDEDE004EBC44 /* ScreenshotTests */,
+				567070922F74218400FD1910 /* PilgrimWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -1755,6 +1841,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		22DD1587280C5BB4002CDB45 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		567070912F74218400FD1910 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1961,6 +2054,7 @@
 				22B1DD8C253F90FD0093822B /* DataModelProtocol.swift in Sources */,
 				222632AC24B24FF80017517E /* ExportManager.swift in Sources */,
 				22B6CF5722CA0814002D2FB0 /* AppDelegate.swift in Sources */,
+				567070AF2F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */,
 				22BC993F2941D9A800D9B1A5 /* ProgressView.swift in Sources */,
 				22BC993B2941D9A800D9B1A5 /* ActionButton.swift in Sources */,
 				567070362F733CB000FD1910 /* JourneyViewerView.swift in Sources */,
@@ -1978,6 +2072,7 @@
 				22BC993A2941D9A800D9B1A5 /* CloseButton.swift in Sources */,
 				2227C642234B66BC00CFE31A /* ButtonSetting.swift in Sources */,
 				225C0F762931D22300B9B45F /* RootCoordinatorView.swift in Sources */,
+				567070B22F7426A500FD1910 /* WalkActivityManager.swift in Sources */,
 				22BC99172941D97600D9B1A5 /* WelcomeView.swift in Sources */,
 				225AC6A4243F2710008D493D /* HeartRateDataSample.swift in Sources */,
 				22585C22240AE1BC0052E2CA /* RouteDataSample.swift in Sources */,
@@ -2173,6 +2268,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5670708F2F74218400FD1910 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				567070B02F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		56E07B122F6DDEDE004EBC44 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2187,6 +2290,11 @@
 			isa = PBXTargetDependency;
 			target = 22B6CF5222CA0814002D2FB0 /* Pilgrim */;
 			targetProxy = 22DD158D280C5BB4002CDB45 /* PBXContainerItemProxy */;
+		};
+		567070A72F74218500FD1910 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 567070922F74218400FD1910 /* PilgrimWidgetExtension */;
+			targetProxy = 567070A62F74218500FD1910 /* PBXContainerItemProxy */;
 		};
 		56E07B1D2F6DDEDE004EBC44 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2443,6 +2551,81 @@
 			};
 			name = Release;
 		};
+		567070AA2F74218500FD1910 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YCF2TGZAX8;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PilgrimWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PilgrimWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Tim Fraedrich. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.PilgrimWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		567070AB2F74218500FD1910 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YCF2TGZAX8;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PilgrimWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PilgrimWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Tim Fraedrich. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.PilgrimWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		56E07B1F2F6DDEDE004EBC44 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2522,6 +2705,15 @@
 			buildConfigurations = (
 				22DD158F280C5BB4002CDB45 /* Debug */,
 				22DD1590280C5BB4002CDB45 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		567070AD2F74218500FD1910 /* Build configuration list for PBXNativeTarget "PilgrimWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				567070AA2F74218500FD1910 /* Debug */,
+				567070AB2F74218500FD1910 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

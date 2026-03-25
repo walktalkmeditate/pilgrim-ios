@@ -37,6 +37,7 @@ class LiveStats: WalkBuilderComponent {
     fileprivate let workoutTypeRelay = CurrentValueRelay<Walk.WalkType?>(nil)
     /// The relay to publish the distance shared by components.
     fileprivate let distanceRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UserPreferences.distanceMeasurementType.safeValue))
+    fileprivate let rawDistanceRelay = CurrentValueRelay<Double>(0)
     /// The relay to publish the steps counted by components.
     fileprivate let stepsRelay = CurrentValueRelay<String>(StatsHelper.string(for: 0, unit: UnitCount.count))
     /// The relay to publish the current location regardless of whether it was recorded or not.
@@ -99,6 +100,7 @@ class LiveStats: WalkBuilderComponent {
     var status: AnyPublisher<WalkBuilder.Status, Never> { self.statusRelay.eraseToAnyPublisher() }
     var workoutType: AnyPublisher<Walk.WalkType?, Never> { self.workoutTypeRelay.eraseToAnyPublisher() }
     var distance: AnyPublisher<String, Never> { self.distanceRelay.eraseToAnyPublisher() }
+    var rawDistance: AnyPublisher<Double, Never> { self.rawDistanceRelay.eraseToAnyPublisher() }
     var steps: AnyPublisher<String, Never> { self.stepsRelay.eraseToAnyPublisher() }
     var currentLocation: AnyPublisher<TempRouteDataSample?, Never> { self.currentLocationRelay.eraseToAnyPublisher() }
     var locations: AnyPublisher<[TempRouteDataSample], Never> { self.locationsRelay.eraseToAnyPublisher() }
@@ -122,6 +124,7 @@ class LiveStats: WalkBuilderComponent {
         output.status.sink(receiveValue: statusRelay.accept).store(in: &cancellables)
         output.workoutType.sink(receiveValue: workoutTypeRelay.accept).store(in: &cancellables)
         output.distance.map(distanceMapper).sink(receiveValue: distanceRelay.accept).store(in: &cancellables)
+        output.distance.sink(receiveValue: rawDistanceRelay.accept).store(in: &cancellables)
         output.steps.map(stepsMapper).sink(receiveValue: stepsRelay.accept).store(in: &cancellables)
         output.currentLocation.sink(receiveValue: currentLocationRelay.accept).store(in: &cancellables)
         output.locations.sink(receiveValue: locationsRelay.accept).store(in: &cancellables)
