@@ -150,13 +150,22 @@ cmd_archive() {
 
     rm -rf "$ARCHIVE_PATH"
 
+    local auth_flags=""
+    if [ -n "${APP_STORE_API_KEY:-}" ] && [ -n "${APP_STORE_API_ISSUER:-}" ]; then
+        local key_path="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
+        if [ -f "$key_path" ]; then
+            auth_flags="-allowProvisioningUpdates -authenticationKeyPath $key_path -authenticationKeyID $APP_STORE_API_KEY -authenticationKeyIssuerID $APP_STORE_API_ISSUER"
+        fi
+    fi
+
     xcodebuild archive \
         -workspace "$WORKSPACE" \
         -scheme "$SCHEME" \
         -sdk iphoneos \
         -configuration Release \
         -archivePath "$ARCHIVE_PATH" \
-        -quiet || fail "Archive failed"
+        -quiet \
+        $auth_flags || fail "Archive failed"
 
     pass "Archive created at $ARCHIVE_PATH"
 }
