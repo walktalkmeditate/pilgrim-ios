@@ -3,9 +3,16 @@
 <plist version="1.0">
 <dict>
 	<key>method</key>
-	<string>app-store-connect</string>
+	<string>app-store</string>
 	<key>teamID</key>
 	<string>YCF2TGZAX8</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>org.walktalkmeditate.pilgrim</key>
+		<string>Pilgrim App Store</string>
+	</dict>
 	<key>uploadSymbols</key>
 	<true/>
 	<key>uploadBitcode</key>
