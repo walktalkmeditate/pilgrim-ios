@@ -3,6 +3,9 @@ name: TestFlight
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   testflight:
     runs-on: macos-15
