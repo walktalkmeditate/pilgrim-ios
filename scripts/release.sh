@@ -183,11 +183,20 @@ cmd_export() {
 
     rm -rf "$EXPORT_PATH"
 
+    local auth_flags=""
+    if [ -n "${APP_STORE_API_KEY:-}" ] && [ -n "${APP_STORE_API_ISSUER:-}" ]; then
+        local key_path="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
+        if [ -f "$key_path" ]; then
+            auth_flags="-allowProvisioningUpdates -authenticationKeyPath $key_path -authenticationKeyID $APP_STORE_API_KEY -authenticationKeyIssuerID $APP_STORE_API_ISSUER"
+        fi
+    fi
+
     xcodebuild -exportArchive \
         -archivePath "$ARCHIVE_PATH" \
         -exportOptionsPlist "$EXPORT_OPTIONS" \
         -exportPath "$EXPORT_PATH" \
-        -quiet || fail "Export failed"
+        -quiet \
+        $auth_flags || fail "Export failed"
 
     pass "IPA exported to $EXPORT_PATH"
 }
