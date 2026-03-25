@@ -17,8 +17,12 @@ jobs:
       - name: Copy Secrets
         run: cp Secrets.xcconfig.example Secrets.xcconfig
 
-      - name: Check
-        run: scripts/release.sh check
+      - name: Setup API Key
+        env:
+          API_KEY_BASE64: ${{ secrets.APP_STORE_API_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/.private_keys
+          echo "$API_KEY_BASE64" | base64 -d > ~/.private_keys/AuthKey_${{ secrets.APP_STORE_API_KEY }}.p8
 
       - name: Bump
         run: |
@@ -33,6 +37,12 @@ jobs:
 
       - name: Export
         run: scripts/release.sh export
+
+      - name: Upload to App Store Connect
+        env:
+          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
+          APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
+        run: scripts/release.sh upload
 
       - name: Generate Changelog
         run: scripts/release.sh changelog
