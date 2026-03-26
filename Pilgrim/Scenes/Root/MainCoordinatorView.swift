@@ -1,6 +1,8 @@
 import SwiftUI
 import UIKit
 import CoreLocation
+import CoreStore
+import StoreKit
 
 class MainCoordinator: ObservableObject {
 
@@ -64,6 +66,7 @@ class MainCoordinator: ObservableObject {
                     self.pendingSnapshot = snapshot
                     self.activeWalkViewModel = nil
                     self.triggerAutoTranscription(for: snapshot)
+                    self.requestReviewIfAppropriate()
                     CollectiveCounterService.shared.recordWalk(
                         distanceKm: snapshot.distance / 1000,
                         meditationMin: Int(snapshot.meditateDuration / 60),
@@ -105,6 +108,15 @@ class MainCoordinator: ObservableObject {
     func handleSummaryDismiss() {
         Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
         homeViewModel.loadWalks()
+    }
+
+    private func requestReviewIfAppropriate() {
+        let count = (try? DataManager.dataStack.fetchCount(From<Walk>())) ?? 0
+        guard count >= 3 else { return }
+        if let scene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            SKStoreReviewController.requestReview(in: scene)
+        }
     }
 
     private func triggerAutoTranscription(for snapshot: TempWalk) {

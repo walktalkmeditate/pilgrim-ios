@@ -223,6 +223,24 @@ struct AboutView: View {
                 label: "Source code on GitHub",
                 url: URL(string: "https://github.com/walktalkmeditate/pilgrim-ios")!
             )
+
+            Button {
+                UIApplication.shared.open(URL(string: "https://apps.apple.com/app/id6760921056?action=write-review")!)
+            } label: {
+                HStack(spacing: Constants.UI.Padding.small) {
+                    Image(systemName: "heart")
+                        .font(.system(size: 14))
+                        .frame(width: 24, alignment: .center)
+                    Text("Rate Pilgrim")
+                        .font(Constants.Typography.body)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 12))
+                        .opacity(Constants.UI.Opacity.medium)
+                }
+                .foregroundColor(.stone)
+                .padding(.vertical, Constants.UI.Padding.small + Constants.UI.Padding.xs)
+            }
         }
         .padding(.bottom, Constants.UI.Padding.big)
         .frame(maxWidth: .infinity, alignment: .leading)
