@@ -36,7 +36,7 @@
 "Next" = "Next";
 "Finish" = "Finish";
 "Skip" = "Skip";
-"Grant" = "Grant";
+"Grant" = "Continue";
 "Open" = "Open";
 "Try Again" = "Try Again";
 "Turn Off" = "Turn Off";
@@ -181,7 +181,7 @@
 "Permissions.Motion.Title" = "To count your steps";
 "Permissions.Motion.Description" = "Measure steps as you move";
 "Permissions.Motion.Optional" = "(optional)";
-"Permissions.Grant" = "Grant";
+"Permissions.Grant" = "Continue";
 "Permissions.Settings" = "Settings";
 "Permissions.Skipped" = "Skipped";
 "Permissions.Next" = "Next";

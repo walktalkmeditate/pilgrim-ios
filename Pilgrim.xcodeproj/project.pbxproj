@@ -117,7 +117,6 @@
 		22BC993F2941D9A800D9B1A5 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992E2941D9A800D9B1A5 /* ProgressView.swift */; };
 		22BC99402941D9A800D9B1A5 /* FeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992F2941D9A800D9B1A5 /* FeatureView.swift */; };
 		22BC99432941D9A800D9B1A5 /* CornerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99322941D9A800D9B1A5 /* CornerView.swift */; };
-		22BC99442941D9A800D9B1A5 /* PermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99332941D9A800D9B1A5 /* PermissionView.swift */; };
 		22BC99452941D9A800D9B1A5 /* MetricView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99342941D9A800D9B1A5 /* MetricView.swift */; };
 		22BC99462941D9A800D9B1A5 /* AxisGeometryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99352941D9A800D9B1A5 /* AxisGeometryReader.swift */; };
 		22BC99472941D9A800D9B1A5 /* WalkCardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */; };
@@ -501,7 +500,6 @@
 		22BC992E2941D9A800D9B1A5 /* ProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		22BC992F2941D9A800D9B1A5 /* FeatureView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeatureView.swift; sourceTree = "<group>"; };
 		22BC99322941D9A800D9B1A5 /* CornerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CornerView.swift; sourceTree = "<group>"; };
-		22BC99332941D9A800D9B1A5 /* PermissionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
 		22BC99342941D9A800D9B1A5 /* MetricView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetricView.swift; sourceTree = "<group>"; };
 		22BC99352941D9A800D9B1A5 /* AxisGeometryReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AxisGeometryReader.swift; sourceTree = "<group>"; };
 		22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalkCardModel.swift; sourceTree = "<group>"; };
@@ -1170,7 +1168,6 @@
 				22BC99342941D9A800D9B1A5 /* MetricView.swift */,
 				56EEE45B2F70788E003F4391 /* StreakFlameView.swift */,
 				22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */,
-				22BC99332941D9A800D9B1A5 /* PermissionView.swift */,
 				22BC992C2941D9A800D9B1A5 /* PillView.swift */,
 				AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */,
 				AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */,
@@ -2006,7 +2003,6 @@
 				22834F73254220FC00057FEB /* WalkPauseInterface.swift in Sources */,
 				22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */,
 				221436BF2443746B0010D82B /* Event.swift in Sources */,
-				22BC99442941D9A800D9B1A5 /* PermissionView.swift in Sources */,
 				22BC99392941D9A800D9B1A5 /* MetricViewModel.swift in Sources */,
 				229FF49A235C228100EA220E /* SettingsModel.swift in Sources */,
 				22834F7A2542239800057FEB /* HelperMethods.swift in Sources */,
