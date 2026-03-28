@@ -160,7 +160,7 @@ struct PodcastSubmissionView: View {
                         .foregroundColor(consentChecked ? .stone : .fog)
                         .font(.system(size: 20))
 
-                    Text("I consent to my voice recordings being used in an anonymous podcast episode. Recordings are unedited. I can request removal at hello@walktalkmeditate.org.")
+                    Text("I consent to my voice recordings being considered for an anonymous podcast episode. Submissions are curated and not all walks are selected. Recordings are unedited. I can request removal at hello@walktalkmeditate.org.")
                         .font(Constants.Typography.caption)
                         .foregroundColor(.ink)
                         .multilineTextAlignment(.leading)
