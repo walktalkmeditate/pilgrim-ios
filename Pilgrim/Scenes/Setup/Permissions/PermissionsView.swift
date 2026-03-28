@@ -28,6 +28,7 @@ struct PermissionCardConfig {
     let denied: Bool
     let shake: Bool
     let required: Bool
+    let decided: Bool
     let action: () -> Void
     let retryAction: (() -> Void)?
 }
@@ -62,6 +63,7 @@ struct PermissionsView: View {
                     denied: viewModel.locationDenied,
                     shake: viewModel.shakeLocationCard,
                     required: true,
+                    decided: true,
                     action: viewModel.requestLocation,
                     retryAction: viewModel.openSettings
                 ))
@@ -72,8 +74,9 @@ struct PermissionsView: View {
                     description: LS["Permissions.Microphone.Description"],
                     granted: viewModel.microphoneGranted,
                     denied: viewModel.microphoneDenied,
-                    shake: viewModel.shakeMicrophoneCard,
-                    required: true,
+                    shake: false,
+                    required: false,
+                    decided: viewModel.microphoneDecided,
                     action: viewModel.requestMicrophone,
                     retryAction: viewModel.openSettings
                 ))
@@ -86,6 +89,7 @@ struct PermissionsView: View {
                     denied: false,
                     shake: false,
                     required: false,
+                    decided: viewModel.motionDecided,
                     action: viewModel.requestMotion,
                     retryAction: nil
                 ))
@@ -160,7 +164,7 @@ struct PermissionsView: View {
                     granted: config.granted,
                     denied: config.denied,
                     required: config.required,
-                    decided: !config.required && viewModel.motionDecided,
+                    decided: !config.required && config.decided,
                     action: config.denied && config.retryAction != nil ? config.retryAction! : config.action
                 )
             }
