@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ConnectCard: View {
 
-    private let appStoreURL = URL(string: "https://apps.apple.com/app/id6760921056")!
+    private let shareURL = URL(string: "https://plgr.im/share")!
     private let reviewURL = URL(string: "https://apps.apple.com/app/id6760921056?action=write-review")!
 
     var body: some View {
@@ -53,7 +53,7 @@ struct ConnectCard: View {
 
     private func share() {
         let text = "I've been walking with Pilgrim — it tracks your walks, records voice notes, and even has a meditation mode. No accounts, no tracking, everything stays on your phone. Free and open source."
-        let activityVC = UIActivityViewController(activityItems: [text, appStoreURL], applicationActivities: nil)
+        let activityVC = UIActivityViewController(activityItems: [text, shareURL], applicationActivities: nil)
         if let windowScene = UIApplication.shared.connectedScenes
             .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
            let root = windowScene.windows.first?.rootViewController {
