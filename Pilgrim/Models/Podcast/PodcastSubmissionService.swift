@@ -149,9 +149,6 @@ final class PodcastSubmissionService {
             metadata["location"] = String(format: "%.4f, %.4f", lat, lon)
         }
         if let shareURL { metadata["share_url"] = shareURL }
-        metadata["ascent"] = walk.ascend
-        metadata["waypoint_count"] = walk.waypoints.count
-        if let steps = walk.steps { metadata["steps"] = steps }
 
         let payload: [String: Any] = [
             "submission_id": submissionId,
