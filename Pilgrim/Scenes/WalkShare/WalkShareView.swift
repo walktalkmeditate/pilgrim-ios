@@ -25,8 +25,9 @@ struct WalkShareView: View {
                 VStack(spacing: Constants.UI.Padding.big) {
                     if isShared {
                         shareButton
-                        if PodcastSubmissionService.shared.isEligible(walk: walk) {
-                            PodcastSubmissionView(walk: walk)
+                        if PodcastSubmissionService.shared.isEligible(walk: walk),
+                           case .success(let url) = viewModel.shareState {
+                            PodcastSubmissionView(walk: walk, shareURL: url)
                         }
                     } else {
                         routePreview

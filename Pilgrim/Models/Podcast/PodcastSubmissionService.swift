@@ -1,12 +1,10 @@
 import Foundation
-import AVFoundation
 
 final class PodcastSubmissionService {
 
     static let shared = PodcastSubmissionService()
 
     private let workerBase = "https://walk.pilgrimapp.org"
-    private let maxChunkDuration: TimeInterval = 15 * 60
     private let minTotalDuration: TimeInterval = 12 * 60
     private let maxTotalDuration: TimeInterval = 60 * 60
 
@@ -42,7 +40,7 @@ final class PodcastSubmissionService {
 
     // MARK: - Submit
 
-    func submit(walk: WalkInterface, deviceToken: String) async throws {
+    func submit(walk: WalkInterface, deviceToken: String, shareURL: String? = nil) async throws {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let submissionId = generateSubmissionId()
 
@@ -52,42 +50,20 @@ final class PodcastSubmissionService {
             let audioURL = docs.appendingPathComponent(recording.fileRelativePath)
             guard FileManager.default.fileExists(atPath: audioURL.path) else { continue }
 
-            if recording.duration > maxChunkDuration {
-                let chunks = try await splitAudio(url: audioURL, maxDuration: maxChunkDuration)
-                for (chunkIndex, chunkURL) in chunks.enumerated() {
-                    let name = "recording_\(index + 1)_part\(chunkIndex + 1).m4a"
-                    let key = try await uploadFile(
-                        url: chunkURL,
-                        submissionId: submissionId,
-                        fileName: name,
-                        fileIndex: index,
-                        deviceToken: deviceToken
-                    )
-                    let chunkDuration = try await audioDuration(url: chunkURL)
-                    uploadedRecordings.append(RecordingInfo(
-                        fileName: name,
-                        r2Key: key,
-                        duration: chunkDuration,
-                        transcription: chunkIndex == 0 ? recording.transcription : nil
-                    ))
-                    try? FileManager.default.removeItem(at: chunkURL)
-                }
-            } else {
-                let name = "recording_\(index + 1).m4a"
-                let key = try await uploadFile(
-                    url: audioURL,
-                    submissionId: submissionId,
-                    fileName: name,
-                    fileIndex: index,
-                    deviceToken: deviceToken
-                )
-                uploadedRecordings.append(RecordingInfo(
-                    fileName: name,
-                    r2Key: key,
-                    duration: recording.duration,
-                    transcription: recording.transcription
-                ))
-            }
+            let name = "recording_\(index + 1).m4a"
+            let key = try await uploadFile(
+                url: audioURL,
+                submissionId: submissionId,
+                fileName: name,
+                fileIndex: index,
+                deviceToken: deviceToken
+            )
+            uploadedRecordings.append(RecordingInfo(
+                fileName: name,
+                r2Key: key,
+                duration: recording.duration,
+                transcription: recording.transcription
+            ))
         }
 
         guard !uploadedRecordings.isEmpty else {
@@ -98,7 +74,8 @@ final class PodcastSubmissionService {
             walk: walk,
             submissionId: submissionId,
             recordings: uploadedRecordings,
-            deviceToken: deviceToken
+            deviceToken: deviceToken,
+            shareURL: shareURL
         )
 
         await MainActor.run {
@@ -145,7 +122,8 @@ final class PodcastSubmissionService {
         walk: WalkInterface,
         submissionId: String,
         recordings: [RecordingInfo],
-        deviceToken: String
+        deviceToken: String,
+        shareURL: String?
     ) async throws {
         let first = walk.routeData.first
         var weather: String?
@@ -170,6 +148,10 @@ final class PodcastSubmissionService {
             metadata["start_lon"] = lon
             metadata["location"] = String(format: "%.4f, %.4f", lat, lon)
         }
+        if let shareURL { metadata["share_url"] = shareURL }
+        metadata["ascent"] = walk.ascend
+        metadata["waypoint_count"] = walk.waypoints.count
+        if let steps = walk.steps { metadata["steps"] = steps }
 
         let payload: [String: Any] = [
             "submission_id": submissionId,
@@ -195,47 +177,6 @@ final class PodcastSubmissionService {
         guard let http = response as? HTTPURLResponse, http.statusCode == 201 else {
             throw SubmissionError.submissionFailed
         }
-    }
-
-    // MARK: - Audio Splitting
-
-    private func splitAudio(url: URL, maxDuration: TimeInterval) async throws -> [URL] {
-        let asset = AVURLAsset(url: url)
-        let totalDuration = try await asset.load(.duration).seconds
-        let chunkCount = Int(ceil(totalDuration / maxDuration))
-        var chunks: [URL] = []
-
-        for i in 0..<chunkCount {
-            let start = CMTime(seconds: Double(i) * maxDuration, preferredTimescale: 600)
-            let end = CMTime(seconds: min(Double(i + 1) * maxDuration, totalDuration), preferredTimescale: 600)
-            let range = CMTimeRange(start: start, end: end)
-
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("podcast_chunk_\(i)_\(UUID().uuidString.prefix(8)).m4a")
-
-            guard let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough) else {
-                throw SubmissionError.splitFailed
-            }
-
-            session.outputURL = tempURL
-            session.outputFileType = .m4a
-            session.timeRange = range
-
-            await session.export()
-
-            guard session.status == .completed else {
-                throw SubmissionError.splitFailed
-            }
-
-            chunks.append(tempURL)
-        }
-
-        return chunks
-    }
-
-    private func audioDuration(url: URL) async throws -> Double {
-        let asset = AVURLAsset(url: url)
-        return try await asset.load(.duration).seconds
     }
 
     // MARK: - Helpers
@@ -267,14 +208,12 @@ final class PodcastSubmissionService {
     enum SubmissionError: LocalizedError {
         case uploadFailed(String)
         case submissionFailed
-        case splitFailed
         case noRecordingsFound
 
         var errorDescription: String? {
             switch self {
             case .uploadFailed(let name): return "Failed to upload \(name)."
             case .submissionFailed: return "Failed to submit walk."
-            case .splitFailed: return "Failed to split audio recording."
             case .noRecordingsFound: return "No audio files found on this device."
             }
         }

@@ -3,6 +3,7 @@ import SwiftUI
 struct PodcastSubmissionView: View {
 
     let walk: WalkInterface
+    var shareURL: String?
 
     @State private var consentChecked = false
     @State private var isSubmitting = false
@@ -146,7 +147,7 @@ struct PodcastSubmissionView: View {
 
         Task {
             do {
-                try await service.submit(walk: walk, deviceToken: deviceToken)
+                try await service.submit(walk: walk, deviceToken: deviceToken, shareURL: shareURL)
                 await MainActor.run {
                     isSubmitting = false
                     submitted = true
