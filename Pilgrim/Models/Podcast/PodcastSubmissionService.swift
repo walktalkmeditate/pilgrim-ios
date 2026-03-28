@@ -40,7 +40,7 @@ final class PodcastSubmissionService {
 
     // MARK: - Submit
 
-    func submit(walk: WalkInterface, deviceToken: String, shareURL: String? = nil) async throws {
+    func submit(walk: WalkInterface, deviceToken: String, shareURL: String? = nil, reflection: String? = nil) async throws {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let submissionId = generateSubmissionId()
 
@@ -75,7 +75,8 @@ final class PodcastSubmissionService {
             submissionId: submissionId,
             recordings: uploadedRecordings,
             deviceToken: deviceToken,
-            shareURL: shareURL
+            shareURL: shareURL,
+            reflection: reflection
         )
 
         await MainActor.run {
@@ -123,7 +124,8 @@ final class PodcastSubmissionService {
         submissionId: String,
         recordings: [RecordingInfo],
         deviceToken: String,
-        shareURL: String?
+        shareURL: String?,
+        reflection: String?
     ) async throws {
         let first = walk.routeData.first
         var weather: String?
@@ -149,6 +151,7 @@ final class PodcastSubmissionService {
             metadata["location"] = String(format: "%.4f, %.4f", lat, lon)
         }
         if let shareURL { metadata["share_url"] = shareURL }
+        if let reflection { metadata["reflection"] = reflection }
 
         let payload: [String: Any] = [
             "submission_id": submissionId,
