@@ -179,6 +179,8 @@
 		567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99D82F6F41030006A58E /* WeatherKitREST.swift */; };
 		567B99EB2F6F83200006A58E /* WalkKoan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99EA2F6F83200006A58E /* WalkKoan.swift */; };
 		567B99F72F701B8D0006A58E /* CollectiveCounterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */; };
+		CC02000100000000PODSVB01 /* PodcastSubmissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC02000100000000PODSVR01 /* PodcastSubmissionService.swift */; };
+		CC02000100000000PODVWB01 /* PodcastSubmissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC02000100000000PODVWR01 /* PodcastSubmissionView.swift */; };
 		567B99F82F701B8D0006A58E /* PilgrimageProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */; };
 		56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */; };
 		56E07B2C2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */; };
@@ -563,6 +565,8 @@
 		567B99D82F6F41030006A58E /* WeatherKitREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitREST.swift; sourceTree = "<group>"; };
 		567B99EA2F6F83200006A58E /* WalkKoan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkKoan.swift; sourceTree = "<group>"; };
 		567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectiveCounterService.swift; sourceTree = "<group>"; };
+		CC02000100000000PODSVR01 /* PodcastSubmissionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastSubmissionService.swift; sourceTree = "<group>"; };
+		CC02000100000000PODVWR01 /* PodcastSubmissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastSubmissionView.swift; sourceTree = "<group>"; };
 		567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimageProgress.swift; sourceTree = "<group>"; };
 		56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Pilgrim/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		56E07B162F6DDEDE004EBC44 /* ScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1109,6 +1113,7 @@
 				867117AF847684253BE2DFDE /* Prompt */,
 				5AF23B8551BD6D061A516BDA /* Astrology */,
 				567B99F62F701B8D0006A58E /* Collective */,
+				CC02000100000000PODGRP01 /* Podcast */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1416,6 +1421,15 @@
 				567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */,
 			);
 			path = Collective;
+			sourceTree = "<group>";
+		};
+		CC02000100000000PODGRP01 /* Podcast */ = {
+			isa = PBXGroup;
+			children = (
+				CC02000100000000PODSVR01 /* PodcastSubmissionService.swift */,
+				CC02000100000000PODVWR01 /* PodcastSubmissionView.swift */,
+			);
+			path = Podcast;
 			sourceTree = "<group>";
 		};
 		5AF23B8551BD6D061A516BDA /* Astrology */ = {
@@ -1934,6 +1948,8 @@
 			files = (
 				764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */,
 				567B99F72F701B8D0006A58E /* CollectiveCounterService.swift in Sources */,
+				CC02000100000000PODSVB01 /* PodcastSubmissionService.swift in Sources */,
+				CC02000100000000PODVWB01 /* PodcastSubmissionView.swift in Sources */,
 				567B99F82F701B8D0006A58E /* PilgrimageProgress.swift in Sources */,
 				DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */,
 				22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */,

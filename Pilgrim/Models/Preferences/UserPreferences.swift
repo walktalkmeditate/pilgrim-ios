@@ -62,6 +62,9 @@ struct UserPreferences {
     static let dynamicVoiceEnabled = UserPreference.Required<Bool>(key: "dynamicVoiceEnabled", defaultValue: true)
     static let autoTranscribe = UserPreference.Required<Bool>(key: "autoTranscribe", defaultValue: false)
 
+    static let podcastConsentGiven = UserPreference.Required<Bool>(key: "podcastConsentGiven", defaultValue: false)
+    static let lastPodcastSubmissionDate = UserPreference.Optional<String>(key: "lastPodcastSubmissionDate")
+
     static let distanceMeasurementType = MeasurementUserPreference<UnitLength>(key: "distanceMeasurementType", possibleValues: [.kilometers, .miles])
     static let altitudeMeasurementType = MeasurementUserPreference<UnitLength>(key: "altitudeMeasurementType", possibleValues: [.meters, .feet], bigUnits: false)
     static let speedMeasurementType = MeasurementUserPreference<UnitSpeed>(key: "speedMeasurementType", possibleValues: [.kilometersPerHour, .milesPerHour, .minutesPerLengthUnit(from: .kilometers), .minutesPerLengthUnit(from: .miles)])
