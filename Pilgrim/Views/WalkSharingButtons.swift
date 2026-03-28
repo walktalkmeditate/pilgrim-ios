@@ -20,19 +20,13 @@ struct WalkSharingButtons: View {
     var body: some View {
         if hasRoute {
             VStack(spacing: Constants.UI.Padding.normal) {
-                VStack(spacing: Constants.UI.Padding.normal) {
-                    imageShareRow
-                    divider
-                    journeySection
-                }
-                .padding(Constants.UI.Padding.normal)
-                .background(Color.parchmentSecondary)
-                .cornerRadius(Constants.UI.CornerRadius.normal)
-
-                if PodcastSubmissionService.shared.isEligible(walk: walk) {
-                    PodcastSubmissionView(walk: walk)
-                }
+                imageShareRow
+                divider
+                journeySection
             }
+            .padding(Constants.UI.Padding.normal)
+            .background(Color.parchmentSecondary)
+            .cornerRadius(Constants.UI.CornerRadius.normal)
             .sheet(isPresented: $showJourneySheet) {
                 WalkShareView(walk: walk)
             }

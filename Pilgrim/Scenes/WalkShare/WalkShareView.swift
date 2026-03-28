@@ -7,7 +7,10 @@ struct WalkShareView: View {
     @State private var showCopiedToast = false
     @State private var toastGeneration = 0
 
+    let walk: WalkInterface
+
     init(walk: WalkInterface) {
+        self.walk = walk
         _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk))
     }
 
@@ -22,6 +25,9 @@ struct WalkShareView: View {
                 VStack(spacing: Constants.UI.Padding.big) {
                     if isShared {
                         shareButton
+                        if PodcastSubmissionService.shared.isEligible(walk: walk) {
+                            PodcastSubmissionView(walk: walk)
+                        }
                     } else {
                         routePreview
                         statToggles
