@@ -297,6 +297,7 @@
 		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
 		CC01000100000000ATMOCB01 /* AtmosphereCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000ATMOCR01 /* AtmosphereCard.swift */; };
 		CC01000100000000DATACB01 /* DataCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000DATACR01 /* DataCard.swift */; };
+		CC01000100000000CONNCB01 /* ConnectCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000CONNCR01 /* ConnectCard.swift */; };
 		CC01000100000000PERMCB01 /* PermissionsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PERMCR01 /* PermissionsCard.swift */; };
 		CC01000100000000PRACCB01 /* PracticeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACCR01 /* PracticeCard.swift */; };
 		CC01000100000000PRACSH01 /* PracticeSummaryHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */; };
@@ -687,6 +688,7 @@
 		CC00000100000000WKSTRT01 /* WalkStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStartView.swift; sourceTree = "<group>"; };
 		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
 		CC01000100000000ATMOCR01 /* AtmosphereCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtmosphereCard.swift; sourceTree = "<group>"; };
+		CC01000100000000CONNCR01 /* ConnectCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectCard.swift; sourceTree = "<group>"; };
 		CC01000100000000DATACR01 /* DataCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataCard.swift; sourceTree = "<group>"; };
 		CC01000100000000PERMCR01 /* PermissionsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsCard.swift; sourceTree = "<group>"; };
 		CC01000100000000PRACCR01 /* PracticeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeCard.swift; sourceTree = "<group>"; };
@@ -1610,6 +1612,7 @@
 				CC01000100000000VOICCR01 /* VoiceCard.swift */,
 				CC01000100000000PERMCR01 /* PermissionsCard.swift */,
 				CC01000100000000DATACR01 /* DataCard.swift */,
+				CC01000100000000CONNCR01 /* ConnectCard.swift */,
 			);
 			path = SettingsCards;
 			sourceTree = "<group>";
@@ -2095,6 +2098,7 @@
 				CC01000100000000VOICCB01 /* VoiceCard.swift in Sources */,
 				CC01000100000000PERMCB01 /* PermissionsCard.swift in Sources */,
 				CC01000100000000DATACB01 /* DataCard.swift in Sources */,
+				CC01000100000000CONNCB01 /* ConnectCard.swift in Sources */,
 				CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */,
 				CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */,
 				CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */,
