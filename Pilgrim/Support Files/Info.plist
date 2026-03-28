@@ -32,8 +32,6 @@
 	<string>$(WEATHERKIT_TEAM_ID)</string>
 	<key>WeatherKitPrivateKey</key>
 	<string>$(WEATHERKIT_PRIVATE_KEY)</string>
-	<key>GitHubPodcastPAT</key>
-	<string>$(GITHUB_PODCAST_PAT)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>

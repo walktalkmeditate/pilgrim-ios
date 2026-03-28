@@ -30,7 +30,7 @@ struct WalkSharingButtons: View {
                 .cornerRadius(Constants.UI.CornerRadius.normal)
 
                 if PodcastSubmissionService.shared.isEligible(walk: walk) {
-                    PodcastSubmissionView(walk: walk, onDismiss: {})
+                    PodcastSubmissionView(walk: walk)
                 }
             }
             .sheet(isPresented: $showJourneySheet) {

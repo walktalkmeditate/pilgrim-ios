@@ -3,7 +3,6 @@ import SwiftUI
 struct PodcastSubmissionView: View {
 
     let walk: WalkInterface
-    let onDismiss: () -> Void
 
     @State private var consentChecked = false
     @State private var isSubmitting = false
@@ -143,7 +142,7 @@ struct PodcastSubmissionView: View {
         isSubmitting = true
         errorMessage = nil
 
-        let deviceToken = deviceIdentifier()
+        let deviceToken = ShareService.deviceTokenForFeedback()
 
         Task {
             do {
@@ -161,12 +160,4 @@ struct PodcastSubmissionView: View {
         }
     }
 
-    private func deviceIdentifier() -> String {
-        if let existing = UserDefaults.standard.string(forKey: "pilgrim_device_token") {
-            return existing
-        }
-        let token = UUID().uuidString
-        UserDefaults.standard.set(token, forKey: "pilgrim_device_token")
-        return token
-    }
 }

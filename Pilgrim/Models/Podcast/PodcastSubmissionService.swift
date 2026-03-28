@@ -90,6 +90,10 @@ final class PodcastSubmissionService {
             }
         }
 
+        guard !uploadedRecordings.isEmpty else {
+            throw SubmissionError.noRecordingsFound
+        }
+
         try await submitMetadata(
             walk: walk,
             submissionId: submissionId,
@@ -152,19 +156,24 @@ final class PodcastSubmissionService {
             }
         }
 
+        var metadata: [String: Any] = [
+            "distance_km": walk.distance / 1000,
+            "active_duration": walk.activeDuration,
+            "talk_duration": walk.talkDuration,
+            "meditate_duration": walk.meditateDuration,
+            "date": Self.todayString(),
+        ]
+        if let weather { metadata["weather"] = weather }
+        if let intention = walk.comment { metadata["intention"] = intention }
+        if let lat = first?.latitude, let lon = first?.longitude {
+            metadata["start_lat"] = lat
+            metadata["start_lon"] = lon
+            metadata["location"] = String(format: "%.4f, %.4f", lat, lon)
+        }
+
         let payload: [String: Any] = [
             "submission_id": submissionId,
-            "metadata": [
-                "weather": weather as Any,
-                "intention": walk.comment as Any,
-                "distance_km": walk.distance / 1000,
-                "active_duration": walk.activeDuration,
-                "talk_duration": walk.talkDuration,
-                "meditate_duration": walk.meditateDuration,
-                "date": Self.todayString(),
-                "start_lat": first?.latitude as Any,
-                "start_lon": first?.longitude as Any,
-            ],
+            "metadata": metadata,
             "recordings": recordings.map { rec in
                 var dict: [String: Any] = [
                     "file_name": rec.fileName,
@@ -243,22 +252,30 @@ final class PodcastSubmissionService {
         return String((0..<12).map { _ in chars.randomElement()! })
     }
 
-    private static func todayString() -> String {
+    private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: Date())
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f
+    }()
+
+    private static func todayString() -> String {
+        dayFormatter.string(from: Date())
     }
 
     enum SubmissionError: LocalizedError {
         case uploadFailed(String)
         case submissionFailed
         case splitFailed
+        case noRecordingsFound
 
         var errorDescription: String? {
             switch self {
             case .uploadFailed(let name): return "Failed to upload \(name)."
             case .submissionFailed: return "Failed to submit walk."
             case .splitFailed: return "Failed to split audio recording."
+            case .noRecordingsFound: return "No audio files found on this device."
             }
         }
     }
