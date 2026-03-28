@@ -64,7 +64,7 @@ struct WalkShareView: View {
                 }
             }
             .onChange(of: isShared) { _, shared in
-                guard shared,
+                guard shared, !showPodcastCard,
                       PodcastSubmissionService.shared.isEligible(walk: walk) else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                     withAnimation(.easeOut(duration: 0.5)) {

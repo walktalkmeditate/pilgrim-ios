@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct PodcastSubmissionView: View {
 
@@ -10,6 +11,7 @@ struct PodcastSubmissionView: View {
     @State private var submitted = false
     @State private var errorMessage: String?
     @State private var reflection = ""
+    @State private var showMicDenied = false
     @StateObject private var recorder = IntentionVoiceRecorder()
 
     private let service = PodcastSubmissionService.shared
@@ -91,15 +93,15 @@ struct PodcastSubmissionView: View {
 
                 HStack {
                     Button {
-                        recorder.startRecording()
+                        startVoiceRecording()
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "mic")
                                 .font(.caption)
-                            Text("Voice")
+                            Text(showMicDenied ? "Mic access needed" : "Voice")
                                 .font(Constants.Typography.caption)
                         }
-                        .foregroundColor(.fog)
+                        .foregroundColor(showMicDenied ? .rust : .fog)
                     }
 
                     Spacer()
@@ -231,6 +233,29 @@ struct PodcastSubmissionView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(.vertical, Constants.UI.Padding.normal)
+    }
+
+    // MARK: - Voice
+
+    private func startVoiceRecording() {
+        switch AVAudioSession.sharedInstance().recordPermission {
+        case .granted:
+            recorder.startRecording()
+        case .denied:
+            showMicDenied = true
+        case .undetermined:
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        recorder.startRecording()
+                    } else {
+                        showMicDenied = true
+                    }
+                }
+            }
+        @unknown default:
+            break
+        }
     }
 
     // MARK: - Action
