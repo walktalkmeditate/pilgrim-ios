@@ -19,6 +19,15 @@ struct ActiveWalkView: View {
     @State private var greetingGeneration = 0
     @State private var celestialGreetingGeneration = 0
     @State private var celestialSnapshot: CelestialSnapshot?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var isLargeText: Bool {
+        dynamicTypeSize >= .accessibility2
+    }
+
+    private var mapHeightFraction: CGFloat {
+        isLargeText ? 0.35 : 0.6
+    }
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -34,7 +43,7 @@ struct ActiveWalkView: View {
 
                 VStack(spacing: 0) {
                     ZStack(alignment: .bottom) {
-                        mapSection(height: geometry.size.height * 0.6)
+                        mapSection(height: geometry.size.height * mapHeightFraction)
                         LinearGradient(
                             colors: [.clear, .parchment],
                             startPoint: .top,
@@ -352,17 +361,20 @@ struct ActiveWalkView: View {
     }
 
     private var statsSection: some View {
-        VStack(spacing: Constants.UI.Padding.normal) {
+        VStack(spacing: isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.normal) {
             VStack(spacing: 4) {
                 Text(viewModel.duration)
                     .font(Constants.Typography.timer)
                     .foregroundColor(.ink)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
 
                 Text(viewModel.intention ?? "every step is enough")
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog.opacity(0.6))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.7)
             }
             .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)
 
@@ -371,8 +383,9 @@ struct ActiveWalkView: View {
                 StatItem(label: "Steps", value: viewModel.steps)
                 StatItem(label: "Ascent", value: viewModel.ascent)
             }
+            .minimumScaleFactor(0.6)
 
-            HStack(spacing: Constants.UI.Padding.big) {
+            HStack(spacing: isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.big) {
                 TimeMetricItem(label: "Walk", value: viewModel.walkTime, icon: "figure.walk",
                                isActive: !viewModel.isRecordingVoice && !viewModel.isMeditating)
                 TimeMetricItem(label: "Talk", value: viewModel.talkTime, icon: "waveform",
@@ -380,27 +393,32 @@ struct ActiveWalkView: View {
                 TimeMetricItem(label: "Meditate", value: viewModel.meditateTime, icon: "brain.head.profile",
                                isActive: viewModel.isMeditating)
             }
+            .minimumScaleFactor(0.5)
         }
-        .padding(.vertical, Constants.UI.Padding.normal)
+        .padding(.vertical, isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.normal)
         .padding(.horizontal, Constants.UI.Padding.normal)
     }
 
     private var micButton: some View {
         let isActive = viewModel.isRecordingVoice
+        let size: CGFloat = isLargeText ? 80 : 72
         return Button(action: { viewModel.toggleVoiceRecording() }) {
-            VStack(spacing: 6) {
+            VStack(spacing: isLargeText ? 2 : 6) {
                 if isActive {
                     AudioWaveformView(level: viewModel.audioLevel)
                         .frame(width: 36, height: 24)
                 } else {
                     Image(systemName: "mic")
-                        .font(.title2)
+                        .font(isLargeText ? .body : .title2)
+                        .frame(height: isLargeText ? 20 : 24)
                 }
                 Text(isActive ? "Stop" : "Record")
                     .font(Constants.Typography.caption)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
             }
             .foregroundColor(.rust)
-            .frame(width: 72, height: 72)
+            .frame(width: size, height: size)
             .background(
                 Circle()
                     .fill(Color.rust.opacity(isActive ? 0.15 : 0.06))
@@ -485,15 +503,19 @@ struct ActiveWalkView: View {
     }
 
     private func actionButton(_ title: String, systemImage: String, color: Color, isFilled: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
+        let size: CGFloat = isLargeText ? 80 : 72
+        return Button(action: action) {
+            VStack(spacing: isLargeText ? 2 : 6) {
                 Image(systemName: systemImage)
-                    .font(.title2)
+                    .font(isLargeText ? .body : .title2)
+                    .frame(height: isLargeText ? 20 : 24)
                 Text(title)
                     .font(Constants.Typography.caption)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
             }
             .foregroundColor(color)
-            .frame(width: 72, height: 72)
+            .frame(width: size, height: size)
             .background(
                 Circle()
                     .fill(color.opacity(isFilled ? 0.12 : 0.06))
@@ -520,9 +542,13 @@ struct TimeMetricItem: View {
             Text(value)
                 .font(Constants.Typography.statValue)
                 .foregroundColor(.ink)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
             Text(label)
                 .font(Constants.Typography.statLabel)
                 .foregroundColor(.fog)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
     }

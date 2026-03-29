@@ -3,6 +3,16 @@
     {
       "filename" : "pilgrimLogo.png",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "pilgrimLogo-dark.png",
+      "idiom" : "universal"
     }
   ],
   "info" : {

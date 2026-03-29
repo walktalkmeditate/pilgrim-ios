@@ -625,9 +625,13 @@ struct MeditationView: View {
                                 Text(r.name)
                                     .font(Constants.Typography.body)
                                     .foregroundColor(Color.ink.opacity(0.9))
+                                    .minimumScaleFactor(0.7)
+                                    .lineLimit(1)
                                 Text(r.label)
                                     .font(Constants.Typography.caption)
                                     .foregroundColor(Color.fog.opacity(0.4))
+                                    .minimumScaleFactor(0.7)
+                                    .lineLimit(1)
                             }
                             Text(r.description)
                                 .font(Constants.Typography.caption)

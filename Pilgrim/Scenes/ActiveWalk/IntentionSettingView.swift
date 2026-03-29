@@ -17,33 +17,36 @@ struct IntentionSettingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
-                .padding(.top, 12)
+            ScrollView {
+                VStack(spacing: 0) {
+                    header
+                        .padding(.top, 12)
 
-            if recorder.isRecording {
-                voiceRecordingView
-                    .padding(.top, Constants.UI.Padding.big)
-            } else if recorder.isTranscribing {
-                transcribingView
-                    .padding(.top, Constants.UI.Padding.big)
-            } else {
-                textInputSection
-                    .padding(.top, Constants.UI.Padding.big)
+                    if recorder.isRecording {
+                        voiceRecordingView
+                            .padding(.top, Constants.UI.Padding.big)
+                    } else if recorder.isTranscribing {
+                        transcribingView
+                            .padding(.top, Constants.UI.Padding.big)
+                    } else {
+                        textInputSection
+                            .padding(.top, Constants.UI.Padding.big)
 
-                if text.isEmpty {
-                    if UserPreferences.celestialAwarenessEnabled.value {
-                        celestialSuggestions
-                            .padding(.top, Constants.UI.Padding.normal)
-                    }
+                        if text.isEmpty {
+                            if UserPreferences.celestialAwarenessEnabled.value {
+                                celestialSuggestions
+                                    .padding(.top, Constants.UI.Padding.normal)
+                            }
 
-                    if !historyStore.intentions.isEmpty {
-                        historySection
-                            .padding(.top, Constants.UI.Padding.normal)
+                            if !historyStore.intentions.isEmpty {
+                                historySection
+                                    .padding(.top, Constants.UI.Padding.normal)
+                            }
+                        }
                     }
                 }
             }
-
-            Spacer()
+            .scrollDismissesKeyboard(.interactively)
 
             bottomButtons
                 .padding(.bottom, Constants.UI.Padding.big)

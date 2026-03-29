@@ -81,6 +81,8 @@ func settingNavRow(label: String, detail: String? = nil) -> some View {
             Text(detail)
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
         }
         Image(systemName: "chevron.right")
             .font(Constants.Typography.caption)

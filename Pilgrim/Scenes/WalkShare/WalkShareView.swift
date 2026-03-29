@@ -188,6 +188,8 @@ struct WalkShareView: View {
         } label: {
             Text(option.label)
                 .font(Constants.Typography.caption)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(isSelected ? Color.stone : Color.parchmentSecondary)
@@ -259,6 +261,8 @@ struct WalkShareView: View {
                             Image(systemName: showCopiedToast ? "checkmark" : "doc.on.doc")
                             Text(showCopiedToast ? "Copied" : "Copy")
                                 .font(Constants.Typography.button)
+                                .minimumScaleFactor(0.8)
+                                .lineLimit(1)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -273,6 +277,8 @@ struct WalkShareView: View {
                                 Image(systemName: "square.and.arrow.up")
                                 Text("Share")
                                     .font(Constants.Typography.button)
+                                    .minimumScaleFactor(0.8)
+                                    .lineLimit(1)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)

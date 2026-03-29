@@ -21,11 +21,15 @@ struct PracticeSummaryHeader: View {
                     .foregroundColor(.fog)
                     .opacity(0.3)
             }
+            .minimumScaleFactor(0.7)
+            .lineLimit(1)
 
             if walkCount > 0 {
                 Text(currentStatLine)
                     .font(Constants.Typography.body)
                     .foregroundColor(.stone)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
                     .contentTransition(.numericText())
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -42,6 +46,8 @@ struct PracticeSummaryHeader: View {
                     Text(collectiveStatsLine(stats))
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
                     if let streak = stats.streakDays, streak > 1 {
                         StreakFlameView(days: streak)
                             .padding(.top, 2)

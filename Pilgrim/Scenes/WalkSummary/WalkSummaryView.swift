@@ -311,6 +311,8 @@ struct WalkSummaryView: View {
             Text(text)
                 .font(Constants.Typography.caption)
                 .foregroundColor(.ink)
+                .minimumScaleFactor(0.7)
+                .lineLimit(2)
         }
         .padding(.horizontal, Constants.UI.Padding.normal)
         .padding(.vertical, Constants.UI.Padding.small)
@@ -443,6 +445,7 @@ struct WalkSummaryView: View {
                 miniStat(label: "Elevation", value: formatElevation(walk.ascend))
             }
         }
+        .minimumScaleFactor(0.7)
         .opacity(revealPhase == .revealed ? 1 : 0)
         .animation(.easeIn(duration: 0.6).delay(0.2), value: revealPhase)
     }
@@ -472,6 +475,8 @@ struct WalkSummaryView: View {
                     .font(Constants.Typography.caption)
             }
             .foregroundColor(.fog)
+            .minimumScaleFactor(0.7)
+            .lineLimit(1)
             .opacity(revealPhase == .revealed ? 1 : 0)
             .animation(.easeIn(duration: 0.6).delay(0.2), value: revealPhase)
         }
@@ -495,6 +500,8 @@ struct WalkSummaryView: View {
                 }
             }
             .foregroundColor(.fog)
+            .minimumScaleFactor(0.7)
+            .lineLimit(1)
             .opacity(revealPhase == .revealed ? 1 : 0)
             .animation(.easeIn(duration: 0.6).delay(0.3), value: revealPhase)
         }
@@ -651,6 +658,7 @@ struct WalkSummaryView: View {
             Text("Voice Recordings")
                 .font(Constants.Typography.heading)
                 .foregroundColor(.ink)
+                .minimumScaleFactor(0.7)
             Spacer()
 
             if hasUntranscribedRecordings && !isTranscribing {
@@ -658,6 +666,7 @@ struct WalkSummaryView: View {
                     Label("Transcribe", systemImage: "text.badge.plus")
                         .font(Constants.Typography.caption)
                         .foregroundColor(.stone)
+                        .minimumScaleFactor(0.7)
                 }
             }
 
