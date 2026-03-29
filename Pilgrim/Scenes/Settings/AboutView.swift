@@ -11,7 +11,9 @@ struct AboutView: View {
     @State private var statMode: StatMode = .distance
     @State private var safariURL: IdentifiableURL?
     @State private var appeared = false
+    @State private var showIconConfirmation = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("selectedVoiceGuidePackId") private var selectedGuideId: String?
 
     var body: some View {
         ScrollView {
@@ -29,6 +31,7 @@ struct AboutView: View {
                 divider
                 motto
                 seasonalVignette
+
                 version
             }
             .padding(.horizontal, Constants.UI.Padding.big)
@@ -55,6 +58,30 @@ struct AboutView: View {
         .sheet(item: $safariURL) { item in
             SafariView(url: item.url)
         }
+        .confirmationDialog(
+            iconDialogTitle,
+            isPresented: $showIconConfirmation,
+            titleVisibility: .visible
+        ) {
+            if let guideId = UserPreferences.voiceGuideEnabled.value ? selectedGuideId : nil,
+               let iconName = PilgrimLogoView.appIconName(for: guideId),
+               UIApplication.shared.alternateIconName != iconName {
+                Button("Use as app icon") {
+                    setAlternateIcon(iconName)
+                }
+            }
+            if UIApplication.shared.alternateIconName != "AppIconDark" {
+                Button("Use dark icon") {
+                    setAlternateIcon("AppIconDark")
+                }
+            }
+            if let current = UIApplication.shared.alternateIconName, current != "AppIconDefault" {
+                Button("Reset to default") {
+                    setAlternateIcon("AppIconDefault")
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     // MARK: - Hero
@@ -62,6 +89,7 @@ struct AboutView: View {
     private var hero: some View {
         VStack(spacing: Constants.UI.Padding.normal) {
             PilgrimLogoView(size: 80, animated: !reduceMotion, breathing: $breathing)
+                .onTapGesture { showIconConfirmation = true }
                 .padding(.top, Constants.UI.Padding.big + Constants.UI.Padding.normal)
 
             Text("Every walk is a\nsmall pilgrimage.")
@@ -338,6 +366,25 @@ struct AboutView: View {
         }
     }
 
+    // MARK: - App Icon
+
+    private var iconDialogTitle: String {
+        if UserPreferences.voiceGuideEnabled.value,
+           let guideId = selectedGuideId,
+           let pack = VoiceGuideManifestService.shared.pack(byId: guideId) {
+            return "\(pack.name)\n\(pack.tagline)"
+        }
+        return "App Icon"
+    }
+
+    private func setAlternateIcon(_ name: String?) {
+        UIApplication.shared.setAlternateIconName(name) { error in
+            if let error {
+                print("[AppIcon] Failed to set icon '\(name ?? "default")': \(error.localizedDescription)")
+            }
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatDistance(_ meters: Double) -> String {
@@ -403,3 +450,4 @@ private extension View {
         modifier(SectionAppearModifier(index: index, appeared: appeared, reduceMotion: reduceMotion))
     }
 }
+

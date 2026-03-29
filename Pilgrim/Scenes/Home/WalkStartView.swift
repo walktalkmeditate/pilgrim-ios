@@ -40,9 +40,7 @@ struct WalkStartView: View {
             runEntrance()
         }
         .onChange(of: selectedMode) { _, mode in
-            withAnimation(.easeInOut(duration: 0.4)) {
-                currentQuote = mode.quotes.randomElement() ?? ""
-            }
+            currentQuote = mode.quotes.randomElement() ?? ""
         }
         .onChange(of: selectedMode) { _, newMode in
             if UIAccessibility.isReduceMotionEnabled {
@@ -175,6 +173,8 @@ struct WalkStartView: View {
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
                         .lineLimit(isHomeLargeText ? 3 : 4)
+                        .contentTransition(.opacity)
+                        .animation(.easeInOut(duration: 0.4), value: currentQuote)
                         .opacity(showQuote ? 1 : 0)
 
                     if !isHomeLargeText {

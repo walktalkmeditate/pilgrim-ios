@@ -2475,6 +2475,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = accentColor;
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;
@@ -2500,6 +2501,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = accentColor;
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;

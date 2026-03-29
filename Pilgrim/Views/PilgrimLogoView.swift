@@ -9,6 +9,17 @@ struct PilgrimLogoView: View {
 
     @State private var appeared = false
     @State private var breathScale: CGFloat = 1.0
+    @AppStorage("selectedVoiceGuidePackId") private var selectedGuideId: String?
+    @AppStorage("voiceGuideEnabled") private var voiceGuideEnabled = false
+
+    private static let guideIds: Set<String> = ["breeze", "drift", "dusk", "ember", "river", "sage", "stone"]
+
+    private var logoImageName: String {
+        if voiceGuideEnabled, let id = selectedGuideId, Self.guideIds.contains(id) {
+            return "pilgrimLogo-\(id)"
+        }
+        return "pilgrimLogo"
+    }
 
     init(size: CGFloat = 80, color: Color = .stone, animated: Bool = false, breathing: Binding<Bool> = .constant(false)) {
         self.size = size
@@ -18,7 +29,7 @@ struct PilgrimLogoView: View {
     }
 
     var body: some View {
-        Image("pilgrimLogo")
+        Image(logoImageName)
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: size, height: size)
@@ -32,7 +43,7 @@ struct PilgrimLogoView: View {
                     }
                 }
             }
-            .onChange(of: breathing) { isBreathing in
+            .onChange(of: breathing) { _, isBreathing in
                 if isBreathing {
                     withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
                         breathScale = 1.02
@@ -43,5 +54,10 @@ struct PilgrimLogoView: View {
                     }
                 }
             }
+    }
+
+    static func appIconName(for guideId: String?) -> String? {
+        guard let id = guideId, guideIds.contains(id) else { return nil }
+        return "AppIcon\(id.prefix(1).uppercased())\(id.dropFirst())"
     }
 }
