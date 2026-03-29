@@ -139,40 +139,55 @@ struct WalkStartView: View {
 
     // MARK: - Content
 
+    @Environment(\.dynamicTypeSize) private var homeTypeSize
+
+    private var isHomeLargeText: Bool {
+        homeTypeSize >= .accessibility1
+    }
+
     private var content: some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 40)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    Spacer(minLength: isHomeLargeText ? 16 : 40)
 
-            PilgrimLogoView(size: 100, breathing: $breathing)
-                .scaleEffect(collectivePulse ? 1.03 : 1.0)
-                .shadow(color: .stone.opacity(collectivePulse ? 0.3 : 0), radius: collectivePulse ? 12 : 0)
-                .animation(
-                    collectivePulse
-                        ? .easeInOut(duration: 1.2).repeatForever(autoreverses: true)
-                        : .default,
-                    value: collectivePulse
-                )
-                .opacity(showLogo ? 1 : 0)
-                .scaleEffect(showLogo ? 1.0 : 0.95)
-                .padding(.bottom, Constants.UI.Padding.big)
-                .onReceive(counterService.$stats) { stats in
-                    if let stats, stats.walkedInLastHour, !collectivePulse {
-                        collectivePulse = true
+                    PilgrimLogoView(size: isHomeLargeText ? 60 : 100, breathing: $breathing)
+                        .scaleEffect(collectivePulse ? 1.03 : 1.0)
+                        .shadow(color: .stone.opacity(collectivePulse ? 0.3 : 0), radius: collectivePulse ? 12 : 0)
+                        .animation(
+                            collectivePulse
+                                ? .easeInOut(duration: 1.2).repeatForever(autoreverses: true)
+                                : .default,
+                            value: collectivePulse
+                        )
+                        .opacity(showLogo ? 1 : 0)
+                        .scaleEffect(showLogo ? 1.0 : 0.95)
+                        .padding(.bottom, Constants.UI.Padding.big)
+                        .onReceive(counterService.$stats) { stats in
+                            if let stats, stats.walkedInLastHour, !collectivePulse {
+                                collectivePulse = true
+                            }
+                        }
+
+                    Text(currentQuote)
+                        .font(Constants.Typography.displayMedium)
+                        .foregroundColor(.fog)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.6)
+                        .opacity(showQuote ? 1 : 0)
+
+                    if !isHomeLargeText {
+                        Spacer(minLength: 20)
+
+                        MoonPhaseView(phase: lunarPhase)
+                            .opacity(showMoon ? 1 : 0)
+
+                        Spacer(minLength: 20)
+                    } else {
+                        Spacer(minLength: 16)
                     }
                 }
-
-            Text(currentQuote)
-                .font(Constants.Typography.displayMedium)
-                .foregroundColor(.fog)
-                .multilineTextAlignment(.center)
-                .opacity(showQuote ? 1 : 0)
-
-            Spacer()
-
-            MoonPhaseView(phase: lunarPhase)
-                .opacity(showMoon ? 1 : 0)
-
-            Spacer()
+            }
 
             modeSelector
                 .padding(.bottom, Constants.UI.Padding.normal)
@@ -180,6 +195,8 @@ struct WalkStartView: View {
             Button(action: { onStartWalk(selectedMode) }) {
                 Text(selectedMode.buttonLabel)
                     .font(Constants.Typography.button)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
                     .foregroundColor(.parchment)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
