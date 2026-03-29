@@ -401,7 +401,6 @@ struct ActiveWalkView: View {
 
     private var micButton: some View {
         let isActive = viewModel.isRecordingVoice
-        let size: CGFloat = isLargeText ? 60 : 72
         return Button(action: { viewModel.toggleVoiceRecording() }) {
             VStack(spacing: isLargeText ? 2 : 6) {
                 if isActive {
@@ -417,7 +416,9 @@ struct ActiveWalkView: View {
                     .lineLimit(1)
             }
             .foregroundColor(.rust)
-            .frame(width: size, height: size)
+            .frame(minWidth: 60, minHeight: 60)
+            .frame(maxWidth: 72, maxHeight: 72)
+            .padding(4)
             .background(
                 Circle()
                     .fill(Color.rust.opacity(isActive ? 0.15 : 0.06))
@@ -502,8 +503,7 @@ struct ActiveWalkView: View {
     }
 
     private func actionButton(_ title: String, systemImage: String, color: Color, isFilled: Bool = false, action: @escaping () -> Void) -> some View {
-        let size: CGFloat = isLargeText ? 60 : 72
-        return Button(action: action) {
+        Button(action: action) {
             VStack(spacing: isLargeText ? 2 : 6) {
                 Image(systemName: systemImage)
                     .font(isLargeText ? .body : .title2)
@@ -513,7 +513,9 @@ struct ActiveWalkView: View {
                     .lineLimit(1)
             }
             .foregroundColor(color)
-            .frame(width: size, height: size)
+            .frame(minWidth: 60, minHeight: 60)
+            .frame(maxWidth: 72, maxHeight: 72)
+            .padding(4)
             .background(
                 Circle()
                     .fill(color.opacity(isFilled ? 0.12 : 0.06))

@@ -377,8 +377,9 @@ struct WalkStartView: View {
                                 Text(mode.rawValue.uppercased())
                                     .font(Constants.Typography.button)
                                     .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
-                                    .minimumScaleFactor(0.6)
+                                    .minimumScaleFactor(0.5)
                                     .lineLimit(1)
+                                    .frame(maxWidth: .infinity)
                                 trailUnderline(for: mode)
                                     .frame(height: 2)
                             }
