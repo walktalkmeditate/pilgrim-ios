@@ -24,12 +24,8 @@ jobs:
           WK_TEAM_ID: ${{ secrets.WEATHERKIT_TEAM_ID }}
           WK_PRIVATE_KEY: ${{ secrets.WEATHERKIT_PRIVATE_KEY }}
         run: |
-          cat > Secrets.xcconfig << EOF
-          MAPBOX_ACCESS_TOKEN = ${MAPBOX_TOKEN:-pk.placeholder}
-          WEATHERKIT_KEY_ID = ${WK_KEY_ID:-placeholder}
-          WEATHERKIT_TEAM_ID = ${WK_TEAM_ID:-placeholder}
-          WEATHERKIT_PRIVATE_KEY = ${WK_PRIVATE_KEY:-placeholder}
-          EOF
+          printf 'MAPBOX_ACCESS_TOKEN = %s\nWEATHERKIT_KEY_ID = %s\nWEATHERKIT_TEAM_ID = %s\nWEATHERKIT_PRIVATE_KEY = %s\n' \
+            "$MAPBOX_TOKEN" "$WK_KEY_ID" "$WK_TEAM_ID" "$WK_PRIVATE_KEY" > Secrets.xcconfig
 
       - name: Setup Mapbox netrc
         env:
