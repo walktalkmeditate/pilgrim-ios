@@ -13,9 +13,13 @@ struct SummaryCard: View {
             Text(value)
                 .font(Constants.Typography.statValue)
                 .foregroundColor(.ink)
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
             Text(title)
                 .font(Constants.Typography.statLabel)
                 .foregroundColor(.fog)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
         .padding(Constants.UI.Padding.normal)

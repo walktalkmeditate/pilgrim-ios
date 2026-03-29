@@ -401,6 +401,7 @@ struct ActiveWalkView: View {
 
     private var micButton: some View {
         let isActive = viewModel.isRecordingVoice
+        let size: CGFloat = isLargeText ? 80 : 72
         return Button(action: { viewModel.toggleVoiceRecording() }) {
             VStack(spacing: isLargeText ? 2 : 6) {
                 if isActive {
@@ -409,16 +410,15 @@ struct ActiveWalkView: View {
                 } else {
                     Image(systemName: "mic")
                         .font(isLargeText ? .body : .title2)
+                        .frame(height: isLargeText ? 20 : 24)
                 }
                 Text(isActive ? "Stop" : "Record")
                     .font(Constants.Typography.caption)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.6)
                     .lineLimit(1)
             }
             .foregroundColor(.rust)
-            .frame(minWidth: 60, minHeight: 60)
-            .frame(maxWidth: 72, maxHeight: 72)
-            .padding(4)
+            .frame(width: size, height: size)
             .background(
                 Circle()
                     .fill(Color.rust.opacity(isActive ? 0.15 : 0.06))
@@ -503,19 +503,19 @@ struct ActiveWalkView: View {
     }
 
     private func actionButton(_ title: String, systemImage: String, color: Color, isFilled: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let size: CGFloat = isLargeText ? 80 : 72
+        return Button(action: action) {
             VStack(spacing: isLargeText ? 2 : 6) {
                 Image(systemName: systemImage)
                     .font(isLargeText ? .body : .title2)
+                    .frame(height: isLargeText ? 20 : 24)
                 Text(title)
                     .font(Constants.Typography.caption)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.6)
                     .lineLimit(1)
             }
             .foregroundColor(color)
-            .frame(minWidth: 60, minHeight: 60)
-            .frame(maxWidth: 72, maxHeight: 72)
-            .padding(4)
+            .frame(width: size, height: size)
             .background(
                 Circle()
                     .fill(color.opacity(isFilled ? 0.12 : 0.06))
