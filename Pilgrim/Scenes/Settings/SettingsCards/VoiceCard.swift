@@ -55,6 +55,8 @@ struct VoiceCard: View {
                     Text("Downloading model \(Int(progress * 100))%")
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
                 }
             }
 

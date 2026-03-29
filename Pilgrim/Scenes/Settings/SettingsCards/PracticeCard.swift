@@ -51,6 +51,8 @@ struct PracticeCard: View {
             Text(isMetric ? "km \u{00B7} min/km \u{00B7} m \u{00B7} \u{00B0}C" : "mi \u{00B7} min/mi \u{00B7} ft \u{00B7} \u{00B0}F")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
 
             Divider()
 

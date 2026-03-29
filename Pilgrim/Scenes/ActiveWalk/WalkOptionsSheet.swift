@@ -143,6 +143,8 @@ struct WalkOptionsSheet: View {
                     Text(title)
                         .font(Constants.Typography.body)
                         .foregroundColor(.ink.opacity(0.9))
+                        .minimumScaleFactor(0.8)
+                        .lineLimit(1)
 
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)

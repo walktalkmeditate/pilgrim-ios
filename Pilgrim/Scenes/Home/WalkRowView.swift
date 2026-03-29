@@ -17,6 +17,8 @@ struct WalkRowView: View {
                 Text(statsString)
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
             }
 
             Spacer()
