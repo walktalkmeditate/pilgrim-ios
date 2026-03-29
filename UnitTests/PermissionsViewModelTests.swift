@@ -10,22 +10,21 @@ final class PermissionsViewModelTests: XCTestCase {
         XCTAssertFalse(vm.motionGranted)
     }
 
-    func testCanTransition_requiresLocationAndMicrophone() {
+    func testCanTransition_requiresLocationOnly() {
         let vm = PermissionsViewModel(permissionManager: nil, onComplete: {})
         XCTAssertFalse(vm.canTransition)
 
         vm.locationGranted = true
-        XCTAssertFalse(vm.canTransition)
-
-        vm.microphoneGranted = true
         XCTAssertTrue(vm.canTransition)
     }
 
-    func testCanTransition_doesNotRequireMotion() {
+    func testCanTransition_doesNotRequireMicOrMotion() {
         let vm = PermissionsViewModel(permissionManager: nil, onComplete: {})
         vm.locationGranted = true
-        vm.microphoneGranted = true
         XCTAssertTrue(vm.canTransition)
+
+        XCTAssertFalse(vm.microphoneGranted)
+        XCTAssertFalse(vm.motionGranted)
     }
 
     func testProceed_callsOnComplete() {
@@ -35,10 +34,12 @@ final class PermissionsViewModelTests: XCTestCase {
         XCTAssertTrue(called)
     }
 
-    func testProceed_setsMotionDecided() {
+    func testProceed_setsDecidedFlags() {
         let vm = PermissionsViewModel(permissionManager: nil, onComplete: {})
+        XCTAssertFalse(vm.microphoneDecided)
         XCTAssertFalse(vm.motionDecided)
         vm.proceed()
+        XCTAssertTrue(vm.microphoneDecided)
         XCTAssertTrue(vm.motionDecided)
     }
 
@@ -46,11 +47,5 @@ final class PermissionsViewModelTests: XCTestCase {
         let vm = PermissionsViewModel(permissionManager: nil, onComplete: {})
         vm.handleLocationDenied()
         XCTAssertTrue(vm.locationDenied)
-    }
-
-    func testMicrophoneDenied_setsFlag() {
-        let vm = PermissionsViewModel(permissionManager: nil, onComplete: {})
-        vm.handleMicrophoneDenied()
-        XCTAssertTrue(vm.microphoneDenied)
     }
 }

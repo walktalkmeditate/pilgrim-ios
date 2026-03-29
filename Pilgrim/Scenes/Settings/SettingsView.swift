@@ -34,8 +34,10 @@ struct SettingsView: View {
                         .cardEntrance(hasAppeared: hasAppeared, delay: 0.4, reduceMotion: reduceMotion)
                     DataCard()
                         .cardEntrance(hasAppeared: hasAppeared, delay: 0.5, reduceMotion: reduceMotion)
-                    aboutLink
+                    ConnectCard()
                         .cardEntrance(hasAppeared: hasAppeared, delay: 0.6, reduceMotion: reduceMotion)
+                    aboutLink
+                        .cardEntrance(hasAppeared: hasAppeared, delay: 0.7, reduceMotion: reduceMotion)
                 }
                 .padding(.horizontal, Constants.UI.Padding.normal)
                 .padding(.bottom, Constants.UI.Padding.breathingRoom)

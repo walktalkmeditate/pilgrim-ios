@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct IntentionSettingView: View {
 
@@ -8,6 +9,7 @@ struct IntentionSettingView: View {
 
     @State private var text = ""
     @State private var cachedSuggestions: [String] = []
+    @State private var showMicDenied = false
     @StateObject private var recorder = IntentionVoiceRecorder()
     @FocusState private var isTextFieldFocused: Bool
 
@@ -90,15 +92,15 @@ struct IntentionSettingView: View {
             HStack {
                 Button {
                     isTextFieldFocused = false
-                    recorder.startRecording()
+                    startVoiceRecording()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "mic")
                             .font(.caption)
-                        Text("Voice")
+                        Text(showMicDenied ? "Mic access needed" : "Voice")
                             .font(Constants.Typography.caption)
                     }
-                    .foregroundColor(.fog)
+                    .foregroundColor(showMicDenied ? .rust : .fog)
                 }
 
                 Spacer()
@@ -278,6 +280,29 @@ struct IntentionSettingView: View {
             Text("Transcribing...")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
+        }
+    }
+
+    // MARK: - Voice Permission
+
+    private func startVoiceRecording() {
+        switch AVAudioSession.sharedInstance().recordPermission {
+        case .granted:
+            recorder.startRecording()
+        case .denied:
+            showMicDenied = true
+        case .undetermined:
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        recorder.startRecording()
+                    } else {
+                        showMicDenied = true
+                    }
+                }
+            }
+        @unknown default:
+            break
         }
     }
 

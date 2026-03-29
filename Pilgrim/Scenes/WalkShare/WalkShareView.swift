@@ -6,8 +6,12 @@ struct WalkShareView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showCopiedToast = false
     @State private var toastGeneration = 0
+    @State private var showPodcastCard = false
+
+    let walk: WalkInterface
 
     init(walk: WalkInterface) {
+        self.walk = walk
         _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk))
     }
 
@@ -22,6 +26,12 @@ struct WalkShareView: View {
                 VStack(spacing: Constants.UI.Padding.big) {
                     if isShared {
                         shareButton
+                        if showPodcastCard,
+                           PodcastSubmissionService.shared.isEligible(walk: walk),
+                           case .success(let url) = viewModel.shareState {
+                            PodcastSubmissionView(walk: walk, shareURL: url)
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        }
                     } else {
                         routePreview
                         statToggles
@@ -51,6 +61,16 @@ struct WalkShareView: View {
                         Button("Cancel") { dismiss() }
                             .foregroundColor(.stone)
                     }
+                }
+            }
+            .onChange(of: isShared) { _, shared in
+                guard shared, !showPodcastCard,
+                      PodcastSubmissionService.shared.isEligible(walk: walk) else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    withAnimation(.easeOut(duration: 0.5)) {
+                        showPodcastCard = true
+                    }
+                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                 }
             }
         }

@@ -179,6 +179,8 @@
 		567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99D82F6F41030006A58E /* WeatherKitREST.swift */; };
 		567B99EB2F6F83200006A58E /* WalkKoan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99EA2F6F83200006A58E /* WalkKoan.swift */; };
 		567B99F72F701B8D0006A58E /* CollectiveCounterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */; };
+		CC02000100000000PODSVB01 /* PodcastSubmissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC02000100000000PODSVR01 /* PodcastSubmissionService.swift */; };
+		CC02000100000000PODVWB01 /* PodcastSubmissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC02000100000000PODVWR01 /* PodcastSubmissionView.swift */; };
 		567B99F82F701B8D0006A58E /* PilgrimageProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */; };
 		56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */; };
 		56E07B2C2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */; };
@@ -297,6 +299,7 @@
 		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
 		CC01000100000000ATMOCB01 /* AtmosphereCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000ATMOCR01 /* AtmosphereCard.swift */; };
 		CC01000100000000DATACB01 /* DataCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000DATACR01 /* DataCard.swift */; };
+		CC01000100000000CONNCB01 /* ConnectCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000CONNCR01 /* ConnectCard.swift */; };
 		CC01000100000000PERMCB01 /* PermissionsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PERMCR01 /* PermissionsCard.swift */; };
 		CC01000100000000PRACCB01 /* PracticeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACCR01 /* PracticeCard.swift */; };
 		CC01000100000000PRACSH01 /* PracticeSummaryHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000PRACSR01 /* PracticeSummaryHeader.swift */; };
@@ -562,6 +565,8 @@
 		567B99D82F6F41030006A58E /* WeatherKitREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitREST.swift; sourceTree = "<group>"; };
 		567B99EA2F6F83200006A58E /* WalkKoan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkKoan.swift; sourceTree = "<group>"; };
 		567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectiveCounterService.swift; sourceTree = "<group>"; };
+		CC02000100000000PODSVR01 /* PodcastSubmissionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastSubmissionService.swift; sourceTree = "<group>"; };
+		CC02000100000000PODVWR01 /* PodcastSubmissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastSubmissionView.swift; sourceTree = "<group>"; };
 		567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimageProgress.swift; sourceTree = "<group>"; };
 		56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Pilgrim/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		56E07B162F6DDEDE004EBC44 /* ScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -687,6 +692,7 @@
 		CC00000100000000WKSTRT01 /* WalkStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStartView.swift; sourceTree = "<group>"; };
 		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
 		CC01000100000000ATMOCR01 /* AtmosphereCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtmosphereCard.swift; sourceTree = "<group>"; };
+		CC01000100000000CONNCR01 /* ConnectCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectCard.swift; sourceTree = "<group>"; };
 		CC01000100000000DATACR01 /* DataCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataCard.swift; sourceTree = "<group>"; };
 		CC01000100000000PERMCR01 /* PermissionsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsCard.swift; sourceTree = "<group>"; };
 		CC01000100000000PRACCR01 /* PracticeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeCard.swift; sourceTree = "<group>"; };
@@ -1107,6 +1113,7 @@
 				867117AF847684253BE2DFDE /* Prompt */,
 				5AF23B8551BD6D061A516BDA /* Astrology */,
 				567B99F62F701B8D0006A58E /* Collective */,
+				CC02000100000000PODGRP01 /* Podcast */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1416,6 +1423,15 @@
 			path = Collective;
 			sourceTree = "<group>";
 		};
+		CC02000100000000PODGRP01 /* Podcast */ = {
+			isa = PBXGroup;
+			children = (
+				CC02000100000000PODSVR01 /* PodcastSubmissionService.swift */,
+				CC02000100000000PODVWR01 /* PodcastSubmissionView.swift */,
+			);
+			path = Podcast;
+			sourceTree = "<group>";
+		};
 		5AF23B8551BD6D061A516BDA /* Astrology */ = {
 			isa = PBXGroup;
 			children = (
@@ -1610,6 +1626,7 @@
 				CC01000100000000VOICCR01 /* VoiceCard.swift */,
 				CC01000100000000PERMCR01 /* PermissionsCard.swift */,
 				CC01000100000000DATACR01 /* DataCard.swift */,
+				CC01000100000000CONNCR01 /* ConnectCard.swift */,
 			);
 			path = SettingsCards;
 			sourceTree = "<group>";
@@ -1931,6 +1948,8 @@
 			files = (
 				764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */,
 				567B99F72F701B8D0006A58E /* CollectiveCounterService.swift in Sources */,
+				CC02000100000000PODSVB01 /* PodcastSubmissionService.swift in Sources */,
+				CC02000100000000PODVWB01 /* PodcastSubmissionView.swift in Sources */,
 				567B99F82F701B8D0006A58E /* PilgrimageProgress.swift in Sources */,
 				DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */,
 				22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */,
@@ -2095,6 +2114,7 @@
 				CC01000100000000VOICCB01 /* VoiceCard.swift in Sources */,
 				CC01000100000000PERMCB01 /* PermissionsCard.swift in Sources */,
 				CC01000100000000DATACB01 /* DataCard.swift in Sources */,
+				CC01000100000000CONNCB01 /* ConnectCard.swift in Sources */,
 				CC00000200000000CALLIG01 /* CalligraphyPathRenderer.swift in Sources */,
 				CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */,
 				CC00000200000000INKSCR01 /* InkScrollView.swift in Sources */,
@@ -2464,7 +2484,7 @@
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				INFOPLIST_FILE = "$(SRCROOT)/Pilgrim/Support Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2489,7 +2509,7 @@
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				INFOPLIST_FILE = "$(SRCROOT)/Pilgrim/Support Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2512,7 +2532,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = QT27QDFZ7N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2533,7 +2553,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = QT27QDFZ7N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2556,7 +2576,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -2594,7 +2614,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -2628,7 +2648,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -2655,7 +2675,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;

@@ -11,17 +11,6 @@ struct DataCard: View {
             } label: {
                 settingNavRow(label: "Export & Import")
             }
-
-            NavigationLink {
-                FeedbackView()
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    settingNavRow(label: "Leave a Trail Note")
-                    Text("Share a thought, report a bug, or suggest a feature")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                }
-            }
         }
         .settingsCard()
     }

@@ -27,11 +27,11 @@ class PermissionsViewModel: ObservableObject {
     @Published var motionGranted = false
     @Published var locationDenied = false
     @Published var microphoneDenied = false
+    @Published var microphoneDecided = false
     @Published var motionDecided = false
     @Published var shakeLocationCard = false
-    @Published var shakeMicrophoneCard = false
 
-    var canTransition: Bool { locationGranted && microphoneGranted }
+    var canTransition: Bool { locationGranted }
 
     private let permissionManager: PermissionManager?
     private let onComplete: () -> Void
@@ -64,13 +64,14 @@ class PermissionsViewModel: ObservableObject {
     }
 
     func requestMicrophone() {
+        microphoneDecided = true
         permissionManager?.checkMicrophonePermission { [weak self] granted in
             guard let self else { return }
             if granted {
                 self.microphoneGranted = true
                 self.microphoneDenied = false
             } else {
-                self.handleMicrophoneDenied()
+                self.microphoneDenied = true
             }
         }
     }
@@ -90,14 +91,6 @@ class PermissionsViewModel: ObservableObject {
         }
     }
 
-    func handleMicrophoneDenied() {
-        microphoneDenied = true
-        shakeMicrophoneCard = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.shakeMicrophoneCard = false
-        }
-    }
-
     func openSettings() {
         if let url = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(url)
@@ -105,6 +98,7 @@ class PermissionsViewModel: ObservableObject {
     }
 
     func proceed() {
+        microphoneDecided = true
         motionDecided = true
         onComplete()
     }
