@@ -142,7 +142,7 @@ struct WalkStartView: View {
     @Environment(\.dynamicTypeSize) private var homeTypeSize
 
     private var isHomeLargeText: Bool {
-        homeTypeSize >= .accessibility3
+        homeTypeSize >= .accessibility2
     }
 
     private var content: some View {
@@ -173,7 +173,8 @@ struct WalkStartView: View {
                         .font(Constants.Typography.displayMedium)
                         .foregroundColor(.fog)
                         .multilineTextAlignment(.center)
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(isHomeLargeText ? 3 : 4)
                         .opacity(showQuote ? 1 : 0)
 
                     if !isHomeLargeText {
@@ -376,7 +377,8 @@ struct WalkStartView: View {
                                 Text(mode.rawValue.uppercased())
                                     .font(Constants.Typography.button)
                                     .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
-                                    .fixedSize()
+                                    .minimumScaleFactor(0.6)
+                                    .lineLimit(1)
                                 trailUnderline(for: mode)
                                     .frame(height: 2)
                             }
@@ -388,6 +390,8 @@ struct WalkStartView: View {
             Text(selectedMode.isAvailable ? selectedMode.subtitle : "coming soon")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog.opacity(0.5))
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
                 .contentTransition(.opacity)
                 .animation(.easeInOut(duration: 0.3), value: selectedMode)
         }

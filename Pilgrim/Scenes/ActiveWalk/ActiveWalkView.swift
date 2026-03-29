@@ -22,7 +22,7 @@ struct ActiveWalkView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var isLargeText: Bool {
-        dynamicTypeSize >= .accessibility3
+        dynamicTypeSize >= .accessibility2
     }
 
     private var mapHeightFraction: CGFloat {
@@ -385,16 +385,15 @@ struct ActiveWalkView: View {
             }
             .minimumScaleFactor(0.6)
 
-            if !isLargeText {
-                HStack(spacing: Constants.UI.Padding.big) {
-                    TimeMetricItem(label: "Walk", value: viewModel.walkTime, icon: "figure.walk",
-                                   isActive: !viewModel.isRecordingVoice && !viewModel.isMeditating)
-                    TimeMetricItem(label: "Talk", value: viewModel.talkTime, icon: "waveform",
-                                   isActive: viewModel.isRecordingVoice)
-                    TimeMetricItem(label: "Meditate", value: viewModel.meditateTime, icon: "brain.head.profile",
-                                   isActive: viewModel.isMeditating)
-                }
+            HStack(spacing: isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.big) {
+                TimeMetricItem(label: "Walk", value: viewModel.walkTime, icon: "figure.walk",
+                               isActive: !viewModel.isRecordingVoice && !viewModel.isMeditating)
+                TimeMetricItem(label: "Talk", value: viewModel.talkTime, icon: "waveform",
+                               isActive: viewModel.isRecordingVoice)
+                TimeMetricItem(label: "Meditate", value: viewModel.meditateTime, icon: "brain.head.profile",
+                               isActive: viewModel.isMeditating)
             }
+            .minimumScaleFactor(0.5)
         }
         .padding(.vertical, isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.normal)
         .padding(.horizontal, Constants.UI.Padding.normal)
