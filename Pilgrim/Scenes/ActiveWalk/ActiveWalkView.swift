@@ -363,9 +363,6 @@ struct ActiveWalkView: View {
                     .foregroundColor(.fog.opacity(0.6))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-
-
-
             }
             .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)
 
