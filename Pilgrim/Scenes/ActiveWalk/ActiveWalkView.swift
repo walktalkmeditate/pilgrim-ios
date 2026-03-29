@@ -19,9 +19,6 @@ struct ActiveWalkView: View {
     @State private var greetingGeneration = 0
     @State private var celestialGreetingGeneration = 0
     @State private var celestialSnapshot: CelestialSnapshot?
-    @State private var walkKoan: String?
-    @State private var koanVisibleWords: Int = 0
-    @State private var koanBreathing = false
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -109,12 +106,6 @@ struct ActiveWalkView: View {
                         }
                     }
 
-                    if let walkKoan, viewModel.intention == nil {
-                        koanView(walkKoan)
-                            .padding(.horizontal, Constants.UI.Padding.big)
-                            .padding(.top, 8)
-                    }
-
                     statsSection
                     Spacer(minLength: 0)
                     controlsSection
@@ -150,10 +141,6 @@ struct ActiveWalkView: View {
             }
         }
         .onChange(of: viewModel.status) { _, newStatus in
-            if newStatus == .recording {
-                koanBreathing = false
-                withAnimation(.easeOut(duration: 0.6)) { walkKoan = nil }
-            }
             guard newStatus == .recording else { return }
             if let condition = viewModel.weatherSnapshot?.condition, weatherGreeting == nil {
                 let greeting: String
@@ -306,18 +293,6 @@ struct ActiveWalkView: View {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
             }
-            if viewModel.intention == nil {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
-                    guard !viewModel.status.isActiveStatus else { return }
-                    guard viewModel.intention == nil else { return }
-                    withAnimation(.easeIn(duration: 1.0)) {
-                        walkKoan = WalkKoan.generate(
-                            celestial: celestialSnapshot,
-                            weather: viewModel.weatherSnapshot
-                        )
-                    }
-                }
-            }
         }
     }
 
@@ -376,28 +351,6 @@ struct ActiveWalkView: View {
         .frame(height: height)
     }
 
-    @ViewBuilder
-    private func koanView(_ text: String) -> some View {
-        let words = text.split(separator: " ").map(String.init)
-        HStack(spacing: 4) {
-            ForEach(Array(words.enumerated()), id: \.offset) { index, word in
-                Text(word)
-                    .font(Constants.Typography.body.italic())
-                    .foregroundColor(.stone)
-                    .opacity(index < koanVisibleWords ? (koanBreathing ? 0.5 : 1.0) : 0)
-                    .animation(.easeInOut(duration: 0.6).delay(Double(index) * 0.3), value: koanVisibleWords)
-            }
-        }
-        .animation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true), value: koanBreathing)
-        .onAppear {
-            koanVisibleWords = words.count
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(words.count) * 0.3 + 1.0) {
-                koanBreathing = true
-            }
-        }
-        .transition(.opacity)
-    }
-
     private var statsSection: some View {
         VStack(spacing: Constants.UI.Padding.normal) {
             VStack(spacing: 4) {
@@ -405,13 +358,11 @@ struct ActiveWalkView: View {
                     .font(Constants.Typography.timer)
                     .foregroundColor(.ink)
 
-                if let intention = viewModel.intention {
-                    Text(intention)
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog.opacity(0.6))
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-                }
+                Text(viewModel.intention ?? "every step is enough")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog.opacity(0.6))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
 
 
 

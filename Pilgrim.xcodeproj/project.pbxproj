@@ -177,7 +177,6 @@
 		567070B02F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */; };
 		567070B22F7426A500FD1910 /* WalkActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070B12F7426A500FD1910 /* WalkActivityManager.swift */; };
 		567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99D82F6F41030006A58E /* WeatherKitREST.swift */; };
-		567B99EB2F6F83200006A58E /* WalkKoan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99EA2F6F83200006A58E /* WalkKoan.swift */; };
 		567B99F72F701B8D0006A58E /* CollectiveCounterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */; };
 		CC02000100000000PODSVB01 /* PodcastSubmissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC02000100000000PODSVR01 /* PodcastSubmissionService.swift */; };
 		CC02000100000000PODVWB01 /* PodcastSubmissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC02000100000000PODVWR01 /* PodcastSubmissionView.swift */; };
@@ -563,7 +562,6 @@
 		567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkActivityAttributes.swift; sourceTree = "<group>"; };
 		567070B12F7426A500FD1910 /* WalkActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkActivityManager.swift; sourceTree = "<group>"; };
 		567B99D82F6F41030006A58E /* WeatherKitREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitREST.swift; sourceTree = "<group>"; };
-		567B99EA2F6F83200006A58E /* WalkKoan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkKoan.swift; sourceTree = "<group>"; };
 		567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectiveCounterService.swift; sourceTree = "<group>"; };
 		CC02000100000000PODSVR01 /* PodcastSubmissionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastSubmissionService.swift; sourceTree = "<group>"; };
 		CC02000100000000PODVWR01 /* PodcastSubmissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastSubmissionView.swift; sourceTree = "<group>"; };
@@ -1097,7 +1095,6 @@
 				CC00000100000000SCENER01 /* SceneryGenerator.swift */,
 				CC00000100000000DEBUGS01 /* DebugDataSeeder.swift */,
 				22718E3A2592665200708D3B /* Contribution.swift */,
-				567B99EA2F6F83200006A58E /* WalkKoan.swift */,
 				2213137C23B4110700881806 /* PermissionManager.swift */,
 				AAAA000000000000000000B2 /* TranscriptionService.swift */,
 				22834F792542239800057FEB /* HelperMethods.swift */,
@@ -2098,7 +2095,6 @@
 				AA0001010000000000000013 /* WalkRowView.swift in Sources */,
 				CC00000200000000SEASON01 /* SeasonalColorEngine.swift in Sources */,
 				CC00000200000000SCENER01 /* SceneryGenerator.swift in Sources */,
-				567B99EB2F6F83200006A58E /* WalkKoan.swift in Sources */,
 				CC00000200000000DEBUGS01 /* DebugDataSeeder.swift in Sources */,
 				CC00000200000000MAINTB01 /* MainTabView.swift in Sources */,
 				CC00000200000000WKSTRT01 /* WalkStartView.swift in Sources */,
