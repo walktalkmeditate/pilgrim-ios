@@ -22,8 +22,19 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Copy Secrets
-        run: cp Secrets.xcconfig.example Secrets.xcconfig
+      - name: Generate Secrets
+        env:
+          MAPBOX_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+          WK_KEY_ID: ${{ secrets.WEATHERKIT_KEY_ID }}
+          WK_TEAM_ID: ${{ secrets.WEATHERKIT_TEAM_ID }}
+          WK_PRIVATE_KEY: ${{ secrets.WEATHERKIT_PRIVATE_KEY }}
+        run: |
+          cat > Secrets.xcconfig << EOF
+          MAPBOX_ACCESS_TOKEN = ${MAPBOX_TOKEN:-pk.placeholder}
+          WEATHERKIT_KEY_ID = ${WK_KEY_ID:-placeholder}
+          WEATHERKIT_TEAM_ID = ${WK_TEAM_ID:-placeholder}
+          WEATHERKIT_PRIVATE_KEY = ${WK_PRIVATE_KEY:-placeholder}
+          EOF
 
       - name: Setup Mapbox netrc
         env:
