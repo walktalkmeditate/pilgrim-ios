@@ -377,16 +377,16 @@ struct WalkStartView: View {
                                 Text(mode.rawValue.uppercased())
                                     .font(Constants.Typography.button)
                                     .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
-                                    .minimumScaleFactor(0.5)
                                     .lineLimit(1)
-                                    .frame(maxWidth: .infinity)
                                 trailUnderline(for: mode)
                                     .frame(height: 2)
                             }
+                            .frame(maxWidth: .infinity)
                         }
                     }
                 }
             }
+            .minimumScaleFactor(0.5)
 
             Text(selectedMode.isAvailable ? selectedMode.subtitle : "coming soon")
                 .font(Constants.Typography.caption)

@@ -542,9 +542,13 @@ struct TimeMetricItem: View {
             Text(value)
                 .font(Constants.Typography.statValue)
                 .foregroundColor(.ink)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
             Text(label)
                 .font(Constants.Typography.statLabel)
                 .foregroundColor(.fog)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
     }
