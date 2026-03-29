@@ -377,7 +377,6 @@ struct WalkStartView: View {
                                 Text(mode.rawValue.uppercased())
                                     .font(Constants.Typography.button)
                                     .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
-                                    .minimumScaleFactor(0.5)
                                     .lineLimit(1)
                                 trailUnderline(for: mode)
                                     .frame(height: 2)
@@ -388,6 +387,7 @@ struct WalkStartView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
 
             Text(selectedMode.isAvailable ? selectedMode.subtitle : "coming soon")
                 .font(Constants.Typography.caption)
