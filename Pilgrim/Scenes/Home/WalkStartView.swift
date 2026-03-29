@@ -142,7 +142,7 @@ struct WalkStartView: View {
     @Environment(\.dynamicTypeSize) private var homeTypeSize
 
     private var isHomeLargeText: Bool {
-        homeTypeSize >= .accessibility1
+        homeTypeSize >= .accessibility3
     }
 
     private var content: some View {

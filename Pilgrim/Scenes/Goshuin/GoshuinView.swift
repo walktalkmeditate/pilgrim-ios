@@ -46,13 +46,15 @@ struct GoshuinView: View {
     // MARK: - Filter Bar
 
     private var filterBar: some View {
-        HStack(spacing: Constants.UI.Padding.small) {
-            filterToggle(nil, label: "All")
-            ForEach(WalkFavicon.allCases, id: \.self) { fav in
-                filterToggle(fav, label: fav.label)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Constants.UI.Padding.small) {
+                filterToggle(nil, label: "All")
+                ForEach(WalkFavicon.allCases, id: \.self) { fav in
+                    filterToggle(fav, label: fav.label)
+                }
             }
+            .padding(.horizontal, Constants.UI.Padding.normal)
         }
-        .padding(.horizontal, Constants.UI.Padding.normal)
         .padding(.vertical, Constants.UI.Padding.small)
     }
 

@@ -22,7 +22,7 @@ struct ActiveWalkView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var isLargeText: Bool {
-        dynamicTypeSize >= .accessibility1
+        dynamicTypeSize >= .accessibility3
     }
 
     private var mapHeightFraction: CGFloat {
