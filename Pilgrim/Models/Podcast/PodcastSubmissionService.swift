@@ -47,7 +47,7 @@ final class PodcastSubmissionService {
 
         var uploadedRecordings: [RecordingInfo] = []
 
-        let freshRecordings: [VoiceRecordingInterface] = {
+        let freshRecordings: [VoiceRecordingInterface] = await MainActor.run {
             guard let walkUUID = walk.uuid,
                   let dbWalk = try? DataManager.dataStack.fetchOne(
                     From<Walk>().where(\._uuid == walkUUID)
@@ -55,7 +55,7 @@ final class PodcastSubmissionService {
                 return walk.voiceRecordings
             }
             return dbWalk.voiceRecordings
-        }()
+        }
 
         for (index, recording) in freshRecordings.enumerated() {
             let audioURL = docs.appendingPathComponent(recording.fileRelativePath)
