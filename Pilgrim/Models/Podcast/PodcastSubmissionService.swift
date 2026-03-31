@@ -7,7 +7,7 @@ final class PodcastSubmissionService {
 
     private let workerBase = "https://walk.pilgrimapp.org"
     private let minTotalDuration: TimeInterval = 12 * 60
-    private let maxTotalDuration: TimeInterval = 60 * 60
+    private let maxTotalDuration: TimeInterval = 108 * 60
 
     private init() {}
 
