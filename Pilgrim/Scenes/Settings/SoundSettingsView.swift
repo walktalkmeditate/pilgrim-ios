@@ -16,6 +16,7 @@ struct SoundSettingsView: View {
     @State private var selectedSoundscapeId = UserPreferences.selectedSoundscapeId.value
 
     @State private var breathRhythm = UserPreferences.breathRhythm.value
+    @State private var autoPlayWhisper = UserPreferences.autoPlayWhisperOnProximity.value
     @State private var activePicker: PickerType?
 
     private let bellPlayer = BellPlayer.shared
@@ -78,6 +79,20 @@ struct SoundSettingsView: View {
                 .tint(.stone)
                 .onChange(of: hapticEnabled) { _, val in
                     UserPreferences.bellHapticEnabled.value = val
+                }
+
+                Toggle(isOn: $autoPlayWhisper) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Auto-play nearby whispers")
+                            .font(Constants.Typography.body)
+                        Text("Play whispers left by other pilgrims when you walk near them")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                }
+                .tint(.stone)
+                .onChange(of: autoPlayWhisper) { _, val in
+                    UserPreferences.autoPlayWhisperOnProximity.value = val
                 }
             }
         }

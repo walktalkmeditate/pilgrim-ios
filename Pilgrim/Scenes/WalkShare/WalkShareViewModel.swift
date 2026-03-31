@@ -29,6 +29,14 @@ final class WalkShareViewModel: ObservableObject {
             case .cycle: return "1 cycle"
             }
         }
+
+        var kanji: String {
+            switch self {
+            case .moon: return "\u{6708}"
+            case .season: return "\u{5B63}"
+            case .cycle: return "\u{5DE1}"
+            }
+        }
     }
 
     enum ShareState: Equatable {

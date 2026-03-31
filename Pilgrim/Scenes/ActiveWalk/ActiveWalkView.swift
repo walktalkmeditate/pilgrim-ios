@@ -13,6 +13,9 @@ struct ActiveWalkView: View {
     @State private var showWaypoint = false
     @State private var showBackConfirmation = false
     @State private var showWaypointFailed = false
+    @State private var showWhisperSheet = false
+    @State private var showStoneSheet = false
+    @State private var proximityNotification: ProximityNotificationEvent?
     @State private var hasCheckedAutoIntention = false
     @State private var weatherGreeting: String?
     @State private var celestialGreeting: String?
@@ -212,6 +215,23 @@ struct ActiveWalkView: View {
                 },
                 currentIntention: viewModel.intention,
                 waypointCount: viewModel.waypoints.count,
+                canPlaceWhisper: viewModel.canPlaceWhisper,
+                isWhisperUnlocked: viewModel.isWhisperUnlocked,
+                whispersRemaining: 7 - viewModel.whispersPlacedThisWalk,
+                onLeaveWhisper: {
+                    showOptions = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showWhisperSheet = true
+                    }
+                },
+                canPlaceStone: viewModel.canPlaceStone,
+                isStoneUnlocked: viewModel.isStoneUnlocked,
+                onPlaceStone: {
+                    showOptions = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showStoneSheet = true
+                    }
+                },
                 soundscapeName: selectedSoundscapeName,
                 isSoundscapePlaying: SoundscapePlayer.shared.isPlaying,
                 onToggleSoundscape: { viewModel.soundManagement.toggleSoundscape() },
@@ -274,6 +294,37 @@ struct ActiveWalkView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(isPresented: $showWhisperSheet) {
+            WhisperPlacementSheet(
+                currentLocation: viewModel.currentLocation,
+                onPlace: { whisper, expiry in
+                    showWhisperSheet = false
+                    placeWhisper(whisper: whisper, expiry: expiry)
+                },
+                onDismiss: { showWhisperSheet = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(isPresented: $showStoneSheet) {
+            StonePlacementSheet(
+                currentLocation: viewModel.currentLocation,
+                nearbyCairn: nearestCachedCairn(),
+                onPlace: {
+                    showStoneSheet = false
+                    placeStone()
+                },
+                onDismiss: { showStoneSheet = false }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .proximityNotification(event: $proximityNotification)
+        .onReceive(viewModel.proximityService.proximityEvents) { event in
+            handleProximityEvent(event)
         }
         .alert("Location Unavailable", isPresented: $showWaypointFailed) {
             Button("OK", role: .cancel) {}
@@ -626,3 +677,122 @@ struct AudioWaveformView: View {
         return minHeight + amplitude * (maxHeight - minHeight)
     }
 }
+
+// MARK: - Whisper & Stone Actions
+
+extension ActiveWalkView {
+
+    private func placeWhisper(whisper: WhisperDefinition, expiry: KanjiExpiryPicker.ExpiryDuration) {
+        guard let location = viewModel.currentLocation else { return }
+
+        viewModel.whispersPlacedThisWalk += 1
+        HapticPattern.whisperPlaced.fire()
+
+        Task {
+            do {
+                _ = try await WhisperService.placeWhisper(
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    whisperId: whisper.id,
+                    category: whisper.category.rawValue,
+                    expiryOption: expiry.apiValue
+                )
+            } catch {
+                let payload = WhisperService.makeOfflinePayload(
+                    whisperId: whisper.id,
+                    category: whisper.category.rawValue,
+                    expiryOption: expiry.apiValue
+                )
+                GeoCacheService.shared.queuePlacement(PendingPlacement(
+                    type: .whisper,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    payload: payload,
+                    timestamp: Date()
+                ))
+            }
+        }
+    }
+
+    private func placeStone() {
+        guard let location = viewModel.currentLocation else { return }
+
+        viewModel.stonePlacedThisWalk = true
+
+        let cairn = nearestCachedCairn()
+        let tier = cairn?.tier.soundTier ?? 1
+        HapticPattern.stonePlaced(tier: tier).fire()
+
+        Task {
+            do {
+                let result = try await CairnService.placeStone(
+                    latitude: location.latitude,
+                    longitude: location.longitude
+                )
+                await MainActor.run {
+                    if let idx = GeoCacheService.shared.cachedCairns.firstIndex(where: { $0.id == result.id }) {
+                        let old = GeoCacheService.shared.cachedCairns[idx]
+                        GeoCacheService.shared.cachedCairns[idx] = CachedCairn(
+                            id: old.id,
+                            latitude: old.latitude,
+                            longitude: old.longitude,
+                            stoneCount: result.stoneCount,
+                            lastPlacedAt: old.lastPlacedAt
+                        )
+                    }
+                }
+            } catch {
+                let payload = CairnService.makeOfflinePayload()
+                GeoCacheService.shared.queuePlacement(PendingPlacement(
+                    type: .stone,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    payload: payload,
+                    timestamp: Date()
+                ))
+            }
+        }
+    }
+
+    private func nearestCachedCairn() -> CachedCairn? {
+        guard let location = viewModel.currentLocation else { return nil }
+        let userLoc = CLLocation(latitude: location.latitude, longitude: location.longitude)
+        let maxMergeDistance: CLLocationDistance = 50
+        return GeoCacheService.shared.cachedCairns
+            .compactMap { cairn -> (CachedCairn, CLLocationDistance)? in
+                let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))
+                return dist <= maxMergeDistance ? (cairn, dist) : nil
+            }
+            .min(by: { $0.1 < $1.1 })
+            .map(\.0)
+    }
+
+    private func handleProximityEvent(_ event: ProximityEvent) {
+        guard event.direction == .entered else { return }
+
+        switch event.target.type {
+        case .whisper:
+            proximityNotification = .whisper()
+            HapticPattern.whisperProximity.fire()
+
+            if UserPreferences.autoPlayWhisperOnProximity.value,
+               UserPreferences.soundsEnabled.value {
+                let whisperId = event.target.id.replacingOccurrences(of: "whisper-", with: "")
+                if let cached = GeoCacheService.shared.cachedWhispers.first(where: { $0.id == whisperId }),
+                   let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
+                    WhisperPlayer.shared.play(definition)
+                }
+            }
+
+        case .cairn:
+            let cairnId = event.target.id.replacingOccurrences(of: "cairn-", with: "")
+            if let cached = GeoCacheService.shared.cachedCairns.first(where: { $0.id == cairnId }) {
+                proximityNotification = .cairn(stoneCount: cached.stoneCount)
+            } else {
+                proximityNotification = .cairn(stoneCount: 1)
+            }
+            HapticPattern.cairnProximity.fire()
+        }
+    }
+}
+

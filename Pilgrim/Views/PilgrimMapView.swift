@@ -263,6 +263,36 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeColor = StyleColor(UIColor.stone)
                 circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
+            case .whisper(let categoryColor, let isNearby):
+                circle.circleRadius = isNearby ? 10 : 7
+                circle.circleColor = StyleColor(categoryColor.withAlphaComponent(0.15))
+                circle.circleOpacity = isNearby ? 0.9 : 0.6
+                circle.circleStrokeColor = StyleColor(categoryColor)
+                circle.circleStrokeWidth = 2
+                circle.circleStrokeOpacity = 1.0
+                if isNearby {
+                    var pulse = CircleAnnotation(centerCoordinate: pin.coordinate)
+                    pulse.circleRadius = 16
+                    pulse.circleColor = StyleColor(categoryColor)
+                    pulse.circleOpacity = 0.08
+                    pulse.circleStrokeWidth = 0
+                    circles.append(pulse)
+                }
+            case .cairn(_, let tier):
+                circle.circleRadius = tier.circleRadius
+                circle.circleColor = StyleColor(UIColor.stone)
+                circle.circleOpacity = tier.opacity
+                circle.circleStrokeColor = StyleColor(UIColor.stone)
+                circle.circleStrokeWidth = tier.glows ? 3.0 : 1.5
+                circle.circleStrokeOpacity = 1.0
+                if tier.glows {
+                    var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
+                    glow.circleRadius = tier.circleRadius + 8
+                    glow.circleColor = StyleColor(UIColor.stone)
+                    glow.circleOpacity = 0.12
+                    glow.circleStrokeWidth = 0
+                    circles.append(glow)
+                }
             }
             circles.append(circle)
         }
