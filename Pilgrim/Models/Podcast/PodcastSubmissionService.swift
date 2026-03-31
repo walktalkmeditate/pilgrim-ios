@@ -1,4 +1,5 @@
 import Foundation
+import CoreStore
 
 final class PodcastSubmissionService {
 
@@ -46,7 +47,17 @@ final class PodcastSubmissionService {
 
         var uploadedRecordings: [RecordingInfo] = []
 
-        for (index, recording) in walk.voiceRecordings.enumerated() {
+        let freshRecordings: [VoiceRecordingInterface] = {
+            guard let walkUUID = walk.uuid,
+                  let dbWalk = try? DataManager.dataStack.fetchOne(
+                    From<Walk>().where(\._uuid == walkUUID)
+                  ) else {
+                return walk.voiceRecordings
+            }
+            return dbWalk.voiceRecordings
+        }()
+
+        for (index, recording) in freshRecordings.enumerated() {
             let audioURL = docs.appendingPathComponent(recording.fileRelativePath)
             guard FileManager.default.fileExists(atPath: audioURL.path) else { continue }
 
@@ -141,7 +152,7 @@ final class PodcastSubmissionService {
             "active_duration": walk.activeDuration,
             "talk_duration": walk.talkDuration,
             "meditate_duration": walk.meditateDuration,
-            "date": Self.todayString(),
+            "date": Self.dateString(for: walk.startDate),
         ]
         if let weather { metadata["weather"] = weather }
         if let intention = walk.comment { metadata["intention"] = intention }
@@ -197,12 +208,16 @@ final class PodcastSubmissionService {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
+        f.timeZone = .current
         return f
     }()
 
     private static func todayString() -> String {
         dayFormatter.string(from: Date())
+    }
+
+    private static func dateString(for date: Date) -> String {
+        dayFormatter.string(from: date)
     }
 
     enum SubmissionError: LocalizedError {
