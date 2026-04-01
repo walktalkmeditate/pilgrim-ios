@@ -175,13 +175,6 @@
 		4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
-		5625391F2F7DAABD005F18DB /* stone-tier-1 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 562539182F7DAABD005F18DB /* stone-tier-1 2.m4a */; };
-		562539202F7DAABD005F18DB /* stone-tier-7 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5625391E2F7DAABD005F18DB /* stone-tier-7 2.m4a */; };
-		562539212F7DAABD005F18DB /* stone-tier-2 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 562539192F7DAABD005F18DB /* stone-tier-2 2.m4a */; };
-		562539222F7DAABD005F18DB /* stone-tier-6 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5625391D2F7DAABD005F18DB /* stone-tier-6 2.m4a */; };
-		562539232F7DAABD005F18DB /* stone-tier-4 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5625391B2F7DAABD005F18DB /* stone-tier-4 2.m4a */; };
-		562539242F7DAABD005F18DB /* stone-tier-3 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5625391A2F7DAABD005F18DB /* stone-tier-3 2.m4a */; };
-		562539252F7DAABD005F18DB /* stone-tier-5 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5625391C2F7DAABD005F18DB /* stone-tier-5 2.m4a */; };
 		5629E7D85292B525B5FDAFEF /* WhisperPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF0C3B1FFBCAF6277D0D9E96 /* WhisperPlayer.swift */; };
 		567070362F733CB000FD1910 /* JourneyViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070352F733CB000FD1910 /* JourneyViewerView.swift */; };
 		567070952F74218400FD1910 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 567070942F74218400FD1910 /* WidgetKit.framework */; };
@@ -596,13 +589,6 @@
 		4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteShapeView.swift; sourceTree = "<group>"; };
 		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
 		4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityNotificationView.swift; sourceTree = "<group>"; };
-		562539182F7DAABD005F18DB /* stone-tier-1 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-1 2.m4a"; sourceTree = "<group>"; };
-		562539192F7DAABD005F18DB /* stone-tier-2 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-2 2.m4a"; sourceTree = "<group>"; };
-		5625391A2F7DAABD005F18DB /* stone-tier-3 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-3 2.m4a"; sourceTree = "<group>"; };
-		5625391B2F7DAABD005F18DB /* stone-tier-4 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-4 2.m4a"; sourceTree = "<group>"; };
-		5625391C2F7DAABD005F18DB /* stone-tier-5 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-5 2.m4a"; sourceTree = "<group>"; };
-		5625391D2F7DAABD005F18DB /* stone-tier-6 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-6 2.m4a"; sourceTree = "<group>"; };
-		5625391E2F7DAABD005F18DB /* stone-tier-7 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-7 2.m4a"; sourceTree = "<group>"; };
 		567070352F733CB000FD1910 /* JourneyViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewerView.swift; sourceTree = "<group>"; };
 		567070932F74218400FD1910 /* PilgrimWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PilgrimWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		567070942F74218400FD1910 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -1080,13 +1066,6 @@
 				223C2E0B25252F1B00D4B13D /* Info.plist */,
 				2291863C23679AA300929885 /* InfoPlist.strings */,
 				22B1F14222D61D0F00C02973 /* Localizable.strings */,
-				562539182F7DAABD005F18DB /* stone-tier-1 2.m4a */,
-				562539192F7DAABD005F18DB /* stone-tier-2 2.m4a */,
-				5625391A2F7DAABD005F18DB /* stone-tier-3 2.m4a */,
-				5625391B2F7DAABD005F18DB /* stone-tier-4 2.m4a */,
-				5625391C2F7DAABD005F18DB /* stone-tier-5 2.m4a */,
-				5625391D2F7DAABD005F18DB /* stone-tier-6 2.m4a */,
-				5625391E2F7DAABD005F18DB /* stone-tier-7 2.m4a */,
 				22FAB3B6253BAC450040CBB1 /* Changelog.strings */,
 				22718E3725925E2D00708D3B /* contribution.json */,
 			);
@@ -1955,13 +1934,6 @@
 				F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */,
 				F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */,
 				F0F0F00100000004AABBCC04 /* Lato-Regular.ttf in Resources */,
-				5625391F2F7DAABD005F18DB /* stone-tier-1 2.m4a in Resources */,
-				562539202F7DAABD005F18DB /* stone-tier-7 2.m4a in Resources */,
-				562539212F7DAABD005F18DB /* stone-tier-2 2.m4a in Resources */,
-				562539222F7DAABD005F18DB /* stone-tier-6 2.m4a in Resources */,
-				562539232F7DAABD005F18DB /* stone-tier-4 2.m4a in Resources */,
-				562539242F7DAABD005F18DB /* stone-tier-3 2.m4a in Resources */,
-				562539252F7DAABD005F18DB /* stone-tier-5 2.m4a in Resources */,
 				F0F0F00100000005AABBCC05 /* Lato-Bold.ttf in Resources */,
 				22B1F13F22D61CF400C02973 /* LaunchScreen.storyboard in Resources */,
 				56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */,
