@@ -70,18 +70,6 @@ enum WhisperService {
         return PlaceResult(id: result.id)
     }
 
-    static func makeOfflinePayload(
-        whisperId: String,
-        category: String,
-        expiryOption: String
-    ) -> Data {
-        let body: [String: String] = [
-            "whisper_id": whisperId,
-            "category": category,
-            "expiry_option": expiryOption,
-        ]
-        return (try? JSONSerialization.data(withJSONObject: body)) ?? Data("{}".utf8)
-    }
 }
 
 private struct IDResponse: Decodable {

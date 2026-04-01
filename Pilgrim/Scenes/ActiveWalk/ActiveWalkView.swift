@@ -685,7 +685,6 @@ extension ActiveWalkView {
     private func placeWhisper(whisper: WhisperDefinition, expiry: KanjiExpiryPicker.ExpiryDuration) {
         guard let location = viewModel.currentLocation else { return }
 
-        viewModel.whispersPlacedThisWalk += 1
         HapticPattern.whisperPlaced.fire()
 
         Task {
@@ -697,19 +696,11 @@ extension ActiveWalkView {
                     category: whisper.category.rawValue,
                     expiryOption: expiry.apiValue
                 )
+                await MainActor.run {
+                    viewModel.whispersPlacedThisWalk += 1
+                }
             } catch {
-                let payload = WhisperService.makeOfflinePayload(
-                    whisperId: whisper.id,
-                    category: whisper.category.rawValue,
-                    expiryOption: expiry.apiValue
-                )
-                GeoCacheService.shared.queuePlacement(PendingPlacement(
-                    type: .whisper,
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                    payload: payload,
-                    timestamp: Date()
-                ))
+                print("[ActiveWalk] Whisper placement failed: \(error)")
             }
         }
     }
@@ -717,11 +708,8 @@ extension ActiveWalkView {
     private func placeStone() {
         guard let location = viewModel.currentLocation else { return }
 
-        viewModel.stonePlacedThisWalk = true
-
         let cairn = nearestCachedCairn()
         let tier = cairn?.tier.soundTier ?? 1
-        HapticPattern.stonePlaced(tier: tier).fire()
 
         Task {
             do {
@@ -730,6 +718,8 @@ extension ActiveWalkView {
                     longitude: location.longitude
                 )
                 await MainActor.run {
+                    viewModel.stonePlacedThisWalk = true
+                    HapticPattern.stonePlaced(tier: tier).fire()
                     if let idx = GeoCacheService.shared.cachedCairns.firstIndex(where: { $0.id == result.id }) {
                         let old = GeoCacheService.shared.cachedCairns[idx]
                         GeoCacheService.shared.cachedCairns[idx] = CachedCairn(
@@ -742,14 +732,7 @@ extension ActiveWalkView {
                     }
                 }
             } catch {
-                let payload = CairnService.makeOfflinePayload()
-                GeoCacheService.shared.queuePlacement(PendingPlacement(
-                    type: .stone,
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                    payload: payload,
-                    timestamp: Date()
-                ))
+                print("[ActiveWalk] Stone placement failed: \(error)")
             }
         }
     }

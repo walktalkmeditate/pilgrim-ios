@@ -10,6 +10,12 @@ final class StonePlayer: NSObject, AVAudioPlayerDelegate {
     private override init() { super.init() }
 
     func playForCount(_ count: Int) {
+        if player != nil {
+            player?.stop()
+            player = nil
+            coordinator.deactivate(consumer: "stone")
+        }
+
         let tier = soundTier(for: count)
         let fileName = "stone-tier-\(tier)"
         guard let url = Bundle.main.url(forResource: fileName, withExtension: "m4a") else {
@@ -17,8 +23,6 @@ final class StonePlayer: NSObject, AVAudioPlayerDelegate {
             return
         }
 
-        player?.stop()
-        player = nil
         coordinator.activate(for: .playbackOnly, consumer: "stone")
 
         do {

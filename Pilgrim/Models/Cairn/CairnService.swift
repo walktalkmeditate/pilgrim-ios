@@ -53,9 +53,6 @@ enum CairnService {
         return PlaceResult(id: result.id, stoneCount: result.stoneCount)
     }
 
-    static func makeOfflinePayload() -> Data {
-        Data("{}".utf8)
-    }
 }
 
 private struct PlaceResponse: Decodable {

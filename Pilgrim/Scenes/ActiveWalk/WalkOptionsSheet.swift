@@ -71,7 +71,7 @@ struct WalkOptionsSheet: View {
         .onAppear { checkConnectivity() }
     }
 
-    @State private var isConnected = true
+    @State private var isConnected = false
 
     private func checkConnectivity() {
         let monitor = NWPathMonitor()

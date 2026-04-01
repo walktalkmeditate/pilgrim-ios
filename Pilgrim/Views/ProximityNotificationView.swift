@@ -56,7 +56,7 @@ struct ProximityNotificationModifier: ViewModifier {
                 .padding(.top, Constants.UI.Padding.big)
             }
         }
-        .onChange(of: event?.id) { _ in
+        .onChange(of: event?.id) { _, _ in
             guard event != nil else { return }
             generation += 1
             let gen = generation
