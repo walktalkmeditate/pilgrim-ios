@@ -4,21 +4,18 @@ struct ConnectCard: View {
 
     private let shareURL = URL(string: "https://plgr.im/share")!
     private let reviewURL = URL(string: "https://apps.apple.com/app/id6760921056?action=write-review")!
+    private let podcastURL = URL(string: "https://podcast.pilgrimapp.org")!
+
+    @State private var showPodcast = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
             cardHeader(title: "Connect", subtitle: "Share the path")
 
             Button {
-                share()
+                showPodcast = true
             } label: {
-                connectRow(icon: "square.and.arrow.up", label: "Share Pilgrim")
-            }
-
-            Button {
-                UIApplication.shared.open(reviewURL)
-            } label: {
-                connectRow(icon: "heart", label: "Rate Pilgrim", external: true)
+                connectRow(icon: "waveform", label: "Pilgrim on the Path")
             }
 
             NavigationLink {
@@ -31,8 +28,23 @@ struct ConnectCard: View {
                         .foregroundColor(.fog)
                 }
             }
+
+            Button {
+                UIApplication.shared.open(reviewURL)
+            } label: {
+                connectRow(icon: "heart", label: "Rate Pilgrim", external: true)
+            }
+
+            Button {
+                share()
+            } label: {
+                connectRow(icon: "square.and.arrow.up", label: "Share Pilgrim")
+            }
         }
         .settingsCard()
+        .sheet(isPresented: $showPodcast) {
+            SafariView(url: podcastURL)
+        }
     }
 
     private func connectRow(icon: String, label: String, external: Bool = false) -> some View {
