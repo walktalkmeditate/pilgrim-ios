@@ -10,6 +10,7 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private let coordinator = AudioSessionCoordinator.shared
     private let cacheDir: URL
     private var downloadTask: Task<Void, Never>?
+    private var previewTask: Task<Void, Never>?
 
     @Published private(set) var isPlaying: Bool = false
     @Published private(set) var isDownloading: Bool = false
@@ -69,9 +70,24 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func play(_ whisper: WhisperDefinition, volume: Float = 0.8) {
-        let url = isAvailable(whisper) ? localURL(for: whisper) : remoteURL(for: whisper)
-        let queue = AudioPriorityQueue.shared
-        queue.playWhisper(url: url, volume: volume)
+        if isAvailable(whisper) {
+            AudioPriorityQueue.shared.playWhisper(url: localURL(for: whisper), volume: volume)
+        } else {
+            Task { [weak self] in
+                guard let self else { return }
+                let remote = remoteURL(for: whisper)
+                let local = localURL(for: whisper)
+                do {
+                    let (data, _) = try await URLSession.shared.data(from: remote)
+                    try data.write(to: local)
+                    await MainActor.run {
+                        AudioPriorityQueue.shared.playWhisper(url: local, volume: volume)
+                    }
+                } catch {
+                    print("[WhisperPlayer] Download-and-play failed: \(error)")
+                }
+            }
+        }
     }
 
     func preview(_ whisper: WhisperDefinition, volume: Float = 0.6) {
@@ -81,12 +97,16 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         if isAvailable(whisper) {
             playLocal(localURL(for: whisper), volume: volume)
         } else {
-            Task {
+            previewTask = Task { [weak self] in
+                guard let self else { return }
                 do {
                     let (data, _) = try await URLSession.shared.data(from: remoteURL(for: whisper))
+                    guard !Task.isCancelled else { return }
                     await MainActor.run { self.playData(data, volume: volume) }
                 } catch {
-                    print("[WhisperPlayer] Preview download error: \(error)")
+                    if !Task.isCancelled {
+                        print("[WhisperPlayer] Preview download error: \(error)")
+                    }
                     await MainActor.run { self.coordinator.deactivate(consumer: "whisper-preview") }
                 }
             }
@@ -124,6 +144,8 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func stop() {
+        previewTask?.cancel()
+        previewTask = nil
         guard player != nil else { return }
         player?.stop()
         player = nil

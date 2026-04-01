@@ -18,8 +18,8 @@ final class StonePlayer: NSObject, AVAudioPlayerDelegate {
 
         let tier = soundTier(for: count)
         let fileName = "stone-tier-\(tier)"
-        guard let url = Bundle.main.url(forResource: fileName, withExtension: "m4a") else {
-            print("[StonePlayer] Audio file not found: \(fileName)")
+        guard let url = Bundle.main.url(forResource: fileName, withExtension: "m4a")
+                ?? Bundle.main.url(forResource: "stone-tier-1", withExtension: "m4a") else {
             return
         }
 

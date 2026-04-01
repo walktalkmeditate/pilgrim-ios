@@ -363,6 +363,9 @@ struct ActiveWalkView: View {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
             }
+            if !WhisperPlayer.shared.allDownloaded {
+                WhisperPlayer.shared.downloadAll()
+            }
         }
     }
 
