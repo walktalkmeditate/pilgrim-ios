@@ -369,7 +369,7 @@ struct PilgrimMapView: UIViewRepresentable {
                 case .whisper, .cairn:
                     let pinLoc = CLLocation(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude)
                     let dist = tapLoc.distance(from: pinLoc)
-                    if dist < 50, closest == nil || dist < closest!.distance {
+                    if dist < 25, closest == nil || dist < closest!.distance {
                         closest = (pin, dist)
                     }
                 default:
