@@ -9,6 +9,10 @@ struct CachedWhisper: Codable, Identifiable {
     let category: String
     let expiresAt: String
 
+    var resolvedCategory: WhisperCategory? {
+        WhisperCategory(rawValue: category)
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
         case latitude

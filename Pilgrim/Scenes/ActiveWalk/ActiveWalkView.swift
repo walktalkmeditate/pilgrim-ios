@@ -395,6 +395,10 @@ struct ActiveWalkView: View {
         .padding(.top, 56)
     }
 
+    private static let mapVisibilityRadius: CLLocationDistance = 2000
+    private static let maxVisiblePins = 30
+    private static let minPinSeparation: CLLocationDistance = 15
+
     private func mapSection(height: CGFloat) -> some View {
         let waypointPins = viewModel.waypoints.map { wp in
             PilgrimAnnotation(
@@ -406,9 +410,66 @@ struct ActiveWalkView: View {
             showsUserLocation: true,
             followsUserLocation: true,
             routeSegments: viewModel.routeSegments,
-            pinAnnotations: waypointPins
+            pinAnnotations: waypointPins + proximityAnnotations()
         )
         .frame(height: height)
+    }
+
+    private func proximityAnnotations() -> [PilgrimAnnotation] {
+        guard let loc = viewModel.currentLocation else { return [] }
+        let userLoc = CLLocation(latitude: loc.latitude, longitude: loc.longitude)
+
+        struct Candidate {
+            let annotation: PilgrimAnnotation
+            let distance: CLLocationDistance
+        }
+
+        var candidates: [Candidate] = []
+
+        for whisper in GeoCacheService.shared.cachedWhispers {
+            let dist = userLoc.distance(from: CLLocation(latitude: whisper.latitude, longitude: whisper.longitude))
+            guard dist <= Self.mapVisibilityRadius else { continue }
+            guard let cat = whisper.resolvedCategory else { continue }
+            let isNearby = dist <= ProximityDetectionService.whisperRadius
+            let annotation = PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: whisper.latitude, longitude: whisper.longitude),
+                kind: .whisper(categoryColor: cat.borderColor, isNearby: isNearby)
+            )
+            candidates.append(Candidate(annotation: annotation, distance: dist))
+        }
+
+        for cairn in GeoCacheService.shared.cachedCairns {
+            let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))
+            guard dist <= Self.mapVisibilityRadius else { continue }
+            let annotation = PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: cairn.latitude, longitude: cairn.longitude),
+                kind: .cairn(stoneCount: cairn.stoneCount, tier: cairn.tier)
+            )
+            candidates.append(Candidate(annotation: annotation, distance: dist))
+        }
+
+        candidates.sort { $0.distance < $1.distance }
+
+        var accepted: [PilgrimAnnotation] = []
+        for candidate in candidates {
+            guard accepted.count < Self.maxVisiblePins else { break }
+            let candidateLoc = CLLocation(
+                latitude: candidate.annotation.coordinate.latitude,
+                longitude: candidate.annotation.coordinate.longitude
+            )
+            let tooClose = accepted.contains { existing in
+                let existingLoc = CLLocation(
+                    latitude: existing.coordinate.latitude,
+                    longitude: existing.coordinate.longitude
+                )
+                return candidateLoc.distance(from: existingLoc) < Self.minPinSeparation
+            }
+            if !tooClose {
+                accepted.append(candidate.annotation)
+            }
+        }
+
+        return accepted
     }
 
     private var statsSection: some View {
@@ -698,6 +759,17 @@ extension ActiveWalkView {
                 )
                 await MainActor.run {
                     viewModel.whispersPlacedThisWalk += 1
+                    let iso = ISO8601DateFormatter()
+                    iso.formatOptions = [.withInternetDateTime]
+                    let expiryDate = iso.string(from: Date().addingTimeInterval(TimeInterval(expiry.days * 86400)))
+                    GeoCacheService.shared.cachedWhispers.append(CachedWhisper(
+                        id: UUID().uuidString,
+                        latitude: location.latitude,
+                        longitude: location.longitude,
+                        whisperId: whisper.id,
+                        category: whisper.category.rawValue,
+                        expiresAt: expiryDate
+                    ))
                 }
             } catch {
                 print("[ActiveWalk] Whisper placement failed: \(error)")
@@ -755,12 +827,13 @@ extension ActiveWalkView {
 
         switch event.target.type {
         case .whisper:
+            let whisperId = event.target.id.replacingOccurrences(of: "whisper-", with: "")
+            viewModel.encounteredWhisperIDs.insert(whisperId)
             proximityNotification = .whisper()
             HapticPattern.whisperProximity.fire()
 
             if UserPreferences.autoPlayWhisperOnProximity.value,
                UserPreferences.soundsEnabled.value {
-                let whisperId = event.target.id.replacingOccurrences(of: "whisper-", with: "")
                 if let cached = GeoCacheService.shared.cachedWhispers.first(where: { $0.id == whisperId }),
                    let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
                     WhisperPlayer.shared.play(definition)
@@ -769,6 +842,7 @@ extension ActiveWalkView {
 
         case .cairn:
             let cairnId = event.target.id.replacingOccurrences(of: "cairn-", with: "")
+            viewModel.encounteredCairnIDs.insert(cairnId)
             if let cached = GeoCacheService.shared.cachedCairns.first(where: { $0.id == cairnId }) {
                 proximityNotification = .cairn(stoneCount: cached.stoneCount)
             } else {

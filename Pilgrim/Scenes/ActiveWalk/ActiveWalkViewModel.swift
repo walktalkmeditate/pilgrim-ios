@@ -43,6 +43,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     @Published var whispersPlacedThisWalk = 0
     @Published var stonePlacedThisWalk = false
+    @Published var encounteredWhisperIDs: Set<String> = []
+    @Published var encounteredCairnIDs: Set<String> = []
     @Published private(set) var activeDurationSeconds: TimeInterval = 0
 
     var isWhisperUnlocked: Bool { activeDurationSeconds >= 7 * 60 }
