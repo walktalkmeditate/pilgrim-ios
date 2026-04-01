@@ -7,8 +7,9 @@ struct WhisperPlacementSheet: View {
     let onDismiss: () -> Void
 
     @ObservedObject private var whisperPlayer = WhisperPlayer.shared
-    @State private var selectedWhisper: WhisperDefinition?
+    @State private var selectedCategory: WhisperCategory?
     @State private var selectedExpiry: KanjiExpiryPicker.ExpiryDuration = .sevenDays
+    @State private var previewingCategory: WhisperCategory?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,14 +28,14 @@ struct WhisperPlacementSheet: View {
                 }
 
                 VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-                    Text("Choose a whisper")
+                    Text("Choose an energy")
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog.opacity(0.5))
 
                     ScrollView {
                         LazyVStack(spacing: 6) {
-                            ForEach(WhisperCatalog.all) { whisper in
-                                whisperRow(whisper)
+                            ForEach(WhisperCategory.allCases, id: \.rawValue) { category in
+                                categoryRow(category)
                             }
                         }
                     }
@@ -43,7 +44,9 @@ struct WhisperPlacementSheet: View {
                 privacyNotice
 
                 Button(action: {
-                    guard let whisper = selectedWhisper else { return }
+                    guard let category = selectedCategory else { return }
+                    let whispers = WhisperCatalog.whispers(for: category)
+                    guard let whisper = whispers.randomElement() else { return }
                     whisperPlayer.stop()
                     onPlace(whisper, selectedExpiry)
                 }) {
@@ -51,11 +54,11 @@ struct WhisperPlacementSheet: View {
                         .font(Constants.Typography.button)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(selectedWhisper != nil ? Color.stone : Color.fog.opacity(0.3))
-                        .foregroundColor(selectedWhisper != nil ? .parchment : .fog)
+                        .background(selectedCategory != nil ? Color.stone : Color.fog.opacity(0.3))
+                        .foregroundColor(selectedCategory != nil ? .parchment : .fog)
                         .cornerRadius(Constants.UI.CornerRadius.normal)
                 }
-                .disabled(selectedWhisper == nil)
+                .disabled(selectedCategory == nil)
             }
             .padding(.horizontal, Constants.UI.Padding.normal)
             .padding(.top, Constants.UI.Padding.big)
@@ -67,31 +70,34 @@ struct WhisperPlacementSheet: View {
         }
     }
 
-    private func whisperRow(_ whisper: WhisperDefinition) -> some View {
-        let isSelected = selectedWhisper?.id == whisper.id
+    private func categoryRow(_ category: WhisperCategory) -> some View {
+        let isSelected = selectedCategory == category
+        let isPreviewing = whisperPlayer.isPlaying && previewingCategory == category
         return Button {
-            selectedWhisper = whisper
+            selectedCategory = category
         } label: {
             HStack(spacing: 12) {
                 Button {
-                    if whisperPlayer.isPlaying, selectedWhisper?.id == whisper.id {
+                    if isPreviewing {
                         whisperPlayer.stop()
+                        previewingCategory = nil
                     } else {
-                        whisperPlayer.preview(whisper)
-                        selectedWhisper = whisper
+                        let whispers = WhisperCatalog.whispers(for: category)
+                        if let whisper = whispers.randomElement() {
+                            whisperPlayer.preview(whisper)
+                            previewingCategory = category
+                            selectedCategory = category
+                        }
                     }
                 } label: {
-                    Image(systemName: whisperPlayer.isPlaying && selectedWhisper?.id == whisper.id
-                          ? "stop.circle" : "play.circle")
+                    Image(systemName: isPreviewing ? "stop.circle" : "play.circle")
                         .font(.title3)
-                        .foregroundColor(.stone)
+                        .foregroundColor(Color(category.borderColor))
                 }
 
-                Text(whisper.title)
+                Text(category.rawValue.capitalized)
                     .font(Constants.Typography.body)
                     .foregroundColor(.ink.opacity(0.9))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
 
                 Spacer()
 
@@ -109,14 +115,14 @@ struct WhisperPlacementSheet: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.small)
-                    .stroke(Color(whisper.category.borderColor), lineWidth: isSelected ? 2 : 1)
+                    .stroke(Color(category.borderColor), lineWidth: isSelected ? 2 : 1)
                     .opacity(isSelected ? 1.0 : 0.4)
             )
         }
     }
 
     private var privacyNotice: some View {
-        Text("Your location is shared anonymously. Whispers expire after the chosen duration.")
+        Text("Your location is shared anonymously. Whispers expire after the chosen duration. A random message from this category will be placed.")
             .font(Constants.Typography.caption)
             .foregroundColor(.fog.opacity(0.4))
             .multilineTextAlignment(.center)
