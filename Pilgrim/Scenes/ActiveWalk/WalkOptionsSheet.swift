@@ -69,11 +69,14 @@ struct WalkOptionsSheet: View {
             Spacer()
         }
         .onAppear { startMonitoringConnection() }
+        .onDisappear { stopMonitoringConnection() }
     }
 
     @State private var isConnected = true
+    @State private var connectivityMonitor: NWPathMonitor?
 
     private func startMonitoringConnection() {
+        guard connectivityMonitor == nil else { return }
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { path in
             DispatchQueue.main.async {
@@ -81,6 +84,12 @@ struct WalkOptionsSheet: View {
             }
         }
         monitor.start(queue: DispatchQueue(label: "connectivity"))
+        connectivityMonitor = monitor
+    }
+
+    private func stopMonitoringConnection() {
+        connectivityMonitor?.cancel()
+        connectivityMonitor = nil
     }
 
     @ViewBuilder
