@@ -3,29 +3,33 @@ import Foundation
 enum WhisperCatalog {
 
     static let all: [WhisperDefinition] = [
-        WhisperDefinition(id: "courage-breath", title: "Breathe into your courage", category: .courage, audioFileName: "whisper-courage-breath", durationSec: 8),
-        WhisperDefinition(id: "courage-step", title: "Every step is a choice", category: .courage, audioFileName: "whisper-courage-step", durationSec: 7),
-        WhisperDefinition(id: "courage-unknown", title: "The unknown is not the enemy", category: .courage, audioFileName: "whisper-courage-unknown", durationSec: 9),
+        WhisperDefinition(id: "presence-1", title: "What do you see right now?", category: .presence, audioFileName: "whisper-presence-1", durationSec: 6),
+        WhisperDefinition(id: "presence-2", title: "Feel your feet on the earth", category: .presence, audioFileName: "whisper-presence-2", durationSec: 8),
+        WhisperDefinition(id: "presence-3", title: "You are here", category: .presence, audioFileName: "whisper-presence-3", durationSec: 5),
 
-        WhisperDefinition(id: "gratitude-ground", title: "Thank the ground beneath you", category: .gratitude, audioFileName: "whisper-gratitude-ground", durationSec: 8),
-        WhisperDefinition(id: "gratitude-air", title: "Grateful for this air", category: .gratitude, audioFileName: "whisper-gratitude-air", durationSec: 7),
-        WhisperDefinition(id: "gratitude-body", title: "Your body carries you", category: .gratitude, audioFileName: "whisper-gratitude-body", durationSec: 9),
+        WhisperDefinition(id: "lightness-1", title: "You are doing great", category: .lightness, audioFileName: "whisper-lightness-1", durationSec: 6),
+        WhisperDefinition(id: "lightness-2", title: "Whatever you were worrying about can wait", category: .lightness, audioFileName: "whisper-lightness-2", durationSec: 8),
+        WhisperDefinition(id: "lightness-3", title: "Take a breath", category: .lightness, audioFileName: "whisper-lightness-3", durationSec: 8),
 
-        WhisperDefinition(id: "stillness-pause", title: "Pause here", category: .stillness, audioFileName: "whisper-stillness-pause", durationSec: 6),
-        WhisperDefinition(id: "stillness-listen", title: "Listen to the silence", category: .stillness, audioFileName: "whisper-stillness-listen", durationSec: 8),
-        WhisperDefinition(id: "stillness-settle", title: "Let your mind settle", category: .stillness, audioFileName: "whisper-stillness-settle", durationSec: 10),
+        WhisperDefinition(id: "wonder-1", title: "Something extraordinary is happening", category: .wonder, audioFileName: "whisper-wonder-1", durationSec: 7),
+        WhisperDefinition(id: "wonder-2", title: "The light left its source long ago", category: .wonder, audioFileName: "whisper-wonder-2", durationSec: 7),
+        WhisperDefinition(id: "wonder-3", title: "You are spinning through space", category: .wonder, audioFileName: "whisper-wonder-3", durationSec: 9),
 
-        WhisperDefinition(id: "wonder-look", title: "Look around you slowly", category: .wonder, audioFileName: "whisper-wonder-look", durationSec: 8),
-        WhisperDefinition(id: "wonder-sky", title: "Lift your eyes to the sky", category: .wonder, audioFileName: "whisper-wonder-sky", durationSec: 7),
-        WhisperDefinition(id: "wonder-small", title: "Notice something small", category: .wonder, audioFileName: "whisper-wonder-small", durationSec: 8),
+        WhisperDefinition(id: "gratitude-1", title: "Thank the one who planted this tree", category: .gratitude, audioFileName: "whisper-gratitude-1", durationSec: 8),
+        WhisperDefinition(id: "gratitude-2", title: "Your body carried you here", category: .gratitude, audioFileName: "whisper-gratitude-2", durationSec: 8),
+        WhisperDefinition(id: "gratitude-3", title: "This moment is a gift", category: .gratitude, audioFileName: "whisper-gratitude-3", durationSec: 6),
 
-        WhisperDefinition(id: "compassion-kind", title: "Be kind to yourself", category: .compassion, audioFileName: "whisper-compassion-kind", durationSec: 7),
-        WhisperDefinition(id: "compassion-others", title: "Others walk this path too", category: .compassion, audioFileName: "whisper-compassion-others", durationSec: 9),
-        WhisperDefinition(id: "compassion-heart", title: "Open your heart", category: .compassion, audioFileName: "whisper-compassion-heart", durationSec: 8),
+        WhisperDefinition(id: "compassion-1", title: "Others have walked here with heavy hearts", category: .compassion, audioFileName: "whisper-compassion-1", durationSec: 6),
+        WhisperDefinition(id: "compassion-2", title: "Set something down", category: .compassion, audioFileName: "whisper-compassion-2", durationSec: 6),
+        WhisperDefinition(id: "compassion-3", title: "The path does not ask you to be perfect", category: .compassion, audioFileName: "whisper-compassion-3", durationSec: 8),
 
-        WhisperDefinition(id: "presence-here", title: "You are here, now", category: .presence, audioFileName: "whisper-presence-here", durationSec: 6),
-        WhisperDefinition(id: "presence-feet", title: "Feel your feet on the earth", category: .presence, audioFileName: "whisper-presence-feet", durationSec: 8),
-        WhisperDefinition(id: "presence-arrive", title: "You have already arrived", category: .presence, audioFileName: "whisper-presence-arrive", durationSec: 9),
+        WhisperDefinition(id: "courage-1", title: "The next step is the only one that matters", category: .courage, audioFileName: "whisper-courage-1", durationSec: 6),
+        WhisperDefinition(id: "courage-2", title: "What you seek is also seeking you", category: .courage, audioFileName: "whisper-courage-2", durationSec: 6),
+        WhisperDefinition(id: "courage-3", title: "You already know the answer", category: .courage, audioFileName: "whisper-courage-3", durationSec: 7),
+
+        WhisperDefinition(id: "stillness-1", title: "Be still", category: .stillness, audioFileName: "whisper-stillness-1", durationSec: 3),
+        WhisperDefinition(id: "stillness-2", title: "Breathe", category: .stillness, audioFileName: "whisper-stillness-2", durationSec: 4),
+        WhisperDefinition(id: "stillness-3", title: "You are an animal on the earth", category: .stillness, audioFileName: "whisper-stillness-3", durationSec: 6),
     ]
 
     static func whispers(for category: WhisperCategory) -> [WhisperDefinition] {

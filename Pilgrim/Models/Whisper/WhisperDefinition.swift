@@ -10,21 +10,23 @@ struct WhisperDefinition: Codable, Identifiable {
 }
 
 enum WhisperCategory: String, Codable, CaseIterable {
-    case courage
-    case gratitude
-    case stillness
-    case wonder
-    case compassion
     case presence
+    case lightness
+    case wonder
+    case gratitude
+    case compassion
+    case courage
+    case stillness
 
     var borderColor: UIColor {
         switch self {
-        case .courage: return UIColor(red: 0.85, green: 0.65, blue: 0.35, alpha: 1.0)
-        case .gratitude: return UIColor(red: 0.80, green: 0.72, blue: 0.45, alpha: 1.0)
-        case .stillness: return UIColor(red: 0.55, green: 0.62, blue: 0.68, alpha: 1.0)
-        case .wonder: return UIColor(red: 0.65, green: 0.55, blue: 0.75, alpha: 1.0)
-        case .compassion: return UIColor(red: 0.50, green: 0.62, blue: 0.45, alpha: 1.0)
-        case .presence: return UIColor(red: 0.55, green: 0.45, blue: 0.34, alpha: 1.0)
+        case .presence: return UIColor(red: 0.11, green: 0.23, blue: 0.29, alpha: 1.0)
+        case .lightness: return UIColor(red: 0.76, green: 0.65, blue: 0.55, alpha: 1.0)
+        case .wonder: return UIColor(red: 0.66, green: 0.72, blue: 0.75, alpha: 1.0)
+        case .gratitude: return UIColor(red: 0.78, green: 0.63, blue: 0.31, alpha: 1.0)
+        case .compassion: return UIColor(red: 0.66, green: 0.85, blue: 0.82, alpha: 1.0)
+        case .courage: return UIColor(red: 0.78, green: 0.72, blue: 0.53, alpha: 1.0)
+        case .stillness: return UIColor(red: 0.72, green: 0.58, blue: 0.42, alpha: 1.0)
         }
     }
 }
