@@ -1,4 +1,5 @@
 import SwiftUI
+import Network
 
 struct WalkOptionsSheet: View {
 
@@ -67,10 +68,25 @@ struct WalkOptionsSheet: View {
 
             Spacer()
         }
+        .onAppear { startMonitoringConnection() }
+    }
+
+    @State private var isConnected = true
+
+    private func startMonitoringConnection() {
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { path in
+            DispatchQueue.main.async {
+                self.isConnected = path.status == .satisfied
+            }
+        }
+        monitor.start(queue: DispatchQueue(label: "connectivity"))
     }
 
     @ViewBuilder
     private var traceSection: some View {
+        if !isConnected { EmptyView() }
+        else {
         VStack(alignment: .leading, spacing: 4) {
             Text("Traces")
                 .font(Constants.Typography.caption)
@@ -101,6 +117,7 @@ struct WalkOptionsSheet: View {
             }
             .disabled(!canPlaceStone)
             .opacity(canPlaceStone ? 1.0 : 0.4)
+        }
         }
     }
 
