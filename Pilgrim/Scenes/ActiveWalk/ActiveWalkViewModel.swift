@@ -200,6 +200,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func stop() {
+        cancellables.removeAll()
+        proximityService.resetSession()
         sessionGuard?.stopAndCleanup()
         finalizeMeditation()
         soundManagement.onWalkEnd()
@@ -209,6 +211,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func cancel() {
+        cancellables.removeAll()
+        proximityService.resetSession()
         sessionGuard?.stopAndCleanup()
         soundManagement.onWalkEnd()
         voiceGuideManagement.stopGuiding()

@@ -797,6 +797,7 @@ extension ActiveWalkView {
 
         let cairn = nearestCachedCairn()
         let tier = cairn?.tier.soundTier ?? 1
+        HapticPattern.stonePlaced(tier: tier).fire()
 
         Task {
             do {
@@ -806,7 +807,7 @@ extension ActiveWalkView {
                 )
                 await MainActor.run {
                     viewModel.stonePlacedThisWalk = true
-                    HapticPattern.stonePlaced(tier: tier).fire()
+                    StonePlayer.shared.playForCount(result.stoneCount)
                     if let idx = GeoCacheService.shared.cachedCairns.firstIndex(where: { $0.id == result.id }) {
                         let old = GeoCacheService.shared.cachedCairns[idx]
                         GeoCacheService.shared.cachedCairns[idx] = CachedCairn(
