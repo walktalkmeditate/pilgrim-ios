@@ -12,6 +12,7 @@ struct PilgrimMapView: UIViewRepresentable {
     var followsUserLocation: Bool = false
     var routeSegments: [RouteSegment] = []
     var pinAnnotations: [PilgrimAnnotation] = []
+    var onAnnotationTap: ((PilgrimAnnotation) -> Void)?
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     var cameraBounds: MapCameraBounds?
@@ -24,6 +25,7 @@ struct PilgrimMapView: UIViewRepresentable {
         followsUserLocation: Bool = false,
         routeSegments: [RouteSegment] = [],
         pinAnnotations: [PilgrimAnnotation] = [],
+        onAnnotationTap: ((PilgrimAnnotation) -> Void)? = nil,
         cameraCenter: Binding<CLLocationCoordinate2D?> = .constant(nil),
         cameraZoom: Binding<CGFloat> = .constant(14),
         cameraBounds: MapCameraBounds? = nil,
@@ -34,6 +36,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self.followsUserLocation = followsUserLocation
         self.routeSegments = routeSegments
         self.pinAnnotations = pinAnnotations
+        self.onAnnotationTap = onAnnotationTap
         self._cameraCenter = cameraCenter
         self._cameraZoom = cameraZoom
         self.cameraBounds = cameraBounds
@@ -78,6 +81,14 @@ struct PilgrimMapView: UIViewRepresentable {
     func updateUIView(_ mapView: MBMapView, context: Context) {
         context.coordinator.pendingSegments = routeSegments
         context.coordinator.pendingAnnotations = pinAnnotations
+        context.coordinator.onAnnotationTap = onAnnotationTap
+        context.coordinator.currentPinAnnotations = pinAnnotations
+
+        if !context.coordinator.tapGestureAdded, onAnnotationTap != nil {
+            let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleMapTap(_:)))
+            mapView.addGestureRecognizer(tap)
+            context.coordinator.tapGestureAdded = true
+        }
 
         mapView.gestures.options.panEnabled = isInteractive
         mapView.gestures.options.pinchEnabled = isInteractive
@@ -342,6 +353,34 @@ struct PilgrimMapView: UIViewRepresentable {
         var pendingAnnotations: [PilgrimAnnotation] = []
         var currentColorScheme: ColorScheme = .light
         weak var mapView: MBMapView?
+        var onAnnotationTap: ((PilgrimAnnotation) -> Void)?
+        var currentPinAnnotations: [PilgrimAnnotation] = []
+        var tapGestureAdded = false
+
+        @objc func handleMapTap(_ gesture: UITapGestureRecognizer) {
+            guard let mapView, let onAnnotationTap else { return }
+            let tapPoint = gesture.location(in: mapView)
+            let tapCoord = mapView.mapboxMap.coordinate(for: tapPoint)
+            let tapLoc = CLLocation(latitude: tapCoord.latitude, longitude: tapCoord.longitude)
+
+            var closest: (annotation: PilgrimAnnotation, distance: CLLocationDistance)?
+            for pin in currentPinAnnotations {
+                switch pin.kind {
+                case .whisper, .cairn:
+                    let pinLoc = CLLocation(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude)
+                    let dist = tapLoc.distance(from: pinLoc)
+                    if dist < 50, closest == nil || dist < closest!.distance {
+                        closest = (pin, dist)
+                    }
+                default:
+                    break
+                }
+            }
+
+            if let match = closest {
+                onAnnotationTap(match.annotation)
+            }
+        }
 
         deinit {
             if let mapView {

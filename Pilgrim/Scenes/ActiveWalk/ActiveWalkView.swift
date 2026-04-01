@@ -15,6 +15,7 @@ struct ActiveWalkView: View {
     @State private var showWaypointFailed = false
     @State private var showWhisperSheet = false
     @State private var showStoneSheet = false
+    @State private var tappedCairn: CachedCairn?
     @State private var proximityNotification: ProximityNotificationEvent?
     @State private var hasCheckedAutoIntention = false
     @State private var weatherGreeting: String?
@@ -322,6 +323,15 @@ struct ActiveWalkView: View {
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
         }
+        .sheet(item: $tappedCairn) { cairn in
+            VStack(spacing: Constants.UI.Padding.normal) {
+                CairnDetailView(cairn: cairn, canPlaceStone: false, onPlaceStone: nil)
+            }
+            .padding(Constants.UI.Padding.big)
+            .presentationDetents([.fraction(0.35)])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
+        }
         .proximityNotification(event: $proximityNotification)
         .onReceive(viewModel.proximityService.proximityEvents) { event in
             handleProximityEvent(event)
@@ -395,6 +405,11 @@ struct ActiveWalkView: View {
         .padding(.top, 56)
     }
 
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
     private static let mapVisibilityRadius: CLLocationDistance = 2000
     private static let maxVisiblePins = 30
     private static let minPinSeparation: CLLocationDistance = 15
@@ -410,7 +425,10 @@ struct ActiveWalkView: View {
             showsUserLocation: true,
             followsUserLocation: true,
             routeSegments: viewModel.routeSegments,
-            pinAnnotations: waypointPins + proximityAnnotations()
+            pinAnnotations: waypointPins + proximityAnnotations(),
+            onAnnotationTap: { annotation in
+                handleAnnotationTap(annotation)
+            }
         )
         .frame(height: height)
     }
@@ -450,26 +468,22 @@ struct ActiveWalkView: View {
 
         candidates.sort { $0.distance < $1.distance }
 
-        var accepted: [PilgrimAnnotation] = []
+        var accepted: [(annotation: PilgrimAnnotation, lat: Double, lon: Double)] = []
         for candidate in candidates {
             guard accepted.count < Self.maxVisiblePins else { break }
-            let candidateLoc = CLLocation(
-                latitude: candidate.annotation.coordinate.latitude,
-                longitude: candidate.annotation.coordinate.longitude
-            )
-            let tooClose = accepted.contains { existing in
-                let existingLoc = CLLocation(
-                    latitude: existing.coordinate.latitude,
-                    longitude: existing.coordinate.longitude
-                )
-                return candidateLoc.distance(from: existingLoc) < Self.minPinSeparation
+            let cLat = candidate.annotation.coordinate.latitude
+            let cLon = candidate.annotation.coordinate.longitude
+            let tooClose = accepted.contains { a in
+                let dLat = (a.lat - cLat) * 111_000
+                let dLon = (a.lon - cLon) * 111_000 * cos(cLat * .pi / 180)
+                return (dLat * dLat + dLon * dLon) < Self.minPinSeparation * Self.minPinSeparation
             }
             if !tooClose {
-                accepted.append(candidate.annotation)
+                accepted.append((candidate.annotation, cLat, cLon))
             }
         }
 
-        return accepted
+        return accepted.map(\.annotation)
     }
 
     private var statsSection: some View {
@@ -759,9 +773,7 @@ extension ActiveWalkView {
                 )
                 await MainActor.run {
                     viewModel.whispersPlacedThisWalk += 1
-                    let iso = ISO8601DateFormatter()
-                    iso.formatOptions = [.withInternetDateTime]
-                    let expiryDate = iso.string(from: Date().addingTimeInterval(TimeInterval(expiry.days * 86400)))
+                    let expiryDate = Self.isoFormatter.string(from: Date().addingTimeInterval(TimeInterval(expiry.days * 86400)))
                     GeoCacheService.shared.cachedWhispers.append(CachedWhisper(
                         id: UUID().uuidString,
                         latitude: location.latitude,
@@ -820,6 +832,29 @@ extension ActiveWalkView {
             }
             .min(by: { $0.1 < $1.1 })
             .map(\.0)
+    }
+
+    private func handleAnnotationTap(_ annotation: PilgrimAnnotation) {
+        switch annotation.kind {
+        case .whisper:
+            let coord = annotation.coordinate
+            if let cached = GeoCacheService.shared.cachedWhispers.first(where: {
+                abs($0.latitude - coord.latitude) < 0.0001 && abs($0.longitude - coord.longitude) < 0.0001
+            }),
+               let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
+                WhisperPlayer.shared.play(definition)
+                HapticPattern.whisperProximity.fire()
+            }
+        case .cairn:
+            let coord = annotation.coordinate
+            if let cached = GeoCacheService.shared.cachedCairns.first(where: {
+                abs($0.latitude - coord.latitude) < 0.0001 && abs($0.longitude - coord.longitude) < 0.0001
+            }) {
+                tappedCairn = cached
+            }
+        default:
+            break
+        }
     }
 
     private func handleProximityEvent(_ event: ProximityEvent) {
