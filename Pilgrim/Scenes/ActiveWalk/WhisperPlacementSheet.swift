@@ -65,6 +65,11 @@ struct WhisperPlacementSheet: View {
 
             Spacer()
         }
+        .onAppear {
+            if !whisperPlayer.allDownloaded {
+                whisperPlayer.downloadAll()
+            }
+        }
         .onDisappear {
             whisperPlayer.stop()
         }
