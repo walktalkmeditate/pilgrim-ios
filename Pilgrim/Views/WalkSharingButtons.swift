@@ -280,10 +280,29 @@ struct WalkSharingButtons: View {
 
     private func returnedSection(_ cached: ShareService.CachedShare) -> some View {
         VStack(spacing: Constants.UI.Padding.xs) {
+            Image(systemName: "arrow.uturn.backward.circle")
+                .font(.system(size: 24))
+                .foregroundColor(.fog)
+
             Text("This walk has returned to the trail")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
                 .italic()
+
+            if let label = labelForOption(cached.expiryOption) {
+                Text("Shared for \(label)")
+                    .font(Constants.Typography.micro)
+                    .foregroundColor(.fog)
+            } else {
+                Text("This walk was shared")
+                    .font(Constants.Typography.micro)
+                    .foregroundColor(.fog)
+            }
+
+            Rectangle()
+                .fill(Color.fog.opacity(0.15))
+                .frame(height: 0.5)
+                .padding(.horizontal, Constants.UI.Padding.big)
 
             Button {
                 showJourneySheet = true
