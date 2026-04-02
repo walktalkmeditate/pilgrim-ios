@@ -16,6 +16,7 @@ final class WalkShareViewModel: ObservableObject {
     @Published var selectedExpiry: ExpiryOption = .season
 
     @Published var shareState: ShareState = .idle
+    private var cachedExpiryDate: Date?
 
     enum ExpiryOption: Int, CaseIterable {
         case moon = 30
@@ -55,7 +56,7 @@ final class WalkShareViewModel: ObservableObject {
     }
 
     var expiryDate: Date {
-        Calendar.current.date(
+        cachedExpiryDate ?? Calendar.current.date(
             byAdding: .day,
             value: selectedExpiry.rawValue,
             to: Date()
@@ -111,6 +112,7 @@ final class WalkShareViewModel: ObservableObject {
         self.walk = walk
         if let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid), !cached.isExpired {
             shareState = .success(url: cached.url)
+            cachedExpiryDate = cached.expiry
         }
     }
 
