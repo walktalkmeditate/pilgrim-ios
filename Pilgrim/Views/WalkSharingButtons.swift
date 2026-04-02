@@ -6,6 +6,8 @@ struct WalkSharingButtons: View {
     @State private var showJourneySheet = false
     @State private var shareURL: URL?
     @State private var isGenerating = false
+    @State private var showCopiedToast = false
+    @State private var copiedToastGeneration = 0
 
     private static let dateTimeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -175,17 +177,102 @@ struct WalkSharingButtons: View {
     // MARK: - Active Share
 
     private func activeShareSection(_ cached: ShareService.CachedShare) -> some View {
-        VStack(spacing: Constants.UI.Padding.xs) {
-            Text(cached.url)
-                .font(Constants.Typography.caption)
-                .foregroundColor(.stone)
-                .lineLimit(1)
-                .truncationMode(.middle)
+        ZStack {
+            if let kanji = kanjiForOption(cached.expiryOption) {
+                Text(kanji)
+                    .font(.system(size: 120, weight: .ultraLight))
+                    .foregroundColor(Color.stone.opacity(watermarkOpacity(cached)))
+            }
 
-            Text("Returns to the trail on \(Self.expiryFormatter.string(from: cached.expiry))")
-                .font(Constants.Typography.caption)
-                .foregroundColor(.fog)
-                .italic()
+            VStack(spacing: Constants.UI.Padding.xs) {
+                if let label = labelForOption(cached.expiryOption) {
+                    Text(label.uppercased())
+                        .font(Constants.Typography.micro)
+                        .foregroundColor(.stone)
+                        .tracking(1.5)
+                }
+
+                Text(cached.url)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.stone)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text("Returns to the trail on \(Self.expiryFormatter.string(from: cached.expiry))")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+                    .italic()
+
+                HStack(spacing: Constants.UI.Padding.small) {
+                    Button {
+                        UIPasteboard.general.string = cached.url
+                        copiedToastGeneration += 1
+                        let gen = copiedToastGeneration
+                        showCopiedToast = true
+                        Task {
+                            try? await Task.sleep(for: .seconds(2))
+                            if copiedToastGeneration == gen { showCopiedToast = false }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: showCopiedToast ? "checkmark" : "doc.on.doc")
+                            Text(showCopiedToast ? "Copied" : "Copy")
+                                .font(Constants.Typography.button)
+                                .minimumScaleFactor(0.8)
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.parchmentSecondary)
+                        .foregroundColor(.stone)
+                        .cornerRadius(Constants.UI.CornerRadius.small)
+                    }
+
+                    if let shareURL = URL(string: cached.url) {
+                        ShareLink(item: shareURL) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share")
+                                    .font(Constants.Typography.button)
+                                    .minimumScaleFactor(0.8)
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.stone)
+                            .foregroundColor(.parchment)
+                            .cornerRadius(Constants.UI.CornerRadius.small)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func watermarkOpacity(_ cached: ShareService.CachedShare) -> Double {
+        guard let shareDate = cached.shareDate else { return 0.05 }
+        let total = cached.expiry.timeIntervalSince(shareDate)
+        guard total > 0 else { return 0.025 }
+        let elapsed = Date().timeIntervalSince(shareDate)
+        let fraction = min(max(elapsed / total, 0), 1)
+        return 0.07 - (fraction * 0.045)
+    }
+
+    private func kanjiForOption(_ option: String?) -> String? {
+        switch option {
+        case "moon": return "\u{6708}"
+        case "season": return "\u{5B63}"
+        case "cycle": return "\u{5DE1}"
+        default: return nil
+        }
+    }
+
+    private func labelForOption(_ option: String?) -> String? {
+        switch option {
+        case "moon": return "1 moon"
+        case "season": return "1 season"
+        case "cycle": return "1 cycle"
+        default: return nil
         }
     }
 
