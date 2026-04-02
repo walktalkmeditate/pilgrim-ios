@@ -283,6 +283,7 @@ struct ActiveWalkView: View {
             WaypointMarkingSheet(
                 onMark: { label, icon in
                     let success = viewModel.addWaypoint(label: label, icon: icon)
+                    if success { HapticPattern.waypointDropped.fire() }
                     showWaypoint = false
                     if !success {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -818,6 +819,14 @@ extension ActiveWalkView {
                             stoneCount: result.stoneCount,
                             lastPlacedAt: old.lastPlacedAt
                         )
+                    } else {
+                        GeoCacheService.shared.cachedCairns.append(CachedCairn(
+                            id: result.id,
+                            latitude: location.latitude,
+                            longitude: location.longitude,
+                            stoneCount: result.stoneCount,
+                            lastPlacedAt: Self.isoFormatter.string(from: Date())
+                        ))
                     }
                 }
             } catch {

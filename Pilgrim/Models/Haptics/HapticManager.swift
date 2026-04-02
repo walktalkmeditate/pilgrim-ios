@@ -2,6 +2,7 @@ import UIKit
 import CoreHaptics
 
 enum HapticPattern {
+    case waypointDropped
     case whisperProximity
     case whisperPlaced
     case cairnProximity
@@ -9,6 +10,11 @@ enum HapticPattern {
 
     func fire() {
         switch self {
+        case .waypointDropped:
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.prepare()
+            generator.impactOccurred()
+
         case .whisperProximity:
             let generator = UINotificationFeedbackGenerator()
             generator.prepare()
