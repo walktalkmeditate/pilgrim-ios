@@ -8,6 +8,7 @@ struct WalkSharingButtons: View {
     @State private var isGenerating = false
     @State private var showCopiedToast = false
     @State private var copiedToastGeneration = 0
+    @State private var shareVersion = 0
 
     private static let dateTimeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -40,7 +41,8 @@ struct WalkSharingButtons: View {
             .padding(Constants.UI.Padding.normal)
             .background(Color.parchmentSecondary)
             .cornerRadius(Constants.UI.CornerRadius.normal)
-            .sheet(isPresented: $showJourneySheet) {
+            .id(shareVersion)
+            .sheet(isPresented: $showJourneySheet, onDismiss: { shareVersion += 1 }) {
                 WalkShareView(walk: walk)
             }
             .sheet(item: $shareURL) { url in

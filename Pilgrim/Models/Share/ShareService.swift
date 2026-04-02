@@ -141,12 +141,13 @@ enum ShareService {
     }
 
     static func cacheShare(_ result: ShareResult, walkID: UUID, expiryDays: Int, expiryOption: String?) {
-        let expiry = Calendar.current.date(byAdding: .day, value: expiryDays, to: Date()) ?? Date()
+        let now = Date()
+        let expiry = Calendar.current.date(byAdding: .day, value: expiryDays, to: now) ?? now
         var dict: [String: String] = [
             "url": result.url,
             "id": result.id,
             "expiry": isoFormatter.string(from: expiry),
-            "shareDate": isoFormatter.string(from: Date()),
+            "shareDate": isoFormatter.string(from: now),
         ]
         if let expiryOption {
             dict["expiryOption"] = expiryOption
