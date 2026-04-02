@@ -111,7 +111,7 @@ struct WalkOptionsSheet: View {
                 icon: "mountain.2",
                 title: "Place a Stone",
                 subtitle: isStoneUnlocked
-                    ? "Available"
+                    ? (canPlaceStone ? "1 remaining" : "Placed")
                     : "Unlocks at 12 min"
             ) {
                 onPlaceStone?()

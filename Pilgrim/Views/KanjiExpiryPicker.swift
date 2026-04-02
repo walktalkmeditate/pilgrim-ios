@@ -12,7 +12,7 @@ struct KanjiExpiryPicker: View {
         var label: String {
             switch self {
             case .oneDay: return "1 day"
-            case .sevenDays: return "7 days"
+            case .sevenDays: return "1 week"
             case .oneMonth: return "1 month"
             }
         }

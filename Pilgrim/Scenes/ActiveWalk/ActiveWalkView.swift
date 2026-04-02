@@ -776,6 +776,7 @@ extension ActiveWalkView {
                 )
                 await MainActor.run {
                     viewModel.whispersPlacedThisWalk += 1
+                    WhisperPlayer.shared.play(whisper)
                     let expiryDate = Self.isoFormatter.string(from: Date().addingTimeInterval(TimeInterval(expiry.days * 86400)))
                     GeoCacheService.shared.cachedWhispers.append(CachedWhisper(
                         id: UUID().uuidString,
