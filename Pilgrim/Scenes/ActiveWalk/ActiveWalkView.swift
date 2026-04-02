@@ -778,15 +778,17 @@ extension ActiveWalkView {
                 await MainActor.run {
                     viewModel.whispersPlacedThisWalk += 1
                     WhisperPlayer.shared.play(whisper)
+                    let localId = UUID().uuidString
                     let expiryDate = Self.isoFormatter.string(from: Date().addingTimeInterval(TimeInterval(expiry.days * 86400)))
                     GeoCacheService.shared.cachedWhispers.append(CachedWhisper(
-                        id: UUID().uuidString,
+                        id: localId,
                         latitude: location.latitude,
                         longitude: location.longitude,
                         whisperId: whisper.id,
                         category: whisper.category.rawValue,
                         expiresAt: expiryDate
                     ))
+                    viewModel.proximityService.suppressTarget(id: "whisper-\(localId)")
                 }
             } catch {
                 print("[ActiveWalk] Whisper placement failed: \(error)")
@@ -828,6 +830,7 @@ extension ActiveWalkView {
                             lastPlacedAt: Self.isoFormatter.string(from: Date())
                         ))
                     }
+                    viewModel.proximityService.suppressTarget(id: "cairn-\(result.id)")
                 }
             } catch {
                 print("[ActiveWalk] Stone placement failed: \(error)")

@@ -33,6 +33,10 @@ final class ProximityDetectionService {
         notifiedTargetIDs.removeAll()
     }
 
+    func suppressTarget(id: String) {
+        notifiedTargetIDs.insert(id)
+    }
+
     private func checkProximity(to sample: TempRouteDataSample) {
         let userLocation = CLLocation(latitude: sample.latitude, longitude: sample.longitude)
 
