@@ -31,6 +31,15 @@ enum ShareService {
         let id: String
     }
 
+    struct CachedShare {
+        let url: String
+        let id: String
+        let expiry: Date
+        let shareDate: Date?
+        let expiryOption: String?
+        var isExpired: Bool { expiry <= Date() }
+    }
+
     static func share(payload: SharePayload) async throws -> ShareResult {
         let url = URL(string: "\(baseURL)/api/share")!
         var request = URLRequest(url: url)
@@ -110,25 +119,38 @@ enum ShareService {
 
     private static let isoFormatter = ISO8601DateFormatter()
 
-    static func cachedShare(for walkID: UUID) -> ShareResult? {
+    static func cachedShare(for walkID: UUID) -> CachedShare? {
         guard let dict = UserDefaults.standard.dictionary(forKey: "share:\(walkID.uuidString)"),
               let url = dict["url"] as? String,
               let id = dict["id"] as? String,
               let expiryStr = dict["expiry"] as? String,
-              let expiry = isoFormatter.date(from: expiryStr),
-              expiry > Date() else {
+              let expiry = isoFormatter.date(from: expiryStr) else {
             return nil
         }
-        return ShareResult(url: url, id: id)
+
+        let shareDate = (dict["shareDate"] as? String).flatMap { isoFormatter.date(from: $0) }
+        let expiryOption = dict["expiryOption"] as? String
+
+        return CachedShare(
+            url: url,
+            id: id,
+            expiry: expiry,
+            shareDate: shareDate,
+            expiryOption: expiryOption
+        )
     }
 
-    static func cacheShare(_ result: ShareResult, walkID: UUID, expiryDays: Int) {
+    static func cacheShare(_ result: ShareResult, walkID: UUID, expiryDays: Int, expiryOption: String?) {
         let expiry = Calendar.current.date(byAdding: .day, value: expiryDays, to: Date()) ?? Date()
-        let dict: [String: String] = [
+        var dict: [String: String] = [
             "url": result.url,
             "id": result.id,
-            "expiry": isoFormatter.string(from: expiry)
+            "expiry": isoFormatter.string(from: expiry),
+            "shareDate": isoFormatter.string(from: Date()),
         ]
+        if let expiryOption {
+            dict["expiryOption"] = expiryOption
+        }
         UserDefaults.standard.set(dict, forKey: "share:\(walkID.uuidString)")
     }
 }
