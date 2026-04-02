@@ -89,7 +89,7 @@ class HomeViewModel: ObservableObject {
                 talkDuration: walk.talkDuration,
                 meditateDuration: walk.meditateDuration,
                 favicon: walk.favicon,
-                isShared: ShareService.cachedShare(for: walk.id) != nil,
+                isShared: ShareService.cachedShare(for: walk.id).map { !$0.isExpired } ?? false,
                 weatherCondition: walk.weatherCondition
             ))
         }
