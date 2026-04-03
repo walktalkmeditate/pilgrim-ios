@@ -487,6 +487,9 @@ struct ActiveWalkView: View {
             }
         }
 
+        if !accepted.isEmpty {
+            print("[MapDebug] proximityAnnotations returning \(accepted.count) annotations")
+        }
         return accepted.map(\.annotation)
     }
 
