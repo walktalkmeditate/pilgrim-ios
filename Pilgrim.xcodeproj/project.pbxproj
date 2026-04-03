@@ -190,6 +190,13 @@
 		56E07B2C2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */; };
 		56ED2CA2C618854F7461544B /* CelestialVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */; };
 		56EEE45C2F70788E003F4391 /* StreakFlameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EEE45B2F70788E003F4391 /* StreakFlameView.swift */; };
+		56F5586D2F7F4BA500805DD0 /* stone-tier-1 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 56F558662F7F4BA500805DD0 /* stone-tier-1 2.m4a */; };
+		56F5586E2F7F4BA500805DD0 /* stone-tier-3 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 56F558682F7F4BA500805DD0 /* stone-tier-3 2.m4a */; };
+		56F5586F2F7F4BA500805DD0 /* stone-tier-7 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 56F5586C2F7F4BA500805DD0 /* stone-tier-7 2.m4a */; };
+		56F558702F7F4BA500805DD0 /* stone-tier-2 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 56F558672F7F4BA500805DD0 /* stone-tier-2 2.m4a */; };
+		56F558712F7F4BA500805DD0 /* stone-tier-4 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 56F558692F7F4BA500805DD0 /* stone-tier-4 2.m4a */; };
+		56F558722F7F4BA500805DD0 /* stone-tier-5 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 56F5586A2F7F4BA500805DD0 /* stone-tier-5 2.m4a */; };
+		56F558732F7F4BA500805DD0 /* stone-tier-6 2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 56F5586B2F7F4BA500805DD0 /* stone-tier-6 2.m4a */; };
 		59BA65A9BE8B2AF967F1BA28 /* CairnDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2737896863F22401CF29A1B4 /* CairnDetailView.swift */; };
 		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
 		6AA104266A1EB53C62C020D7 /* WhisperDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4614D1D6F2BC24176FEAC8 /* WhisperDefinition.swift */; };
@@ -602,6 +609,13 @@
 		56E07B162F6DDEDE004EBC44 /* ScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataSeeder.swift; sourceTree = "<group>"; };
 		56EEE45B2F70788E003F4391 /* StreakFlameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakFlameView.swift; sourceTree = "<group>"; };
+		56F558662F7F4BA500805DD0 /* stone-tier-1 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-1 2.m4a"; sourceTree = "<group>"; };
+		56F558672F7F4BA500805DD0 /* stone-tier-2 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-2 2.m4a"; sourceTree = "<group>"; };
+		56F558682F7F4BA500805DD0 /* stone-tier-3 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-3 2.m4a"; sourceTree = "<group>"; };
+		56F558692F7F4BA500805DD0 /* stone-tier-4 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-4 2.m4a"; sourceTree = "<group>"; };
+		56F5586A2F7F4BA500805DD0 /* stone-tier-5 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-5 2.m4a"; sourceTree = "<group>"; };
+		56F5586B2F7F4BA500805DD0 /* stone-tier-6 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-6 2.m4a"; sourceTree = "<group>"; };
+		56F5586C2F7F4BA500805DD0 /* stone-tier-7 2.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-7 2.m4a"; sourceTree = "<group>"; };
 		5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideDownloadManager.swift; sourceTree = "<group>"; };
 		5D9564A30CD3DE97895B7A42 /* CairnService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnService.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
@@ -1066,6 +1080,13 @@
 				223C2E0B25252F1B00D4B13D /* Info.plist */,
 				2291863C23679AA300929885 /* InfoPlist.strings */,
 				22B1F14222D61D0F00C02973 /* Localizable.strings */,
+				56F558662F7F4BA500805DD0 /* stone-tier-1 2.m4a */,
+				56F558672F7F4BA500805DD0 /* stone-tier-2 2.m4a */,
+				56F558682F7F4BA500805DD0 /* stone-tier-3 2.m4a */,
+				56F558692F7F4BA500805DD0 /* stone-tier-4 2.m4a */,
+				56F5586A2F7F4BA500805DD0 /* stone-tier-5 2.m4a */,
+				56F5586B2F7F4BA500805DD0 /* stone-tier-6 2.m4a */,
+				56F5586C2F7F4BA500805DD0 /* stone-tier-7 2.m4a */,
 				22FAB3B6253BAC450040CBB1 /* Changelog.strings */,
 				22718E3725925E2D00708D3B /* contribution.json */,
 			);
@@ -1930,6 +1951,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				56F5586D2F7F4BA500805DD0 /* stone-tier-1 2.m4a in Resources */,
+				56F5586E2F7F4BA500805DD0 /* stone-tier-3 2.m4a in Resources */,
+				56F5586F2F7F4BA500805DD0 /* stone-tier-7 2.m4a in Resources */,
+				56F558702F7F4BA500805DD0 /* stone-tier-2 2.m4a in Resources */,
+				56F558712F7F4BA500805DD0 /* stone-tier-4 2.m4a in Resources */,
+				56F558722F7F4BA500805DD0 /* stone-tier-5 2.m4a in Resources */,
+				56F558732F7F4BA500805DD0 /* stone-tier-6 2.m4a in Resources */,
 				F0F0F00100000001AABBCC01 /* CormorantGaramond-Light.otf in Resources */,
 				F0F0F00100000002AABBCC02 /* CormorantGaramond-Regular.otf in Resources */,
 				F0F0F00100000003AABBCC03 /* CormorantGaramond-SemiBold.otf in Resources */,
