@@ -1,5 +1,8 @@
 import SwiftUI
 import CoreLocation
+import os
+
+private let mapLog = Logger(subsystem: "org.walktalkmeditate.pilgrim", category: "MapDebug")
 
 struct ActiveWalkView: View {
 
@@ -488,7 +491,7 @@ struct ActiveWalkView: View {
         }
 
         if !accepted.isEmpty {
-            print("[MapDebug] proximityAnnotations returning \(accepted.count) annotations")
+            mapLog.info("proximityAnnotations returning \(accepted.count) annotations")
         }
         return accepted.map(\.annotation)
     }

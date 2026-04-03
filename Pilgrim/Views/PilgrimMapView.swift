@@ -2,6 +2,9 @@ import SwiftUI
 import MapboxMaps
 import CoreLocation
 import Combine
+import os
+
+private let mapLog = Logger(subsystem: "org.walktalkmeditate.pilgrim", category: "MapDebug")
 
 typealias MBMapView = MapboxMaps.MapView
 
@@ -223,16 +226,16 @@ struct PilgrimMapView: UIViewRepresentable {
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], on mapView: MBMapView, coordinator: Coordinator) {
         if !pinAnnotations.isEmpty {
             let kinds = pinAnnotations.map { "\($0.kind)" }.joined(separator: ", ")
-            print("[MapDebug] applyAnnotations called with \(pinAnnotations.count) pins: \(kinds)")
+            mapLog.info("applyAnnotations called with \(pinAnnotations.count) pins: \(kinds)")
         }
 
         if coordinator.circleManager == nil {
             coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager()
-            print("[MapDebug] Created circleManager")
+            mapLog.info("Created circleManager")
         }
 
         guard let circleManager = coordinator.circleManager else {
-            print("[MapDebug] circleManager is nil — bailing")
+            mapLog.error("circleManager is nil — bailing")
             return
         }
 
@@ -318,13 +321,13 @@ struct PilgrimMapView: UIViewRepresentable {
         }
 
         if !circles.isEmpty {
-            print("[MapDebug] Setting \(circles.count) circle annotations")
+            mapLog.info("Setting \(circles.count) circle annotations")
         }
         circleManager.annotations = circles
 
         if coordinator.pointManager == nil {
             coordinator.pointManager = mapView.annotations.makePointAnnotationManager()
-            print("[MapDebug] Created pointManager")
+            mapLog.info("Created pointManager")
         }
 
         guard let pointManager = coordinator.pointManager else { return }
@@ -336,7 +339,7 @@ struct PilgrimMapView: UIViewRepresentable {
                 if let image = Self.renderSFSymbol(icon, size: 18, color: .stone) {
                     point.image = .init(image: image, name: icon)
                 } else {
-                    print("[MapDebug] renderSFSymbol returned nil for icon: \(icon)")
+                    mapLog.error("renderSFSymbol returned nil for icon: \(icon)")
                 }
                 point.iconSize = 1.0
                 points.append(point)
