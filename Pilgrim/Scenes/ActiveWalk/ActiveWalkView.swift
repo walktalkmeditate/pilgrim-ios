@@ -847,7 +847,7 @@ extension ActiveWalkView {
     private func nearestCachedCairn() -> CachedCairn? {
         guard let location = viewModel.currentLocation else { return nil }
         let userLoc = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        let maxMergeDistance: CLLocationDistance = 50
+        let maxMergeDistance: CLLocationDistance = 21
         return GeoCacheService.shared.cachedCairns
             .compactMap { cairn -> (CachedCairn, CLLocationDistance)? in
                 let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))

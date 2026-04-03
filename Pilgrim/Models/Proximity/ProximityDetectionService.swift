@@ -4,8 +4,8 @@ import Combine
 
 final class ProximityDetectionService {
 
-    static let whisperRadius: CLLocationDistance = 700
-    static let cairnRadius: CLLocationDistance = 200
+    static let whisperRadius: CLLocationDistance = 42
+    static let cairnRadius: CLLocationDistance = 108
 
     private var targets: Set<ProximityTarget> = []
     private var notifiedTargetIDs: Set<String> = []
