@@ -25,6 +25,12 @@ final class GeoCacheService: ObservableObject {
         loadCachedCairns()
     }
 
+    func invalidateLastFetch() {
+        lastFetchCenter = nil
+        whispersETag = nil
+        cairnsETag = nil
+    }
+
     func fetchIfNeeded(near coordinate: CLLocationCoordinate2D) async {
         if let center = lastFetchCenter {
             let distance = CLLocation(latitude: center.latitude, longitude: center.longitude)
@@ -202,12 +208,22 @@ final class GeoCacheService: ObservableObject {
         UserDefaults.standard.set(data, forKey: cachedWhispersKey)
     }
 
+    func persistCurrentWhispers() {
+        guard let data = try? JSONEncoder().encode(cachedWhispers) else { return }
+        UserDefaults.standard.set(data, forKey: cachedWhispersKey)
+    }
+
     private func loadCachedCairns() {
         guard let data = UserDefaults.standard.data(forKey: cachedCairnsKey) else { return }
         cachedCairns = (try? JSONDecoder().decode([CachedCairn].self, from: data)) ?? []
     }
 
     private func persistCairns(_ data: Data) {
+        UserDefaults.standard.set(data, forKey: cachedCairnsKey)
+    }
+
+    func persistCurrentCairns() {
+        guard let data = try? JSONEncoder().encode(cachedCairns) else { return }
         UserDefaults.standard.set(data, forKey: cachedCairnsKey)
     }
 

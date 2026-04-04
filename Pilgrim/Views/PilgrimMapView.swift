@@ -2,10 +2,6 @@ import SwiftUI
 import MapboxMaps
 import CoreLocation
 import Combine
-import os
-
-private let mapLog = Logger(subsystem: "org.walktalkmeditate.pilgrim", category: "MapDebug")
-
 typealias MBMapView = MapboxMaps.MapView
 
 struct PilgrimMapView: UIViewRepresentable {
@@ -73,6 +69,10 @@ struct PilgrimMapView: UIViewRepresentable {
             let mode: PilgrimMapStyle.Mode = coordinator.currentColorScheme == .dark ? .dark : .light
             PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap, mode: mode)
             coordinator.lastSegments = []
+            if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
+            if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
+            coordinator.circleManager = nil
+            coordinator.pointManager = nil
             Self.applyRouteSource(coordinator.pendingSegments, on: mapView, coordinator: coordinator)
             Self.applyAnnotations(coordinator.pendingAnnotations, on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
@@ -224,20 +224,13 @@ struct PilgrimMapView: UIViewRepresentable {
     // MARK: - Annotations
 
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], on mapView: MBMapView, coordinator: Coordinator) {
-        if !pinAnnotations.isEmpty {
-            let kinds = pinAnnotations.map { "\($0.kind)" }.joined(separator: ", ")
-            mapLog.info("applyAnnotations called with \(pinAnnotations.count) pins: \(kinds)")
-        }
+        guard mapView.mapboxMap.isStyleLoaded else { return }
 
         if coordinator.circleManager == nil {
             coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager()
-            mapLog.info("Created circleManager")
         }
 
-        guard let circleManager = coordinator.circleManager else {
-            mapLog.error("circleManager is nil — bailing")
-            return
-        }
+        guard let circleManager = coordinator.circleManager else { return }
 
         var circles: [CircleAnnotation] = []
 
@@ -286,63 +279,53 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeColor = StyleColor(UIColor.stone)
                 circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
-            case .whisper(let categoryColor, let isNearby):
-                circle.circleRadius = isNearby ? 10 : 7
-                circle.circleColor = StyleColor(categoryColor.withAlphaComponent(0.15))
-                circle.circleOpacity = isNearby ? 0.9 : 0.6
-                circle.circleStrokeColor = StyleColor(categoryColor)
-                circle.circleStrokeWidth = 2
-                circle.circleStrokeOpacity = 1.0
-                if isNearby {
-                    var pulse = CircleAnnotation(centerCoordinate: pin.coordinate)
-                    pulse.circleRadius = 16
-                    pulse.circleColor = StyleColor(categoryColor)
-                    pulse.circleOpacity = 0.08
-                    pulse.circleStrokeWidth = 0
-                    circles.append(pulse)
-                }
-            case .cairn(_, let tier):
-                circle.circleRadius = tier.circleRadius
-                circle.circleColor = StyleColor(UIColor.stone)
-                circle.circleOpacity = tier.opacity
-                circle.circleStrokeColor = StyleColor(UIColor.stone)
-                circle.circleStrokeWidth = tier.glows ? 3.0 : 1.5
-                circle.circleStrokeOpacity = 1.0
-                if tier.glows {
-                    var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
-                    glow.circleRadius = tier.circleRadius + 8
-                    glow.circleColor = StyleColor(UIColor.stone)
-                    glow.circleOpacity = 0.12
-                    glow.circleStrokeWidth = 0
-                    circles.append(glow)
-                }
+            case .whisper:
+                continue
+            case .cairn:
+                continue
             }
             circles.append(circle)
         }
 
-        if !circles.isEmpty {
-            mapLog.info("Setting \(circles.count) circle annotations")
-        }
         circleManager.annotations = circles
 
         if coordinator.pointManager == nil {
             coordinator.pointManager = mapView.annotations.makePointAnnotationManager()
-            mapLog.info("Created pointManager")
         }
 
         guard let pointManager = coordinator.pointManager else { return }
 
         var points: [PointAnnotation] = []
         for pin in pinAnnotations {
-            if case .waypoint(_, let icon) = pin.kind {
+            switch pin.kind {
+            case .waypoint(_, let icon):
                 var point = PointAnnotation(coordinate: pin.coordinate)
                 if let image = Self.renderSFSymbol(icon, size: 18, color: .stone) {
                     point.image = .init(image: image, name: icon)
-                } else {
-                    mapLog.error("renderSFSymbol returned nil for icon: \(icon)")
                 }
                 point.iconSize = 1.0
                 points.append(point)
+            case .whisper(let categoryColor, _):
+                var point = PointAnnotation(coordinate: pin.coordinate)
+                let colorKey = String(format: "whisper-%02X%02X%02X",
+                    Int((categoryColor.cgColor.components?[0] ?? 0) * 255),
+                    Int((categoryColor.cgColor.components?[1] ?? 0) * 255),
+                    Int((categoryColor.cgColor.components?[2] ?? 0) * 255))
+                if let image = Self.renderSFSymbol("wind", size: 14, color: categoryColor) {
+                    point.image = .init(image: image, name: colorKey)
+                }
+                point.iconSize = 1.0
+                points.append(point)
+            case .cairn(_, let tier):
+                var point = PointAnnotation(coordinate: pin.coordinate)
+                let iconSize: CGFloat = 12 + CGFloat(tier.rawValue)
+                if let image = Self.renderSFSymbol("mountain.2", size: iconSize, color: .moss) {
+                    point.image = .init(image: image, name: "cairn-\(tier.rawValue)")
+                }
+                point.iconSize = 1.0
+                points.append(point)
+            default:
+                break
             }
         }
         pointManager.annotations = points

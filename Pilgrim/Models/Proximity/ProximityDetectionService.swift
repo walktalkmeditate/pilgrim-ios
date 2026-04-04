@@ -33,6 +33,11 @@ final class ProximityDetectionService {
         notifiedTargetIDs.removeAll()
     }
 
+    func stopListening() {
+        cancellables.removeAll()
+        notifiedTargetIDs.removeAll()
+    }
+
     func suppressTarget(id: String) {
         notifiedTargetIDs.insert(id)
     }

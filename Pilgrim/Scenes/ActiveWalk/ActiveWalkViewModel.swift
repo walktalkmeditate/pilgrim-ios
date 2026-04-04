@@ -189,6 +189,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func startRecording() {
+        proximityService.resetSession()
         builder.setStatus(.recording)
         soundManagement.onWalkStart()
         startVoiceGuideIfEnabled()
@@ -201,7 +202,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func stop() {
         cancellables.removeAll()
-        proximityService.resetSession()
+        proximityService.stopListening()
         sessionGuard?.stopAndCleanup()
         finalizeMeditation()
         soundManagement.onWalkEnd()
@@ -212,7 +213,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func cancel() {
         cancellables.removeAll()
-        proximityService.resetSession()
+        proximityService.stopListening()
         sessionGuard?.stopAndCleanup()
         soundManagement.onWalkEnd()
         voiceGuideManagement.stopGuiding()
@@ -392,6 +393,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             liveStats.currentLocation
         )
         proximityService.resetSession()
+        GeoCacheService.shared.invalidateLastFetch()
 
         liveStats.currentLocation
             .compactMap { $0 }

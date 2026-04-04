@@ -1,8 +1,5 @@
 import SwiftUI
 import CoreLocation
-import os
-
-private let mapLog = Logger(subsystem: "org.walktalkmeditate.pilgrim", category: "MapDebug")
 
 struct ActiveWalkView: View {
 
@@ -480,7 +477,14 @@ struct ActiveWalkView: View {
             guard accepted.count < Self.maxVisiblePins else { break }
             let cLat = candidate.annotation.coordinate.latitude
             let cLon = candidate.annotation.coordinate.longitude
+            let isSameType: (PilgrimAnnotation.Kind, PilgrimAnnotation.Kind) -> Bool = { a, b in
+                switch (a, b) {
+                case (.whisper, .whisper), (.cairn, .cairn): return true
+                default: return false
+                }
+            }
             let tooClose = accepted.contains { a in
+                guard isSameType(a.annotation.kind, candidate.annotation.kind) else { return false }
                 let dLat = (a.lat - cLat) * 111_000
                 let dLon = (a.lon - cLon) * 111_000 * cos(cLat * .pi / 180)
                 return (dLat * dLat + dLon * dLon) < Self.minPinSeparation * Self.minPinSeparation
@@ -490,9 +494,6 @@ struct ActiveWalkView: View {
             }
         }
 
-        if !accepted.isEmpty {
-            mapLog.info("proximityAnnotations returning \(accepted.count) annotations")
-        }
         return accepted.map(\.annotation)
     }
 
@@ -795,6 +796,7 @@ extension ActiveWalkView {
                         expiresAt: expiryDate
                     ))
                     viewModel.proximityService.suppressTarget(id: "whisper-\(localId)")
+                    GeoCacheService.shared.persistCurrentWhispers()
                 }
             } catch {
                 print("[ActiveWalk] Whisper placement failed: \(error)")
@@ -837,6 +839,7 @@ extension ActiveWalkView {
                         ))
                     }
                     viewModel.proximityService.suppressTarget(id: "cairn-\(result.id)")
+                    GeoCacheService.shared.persistCurrentCairns()
                 }
             } catch {
                 print("[ActiveWalk] Stone placement failed: \(error)")
@@ -881,7 +884,8 @@ extension ActiveWalkView {
     }
 
     private func handleProximityEvent(_ event: ProximityEvent) {
-        guard event.direction == .entered else { return }
+        guard event.direction == .entered,
+              viewModel.status.isActiveStatus else { return }
 
         switch event.target.type {
         case .whisper:
