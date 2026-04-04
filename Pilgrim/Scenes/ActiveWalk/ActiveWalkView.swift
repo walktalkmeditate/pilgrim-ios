@@ -13,6 +13,10 @@ struct ActiveWalkView: View {
     @State private var showWaypoint = false
     @State private var showBackConfirmation = false
     @State private var showWaypointFailed = false
+    @State private var showWhisperSheet = false
+    @State private var showStoneSheet = false
+    @State private var tappedCairn: CachedCairn?
+    @State private var proximityNotification: ProximityNotificationEvent?
     @State private var hasCheckedAutoIntention = false
     @State private var weatherGreeting: String?
     @State private var celestialGreeting: String?
@@ -212,6 +216,23 @@ struct ActiveWalkView: View {
                 },
                 currentIntention: viewModel.intention,
                 waypointCount: viewModel.waypoints.count,
+                canPlaceWhisper: viewModel.canPlaceWhisper,
+                isWhisperUnlocked: viewModel.isWhisperUnlocked,
+                whispersRemaining: 7 - viewModel.whispersPlacedThisWalk,
+                onLeaveWhisper: {
+                    showOptions = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showWhisperSheet = true
+                    }
+                },
+                canPlaceStone: viewModel.canPlaceStone,
+                isStoneUnlocked: viewModel.isStoneUnlocked,
+                onPlaceStone: {
+                    showOptions = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showStoneSheet = true
+                    }
+                },
                 soundscapeName: selectedSoundscapeName,
                 isSoundscapePlaying: SoundscapePlayer.shared.isPlaying,
                 onToggleSoundscape: { viewModel.soundManagement.toggleSoundscape() },
@@ -262,6 +283,7 @@ struct ActiveWalkView: View {
             WaypointMarkingSheet(
                 onMark: { label, icon in
                     let success = viewModel.addWaypoint(label: label, icon: icon)
+                    if success { HapticPattern.waypointDropped.fire() }
                     showWaypoint = false
                     if !success {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -274,6 +296,46 @@ struct ActiveWalkView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(isPresented: $showWhisperSheet) {
+            WhisperPlacementSheet(
+                currentLocation: viewModel.currentLocation,
+                onPlace: { whisper, expiry in
+                    showWhisperSheet = false
+                    placeWhisper(whisper: whisper, expiry: expiry)
+                },
+                onDismiss: { showWhisperSheet = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(isPresented: $showStoneSheet) {
+            StonePlacementSheet(
+                currentLocation: viewModel.currentLocation,
+                nearbyCairn: nearestCachedCairn(),
+                onPlace: {
+                    showStoneSheet = false
+                    placeStone()
+                },
+                onDismiss: { showStoneSheet = false }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(item: $tappedCairn) { cairn in
+            VStack(spacing: Constants.UI.Padding.normal) {
+                CairnDetailView(cairn: cairn, canPlaceStone: false, onPlaceStone: nil)
+            }
+            .padding(Constants.UI.Padding.big)
+            .presentationDetents([.fraction(0.35)])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .proximityNotification(event: $proximityNotification)
+        .onReceive(viewModel.proximityService.proximityEvents) { event in
+            handleProximityEvent(event)
         }
         .alert("Location Unavailable", isPresented: $showWaypointFailed) {
             Button("OK", role: .cancel) {}
@@ -301,6 +363,9 @@ struct ActiveWalkView: View {
             if UserPreferences.celestialAwarenessEnabled.value {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
+            }
+            if !WhisperPlayer.shared.allDownloaded {
+                WhisperPlayer.shared.downloadAll()
             }
         }
     }
@@ -344,6 +409,15 @@ struct ActiveWalkView: View {
         .padding(.top, 56)
     }
 
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+    private static let mapVisibilityRadius: CLLocationDistance = 2000
+    private static let maxVisiblePins = 30
+    private static let minPinSeparation: CLLocationDistance = 15
+
     private func mapSection(height: CGFloat) -> some View {
         let waypointPins = viewModel.waypoints.map { wp in
             PilgrimAnnotation(
@@ -355,9 +429,72 @@ struct ActiveWalkView: View {
             showsUserLocation: true,
             followsUserLocation: true,
             routeSegments: viewModel.routeSegments,
-            pinAnnotations: waypointPins
+            pinAnnotations: waypointPins + proximityAnnotations(),
+            onAnnotationTap: { annotation in
+                handleAnnotationTap(annotation)
+            }
         )
         .frame(height: height)
+    }
+
+    private func proximityAnnotations() -> [PilgrimAnnotation] {
+        guard let loc = viewModel.currentLocation else { return [] }
+        let userLoc = CLLocation(latitude: loc.latitude, longitude: loc.longitude)
+
+        struct Candidate {
+            let annotation: PilgrimAnnotation
+            let distance: CLLocationDistance
+        }
+
+        var candidates: [Candidate] = []
+
+        for whisper in GeoCacheService.shared.cachedWhispers {
+            let dist = userLoc.distance(from: CLLocation(latitude: whisper.latitude, longitude: whisper.longitude))
+            guard dist <= Self.mapVisibilityRadius else { continue }
+            guard let cat = whisper.resolvedCategory else { continue }
+            let isNearby = dist <= ProximityDetectionService.whisperRadius
+            let annotation = PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: whisper.latitude, longitude: whisper.longitude),
+                kind: .whisper(categoryColor: cat.borderColor, isNearby: isNearby)
+            )
+            candidates.append(Candidate(annotation: annotation, distance: dist))
+        }
+
+        for cairn in GeoCacheService.shared.cachedCairns {
+            let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))
+            guard dist <= Self.mapVisibilityRadius else { continue }
+            let annotation = PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: cairn.latitude, longitude: cairn.longitude),
+                kind: .cairn(stoneCount: cairn.stoneCount, tier: cairn.tier)
+            )
+            candidates.append(Candidate(annotation: annotation, distance: dist))
+        }
+
+        candidates.sort { $0.distance < $1.distance }
+
+        var accepted: [(annotation: PilgrimAnnotation, lat: Double, lon: Double)] = []
+        for candidate in candidates {
+            guard accepted.count < Self.maxVisiblePins else { break }
+            let cLat = candidate.annotation.coordinate.latitude
+            let cLon = candidate.annotation.coordinate.longitude
+            let isSameType: (PilgrimAnnotation.Kind, PilgrimAnnotation.Kind) -> Bool = { a, b in
+                switch (a, b) {
+                case (.whisper, .whisper), (.cairn, .cairn): return true
+                default: return false
+                }
+            }
+            let tooClose = accepted.contains { a in
+                guard isSameType(a.annotation.kind, candidate.annotation.kind) else { return false }
+                let dLat = (a.lat - cLat) * 111_000
+                let dLon = (a.lon - cLon) * 111_000 * cos(cLat * .pi / 180)
+                return (dLat * dLat + dLon * dLon) < Self.minPinSeparation * Self.minPinSeparation
+            }
+            if !tooClose {
+                accepted.append((candidate.annotation, cLat, cLon))
+            }
+        }
+
+        return accepted.map(\.annotation)
     }
 
     private var statsSection: some View {
@@ -626,3 +763,155 @@ struct AudioWaveformView: View {
         return minHeight + amplitude * (maxHeight - minHeight)
     }
 }
+
+// MARK: - Whisper & Stone Actions
+
+extension ActiveWalkView {
+
+    private func placeWhisper(whisper: WhisperDefinition, expiry: KanjiExpiryPicker.ExpiryDuration) {
+        guard let location = viewModel.currentLocation else { return }
+
+        HapticPattern.whisperPlaced.fire()
+
+        Task {
+            do {
+                _ = try await WhisperService.placeWhisper(
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    whisperId: whisper.id,
+                    category: whisper.category.rawValue,
+                    expiryOption: expiry.apiValue
+                )
+                await MainActor.run {
+                    viewModel.whispersPlacedThisWalk += 1
+                    WhisperPlayer.shared.play(whisper)
+                    let localId = UUID().uuidString
+                    let expiryDate = Self.isoFormatter.string(from: Date().addingTimeInterval(TimeInterval(expiry.days * 86400)))
+                    GeoCacheService.shared.cachedWhispers.append(CachedWhisper(
+                        id: localId,
+                        latitude: location.latitude,
+                        longitude: location.longitude,
+                        whisperId: whisper.id,
+                        category: whisper.category.rawValue,
+                        expiresAt: expiryDate
+                    ))
+                    viewModel.proximityService.suppressTarget(id: "whisper-\(localId)")
+                    GeoCacheService.shared.persistCurrentWhispers()
+                }
+            } catch {
+                print("[ActiveWalk] Whisper placement failed: \(error)")
+            }
+        }
+    }
+
+    private func placeStone() {
+        guard let location = viewModel.currentLocation else { return }
+
+        let cairn = nearestCachedCairn()
+        let tier = cairn?.tier.soundTier ?? 1
+        HapticPattern.stonePlaced(tier: tier).fire()
+
+        Task {
+            do {
+                let result = try await CairnService.placeStone(
+                    latitude: location.latitude,
+                    longitude: location.longitude
+                )
+                await MainActor.run {
+                    viewModel.stonePlacedThisWalk = true
+                    StonePlayer.shared.playForCount(result.stoneCount)
+                    if let idx = GeoCacheService.shared.cachedCairns.firstIndex(where: { $0.id == result.id }) {
+                        let old = GeoCacheService.shared.cachedCairns[idx]
+                        GeoCacheService.shared.cachedCairns[idx] = CachedCairn(
+                            id: old.id,
+                            latitude: old.latitude,
+                            longitude: old.longitude,
+                            stoneCount: result.stoneCount,
+                            lastPlacedAt: old.lastPlacedAt
+                        )
+                    } else {
+                        GeoCacheService.shared.cachedCairns.append(CachedCairn(
+                            id: result.id,
+                            latitude: location.latitude,
+                            longitude: location.longitude,
+                            stoneCount: result.stoneCount,
+                            lastPlacedAt: Self.isoFormatter.string(from: Date())
+                        ))
+                    }
+                    viewModel.proximityService.suppressTarget(id: "cairn-\(result.id)")
+                    GeoCacheService.shared.persistCurrentCairns()
+                }
+            } catch {
+                print("[ActiveWalk] Stone placement failed: \(error)")
+            }
+        }
+    }
+
+    private func nearestCachedCairn() -> CachedCairn? {
+        guard let location = viewModel.currentLocation else { return nil }
+        let userLoc = CLLocation(latitude: location.latitude, longitude: location.longitude)
+        let maxMergeDistance: CLLocationDistance = 21
+        return GeoCacheService.shared.cachedCairns
+            .compactMap { cairn -> (CachedCairn, CLLocationDistance)? in
+                let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))
+                return dist <= maxMergeDistance ? (cairn, dist) : nil
+            }
+            .min(by: { $0.1 < $1.1 })
+            .map(\.0)
+    }
+
+    private func handleAnnotationTap(_ annotation: PilgrimAnnotation) {
+        switch annotation.kind {
+        case .whisper:
+            let coord = annotation.coordinate
+            if let cached = GeoCacheService.shared.cachedWhispers.first(where: {
+                abs($0.latitude - coord.latitude) < 0.0001 && abs($0.longitude - coord.longitude) < 0.0001
+            }),
+               let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
+                WhisperPlayer.shared.play(definition)
+                HapticPattern.whisperProximity.fire()
+            }
+        case .cairn:
+            let coord = annotation.coordinate
+            if let cached = GeoCacheService.shared.cachedCairns.first(where: {
+                abs($0.latitude - coord.latitude) < 0.0001 && abs($0.longitude - coord.longitude) < 0.0001
+            }) {
+                tappedCairn = cached
+            }
+        default:
+            break
+        }
+    }
+
+    private func handleProximityEvent(_ event: ProximityEvent) {
+        guard event.direction == .entered,
+              viewModel.status.isActiveStatus else { return }
+
+        switch event.target.type {
+        case .whisper:
+            let whisperId = event.target.id.replacingOccurrences(of: "whisper-", with: "")
+            viewModel.encounteredWhisperIDs.insert(whisperId)
+            proximityNotification = .whisper()
+            HapticPattern.whisperProximity.fire()
+
+            if UserPreferences.autoPlayWhisperOnProximity.value,
+               UserPreferences.soundsEnabled.value {
+                if let cached = GeoCacheService.shared.cachedWhispers.first(where: { $0.id == whisperId }),
+                   let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
+                    WhisperPlayer.shared.play(definition)
+                }
+            }
+
+        case .cairn:
+            let cairnId = event.target.id.replacingOccurrences(of: "cairn-", with: "")
+            viewModel.encounteredCairnIDs.insert(cairnId)
+            if let cached = GeoCacheService.shared.cachedCairns.first(where: { $0.id == cairnId }) {
+                proximityNotification = .cairn(stoneCount: cached.stoneCount)
+            } else {
+                proximityNotification = .cairn(stoneCount: 1)
+            }
+            HapticPattern.cairnProximity.fire()
+        }
+    }
+}
+

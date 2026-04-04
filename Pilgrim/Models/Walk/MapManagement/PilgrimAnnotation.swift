@@ -1,4 +1,5 @@
 import CoreLocation
+import UIKit
 
 struct PilgrimAnnotation: Identifiable {
     let id = UUID()
@@ -11,6 +12,8 @@ struct PilgrimAnnotation: Identifiable {
         case waypoint(label: String, icon: String)
         case startPoint
         case endPoint
+        case whisper(categoryColor: UIColor, isNearby: Bool)
+        case cairn(stoneCount: Int, tier: CairnTier)
     }
 }
 

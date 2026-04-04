@@ -238,7 +238,9 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
             guard isFirst || checkForAppropriateAccuracy(location) else { continue }
 
             let location = refineLocation(location)
-            locationsRelay.accept(locationsRelay.value + [location.asTemp])
+            let sample = location.asTemp
+            locationsRelay.accept(locationsRelay.value + [sample])
+            currentLocationRelay.accept(sample)
 
             let lastIndex = self.locationsRelay.value.count - 2
             guard shouldUpdateDistance, let lastLocation = locationsRelay.value.safeValue(for: lastIndex) else { continue }

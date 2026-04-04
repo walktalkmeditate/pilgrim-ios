@@ -53,6 +53,8 @@ struct UserPreferences {
     static let contributeToCollective = UserPreference.Required<Bool>(key: "contributeToCollective", defaultValue: false)
     static let lastSeenCollectiveWalks = UserPreference.Required<Int>(key: "lastSeenCollectiveWalks", defaultValue: 0)
 
+    static let autoPlayWhisperOnProximity = UserPreference.Required<Bool>(key: "autoPlayWhisperOnProximity", defaultValue: true)
+
     static let beginWithIntention = UserPreference.Required<Bool>(key: "beginWithIntention", defaultValue: false)
 
     static let celestialAwarenessEnabled = UserPreference.Required<Bool>(key: "celestialAwarenessEnabled", defaultValue: false)

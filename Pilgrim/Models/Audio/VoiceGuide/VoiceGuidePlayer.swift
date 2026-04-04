@@ -1,4 +1,5 @@
 import AVFoundation
+import Combine
 
 final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
 
@@ -14,6 +15,8 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
     private var lastPromptId: String?
     private var lastPackId: String?
 
+    let playbackDidFinish = PassthroughSubject<Void, Never>()
+
     var isPlaying: Bool { player?.isPlaying ?? false }
     var hasLastPrompt: Bool { lastPromptId != nil }
 
@@ -22,6 +25,7 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
     func play(prompt: VoiceGuidePrompt, packId: String, onFinished: (() -> Void)? = nil) {
         guard let url = fileStore.localURL(for: prompt, packId: packId) else { return }
 
+        AudioPriorityQueue.shared.interruptForVoiceGuide()
         stop()
 
         self.onFinished = onFinished
@@ -73,6 +77,7 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
             let callback = self?.onFinished
             self?.onFinished = nil
             callback?()
+            self?.playbackDidFinish.send()
         }
     }
 
