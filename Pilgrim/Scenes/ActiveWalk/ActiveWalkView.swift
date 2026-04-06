@@ -325,13 +325,10 @@ struct ActiveWalkView: View {
             .presentationBackground(Color.parchment.opacity(0.95))
         }
         .sheet(item: $tappedCairn) { cairn in
-            VStack(spacing: Constants.UI.Padding.normal) {
-                CairnDetailView(cairn: cairn, canPlaceStone: false, onPlaceStone: nil)
-            }
-            .padding(Constants.UI.Padding.big)
-            .presentationDetents([.fraction(0.35)])
-            .presentationDragIndicator(.visible)
-            .presentationBackground(Color.parchment.opacity(0.95))
+            CairnDetailView(cairn: cairn, canPlaceStone: false, onPlaceStone: nil)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Color.parchment.opacity(0.95))
         }
         .proximityNotification(event: $proximityNotification)
         .onReceive(viewModel.proximityService.proximityEvents) { event in
@@ -850,7 +847,7 @@ extension ActiveWalkView {
     private func nearestCachedCairn() -> CachedCairn? {
         guard let location = viewModel.currentLocation else { return nil }
         let userLoc = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        let maxMergeDistance: CLLocationDistance = 21
+        let maxMergeDistance: CLLocationDistance = 42
         return GeoCacheService.shared.cachedCairns
             .compactMap { cairn -> (CachedCairn, CLLocationDistance)? in
                 let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))

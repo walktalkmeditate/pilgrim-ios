@@ -47,6 +47,30 @@ enum CairnTier: Int, CaseIterable {
 
     var glows: Bool { self == .eternal }
 
+    var threshold: Int {
+        switch self {
+        case .faint: return 0
+        case .small: return 3
+        case .medium: return 7
+        case .large: return 12
+        case .great: return 42
+        case .sacred: return 77
+        case .eternal: return 108
+        }
+    }
+
+    var nextTier: CairnTier? {
+        switch self {
+        case .faint: return .small
+        case .small: return .medium
+        case .medium: return .large
+        case .large: return .great
+        case .great: return .sacred
+        case .sacred: return .eternal
+        case .eternal: return nil
+        }
+    }
+
     var soundTier: Int {
         switch self {
         case .faint: return 1
