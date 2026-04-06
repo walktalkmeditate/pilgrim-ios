@@ -2,6 +2,11 @@ name: TestFlight
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Marketing version (e.g. 1.2.0). Leave empty to keep current.'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -66,6 +71,13 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "$PROFILE_BASE64" | base64 -d > ~/Library/MobileDevice/Provisioning\ Profiles/pilgrim.mobileprovision
           echo "$WIDGET_PROFILE_BASE64" | base64 -d > ~/Library/MobileDevice/Provisioning\ Profiles/pilgrim-widget.mobileprovision
+
+      - name: Set Marketing Version
+        if: inputs.version != ''
+        env:
+          NEW_VERSION: ${{ inputs.version }}
+        run: |
+          sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $NEW_VERSION/" Pilgrim.xcodeproj/project.pbxproj
 
       - name: Bump Build Number
         run: scripts/release.sh bump
