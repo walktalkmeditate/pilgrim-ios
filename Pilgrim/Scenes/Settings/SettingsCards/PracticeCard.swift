@@ -7,6 +7,7 @@ struct PracticeCard: View {
     @State private var zodiacSystem = UserPreferences.zodiacSystem.value
     @State private var isMetric = UserPreferences.distanceMeasurementType.safeValue == .kilometers
     @State private var contributeToCollective = UserPreferences.contributeToCollective.value
+    @State private var autoPlayWhisper = UserPreferences.autoPlayWhisperOnProximity.value
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
@@ -62,6 +63,14 @@ struct PracticeCard: View {
                 isOn: $contributeToCollective
             ) { newValue in
                 UserPreferences.contributeToCollective.value = newValue
+            }
+
+            settingToggle(
+                label: "Auto-play nearby whispers",
+                description: "Hear whispers left by other pilgrims as you walk near them",
+                isOn: $autoPlayWhisper
+            ) { newValue in
+                UserPreferences.autoPlayWhisperOnProximity.value = newValue
             }
         }
         .settingsCard()
