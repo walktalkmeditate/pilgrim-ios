@@ -164,7 +164,6 @@ cmd_archive() {
         -sdk iphoneos \
         -configuration Release \
         -archivePath "$ARCHIVE_PATH" \
-        CODE_SIGN_STYLE=Manual \
         -quiet \
         $auth_flags || fail "Archive failed"
 
