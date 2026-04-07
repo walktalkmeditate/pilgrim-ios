@@ -90,6 +90,21 @@ jobs:
           git commit -m "release: bump build [skip ci]"
           git push
 
+      - name: Snapshot Development Certs
+        run: |
+          KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
+          if [ ! -f "$KEY_PATH" ]; then touch "$RUNNER_TEMP/pre_build_certs.txt"; exit 0; fi
+          TOKEN=$(python3 -c "
+          import jwt, time
+          key = open('$KEY_PATH').read()
+          payload = {'iss': '$APP_STORE_API_ISSUER', 'iat': int(time.time()), 'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1'}
+          print(jwt.encode(payload, key, algorithm='ES256', headers={'kid': '$APP_STORE_API_KEY'}))
+          " 2>/dev/null || exit 0)
+          curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://api.appstoreconnect.apple.com/v1/certificates?filter[certificateType]=DEVELOPMENT" \
+            | python3 -c "import sys,json; [print(c['id']) for c in json.load(sys.stdin).get('data',[])]" \
+            > "$RUNNER_TEMP/pre_build_certs.txt" 2>/dev/null || touch "$RUNNER_TEMP/pre_build_certs.txt"
+
       - name: Archive
         run: scripts/release.sh archive
 
@@ -101,6 +116,29 @@ jobs:
 
       - name: Generate Changelog
         run: scripts/release.sh changelog
+
+      - name: Revoke Auto-Created Development Certs
+        if: always()
+        run: |
+          KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
+          if [ ! -f "$KEY_PATH" ] || [ ! -f "$RUNNER_TEMP/pre_build_certs.txt" ]; then exit 0; fi
+          TOKEN=$(python3 -c "
+          import jwt, time
+          key = open('$KEY_PATH').read()
+          payload = {'iss': '$APP_STORE_API_ISSUER', 'iat': int(time.time()), 'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1'}
+          print(jwt.encode(payload, key, algorithm='ES256', headers={'kid': '$APP_STORE_API_KEY'}))
+          " 2>/dev/null || exit 0)
+          NEW_CERTS=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://api.appstoreconnect.apple.com/v1/certificates?filter[certificateType]=DEVELOPMENT" \
+            | python3 -c "import sys,json; [print(c['id']) for c in json.load(sys.stdin).get('data',[])]" 2>/dev/null || true)
+          PRE_CERTS=$(cat "$RUNNER_TEMP/pre_build_certs.txt")
+          for CERT_ID in $NEW_CERTS; do
+            if ! echo "$PRE_CERTS" | grep -q "$CERT_ID"; then
+              curl -s -X DELETE -H "Authorization: Bearer $TOKEN" \
+                "https://api.appstoreconnect.apple.com/v1/certificates/$CERT_ID" || true
+              echo "Revoked new development cert: $CERT_ID"
+            fi
+          done
 
       - name: Cleanup
         if: always()
