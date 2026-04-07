@@ -227,7 +227,9 @@ struct PilgrimMapView: UIViewRepresentable {
         guard mapView.mapboxMap.isStyleLoaded else { return }
 
         if coordinator.circleManager == nil {
-            coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager()
+            coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager(
+                layerPosition: .above("pilgrim-route-layer")
+            )
         }
 
         guard let circleManager = coordinator.circleManager else { return }
@@ -290,7 +292,9 @@ struct PilgrimMapView: UIViewRepresentable {
         circleManager.annotations = circles
 
         if coordinator.pointManager == nil {
-            coordinator.pointManager = mapView.annotations.makePointAnnotationManager()
+            coordinator.pointManager = mapView.annotations.makePointAnnotationManager(
+                layerPosition: .above("pilgrim-route-layer")
+            )
         }
 
         guard let pointManager = coordinator.pointManager else { return }
