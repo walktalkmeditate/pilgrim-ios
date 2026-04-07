@@ -231,11 +231,23 @@ struct PilgrimMapView: UIViewRepresentable {
                 layerPosition: .above("pilgrim-route-layer")
             )
         }
+        if let circleManager = coordinator.circleManager {
+            circleManager.annotations = buildCircles(from: pinAnnotations)
+        }
 
-        guard let circleManager = coordinator.circleManager else { return }
+        if coordinator.pointManager == nil {
+            coordinator.pointManager = mapView.annotations.makePointAnnotationManager(
+                layerPosition: .above("pilgrim-route-layer")
+            )
+        }
+        if let pointManager = coordinator.pointManager {
+            pointManager.annotations = buildPoints(from: pinAnnotations)
+            pointManager.iconAllowOverlap = true
+        }
+    }
 
+    private static func buildCircles(from pinAnnotations: [PilgrimAnnotation]) -> [CircleAnnotation] {
         var circles: [CircleAnnotation] = []
-
         for pin in pinAnnotations {
             if case .endPoint = pin.kind {
                 var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
@@ -265,8 +277,6 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeColor = StyleColor(UIColor.rust)
                 circle.circleStrokeWidth = 1.5
                 circle.circleStrokeOpacity = 1.0
-            case .waypoint:
-                continue
             case .startPoint:
                 circle.circleRadius = 6
                 circle.circleColor = StyleColor(UIColor.parchment)
@@ -281,30 +291,21 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeColor = StyleColor(UIColor.stone)
                 circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
-            case .whisper:
-                continue
-            case .cairn:
+            case .waypoint, .whisper, .cairn:
                 continue
             }
             circles.append(circle)
         }
+        return circles
+    }
 
-        circleManager.annotations = circles
-
-        if coordinator.pointManager == nil {
-            coordinator.pointManager = mapView.annotations.makePointAnnotationManager(
-                layerPosition: .above("pilgrim-route-layer")
-            )
-        }
-
-        guard let pointManager = coordinator.pointManager else { return }
-
+    private static func buildPoints(from pinAnnotations: [PilgrimAnnotation]) -> [PointAnnotation] {
         var points: [PointAnnotation] = []
         for pin in pinAnnotations {
             switch pin.kind {
             case .waypoint(_, let icon):
                 var point = PointAnnotation(coordinate: pin.coordinate)
-                if let image = Self.renderSFSymbol(icon, size: 18, color: .stone) {
+                if let image = renderSFSymbol(icon, size: 18, color: .stone) {
                     point.image = .init(image: image, name: icon)
                 }
                 point.iconSize = 1.0
@@ -315,7 +316,7 @@ struct PilgrimMapView: UIViewRepresentable {
                     Int((categoryColor.cgColor.components?[0] ?? 0) * 255),
                     Int((categoryColor.cgColor.components?[1] ?? 0) * 255),
                     Int((categoryColor.cgColor.components?[2] ?? 0) * 255))
-                if let image = Self.renderSFSymbol("wind", size: 14, color: categoryColor) {
+                if let image = renderSFSymbol("wind", size: 14, color: categoryColor) {
                     point.image = .init(image: image, name: colorKey)
                 }
                 point.iconSize = 1.0
@@ -323,7 +324,7 @@ struct PilgrimMapView: UIViewRepresentable {
             case .cairn(_, let tier):
                 var point = PointAnnotation(coordinate: pin.coordinate)
                 let iconSize: CGFloat = 12 + CGFloat(tier.rawValue)
-                if let image = Self.renderSFSymbol("mountain.2", size: iconSize, color: .moss) {
+                if let image = renderSFSymbol("mountain.2", size: iconSize, color: .moss) {
                     point.image = .init(image: image, name: "cairn-\(tier.rawValue)")
                 }
                 point.iconSize = 1.0
@@ -332,8 +333,7 @@ struct PilgrimMapView: UIViewRepresentable {
                 break
             }
         }
-        pointManager.annotations = points
-        pointManager.iconAllowOverlap = true
+        return points
     }
 
     private static func renderSFSymbol(_ name: String, size: CGFloat, color: UIColor) -> UIImage? {
