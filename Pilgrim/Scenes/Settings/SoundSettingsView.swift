@@ -79,6 +79,7 @@ struct SoundSettingsView: View {
                 .onChange(of: hapticEnabled) { _, val in
                     UserPreferences.bellHapticEnabled.value = val
                 }
+
             }
         }
     }

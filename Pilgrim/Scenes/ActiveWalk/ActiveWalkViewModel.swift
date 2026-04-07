@@ -41,6 +41,19 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var waypoints: [TempWaypoint] = []
     @Published var weatherSnapshot: WeatherSnapshot?
 
+    @Published var whispersPlacedThisWalk = 0
+    @Published var stonePlacedThisWalk = false
+    @Published var encounteredWhisperIDs: Set<String> = []
+    @Published var encounteredCairnIDs: Set<String> = []
+    @Published private(set) var activeDurationSeconds: TimeInterval = 0
+
+    var isWhisperUnlocked: Bool { activeDurationSeconds >= 7 * 60 }
+    var isStoneUnlocked: Bool { activeDurationSeconds >= 12 * 60 }
+    var canPlaceWhisper: Bool { isWhisperUnlocked && whispersPlacedThisWalk < 7 }
+    var canPlaceStone: Bool { isStoneUnlocked && !stonePlacedThisWalk }
+
+    let proximityService = ProximityDetectionService()
+
     private var meditationStartDate: Date?
     private var meditationIntervals: [TempActivityInterval] = []
     private var completedRecordings: [TempVoiceRecording] = []
@@ -74,6 +87,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         bindSoundscape()
         bindVoiceGuide()
         bindCompletedRecordings()
+        bindProximity()
 
         let guard_ = WalkSessionGuard()
         guard_.builder = builder
@@ -175,6 +189,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func startRecording() {
+        proximityService.resetSession()
         builder.setStatus(.recording)
         soundManagement.onWalkStart()
         startVoiceGuideIfEnabled()
@@ -186,6 +201,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func stop() {
+        cancellables.removeAll()
+        proximityService.stopListening()
         sessionGuard?.stopAndCleanup()
         finalizeMeditation()
         soundManagement.onWalkEnd()
@@ -195,6 +212,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func cancel() {
+        cancellables.removeAll()
+        proximityService.stopListening()
         sessionGuard?.stopAndCleanup()
         soundManagement.onWalkEnd()
         voiceGuideManagement.stopGuiding()
@@ -322,6 +341,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                 guard let start else { return }
                 let pauseDuration = pauseList.map { $0.duration }.reduce(0, +)
                 let activeDuration = max(0, start.distance(to: Date()) - pauseDuration)
+                self.activeDurationSeconds = activeDuration
 
                 self.duration = self.formatTime(activeDuration)
 
@@ -364,6 +384,38 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recordings in
                 self?.completedRecordings = recordings
+            }
+            .store(in: &cancellables)
+    }
+
+    private func bindProximity() {
+        proximityService.bindToLocation(
+            liveStats.currentLocation
+        )
+        proximityService.resetSession()
+        GeoCacheService.shared.invalidateLastFetch()
+
+        liveStats.currentLocation
+            .compactMap { $0 }
+            .throttle(for: .seconds(300), scheduler: DispatchQueue.main, latest: true)
+            .sink { [weak self] sample in
+                guard let self else { return }
+                Task {
+                    await GeoCacheService.shared.fetchIfNeeded(
+                        near: CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude)
+                    )
+                    await MainActor.run {
+                        self.proximityService.updateTargets(GeoCacheService.shared.proximityTargets())
+                    }
+                }
+            }
+            .store(in: &cancellables)
+
+        GeoCacheService.shared.$cachedWhispers
+            .combineLatest(GeoCacheService.shared.$cachedCairns)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _ in
+                self?.proximityService.updateTargets(GeoCacheService.shared.proximityTargets())
             }
             .store(in: &cancellables)
     }

@@ -1,4 +1,5 @@
 import SwiftUI
+import Network
 
 struct WalkOptionsSheet: View {
 
@@ -7,6 +8,15 @@ struct WalkOptionsSheet: View {
     var onDropWaypoint: (() -> Void)?
     let currentIntention: String?
     let waypointCount: Int
+
+    var canPlaceWhisper: Bool = false
+    var isWhisperUnlocked: Bool = false
+    var whispersRemaining: Int = 7
+    var onLeaveWhisper: (() -> Void)?
+
+    var canPlaceStone: Bool = false
+    var isStoneUnlocked: Bool = false
+    var onPlaceStone: (() -> Void)?
 
     var soundscapeName: String?
     var isSoundscapePlaying: Bool = false
@@ -49,6 +59,7 @@ struct WalkOptionsSheet: View {
                 }
 
                 if isRecording {
+                    traceSection
                     audioSection
                 }
             }
@@ -56,6 +67,58 @@ struct WalkOptionsSheet: View {
             .padding(.top, Constants.UI.Padding.big)
 
             Spacer()
+        }
+        .onAppear { checkConnectivity() }
+    }
+
+    @State private var isConnected = false
+
+    private func checkConnectivity() {
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { path in
+            DispatchQueue.main.async {
+                self.isConnected = path.status == .satisfied
+            }
+            monitor.cancel()
+        }
+        monitor.start(queue: DispatchQueue(label: "connectivity-check"))
+    }
+
+    @ViewBuilder
+    private var traceSection: some View {
+        if !isConnected { EmptyView() }
+        else {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Traces")
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog.opacity(0.5))
+                .padding(.top, 8)
+                .padding(.leading, 4)
+
+            optionRow(
+                icon: "wind",
+                title: "Leave a Whisper",
+                subtitle: isWhisperUnlocked
+                    ? "\(whispersRemaining) remaining"
+                    : "Unlocks at 7 min"
+            ) {
+                onLeaveWhisper?()
+            }
+            .disabled(!canPlaceWhisper)
+            .opacity(canPlaceWhisper ? 1.0 : 0.4)
+
+            optionRow(
+                icon: "mountain.2",
+                title: "Place a Stone",
+                subtitle: isStoneUnlocked
+                    ? (canPlaceStone ? "1 remaining" : "Placed")
+                    : "Unlocks at 12 min"
+            ) {
+                onPlaceStone?()
+            }
+            .disabled(!canPlaceStone)
+            .opacity(canPlaceStone ? 1.0 : 0.4)
+        }
         }
     }
 

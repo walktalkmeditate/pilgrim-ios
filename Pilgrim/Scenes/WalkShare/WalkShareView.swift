@@ -186,15 +186,22 @@ struct WalkShareView: View {
         return Button {
             viewModel.selectedExpiry = option
         } label: {
-            Text(option.label)
-                .font(Constants.Typography.caption)
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(isSelected ? Color.stone : Color.parchmentSecondary)
-                .foregroundColor(isSelected ? .parchment : .fog)
-                .cornerRadius(Constants.UI.CornerRadius.small)
+            ZStack {
+                // CJK glyphs require system font — Cormorant Garamond has no kanji coverage
+                Text(option.kanji)
+                    .font(.system(size: 40, weight: .ultraLight))
+                    .foregroundColor(isSelected ? .parchment.opacity(0.12) : .fog.opacity(0.06))
+
+                Text(option.label)
+                    .font(Constants.Typography.caption)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(isSelected ? Color.stone : Color.parchmentSecondary)
+            .foregroundColor(isSelected ? .parchment : .fog)
+            .cornerRadius(Constants.UI.CornerRadius.small)
         }
     }
 

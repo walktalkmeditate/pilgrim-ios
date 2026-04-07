@@ -83,6 +83,16 @@ struct MoonPhaseShape: Shape {
         let r = min(rect.width, rect.height) / 2
         let center = CGPoint(x: rect.midX, y: rect.midY)
 
+        if illumination > 0.95 {
+            var full = Path()
+            full.addArc(center: center, radius: r, startAngle: .degrees(0), endAngle: .degrees(360), clockwise: false)
+            return full
+        }
+
+        if illumination < 0.05 {
+            return Path()
+        }
+
         var path = Path()
         path.addArc(center: center, radius: r,
                     startAngle: .degrees(-90), endAngle: .degrees(90),

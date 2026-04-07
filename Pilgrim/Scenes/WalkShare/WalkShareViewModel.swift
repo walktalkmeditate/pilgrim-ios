@@ -16,6 +16,7 @@ final class WalkShareViewModel: ObservableObject {
     @Published var selectedExpiry: ExpiryOption = .season
 
     @Published var shareState: ShareState = .idle
+    private var cachedExpiryDate: Date?
 
     enum ExpiryOption: Int, CaseIterable {
         case moon = 30
@@ -29,6 +30,22 @@ final class WalkShareViewModel: ObservableObject {
             case .cycle: return "1 cycle"
             }
         }
+
+        var kanji: String {
+            switch self {
+            case .moon: return "\u{6708}"
+            case .season: return "\u{5B63}"
+            case .cycle: return "\u{5DE1}"
+            }
+        }
+
+        var cacheKey: String {
+            switch self {
+            case .moon: return "moon"
+            case .season: return "season"
+            case .cycle: return "cycle"
+            }
+        }
     }
 
     enum ShareState: Equatable {
@@ -39,7 +56,7 @@ final class WalkShareViewModel: ObservableObject {
     }
 
     var expiryDate: Date {
-        Calendar.current.date(
+        cachedExpiryDate ?? Calendar.current.date(
             byAdding: .day,
             value: selectedExpiry.rawValue,
             to: Date()
@@ -48,7 +65,8 @@ final class WalkShareViewModel: ObservableObject {
 
     var hasExistingShare: Bool {
         guard let uuid = walk.uuid else { return false }
-        return ShareService.cachedShare(for: uuid) != nil
+        guard let cached = ShareService.cachedShare(for: uuid) else { return false }
+        return !cached.isExpired
     }
 
     var formattedDistance: String? {
@@ -92,8 +110,9 @@ final class WalkShareViewModel: ObservableObject {
 
     init(walk: WalkInterface) {
         self.walk = walk
-        if let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid) {
+        if let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid), !cached.isExpired {
             shareState = .success(url: cached.url)
+            cachedExpiryDate = cached.expiry
         }
     }
 
@@ -106,7 +125,7 @@ final class WalkShareViewModel: ObservableObject {
         do {
             let result = try await ShareService.share(payload: payload)
             if let uuid = walk.uuid {
-                ShareService.cacheShare(result, walkID: uuid, expiryDays: selectedExpiry.rawValue)
+                ShareService.cacheShare(result, walkID: uuid, expiryDays: selectedExpiry.rawValue, expiryOption: selectedExpiry.cacheKey)
             }
             shareState = .success(url: result.url)
         } catch {

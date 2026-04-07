@@ -2,7 +2,6 @@ import SwiftUI
 import MapboxMaps
 import CoreLocation
 import Combine
-
 typealias MBMapView = MapboxMaps.MapView
 
 struct PilgrimMapView: UIViewRepresentable {
@@ -12,6 +11,7 @@ struct PilgrimMapView: UIViewRepresentable {
     var followsUserLocation: Bool = false
     var routeSegments: [RouteSegment] = []
     var pinAnnotations: [PilgrimAnnotation] = []
+    var onAnnotationTap: ((PilgrimAnnotation) -> Void)?
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     var cameraBounds: MapCameraBounds?
@@ -24,6 +24,7 @@ struct PilgrimMapView: UIViewRepresentable {
         followsUserLocation: Bool = false,
         routeSegments: [RouteSegment] = [],
         pinAnnotations: [PilgrimAnnotation] = [],
+        onAnnotationTap: ((PilgrimAnnotation) -> Void)? = nil,
         cameraCenter: Binding<CLLocationCoordinate2D?> = .constant(nil),
         cameraZoom: Binding<CGFloat> = .constant(14),
         cameraBounds: MapCameraBounds? = nil,
@@ -34,6 +35,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self.followsUserLocation = followsUserLocation
         self.routeSegments = routeSegments
         self.pinAnnotations = pinAnnotations
+        self.onAnnotationTap = onAnnotationTap
         self._cameraCenter = cameraCenter
         self._cameraZoom = cameraZoom
         self.cameraBounds = cameraBounds
@@ -67,6 +69,10 @@ struct PilgrimMapView: UIViewRepresentable {
             let mode: PilgrimMapStyle.Mode = coordinator.currentColorScheme == .dark ? .dark : .light
             PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap, mode: mode)
             coordinator.lastSegments = []
+            if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
+            if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
+            coordinator.circleManager = nil
+            coordinator.pointManager = nil
             Self.applyRouteSource(coordinator.pendingSegments, on: mapView, coordinator: coordinator)
             Self.applyAnnotations(coordinator.pendingAnnotations, on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
@@ -78,6 +84,14 @@ struct PilgrimMapView: UIViewRepresentable {
     func updateUIView(_ mapView: MBMapView, context: Context) {
         context.coordinator.pendingSegments = routeSegments
         context.coordinator.pendingAnnotations = pinAnnotations
+        context.coordinator.onAnnotationTap = onAnnotationTap
+        context.coordinator.currentPinAnnotations = pinAnnotations
+
+        if !context.coordinator.tapGestureAdded, onAnnotationTap != nil {
+            let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleMapTap(_:)))
+            mapView.addGestureRecognizer(tap)
+            context.coordinator.tapGestureAdded = true
+        }
 
         mapView.gestures.options.panEnabled = isInteractive
         mapView.gestures.options.pinchEnabled = isInteractive
@@ -210,8 +224,12 @@ struct PilgrimMapView: UIViewRepresentable {
     // MARK: - Annotations
 
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], on mapView: MBMapView, coordinator: Coordinator) {
+        guard mapView.mapboxMap.isStyleLoaded else { return }
+
         if coordinator.circleManager == nil {
-            coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager()
+            coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager(
+                layerPosition: .above("pilgrim-route-layer")
+            )
         }
 
         guard let circleManager = coordinator.circleManager else { return }
@@ -263,6 +281,10 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeColor = StyleColor(UIColor.stone)
                 circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
+            case .whisper:
+                continue
+            case .cairn:
+                continue
             }
             circles.append(circle)
         }
@@ -270,20 +292,44 @@ struct PilgrimMapView: UIViewRepresentable {
         circleManager.annotations = circles
 
         if coordinator.pointManager == nil {
-            coordinator.pointManager = mapView.annotations.makePointAnnotationManager()
+            coordinator.pointManager = mapView.annotations.makePointAnnotationManager(
+                layerPosition: .above("pilgrim-route-layer")
+            )
         }
 
         guard let pointManager = coordinator.pointManager else { return }
 
         var points: [PointAnnotation] = []
         for pin in pinAnnotations {
-            if case .waypoint(_, let icon) = pin.kind {
+            switch pin.kind {
+            case .waypoint(_, let icon):
                 var point = PointAnnotation(coordinate: pin.coordinate)
                 if let image = Self.renderSFSymbol(icon, size: 18, color: .stone) {
                     point.image = .init(image: image, name: icon)
                 }
                 point.iconSize = 1.0
                 points.append(point)
+            case .whisper(let categoryColor, _):
+                var point = PointAnnotation(coordinate: pin.coordinate)
+                let colorKey = String(format: "whisper-%02X%02X%02X",
+                    Int((categoryColor.cgColor.components?[0] ?? 0) * 255),
+                    Int((categoryColor.cgColor.components?[1] ?? 0) * 255),
+                    Int((categoryColor.cgColor.components?[2] ?? 0) * 255))
+                if let image = Self.renderSFSymbol("wind", size: 14, color: categoryColor) {
+                    point.image = .init(image: image, name: colorKey)
+                }
+                point.iconSize = 1.0
+                points.append(point)
+            case .cairn(_, let tier):
+                var point = PointAnnotation(coordinate: pin.coordinate)
+                let iconSize: CGFloat = 12 + CGFloat(tier.rawValue)
+                if let image = Self.renderSFSymbol("mountain.2", size: iconSize, color: .moss) {
+                    point.image = .init(image: image, name: "cairn-\(tier.rawValue)")
+                }
+                point.iconSize = 1.0
+                points.append(point)
+            default:
+                break
             }
         }
         pointManager.annotations = points
@@ -312,6 +358,34 @@ struct PilgrimMapView: UIViewRepresentable {
         var pendingAnnotations: [PilgrimAnnotation] = []
         var currentColorScheme: ColorScheme = .light
         weak var mapView: MBMapView?
+        var onAnnotationTap: ((PilgrimAnnotation) -> Void)?
+        var currentPinAnnotations: [PilgrimAnnotation] = []
+        var tapGestureAdded = false
+
+        @objc func handleMapTap(_ gesture: UITapGestureRecognizer) {
+            guard let mapView, let onAnnotationTap else { return }
+            let tapPoint = gesture.location(in: mapView)
+            let tapCoord = mapView.mapboxMap.coordinate(for: tapPoint)
+            let tapLoc = CLLocation(latitude: tapCoord.latitude, longitude: tapCoord.longitude)
+
+            var closest: (annotation: PilgrimAnnotation, distance: CLLocationDistance)?
+            for pin in currentPinAnnotations {
+                switch pin.kind {
+                case .whisper, .cairn:
+                    let pinLoc = CLLocation(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude)
+                    let dist = tapLoc.distance(from: pinLoc)
+                    if dist < 25, closest == nil || dist < closest!.distance {
+                        closest = (pin, dist)
+                    }
+                default:
+                    break
+                }
+            }
+
+            if let match = closest {
+                onAnnotationTap(match.annotation)
+            }
+        }
 
         deinit {
             if let mapView {
