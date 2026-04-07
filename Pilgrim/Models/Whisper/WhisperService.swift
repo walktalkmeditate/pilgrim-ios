@@ -44,7 +44,7 @@ enum WhisperService {
             "longitude": longitude,
             "whisper_id": whisperId,
             "category": category,
-            "expiry_option": expiryOption,
+            "expiry_option": expiryOption
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 

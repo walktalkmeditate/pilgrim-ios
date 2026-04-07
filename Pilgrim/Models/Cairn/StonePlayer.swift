@@ -7,7 +7,7 @@ final class StonePlayer: NSObject, AVAudioPlayerDelegate {
     private var player: AVAudioPlayer?
     private let coordinator = AudioSessionCoordinator.shared
 
-    private override init() { super.init() }
+    override private init() { super.init() }
 
     func playForCount(_ count: Int) {
         if player != nil {

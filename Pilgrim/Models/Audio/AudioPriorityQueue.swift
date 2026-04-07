@@ -16,7 +16,7 @@ final class AudioPriorityQueue: NSObject, ObservableObject, AVAudioPlayerDelegat
 
     @Published private(set) var isPlayingWhisper = false
 
-    private override init() {
+    override private init() {
         super.init()
 
         voiceGuidePlayer.playbackDidFinish

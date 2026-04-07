@@ -15,7 +15,7 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published private(set) var isPlaying: Bool = false
     @Published private(set) var isDownloading: Bool = false
 
-    private override init() {
+    override private init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         cacheDir = appSupport.appendingPathComponent("Whispers", isDirectory: true)
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)

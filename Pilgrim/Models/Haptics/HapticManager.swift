@@ -58,7 +58,7 @@ enum HapticPattern {
             let events = [
                 CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0),
                 CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0.08),
-                CHHapticEvent(eventType: .hapticContinuous, parameters: [intensity, sharpness], relativeTime: 0.15, duration: 0.2),
+                CHHapticEvent(eventType: .hapticContinuous, parameters: [intensity, sharpness], relativeTime: 0.15, duration: 0.2)
             ]
 
             let pattern = try CHHapticPattern(events: events, parameters: [])

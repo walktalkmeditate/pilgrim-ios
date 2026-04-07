@@ -29,7 +29,7 @@ enum WhisperCatalog {
 
         WhisperDefinition(id: "stillness-1", title: "Be still", category: .stillness, audioFileName: "whisper-stillness-1", durationSec: 3),
         WhisperDefinition(id: "stillness-2", title: "Breathe", category: .stillness, audioFileName: "whisper-stillness-2", durationSec: 4),
-        WhisperDefinition(id: "stillness-3", title: "You are an animal on the earth", category: .stillness, audioFileName: "whisper-stillness-3", durationSec: 6),
+        WhisperDefinition(id: "stillness-3", title: "You are an animal on the earth", category: .stillness, audioFileName: "whisper-stillness-3", durationSec: 6)
     ]
 
     static func whispers(for category: WhisperCategory) -> [WhisperDefinition] {

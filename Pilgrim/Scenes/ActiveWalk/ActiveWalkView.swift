@@ -911,4 +911,3 @@ extension ActiveWalkView {
         }
     }
 }
-
