@@ -25,6 +25,7 @@ struct WalkStatsSheet: View {
 
     @State private var dragOffset: CGFloat = 0
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Distance (in points) the user must drag before a state change fires.
     private static let dragThreshold: CGFloat = 40
@@ -67,8 +68,13 @@ struct WalkStatsSheet: View {
             }
         }
         .offset(y: dragOffset)
-        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: showsMinimized)
+        .animation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.85), value: showsMinimized)
         .simultaneousGesture(dragGesture)
+        .onChange(of: showsMinimized) { _, _ in
+            // Reset any lingering drag offset when the state changes
+            // (e.g., due to status flip mid-drag). Keeps layout clean.
+            dragOffset = 0
+        }
     }
 
     // MARK: - Drag Gesture
@@ -89,9 +95,7 @@ struct WalkStatsSheet: View {
             }
             .onEnded { value in
                 guard canDrag else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        dragOffset = 0
-                    }
+                    animateDragOffsetToZero()
                     return
                 }
 
@@ -109,7 +113,8 @@ struct WalkStatsSheet: View {
                     (translation > Self.dragThreshold || predictedDelta > Self.flickVelocity)
 
                 if shouldExpand {
-                    // Reset offset instantly so only the state spring animates
+                    // Reset offset instantly so only the state spring animates.
+                    // onChange(of: showsMinimized) also clears any residual offset.
                     dragOffset = 0
                     fireHaptic()
                     state = .expanded
@@ -119,11 +124,21 @@ struct WalkStatsSheet: View {
                     state = .minimized
                 } else {
                     // Didn't cross threshold — rubber-band back to 0
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        dragOffset = 0
-                    }
+                    animateDragOffsetToZero()
                 }
             }
+    }
+
+    /// Rubber-bands the drag offset back to zero with a spring. Respects
+    /// reduce motion — instant snap if the user has it enabled.
+    private func animateDragOffsetToZero() {
+        if reduceMotion {
+            dragOffset = 0
+        } else {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                dragOffset = 0
+            }
+        }
     }
 
     /// Fires a soft impact haptic for sheet state transitions.
@@ -183,7 +198,7 @@ struct WalkStatsSheet: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Walk stats")
         .accessibilityValue("\(viewModel.duration), \(viewModel.distance)")
-        .accessibilityAddTraits([.isButton, .updatesFrequently])
+        .accessibilityAddTraits(.isButton)
         .accessibilityHint("Double tap to show full stats and controls")
     }
 

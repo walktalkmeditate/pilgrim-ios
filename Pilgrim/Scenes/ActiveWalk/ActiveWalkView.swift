@@ -34,7 +34,7 @@ struct ActiveWalkView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             // Full-screen map background (ignores safe area to fill entire screen)
             mapSection()
                 .ignoresSafeArea()
@@ -60,13 +60,14 @@ struct ActiveWalkView: View {
             // expanded, these elements are covered by the sheet — that's fine,
             // the expanded sheet is the user's focus. When minimized, these
             // elements become visible above it.
-            // Hit testing is enabled only when the walk is actively recording
-            // AND the sheet is minimized, so taps on the audio/voice-guide
-            // indicators work only when they're actually visible.
+            // Hit testing is enabled when the sheet is minimized AND the walk
+            // is in an active status (recording or paused). We use
+            // `isActiveStatus` here (not `== .recording`) so that during the
+            // 800ms pause-debounce window, the audio indicators remain tappable.
             ambientOverlay
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, Self.minimizedSheetHeight)
-                .allowsHitTesting(viewModel.status == .recording && sheetState == .minimized)
+                .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
 
             // Bottom sheet with stats and controls
             bottomSheet
