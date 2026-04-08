@@ -23,7 +23,14 @@ struct WalkStatsSheet: View {
     let onStartMeditation: () -> Void
     let onRequestEndWalk: () -> Void
 
+    @State private var dragOffset: CGFloat = 0
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Distance (in points) the user must drag before a state change fires.
+    private static let dragThreshold: CGFloat = 40
+
+    /// Maximum visible drag offset — drag beyond this point resists further movement.
+    private static let dragClamp: CGFloat = 100
 
     private var isLargeText: Bool {
         dynamicTypeSize >= .accessibility2
@@ -35,6 +42,12 @@ struct WalkStatsSheet: View {
     /// `.paused` and `.autoPaused` — we want the sheet expanded in those states.
     private var showsMinimized: Bool {
         state == .minimized && viewModel.status == .recording
+    }
+
+    /// Drag gesture is only meaningful during an active recording walk.
+    /// In pre-walk and paused states, the sheet is locked in its current state.
+    private var canDrag: Bool {
+        viewModel.status == .recording
     }
 
     var body: some View {
@@ -49,7 +62,53 @@ struct WalkStatsSheet: View {
                     .transition(.opacity)
             }
         }
+        .offset(y: dragOffset)
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: showsMinimized)
+        .simultaneousGesture(dragGesture)
+    }
+
+    // MARK: - Drag Gesture
+
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 15)
+            .onChanged { value in
+                guard canDrag else { return }
+                let translation = value.translation.height
+                if showsMinimized && translation < 0 {
+                    // Dragging up from minimized — reveal expanded content
+                    dragOffset = max(translation, -Self.dragClamp)
+                } else if !showsMinimized && translation > 0 {
+                    // Dragging down from expanded — preview minimized
+                    dragOffset = min(translation, Self.dragClamp)
+                }
+            }
+            .onEnded { value in
+                guard canDrag else {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        dragOffset = 0
+                    }
+                    return
+                }
+
+                let translation = value.translation.height
+
+                if showsMinimized && translation < -Self.dragThreshold {
+                    // Crossed threshold — expand. Reset offset instantly so
+                    // only the state animation (spring on showsMinimized) runs.
+                    dragOffset = 0
+                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                    state = .expanded
+                } else if !showsMinimized && translation > Self.dragThreshold {
+                    dragOffset = 0
+                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                    state = .minimized
+                } else {
+                    // Didn't cross threshold — rubber-band back to 0
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        dragOffset = 0
+                    }
+                }
+            }
     }
 
     // MARK: - Drag Handle
