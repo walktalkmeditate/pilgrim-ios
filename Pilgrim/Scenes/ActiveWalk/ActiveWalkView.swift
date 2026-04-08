@@ -104,25 +104,12 @@ struct ActiveWalkView: View {
         }
         .onChange(of: viewModel.status) { _, newStatus in
             // Auto-collapse sheet when walk starts; auto-expand on pause.
-            let reduceMotion = UIAccessibility.isReduceMotionEnabled
+            // The sheet's internal .animation(value: showsMinimized) drives
+            // the visual transition and respects reduce motion automatically.
             switch newStatus {
             case .recording:
-                if reduceMotion {
-                    sheetState = .minimized
-                } else {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
-                        sheetState = .minimized
-                    }
-                }
-            case .paused, .autoPaused:
-                if reduceMotion {
-                    sheetState = .expanded
-                } else {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
-                        sheetState = .expanded
-                    }
-                }
-            case .waiting, .ready:
+                sheetState = .minimized
+            case .paused, .autoPaused, .waiting, .ready:
                 sheetState = .expanded
             }
 

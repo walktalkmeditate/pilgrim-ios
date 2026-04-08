@@ -40,7 +40,7 @@ struct WalkStatsSheet: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: showsMinimized)
+        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: showsMinimized)
     }
 
     // MARK: - Drag Handle
@@ -56,33 +56,41 @@ struct WalkStatsSheet: View {
 
     // MARK: - Minimized
 
-    /// Thin bar with timer and distance only. Tapping doesn't do anything yet
-    /// — the drag gesture (Stage 4) will let users swipe up to expand.
+    /// Thin bar with timer and distance only. Tappable to expand as a fallback
+    /// until the drag gesture lands in Stage 4.
     private var minimizedContent: some View {
-        HStack(spacing: Constants.UI.Padding.big) {
-            Text(viewModel.duration)
-                .font(Constants.Typography.timer)
-                .foregroundColor(.ink)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(viewModel.distance)
-                    .font(Constants.Typography.body)
+        Button {
+            state = .expanded
+        } label: {
+            HStack(spacing: Constants.UI.Padding.big) {
+                Text(viewModel.duration)
+                    .font(Constants.Typography.timer)
                     .foregroundColor(.ink)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.6)
                     .lineLimit(1)
-                Text("distance")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog.opacity(0.6))
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(viewModel.distance)
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                    Text("Distance")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog.opacity(0.6))
+                }
             }
+            .padding(.horizontal, Constants.UI.Padding.big)
+            .padding(.top, Constants.UI.Padding.small)
+            .padding(.bottom, Constants.UI.Padding.normal)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, Constants.UI.Padding.big)
-        .padding(.vertical, Constants.UI.Padding.small)
-        .padding(.bottom, Constants.UI.Padding.small)
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
+        .accessibilityLabel("Walk stats. \(viewModel.duration), \(viewModel.distance)")
+        .accessibilityHint("Double tap to show full stats and controls")
     }
 
     // MARK: - Expanded
