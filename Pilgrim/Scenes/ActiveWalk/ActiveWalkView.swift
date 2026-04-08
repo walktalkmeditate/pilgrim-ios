@@ -1,13 +1,6 @@
 import SwiftUI
 import CoreLocation
 
-/// Collapsible state of the stats sheet during an active walk.
-/// Used by both `ActiveWalkView` (owner) and `WalkStatsSheet` (binding).
-enum SheetState {
-    case minimized  // Thin bar: drag handle + timer + distance
-    case expanded   // Full stats + controls
-}
-
 struct ActiveWalkView: View {
 
     @ObservedObject var viewModel: ActiveWalkViewModel
@@ -31,11 +24,8 @@ struct ActiveWalkView: View {
     @State private var celestialGreetingGeneration = 0
     @State private var celestialSnapshot: CelestialSnapshot?
     @State private var sheetState: SheetState = .expanded
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    private var isLargeText: Bool {
-        dynamicTypeSize >= .accessibility2
-    }
+    @State private var hasInitializedSheetState = false
+    @State private var pauseExpandGeneration = 0
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -49,10 +39,11 @@ struct ActiveWalkView: View {
             mapSection()
                 .ignoresSafeArea()
 
-            // Weather overlay (full screen, non-interactive)
+            // Weather overlay (full screen, non-interactive, hidden from VO)
             WeatherOverlayView(condition: viewModel.weatherSnapshot?.condition)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
+                .accessibilityHidden(true)
 
             // Top overlay: map option buttons (ellipsis / close)
             topOverlay
@@ -82,66 +73,12 @@ struct ActiveWalkView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
         .onChange(of: viewModel.weatherSnapshot?.condition) { _, condition in
-            guard let condition, weatherGreeting == nil,
-                  viewModel.status == .recording else { return }
-            let greeting: String
-            switch condition {
-            case .clear: greeting = "A clear day for wandering"
-            case .partlyCloudy: greeting = "Walking under shifting skies"
-            case .overcast: greeting = "Soft light on the path"
-            case .lightRain: greeting = "Walking into the rain"
-            case .heavyRain: greeting = "The sky walks with you"
-            case .thunderstorm: greeting = "Thunder on the horizon"
-            case .snow: greeting = "Snow on the path"
-            case .fog: greeting = "Walking into the mist"
-            case .wind: greeting = "The wind at your back"
-            case .haze: greeting = "A hazy veil over the world"
-            }
-            greetingGeneration += 1
-            let gen = greetingGeneration
-            withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-                guard greetingGeneration == gen else { return }
-                withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
-            }
+            guard let condition, viewModel.status == .recording else { return }
+            triggerWeatherGreeting(for: condition)
         }
         .onChange(of: viewModel.status) { _, newStatus in
-            // Auto-collapse sheet when walk starts; auto-expand on pause.
-            // The sheet's internal .animation(value: showsMinimized) drives
-            // the visual transition and respects reduce motion automatically.
-            switch newStatus {
-            case .recording:
-                sheetState = .minimized
-            case .paused, .autoPaused, .waiting, .ready:
-                sheetState = .expanded
-            }
-
-            guard newStatus == .recording else { return }
-            if let condition = viewModel.weatherSnapshot?.condition, weatherGreeting == nil {
-                let greeting: String
-                switch condition {
-                case .clear: greeting = "A clear day for wandering"
-                case .partlyCloudy: greeting = "Walking under shifting skies"
-                case .overcast: greeting = "Soft light on the path"
-                case .lightRain: greeting = "Walking into the rain"
-                case .heavyRain: greeting = "The sky walks with you"
-                case .thunderstorm: greeting = "Thunder on the horizon"
-                case .snow: greeting = "Snow on the path"
-                case .fog: greeting = "Walking into the mist"
-                case .wind: greeting = "The wind at your back"
-                case .haze: greeting = "A hazy veil over the world"
-                }
-                greetingGeneration += 1
-                let gen = greetingGeneration
-                withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-                    guard greetingGeneration == gen else { return }
-                    withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
-                }
-            }
-            if let snapshot = celestialSnapshot {
-                showCelestialGreeting(snapshot: snapshot)
-            }
+            updateSheetStateForStatus(newStatus)
+            triggerGreetingsIfRecording(newStatus)
         }
         .alert("End Walk?", isPresented: $showStopConfirmation) {
             Button("End Walk", role: .destructive) { viewModel.stop() }
@@ -312,11 +249,15 @@ struct ActiveWalkView: View {
             Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
         }
         .onAppear {
-            // Initialize sheet state from current walk status. Handles the
-            // case where the view mounts mid-walk (e.g., state restoration
-            // after app relaunch) — .onChange only fires on changes, not on
-            // initial values, so we need to seed it here.
-            sheetState = (viewModel.status == .recording) ? .minimized : .expanded
+            // Seed sheet state from current walk status on FIRST mount only.
+            // Guarded so that navigating away (meditation, walk summary) and
+            // back doesn't overwrite user manual expansion/collapse.
+            // Handles state restoration after app relaunch — .onChange only
+            // fires on changes, not on initial values.
+            if !hasInitializedSheetState {
+                sheetState = (viewModel.status == .recording) ? .minimized : .expanded
+                hasInitializedSheetState = true
+            }
 
             guard !hasCheckedAutoIntention else { return }
             hasCheckedAutoIntention = true
@@ -344,7 +285,7 @@ struct ActiveWalkView: View {
     }
 
     /// Floating greeting text, anchored to the middle of the screen.
-    /// Non-interactive passthrough.
+    /// Non-interactive passthrough. Hidden from VoiceOver — ambient text.
     private var floatingGreetings: some View {
         VStack(spacing: Constants.UI.Padding.small) {
             if let weatherGreeting {
@@ -362,6 +303,7 @@ struct ActiveWalkView: View {
                     .transition(.opacity)
             }
         }
+        .accessibilityHidden(true)
     }
 
     /// Ambient elements above the sheet: audio indicators, vignettes,
@@ -409,6 +351,7 @@ struct ActiveWalkView: View {
             .padding(.bottom, Constants.UI.Padding.small)
 
             // Pace sparkline slot — reserved height prevents layout jump
+            // (hidden from VoiceOver — ambient visual)
             Group {
                 if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
                     LivePaceSparklineView(values: viewModel.paceHistory)
@@ -418,6 +361,7 @@ struct ActiveWalkView: View {
             }
             .frame(height: 28)
             .padding(.bottom, Constants.UI.Padding.small)
+            .accessibilityHidden(true)
 
             // Gradient fade into the parchment sheet (only visible when sheet
             // is minimized — when expanded, sheet covers the gradient)
@@ -428,6 +372,7 @@ struct ActiveWalkView: View {
             )
             .frame(height: 40)
             .allowsHitTesting(false)
+            .accessibilityHidden(true)
         }
     }
 
@@ -493,6 +438,11 @@ struct ActiveWalkView: View {
     /// Height reserved for the minimized sheet at default text size. The
     /// ambient overlay (audio indicators, vignettes, sparkline) sits above
     /// this line. Approximation — the actual minimized sheet is content-driven.
+    ///
+    /// FIXME(v1.2 Stage 5): This hardcoded value is wrong at accessibility
+    /// text sizes. Switch to `.safeAreaInset(edge: .bottom) { bottomSheet }`
+    /// so the ambient overlay automatically respects the sheet's actual
+    /// content-driven height. See IMPLEMENTATION_PLAN.md Stage 5.
     private static let minimizedSheetHeight: CGFloat = 96
 
     private static let isoFormatter: ISO8601DateFormatter = {
@@ -580,6 +530,70 @@ struct ActiveWalkView: View {
         }
 
         return accepted.map(\.annotation)
+    }
+
+    // MARK: - Status Change Handlers
+
+    /// Updates the sheet state in response to walk status changes.
+    /// Pause/autoPause auto-expand is debounced ~800ms to avoid thrashing
+    /// during brief GPS flaps that cause rapid .recording ↔ .autoPaused cycles.
+    private func updateSheetStateForStatus(_ newStatus: WalkBuilder.Status) {
+        switch newStatus {
+        case .recording:
+            // Cancel any pending auto-expand from a previous pause
+            pauseExpandGeneration += 1
+            sheetState = .minimized
+        case .paused, .autoPaused:
+            // Debounce: only auto-expand if the pause persists for 800ms.
+            pauseExpandGeneration += 1
+            let gen = pauseExpandGeneration
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                guard pauseExpandGeneration == gen else { return }
+                // Check status hasn't flipped back to recording in the meantime
+                guard viewModel.status == .paused || viewModel.status == .autoPaused else { return }
+                sheetState = .expanded
+            }
+        case .waiting, .ready:
+            pauseExpandGeneration += 1
+            sheetState = .expanded
+        }
+    }
+
+    /// Triggers weather and celestial greetings when walk enters recording state.
+    private func triggerGreetingsIfRecording(_ newStatus: WalkBuilder.Status) {
+        guard newStatus == .recording else { return }
+        if let condition = viewModel.weatherSnapshot?.condition {
+            triggerWeatherGreeting(for: condition)
+        }
+        if let snapshot = celestialSnapshot {
+            showCelestialGreeting(snapshot: snapshot)
+        }
+    }
+
+    /// Fades in a brief weather greeting text and auto-dismisses after ~3.5s.
+    /// Guarded to only fire when a greeting isn't already showing.
+    private func triggerWeatherGreeting(for condition: WeatherCondition) {
+        guard weatherGreeting == nil else { return }
+        let greeting: String
+        switch condition {
+        case .clear: greeting = "A clear day for wandering"
+        case .partlyCloudy: greeting = "Walking under shifting skies"
+        case .overcast: greeting = "Soft light on the path"
+        case .lightRain: greeting = "Walking into the rain"
+        case .heavyRain: greeting = "The sky walks with you"
+        case .thunderstorm: greeting = "Thunder on the horizon"
+        case .snow: greeting = "Snow on the path"
+        case .fog: greeting = "Walking into the mist"
+        case .wind: greeting = "The wind at your back"
+        case .haze: greeting = "A hazy veil over the world"
+        }
+        greetingGeneration += 1
+        let gen = greetingGeneration
+        withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+            guard greetingGeneration == gen else { return }
+            withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
+        }
     }
 
     private func showCelestialGreeting(snapshot: CelestialSnapshot) {

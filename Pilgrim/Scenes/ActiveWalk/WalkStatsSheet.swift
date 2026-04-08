@@ -1,5 +1,12 @@
 import SwiftUI
 
+/// Collapsible state of the stats sheet during an active walk.
+/// Owned by `ActiveWalkView`, bound into `WalkStatsSheet`.
+enum SheetState {
+    case minimized  // Thin bar: drag handle + timer + distance
+    case expanded   // Full stats + controls
+}
+
 /// Collapsible stats sheet for the active walk screen.
 ///
 /// Two visual states driven by `@Binding var state: SheetState`:
