@@ -41,12 +41,19 @@ struct StonePlacementSheet: View {
     }
 
     private func existingCairnSection(_ cairn: CachedCairn) -> some View {
-        VStack(spacing: Constants.UI.Padding.normal) {
-            CairnDetailView(
-                cairn: cairn,
-                canPlaceStone: false,
-                onPlaceStone: nil
-            )
+        let tier = cairn.tier
+        return VStack(spacing: Constants.UI.Padding.small) {
+            Image(systemName: tier.rawValue >= CairnTier.medium.rawValue ? "mountain.2.fill" : "mountain.2")
+                .font(.system(size: 36, weight: .light))
+                .foregroundColor(.stone)
+
+            Text("\(cairn.stoneCount)")
+                .font(Constants.Typography.displayMedium)
+                .foregroundColor(.ink)
+            + Text(" ")
+            + Text(cairn.stoneCount == 1 ? "stone" : "stones")
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
 
             Text("Add your stone to this cairn")
                 .font(Constants.Typography.body)
