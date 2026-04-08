@@ -215,6 +215,11 @@ struct PilgrimMapView: UIViewRepresentable {
                     }
                 )
                 try mapView.mapboxMap.addLayer(layer)
+
+                if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
+                if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
+                coordinator.circleManager = nil
+                coordinator.pointManager = nil
             } catch {
                 print("[PilgrimMapView] Failed to add route layer: \(error)")
             }
@@ -226,19 +231,26 @@ struct PilgrimMapView: UIViewRepresentable {
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
 
+        let routeLayerExists = mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer")
+        let layerPosition: LayerPosition? = routeLayerExists ? .above("pilgrim-route-layer") : nil
+
         if coordinator.circleManager == nil {
-            coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager(
-                layerPosition: .above("pilgrim-route-layer")
-            )
+            if let pos = layerPosition {
+                coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager(layerPosition: pos)
+            } else {
+                coordinator.circleManager = mapView.annotations.makeCircleAnnotationManager()
+            }
         }
         if let circleManager = coordinator.circleManager {
             circleManager.annotations = buildCircles(from: pinAnnotations)
         }
 
         if coordinator.pointManager == nil {
-            coordinator.pointManager = mapView.annotations.makePointAnnotationManager(
-                layerPosition: .above("pilgrim-route-layer")
-            )
+            if let pos = layerPosition {
+                coordinator.pointManager = mapView.annotations.makePointAnnotationManager(layerPosition: pos)
+            } else {
+                coordinator.pointManager = mapView.annotations.makePointAnnotationManager()
+            }
         }
         if let pointManager = coordinator.pointManager {
             pointManager.annotations = buildPoints(from: pinAnnotations)
