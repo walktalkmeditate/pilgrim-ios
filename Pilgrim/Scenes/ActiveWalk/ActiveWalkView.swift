@@ -299,10 +299,39 @@ struct ActiveWalkView: View {
 
     // MARK: - Body Layers
 
+    /// Top overlay: map option buttons (ellipsis / close).
+    /// Pinned to the top safe area.
     private var topOverlay: some View {
-        VStack(spacing: 0) {
-            mapOverlayButtons
+        mapOverlayButtons
+    }
 
+    /// Floating greeting text, anchored to the middle of the screen.
+    /// Non-interactive passthrough.
+    private var floatingGreetings: some View {
+        VStack(spacing: Constants.UI.Padding.small) {
+            if let weatherGreeting {
+                Text(weatherGreeting)
+                    .font(Constants.Typography.body.italic())
+                    .foregroundColor(.ink.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
+            }
+            if let celestialGreeting {
+                Text(celestialGreeting)
+                    .font(Constants.Typography.body.italic())
+                    .foregroundColor(.ink.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    /// Bottom anchor: audio indicators, vignettes, pace sparkline, gradient fade,
+    /// then the stats sheet itself. Everything stacks above the sheet and moves
+    /// with it. Background extends through the bottom safe area.
+    private var bottomSheet: some View {
+        VStack(spacing: 0) {
+            // Audio indicators and weather/celestial vignettes row
             HStack {
                 HStack(spacing: 6) {
                     if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
@@ -338,39 +367,18 @@ struct ActiveWalkView: View {
                 }
             }
             .padding(.horizontal, Constants.UI.Padding.normal)
-            .padding(.top, Constants.UI.Padding.small)
-        }
-    }
+            .padding(.bottom, Constants.UI.Padding.small)
 
-    private var floatingGreetings: some View {
-        VStack(spacing: Constants.UI.Padding.small) {
+            // Pace sparkline, just above the gradient
             if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
                 LivePaceSparklineView(values: viewModel.paceHistory)
                     .frame(height: 28)
                     .padding(.horizontal, Constants.UI.Padding.big)
+                    .padding(.bottom, Constants.UI.Padding.small)
                     .transition(.opacity)
             }
 
-            if let weatherGreeting {
-                Text(weatherGreeting)
-                    .font(Constants.Typography.body.italic())
-                    .foregroundColor(.ink.opacity(0.5))
-                    .multilineTextAlignment(.center)
-                    .transition(.opacity)
-            }
-            if let celestialGreeting {
-                Text(celestialGreeting)
-                    .font(Constants.Typography.body.italic())
-                    .foregroundColor(.ink.opacity(0.5))
-                    .multilineTextAlignment(.center)
-                    .transition(.opacity)
-            }
-        }
-    }
-
-    private var bottomSheet: some View {
-        VStack(spacing: 0) {
-            // Gradient fade above the sheet for readability
+            // Gradient fade into the parchment sheet
             LinearGradient(
                 colors: [.clear, .parchment],
                 startPoint: .top,
@@ -379,6 +387,7 @@ struct ActiveWalkView: View {
             .frame(height: 40)
             .allowsHitTesting(false)
 
+            // Stats + controls — background extends through bottom safe area
             WalkStatsSheet(
                 viewModel: viewModel,
                 onStartMeditation: {
@@ -389,7 +398,10 @@ struct ActiveWalkView: View {
                     showStopConfirmation = true
                 }
             )
-            .background(Color.parchment)
+            .background(
+                Color.parchment
+                    .ignoresSafeArea(edges: .bottom)
+            )
         }
     }
 

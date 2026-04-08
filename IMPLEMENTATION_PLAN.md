@@ -230,7 +230,14 @@ The sheet overlays the bottom of the map. User's location marker should remain v
 ### Stage 3: Add `SheetState` enum and conditional content rendering
 **Goal**: Sheet shows different content in minimized vs expanded states
 **Tests**: Manually flip state to verify both layouts render correctly
-**Files**: `WalkStatsSheet.swift`
+**Files**: `WalkStatsSheet.swift`, `ActiveWalkView.swift`
+
+**Key decisions from review:**
+- `SheetState` lives in `ActiveWalkView` (not `WalkStatsSheet`), passed as `@Binding`. Parent needs to drive auto-collapse on `viewModel.status` change.
+- Only `dragOffset` lives as `@State` inside `WalkStatsSheet`.
+- The conditional branches (`minimizedContent` vs `expandedContent`) must live inside `WalkStatsSheet.body` to preserve view identity — don't conditionally render `WalkStatsSheet` itself from the parent.
+- Auto-collapse logic goes in the EXISTING `onChange(of: viewModel.status)` handler in `ActiveWalkView` (don't add a second one).
+- The gradient fade above the sheet may need to move OUT of the bottomSheet VStack if we want it fixed in place while the sheet resizes. For Stage 3, we can keep it in the VStack since it'll move with the sheet — evaluate visually.
 
 ### Stage 4: Add drag gesture and auto-collapse on walk start
 **Goal**: User can swipe to expand/collapse, auto-collapse when status transitions to .recording
