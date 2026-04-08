@@ -326,6 +326,7 @@ struct MeditationView: View {
             }
         )
         .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.isMuted)
+        .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.currentAsset?.id)
     }
 
     private var selectedSoundscapeName: String? {

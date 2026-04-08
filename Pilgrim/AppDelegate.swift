@@ -50,6 +50,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         // fixes None, but we still want fresh installs and pre-migration
         // users to get sensible initial choices. Explicit existing
         // selections are preserved.
+        //
+        // Writes go directly to UserDefaults rather than through
+        // `UserPreferences.X.value = Y`, because this runs before any
+        // UserPreferences static members are touched. The
+        // `UserPreference._Base.publisher` is created lazily on first
+        // access of the static let, at which point it reads the current
+        // UserDefaults value — so it picks up the migrated seeds
+        // automatically without needing to go through `set()`.
         let soundscapeMigrationKey = "soundscapeDefaultMigrated_v1"
         if !UserDefaults.standard.bool(forKey: soundscapeMigrationKey) {
             let seeds: [(key: String, initialValue: String)] = [

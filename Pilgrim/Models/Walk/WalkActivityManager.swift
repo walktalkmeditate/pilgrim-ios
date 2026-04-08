@@ -150,7 +150,8 @@ final class WalkActivityManager {
         let activities = Activity<WalkActivityAttributes>.activities
         guard !activities.isEmpty else { return }
 
-        print("[WalkActivity] Cleaning up \(activities.count) stale activity(ies) at launch")
+        let suffix = activities.count == 1 ? "activity" : "activities"
+        print("[WalkActivity] Cleaning up \(activities.count) stale \(suffix) at launch")
         currentActivity = nil
 
         Task {
