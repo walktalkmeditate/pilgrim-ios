@@ -103,25 +103,63 @@ final class WalkActivityManager {
 
     func end() {
         dispatchPrecondition(condition: .onQueue(.main))
-        guard let activity = currentActivity else { return }
         currentActivity = nil
 
-        let finalState = WalkActivityAttributes.ContentState(
-            activeDurationSeconds: activity.content.state.activeDurationSeconds,
-            walkTimerStart: nil,
-            distanceMeters: activity.content.state.distanceMeters,
-            meditationTimerStart: nil,
-            talkTimerStart: nil,
-            isPaused: false,
-            isMeditating: false,
-            isRecordingVoice: false
-        )
+        // Enumerate iOS's authoritative list of activities, not just the
+        // one we remember. On a normal walk-end the tracked activity is
+        // one of them and gets the frozen final state. If the app crashed
+        // or was force-quit mid-walk, iOS may still be showing an orphan
+        // activity that our in-memory manager has no reference to. Ending
+        // all of them guarantees the lock screen is clean.
+        let activities = Activity<WalkActivityAttributes>.activities
+        guard !activities.isEmpty else { return }
 
         Task {
-            await activity.end(
-                ActivityContent(state: finalState, staleDate: nil),
-                dismissalPolicy: .immediate
-            )
+            for activity in activities {
+                // Freeze timer starts + transient flags so the final
+                // frame the user sees (before dismissal) reads as
+                // "finished" rather than "still counting up."
+                let frozenState = WalkActivityAttributes.ContentState(
+                    activeDurationSeconds: activity.content.state.activeDurationSeconds,
+                    walkTimerStart: nil,
+                    distanceMeters: activity.content.state.distanceMeters,
+                    meditationTimerStart: nil,
+                    talkTimerStart: nil,
+                    isPaused: false,
+                    isMeditating: false,
+                    isRecordingVoice: false
+                )
+                await activity.end(
+                    ActivityContent(state: frozenState, staleDate: nil),
+                    dismissalPolicy: .immediate
+                )
+            }
+        }
+    }
+
+    /// Ends every Live Activity of this type, regardless of whether the
+    /// manager tracks it. Call on app launch to clean up orphans left
+    /// behind by a crash, force-quit, or OOM kill — any activity still
+    /// alive at launch time is necessarily stale because the session that
+    /// created it is no longer running. Safe to call when no activities
+    /// exist (no-op).
+    func endAllStaleActivities() {
+        dispatchPrecondition(condition: .onQueue(.main))
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let activities = Activity<WalkActivityAttributes>.activities
+        guard !activities.isEmpty else { return }
+
+        print("[WalkActivity] Cleaning up \(activities.count) stale activity(ies) at launch")
+        currentActivity = nil
+
+        Task {
+            for activity in activities {
+                await activity.end(
+                    ActivityContent(state: activity.content.state, staleDate: nil),
+                    dismissalPolicy: .immediate
+                )
+            }
         }
     }
 }

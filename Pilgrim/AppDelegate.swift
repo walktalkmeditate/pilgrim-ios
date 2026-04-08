@@ -34,6 +34,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
 
         MapboxMapsOptions.tileStoreUsageMode = .readOnly
 
+        // Clean up any Live Activities left over from a previous session
+        // that ended abnormally (crash, force-quit, OOM kill). Any activity
+        // alive at app launch is necessarily stale — the walk that created
+        // it is no longer running. Without this, walkers see the lock
+        // screen Live Activity hang around even though the app thinks the
+        // walk is finished.
+        WalkActivityManager.shared.endAllStaleActivities()
+
         DataManager.setup(
             completion: { _ in
                 
