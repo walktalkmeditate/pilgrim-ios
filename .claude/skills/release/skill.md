@@ -31,34 +31,44 @@ Run a comprehensive pre-release check:
 
 ## `/release prepare` — Prepare Release
 
+Prepares the repo for a release. **Does NOT bump the build number locally** — the GHA Release workflow auto-increments the build number as part of its pipeline, and a local bump is wasted (the workflow increments past it, leaving a dangling build number in git history). This happened on 2026-04-08 with build 42.
+
 1. Ask the user what type of release this is:
    - **Patch** (1.0.x) — bug fixes only
    - **Minor** (1.x.0) — new features, backwards compatible
    - **Major** (x.0.0) — breaking changes or major milestone
 2. Determine the new version number from current `MARKETING_VERSION` in pbxproj
-3. Run `scripts/release.sh bump` to increment the build number
-4. If the marketing version is changing, update `MARKETING_VERSION` in the pbxproj (both Debug and Release configurations for the Pilgrim target)
-5. Generate a changelog from commits since the last tag:
+3. If the marketing version is changing, update `MARKETING_VERSION` in the pbxproj (both Debug and Release configurations for the Pilgrim target). Do NOT touch `CURRENT_PROJECT_VERSION` — GHA handles it.
+4. Generate a changelog from commits since the last tag:
    ```bash
    git log $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD --oneline --no-merges
    ```
-6. Show the changelog to the user for review
-7. Commit the version bump with message: `release: prepare v{version}`
+5. Show the changelog to the user for review
+6. If the marketing version changed in step 3, commit with message: `release: prepare v{version}`. If only the changelog was reviewed (no pbxproj changes), skip the commit — there's nothing to commit.
 
-## `/release ship` — Ship Release
+## `/release ship` — Ship Release via GHA
 
-1. Run `scripts/release.sh check` first — abort if it fails
-2. Run `scripts/release.sh archive`
-3. Run `scripts/release.sh export`
-4. Ask the user to confirm before uploading:
-   - Show the version, build number, and archive path
-   - Confirm they have App Store Connect API credentials set
-5. Run `scripts/release.sh upload` (or skip if user hasn't set up API keys yet)
-6. Run `scripts/release.sh tag v{version}`
-7. Ask the user if they want to push the tag and commit
-8. Remind the user to:
+**Do not run `scripts/release.sh archive/export/upload` locally** — the local machine lacks the iOS Distribution signing cert. The canonical release path is the GHA `Release` workflow, which archives, exports, signs, uploads to App Store Connect, bumps the build number, commits back to main, and tags.
+
+1. Run `scripts/release.sh check` first (tests, lint, readiness) — abort if it fails
+2. Ensure the release prep commit (if any) is pushed to main
+3. Ask the user to confirm the target version (e.g., `1.2.0`) before triggering
+4. Trigger the GHA Release workflow:
+   ```bash
+   gh workflow run release.yml --ref main -f version=X.Y.Z
+   ```
+5. Watch the run:
+   ```bash
+   gh run list --workflow=release.yml --limit 3
+   gh run watch <run-id>
+   ```
+6. After the workflow succeeds:
+   - Fast-forward local main: `git pull --ff-only origin main` (the workflow pushed a `release: bump build [skip ci]` commit)
+   - The build appears in App Store Connect → Build Uploads, status "Processing"
+7. Remind the user to:
    - Fill in App Store Connect metadata (screenshots, description, "What's New")
    - Submit for App Review
+   - Do NOT create a GitHub release or git tag until Apple approves — we've jumped ahead before and had to delete
 
 ## `/release notes` — Generate App Store Notes
 
