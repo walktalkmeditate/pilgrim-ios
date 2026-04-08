@@ -241,27 +241,35 @@ The sheet overlays the bottom of the map. User's location marker should remain v
 - **Gradient behavior with state transitions**: If ambient stays with sheet, gradient does too. If ambient is extracted, gradient needs to decide: stay with sheet (will be below ambient when expanded) or stay with ambient (will be above minimized sheet).
 
 ### Stage 4: Add drag gesture
-**Additional decisions:**
-- **Drag gesture attaches to drag handle view only**, NOT the whole sheet VStack. Tapping the mic/end/meditate buttons should not trigger drags. A small ~30x20pt pill at the top of the sheet captures drags.
-- Add light haptic (`UIImpactFeedbackGenerator(style: .soft)`) on state transition — Apple Maps pattern.
-- Every `.animation(...)` must be `value:`-scoped. NO blanket `withAnimation { ... }` around published property changes.
-
-### Stage 5: Polish additions
-- **Mapbox camera padding**: Verify user location marker isn't hidden under the sheet. If `PilgrimMapView` needs a `bottomInset: CGFloat` parameter, add it. Mapbox supports `setCameraPadding` to offset the logical center.
-- **Mapbox battery cost**: Full-screen map rasterizes ~40% more pixels. Expect ~1-3% extra battery/hour. Accepted; revisit in Battery Optimization project.
-- **VoiceOver focus order**: Verify traversal is top buttons → stats sheet. Mark map, weather overlay, and `floatingGreetings` as `accessibilityHidden` if not already.
-- **Dynamic Island**: Verify `mapOverlayButtons` clears the island on iPhone 15 Pro and later.
-- **SE3 testing**: Actually run on 4.7" simulator at accessibility3+ text size to verify the collapsible design solves the crowding.
-
-### Stage 4: Add drag gesture and auto-collapse on walk start
-**Goal**: User can swipe to expand/collapse, auto-collapse when status transitions to .recording
-**Tests**: Drag works smoothly, auto-collapse fires, resource safety with animation
+**Goal**: User can manually swipe to expand/collapse the sheet
+**Tests**: Drag works smoothly, doesn't conflict with button taps, resource safety
 **Files**: `WalkStatsSheet.swift`, `ActiveWalkView.swift`
 
+**Key decisions from reviews:**
+- **Drag gesture attaches to the whole sheet VStack** via `.simultaneousGesture(DragGesture())`, NOT just the drag handle. The 40x5pt pill is too small a target on a moving walk. Apple Maps and iOS presentation sheets let users drag from anywhere in the header region. BUT: attach via `simultaneousGesture` or explicitly reject drags starting near the control buttons, so tapping Mic/End/Meditate doesn't get eaten.
+- Remove the `Button` wrapper from `minimizedContent` (already done in Stage 3 polish) — use plain `.onTapGesture` so gestures arbitrate cleanly.
+- Add light haptic (`UIImpactFeedbackGenerator(style: .soft)`) on state transition. Guard against firing on every `sheetState` assignment — only when previous state != new state.
+- Every `.animation(...)` must be `value:`-scoped. NO blanket `withAnimation { ... }` around state changes.
+- In `onEnded`: set state and reset dragOffset as BARE assignments. The existing `.animation(value: showsMinimized)` handles state transitions; add `.animation(value: dragOffset)` with `.interactiveSpring()` for drag offset. Two independent animation scopes — don't wrap either in `withAnimation`.
+- When drag threshold is crossed AND state is about to change, reset `dragOffset = 0` inside a `Transaction(animation: nil)` to avoid double-animation (layout change + slide-back).
+
 ### Stage 5: Polish and accessibility
-**Goal**: Reduce motion support, dark mode verification, safe area handling, drag indicator styling
-**Tests**: Test on SE3 simulator, iPhone 17 Pro, both text sizes, both themes
-**Files**: `WalkStatsSheet.swift`
+**Goal**: Visual polish, state restoration correctness, accessibility
+**Tests**: Test on SE3 simulator, iPhone 17 Pro, XXL text, both themes, VoiceOver
+**Files**: `WalkStatsSheet.swift`, `ActiveWalkView.swift`, `PilgrimMapView.swift`
+
+**Additions:**
+- **Sheet visual styling**: Rounded top corners (20pt radius, .continuous) and shadow (`ink.opacity(0.15)`, radius 12, y: -4). Use `UnevenRoundedRectangle` for top-only corners. Verify shadow doesn't clip through `.ignoresSafeArea(edges: .bottom)`.
+- **`minimizedSheetHeight` should scale with dynamic type** OR — better — switch to `.safeAreaInset(edge: .bottom) { bottomSheet }` on the ZStack contents. This makes the ambient overlay automatically respect the sheet's content-driven height and eliminates the hardcoded constant.
+- **Mapbox camera padding**: Verify user location marker isn't hidden under the sheet. Add a `bottomInset: CGFloat` parameter to `PilgrimMapView` and pass the minimized sheet height.
+- **Mapbox battery cost**: Full-screen map rasterizes ~40% more pixels. Expect ~1-3% extra battery/hour. Accepted; revisit in Battery Optimization project.
+- **VoiceOver focus order**: Verify traversal is top buttons → stats sheet. Mark map, weather overlay, and `floatingGreetings` as `accessibilityHidden`.
+- **Group expanded sheet stats into a single VoiceOver element** via `.accessibilityElement(children: .combine)` so users don't traverse every stat individually.
+- **Dynamic Island**: Verify `mapOverlayButtons` clears the island on iPhone 15 Pro and later.
+- **Haptic debounce**: Guard haptic firing on actual state change, not on every assignment.
+- **SE3 testing**: Actually run on 4.7" simulator at accessibility3+ text size to verify the collapsible design solves the crowding.
+- **iPad landscape**: Cap `bottomSheet` width at 600pt via `.frame(maxWidth: 600)` so it doesn't stretch edge-to-edge on iPad.
+- **Audio indicators in paused state**: Decide if audio indicators should be accessible during pause. If yes, move them into the top overlay or expanded sheet header — they're currently hidden behind the expanded sheet.
 
 ## Risks and Mitigations
 

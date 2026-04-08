@@ -23,9 +23,11 @@ struct WalkStatsSheet: View {
     }
 
     /// True only when the walk is actively recording AND the state is minimized.
-    /// Pre-walk and paused states always render expanded content.
+    /// Pre-walk, paused, and autoPaused states always render expanded content.
+    /// We check `.recording` explicitly because `isActiveStatus` would include
+    /// `.paused` and `.autoPaused` — we want the sheet expanded in those states.
     private var showsMinimized: Bool {
-        state == .minimized && viewModel.status.isActiveStatus
+        state == .minimized && viewModel.status == .recording
     }
 
     var body: some View {
@@ -57,39 +59,41 @@ struct WalkStatsSheet: View {
     // MARK: - Minimized
 
     /// Thin bar with timer and distance only. Tappable to expand as a fallback
-    /// until the drag gesture lands in Stage 4.
+    /// until the drag gesture lands in Stage 4. Uses a plain tap gesture
+    /// (not a Button wrapper) so the drag gesture can coexist cleanly.
     private var minimizedContent: some View {
-        Button {
-            state = .expanded
-        } label: {
-            HStack(spacing: Constants.UI.Padding.big) {
-                Text(viewModel.duration)
-                    .font(Constants.Typography.timer)
+        HStack(alignment: .firstTextBaseline, spacing: Constants.UI.Padding.big) {
+            Text(viewModel.duration)
+                .font(Constants.Typography.timer)
+                .foregroundColor(.ink)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(viewModel.distance)
+                    .font(Constants.Typography.body)
                     .foregroundColor(.ink)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(0.7)
                     .lineLimit(1)
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(viewModel.distance)
-                        .font(Constants.Typography.body)
-                        .foregroundColor(.ink)
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
-                    Text("Distance")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog.opacity(0.6))
-                }
+                Text("Distance")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog.opacity(0.6))
             }
-            .padding(.horizontal, Constants.UI.Padding.big)
-            .padding(.top, Constants.UI.Padding.small)
-            .padding(.bottom, Constants.UI.Padding.normal)
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Walk stats. \(viewModel.duration), \(viewModel.distance)")
+        .padding(.horizontal, Constants.UI.Padding.big)
+        .padding(.top, Constants.UI.Padding.small)
+        .padding(.bottom, Constants.UI.Padding.normal)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            state = .expanded
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Walk stats")
+        .accessibilityValue("\(viewModel.duration), \(viewModel.distance)")
+        .accessibilityAddTraits([.isButton, .updatesFrequently])
         .accessibilityHint("Double tap to show full stats and controls")
     }
 

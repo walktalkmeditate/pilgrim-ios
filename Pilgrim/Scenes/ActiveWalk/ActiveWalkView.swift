@@ -69,10 +69,13 @@ struct ActiveWalkView: View {
             // expanded, these elements are covered by the sheet — that's fine,
             // the expanded sheet is the user's focus. When minimized, these
             // elements become visible above it.
+            // Hit testing is enabled only when the walk is actively recording
+            // AND the sheet is minimized, so taps on the audio/voice-guide
+            // indicators work only when they're actually visible.
             ambientOverlay
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, Self.minimizedSheetHeight)
-                .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
+                .allowsHitTesting(viewModel.status == .recording && sheetState == .minimized)
 
             // Bottom sheet with stats and controls
             bottomSheet
@@ -309,6 +312,12 @@ struct ActiveWalkView: View {
             Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
         }
         .onAppear {
+            // Initialize sheet state from current walk status. Handles the
+            // case where the view mounts mid-walk (e.g., state restoration
+            // after app relaunch) — .onChange only fires on changes, not on
+            // initial values, so we need to seed it here.
+            sheetState = (viewModel.status == .recording) ? .minimized : .expanded
+
             guard !hasCheckedAutoIntention else { return }
             hasCheckedAutoIntention = true
             if UserPreferences.beginWithIntention.value && viewModel.intention == nil {
