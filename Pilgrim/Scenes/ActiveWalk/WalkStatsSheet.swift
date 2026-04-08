@@ -72,8 +72,9 @@ struct WalkStatsSheet: View {
         .simultaneousGesture(dragGesture)
         .onChange(of: showsMinimized) { _, _ in
             // Reset any lingering drag offset when the state changes
-            // (e.g., due to status flip mid-drag). Keeps layout clean.
-            dragOffset = 0
+            // (e.g., due to status flip mid-drag). Animated so it glides
+            // back to 0 if the user's finger released during the flip.
+            animateDragOffsetToZero()
         }
     }
 
@@ -113,15 +114,14 @@ struct WalkStatsSheet: View {
                     (translation > Self.dragThreshold || predictedDelta > Self.flickVelocity)
 
                 if shouldExpand {
-                    // Reset offset instantly so only the state spring animates.
-                    // onChange(of: showsMinimized) also clears any residual offset.
-                    dragOffset = 0
+                    // Animate offset and state together so the sheet smoothly
+                    // grows upward from the user's drag position, instead of
+                    // snapping back to 0 before expanding.
                     fireHaptic()
-                    state = .expanded
+                    commitSheetStateChange(to: .expanded)
                 } else if shouldCollapse {
-                    dragOffset = 0
                     fireHaptic()
-                    state = .minimized
+                    commitSheetStateChange(to: .minimized)
                 } else {
                     // Didn't cross threshold — rubber-band back to 0
                     animateDragOffsetToZero()
@@ -137,6 +137,21 @@ struct WalkStatsSheet: View {
         } else {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 dragOffset = 0
+            }
+        }
+    }
+
+    /// Commits a sheet state change triggered by a drag, coordinating the
+    /// state transition and the drag-offset reset in a single animation so
+    /// the sheet glides smoothly instead of snapping back before expanding.
+    private func commitSheetStateChange(to newState: SheetState) {
+        if reduceMotion {
+            dragOffset = 0
+            state = newState
+        } else {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                dragOffset = 0
+                state = newState
             }
         }
     }
