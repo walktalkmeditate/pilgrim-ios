@@ -36,126 +36,29 @@ struct ActiveWalkView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Full-screen map background
+        ZStack {
+            // Full-screen map background (ignores safe area to fill entire screen)
             mapSection()
                 .ignoresSafeArea()
 
-            // Weather overlay (full screen)
+            // Weather overlay (full screen, non-interactive)
             WeatherOverlayView(condition: viewModel.weatherSnapshot?.condition)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-            // Top overlay: audio indicators and vignettes
-            VStack(spacing: 0) {
-                HStack {
-                    HStack(spacing: 6) {
-                        if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
-                            audioIndicator(
-                                icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
-                            ) {
-                                SoundscapePlayer.shared.toggleMute()
-                            }
-                        }
-                        if viewModel.voiceGuidePackName != nil {
-                            audioIndicator(
-                                icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
-                            ) {
-                                if viewModel.voiceGuideManagement.isPaused {
-                                    viewModel.voiceGuideManagement.resumeGuide()
-                                } else {
-                                    viewModel.voiceGuideManagement.pauseGuide()
-                                }
-                            }
-                        }
-                    }
+            // Top overlay: map buttons, audio indicators, vignettes
+            topOverlay
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                    Spacer()
-
-                    HStack(spacing: 6) {
-                        if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
-                            CelestialVignetteView(snapshot: celestialSnapshot)
-                        }
-                        WeatherVignetteView(
-                            snapshot: viewModel.weatherSnapshot,
-                            imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
-                        )
-                    }
-                }
-                .padding(.horizontal, Constants.UI.Padding.normal)
-                .padding(.top, 104)
-
-                Spacer()
-            }
-
-            // Pace sparkline (floating in middle area)
-            if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
-                VStack {
-                    Spacer()
-                    LivePaceSparklineView(values: viewModel.paceHistory)
-                        .frame(height: 28)
-                        .padding(.horizontal, Constants.UI.Padding.big)
-                        .transition(.opacity)
-                    Spacer()
-                }
+            // Floating greeting text and pace sparkline (centered, non-interactive)
+            floatingGreetings
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 .allowsHitTesting(false)
-            }
-
-            // Floating greeting text (middle of screen)
-            VStack {
-                Spacer()
-                VStack(spacing: 4) {
-                    if let weatherGreeting {
-                        Text(weatherGreeting)
-                            .font(Constants.Typography.body.italic())
-                            .foregroundColor(.ink.opacity(0.5))
-                            .multilineTextAlignment(.center)
-                            .transition(.opacity)
-                    }
-                    if let celestialGreeting {
-                        Text(celestialGreeting)
-                            .font(Constants.Typography.body.italic())
-                            .foregroundColor(.ink.opacity(0.5))
-                            .multilineTextAlignment(.center)
-                            .transition(.opacity)
-                    }
-                }
-                .padding(.bottom, 8)
-                Spacer()
-            }
-            .allowsHitTesting(false)
-
-            // Top buttons (ellipsis + close)
-            VStack {
-                mapOverlayButtons
-                Spacer()
-            }
 
             // Bottom sheet with stats and controls
-            VStack(spacing: 0) {
-                // Gradient fade above the sheet for readability
-                LinearGradient(
-                    colors: [.clear, .parchment],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 40)
-                .allowsHitTesting(false)
-
-                WalkStatsSheet(
-                    viewModel: viewModel,
-                    onStartMeditation: {
-                        viewModel.startMeditation()
-                        showMeditation = true
-                    },
-                    onRequestEndWalk: {
-                        showStopConfirmation = true
-                    }
-                )
-                .background(Color.parchment)
-            }
+            bottomSheet
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
-        .background(Color.parchment)
         .onChange(of: viewModel.weatherSnapshot?.condition) { _, condition in
             guard let condition, weatherGreeting == nil,
                   viewModel.status == .recording else { return }
@@ -394,6 +297,102 @@ struct ActiveWalkView: View {
         }
     }
 
+    // MARK: - Body Layers
+
+    private var topOverlay: some View {
+        VStack(spacing: 0) {
+            mapOverlayButtons
+
+            HStack {
+                HStack(spacing: 6) {
+                    if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
+                        audioIndicator(
+                            icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
+                        ) {
+                            SoundscapePlayer.shared.toggleMute()
+                        }
+                    }
+                    if viewModel.voiceGuidePackName != nil {
+                        audioIndicator(
+                            icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
+                        ) {
+                            if viewModel.voiceGuideManagement.isPaused {
+                                viewModel.voiceGuideManagement.resumeGuide()
+                            } else {
+                                viewModel.voiceGuideManagement.pauseGuide()
+                            }
+                        }
+                    }
+                }
+
+                Spacer()
+
+                HStack(spacing: 6) {
+                    if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
+                        CelestialVignetteView(snapshot: celestialSnapshot)
+                    }
+                    WeatherVignetteView(
+                        snapshot: viewModel.weatherSnapshot,
+                        imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
+                    )
+                }
+            }
+            .padding(.horizontal, Constants.UI.Padding.normal)
+            .padding(.top, Constants.UI.Padding.small)
+        }
+    }
+
+    private var floatingGreetings: some View {
+        VStack(spacing: Constants.UI.Padding.small) {
+            if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
+                LivePaceSparklineView(values: viewModel.paceHistory)
+                    .frame(height: 28)
+                    .padding(.horizontal, Constants.UI.Padding.big)
+                    .transition(.opacity)
+            }
+
+            if let weatherGreeting {
+                Text(weatherGreeting)
+                    .font(Constants.Typography.body.italic())
+                    .foregroundColor(.ink.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
+            }
+            if let celestialGreeting {
+                Text(celestialGreeting)
+                    .font(Constants.Typography.body.italic())
+                    .foregroundColor(.ink.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    private var bottomSheet: some View {
+        VStack(spacing: 0) {
+            // Gradient fade above the sheet for readability
+            LinearGradient(
+                colors: [.clear, .parchment],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 40)
+            .allowsHitTesting(false)
+
+            WalkStatsSheet(
+                viewModel: viewModel,
+                onStartMeditation: {
+                    viewModel.startMeditation()
+                    showMeditation = true
+                },
+                onRequestEndWalk: {
+                    showStopConfirmation = true
+                }
+            )
+            .background(Color.parchment)
+        }
+    }
+
     // MARK: - Map Overlay Buttons
 
     private var mapOverlayButtons: some View {
@@ -430,7 +429,7 @@ struct ActiveWalkView: View {
             }
         }
         .padding(.horizontal, Constants.UI.Padding.normal)
-        .padding(.top, 56)
+        .padding(.top, Constants.UI.Padding.small)
     }
 
     private static let isoFormatter: ISO8601DateFormatter = {
