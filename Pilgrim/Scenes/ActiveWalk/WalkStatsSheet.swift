@@ -32,6 +32,10 @@ struct WalkStatsSheet: View {
     /// Maximum visible drag offset — drag beyond this point resists further movement.
     private static let dragClamp: CGFloat = 100
 
+    /// Velocity threshold for a "flick" gesture. If the user releases a drag
+    /// moving faster than this, state changes even if distance is below threshold.
+    private static let flickVelocity: CGFloat = 300
+
     private var isLargeText: Bool {
         dynamicTypeSize >= .accessibility2
     }
@@ -74,6 +78,7 @@ struct WalkStatsSheet: View {
             .onChanged { value in
                 guard canDrag else { return }
                 let translation = value.translation.height
+
                 if showsMinimized && translation < 0 {
                     // Dragging up from minimized — reveal expanded content
                     dragOffset = max(translation, -Self.dragClamp)
@@ -91,16 +96,26 @@ struct WalkStatsSheet: View {
                 }
 
                 let translation = value.translation.height
+                // Predicted end translation extrapolates the gesture's motion
+                // into the future assuming deceleration. The delta from the
+                // current translation is a reasonable proxy for velocity.
+                let predictedDelta = value.predictedEndTranslation.height - translation
 
-                if showsMinimized && translation < -Self.dragThreshold {
-                    // Crossed threshold — expand. Reset offset instantly so
-                    // only the state animation (spring on showsMinimized) runs.
+                // Trigger state change if user crossed the distance threshold
+                // OR flicked hard enough (predicted end travel).
+                let shouldExpand = showsMinimized &&
+                    (translation < -Self.dragThreshold || predictedDelta < -Self.flickVelocity)
+                let shouldCollapse = !showsMinimized &&
+                    (translation > Self.dragThreshold || predictedDelta > Self.flickVelocity)
+
+                if shouldExpand {
+                    // Reset offset instantly so only the state spring animates
                     dragOffset = 0
-                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                    fireHaptic()
                     state = .expanded
-                } else if !showsMinimized && translation > Self.dragThreshold {
+                } else if shouldCollapse {
                     dragOffset = 0
-                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                    fireHaptic()
                     state = .minimized
                 } else {
                     // Didn't cross threshold — rubber-band back to 0
@@ -109,6 +124,15 @@ struct WalkStatsSheet: View {
                     }
                 }
             }
+    }
+
+    /// Fires a soft impact haptic for sheet state transitions.
+    /// Creates a fresh generator per call — SwiftUI structs re-create on
+    /// every body eval (many times per second during an active walk), so
+    /// a stored generator would leak references per CLAUDE.md. Cold-start
+    /// latency is ~10ms which is imperceptible for a tap-response.
+    private func fireHaptic() {
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
     }
 
     // MARK: - Drag Handle
@@ -124,8 +148,8 @@ struct WalkStatsSheet: View {
 
     // MARK: - Minimized
 
-    /// Thin bar with timer and distance only. Tappable to expand as a fallback
-    /// until the drag gesture lands in Stage 4. Uses a plain tap gesture
+    /// Thin bar with timer and distance only. Tappable as a quick alternative
+    /// to the drag gesture — tap expands the sheet. Uses a plain tap gesture
     /// (not a Button wrapper) so the drag gesture can coexist cleanly.
     private var minimizedContent: some View {
         HStack(alignment: .firstTextBaseline, spacing: Constants.UI.Padding.big) {
