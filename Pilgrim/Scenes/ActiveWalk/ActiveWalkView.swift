@@ -455,7 +455,14 @@ struct ActiveWalkView: View {
             // composed shape once, preventing a "pop" during sheet resize
             // animations where the shape geometry changes frame-by-frame.
             .compositingGroup()
-            .shadow(color: .ink.opacity(0.15), radius: 12, y: -4)
+            // Use .black instead of .ink so the shadow stays dark in both
+            // light and dark mode. `.ink` is an adaptive text color (dark
+            // in light mode, light in dark mode), which in dark mode would
+            // render this as a bright halo above the sheet — reading as
+            // a visible line on the dark map. A fixed dark shadow is
+            // subtle in light mode and invisible in dark mode; sheet/map
+            // separation in dark mode comes from the parchment tint.
+            .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
             .ignoresSafeArea(edges: .bottom)
         )
     }
