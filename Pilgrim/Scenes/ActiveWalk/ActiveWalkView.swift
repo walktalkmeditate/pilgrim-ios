@@ -26,42 +26,36 @@ struct ActiveWalkView: View {
     @State private var sheetState: SheetState = .expanded
     @State private var hasInitializedSheetState = false
     @State private var pauseExpandGeneration = 0
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Incremented on walk-start transitions to trigger the sheet's
+    /// one-time "wink" hint animation teaching the swipe-to-expand
+    /// affordance. Observed by `WalkStatsSheet` via `peekHintTrigger`.
+    @State private var sheetPeekHintTrigger: Int = 0
+    /// Measured height of the minimized sheet, captured via GeometryReader.
+    /// Used as the reservation amount for the ambient overlay's bottom
+    /// padding so the weather chip / sparkline sit exactly above the sheet
+    /// top regardless of content width variations or dynamic type. Seeded
+    /// to a sensible default so first-frame layout isn't jarring.
+    @State private var measuredMinimizedSheetHeight: CGFloat = 90
 
-    /// Height reserved for the minimized sheet. The ambient overlay sits
-    /// above this line. Approximation — scales with dynamic type so the
-    /// ambient elements don't sit inside the sheet at accessibility sizes.
-    /// At AX3+ the timer font balloons, so we need more headroom.
+    /// Measured height of the expanded sheet, captured via GeometryReader.
+    /// Passed to Mapbox as the bottom camera inset so the user's location
+    /// puck stays visible above the expanded sheet. Seeded to a sensible
+    /// default so the first frame before measurement has a reasonable
+    /// camera offset.
+    @State private var measuredExpandedSheetHeight: CGFloat = 340
+
+    /// Bottom padding the ambient overlay uses to sit just above the
+    /// minimized sheet. Driven by the measured sheet height (not an
+    /// estimate) so it's always accurate.
     private var minimizedSheetHeight: CGFloat {
-        switch dynamicTypeSize {
-        case .accessibility3, .accessibility4, .accessibility5:
-            return 180
-        case .accessibility1, .accessibility2:
-            return 140
-        default:
-            return 96
-        }
-    }
-
-    /// Approximate height of the expanded sheet — used for map camera
-    /// padding so the user puck stays visible above the sheet. This is an
-    /// estimate; the real height is content-driven. Scales with dynamic
-    /// type to match the sheet's actual growth.
-    private var expandedSheetHeight: CGFloat {
-        switch dynamicTypeSize {
-        case .accessibility3, .accessibility4, .accessibility5:
-            return 520
-        case .accessibility1, .accessibility2:
-            return 420
-        default:
-            return 340
-        }
+        measuredMinimizedSheetHeight
     }
 
     /// Bottom padding the map should reserve for the overlay sheet so the
-    /// user's location puck doesn't hide underneath it.
+    /// user's location puck doesn't hide underneath it. Driven by the
+    /// measured sheet height in both states — no estimates.
     private var mapBottomInset: CGFloat {
-        sheetState == .minimized ? minimizedSheetHeight : expandedSheetHeight
+        sheetState == .minimized ? measuredMinimizedSheetHeight : measuredExpandedSheetHeight
     }
 
     private var selectedSoundscapeName: String? {
@@ -109,6 +103,21 @@ struct ActiveWalkView: View {
             // Bottom sheet with stats and controls
             bottomSheet
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        }
+        .onPreferenceChange(MinimizedSheetHeightKey.self) { newHeight in
+            // Capture the measured height of the minimized sheet chrome
+            // (drag handle + stat row). Guarded on current sheetState
+            // so a transition-time default-value emission from the
+            // preference key doesn't clobber a valid measurement.
+            guard sheetState == .minimized else { return }
+            measuredMinimizedSheetHeight = newHeight
+        }
+        .onPreferenceChange(ExpandedSheetHeightKey.self) { newHeight in
+            // Capture the expanded sheet's actual rendered height so the
+            // Mapbox camera inset matches reality in the expanded state.
+            // Same transition-safety guard as above.
+            guard sheetState == .expanded else { return }
+            measuredExpandedSheetHeight = newHeight
         }
         .onChange(of: viewModel.weatherSnapshot?.condition) { _, condition in
             guard let condition, viewModel.status == .recording else { return }
@@ -386,7 +395,7 @@ struct ActiveWalkView: View {
                 }
             }
             .padding(.horizontal, Constants.UI.Padding.normal)
-            .padding(.bottom, Constants.UI.Padding.small)
+            .padding(.bottom, Constants.UI.Padding.xs)
 
             // Pace sparkline slot — reserved height prevents layout jump
             // (hidden from VoiceOver — ambient visual)
@@ -397,18 +406,20 @@ struct ActiveWalkView: View {
                         .transition(.opacity)
                 }
             }
-            .frame(height: 28)
-            .padding(.bottom, Constants.UI.Padding.small)
+            .frame(height: 24)
+            .padding(.bottom, Constants.UI.Padding.xs)
             .accessibilityHidden(true)
 
             // Gradient fade into the parchment sheet (only visible when sheet
-            // is minimized — when expanded, sheet covers the gradient)
+            // is minimized — when expanded, sheet covers the gradient).
+            // Kept small so the ambient content sits close to the sheet top
+            // instead of floating high up the map.
             LinearGradient(
                 colors: [.clear, .parchment],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 40)
+            .frame(height: 20)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
         }
@@ -428,7 +439,8 @@ struct ActiveWalkView: View {
             },
             onRequestEndWalk: {
                 showStopConfirmation = true
-            }
+            },
+            peekHintTrigger: sheetPeekHintTrigger
         )
         .background(
             UnevenRoundedRectangle(
@@ -588,10 +600,13 @@ struct ActiveWalkView: View {
             // Cancel any pending auto-expand from a previous pause
             pauseExpandGeneration += 1
             sheetState = .minimized
-            // Handoff haptic — only on the initial walk-start transition,
-            // not on resume-from-pause or GPS-flap recovery.
+            // Handoff haptic + peek hint — only on the initial walk-start
+            // transition, not on resume-from-pause or GPS-flap recovery.
+            // The peek teaches the swipe-to-expand affordance once per
+            // walk start, tied to the same moment as the haptic.
             if oldStatus == .ready || oldStatus == .waiting {
                 UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                sheetPeekHintTrigger += 1
             }
         case .paused, .autoPaused:
             // Debounce: only auto-expand if the pause persists for 800ms.
@@ -745,23 +760,6 @@ struct LivePaceSparklineView: View {
                 .stroke(Color.stone.opacity(0.4), style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
             }
         }
-    }
-}
-
-struct StatItem: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(Constants.Typography.statValue)
-                .foregroundColor(.ink)
-            Text(label)
-                .font(Constants.Typography.statLabel)
-                .foregroundColor(.fog)
-        }
-        .frame(maxWidth: .infinity)
     }
 }
 
