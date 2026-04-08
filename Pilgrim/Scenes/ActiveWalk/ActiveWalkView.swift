@@ -413,7 +413,6 @@ struct ActiveWalkView: View {
             .shadow(color: .ink.opacity(0.15), radius: 12, y: -4)
             .ignoresSafeArea(edges: .bottom)
         )
-        .frame(maxWidth: 600) // Cap width on iPad
     }
 
     // MARK: - Map Overlay Buttons

@@ -157,10 +157,11 @@ struct WalkStatsSheet: View {
     }
 
     /// Fires a soft impact haptic for sheet state transitions.
-    /// Creates a fresh generator per call — SwiftUI structs re-create on
-    /// every body eval (many times per second during an active walk), so
-    /// a stored generator would leak references per CLAUDE.md. Cold-start
-    /// latency is ~10ms which is imperceptible for a tap-response.
+    /// Creates a fresh generator per call — storing it as a struct property
+    /// would needlessly retain a Core Haptics resource across the lifetime
+    /// of the sheet, and SwiftUI structs re-create on every body eval so
+    /// @State-stored generators don't really help anyway. Cold-start latency
+    /// is ~10ms which is imperceptible for a tap-response.
     private func fireHaptic() {
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
     }
