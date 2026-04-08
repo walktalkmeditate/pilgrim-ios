@@ -109,13 +109,13 @@ struct MeditationView: View {
         }
         .sheet(isPresented: $showMeditationOptions) {
             meditationOptionsSheet
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.parchment.opacity(0.95))
         }
         .sheet(isPresented: $showSoundscapePicker) {
             soundscapePickerSheet
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.parchment.opacity(0.95))
         }
@@ -382,6 +382,9 @@ struct MeditationView: View {
                 .padding(.top, 12)
 
             ScrollView {
+                // Bottom padding so the last row ("None") has breathing
+                // room at the sheet edge and doesn't butt against the
+                // home indicator.
                 VStack(spacing: 6) {
                     ForEach(AudioManifestService.shared.soundscapes) { scape in
                         let isSelected = soundscapePlayer.currentAsset?.id == scape.id
@@ -439,6 +442,7 @@ struct MeditationView: View {
                     }
                 }
                 .padding(.horizontal, 16)
+                .padding(.bottom, Constants.UI.Padding.big)
             }
         }
     }
@@ -463,6 +467,7 @@ struct MeditationView: View {
                     breathRhythmSection
                 }
                 .padding(.horizontal, 16)
+                .padding(.bottom, Constants.UI.Padding.big)
             }
         }
     }

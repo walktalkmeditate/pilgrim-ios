@@ -37,36 +37,41 @@ struct WalkOptionsSheet: View {
                 .foregroundColor(Color.ink.opacity(0.8))
                 .padding(.top, 12)
 
-            VStack(spacing: 6) {
-                if !isRecording, let onSetIntention {
-                    optionRow(
-                        icon: "leaf",
-                        title: "Set Intention",
-                        subtitle: currentIntention
-                    ) {
-                        onSetIntention()
+            // ScrollView wraps the options so content taller than the
+            // sheet's current detent can scroll instead of being clipped.
+            // Previously this was a bare VStack with a trailing Spacer,
+            // which silently hid the audio section at medium detent.
+            ScrollView {
+                VStack(spacing: 6) {
+                    if !isRecording, let onSetIntention {
+                        optionRow(
+                            icon: "leaf",
+                            title: "Set Intention",
+                            subtitle: currentIntention
+                        ) {
+                            onSetIntention()
+                        }
+                    }
+
+                    if isRecording, let onDropWaypoint {
+                        optionRow(
+                            icon: "mappin",
+                            title: "Drop Waypoint",
+                            subtitle: waypointCount > 0 ? "\(waypointCount) marked" : nil
+                        ) {
+                            onDropWaypoint()
+                        }
+                    }
+
+                    if isRecording {
+                        traceSection
+                        audioSection
                     }
                 }
-
-                if isRecording, let onDropWaypoint {
-                    optionRow(
-                        icon: "mappin",
-                        title: "Drop Waypoint",
-                        subtitle: waypointCount > 0 ? "\(waypointCount) marked" : nil
-                    ) {
-                        onDropWaypoint()
-                    }
-                }
-
-                if isRecording {
-                    traceSection
-                    audioSection
-                }
+                .padding(.horizontal, Constants.UI.Padding.normal)
+                .padding(.top, Constants.UI.Padding.big)
+                .padding(.bottom, Constants.UI.Padding.big)
             }
-            .padding(.horizontal, Constants.UI.Padding.normal)
-            .padding(.top, Constants.UI.Padding.big)
-
-            Spacer()
         }
         .onAppear { checkConnectivity() }
     }

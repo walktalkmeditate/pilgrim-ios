@@ -208,7 +208,7 @@ struct ActiveWalkView: View {
                 },
                 onReplayPrompt: { viewModel.voiceGuideManagement.replayLastPrompt() }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
         }
@@ -221,7 +221,7 @@ struct ActiveWalkView: View {
                 },
                 onDismiss: { showIntention = false }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
         }
