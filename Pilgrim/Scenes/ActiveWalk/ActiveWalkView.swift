@@ -29,10 +29,6 @@ struct ActiveWalkView: View {
         dynamicTypeSize >= .accessibility2
     }
 
-    private var mapHeightFraction: CGFloat {
-        isLargeText ? 0.35 : 0.6
-    }
-
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
               let id = UserPreferences.selectedSoundscapeId.value else { return nil }
@@ -40,102 +36,126 @@ struct ActiveWalkView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .top) {
-                WeatherOverlayView(condition: viewModel.weatherSnapshot?.condition)
-                    .ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            // Full-screen map background
+            mapSection()
+                .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    ZStack(alignment: .bottom) {
-                        mapSection(height: geometry.size.height * mapHeightFraction)
-                        LinearGradient(
-                            colors: [.clear, .parchment],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 40)
+            // Weather overlay (full screen)
+            WeatherOverlayView(condition: viewModel.weatherSnapshot?.condition)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
 
-                        HStack {
-                            HStack(spacing: 6) {
-                                if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
-                                    audioIndicator(
-                                        icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
-                                    ) {
-                                        SoundscapePlayer.shared.toggleMute()
-                                    }
-                                }
-                                if viewModel.voiceGuidePackName != nil {
-                                    audioIndicator(
-                                        icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
-                                    ) {
-                                        if viewModel.voiceGuideManagement.isPaused {
-                                            viewModel.voiceGuideManagement.resumeGuide()
-                                        } else {
-                                            viewModel.voiceGuideManagement.pauseGuide()
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer()
-
-                            HStack(spacing: 6) {
-                                if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
-                                    CelestialVignetteView(snapshot: celestialSnapshot)
-                                }
-                                WeatherVignetteView(
-                                    snapshot: viewModel.weatherSnapshot,
-                                    imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
-                                )
+            // Top overlay: audio indicators and vignettes
+            VStack(spacing: 0) {
+                HStack {
+                    HStack(spacing: 6) {
+                        if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
+                            audioIndicator(
+                                icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
+                            ) {
+                                SoundscapePlayer.shared.toggleMute()
                             }
                         }
-                        .padding(.horizontal, Constants.UI.Padding.normal)
-                        .padding(.bottom, 48)
-
-                        if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
-                            LivePaceSparklineView(values: viewModel.paceHistory)
-                                .frame(height: 28)
-                                .padding(.horizontal, Constants.UI.Padding.big)
-                                .transition(.opacity)
-                        }
-
-                        VStack(spacing: 4) {
-                            if let weatherGreeting {
-                                Text(weatherGreeting)
-                                    .font(Constants.Typography.body.italic())
-                                    .foregroundColor(.ink.opacity(0.5))
-                                    .multilineTextAlignment(.center)
-                                    .transition(.opacity)
-                                    .allowsHitTesting(false)
-                            }
-                            if let celestialGreeting {
-                                Text(celestialGreeting)
-                                    .font(Constants.Typography.body.italic())
-                                    .foregroundColor(.ink.opacity(0.5))
-                                    .multilineTextAlignment(.center)
-                                    .transition(.opacity)
-                                    .allowsHitTesting(false)
+                        if viewModel.voiceGuidePackName != nil {
+                            audioIndicator(
+                                icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
+                            ) {
+                                if viewModel.voiceGuideManagement.isPaused {
+                                    viewModel.voiceGuideManagement.resumeGuide()
+                                } else {
+                                    viewModel.voiceGuideManagement.pauseGuide()
+                                }
                             }
                         }
                     }
 
-                    WalkStatsSheet(
-                        viewModel: viewModel,
-                        onStartMeditation: {
-                            viewModel.startMeditation()
-                            showMeditation = true
-                        },
-                        onRequestEndWalk: {
-                            showStopConfirmation = true
-                        }
-                    )
-                }
+                    Spacer()
 
+                    HStack(spacing: 6) {
+                        if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
+                            CelestialVignetteView(snapshot: celestialSnapshot)
+                        }
+                        WeatherVignetteView(
+                            snapshot: viewModel.weatherSnapshot,
+                            imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
+                        )
+                    }
+                }
+                .padding(.horizontal, Constants.UI.Padding.normal)
+                .padding(.top, 104)
+
+                Spacer()
+            }
+
+            // Pace sparkline (floating in middle area)
+            if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
+                VStack {
+                    Spacer()
+                    LivePaceSparklineView(values: viewModel.paceHistory)
+                        .frame(height: 28)
+                        .padding(.horizontal, Constants.UI.Padding.big)
+                        .transition(.opacity)
+                    Spacer()
+                }
+                .allowsHitTesting(false)
+            }
+
+            // Floating greeting text (middle of screen)
+            VStack {
+                Spacer()
+                VStack(spacing: 4) {
+                    if let weatherGreeting {
+                        Text(weatherGreeting)
+                            .font(Constants.Typography.body.italic())
+                            .foregroundColor(.ink.opacity(0.5))
+                            .multilineTextAlignment(.center)
+                            .transition(.opacity)
+                    }
+                    if let celestialGreeting {
+                        Text(celestialGreeting)
+                            .font(Constants.Typography.body.italic())
+                            .foregroundColor(.ink.opacity(0.5))
+                            .multilineTextAlignment(.center)
+                            .transition(.opacity)
+                    }
+                }
+                .padding(.bottom, 8)
+                Spacer()
+            }
+            .allowsHitTesting(false)
+
+            // Top buttons (ellipsis + close)
+            VStack {
                 mapOverlayButtons
+                Spacer()
+            }
+
+            // Bottom sheet with stats and controls
+            VStack(spacing: 0) {
+                // Gradient fade above the sheet for readability
+                LinearGradient(
+                    colors: [.clear, .parchment],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 40)
+                .allowsHitTesting(false)
+
+                WalkStatsSheet(
+                    viewModel: viewModel,
+                    onStartMeditation: {
+                        viewModel.startMeditation()
+                        showMeditation = true
+                    },
+                    onRequestEndWalk: {
+                        showStopConfirmation = true
+                    }
+                )
+                .background(Color.parchment)
             }
         }
         .background(Color.parchment)
-        .ignoresSafeArea(edges: .top)
         .onChange(of: viewModel.weatherSnapshot?.condition) { _, condition in
             guard let condition, weatherGreeting == nil,
                   viewModel.status == .recording else { return }
@@ -422,7 +442,7 @@ struct ActiveWalkView: View {
     private static let maxVisiblePins = 30
     private static let minPinSeparation: CLLocationDistance = 15
 
-    private func mapSection(height: CGFloat) -> some View {
+    private func mapSection() -> some View {
         let waypointPins = viewModel.waypoints.map { wp in
             PilgrimAnnotation(
                 coordinate: CLLocationCoordinate2D(latitude: wp.latitude, longitude: wp.longitude),
@@ -438,7 +458,6 @@ struct ActiveWalkView: View {
                 handleAnnotationTap(annotation)
             }
         )
-        .frame(height: height)
     }
 
     private func proximityAnnotations() -> [PilgrimAnnotation] {
