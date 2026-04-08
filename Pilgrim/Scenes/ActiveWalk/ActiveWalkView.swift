@@ -46,16 +46,17 @@ struct ActiveWalkView: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-            // Top overlay: map buttons, audio indicators, vignettes
+            // Top overlay: map option buttons (ellipsis / close)
             topOverlay
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-            // Floating greeting text and pace sparkline (centered, non-interactive)
+            // Floating greeting text (anchored to upper third, non-interactive)
             floatingGreetings
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, 140)
                 .allowsHitTesting(false)
 
-            // Bottom sheet with stats and controls
+            // Bottom sheet — contains ambient elements + gradient + stats sheet
             bottomSheet
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
@@ -369,14 +370,17 @@ struct ActiveWalkView: View {
             .padding(.horizontal, Constants.UI.Padding.normal)
             .padding(.bottom, Constants.UI.Padding.small)
 
-            // Pace sparkline, just above the gradient
-            if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
-                LivePaceSparklineView(values: viewModel.paceHistory)
-                    .frame(height: 28)
-                    .padding(.horizontal, Constants.UI.Padding.big)
-                    .padding(.bottom, Constants.UI.Padding.small)
-                    .transition(.opacity)
+            // Pace sparkline slot — reserved height prevents sheet from
+            // jumping when the sparkline fades in mid-walk.
+            Group {
+                if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
+                    LivePaceSparklineView(values: viewModel.paceHistory)
+                        .padding(.horizontal, Constants.UI.Padding.big)
+                        .transition(.opacity)
+                }
             }
+            .frame(height: 28)
+            .padding(.bottom, Constants.UI.Padding.small)
 
             // Gradient fade into the parchment sheet
             LinearGradient(

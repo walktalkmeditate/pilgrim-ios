@@ -237,7 +237,21 @@ The sheet overlays the bottom of the map. User's location marker should remain v
 - Only `dragOffset` lives as `@State` inside `WalkStatsSheet`.
 - The conditional branches (`minimizedContent` vs `expandedContent`) must live inside `WalkStatsSheet.body` to preserve view identity — don't conditionally render `WalkStatsSheet` itself from the parent.
 - Auto-collapse logic goes in the EXISTING `onChange(of: viewModel.status)` handler in `ActiveWalkView` (don't add a second one).
-- The gradient fade above the sheet may need to move OUT of the bottomSheet VStack if we want it fixed in place while the sheet resizes. For Stage 3, we can keep it in the VStack since it'll move with the sheet — evaluate visually.
+- **Restructure before state transitions**: The ambient elements (audio indicators, vignettes, sparkline, gradient) currently live inside `bottomSheet` VStack. When the sheet collapses, they'll slide down with it by ~200pt. Extract them into their own `ambientOverlay` layer BEFORE adding SheetState, so that only the stats content collapses. Or keep them attached to the sheet top — decide which behavior is desired first.
+- **Gradient behavior with state transitions**: If ambient stays with sheet, gradient does too. If ambient is extracted, gradient needs to decide: stay with sheet (will be below ambient when expanded) or stay with ambient (will be above minimized sheet).
+
+### Stage 4: Add drag gesture
+**Additional decisions:**
+- **Drag gesture attaches to drag handle view only**, NOT the whole sheet VStack. Tapping the mic/end/meditate buttons should not trigger drags. A small ~30x20pt pill at the top of the sheet captures drags.
+- Add light haptic (`UIImpactFeedbackGenerator(style: .soft)`) on state transition — Apple Maps pattern.
+- Every `.animation(...)` must be `value:`-scoped. NO blanket `withAnimation { ... }` around published property changes.
+
+### Stage 5: Polish additions
+- **Mapbox camera padding**: Verify user location marker isn't hidden under the sheet. If `PilgrimMapView` needs a `bottomInset: CGFloat` parameter, add it. Mapbox supports `setCameraPadding` to offset the logical center.
+- **Mapbox battery cost**: Full-screen map rasterizes ~40% more pixels. Expect ~1-3% extra battery/hour. Accepted; revisit in Battery Optimization project.
+- **VoiceOver focus order**: Verify traversal is top buttons → stats sheet. Mark map, weather overlay, and `floatingGreetings` as `accessibilityHidden` if not already.
+- **Dynamic Island**: Verify `mapOverlayButtons` clears the island on iPhone 15 Pro and later.
+- **SE3 testing**: Actually run on 4.7" simulator at accessibility3+ text size to verify the collapsible design solves the crowding.
 
 ### Stage 4: Add drag gesture and auto-collapse on walk start
 **Goal**: User can swipe to expand/collapse, auto-collapse when status transitions to .recording
