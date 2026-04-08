@@ -94,12 +94,11 @@ jobs:
         run: |
           KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
           if [ ! -f "$KEY_PATH" ]; then touch "$RUNNER_TEMP/pre_build_certs.txt"; exit 0; fi
-          TOKEN=$(python3 -c "
-          import jwt, time
-          key = open('$KEY_PATH').read()
-          payload = {'iss': '$APP_STORE_API_ISSUER', 'iat': int(time.time()), 'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1'}
-          print(jwt.encode(payload, key, algorithm='ES256', headers={'kid': '$APP_STORE_API_KEY'}))
-          " 2>/dev/null || exit 0)
+          NOW=$(date +%s)
+          HEADER=$(printf '{"alg":"ES256","kid":"%s","typ":"JWT"}' "$APP_STORE_API_KEY" | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+          PAYLOAD=$(printf '{"iss":"%s","iat":%d,"exp":%d,"aud":"appstoreconnect-v1"}' "$APP_STORE_API_ISSUER" "$NOW" "$((NOW+1200))" | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+          SIG=$(printf '%s.%s' "$HEADER" "$PAYLOAD" | openssl dgst -sha256 -sign "$KEY_PATH" -binary | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+          TOKEN="${HEADER}.${PAYLOAD}.${SIG}"
           curl -s -H "Authorization: Bearer $TOKEN" \
             "https://api.appstoreconnect.apple.com/v1/certificates?filter[certificateType]=DEVELOPMENT" \
             | python3 -c "import sys,json; [print(c['id']) for c in json.load(sys.stdin).get('data',[])]" \
@@ -122,12 +121,11 @@ jobs:
         run: |
           KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
           if [ ! -f "$KEY_PATH" ] || [ ! -f "$RUNNER_TEMP/pre_build_certs.txt" ]; then exit 0; fi
-          TOKEN=$(python3 -c "
-          import jwt, time
-          key = open('$KEY_PATH').read()
-          payload = {'iss': '$APP_STORE_API_ISSUER', 'iat': int(time.time()), 'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1'}
-          print(jwt.encode(payload, key, algorithm='ES256', headers={'kid': '$APP_STORE_API_KEY'}))
-          " 2>/dev/null || exit 0)
+          NOW=$(date +%s)
+          HEADER=$(printf '{"alg":"ES256","kid":"%s","typ":"JWT"}' "$APP_STORE_API_KEY" | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+          PAYLOAD=$(printf '{"iss":"%s","iat":%d,"exp":%d,"aud":"appstoreconnect-v1"}' "$APP_STORE_API_ISSUER" "$NOW" "$((NOW+1200))" | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+          SIG=$(printf '%s.%s' "$HEADER" "$PAYLOAD" | openssl dgst -sha256 -sign "$KEY_PATH" -binary | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+          TOKEN="${HEADER}.${PAYLOAD}.${SIG}"
           NEW_CERTS=$(curl -s -H "Authorization: Bearer $TOKEN" \
             "https://api.appstoreconnect.apple.com/v1/certificates?filter[certificateType]=DEVELOPMENT" \
             | python3 -c "import sys,json; [print(c['id']) for c in json.load(sys.stdin).get('data',[])]" 2>/dev/null || true)
