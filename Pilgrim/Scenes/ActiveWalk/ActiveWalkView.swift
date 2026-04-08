@@ -31,8 +31,16 @@ struct ActiveWalkView: View {
     /// Height reserved for the minimized sheet. The ambient overlay sits
     /// above this line. Approximation — scales with dynamic type so the
     /// ambient elements don't sit inside the sheet at accessibility sizes.
+    /// At AX3+ the timer font balloons, so we need more headroom.
     private var minimizedSheetHeight: CGFloat {
-        dynamicTypeSize >= .accessibility2 ? 140 : 96
+        switch dynamicTypeSize {
+        case .accessibility3, .accessibility4, .accessibility5:
+            return 180
+        case .accessibility1, .accessibility2:
+            return 140
+        default:
+            return 96
+        }
     }
 
     private var selectedSoundscapeName: String? {
@@ -410,6 +418,10 @@ struct ActiveWalkView: View {
                 style: .continuous
             )
             .fill(Color.parchment)
+            // .compositingGroup() ensures the shadow is computed from the
+            // composed shape once, preventing a "pop" during sheet resize
+            // animations where the shape geometry changes frame-by-frame.
+            .compositingGroup()
             .shadow(color: .ink.opacity(0.15), radius: 12, y: -4)
             .ignoresSafeArea(edges: .bottom)
         )

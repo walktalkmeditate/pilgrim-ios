@@ -176,6 +176,7 @@ struct WalkStatsSheet: View {
             .frame(width: 40, height: 5)
             .padding(.top, 8)
             .padding(.bottom, 4)
+            .animation(.easeInOut(duration: 0.2), value: canDrag)
             .accessibilityHidden(true)
     }
 
