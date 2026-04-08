@@ -26,6 +26,14 @@ struct ActiveWalkView: View {
     @State private var sheetState: SheetState = .expanded
     @State private var hasInitializedSheetState = false
     @State private var pauseExpandGeneration = 0
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Height reserved for the minimized sheet. The ambient overlay sits
+    /// above this line. Approximation — scales with dynamic type so the
+    /// ambient elements don't sit inside the sheet at accessibility sizes.
+    private var minimizedSheetHeight: CGFloat {
+        dynamicTypeSize >= .accessibility2 ? 140 : 96
+    }
 
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
@@ -66,7 +74,7 @@ struct ActiveWalkView: View {
             // 800ms pause-debounce window, the audio indicators remain tappable.
             ambientOverlay
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, Self.minimizedSheetHeight)
+                .padding(.bottom, minimizedSheetHeight)
                 .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
 
             // Bottom sheet with stats and controls
@@ -377,8 +385,10 @@ struct ActiveWalkView: View {
         }
     }
 
-    /// The stats sheet itself — collapsible state-aware.
-    /// Background extends through the bottom safe area.
+    /// The stats sheet itself — collapsible state-aware. Visually a floating
+    /// card with rounded top corners and a soft shadow above. The parchment
+    /// background extends through the bottom safe area so the sheet reads
+    /// as attached to the bottom edge.
     private var bottomSheet: some View {
         WalkStatsSheet(
             state: $sheetState,
@@ -392,9 +402,18 @@ struct ActiveWalkView: View {
             }
         )
         .background(
-            Color.parchment
-                .ignoresSafeArea(edges: .bottom)
+            UnevenRoundedRectangle(
+                topLeadingRadius: 20,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 20,
+                style: .continuous
+            )
+            .fill(Color.parchment)
+            .shadow(color: .ink.opacity(0.15), radius: 12, y: -4)
+            .ignoresSafeArea(edges: .bottom)
         )
+        .frame(maxWidth: 600) // Cap width on iPad
     }
 
     // MARK: - Map Overlay Buttons
@@ -435,16 +454,6 @@ struct ActiveWalkView: View {
         .padding(.horizontal, Constants.UI.Padding.normal)
         .padding(.top, Constants.UI.Padding.small)
     }
-
-    /// Height reserved for the minimized sheet at default text size. The
-    /// ambient overlay (audio indicators, vignettes, sparkline) sits above
-    /// this line. Approximation — the actual minimized sheet is content-driven.
-    ///
-    /// FIXME(v1.2 Stage 5): This hardcoded value is wrong at accessibility
-    /// text sizes. Switch to `.safeAreaInset(edge: .bottom) { bottomSheet }`
-    /// so the ambient overlay automatically respects the sheet's actual
-    /// content-driven height. See IMPLEMENTATION_PLAN.md Stage 5.
-    private static let minimizedSheetHeight: CGFloat = 96
 
     private static let isoFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()

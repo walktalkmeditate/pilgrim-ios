@@ -167,9 +167,11 @@ struct WalkStatsSheet: View {
 
     // MARK: - Drag Handle
 
+    /// Visual affordance for the collapsible sheet. Dimmer in non-recording
+    /// states where drag is disabled — signals "not currently interactive".
     private var dragHandle: some View {
         RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-            .fill(Color.fog.opacity(0.35))
+            .fill(Color.fog.opacity(canDrag ? 0.35 : 0.12))
             .frame(width: 40, height: 5)
             .padding(.top, 8)
             .padding(.bottom, 4)
@@ -265,6 +267,9 @@ struct WalkStatsSheet: View {
         }
         .padding(.vertical, isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.normal)
         .padding(.horizontal, Constants.UI.Padding.normal)
+        // Combine all stats into a single VoiceOver element so users hear
+        // them in one utterance and then move on to the controls.
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Controls
