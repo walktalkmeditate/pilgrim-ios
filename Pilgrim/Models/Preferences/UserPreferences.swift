@@ -37,11 +37,18 @@ struct UserPreferences {
     static let bellHapticEnabled = UserPreference.Required<Bool>(key: "bellHapticEnabled", defaultValue: true)
     static let bellVolume = UserPreference.Required<Double>(key: "bellVolume", defaultValue: 0.7)
     static let soundscapeVolume = UserPreference.Required<Double>(key: "soundscapeVolume", defaultValue: 0.4)
-    static let walkStartBellId = UserPreference.Optional<String>(key: "walkStartBellId", defaultValue: "echo-chime")
-    static let walkEndBellId = UserPreference.Optional<String>(key: "walkEndBellId", defaultValue: "gentle-harp")
-    static let meditationStartBellId = UserPreference.Optional<String>(key: "meditationStartBellId", defaultValue: "temple-bell")
-    static let meditationEndBellId = UserPreference.Optional<String>(key: "meditationEndBellId", defaultValue: "yoga-chime")
-    static let selectedSoundscapeId = UserPreference.Optional<String>(key: "selectedSoundscapeId", defaultValue: "gentle-stream")
+    // Bell and soundscape preferences have NO defaultValue set because
+    // all of them support a valid "None" selection. If they had a
+    // defaultValue fallback, setting the preference to nil (None) would
+    // immediately read back as the default, making None impossible to
+    // persist. Initial seeding for fresh installs and pre-migration
+    // users happens once at app launch via a migration in
+    // `AppDelegate.application(_:didFinishLaunchingWithOptions:)`.
+    static let walkStartBellId = UserPreference.Optional<String>(key: "walkStartBellId")
+    static let walkEndBellId = UserPreference.Optional<String>(key: "walkEndBellId")
+    static let meditationStartBellId = UserPreference.Optional<String>(key: "meditationStartBellId")
+    static let meditationEndBellId = UserPreference.Optional<String>(key: "meditationEndBellId")
+    static let selectedSoundscapeId = UserPreference.Optional<String>(key: "selectedSoundscapeId")
     static let breathRhythm = UserPreference.Required<Int>(key: "breathRhythm", defaultValue: 0)
 
     static let voiceGuideEnabled = UserPreference.Required<Bool>(key: "voiceGuideEnabled", defaultValue: false)

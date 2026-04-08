@@ -233,6 +233,7 @@
 		AA0001010000000000000012 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000002 /* HomeViewModel.swift */; };
 		AA0001010000000000000013 /* WalkRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000003 /* WalkRowView.swift */; };
 		AA0001010000000000000014 /* ActiveWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000004 /* ActiveWalkView.swift */; };
+		CC0001010000000000000002 /* WalkStatsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0001010000000000000001 /* WalkStatsSheet.swift */; };
 		AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000005 /* ActiveWalkViewModel.swift */; };
 		AA0001010000000000000016 /* WalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000006 /* WalkSummaryView.swift */; };
 		AA0001010000000000000017 /* MainCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000007 /* MainCoordinatorView.swift */; };
@@ -653,6 +654,7 @@
 		AA0001010000000000000002 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000003 /* WalkRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkRowView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000004 /* ActiveWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkView.swift; sourceTree = "<group>"; };
+		CC0001010000000000000001 /* WalkStatsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStatsSheet.swift; sourceTree = "<group>"; };
 		AA0001010000000000000005 /* ActiveWalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000006 /* WalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000007 /* MainCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinatorView.swift; sourceTree = "<group>"; };
@@ -1602,6 +1604,7 @@
 			children = (
 				AA0001010000000000000004 /* ActiveWalkView.swift */,
 				AA0001010000000000000005 /* ActiveWalkViewModel.swift */,
+				CC0001010000000000000001 /* WalkStatsSheet.swift */,
 				AAAA0000000000000000F8 /* IntentionSettingView.swift */,
 				BBBB000000000000000009 /* WaypointMarkingSheet.swift */,
 				AA00030100000000000001 /* MeditationView.swift */,
@@ -2248,6 +2251,7 @@
 				CC00000200000000BTRFLY01 /* ButterflyShape.swift in Sources */,
 				CC00000200000000LANTRN01 /* LanternShape.swift in Sources */,
 				AA0001010000000000000014 /* ActiveWalkView.swift in Sources */,
+				CC0001010000000000000002 /* WalkStatsSheet.swift in Sources */,
 				AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */,
 				AAAA0000000000000000F9 /* IntentionSettingView.swift in Sources */,
 				AA00030100000000000002 /* MeditationView.swift in Sources */,

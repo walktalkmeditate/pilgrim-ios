@@ -34,6 +34,45 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
 
         MapboxMapsOptions.tileStoreUsageMode = .readOnly
 
+        // Clean up any Live Activities left over from a previous session
+        // that ended abnormally (crash, force-quit, OOM kill). Any activity
+        // alive at app launch is necessarily stale — the walk that created
+        // it is no longer running. Without this, walkers see the lock
+        // screen Live Activity hang around even though the app thinks the
+        // walk is finished.
+        WalkActivityManager.shared.endAllStaleActivities()
+
+        // One-time migration: seed bell + soundscape preferences with
+        // their initial values for users who have never explicitly set
+        // them. Previously these preferences had fallback defaultValues,
+        // which made the "None" selection impossible to persist — setting
+        // to nil would read back as the default. Removing the fallbacks
+        // fixes None, but we still want fresh installs and pre-migration
+        // users to get sensible initial choices. Explicit existing
+        // selections are preserved.
+        //
+        // Writes go directly to UserDefaults rather than through
+        // `UserPreferences.X.value = Y`, because this runs before any
+        // UserPreferences static members are touched. The
+        // `UserPreference._Base.publisher` is created lazily on first
+        // access of the static let, at which point it reads the current
+        // UserDefaults value — so it picks up the migrated seeds
+        // automatically without needing to go through `set()`.
+        let soundscapeMigrationKey = "soundscapeDefaultMigrated_v1"
+        if !UserDefaults.standard.bool(forKey: soundscapeMigrationKey) {
+            let seeds: [(key: String, initialValue: String)] = [
+                ("walkStartBellId", "echo-chime"),
+                ("walkEndBellId", "gentle-harp"),
+                ("meditationStartBellId", "temple-bell"),
+                ("meditationEndBellId", "yoga-chime"),
+                ("selectedSoundscapeId", "gentle-stream")
+            ]
+            for seed in seeds where UserDefaults.standard.object(forKey: seed.key) == nil {
+                UserDefaults.standard.set(seed.initialValue, forKey: seed.key)
+            }
+            UserDefaults.standard.set(true, forKey: soundscapeMigrationKey)
+        }
+
         DataManager.setup(
             completion: { _ in
                 

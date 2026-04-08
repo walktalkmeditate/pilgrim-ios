@@ -16,6 +16,10 @@ struct PilgrimMapView: UIViewRepresentable {
     @Binding var cameraZoom: CGFloat
     var cameraBounds: MapCameraBounds?
     var cameraDuration: TimeInterval = 0.4
+    /// Bottom padding (in points) reserved for an overlay sheet. The map
+    /// shifts its content so the user puck / fit bounds appear above this
+    /// region instead of being hidden under a bottom sheet.
+    var bottomInset: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -28,7 +32,8 @@ struct PilgrimMapView: UIViewRepresentable {
         cameraCenter: Binding<CLLocationCoordinate2D?> = .constant(nil),
         cameraZoom: Binding<CGFloat> = .constant(14),
         cameraBounds: MapCameraBounds? = nil,
-        cameraDuration: TimeInterval = 0.4
+        cameraDuration: TimeInterval = 0.4,
+        bottomInset: CGFloat = 0
     ) {
         self.isInteractive = isInteractive
         self.showsUserLocation = showsUserLocation
@@ -40,6 +45,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self._cameraZoom = cameraZoom
         self.cameraBounds = cameraBounds
         self.cameraDuration = cameraDuration
+        self.bottomInset = bottomInset
     }
 
     func makeCoordinator() -> Coordinator {
@@ -108,27 +114,37 @@ struct PilgrimMapView: UIViewRepresentable {
         Self.applyAnnotations(pinAnnotations, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
-            if !context.coordinator.isFollowing {
+            let padding = UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
+            let insetChanged = abs(context.coordinator.lastBottomInset - bottomInset) > 0.5
+            if !context.coordinator.isFollowing || insetChanged {
                 context.coordinator.isFollowing = true
+                context.coordinator.lastBottomInset = bottomInset
                 mapView.viewport.transition(
                     to: mapView.viewport.makeFollowPuckViewportState(
-                        options: FollowPuckViewportStateOptions(zoom: 16)
+                        options: FollowPuckViewportStateOptions(padding: padding, zoom: 16)
                     )
                 )
             }
         } else {
             context.coordinator.isFollowing = false
+            context.coordinator.lastBottomInset = bottomInset
 
             if let bounds = cameraBounds {
                 let camera = mapView.mapboxMap.camera(
                     for: [bounds.sw, bounds.ne],
-                    padding: UIEdgeInsets(top: 40, left: 30, bottom: 40, right: 30),
+                    padding: UIEdgeInsets(top: 40, left: 30, bottom: 40 + bottomInset, right: 30),
                     bearing: nil,
                     pitch: nil
                 )
                 mapView.camera.ease(to: camera, duration: cameraDuration)
             } else if let center = cameraCenter {
-                let camera = CameraOptions(center: center, zoom: cameraZoom)
+                let camera: CameraOptions
+                if bottomInset > 0 {
+                    let padding = UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
+                    camera = CameraOptions(center: center, padding: padding, zoom: cameraZoom)
+                } else {
+                    camera = CameraOptions(center: center, zoom: cameraZoom)
+                }
                 mapView.camera.ease(to: camera, duration: cameraDuration)
             }
         }
@@ -365,6 +381,7 @@ struct PilgrimMapView: UIViewRepresentable {
         var circleManager: CircleAnnotationManager?
         var pointManager: PointAnnotationManager?
         var isFollowing = false
+        var lastBottomInset: CGFloat = 0
         var lastSegments: [RouteSegment] = []
         var pendingSegments: [RouteSegment] = []
         var pendingAnnotations: [PilgrimAnnotation] = []

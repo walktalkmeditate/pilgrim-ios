@@ -109,13 +109,13 @@ struct MeditationView: View {
         }
         .sheet(isPresented: $showMeditationOptions) {
             meditationOptionsSheet
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.parchment.opacity(0.95))
         }
         .sheet(isPresented: $showSoundscapePicker) {
             soundscapePickerSheet
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.parchment.opacity(0.95))
         }
@@ -282,10 +282,15 @@ struct MeditationView: View {
             .monospacedDigit()
     }
 
-    @ViewBuilder
+    /// Always-visible soundscape affordance. When a soundscape is
+    /// selected, tap toggles mute (with guide pause/resume) and long-
+    /// press opens the picker. When "None" is selected, there's nothing
+    /// to mute, so a plain tap opens the picker instead — otherwise the
+    /// user would have no way to change the selection after clearing it.
     private var soundscapeLabel: some View {
-        if let name = selectedSoundscapeName {
-            Button {
+        let name = selectedSoundscapeName
+        return Button {
+            if name != nil {
                 let wasMuted = soundscapePlayer.isMuted
                 soundscapePlayer.toggleMute()
                 if !wasMuted {
@@ -293,26 +298,35 @@ struct MeditationView: View {
                 } else {
                     meditationGuide?.resumeGuide()
                 }
-            } label: {
-                if soundscapePlayer.isMuted {
-                    Text("♪ Paused")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(Color.fog.opacity(0.2))
-                        .strikethrough(color: Color.fog.opacity(0.2))
+            } else {
+                showSoundscapePicker = true
+            }
+        } label: {
+            Group {
+                if let name {
+                    if soundscapePlayer.isMuted {
+                        Text("♪ Paused")
+                            .foregroundColor(Color.fog.opacity(0.2))
+                            .strikethrough(color: Color.fog.opacity(0.2))
+                    } else {
+                        Text("♪ \(name)")
+                            .foregroundColor(Color.fog.opacity(0.35))
+                    }
                 } else {
-                    Text("♪ \(name)")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(Color.fog.opacity(0.35))
+                    Text("♪ Silence")
+                        .foregroundColor(Color.fog.opacity(0.25))
                 }
             }
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 1.0).onEnded { _ in
-                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    showSoundscapePicker = true
-                }
-            )
-            .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.isMuted)
+            .font(Constants.Typography.caption)
         }
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 1.0).onEnded { _ in
+                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                showSoundscapePicker = true
+            }
+        )
+        .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.isMuted)
+        .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.currentAsset?.id)
     }
 
     private var selectedSoundscapeName: String? {
@@ -382,6 +396,9 @@ struct MeditationView: View {
                 .padding(.top, 12)
 
             ScrollView {
+                // Bottom padding so the last row ("None") has breathing
+                // room at the sheet edge and doesn't butt against the
+                // home indicator.
                 VStack(spacing: 6) {
                     ForEach(AudioManifestService.shared.soundscapes) { scape in
                         let isSelected = soundscapePlayer.currentAsset?.id == scape.id
@@ -439,6 +456,7 @@ struct MeditationView: View {
                     }
                 }
                 .padding(.horizontal, 16)
+                .padding(.bottom, Constants.UI.Padding.big)
             }
         }
     }
@@ -463,6 +481,7 @@ struct MeditationView: View {
                     breathRhythmSection
                 }
                 .padding(.horizontal, 16)
+                .padding(.bottom, Constants.UI.Padding.big)
             }
         }
     }

@@ -23,14 +23,39 @@ struct ActiveWalkView: View {
     @State private var greetingGeneration = 0
     @State private var celestialGreetingGeneration = 0
     @State private var celestialSnapshot: CelestialSnapshot?
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var sheetState: SheetState = .expanded
+    @State private var hasInitializedSheetState = false
+    @State private var pauseExpandGeneration = 0
+    /// Incremented on walk-start transitions to trigger the sheet's
+    /// one-time "wink" hint animation teaching the swipe-to-expand
+    /// affordance. Observed by `WalkStatsSheet` via `peekHintTrigger`.
+    @State private var sheetPeekHintTrigger: Int = 0
+    /// Measured height of the minimized sheet, captured via GeometryReader.
+    /// Used as the reservation amount for the ambient overlay's bottom
+    /// padding so the weather chip / sparkline sit exactly above the sheet
+    /// top regardless of content width variations or dynamic type. Seeded
+    /// to a sensible default so first-frame layout isn't jarring.
+    @State private var measuredMinimizedSheetHeight: CGFloat = 90
 
-    private var isLargeText: Bool {
-        dynamicTypeSize >= .accessibility2
+    /// Measured height of the expanded sheet, captured via GeometryReader.
+    /// Passed to Mapbox as the bottom camera inset so the user's location
+    /// puck stays visible above the expanded sheet. Seeded to a sensible
+    /// default so the first frame before measurement has a reasonable
+    /// camera offset.
+    @State private var measuredExpandedSheetHeight: CGFloat = 340
+
+    /// Bottom padding the ambient overlay uses to sit just above the
+    /// minimized sheet. Driven by the measured sheet height (not an
+    /// estimate) so it's always accurate.
+    private var minimizedSheetHeight: CGFloat {
+        measuredMinimizedSheetHeight
     }
 
-    private var mapHeightFraction: CGFloat {
-        isLargeText ? 0.35 : 0.6
+    /// Bottom padding the map should reserve for the overlay sheet so the
+    /// user's location puck doesn't hide underneath it. Driven by the
+    /// measured sheet height in both states — no estimates.
+    private var mapBottomInset: CGFloat {
+        sheetState == .minimized ? measuredMinimizedSheetHeight : measuredExpandedSheetHeight
     }
 
     private var selectedSoundscapeName: String? {
@@ -40,146 +65,67 @@ struct ActiveWalkView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .top) {
-                WeatherOverlayView(condition: viewModel.weatherSnapshot?.condition)
-                    .ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            // Full-screen map background (ignores safe area to fill entire screen)
+            mapSection()
+                .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    ZStack(alignment: .bottom) {
-                        mapSection(height: geometry.size.height * mapHeightFraction)
-                        LinearGradient(
-                            colors: [.clear, .parchment],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 40)
+            // Weather overlay (full screen, non-interactive, hidden from VO)
+            WeatherOverlayView(condition: viewModel.weatherSnapshot?.condition)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
 
-                        HStack {
-                            HStack(spacing: 6) {
-                                if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
-                                    audioIndicator(
-                                        icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
-                                    ) {
-                                        SoundscapePlayer.shared.toggleMute()
-                                    }
-                                }
-                                if viewModel.voiceGuidePackName != nil {
-                                    audioIndicator(
-                                        icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
-                                    ) {
-                                        if viewModel.voiceGuideManagement.isPaused {
-                                            viewModel.voiceGuideManagement.resumeGuide()
-                                        } else {
-                                            viewModel.voiceGuideManagement.pauseGuide()
-                                        }
-                                    }
-                                }
-                            }
+            // Top overlay: map option buttons (ellipsis / close)
+            topOverlay
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                            Spacer()
+            // Floating greeting text (anchored to upper third, non-interactive)
+            floatingGreetings
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, 140)
+                .allowsHitTesting(false)
 
-                            HStack(spacing: 6) {
-                                if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
-                                    CelestialVignetteView(snapshot: celestialSnapshot)
-                                }
-                                WeatherVignetteView(
-                                    snapshot: viewModel.weatherSnapshot,
-                                    imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
-                                )
-                            }
-                        }
-                        .padding(.horizontal, Constants.UI.Padding.normal)
-                        .padding(.bottom, 48)
+            // Ambient overlay: audio indicators, vignettes, sparkline, gradient.
+            // Anchored above the MINIMIZED sheet position. When the sheet is
+            // expanded, these elements are covered by the sheet — that's fine,
+            // the expanded sheet is the user's focus. When minimized, these
+            // elements become visible above it.
+            // Hit testing is enabled when the sheet is minimized AND the walk
+            // is in an active status (recording or paused). We use
+            // `isActiveStatus` here (not `== .recording`) so that during the
+            // 800ms pause-debounce window, the audio indicators remain tappable.
+            ambientOverlay
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, minimizedSheetHeight)
+                .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
 
-                        if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
-                            LivePaceSparklineView(values: viewModel.paceHistory)
-                                .frame(height: 28)
-                                .padding(.horizontal, Constants.UI.Padding.big)
-                                .transition(.opacity)
-                        }
-
-                        VStack(spacing: 4) {
-                            if let weatherGreeting {
-                                Text(weatherGreeting)
-                                    .font(Constants.Typography.body.italic())
-                                    .foregroundColor(.ink.opacity(0.5))
-                                    .multilineTextAlignment(.center)
-                                    .transition(.opacity)
-                                    .allowsHitTesting(false)
-                            }
-                            if let celestialGreeting {
-                                Text(celestialGreeting)
-                                    .font(Constants.Typography.body.italic())
-                                    .foregroundColor(.ink.opacity(0.5))
-                                    .multilineTextAlignment(.center)
-                                    .transition(.opacity)
-                                    .allowsHitTesting(false)
-                            }
-                        }
-                    }
-
-                    statsSection
-                    Spacer(minLength: 0)
-                    controlsSection
-                }
-
-                mapOverlayButtons
-            }
+            // Bottom sheet with stats and controls
+            bottomSheet
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
-        .background(Color.parchment)
-        .ignoresSafeArea(edges: .top)
+        .onPreferenceChange(MinimizedSheetHeightKey.self) { newHeight in
+            // Capture the measured height of the minimized sheet chrome
+            // (drag handle + stat row). Guarded on current sheetState
+            // so a transition-time default-value emission from the
+            // preference key doesn't clobber a valid measurement.
+            guard sheetState == .minimized else { return }
+            measuredMinimizedSheetHeight = newHeight
+        }
+        .onPreferenceChange(ExpandedSheetHeightKey.self) { newHeight in
+            // Capture the expanded sheet's actual rendered height so the
+            // Mapbox camera inset matches reality in the expanded state.
+            // Same transition-safety guard as above.
+            guard sheetState == .expanded else { return }
+            measuredExpandedSheetHeight = newHeight
+        }
         .onChange(of: viewModel.weatherSnapshot?.condition) { _, condition in
-            guard let condition, weatherGreeting == nil,
-                  viewModel.status == .recording else { return }
-            let greeting: String
-            switch condition {
-            case .clear: greeting = "A clear day for wandering"
-            case .partlyCloudy: greeting = "Walking under shifting skies"
-            case .overcast: greeting = "Soft light on the path"
-            case .lightRain: greeting = "Walking into the rain"
-            case .heavyRain: greeting = "The sky walks with you"
-            case .thunderstorm: greeting = "Thunder on the horizon"
-            case .snow: greeting = "Snow on the path"
-            case .fog: greeting = "Walking into the mist"
-            case .wind: greeting = "The wind at your back"
-            case .haze: greeting = "A hazy veil over the world"
-            }
-            greetingGeneration += 1
-            let gen = greetingGeneration
-            withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-                guard greetingGeneration == gen else { return }
-                withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
-            }
+            guard let condition, viewModel.status == .recording else { return }
+            triggerWeatherGreeting(for: condition)
         }
-        .onChange(of: viewModel.status) { _, newStatus in
-            guard newStatus == .recording else { return }
-            if let condition = viewModel.weatherSnapshot?.condition, weatherGreeting == nil {
-                let greeting: String
-                switch condition {
-                case .clear: greeting = "A clear day for wandering"
-                case .partlyCloudy: greeting = "Walking under shifting skies"
-                case .overcast: greeting = "Soft light on the path"
-                case .lightRain: greeting = "Walking into the rain"
-                case .heavyRain: greeting = "The sky walks with you"
-                case .thunderstorm: greeting = "Thunder on the horizon"
-                case .snow: greeting = "Snow on the path"
-                case .fog: greeting = "Walking into the mist"
-                case .wind: greeting = "The wind at your back"
-                case .haze: greeting = "A hazy veil over the world"
-                }
-                greetingGeneration += 1
-                let gen = greetingGeneration
-                withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-                    guard greetingGeneration == gen else { return }
-                    withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
-                }
-            }
-            if let snapshot = celestialSnapshot {
-                showCelestialGreeting(snapshot: snapshot)
-            }
+        .onChange(of: viewModel.status) { oldStatus, newStatus in
+            updateSheetStateForStatus(from: oldStatus, to: newStatus)
+            triggerGreetingsIfRecording(newStatus)
         }
         .alert("End Walk?", isPresented: $showStopConfirmation) {
             Button("End Walk", role: .destructive) { viewModel.stop() }
@@ -262,7 +208,7 @@ struct ActiveWalkView: View {
                 },
                 onReplayPrompt: { viewModel.voiceGuideManagement.replayLastPrompt() }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
         }
@@ -275,7 +221,7 @@ struct ActiveWalkView: View {
                 },
                 onDismiss: { showIntention = false }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
         }
@@ -350,6 +296,16 @@ struct ActiveWalkView: View {
             Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
         }
         .onAppear {
+            // Seed sheet state from current walk status on FIRST mount only.
+            // Guarded so that navigating away (meditation, walk summary) and
+            // back doesn't overwrite user manual expansion/collapse.
+            // Handles state restoration after app relaunch — .onChange only
+            // fires on changes, not on initial values.
+            if !hasInitializedSheetState {
+                sheetState = (viewModel.status == .recording) ? .minimized : .expanded
+                hasInitializedSheetState = true
+            }
+
             guard !hasCheckedAutoIntention else { return }
             hasCheckedAutoIntention = true
             if UserPreferences.beginWithIntention.value && viewModel.intention == nil {
@@ -365,6 +321,150 @@ struct ActiveWalkView: View {
                 WhisperPlayer.shared.downloadAll()
             }
         }
+    }
+
+    // MARK: - Body Layers
+
+    /// Top overlay: map option buttons (ellipsis / close).
+    /// Pinned to the top safe area.
+    private var topOverlay: some View {
+        mapOverlayButtons
+    }
+
+    /// Floating greeting text, anchored to the middle of the screen.
+    /// Non-interactive passthrough. Hidden from VoiceOver — ambient text.
+    private var floatingGreetings: some View {
+        VStack(spacing: Constants.UI.Padding.small) {
+            if let weatherGreeting {
+                Text(weatherGreeting)
+                    .font(Constants.Typography.body.italic())
+                    .foregroundColor(.ink.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
+            }
+            if let celestialGreeting {
+                Text(celestialGreeting)
+                    .font(Constants.Typography.body.italic())
+                    .foregroundColor(.ink.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// Ambient elements above the sheet: audio indicators, vignettes,
+    /// sparkline, gradient fade. Positioned at a fixed offset from the bottom
+    /// (above the minimized sheet height). When the sheet expands, these
+    /// elements are covered — not moved.
+    private var ambientOverlay: some View {
+        VStack(spacing: 0) {
+            // Audio indicators and weather/celestial vignettes row
+            HStack {
+                HStack(spacing: 6) {
+                    if SoundscapePlayer.shared.isPlaying || SoundscapePlayer.shared.isMuted {
+                        audioIndicator(
+                            icon: SoundscapePlayer.shared.isMuted ? "speaker.slash" : "speaker.wave.2"
+                        ) {
+                            SoundscapePlayer.shared.toggleMute()
+                        }
+                    }
+                    if viewModel.voiceGuidePackName != nil {
+                        audioIndicator(
+                            icon: viewModel.voiceGuideManagement.isPaused ? "play.circle" : "pause.circle"
+                        ) {
+                            if viewModel.voiceGuideManagement.isPaused {
+                                viewModel.voiceGuideManagement.resumeGuide()
+                            } else {
+                                viewModel.voiceGuideManagement.pauseGuide()
+                            }
+                        }
+                    }
+                }
+
+                Spacer()
+
+                HStack(spacing: 6) {
+                    if let celestialSnapshot, UserPreferences.celestialAwarenessEnabled.value {
+                        CelestialVignetteView(snapshot: celestialSnapshot)
+                    }
+                    WeatherVignetteView(
+                        snapshot: viewModel.weatherSnapshot,
+                        imperial: UserPreferences.distanceMeasurementType.safeValue == .miles
+                    )
+                }
+            }
+            .padding(.horizontal, Constants.UI.Padding.normal)
+            .padding(.bottom, Constants.UI.Padding.xs)
+
+            // Pace sparkline slot — reserved height prevents layout jump
+            // (hidden from VoiceOver — ambient visual)
+            Group {
+                if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
+                    LivePaceSparklineView(values: viewModel.paceHistory)
+                        .padding(.horizontal, Constants.UI.Padding.big)
+                        .transition(.opacity)
+                }
+            }
+            .frame(height: 24)
+            .padding(.bottom, Constants.UI.Padding.xs)
+            .accessibilityHidden(true)
+
+            // Gradient fade into the parchment sheet (only visible when sheet
+            // is minimized — when expanded, sheet covers the gradient).
+            // Kept small so the ambient content sits close to the sheet top
+            // instead of floating high up the map.
+            LinearGradient(
+                colors: [.clear, .parchment],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 20)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// The stats sheet itself — collapsible state-aware. Visually a floating
+    /// card with rounded top corners and a soft shadow above. The parchment
+    /// background extends through the bottom safe area so the sheet reads
+    /// as attached to the bottom edge.
+    private var bottomSheet: some View {
+        WalkStatsSheet(
+            state: $sheetState,
+            viewModel: viewModel,
+            onStartMeditation: {
+                viewModel.startMeditation()
+                showMeditation = true
+            },
+            onRequestEndWalk: {
+                showStopConfirmation = true
+            },
+            peekHintTrigger: sheetPeekHintTrigger
+        )
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 20,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 20,
+                style: .continuous
+            )
+            .fill(Color.parchment)
+            // .compositingGroup() ensures the shadow is computed from the
+            // composed shape once, preventing a "pop" during sheet resize
+            // animations where the shape geometry changes frame-by-frame.
+            .compositingGroup()
+            // Use .black instead of .ink so the shadow stays dark in both
+            // light and dark mode. `.ink` is an adaptive text color (dark
+            // in light mode, light in dark mode), which in dark mode would
+            // render this as a bright halo above the sheet — reading as
+            // a visible line on the dark map. A fixed dark shadow is
+            // subtle in light mode and invisible in dark mode; sheet/map
+            // separation in dark mode comes from the parchment tint.
+            .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
+            .ignoresSafeArea(edges: .bottom)
+        )
     }
 
     // MARK: - Map Overlay Buttons
@@ -403,7 +503,7 @@ struct ActiveWalkView: View {
             }
         }
         .padding(.horizontal, Constants.UI.Padding.normal)
-        .padding(.top, 56)
+        .padding(.top, Constants.UI.Padding.small)
     }
 
     private static let isoFormatter: ISO8601DateFormatter = {
@@ -415,7 +515,7 @@ struct ActiveWalkView: View {
     private static let maxVisiblePins = 30
     private static let minPinSeparation: CLLocationDistance = 15
 
-    private func mapSection(height: CGFloat) -> some View {
+    private func mapSection() -> some View {
         let waypointPins = viewModel.waypoints.map { wp in
             PilgrimAnnotation(
                 coordinate: CLLocationCoordinate2D(latitude: wp.latitude, longitude: wp.longitude),
@@ -429,9 +529,9 @@ struct ActiveWalkView: View {
             pinAnnotations: waypointPins + proximityAnnotations(),
             onAnnotationTap: { annotation in
                 handleAnnotationTap(annotation)
-            }
+            },
+            bottomInset: mapBottomInset
         )
-        .frame(height: height)
     }
 
     private func proximityAnnotations() -> [PilgrimAnnotation] {
@@ -494,101 +594,78 @@ struct ActiveWalkView: View {
         return accepted.map(\.annotation)
     }
 
-    private var statsSection: some View {
-        VStack(spacing: isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.normal) {
-            VStack(spacing: 4) {
-                Text(viewModel.duration)
-                    .font(Constants.Typography.timer)
-                    .foregroundColor(.ink)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
+    // MARK: - Status Change Handlers
 
-                Text(viewModel.intention ?? "every step is enough")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog.opacity(0.6))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.7)
+    /// Updates the sheet state in response to walk status changes.
+    /// Pause/autoPause auto-expand is debounced ~800ms to avoid thrashing
+    /// during brief GPS flaps that cause rapid .recording ↔ .autoPaused cycles.
+    /// Fires a soft handoff haptic when the walk first begins (.ready → .recording)
+    /// but not on pause-resume, so GPS flaps don't buzz the wrist every few seconds.
+    private func updateSheetStateForStatus(from oldStatus: WalkBuilder.Status, to newStatus: WalkBuilder.Status) {
+        switch newStatus {
+        case .recording:
+            // Cancel any pending auto-expand from a previous pause
+            pauseExpandGeneration += 1
+            sheetState = .minimized
+            // Handoff haptic + peek hint — only on the initial walk-start
+            // transition, not on resume-from-pause or GPS-flap recovery.
+            // The peek teaches the swipe-to-expand affordance once per
+            // walk start, tied to the same moment as the haptic.
+            if oldStatus == .ready || oldStatus == .waiting {
+                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                sheetPeekHintTrigger += 1
             }
-            .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)
-
-            HStack(spacing: Constants.UI.Padding.big) {
-                StatItem(label: "Distance", value: viewModel.distance)
-                StatItem(label: "Steps", value: viewModel.steps)
-                StatItem(label: "Ascent", value: viewModel.ascent)
+        case .paused, .autoPaused:
+            // Debounce: only auto-expand if the pause persists for 800ms.
+            pauseExpandGeneration += 1
+            let gen = pauseExpandGeneration
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                guard pauseExpandGeneration == gen else { return }
+                // Check status hasn't flipped back to recording in the meantime
+                guard viewModel.status == .paused || viewModel.status == .autoPaused else { return }
+                sheetState = .expanded
             }
-            .minimumScaleFactor(0.6)
-
-            HStack(spacing: isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.big) {
-                TimeMetricItem(label: "Walk", value: viewModel.walkTime, icon: "figure.walk",
-                               isActive: !viewModel.isRecordingVoice && !viewModel.isMeditating)
-                TimeMetricItem(label: "Talk", value: viewModel.talkTime, icon: "waveform",
-                               isActive: viewModel.isRecordingVoice)
-                TimeMetricItem(label: "Meditate", value: viewModel.meditateTime, icon: "brain.head.profile",
-                               isActive: viewModel.isMeditating)
-            }
-            .minimumScaleFactor(0.5)
+        case .waiting, .ready:
+            pauseExpandGeneration += 1
+            sheetState = .expanded
         }
-        .padding(.vertical, isLargeText ? Constants.UI.Padding.small : Constants.UI.Padding.normal)
-        .padding(.horizontal, Constants.UI.Padding.normal)
     }
 
-    private var micButton: some View {
-        let isActive = viewModel.isRecordingVoice
-        let size: CGFloat = isLargeText ? 80 : 72
-        return Button(action: { viewModel.toggleVoiceRecording() }) {
-            VStack(spacing: isLargeText ? 2 : 6) {
-                if isActive {
-                    AudioWaveformView(level: viewModel.audioLevel)
-                        .frame(width: 36, height: 24)
-                } else {
-                    Image(systemName: "mic")
-                        .font(isLargeText ? .body : .title2)
-                        .frame(height: isLargeText ? 20 : 24)
-                }
-                Text(isActive ? "Stop" : "Record")
-                    .font(Constants.Typography.caption)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
-            }
-            .foregroundColor(.rust)
-            .frame(width: size, height: size)
-            .background(
-                Circle()
-                    .fill(Color.rust.opacity(isActive ? 0.15 : 0.06))
-            )
-            .background(
-                Circle()
-                    .stroke(Color.rust, lineWidth: isActive ? 2.5 : 1.5)
-            )
+    /// Triggers weather and celestial greetings when walk enters recording state.
+    private func triggerGreetingsIfRecording(_ newStatus: WalkBuilder.Status) {
+        guard newStatus == .recording else { return }
+        if let condition = viewModel.weatherSnapshot?.condition {
+            triggerWeatherGreeting(for: condition)
         }
-        .animation(.easeInOut(duration: 0.3), value: isActive)
+        if let snapshot = celestialSnapshot {
+            showCelestialGreeting(snapshot: snapshot)
+        }
     }
 
-    private var controlsSection: some View {
-        HStack(spacing: Constants.UI.Padding.big) {
-            switch viewModel.status {
-            case .waiting:
-                SwiftUI.ProgressView()
-                    .tint(.stone)
-                    .frame(maxWidth: .infinity)
-            case .ready:
-                actionButton("Start", systemImage: "play.fill", color: .moss, isFilled: true) {
-                    viewModel.startRecording()
-                }
-            case .recording, .paused, .autoPaused:
-                actionButton("Meditate", systemImage: "brain.head.profile", color: .dawn) {
-                    viewModel.startMeditation()
-                    showMeditation = true
-                }
-                micButton
-                actionButton("End", systemImage: "stop.fill", color: .fog) {
-                    showStopConfirmation = true
-                }
-            }
+    /// Fades in a brief weather greeting text and auto-dismisses after ~3.5s.
+    /// Guarded to only fire when a greeting isn't already showing.
+    private func triggerWeatherGreeting(for condition: WeatherCondition) {
+        guard weatherGreeting == nil else { return }
+        let greeting: String
+        switch condition {
+        case .clear: greeting = "A clear day for wandering"
+        case .partlyCloudy: greeting = "Walking under shifting skies"
+        case .overcast: greeting = "Soft light on the path"
+        case .lightRain: greeting = "Walking into the rain"
+        case .heavyRain: greeting = "The sky walks with you"
+        case .thunderstorm: greeting = "Thunder on the horizon"
+        case .snow: greeting = "Snow on the path"
+        case .fog: greeting = "Walking into the mist"
+        case .wind: greeting = "The wind at your back"
+        case .haze: greeting = "A hazy veil over the world"
         }
-        .padding(Constants.UI.Padding.normal)
-        .padding(.bottom, Constants.UI.Padding.normal)
+        greetingGeneration += 1
+        let gen = greetingGeneration
+        withAnimation(.easeIn(duration: 0.8)) { weatherGreeting = greeting }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+            guard greetingGeneration == gen else { return }
+            withAnimation(.easeOut(duration: 1.0)) { weatherGreeting = nil }
+        }
     }
 
     private func showCelestialGreeting(snapshot: CelestialSnapshot) {
@@ -636,30 +713,6 @@ struct ActiveWalkView: View {
         }
     }
 
-    private func actionButton(_ title: String, systemImage: String, color: Color, isFilled: Bool = false, action: @escaping () -> Void) -> some View {
-        let size: CGFloat = isLargeText ? 80 : 72
-        return Button(action: action) {
-            VStack(spacing: isLargeText ? 2 : 6) {
-                Image(systemName: systemImage)
-                    .font(isLargeText ? .body : .title2)
-                    .frame(height: isLargeText ? 20 : 24)
-                Text(title)
-                    .font(Constants.Typography.caption)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
-            }
-            .foregroundColor(color)
-            .frame(width: size, height: size)
-            .background(
-                Circle()
-                    .fill(color.opacity(isFilled ? 0.12 : 0.06))
-            )
-            .background(
-                Circle()
-                    .stroke(color, lineWidth: 1.5)
-            )
-        }
-    }
 }
 
 struct TimeMetricItem: View {
@@ -714,23 +767,6 @@ struct LivePaceSparklineView: View {
                 .stroke(Color.stone.opacity(0.4), style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
             }
         }
-    }
-}
-
-struct StatItem: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(Constants.Typography.statValue)
-                .foregroundColor(.ink)
-            Text(label)
-                .font(Constants.Typography.statLabel)
-                .foregroundColor(.fog)
-        }
-        .frame(maxWidth: .infinity)
     }
 }
 
