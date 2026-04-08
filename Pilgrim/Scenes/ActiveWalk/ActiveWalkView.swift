@@ -1,6 +1,13 @@
 import SwiftUI
 import CoreLocation
 
+/// Collapsible state of the stats sheet during an active walk.
+/// Used by both `ActiveWalkView` (owner) and `WalkStatsSheet` (binding).
+enum SheetState {
+    case minimized  // Thin bar: drag handle + timer + distance
+    case expanded   // Full stats + controls
+}
+
 struct ActiveWalkView: View {
 
     @ObservedObject var viewModel: ActiveWalkViewModel
@@ -23,6 +30,7 @@ struct ActiveWalkView: View {
     @State private var greetingGeneration = 0
     @State private var celestialGreetingGeneration = 0
     @State private var celestialSnapshot: CelestialSnapshot?
+    @State private var sheetState: SheetState = .expanded
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var isLargeText: Bool {
@@ -56,7 +64,17 @@ struct ActiveWalkView: View {
                 .padding(.top, 140)
                 .allowsHitTesting(false)
 
-            // Bottom sheet — contains ambient elements + gradient + stats sheet
+            // Ambient overlay: audio indicators, vignettes, sparkline, gradient.
+            // Anchored above the MINIMIZED sheet position. When the sheet is
+            // expanded, these elements are covered by the sheet — that's fine,
+            // the expanded sheet is the user's focus. When minimized, these
+            // elements become visible above it.
+            ambientOverlay
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, Self.minimizedSheetHeight)
+                .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
+
+            // Bottom sheet with stats and controls
             bottomSheet
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
@@ -85,6 +103,29 @@ struct ActiveWalkView: View {
             }
         }
         .onChange(of: viewModel.status) { _, newStatus in
+            // Auto-collapse sheet when walk starts; auto-expand on pause.
+            let reduceMotion = UIAccessibility.isReduceMotionEnabled
+            switch newStatus {
+            case .recording:
+                if reduceMotion {
+                    sheetState = .minimized
+                } else {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                        sheetState = .minimized
+                    }
+                }
+            case .paused, .autoPaused:
+                if reduceMotion {
+                    sheetState = .expanded
+                } else {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                        sheetState = .expanded
+                    }
+                }
+            case .waiting, .ready:
+                sheetState = .expanded
+            }
+
             guard newStatus == .recording else { return }
             if let condition = viewModel.weatherSnapshot?.condition, weatherGreeting == nil {
                 let greeting: String
@@ -327,10 +368,11 @@ struct ActiveWalkView: View {
         }
     }
 
-    /// Bottom anchor: audio indicators, vignettes, pace sparkline, gradient fade,
-    /// then the stats sheet itself. Everything stacks above the sheet and moves
-    /// with it. Background extends through the bottom safe area.
-    private var bottomSheet: some View {
+    /// Ambient elements above the sheet: audio indicators, vignettes,
+    /// sparkline, gradient fade. Positioned at a fixed offset from the bottom
+    /// (above the minimized sheet height). When the sheet expands, these
+    /// elements are covered — not moved.
+    private var ambientOverlay: some View {
         VStack(spacing: 0) {
             // Audio indicators and weather/celestial vignettes row
             HStack {
@@ -370,8 +412,7 @@ struct ActiveWalkView: View {
             .padding(.horizontal, Constants.UI.Padding.normal)
             .padding(.bottom, Constants.UI.Padding.small)
 
-            // Pace sparkline slot — reserved height prevents sheet from
-            // jumping when the sparkline fades in mid-walk.
+            // Pace sparkline slot — reserved height prevents layout jump
             Group {
                 if viewModel.paceHistory.filter({ $0 > 0 }).count > 10 {
                     LivePaceSparklineView(values: viewModel.paceHistory)
@@ -382,7 +423,8 @@ struct ActiveWalkView: View {
             .frame(height: 28)
             .padding(.bottom, Constants.UI.Padding.small)
 
-            // Gradient fade into the parchment sheet
+            // Gradient fade into the parchment sheet (only visible when sheet
+            // is minimized — when expanded, sheet covers the gradient)
             LinearGradient(
                 colors: [.clear, .parchment],
                 startPoint: .top,
@@ -390,23 +432,27 @@ struct ActiveWalkView: View {
             )
             .frame(height: 40)
             .allowsHitTesting(false)
-
-            // Stats + controls — background extends through bottom safe area
-            WalkStatsSheet(
-                viewModel: viewModel,
-                onStartMeditation: {
-                    viewModel.startMeditation()
-                    showMeditation = true
-                },
-                onRequestEndWalk: {
-                    showStopConfirmation = true
-                }
-            )
-            .background(
-                Color.parchment
-                    .ignoresSafeArea(edges: .bottom)
-            )
         }
+    }
+
+    /// The stats sheet itself — collapsible state-aware.
+    /// Background extends through the bottom safe area.
+    private var bottomSheet: some View {
+        WalkStatsSheet(
+            state: $sheetState,
+            viewModel: viewModel,
+            onStartMeditation: {
+                viewModel.startMeditation()
+                showMeditation = true
+            },
+            onRequestEndWalk: {
+                showStopConfirmation = true
+            }
+        )
+        .background(
+            Color.parchment
+                .ignoresSafeArea(edges: .bottom)
+        )
     }
 
     // MARK: - Map Overlay Buttons
@@ -447,6 +493,11 @@ struct ActiveWalkView: View {
         .padding(.horizontal, Constants.UI.Padding.normal)
         .padding(.top, Constants.UI.Padding.small)
     }
+
+    /// Height reserved for the minimized sheet at default text size. The
+    /// ambient overlay (audio indicators, vignettes, sparkline) sits above
+    /// this line. Approximation — the actual minimized sheet is content-driven.
+    private static let minimizedSheetHeight: CGFloat = 96
 
     private static let isoFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()

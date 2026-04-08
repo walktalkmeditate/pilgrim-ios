@@ -2,13 +2,16 @@ import SwiftUI
 
 /// Collapsible stats sheet for the active walk screen.
 ///
-/// Renders walk stats (timer, distance, etc.) and controls (start, meditate,
-/// mic, end). Sits at the bottom of `ActiveWalkView` over the map.
+/// Two visual states driven by `@Binding var state: SheetState`:
+/// - `.minimized` (during a recording walk): thin bar with drag handle + timer + distance
+/// - `.expanded` (pre-walk, paused, or user-expanded): full stats + controls
 ///
-/// Stage 1: pure extraction of `statsSection` + `controlsSection`. No visual
-/// or behavioral change. Collapsible state/drag gesture comes in later stages.
+/// The minimized state only applies while the walk is actively recording.
+/// Pre-walk (`.waiting` / `.ready`) always shows the expanded content so the
+/// Start button is visible. Paused/autoPaused auto-expands so context is clear.
 struct WalkStatsSheet: View {
 
+    @Binding var state: SheetState
     @ObservedObject var viewModel: ActiveWalkViewModel
     let onStartMeditation: () -> Void
     let onRequestEndWalk: () -> Void
@@ -19,7 +22,72 @@ struct WalkStatsSheet: View {
         dynamicTypeSize >= .accessibility2
     }
 
+    /// True only when the walk is actively recording AND the state is minimized.
+    /// Pre-walk and paused states always render expanded content.
+    private var showsMinimized: Bool {
+        state == .minimized && viewModel.status.isActiveStatus
+    }
+
     var body: some View {
+        VStack(spacing: 0) {
+            dragHandle
+
+            if showsMinimized {
+                minimizedContent
+                    .transition(.opacity)
+            } else {
+                expandedContent
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: showsMinimized)
+    }
+
+    // MARK: - Drag Handle
+
+    private var dragHandle: some View {
+        RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+            .fill(Color.fog.opacity(0.35))
+            .frame(width: 40, height: 5)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+            .accessibilityHidden(true)
+    }
+
+    // MARK: - Minimized
+
+    /// Thin bar with timer and distance only. Tapping doesn't do anything yet
+    /// — the drag gesture (Stage 4) will let users swipe up to expand.
+    private var minimizedContent: some View {
+        HStack(spacing: Constants.UI.Padding.big) {
+            Text(viewModel.duration)
+                .font(Constants.Typography.timer)
+                .foregroundColor(.ink)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(viewModel.distance)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                Text("distance")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog.opacity(0.6))
+            }
+        }
+        .padding(.horizontal, Constants.UI.Padding.big)
+        .padding(.vertical, Constants.UI.Padding.small)
+        .padding(.bottom, Constants.UI.Padding.small)
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Expanded
+
+    private var expandedContent: some View {
         VStack(spacing: 0) {
             statsSection
             controlsSection
