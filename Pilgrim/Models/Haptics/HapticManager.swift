@@ -16,9 +16,13 @@ enum HapticPattern {
             generator.impactOccurred()
 
         case .whisperProximity:
-            let generator = UINotificationFeedbackGenerator()
-            generator.prepare()
-            generator.notificationOccurred(.success)
+            if CHHapticEngine.capabilitiesForHardware().supportsHaptics {
+                Self.fireWhisperProximityHaptic()
+            } else {
+                let generator = UINotificationFeedbackGenerator()
+                generator.prepare()
+                generator.notificationOccurred(.success)
+            }
 
         case .whisperPlaced:
             let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -26,9 +30,13 @@ enum HapticPattern {
             generator.impactOccurred()
 
         case .cairnProximity:
-            let generator = UIImpactFeedbackGenerator(style: .rigid)
-            generator.prepare()
-            generator.impactOccurred()
+            if CHHapticEngine.capabilitiesForHardware().supportsHaptics {
+                Self.fireCairnProximityHaptic()
+            } else {
+                let generator = UIImpactFeedbackGenerator(style: .heavy)
+                generator.prepare()
+                generator.impactOccurred()
+            }
 
         case .stonePlaced(let tier):
             if tier >= 5, CHHapticEngine.capabilitiesForHardware().supportsHaptics {
@@ -38,6 +46,49 @@ enum HapticPattern {
                 generator.prepare()
                 generator.impactOccurred()
             }
+        }
+    }
+
+    private static func fireWhisperProximityHaptic() {
+        guard let engine = try? CHHapticEngine() else { return }
+        do {
+            try engine.start()
+            let soft = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.4)
+            let round = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.2)
+            let events = [
+                CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0),
+                CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0.12),
+                CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0.24)
+            ]
+            let pattern = try CHHapticPattern(events: events, parameters: [])
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: 0)
+            engine.notifyWhenPlayersFinished { _ in .stopEngine }
+        } catch {
+            let generator = UINotificationFeedbackGenerator()
+            generator.prepare()
+            generator.notificationOccurred(.success)
+        }
+    }
+
+    private static func fireCairnProximityHaptic() {
+        guard let engine = try? CHHapticEngine() else { return }
+        do {
+            try engine.start()
+            let firm = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.7)
+            let sharp = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.6)
+            let events = [
+                CHHapticEvent(eventType: .hapticTransient, parameters: [firm, sharp], relativeTime: 0),
+                CHHapticEvent(eventType: .hapticTransient, parameters: [firm, sharp], relativeTime: 0.15)
+            ]
+            let pattern = try CHHapticPattern(events: events, parameters: [])
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: 0)
+            engine.notifyWhenPlayersFinished { _ in .stopEngine }
+        } catch {
+            let generator = UIImpactFeedbackGenerator(style: .heavy)
+            generator.prepare()
+            generator.impactOccurred()
         }
     }
 
