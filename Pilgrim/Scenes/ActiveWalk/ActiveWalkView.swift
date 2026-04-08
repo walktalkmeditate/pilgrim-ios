@@ -43,6 +43,27 @@ struct ActiveWalkView: View {
         }
     }
 
+    /// Approximate height of the expanded sheet — used for map camera
+    /// padding so the user puck stays visible above the sheet. This is an
+    /// estimate; the real height is content-driven. Scales with dynamic
+    /// type to match the sheet's actual growth.
+    private var expandedSheetHeight: CGFloat {
+        switch dynamicTypeSize {
+        case .accessibility3, .accessibility4, .accessibility5:
+            return 520
+        case .accessibility1, .accessibility2:
+            return 420
+        default:
+            return 340
+        }
+    }
+
+    /// Bottom padding the map should reserve for the overlay sheet so the
+    /// user's location puck doesn't hide underneath it.
+    private var mapBottomInset: CGFloat {
+        sheetState == .minimized ? minimizedSheetHeight : expandedSheetHeight
+    }
+
     private var selectedSoundscapeName: String? {
         guard UserPreferences.soundsEnabled.value,
               let id = UserPreferences.selectedSoundscapeId.value else { return nil }
@@ -93,8 +114,8 @@ struct ActiveWalkView: View {
             guard let condition, viewModel.status == .recording else { return }
             triggerWeatherGreeting(for: condition)
         }
-        .onChange(of: viewModel.status) { _, newStatus in
-            updateSheetStateForStatus(newStatus)
+        .onChange(of: viewModel.status) { oldStatus, newStatus in
+            updateSheetStateForStatus(from: oldStatus, to: newStatus)
             triggerGreetingsIfRecording(newStatus)
         }
         .alert("End Walk?", isPresented: $showStopConfirmation) {
@@ -489,7 +510,8 @@ struct ActiveWalkView: View {
             pinAnnotations: waypointPins + proximityAnnotations(),
             onAnnotationTap: { annotation in
                 handleAnnotationTap(annotation)
-            }
+            },
+            bottomInset: mapBottomInset
         )
     }
 
@@ -558,12 +580,19 @@ struct ActiveWalkView: View {
     /// Updates the sheet state in response to walk status changes.
     /// Pause/autoPause auto-expand is debounced ~800ms to avoid thrashing
     /// during brief GPS flaps that cause rapid .recording ↔ .autoPaused cycles.
-    private func updateSheetStateForStatus(_ newStatus: WalkBuilder.Status) {
+    /// Fires a soft handoff haptic when the walk first begins (.ready → .recording)
+    /// but not on pause-resume, so GPS flaps don't buzz the wrist every few seconds.
+    private func updateSheetStateForStatus(from oldStatus: WalkBuilder.Status, to newStatus: WalkBuilder.Status) {
         switch newStatus {
         case .recording:
             // Cancel any pending auto-expand from a previous pause
             pauseExpandGeneration += 1
             sheetState = .minimized
+            // Handoff haptic — only on the initial walk-start transition,
+            // not on resume-from-pause or GPS-flap recovery.
+            if oldStatus == .ready || oldStatus == .waiting {
+                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+            }
         case .paused, .autoPaused:
             // Debounce: only auto-expand if the pause persists for 800ms.
             pauseExpandGeneration += 1

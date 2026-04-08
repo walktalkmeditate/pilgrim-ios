@@ -41,12 +41,15 @@ struct WalkStatsSheet: View {
         dynamicTypeSize >= .accessibility2
     }
 
-    /// True only when the walk is actively recording AND the state is minimized.
-    /// Pre-walk, paused, and autoPaused states always render expanded content.
-    /// We check `.recording` explicitly because `isActiveStatus` would include
-    /// `.paused` and `.autoPaused` — we want the sheet expanded in those states.
+    /// True when the sheet should render minimized content.
+    /// Derived SOLELY from `state` — the parent (`ActiveWalkView`) is the
+    /// single source of truth for what state to be in, and its debounce
+    /// logic already filters out GPS-flap status thrashing. If we also
+    /// checked `viewModel.status == .recording` here, brief auto-pauses
+    /// would visually expand the sheet before the parent's debounce had
+    /// a chance to see if the pause was real, causing UI thrashing.
     private var showsMinimized: Bool {
-        state == .minimized && viewModel.status == .recording
+        state == .minimized
     }
 
     /// Drag gesture is only meaningful during an active recording walk.
@@ -248,7 +251,6 @@ struct WalkStatsSheet: View {
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.7)
             }
-            .animation(.easeInOut(duration: 0.5), value: viewModel.currentSoundscapeName)
 
             HStack(spacing: Constants.UI.Padding.big) {
                 StatItem(label: "Distance", value: viewModel.distance)
