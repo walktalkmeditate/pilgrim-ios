@@ -853,14 +853,21 @@ extension ActiveWalkView {
                 await MainActor.run {
                     viewModel.stonePlacedThisWalk = true
                     StonePlayer.shared.playForCount(result.stoneCount)
+                    let nowISO = Self.isoFormatter.string(from: Date())
                     if let idx = GeoCacheService.shared.cachedCairns.firstIndex(where: { $0.id == result.id }) {
                         let old = GeoCacheService.shared.cachedCairns[idx]
+                        // Refresh lastPlacedAt to NOW (the stone was just placed)
+                        // and preserve the original createdAt so "first stone"
+                        // continues to show the cairn's true creation date.
+                        // Previously both fields drifted to the same stale
+                        // value on every placement.
                         GeoCacheService.shared.cachedCairns[idx] = CachedCairn(
                             id: old.id,
                             latitude: old.latitude,
                             longitude: old.longitude,
                             stoneCount: result.stoneCount,
-                            lastPlacedAt: old.lastPlacedAt
+                            lastPlacedAt: nowISO,
+                            createdAt: old.createdAt
                         )
                     } else {
                         GeoCacheService.shared.cachedCairns.append(CachedCairn(
@@ -868,7 +875,8 @@ extension ActiveWalkView {
                             latitude: location.latitude,
                             longitude: location.longitude,
                             stoneCount: result.stoneCount,
-                            lastPlacedAt: Self.isoFormatter.string(from: Date())
+                            lastPlacedAt: nowISO,
+                            createdAt: nowISO
                         ))
                     }
                     viewModel.proximityService.suppressTarget(id: "cairn-\(result.id)")
