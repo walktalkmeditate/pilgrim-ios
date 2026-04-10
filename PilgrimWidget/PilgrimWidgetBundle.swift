@@ -24,6 +24,13 @@ import SwiftUI
 @main
 struct PilgrimWidgetBundle: WidgetBundle {
     var body: some Widget {
+        // Home Screen widget — satisfies App Store review's
+        // Guideline 2.1(a) requirement that the Widget Extension
+        // provide at least one installable entry in the widget
+        // gallery. Also a quiet piece of daily presence.
+        PilgrimHomeWidget()
+
+        // Lock Screen / Dynamic Island Live Activity for active walks.
         PilgrimWidgetLiveActivity()
     }
 }
