@@ -91,38 +91,24 @@ jobs:
           git push
 
       - name: Snapshot Development Certs
+        env:
+          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
+          APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
         run: |
           set -e
-          KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
-          if [ ! -f "$KEY_PATH" ]; then
-            echo "⚠️  API key not found at $KEY_PATH — skipping cert snapshot"
-            touch "$RUNNER_TEMP/pre_build_certs.txt"
-            exit 0
-          fi
-          NOW=$(date +%s)
-          HEADER=$(printf '{"alg":"ES256","kid":"%s","typ":"JWT"}' "$APP_STORE_API_KEY" | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
-          PAYLOAD=$(printf '{"iss":"%s","iat":%d,"exp":%d,"aud":"appstoreconnect-v1"}' "$APP_STORE_API_ISSUER" "$NOW" "$((NOW+1200))" | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
-          SIG=$(printf '%s.%s' "$HEADER" "$PAYLOAD" | openssl dgst -sha256 -sign "$KEY_PATH" -binary | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
-          TOKEN="${HEADER}.${PAYLOAD}.${SIG}"
-          # URL-encoded filter[certificateType] because unencoded square
-          # brackets in the query string made the request silently fail
-          # when bash parsed or curl constructed the URL. Bumping limit to
-          # 200 so we don't miss certs on page 2+.
-          RESPONSE=$(curl -sS -w $'\n%{http_code}' -H "Authorization: Bearer $TOKEN" \
-            "https://api.appstoreconnect.apple.com/v1/certificates?filter%5BcertificateType%5D=DEVELOPMENT&limit=200" || echo "curl_failed")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "⚠️  App Store Connect API returned HTTP $HTTP_CODE — skipping cert snapshot"
-            echo "$BODY" | head -20 || true
-            touch "$RUNNER_TEMP/pre_build_certs.txt"
-            exit 0
-          fi
-          echo "$BODY" | python3 -c "import sys,json; [print(c['id']) for c in json.load(sys.stdin).get('data',[])]" \
-            > "$RUNNER_TEMP/pre_build_certs.txt"
-          PRE_COUNT=$(wc -l < "$RUNNER_TEMP/pre_build_certs.txt" | tr -d ' ')
-          echo "📋 Snapshotted $PRE_COUNT pre-build development cert(s):"
-          sed 's/^/  /' "$RUNNER_TEMP/pre_build_certs.txt" || true
+          # Set up a venv with PyJWT + cryptography for the cert
+          # cleanup script. Using a venv (rather than pip --user)
+          # sidesteps macOS PEP 668 "externally managed environment"
+          # restrictions on the system Python. PyJWT generates raw
+          # r||s ECDSA signatures which Apple's API requires; the
+          # previous bash+openssl version produced DER signatures and
+          # silently failed with 401 NOT_AUTHORIZED on every build.
+          VENV="$RUNNER_TEMP/cert-cleanup-venv"
+          python3 -m venv "$VENV"
+          "$VENV/bin/pip" install --quiet --upgrade pip
+          "$VENV/bin/pip" install --quiet pyjwt cryptography
+          export APP_STORE_API_KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
+          "$VENV/bin/python" scripts/asc-cert-cleanup.py snapshot "$RUNNER_TEMP/pre_build_certs.txt"
 
       - name: Archive
         run: scripts/release.sh archive
@@ -135,56 +121,22 @@ jobs:
 
       - name: Revoke Auto-Created Development Certs
         if: always()
+        env:
+          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
+          APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
         run: |
           set -e
-          KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
-          if [ ! -f "$KEY_PATH" ]; then
-            echo "⚠️  API key not found at $KEY_PATH — skipping cert revoke"
-            exit 0
+          # Reuse the venv created in the Snapshot step. If that step
+          # failed before creating the venv, create one now — always-run
+          # semantics mean this step must tolerate any prior state.
+          VENV="$RUNNER_TEMP/cert-cleanup-venv"
+          if [ ! -x "$VENV/bin/python" ]; then
+            python3 -m venv "$VENV"
+            "$VENV/bin/pip" install --quiet --upgrade pip
+            "$VENV/bin/pip" install --quiet pyjwt cryptography
           fi
-          if [ ! -f "$RUNNER_TEMP/pre_build_certs.txt" ]; then
-            echo "⚠️  pre_build_certs.txt not found — skipping cert revoke"
-            exit 0
-          fi
-          NOW=$(date +%s)
-          HEADER=$(printf '{"alg":"ES256","kid":"%s","typ":"JWT"}' "$APP_STORE_API_KEY" | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
-          PAYLOAD=$(printf '{"iss":"%s","iat":%d,"exp":%d,"aud":"appstoreconnect-v1"}' "$APP_STORE_API_ISSUER" "$NOW" "$((NOW+1200))" | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
-          SIG=$(printf '%s.%s' "$HEADER" "$PAYLOAD" | openssl dgst -sha256 -sign "$KEY_PATH" -binary | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
-          TOKEN="${HEADER}.${PAYLOAD}.${SIG}"
-          # URL-encoded filter[certificateType] — see Snapshot step.
-          RESPONSE=$(curl -sS -w $'\n%{http_code}' -H "Authorization: Bearer $TOKEN" \
-            "https://api.appstoreconnect.apple.com/v1/certificates?filter%5BcertificateType%5D=DEVELOPMENT&limit=200" || echo "curl_failed")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "⚠️  App Store Connect API returned HTTP $HTTP_CODE — skipping cert revoke"
-            echo "$BODY" | head -20 || true
-            exit 0
-          fi
-          NEW_CERTS=$(echo "$BODY" | python3 -c "import sys,json; [print(c['id']) for c in json.load(sys.stdin).get('data',[])]")
-          POST_COUNT=$(echo "$NEW_CERTS" | grep -c . || true)
-          echo "📋 Found $POST_COUNT current development cert(s)"
-          PRE_CERTS=$(cat "$RUNNER_TEMP/pre_build_certs.txt")
-          REVOKED=0
-          FAILED=0
-          # `grep -Fxq` = fixed-string exact-line quiet match. Prevents
-          # false-positives on cert IDs that happen to be substrings.
-          for CERT_ID in $NEW_CERTS; do
-            if ! echo "$PRE_CERTS" | grep -Fxq "$CERT_ID"; then
-              echo "🗑️  Revoking new cert: $CERT_ID"
-              DEL_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
-                -H "Authorization: Bearer $TOKEN" \
-                "https://api.appstoreconnect.apple.com/v1/certificates/$CERT_ID" || echo "000")
-              if [ "$DEL_CODE" = "204" ] || [ "$DEL_CODE" = "200" ]; then
-                echo "   ✅ revoked"
-                REVOKED=$((REVOKED + 1))
-              else
-                echo "   ❌ delete failed with HTTP $DEL_CODE"
-                FAILED=$((FAILED + 1))
-              fi
-            fi
-          done
-          echo "📊 Revoke summary: $REVOKED revoked, $FAILED failed"
+          export APP_STORE_API_KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
+          "$VENV/bin/python" scripts/asc-cert-cleanup.py revoke "$RUNNER_TEMP/pre_build_certs.txt"
 
       - name: Cleanup
         if: always()
