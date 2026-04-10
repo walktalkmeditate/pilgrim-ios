@@ -60,6 +60,17 @@ class ScreenshotTestCase: XCTestCase {
             Thread.sleep(forTimeInterval: 8)
         }
 
+        // The stats panel auto-minimizes when the walk enters .recording
+        // state. For the showcase screenshot we want the expanded view
+        // so first-time viewers see the full walk ceremony — stats,
+        // intention mantra, timers, and action buttons — not the quieter
+        // map-first minimized bar (which only makes sense once you know
+        // what was hidden). Swipe up from near the bottom to re-expand.
+        let bottomCoord = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.92))
+        let topCoord = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+        bottomCoord.press(forDuration: 0.1, thenDragTo: topCoord)
+        Thread.sleep(forTimeInterval: 1)
+
         capture("\(prefix)02_active_walk")
 
         let meditateButton = app.buttons["Meditate"]
