@@ -12,7 +12,7 @@ A pilgrimage app for iOS. Track your walks, capture voice reflections, sit in me
 <table>
 <tr>
 <td><img src="docs/screenshots/01_walk_start.png" alt="Path tab with quote and moon phase" /></td>
-<td><img src="docs/screenshots/02_active_walk.png" alt="Active walk with live map" /></td>
+<td><img src="docs/screenshots/02_active_walk.png" alt="Active walk with full-screen map and a quiet minimized stats bar at the bottom" /></td>
 <td><img src="docs/screenshots/03_meditation.png" alt="Meditation breathing circle" /></td>
 </tr>
 <tr>
