@@ -7,7 +7,13 @@ class ScreenshotTestCase: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments += ["--demo-mode"]
+        app.launchArguments += [
+            "--demo-mode",
+            // Force default Dynamic Type so screenshots render consistently
+            // regardless of whatever accessibility text size the simulator
+            // happens to be configured with.
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryL"
+        ]
         app.launch()
         waitForDemoData()
     }
