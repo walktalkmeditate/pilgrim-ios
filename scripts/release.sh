@@ -245,9 +245,23 @@ cmd_tag() {
 
     if command -v gh &>/dev/null; then
         step "Creating GitHub Release"
-        gh release create "$tag" \
-            --title "Pilgrim $tag" \
-            --generate-notes || warn "GitHub Release creation failed (non-fatal)"
+        # Prefer a curated narrative changelog written by /release tag
+        # or cmd_changelog over GitHub's auto-generated PR list — the
+        # curated version reads as a product story, the auto-generated
+        # one reads as a commit dump. Fall back to --generate-notes
+        # only if no curated file exists.
+        local title="Pilgrim ${tag#v}"
+        if [ -f "build/changelog.md" ]; then
+            gh release create "$tag" \
+                --title "$title" \
+                --notes-file build/changelog.md \
+                || warn "GitHub Release creation failed (non-fatal)"
+        else
+            gh release create "$tag" \
+                --title "$title" \
+                --generate-notes \
+                || warn "GitHub Release creation failed (non-fatal)"
+        fi
         pass "GitHub Release created"
     else
         warn "gh CLI not installed — create GitHub Release manually"
