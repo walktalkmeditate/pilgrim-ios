@@ -59,6 +59,13 @@ LIST_ENDPOINT = (
 # by this script, no matter what state the snapshot is in.
 API_CREATED_DISPLAY_NAME = "Created via API"
 
+# The only certificate type this script will ever touch. Distribution
+# certs (DISTRIBUTION, DISTRIBUTION_MANAGED, etc.) are filtered out at
+# both the Apple API query level and again as a belt-and-suspenders
+# check in Python, so they can never be accidentally revoked — even
+# if someone later changes the URL filter or mis-configures the query.
+ALLOWED_CERTIFICATE_TYPE = "DEVELOPMENT"
+
 
 def log(msg: str) -> None:
     print(msg, flush=True)
@@ -128,18 +135,45 @@ def list_dev_certs(token: str) -> list[dict]:
 
     data = payload.get("data", [])
     certs: list[dict] = []
+    rejected_non_dev = 0
     for item in data:
         cert_id = item.get("id")
         if not cert_id:
             continue
-        display_name = item.get("attributes", {}).get("displayName", "")
-        certs.append({"id": cert_id, "displayName": display_name})
+        attrs = item.get("attributes", {})
+        cert_type = attrs.get("certificateType", "")
+        # Belt-and-suspenders guard: even if the URL filter is wrong,
+        # we refuse to include any non-DEVELOPMENT cert in the list
+        # this script operates on. Distribution certs (including
+        # DISTRIBUTION and DISTRIBUTION_MANAGED) MUST never be touched.
+        if cert_type != ALLOWED_CERTIFICATE_TYPE:
+            rejected_non_dev += 1
+            continue
+        display_name = attrs.get("displayName", "")
+        certs.append({
+            "id": cert_id,
+            "displayName": display_name,
+            "certificateType": cert_type,
+        })
+    if rejected_non_dev > 0:
+        log(
+            f"🛡️  Ignored {rejected_non_dev} non-DEVELOPMENT cert(s) from Apple's response "
+            f"(distribution certs will never be touched by this script)"
+        )
     return certs
 
 
 def is_api_created(cert: dict) -> bool:
-    """Only API-generated dev certs are safe to revoke."""
-    return cert.get("displayName", "") == API_CREATED_DISPLAY_NAME
+    """Only API-generated DEVELOPMENT certs are safe to revoke.
+
+    Two gates, both must pass:
+    1. displayName is EXACTLY "Created via API" (not a prefix match)
+    2. certificateType is EXACTLY "DEVELOPMENT"
+    """
+    return (
+        cert.get("displayName", "") == API_CREATED_DISPLAY_NAME
+        and cert.get("certificateType", "") == ALLOWED_CERTIFICATE_TYPE
+    )
 
 
 def revoke_cert(token: str, cert_id: str) -> bool:
