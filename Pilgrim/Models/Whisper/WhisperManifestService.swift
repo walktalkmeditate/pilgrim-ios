@@ -115,7 +115,11 @@ final class WhisperManifestService: ObservableObject {
 
     private func saveLocalManifest(_ manifest: WhisperManifest) {
         guard let data = try? Self.encoder.encode(manifest) else { return }
-        try? data.write(to: localManifestURL)
+        do {
+            try data.write(to: localManifestURL)
+        } catch {
+            print("[WhisperManifestService] Failed to save manifest: \(error)")
+        }
     }
 
     private static let decoder: JSONDecoder = {
