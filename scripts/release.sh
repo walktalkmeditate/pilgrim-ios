@@ -32,6 +32,7 @@ usage() {
     echo "  upload          Upload to App Store Connect"
     echo "  whatsnew          Create/edit curated App Store release notes"
     echo "  changelog        Generate release notes from git log since last tag"
+    echo "  bootstrap-whispers Regenerate the bundled whisper bootstrap from R2"
     echo "  tag <version>   Create a git tag and GitHub Release"
     echo "  release         Full pipeline: check → bump → commit → archive → upload → changelog → tag"
     echo ""
@@ -354,6 +355,15 @@ cmd_changelog() {
     cat build/releasenotes.txt
 }
 
+bootstrap_whispers() {
+    step "Regenerating whisper bootstrap bundle"
+    if [ ! -x scripts/regen-whisper-bootstrap.sh ]; then
+        fail "scripts/regen-whisper-bootstrap.sh not found or not executable"
+    fi
+    scripts/regen-whisper-bootstrap.sh
+    pass "Whisper bootstrap regenerated. If new .aac files were added, verify they are in the Xcode target's Copy Bundle Resources phase."
+}
+
 cmd_whatsnew() {
     local version
     version=$(current_marketing_version)
@@ -394,6 +404,7 @@ cmd_release() {
     [ "$confirm" = "y" ] || [ "$confirm" = "Y" ] || exit 0
 
     cmd_check
+    bootstrap_whispers
     cmd_bump
 
     step "Committing version bump"
@@ -437,6 +448,7 @@ case "$COMMAND" in
     export)  cmd_export ;;
     upload)  cmd_upload ;;
     changelog) cmd_changelog ;;
+    bootstrap-whispers) bootstrap_whispers ;;
     whatsnew) cmd_whatsnew ;;
     tag)     [ -z "$ARG1" ] && fail "Usage: release.sh tag <version>" ; cmd_tag "$ARG1" ;;
     release) cmd_release ;;
