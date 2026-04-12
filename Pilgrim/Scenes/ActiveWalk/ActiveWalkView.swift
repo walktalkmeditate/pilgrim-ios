@@ -935,7 +935,7 @@ extension ActiveWalkView {
             if UserPreferences.autoPlayWhisperOnProximity.value,
                UserPreferences.soundsEnabled.value {
                 if let cached = GeoCacheService.shared.cachedWhispers.first(where: { $0.id == whisperId }),
-                   let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
+                   let definition = WhisperManifestService.shared.whisper(byId: cached.whisperId) {
                     WhisperPlayer.shared.play(definition)
                 }
             }
