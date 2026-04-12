@@ -233,7 +233,6 @@
 		AA0001010000000000000012 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000002 /* HomeViewModel.swift */; };
 		AA0001010000000000000013 /* WalkRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000003 /* WalkRowView.swift */; };
 		AA0001010000000000000014 /* ActiveWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000004 /* ActiveWalkView.swift */; };
-		CC0001010000000000000002 /* WalkStatsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0001010000000000000001 /* WalkStatsSheet.swift */; };
 		AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000005 /* ActiveWalkViewModel.swift */; };
 		AA0001010000000000000016 /* WalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000006 /* WalkSummaryView.swift */; };
 		AA0001010000000000000017 /* MainCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000007 /* MainCoordinatorView.swift */; };
@@ -315,6 +314,7 @@
 		CC00000200000000WKDOTV01 /* WalkDotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKDOTV01 /* WalkDotView.swift */; };
 		CC00000200000000WKMODE01 /* WalkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKMODE01 /* WalkMode.swift */; };
 		CC00000200000000WKSTRT01 /* WalkStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000WKSTRT01 /* WalkStartView.swift */; };
+		CC0001010000000000000002 /* WalkStatsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0001010000000000000001 /* WalkStatsSheet.swift */; };
 		CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00BB010000000000000001 /* VoiceRecordingInterface.swift */; };
 		CC01000100000000ATMOCB01 /* AtmosphereCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000ATMOCR01 /* AtmosphereCard.swift */; };
 		CC01000100000000CONNCB01 /* ConnectCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01000100000000CONNCR01 /* ConnectCard.swift */; };
@@ -334,6 +334,7 @@
 		D62B90461A22862A8FDA006C /* VoiceGuideDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */; };
 		D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */; };
 		D9B0FCF6475717C81CEAC35D /* AudioPriorityQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */; };
+		DA6DDA89F11F4728B6B553A1 /* WhisperManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305468F7FF377BC0DFF74897 /* WhisperManifest.swift */; };
 		DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */; };
 		DBC54AC76144B10493D3E481 /* WalkShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE9557700152F043C359DC /* WalkShareView.swift */; };
 		DC700725D862A43F6F4791F7 /* WhisperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8585A815173A295C2F468057 /* WhisperService.swift */; };
@@ -587,6 +588,7 @@
 		2CA2B0038D4875801C41DE26 /* AudioAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAsset.swift; sourceTree = "<group>"; };
 		2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculatorTests.swift; sourceTree = "<group>"; };
 		3023392A906A22FDA4E0B84A /* CachedWhisper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CachedWhisper.swift; sourceTree = "<group>"; };
+		305468F7FF377BC0DFF74897 /* WhisperManifest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifest.swift; sourceTree = "<group>"; };
 		3542AA50A2E8FA62E52758C7 /* WhisperPlacementSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperPlacementSheet.swift; sourceTree = "<group>"; };
 		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
 		3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityIntervalTests.swift; sourceTree = "<group>"; };
@@ -654,7 +656,6 @@
 		AA0001010000000000000002 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000003 /* WalkRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkRowView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000004 /* ActiveWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkView.swift; sourceTree = "<group>"; };
-		CC0001010000000000000001 /* WalkStatsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStatsSheet.swift; sourceTree = "<group>"; };
 		AA0001010000000000000005 /* ActiveWalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000006 /* WalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000007 /* MainCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinatorView.swift; sourceTree = "<group>"; };
@@ -742,6 +743,7 @@
 		CC00000100000000WKDOTV01 /* WalkDotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkDotView.swift; sourceTree = "<group>"; };
 		CC00000100000000WKMODE01 /* WalkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkMode.swift; sourceTree = "<group>"; };
 		CC00000100000000WKSTRT01 /* WalkStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStartView.swift; sourceTree = "<group>"; };
+		CC0001010000000000000001 /* WalkStatsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStatsSheet.swift; sourceTree = "<group>"; };
 		CC00BB010000000000000001 /* VoiceRecordingInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingInterface.swift; sourceTree = "<group>"; };
 		CC01000100000000ATMOCR01 /* AtmosphereCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtmosphereCard.swift; sourceTree = "<group>"; };
 		CC01000100000000CONNCR01 /* ConnectCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectCard.swift; sourceTree = "<group>"; };
@@ -813,7 +815,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		567070AC2F74218500FD1910 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		567070AC2F74218500FD1910 /* Exceptions for "PilgrimWidget" folder in "PilgrimWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -823,8 +825,29 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		567070982F74218400FD1910 /* PilgrimWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (567070AC2F74218500FD1910 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PilgrimWidget; sourceTree = "<group>"; };
-		56E07B172F6DDEDE004EBC44 /* ScreenshotTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ScreenshotTests; sourceTree = "<group>"; };
+		567070982F74218400FD1910 /* PilgrimWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				567070AC2F74218500FD1910 /* Exceptions for "PilgrimWidget" folder in "PilgrimWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = PilgrimWidget;
+			sourceTree = "<group>";
+		};
+		56E07B172F6DDEDE004EBC44 /* ScreenshotTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = ScreenshotTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1443,6 +1466,7 @@
 				FF0C3B1FFBCAF6277D0D9E96 /* WhisperPlayer.swift */,
 				8585A815173A295C2F468057 /* WhisperService.swift */,
 				3023392A906A22FDA4E0B84A /* CachedWhisper.swift */,
+				305468F7FF377BC0DFF74897 /* WhisperManifest.swift */,
 			);
 			path = Whisper;
 			sourceTree = "<group>";
@@ -2387,6 +2411,7 @@
 				E599A6F8ED9AEBCAF54D30C3 /* ProximityNotificationView.swift in Sources */,
 				3D254F3D8D18F5FF91F89330 /* WhisperPlacementSheet.swift in Sources */,
 				7978824143C5D5E81A6A3E06 /* StonePlacementSheet.swift in Sources */,
+				DA6DDA89F11F4728B6B553A1 /* WhisperManifest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
