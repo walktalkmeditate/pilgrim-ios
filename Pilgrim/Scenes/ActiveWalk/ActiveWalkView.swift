@@ -906,7 +906,7 @@ extension ActiveWalkView {
                 abs($0.latitude - coord.latitude) < 0.0001 && abs($0.longitude - coord.longitude) < 0.0001
             }),
                let category = cached.resolvedCategory,
-               let definition = WhisperManifestService.shared.whispers(for: category).randomElement() {
+               let definition = WhisperManifestService.shared.placeableWhispers(for: category).randomElement() {
                 WhisperPlayer.shared.play(definition)
                 HapticPattern.whisperProximity.fire()
             }
@@ -937,7 +937,7 @@ extension ActiveWalkView {
                UserPreferences.soundsEnabled.value {
                 if let cached = GeoCacheService.shared.cachedWhispers.first(where: { $0.id == whisperId }),
                    let category = cached.resolvedCategory,
-                   let definition = WhisperManifestService.shared.whispers(for: category).randomElement() {
+                   let definition = WhisperManifestService.shared.placeableWhispers(for: category).randomElement() {
                     WhisperPlayer.shared.play(definition)
                 }
             }
