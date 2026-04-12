@@ -26,30 +26,30 @@ final class WhisperManifestService: ObservableObject {
     }
 
     // MARK: - Public lookups
+    //
+    // All reads must happen on the main thread because @Published state
+    // is only mutated on main (via syncIfNeeded's @MainActor Task and
+    // synchronous init). If a future caller hits the assert, the call
+    // site needs to dispatch to main first.
 
-    /// All whispers for a category, including retired. Used by WhisperPlayer
-    /// when resolving existing placed whispers (map taps, proximity encounters).
     func whispers(for category: WhisperCategory) -> [WhisperDefinition] {
-        (manifest?.whispers ?? []).filter { $0.category == category }
+        assert(Thread.isMainThread)
+        return manifest?.whispers(in: category) ?? []
     }
 
-    /// Non-retired whispers only. Used by WhisperPlacementSheet for the random
-    /// placement pick.
     func placeableWhispers(for category: WhisperCategory) -> [WhisperDefinition] {
-        (manifest?.whispers ?? []).filter { $0.category == category && $0.retiredAt == nil }
+        assert(Thread.isMainThread)
+        return manifest?.placeableWhispers(in: category) ?? []
     }
 
-    /// Full lookup by ID, including retired. Used when resolving the whisper_id
-    /// on an existing placement.
     func whisper(byId id: String) -> WhisperDefinition? {
-        manifest?.whispers.first { $0.id == id }
+        assert(Thread.isMainThread)
+        return manifest?.whisper(withId: id)
     }
 
-    /// Categories that have at least one placeable whisper. WhisperPlacementSheet
-    /// uses this to hide empty categories (e.g., when Play has not yet been
-    /// populated post-code-ship).
     func placeableCategories() -> [WhisperCategory] {
-        WhisperCategory.allCases.filter { !placeableWhispers(for: $0).isEmpty }
+        assert(Thread.isMainThread)
+        return manifest?.placeableCategories ?? []
     }
 
     // MARK: - Sync
@@ -103,7 +103,10 @@ final class WhisperManifestService: ObservableObject {
         guard let url = Bundle.main.url(forResource: "whispers-bootstrap", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let bootstrap = try? Self.decoder.decode(WhisperManifest.self, from: data) else {
-            print("[WhisperManifestService] No bootstrap manifest found; starting empty")
+            // Shipped builds must include whispers-bootstrap.json so fresh
+            // offline installs have a working catalog. If it is missing in
+            // dev, fail loudly so the release workflow gap is obvious.
+            assertionFailure("Missing whispers-bootstrap.json — run scripts/release.sh bootstrap-whispers and verify the file is in the Pilgrim target's Copy Bundle Resources phase")
             manifest = .empty
             return
         }
