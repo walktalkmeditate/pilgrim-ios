@@ -94,6 +94,10 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 }
             }
             await MainActor.run {
+                // If this task was cancelled mid-flight, a replacement
+                // prefetch for the same category has already claimed the
+                // slot — don't erase it or reset isPrefetching.
+                guard !Task.isCancelled else { return }
                 self.prefetchTasks[category] = nil
                 self.isPrefetching = !self.prefetchTasks.isEmpty
             }

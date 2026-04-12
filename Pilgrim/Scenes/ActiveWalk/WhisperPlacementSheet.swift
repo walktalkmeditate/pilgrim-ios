@@ -69,7 +69,7 @@ struct WhisperPlacementSheet: View {
         .onDisappear {
             whisperPlayer.stop()
         }
-        .onChange(of: selectedCategory) { newValue in
+        .onChange(of: selectedCategory) { _, newValue in
             guard let newValue else { return }
             whisperPlayer.prefetchCategory(newValue)
         }
