@@ -90,11 +90,13 @@ struct MeditationView: View {
         }
         .overlay(Color.parchment.opacity(fadeOverlay))
         .onAppear {
+            UIApplication.shared.isIdleTimerDisabled = true
             startBreathCycle()
             spawnParticles()
             autoStartGuideIfEnabled()
         }
         .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
             voicePlayingCancellable?.cancel()
             voicePlayingCancellable = nil
             meditationGuide?.stopGuiding()
