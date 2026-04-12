@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "whispers": [
     {"id": "presence-1", "title": "What do you see right now?", "category": "presence", "audioFileName": "whisper-presence-1", "durationSec": 6, "retiredAt": null},
     {"id": "presence-2", "title": "Feel your feet on the earth", "category": "presence", "audioFileName": "whisper-presence-2", "durationSec": 8, "retiredAt": null},
@@ -21,6 +21,18 @@
     {"id": "courage-3", "title": "You already know the answer", "category": "courage", "audioFileName": "whisper-courage-3", "durationSec": 7, "retiredAt": null},
     {"id": "stillness-1", "title": "Be still", "category": "stillness", "audioFileName": "whisper-stillness-1", "durationSec": 3, "retiredAt": null},
     {"id": "stillness-2", "title": "Breathe", "category": "stillness", "audioFileName": "whisper-stillness-2", "durationSec": 4, "retiredAt": null},
-    {"id": "stillness-3", "title": "You are an animal on the earth", "category": "stillness", "audioFileName": "whisper-stillness-3", "durationSec": 6, "retiredAt": null}
+    {"id": "stillness-3", "title": "You are an animal on the earth", "category": "stillness", "audioFileName": "whisper-stillness-3", "durationSec": 6, "retiredAt": null},
+    {"id": "play-1", "title": "to play in the play", "category": "play", "audioFileName": "whisper-play-1", "durationSec": 3, "retiredAt": null},
+    {"id": "play-2", "title": "yesss", "category": "play", "audioFileName": "whisper-play-2", "durationSec": 3, "retiredAt": null},
+    {"id": "play-3", "title": "right?", "category": "play", "audioFileName": "whisper-play-3", "durationSec": 3, "retiredAt": null},
+    {"id": "play-4", "title": "let it go", "category": "play", "audioFileName": "whisper-play-4", "durationSec": 3, "retiredAt": null},
+    {"id": "play-5", "title": "relax and release", "category": "play", "audioFileName": "whisper-play-5", "durationSec": 4, "retiredAt": null},
+    {"id": "play-6", "title": "potentiality into actuality", "category": "play", "audioFileName": "whisper-play-6", "durationSec": 4, "retiredAt": null},
+    {"id": "play-7", "title": "let's gooo", "category": "play", "audioFileName": "whisper-play-7", "durationSec": 3, "retiredAt": null},
+    {"id": "play-8", "title": "three layers deep in all things", "category": "play", "audioFileName": "whisper-play-8", "durationSec": 5, "retiredAt": null},
+    {"id": "play-9", "title": "you are born from above", "category": "play", "audioFileName": "whisper-play-9", "durationSec": 4, "retiredAt": null},
+    {"id": "play-10", "title": "enjoy the silence", "category": "play", "audioFileName": "whisper-play-10", "durationSec": 3, "retiredAt": null},
+    {"id": "play-11", "title": "going with the flow of life", "category": "play", "audioFileName": "whisper-play-11", "durationSec": 3, "retiredAt": null},
+    {"id": "play-12", "title": "yooo", "category": "play", "audioFileName": "whisper-play-12", "durationSec": 3, "retiredAt": null}
   ]
 }
