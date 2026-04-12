@@ -102,3 +102,4 @@ backend/
 # AppCode
 .idea/*
 !.idea/codeStyles/*
+.claude/settings.local.json
