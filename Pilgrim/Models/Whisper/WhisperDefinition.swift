@@ -29,7 +29,7 @@ enum WhisperCategory: String, Codable, CaseIterable {
         case .compassion: return UIColor(red: 0.66, green: 0.85, blue: 0.82, alpha: 1.0)
         case .courage: return UIColor(red: 0.78, green: 0.72, blue: 0.53, alpha: 1.0)
         case .stillness: return UIColor(red: 0.72, green: 0.58, blue: 0.42, alpha: 1.0)
-        case .play: return UIColor(red: 0.75, green: 0.40, blue: 0.22, alpha: 1.0)
+        case .play: return UIColor(red: 0.92, green: 0.51, blue: 0.32, alpha: 1.0)
         }
     }
 }
