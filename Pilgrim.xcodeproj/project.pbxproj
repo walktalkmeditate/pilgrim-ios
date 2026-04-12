@@ -205,6 +205,7 @@
 		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
 		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
 		6F8AA2EEEDD08C727B89AB94 /* VoiceGuideScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */; };
+		72F3855194AE5C4010A607C4 /* WhisperManifestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */; };
 		73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */; };
 		758B907703CD5A6120536B37 /* ProximityDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C415FCDCD38A1DE0212C8451 /* ProximityDetectionService.swift */; };
 		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
@@ -218,6 +219,7 @@
 		8D5BC6B95A9A7459DA5738FC /* PilgrimPackageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D4FA04890B06A26D5C59087 /* PilgrimPackageModels.swift */; };
 		9726AFAB9F744FDA86EEC2CF /* ActivityInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA57CE96EE3401595264807 /* ActivityInterval.swift */; };
 		9A477336A61C4C38B9D4F13C /* RouteDownsampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */; };
+		9C3309EA59D57A4224524F68 /* WhisperManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */; };
 		9D37F522C28D84C1E1ECCDCC /* AudioDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */; };
 		9D911971BF1766882C21072B /* PendingPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = F578B62CF2FE5D35049BA99E /* PendingPlacement.swift */; };
 		A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PilgrimV3.swift */; };
@@ -620,6 +622,7 @@
 		56F5586B2F7F4BA500805DD0 /* stone-tier-6.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-6.m4a"; sourceTree = "<group>"; };
 		56F5586C2F7F4BA500805DD0 /* stone-tier-7.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "stone-tier-7.m4a"; sourceTree = "<group>"; };
 		5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideDownloadManager.swift; sourceTree = "<group>"; };
+		5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestServiceTests.swift; sourceTree = "<group>"; };
 		5D9564A30CD3DE97895B7A42 /* CairnService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnService.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
@@ -633,6 +636,7 @@
 		7D4FA04890B06A26D5C59087 /* PilgrimPackageModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageModels.swift; sourceTree = "<group>"; };
 		7F7AF87641B4BC5D1B1E8FA9 /* PilgrimPackageBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageBuilder.swift; sourceTree = "<group>"; };
 		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
+		841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestService.swift; sourceTree = "<group>"; };
 		8585A815173A295C2F468057 /* WhisperService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
 		862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPromptVoices.swift; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1413,6 +1417,7 @@
 				EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */,
 				CC00000100000000UNTSTS01 /* UnitSystemTests.swift */,
 				GOSHUIN0000000000000006 /* GoshuinMilestonesTests.swift */,
+				5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1467,6 +1472,7 @@
 				8585A815173A295C2F468057 /* WhisperService.swift */,
 				3023392A906A22FDA4E0B84A /* CachedWhisper.swift */,
 				305468F7FF377BC0DFF74897 /* WhisperManifest.swift */,
+				841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */,
 			);
 			path = Whisper;
 			sourceTree = "<group>";
@@ -2412,6 +2418,7 @@
 				3D254F3D8D18F5FF91F89330 /* WhisperPlacementSheet.swift in Sources */,
 				7978824143C5D5E81A6A3E06 /* StonePlacementSheet.swift in Sources */,
 				DA6DDA89F11F4728B6B553A1 /* WhisperManifest.swift in Sources */,
+				9C3309EA59D57A4224524F68 /* WhisperManifestService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2450,6 +2457,7 @@
 				CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */,
 				CC00000200000000UNTSTS01 /* UnitSystemTests.swift in Sources */,
 				GOSHUIN0000000000000005 /* GoshuinMilestonesTests.swift in Sources */,
+				72F3855194AE5C4010A607C4 /* WhisperManifestServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
