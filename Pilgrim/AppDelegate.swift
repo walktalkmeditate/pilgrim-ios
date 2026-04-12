@@ -78,6 +78,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 
                 AudioManifestService.shared.syncIfNeeded()
                 VoiceGuideManifestService.shared.syncIfNeeded()
+                WhisperManifestService.shared.syncIfNeeded()
                 Task { await CollectiveCounterService.shared.fetch() }
 
                 #if DEBUG

@@ -317,9 +317,6 @@ struct ActiveWalkView: View {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
             }
-            if !WhisperPlayer.shared.allDownloaded {
-                WhisperPlayer.shared.downloadAll()
-            }
         }
     }
 
@@ -908,7 +905,7 @@ extension ActiveWalkView {
             if let cached = GeoCacheService.shared.cachedWhispers.first(where: {
                 abs($0.latitude - coord.latitude) < 0.0001 && abs($0.longitude - coord.longitude) < 0.0001
             }),
-               let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
+               let definition = WhisperManifestService.shared.whisper(byId: cached.whisperId) {
                 WhisperPlayer.shared.play(definition)
                 HapticPattern.whisperProximity.fire()
             }
