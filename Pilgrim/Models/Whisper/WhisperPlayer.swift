@@ -25,27 +25,24 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     // MARK: - Bundled seed
 
     /// First-launch seeding: if the cache directory has no whisper audio
-    /// files, copy any bundled whisper .aac files into it. Subsequent launches
-    /// skip the copy because files already exist.
+    /// files, iterate through the manifest and copy any bundled .aac files
+    /// (flat in Support Files, matching the stone-tier pattern) into the
+    /// cache. Subsequent launches skip the copy because files already exist.
     private func seedFromBundleIfEmpty() {
         let existing = (try? FileManager.default.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: nil))?
             .filter { $0.pathExtension == "aac" } ?? []
         guard existing.isEmpty else { return }
 
-        guard let bundleDir = Bundle.main.url(forResource: "whisper-audio", withExtension: nil) else {
-            // Bundle directory not present — fine in dev, files will download on demand
-            return
-        }
-
-        let bundled = (try? FileManager.default.contentsOfDirectory(at: bundleDir, includingPropertiesForKeys: nil))?
-            .filter { $0.pathExtension == "aac" } ?? []
-
-        for file in bundled {
-            let destination = cacheDir.appendingPathComponent(file.lastPathComponent)
+        let whispers = WhisperManifestService.shared.manifest?.whispers ?? []
+        for whisper in whispers {
+            guard let source = Bundle.main.url(forResource: whisper.audioFileName, withExtension: "aac") else {
+                continue
+            }
+            let destination = cacheDir.appendingPathComponent("\(whisper.audioFileName).aac")
             do {
-                try FileManager.default.copyItem(at: file, to: destination)
+                try FileManager.default.copyItem(at: source, to: destination)
             } catch {
-                print("[WhisperPlayer] Failed to seed \(file.lastPathComponent): \(error)")
+                print("[WhisperPlayer] Failed to seed \(whisper.audioFileName): \(error)")
             }
         }
     }
