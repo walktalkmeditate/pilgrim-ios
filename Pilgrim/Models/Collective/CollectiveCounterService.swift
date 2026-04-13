@@ -11,6 +11,18 @@ final class CollectiveCounterService: ObservableObject {
     private let pendingKey = "collectivePendingDelta"
     private let cachedStatsKey = "collectiveCachedStats"
 
+    /// How long a successful fetch suppresses subsequent fetches.
+    /// Settings is the only surface that calls `fetch()` on view
+    /// appearance, so without a TTL every settings open hits the
+    /// network. 216s is short enough that the counter still feels
+    /// alive between visits and long enough to absorb rapid
+    /// open/close. Bypassed by `fetch(force: true)`, which we use
+    /// after a walk-end POST so the user sees their own contribution
+    /// reflected immediately rather than waiting up to ~3.6 min.
+    private static let fetchTTL: TimeInterval = 216
+
+    private var lastFetchedAt: Date?
+
     private init() {
         loadCachedStats()
     }
@@ -50,13 +62,17 @@ final class CollectiveCounterService: ObservableObject {
         }
     }
 
-    func fetch() async {
+    func fetch(force: Bool = false) async {
+        if !force, let last = lastFetchedAt, Date().timeIntervalSince(last) < Self.fetchTTL {
+            return
+        }
         guard let url = URL(string: baseURL) else { return }
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             let decoded = try JSONDecoder().decode(CollectiveStats.self, from: data)
             await MainActor.run {
                 self.stats = decoded
+                self.lastFetchedAt = Date()
                 self.cacheStats(data)
                 self.checkMilestone(decoded.totalWalks)
             }
@@ -92,6 +108,14 @@ final class CollectiveCounterService: ObservableObject {
                             self.savePending(current)
                         }
                     }
+                    // The walk just landed server-side. Bypass the
+                    // fetch TTL so the next time the user opens
+                    // Settings (or, if they're already there, the
+                    // currently subscribed view) shows totals that
+                    // include their own contribution. Without this,
+                    // the counter could still show the pre-walk
+                    // numbers for up to ~3.6 minutes.
+                    await self.fetch(force: true)
                 }
             }
         }
