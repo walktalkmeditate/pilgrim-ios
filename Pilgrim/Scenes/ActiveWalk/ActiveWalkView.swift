@@ -799,9 +799,15 @@ struct AudioWaveformView: View {
 extension ActiveWalkView {
 
     private func placeWhisper(whisper: WhisperDefinition, expiry: KanjiExpiryPicker.ExpiryDuration) {
-        guard let location = viewModel.currentLocation else { return }
-
-        HapticPattern.whisperPlaced.fire()
+        guard let location = viewModel.currentLocation else {
+            // Sheet has already dismissed by the time we land here, so a
+            // bare return looks identical to a successful placement. Fire
+            // the failure haptic + a "waiting for location" banner so the
+            // user knows to wait for GPS rather than retry blindly.
+            HapticPattern.placementFailed.fire()
+            proximityNotification = .placementUnavailable()
+            return
+        }
 
         Task {
             do {
@@ -813,6 +819,10 @@ extension ActiveWalkView {
                     expiryOption: expiry.apiValue
                 )
                 await MainActor.run {
+                    // Haptic fires AFTER server confirmation rather than
+                    // optimistically on tap, so a failed placement no
+                    // longer plays success-then-fail in sequence.
+                    HapticPattern.whisperPlaced.fire()
                     viewModel.whispersPlacedThisWalk += 1
                     WhisperPlayer.shared.play(whisper)
                     let localId = UUID().uuidString
@@ -831,7 +841,7 @@ extension ActiveWalkView {
             } catch {
                 print("[ActiveWalk] Whisper placement failed: \(error)")
                 await MainActor.run {
-                    HapticPattern.whisperPlaceFailed.fire()
+                    HapticPattern.placementFailed.fire()
                     proximityNotification = .whisperPlaceFailed()
                 }
             }
@@ -839,11 +849,14 @@ extension ActiveWalkView {
     }
 
     private func placeStone() {
-        guard let location = viewModel.currentLocation else { return }
+        guard let location = viewModel.currentLocation else {
+            HapticPattern.placementFailed.fire()
+            proximityNotification = .placementUnavailable()
+            return
+        }
 
         let cairn = nearestCachedCairn()
         let tier = cairn?.tier.soundTier ?? 1
-        HapticPattern.stonePlaced(tier: tier).fire()
 
         Task {
             do {
@@ -852,6 +865,7 @@ extension ActiveWalkView {
                     longitude: location.longitude
                 )
                 await MainActor.run {
+                    HapticPattern.stonePlaced(tier: tier).fire()
                     viewModel.stonePlacedThisWalk = true
                     StonePlayer.shared.playForCount(result.stoneCount)
                     let nowISO = Self.isoFormatter.string(from: Date())
@@ -885,6 +899,10 @@ extension ActiveWalkView {
                 }
             } catch {
                 print("[ActiveWalk] Stone placement failed: \(error)")
+                await MainActor.run {
+                    HapticPattern.placementFailed.fire()
+                    proximityNotification = .stonePlaceFailed()
+                }
             }
         }
     }

@@ -58,16 +58,38 @@ struct ProximityNotificationModifier: ViewModifier {
         }
         .onChange(of: event?.id) { _, _ in
             guard event != nil else { return }
-            generation += 1
-            let gen = generation
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isShowing = true
+            // Two events arriving inside the 5s window used to swap
+            // messages in place with no transition — the body never
+            // registered a change. Now we briefly dismiss the current
+            // banner and show the new one once it's offscreen, so the
+            // user actually feels the second notification.
+            if isShowing {
+                let dismissedAt = generation
+                withAnimation(.easeInOut(duration: 0.2)) { isShowing = false }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(220))
+                    // If a third event arrived during the dismiss
+                    // window, it ran its own showCurrent() and bumped
+                    // generation — bail so we don't double-show.
+                    guard dismissedAt == generation else { return }
+                    await MainActor.run { showCurrent() }
+                }
+            } else {
+                showCurrent()
             }
-            Task {
-                try? await Task.sleep(for: .seconds(5))
-                guard generation == gen else { return }
-                dismiss()
-            }
+        }
+    }
+
+    private func showCurrent() {
+        generation += 1
+        let gen = generation
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isShowing = true
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            guard generation == gen else { return }
+            dismiss()
         }
     }
 
@@ -110,8 +132,32 @@ struct ProximityNotificationEvent: Equatable {
     /// dismissed by the time we know — without this banner the failure is
     /// invisible to the user. Wabi-sabi tone: no "Error", no exclamation,
     /// suggests the natural metaphor and points at retry.
+    ///
+    /// "Try again" is technically misleading on a 429 (rate-limited —
+    /// retrying immediately won't help), but we accept that because the
+    /// limit is 21/day and a real walker is extremely unlikely to hit it.
+    /// If we ever want to distinguish, split this into rateLimited /
+    /// network / server cases with their own copy.
+    ///
+    /// Length intentionally matches the longest existing banner so the
+    /// shared lineLimit(1) constraint never truncates it on small screens.
     static func whisperPlaceFailed() -> Self {
-        ProximityNotificationEvent(id: UUID(), message: "The whisper didn\u{2019}t take root. Try again.")
+        ProximityNotificationEvent(id: UUID(), message: "The whisper didn\u{2019}t take. Try again.")
+    }
+
+    /// Mirror of `whisperPlaceFailed` for stone placement. Different
+    /// metaphor — a stone "settles" into a cairn — same wabi-sabi tone,
+    /// same 35-char budget so the lineLimit(1) constraint holds.
+    static func stonePlaceFailed() -> Self {
+        ProximityNotificationEvent(id: UUID(), message: "The stone didn\u{2019}t settle. Try again.")
+    }
+
+    /// Surfaced when the user taps Place but CoreLocation hasn't given
+    /// us a fix yet. Distinct from a placement failure because the
+    /// remedy is "wait" not "retry" — the haptic is the same generic
+    /// failure pattern but the copy carries the meaning.
+    static func placementUnavailable() -> Self {
+        ProximityNotificationEvent(id: UUID(), message: "Waiting for a location\u{2026}")
     }
 }
 

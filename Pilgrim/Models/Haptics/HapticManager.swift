@@ -86,7 +86,7 @@ enum HapticPattern {
     case waypointDropped
     case whisperProximity
     case whisperPlaced
-    case whisperPlaceFailed
+    case placementFailed
     case cairnProximity
     case stonePlaced(tier: Int)
 
@@ -109,11 +109,13 @@ enum HapticPattern {
             generator.prepare()
             generator.impactOccurred()
 
-        case .whisperPlaceFailed:
+        case .placementFailed:
             // A short, sharp double-tap — distinct from the gentle "placed"
             // success haptic so a user with the phone in their pocket can
             // feel the difference even without looking at the screen.
-            if !Self.playWhisperPlaceFailed() {
+            // Generic across whisper and stone placements; the on-screen
+            // banner carries the noun.
+            if !Self.playPlacementFailed() {
                 let generator = UINotificationFeedbackGenerator()
                 generator.prepare()
                 generator.notificationOccurred(.warning)
@@ -148,7 +150,7 @@ enum HapticPattern {
         return HapticEngineHost.shared.play(events)
     }
 
-    private static func playWhisperPlaceFailed() -> Bool {
+    private static func playPlacementFailed() -> Bool {
         // Two sharp, slightly firmer taps in quick succession. Higher
         // sharpness than the success "placed" haptic and a tighter gap, so
         // the body learns to read it as "something didn't take" without any
