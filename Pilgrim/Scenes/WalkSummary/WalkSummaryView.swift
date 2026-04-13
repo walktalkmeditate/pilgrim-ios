@@ -32,6 +32,9 @@ struct WalkSummaryView: View {
     @State private var revealPhase: RevealPhase = .hidden
     @State private var milestone: String?
     @State private var cachedCelestialSnapshot: CelestialSnapshot?
+    @State private var lightReading: LightReading?
+    @State private var hasRevealedLightReading: Bool = false
+    private let sharingTracker = WalkSharingTracker()
 
     private enum RevealPhase {
         case hidden, zoomed, revealed
@@ -68,6 +71,9 @@ struct WalkSummaryView: View {
                     }
                     promptsButton
                     detailsSection
+                    if let reading = lightReading {
+                        WalkLightReadingCard(reading: reading, isRevealed: hasRevealedLightReading)
+                    }
                     shareCard
                 }
                 .padding(Constants.UI.Padding.normal)
@@ -106,6 +112,10 @@ struct WalkSummaryView: View {
                 startRevealSequence()
                 if UserPreferences.autoTranscribe.value && transcriptions.isEmpty {
                     pollForAutoTranscription()
+                }
+                lightReading = LightReadingGenerator.generate(for: walk)
+                if let uuid = walk.uuid?.uuidString {
+                    hasRevealedLightReading = sharingTracker.hasShared(walkUUID: uuid)
                 }
             }
             .onDisappear {
@@ -793,7 +803,15 @@ struct WalkSummaryView: View {
     }
 
     private var shareCard: some View {
-        WalkSharingButtons(walk: walk)
+        WalkSharingButtons(walk: walk, onShare: markSharedAndReveal)
+    }
+
+    private func markSharedAndReveal() {
+        guard let uuid = walk.uuid?.uuidString else { return }
+        sharingTracker.markShared(walkUUID: uuid)
+        withAnimation(.easeInOut(duration: 1.2)) {
+            hasRevealedLightReading = true
+        }
     }
 
 }

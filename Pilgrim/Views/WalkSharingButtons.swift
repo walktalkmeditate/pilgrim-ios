@@ -3,6 +3,7 @@ import SwiftUI
 struct WalkSharingButtons: View {
 
     let walk: WalkInterface
+    var onShare: (() -> Void)? = nil
     @State private var showJourneySheet = false
     @State private var shareURL: URL?
     @State private var isGenerating = false
@@ -61,6 +62,7 @@ struct WalkSharingButtons: View {
                 label: "Goshuin",
                 subtitle: "Share as image"
             ) {
+                onShare?()
                 isGenerating = true
                 let input = SealInput(walk: walk)
                 let suffix = Self.dateTimeFormatter.string(from: walk.startDate)
@@ -78,6 +80,7 @@ struct WalkSharingButtons: View {
                 label: "Etegami",
                 subtitle: "Share as postcard"
             ) {
+                onShare?()
                 isGenerating = true
                 let input = SealInput(walk: walk)
                 let suffix = Self.dateTimeFormatter.string(from: walk.startDate)
@@ -154,6 +157,7 @@ struct WalkSharingButtons: View {
     private var neverSharedSection: some View {
         VStack(spacing: Constants.UI.Padding.xs) {
             Button {
+                onShare?()
                 showJourneySheet = true
             } label: {
                 HStack(spacing: Constants.UI.Padding.small) {
@@ -310,6 +314,7 @@ struct WalkSharingButtons: View {
                 .padding(.horizontal, Constants.UI.Padding.big)
 
             Button {
+                onShare?()
                 showJourneySheet = true
             } label: {
                 Text("Share again")
