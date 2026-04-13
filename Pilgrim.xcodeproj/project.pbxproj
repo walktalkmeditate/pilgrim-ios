@@ -220,6 +220,7 @@
 		72F3855194AE5C4010A607C4 /* WhisperManifestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */; };
 		3388473FDC9340D4B1E61E75 /* CelestialCalculatorIlluminationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */; };
 		48CE4EDDAB9C4702A5BAAB87 /* SolarHorizonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */; };
+		07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */; };
 		73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */; };
 		758B907703CD5A6120536B37 /* ProximityDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C415FCDCD38A1DE0212C8451 /* ProximityDetectionService.swift */; };
 		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
@@ -673,6 +674,7 @@
 		5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestServiceTests.swift; sourceTree = "<group>"; };
 		C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculatorIlluminationTests.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SolarHorizonTests.swift; sourceTree = "<group>"; };
+		50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstronomicalEventsTests.swift; sourceTree = "<group>"; };
 		5D9564A30CD3DE97895B7A42 /* CairnService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnService.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		5FC22282979316268A19DABF /* whisper-gratitude-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-gratitude-2.aac"; sourceTree = "<group>"; };
@@ -1528,6 +1530,7 @@
 				5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */,
 				C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */,
+				50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -2606,6 +2609,7 @@
 				72F3855194AE5C4010A607C4 /* WhisperManifestServiceTests.swift in Sources */,
 				3388473FDC9340D4B1E61E75 /* CelestialCalculatorIlluminationTests.swift in Sources */,
 				48CE4EDDAB9C4702A5BAAB87 /* SolarHorizonTests.swift in Sources */,
+				07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

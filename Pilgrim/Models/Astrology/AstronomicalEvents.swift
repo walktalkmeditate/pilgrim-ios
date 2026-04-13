@@ -396,4 +396,45 @@ enum AstronomicalEvents {
     enum EclipseType {
         case penumbral, partial, total
     }
+
+    // MARK: - Lookup helpers
+
+    /// Find a lunar eclipse whose date matches the given walk date in the
+    /// walker's local calendar. The walk and event dates are compared at
+    /// the "start of day" level to match any eclipse happening anywhere
+    /// during the walker's local day.
+    static func eclipse(on walkDate: Date, calendar: Calendar = .current) -> LunarEclipseEvent? {
+        let walkLocalDay = calendar.startOfDay(for: walkDate)
+        return lunarEclipses.first { event in
+            calendar.startOfDay(for: event.date) == walkLocalDay
+        }
+    }
+
+    /// Find a supermoon within ±3 days of the walk date, comparing against
+    /// the walker's local calendar. The ±3 day window captures walks in
+    /// the approach and immediate aftermath of a supermoon full moon.
+    static func supermoon(near walkDate: Date, calendar: Calendar = .current) -> SupermoonEvent? {
+        let walkLocalDay = calendar.startOfDay(for: walkDate)
+        return supermoons.first { event in
+            let eventLocalDay = calendar.startOfDay(for: event.date)
+            let components = calendar.dateComponents([.day], from: eventLocalDay, to: walkLocalDay)
+            let daysBetween = abs(components.day ?? Int.max)
+            return daysBetween <= 3
+        }
+    }
+
+    /// Find a major meteor shower whose peak is within ±1 day of the walk
+    /// date (in the walker's local calendar). Matches on (month, day)
+    /// rather than year so the annual recurrence works for every year.
+    static func meteorShower(on walkDate: Date, calendar: Calendar = .current) -> MeteorShowerEvent? {
+        let components = calendar.dateComponents([.month, .day], from: walkDate)
+        guard let month = components.month, let day = components.day else { return nil }
+        return meteorShowers.first { shower in
+            // ±1 day match in (month, day) space. None of our 8 showers peak
+            // within 1 day of a month boundary, so we don't need to handle
+            // month rollover. (Ursids Dec 22 is the closest to a boundary
+            // and still has 2 days of safety.)
+            month == shower.peakMonth && abs(day - shower.peakDay) <= 1
+        }
+    }
 }
