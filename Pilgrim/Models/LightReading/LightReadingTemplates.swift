@@ -19,6 +19,7 @@ enum LightReadingTemplates {
         case .twilight:         return twilight
         case .goldenHour:       return goldenHour
         case .moonPhase:        return moonPhase
+        case .daylight:         return daylight
         }
     }
 
@@ -120,6 +121,15 @@ enum LightReadingTemplates {
         LightReadingTemplate(text: "A {phaseName} moon was up when you walked. {pct}% of its face in sunlight."),
         LightReadingTemplate(text: "The moon was in its {phaseName} phase \u{2014} {pct}% illuminated."),
         LightReadingTemplate(text: "You walked by {phaseName} moonlight. The moon showed {pct}% of its face."),
+    ]
+
+    private static let daylight: [LightReadingTemplate] = [
+        LightReadingTemplate(text: "You walked in the open light of {season}."),
+        LightReadingTemplate(text: "A {timeOfDay} walk in {season}. The sun was your company."),
+        LightReadingTemplate(text: "You walked beneath a quiet {season} sky."),
+        LightReadingTemplate(text: "The sun was your company on this walk."),
+        LightReadingTemplate(text: "A simple {timeOfDay} walk under a plain sky."),
+        LightReadingTemplate(text: "You walked in the {timeOfDay} light."),
     ]
 
     /// Returns the single template for a given seasonal marker. Each marker maps

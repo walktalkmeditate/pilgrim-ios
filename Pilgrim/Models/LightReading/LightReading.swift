@@ -13,19 +13,22 @@ struct LightReading: Equatable {
 
     /// Rarity-ordered tiers. Lower raw value = higher priority = fires
     /// first in the generator's evaluation ladder. The baseline tier
-    /// `moonPhase` always fires so every walk gets a valid reading.
+    /// `daylight` always fires for walks with coordinates where the sun
+    /// is above the horizon. `moonPhase` fires for night walks or walks
+    /// with no coordinates.
     enum Tier: Int, Comparable, CaseIterable {
         case lunarEclipse      // ~1-3% of walks
         case supermoon         // ~5-7%
         case seasonalMarker    // ~4%
         case meteorShowerPeak  // ~5-7%
-        case fullMoon          // ~10%
-        case newMoon           // ~10%
+        case fullMoon          // ~10%, night only
+        case newMoon           // ~10%, night only
         case deepNight         // ~5-15%
         case sunriseSunset     // ~15-25%
         case goldenHour        // ~20-30%
         case twilight          // ~15-25%
-        case moonPhase         // 100% baseline
+        case moonPhase         // night baseline (or nil-coord fallback)
+        case daylight          // true baseline for daytime walks with coords
 
         // Swift does NOT synthesize Comparable for Int-raw enums.
         static func < (lhs: Tier, rhs: Tier) -> Bool {

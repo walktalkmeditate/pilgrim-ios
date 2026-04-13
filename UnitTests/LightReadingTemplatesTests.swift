@@ -14,7 +14,8 @@ final class LightReadingTemplatesTests: XCTestCase {
     func testNoUnfilledPlaceholdersInTemplateText() {
         let knownPlaceholders: Set<String> = [
             "{N}", "{time}", "{pct}", "{showerName}", "{zhr}",
-            "{month}", "{year}", "{distanceKm}", "{phaseName}"
+            "{month}", "{year}", "{distanceKm}", "{phaseName}",
+            "{season}", "{timeOfDay}"
         ]
         for tier in LightReading.Tier.allCases {
             for template in LightReadingTemplates.templates(for: tier) {

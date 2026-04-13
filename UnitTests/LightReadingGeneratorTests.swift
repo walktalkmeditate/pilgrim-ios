@@ -40,12 +40,40 @@ final class LightReadingGeneratorTests: XCTestCase {
     func testFullMoonTierFiresForKnownFullMoon() {
         // 2026-04-02: full moon, no eclipse, no supermoon (nearest is Dec 24 2026),
         // not a seasonal marker, 20 days before Lyrids peak (Apr 22) — clean date.
+        // Use 22:00Z (midnight Paris local) so the sun is below the horizon and
+        // the moon-tier night gate does not block.
+        let walk = syntheticWalk(
+            startDate: iso("2026-04-02T22:00:00Z"),
+            latitude: 48.8566, longitude: 2.3522
+        )
+        let reading = LightReadingGenerator.generate(for: walk)
+        XCTAssertEqual(reading.tier, .fullMoon, "Expected fullMoon tier, got \(reading.tier)")
+        XCTAssertFalse(reading.sentence.contains("{"), "Placeholder leaked: \(reading.sentence)")
+    }
+
+    func testFullMoonDoesNotFireInDaylight() {
+        // Same full-moon date but at noon (sun well above horizon). The moon tier
+        // must skip and the daylight baseline must fire.
         let walk = syntheticWalk(
             startDate: iso("2026-04-02T12:00:00Z"),
             latitude: 48.8566, longitude: 2.3522
         )
         let reading = LightReadingGenerator.generate(for: walk)
-        XCTAssertEqual(reading.tier, .fullMoon, "Expected fullMoon tier, got \(reading.tier)")
+        XCTAssertNotEqual(reading.tier, .fullMoon, "fullMoon must not fire during daytime")
+        XCTAssertNotEqual(reading.tier, .moonPhase, "moonPhase must not fire during daytime")
+        XCTAssertEqual(reading.tier, .daylight, "Expected daylight tier for noon full-moon walk, got \(reading.tier)")
+        XCTAssertFalse(reading.sentence.contains("{"), "Placeholder leaked: \(reading.sentence)")
+    }
+
+    func testDaylightBaselineFiresForOrdinaryDaytimeWalk() {
+        // Ordinary April afternoon in Paris — no rare events, sun is up.
+        let walk = syntheticWalk(
+            startDate: iso("2026-04-15T14:00:00Z"),
+            latitude: 48.8566, longitude: 2.3522
+        )
+        let reading = LightReadingGenerator.generate(for: walk)
+        XCTAssertEqual(reading.tier, .daylight, "Expected daylight tier, got \(reading.tier)")
+        XCTAssertFalse(reading.sentence.isEmpty)
         XCTAssertFalse(reading.sentence.contains("{"), "Placeholder leaked: \(reading.sentence)")
     }
 
@@ -127,9 +155,10 @@ final class LightReadingGeneratorTests: XCTestCase {
     func testWalkWithoutCoordinatesFallsThroughToLocationIndependentTier() {
         // A walk with no routeData has no coordinates, so the SolarHorizon-
         // based tiers (deepNight, sunriseSunset, twilight, goldenHour) cannot
-        // fire. The generator should fall through to one of the location-
-        // independent tiers: lunarEclipse, supermoon, seasonalMarker,
-        // meteorShowerPeak, fullMoon, newMoon, or moonPhase baseline.
+        // fire. With no altitude available, the moon-tier night gate treats
+        // altitude as nil and falls through to moon tiers (preserves the V1
+        // nil-coordinate path). The daylight tier only fires when we have
+        // confirmed coordinates with the sun above the horizon.
         //
         // We use an ordinary afternoon in April that isn't any rare event,
         // so the expected outcome is the moonPhase baseline.
@@ -146,6 +175,8 @@ final class LightReadingGeneratorTests: XCTestCase {
         ]
         XCTAssertTrue(locationIndependent.contains(reading.tier),
             "Walk with no coordinates should fire a location-independent tier, got \(reading.tier)")
+        XCTAssertNotEqual(reading.tier, .daylight,
+            "daylight must not fire for no-coordinate walks (no altitude to confirm sun is up)")
         XCTAssertFalse(reading.sentence.isEmpty)
         XCTAssertFalse(reading.sentence.contains("{"), "Placeholder leaked: \(reading.sentence)")
     }

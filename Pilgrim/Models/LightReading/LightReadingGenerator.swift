@@ -17,8 +17,9 @@ enum LightReadingGenerator {
         if let reading = evaluateSunriseSunset(features: features, rng: &rng) { return reading }
         if let reading = evaluateGoldenHour(features: features, rng: &rng) { return reading }
         if let reading = evaluateTwilight(features: features, rng: &rng) { return reading }
+        if let reading = evaluateMoonPhase(features: features, rng: &rng) { return reading }
 
-        return evaluateMoonPhase(features: features, rng: &rng)
+        return evaluateDaylight(features: features, rng: &rng)
     }
 
     // MARK: - Features
@@ -104,6 +105,11 @@ enum LightReadingGenerator {
     }
 
     private static func evaluateFullMoon(features: Features, rng: inout SeededGenerator) -> LightReading? {
+        // Only fire at night. If we have coordinates and the sun is above the visual
+        // horizon, skip — the daylight baseline handles it instead.
+        // If coordinates are missing, altitude is nil and we fall through (preserves
+        // the V1 nil-coordinate path).
+        if let altitude = features.solarAltitude, altitude > -0.833 { return nil }
         guard features.illumination >= 0.95 else { return nil }
         let template = pickTemplate(for: .fullMoon, rng: &rng)
         let sentence = fillTemplate(template.text, values: [
@@ -114,6 +120,8 @@ enum LightReadingGenerator {
     }
 
     private static func evaluateNewMoon(features: Features, rng: inout SeededGenerator) -> LightReading? {
+        // Only fire at night (same logic as evaluateFullMoon).
+        if let altitude = features.solarAltitude, altitude > -0.833 { return nil }
         guard features.illumination <= 0.05 else { return nil }
         let template = pickTemplate(for: .newMoon, rng: &rng)
         let sentence = fillTemplate(template.text, values: [
@@ -173,13 +181,56 @@ enum LightReadingGenerator {
         return LightReading(sentence: template.text, tier: .goldenHour, symbolName: "sun.haze")
     }
 
-    private static func evaluateMoonPhase(features: Features, rng: inout SeededGenerator) -> LightReading {
+    private static func evaluateMoonPhase(features: Features, rng: inout SeededGenerator) -> LightReading? {
+        // Only fire at night (same logic as evaluateFullMoon).
+        if let altitude = features.solarAltitude, altitude > -0.833 { return nil }
         let template = pickTemplate(for: .moonPhase, rng: &rng)
         let sentence = fillTemplate(template.text, values: [
             "phaseName": features.phase.displayName,
             "pct": String(Int((features.illumination * 100).rounded()))
         ])
         return LightReading(sentence: sentence, tier: .moonPhase, symbolName: "moon.fill")
+    }
+
+    private static func evaluateDaylight(features: Features, rng: inout SeededGenerator) -> LightReading {
+        let template = pickTemplate(for: .daylight, rng: &rng)
+        let season = seasonName(for: features.walkDate)
+        let timeOfDay = timeOfDayName(for: features.walkDate)
+        let sentence = fillTemplate(template.text, values: [
+            "season": season,
+            "timeOfDay": timeOfDay
+        ])
+        return LightReading(sentence: sentence, tier: .daylight, symbolName: "sun.max")
+    }
+
+    // MARK: - Daylight helpers
+
+    private static func seasonName(for date: Date) -> String {
+        // Northern-hemisphere month-to-season mapping. Southern-hemisphere users
+        // will see an inverted season (e.g. "winter" in June). V2 can use walk
+        // coordinates to determine hemisphere and flip accordingly.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        let month = calendar.component(.month, from: date)
+        switch month {
+        case 3, 4, 5: return "spring"
+        case 6, 7, 8: return "summer"
+        case 9, 10, 11: return "autumn"
+        default: return "winter"
+        }
+    }
+
+    private static func timeOfDayName(for date: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        let hour = calendar.component(.hour, from: date)
+        switch hour {
+        case 5..<11: return "morning"
+        case 11..<15: return "midday"
+        case 15..<18: return "afternoon"
+        case 18..<21: return "evening"
+        default: return "late"
+        }
     }
 
     // MARK: - Template picking
