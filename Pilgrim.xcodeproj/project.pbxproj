@@ -176,6 +176,7 @@
 		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
 		44B04EE19F844EACEBD0DB0F /* CelestialCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */; };
 		3E99F36DBCDB461C99F60DA5 /* SolarHorizon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A98AEE09143482AA1EFE5DC /* SolarHorizon.swift */; };
+		EE11900E0BF7483C9154DC21 /* AstronomicalEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE8823B55D944B53A5149E70 /* AstronomicalEvents.swift */; };
 		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
 		487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */; };
 		4942C685817BB789737E18B1 /* whisper-play-7.aac in Resources */ = {isa = PBXBuildFile; fileRef = A1E1CDD84132639F8B1B90D8 /* whisper-play-7.aac */; };
@@ -474,6 +475,7 @@
 		0BEFB40EDD8525B65D45062C /* CairnTier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnTier.swift; sourceTree = "<group>"; };
 		0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculator.swift; sourceTree = "<group>"; };
 		3A98AEE09143482AA1EFE5DC /* SolarHorizon.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SolarHorizon.swift; sourceTree = "<group>"; };
+		AE8823B55D944B53A5149E70 /* AstronomicalEvents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstronomicalEvents.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		12245A2A15EE8E64818B6D3F /* ActivityContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityContext.swift; sourceTree = "<group>"; };
 		123512C2E2D2088520214836 /* CairnVisualGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnVisualGenerator.swift; sourceTree = "<group>"; };
@@ -1658,6 +1660,7 @@
 				008E97D4312732C8F271886C /* AstrologyModels.swift */,
 				0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */,
 				3A98AEE09143482AA1EFE5DC /* SolarHorizon.swift */,
+				AE8823B55D944B53A5149E70 /* AstronomicalEvents.swift */,
 			);
 			path = Astrology;
 			sourceTree = "<group>";
@@ -2522,6 +2525,7 @@
 				A6174D54B988350284152396 /* AstrologyModels.swift in Sources */,
 				44B04EE19F844EACEBD0DB0F /* CelestialCalculator.swift in Sources */,
 				3E99F36DBCDB461C99F60DA5 /* SolarHorizon.swift in Sources */,
+				EE11900E0BF7483C9154DC21 /* AstronomicalEvents.swift in Sources */,
 				56ED2CA2C618854F7461544B /* CelestialVignetteView.swift in Sources */,
 				327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */,
 				8D5BC6B95A9A7459DA5738FC /* PilgrimPackageModels.swift in Sources */,
