@@ -139,7 +139,22 @@ struct ActiveWalkView: View {
         } message: {
             Text("This walk will not be saved.")
         }
-        .fullScreenCover(isPresented: $showMeditation) {
+        .fullScreenCover(isPresented: $showMeditation, onDismiss: {
+            // MeditationView's onAppear sets isIdleTimerDisabled = true and
+            // its onDisappear is supposed to reset it. In practice, SwiftUI
+            // does not reliably fire onDisappear on a fullScreenCover's
+            // content view when dismissal happens during an animation
+            // transaction with nested .sheet modifiers attached — which is
+            // exactly the closing-ceremony shape (1.5s fade overlay + the
+            // meditation options + soundscape picker sheets still on the
+            // tree). When the leak hits, the screen never auto-locks again
+            // for the rest of the session, draining the device on a long
+            // walk. SwiftUI's fullScreenCover.onDismiss callback fires
+            // independently of the content view's lifecycle, so we use it
+            // as the authoritative reset point. The inner onDisappear stays
+            // as belt-and-suspenders.
+            UIApplication.shared.isIdleTimerDisabled = false
+        }) {
             MeditationView(soundManagement: viewModel.soundManagement) {
                 viewModel.endMeditationSilently()
                 showMeditation = false
