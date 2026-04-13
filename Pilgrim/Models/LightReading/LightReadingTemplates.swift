@@ -15,12 +15,15 @@ enum LightReadingTemplates {
         case .fullMoon:         return fullMoon
         case .newMoon:          return newMoon
         case .deepNight:        return deepNight
-        case .sunriseSunset:    return sunriseSunset
+        case .sunriseSunset:    return sunrisePool + sunsetPool
         case .twilight:         return twilight
         case .goldenHour:       return goldenHour
         case .moonPhase:        return moonPhase
         }
     }
+
+    static func sunriseTemplates() -> [LightReadingTemplate] { sunrisePool }
+    static func sunsetTemplates() -> [LightReadingTemplate] { sunsetPool }
 
     // MARK: - Tier pools
 
@@ -83,10 +86,13 @@ enum LightReadingTemplates {
         LightReadingTemplate(text: "You walked under a proper dark sky \u{2014} sun well gone, moon absent. The kind of night astronomers wait for."),
     ]
 
-    private static let sunriseSunset: [LightReadingTemplate] = [
+    private static let sunrisePool: [LightReadingTemplate] = [
         LightReadingTemplate(text: "Your walk began {N} minutes before sunrise. The sun rose at {time}."),
         LightReadingTemplate(text: "The sun rose at {time}, just {N} minutes after this walk started."),
         LightReadingTemplate(text: "You walked into sunrise. The sun cleared the horizon at {time}."),
+    ]
+
+    private static let sunsetPool: [LightReadingTemplate] = [
         LightReadingTemplate(text: "The sun had set at {time}, {N} minutes before this walk ended."),
         LightReadingTemplate(text: "You walked out of sunset. The sun dropped below the horizon at {time}."),
         LightReadingTemplate(text: "This walk began {N} minutes after the sun went down at {time}."),
@@ -115,4 +121,28 @@ enum LightReadingTemplates {
         LightReadingTemplate(text: "The moon was in its {phaseName} phase \u{2014} {pct}% illuminated."),
         LightReadingTemplate(text: "You walked by {phaseName} moonlight. The moon showed {pct}% of its face."),
     ]
+
+    /// Returns the single template for a given seasonal marker. The seasonal-marker
+    /// tier has exactly one template per marker (unlike other tiers which use a pool),
+    /// so this is a direct index lookup rather than a seeded pick.
+    ///
+    /// Template order in the `seasonalMarker` pool must match this mapping:
+    /// 0 springEquinox, 1 summerSolstice, 2 autumnEquinox, 3 winterSolstice,
+    /// 4 imbolc, 5 beltane, 6 lughnasadh, 7 samhain.
+    static func seasonalMarkerTemplate(for marker: SeasonalMarker) -> LightReadingTemplate {
+        let pool = templates(for: .seasonalMarker)
+        let index: Int
+        switch marker {
+        case .springEquinox:  index = 0
+        case .summerSolstice: index = 1
+        case .autumnEquinox:  index = 2
+        case .winterSolstice: index = 3
+        case .imbolc:         index = 4
+        case .beltane:        index = 5
+        case .lughnasadh:     index = 6
+        case .samhain:        index = 7
+        }
+        precondition(index < pool.count, "seasonalMarker pool missing template at index \(index)")
+        return pool[index]
+    }
 }
