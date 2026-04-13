@@ -223,6 +223,8 @@
 		07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */; };
 		LR00000200000000LRMODEL1 /* LightReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRMODEL1 /* LightReading.swift */; };
 		LR00000200000000LRTESTS1 /* LightReadingModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTESTS1 /* LightReadingModelTests.swift */; };
+		LR00000200000000LRTMPL01 /* LightReadingTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */; };
+		LR00000200000000LRTMPL02 /* LightReadingTemplatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */; };
 		73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */; };
 		758B907703CD5A6120536B37 /* ProximityDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C415FCDCD38A1DE0212C8451 /* ProximityDetectionService.swift */; };
 		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
@@ -481,6 +483,8 @@
 		AE8823B55D944B53A5149E70 /* AstronomicalEvents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstronomicalEvents.swift; sourceTree = "<group>"; };
 		LR00000100000000LRMODEL1 /* LightReading.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReading.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTESTS1 /* LightReadingModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingModelTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingTemplates.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingTemplatesTests.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		12245A2A15EE8E64818B6D3F /* ActivityContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityContext.swift; sourceTree = "<group>"; };
 		123512C2E2D2088520214836 /* CairnVisualGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnVisualGenerator.swift; sourceTree = "<group>"; };
@@ -1537,6 +1541,7 @@
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */,
 				50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */,
 				LR00000100000000LRTESTS1 /* LightReadingModelTests.swift */,
+				LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1678,6 +1683,7 @@
 			isa = PBXGroup;
 			children = (
 				LR00000100000000LRMODEL1 /* LightReading.swift */,
+				LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */,
 			);
 			path = LightReading;
 			sourceTree = "<group>";
@@ -2544,6 +2550,7 @@
 				3E99F36DBCDB461C99F60DA5 /* SolarHorizon.swift in Sources */,
 				EE11900E0BF7483C9154DC21 /* AstronomicalEvents.swift in Sources */,
 				LR00000200000000LRMODEL1 /* LightReading.swift in Sources */,
+				LR00000200000000LRTMPL01 /* LightReadingTemplates.swift in Sources */,
 				56ED2CA2C618854F7461544B /* CelestialVignetteView.swift in Sources */,
 				327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */,
 				8D5BC6B95A9A7459DA5738FC /* PilgrimPackageModels.swift in Sources */,
@@ -2626,6 +2633,7 @@
 				48CE4EDDAB9C4702A5BAAB87 /* SolarHorizonTests.swift in Sources */,
 				07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */,
 				LR00000200000000LRTESTS1 /* LightReadingModelTests.swift in Sources */,
+				LR00000200000000LRTMPL02 /* LightReadingTemplatesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
