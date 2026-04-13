@@ -124,6 +124,32 @@ final class LightReadingGeneratorTests: XCTestCase {
         XCTAssertFalse(reading.sentence.contains("{"), "Placeholder leaked: \(reading.sentence)")
     }
 
+    func testWalkWithoutCoordinatesFallsThroughToLocationIndependentTier() {
+        // A walk with no routeData has no coordinates, so the SolarHorizon-
+        // based tiers (deepNight, sunriseSunset, twilight, goldenHour) cannot
+        // fire. The generator should fall through to one of the location-
+        // independent tiers: lunarEclipse, supermoon, seasonalMarker,
+        // meteorShowerPeak, fullMoon, newMoon, or moonPhase baseline.
+        //
+        // We use an ordinary afternoon in April that isn't any rare event,
+        // so the expected outcome is the moonPhase baseline.
+        let walkNoRoute = WalkDataFactory.makeWalk(
+            uuid: Self.fixedWalkUUID,
+            startDate: iso("2026-04-15T14:00:00Z"),
+            routeData: []
+        )
+        let reading = LightReadingGenerator.generate(for: walkNoRoute)
+
+        let locationIndependent: Set<LightReading.Tier> = [
+            .lunarEclipse, .supermoon, .seasonalMarker, .meteorShowerPeak,
+            .fullMoon, .newMoon, .moonPhase
+        ]
+        XCTAssertTrue(locationIndependent.contains(reading.tier),
+            "Walk with no coordinates should fire a location-independent tier, got \(reading.tier)")
+        XCTAssertFalse(reading.sentence.isEmpty)
+        XCTAssertFalse(reading.sentence.contains("{"), "Placeholder leaked: \(reading.sentence)")
+    }
+
     // MARK: - Helpers
 
     private func iso(_ string: String) -> Date {

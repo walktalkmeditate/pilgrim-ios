@@ -12,7 +12,6 @@ import SwiftUI
 struct WalkLightReadingCard: View {
 
     let reading: LightReading
-    let isRevealed: Bool
 
     var body: some View {
         VStack(spacing: Constants.UI.Padding.normal) {
@@ -38,8 +37,6 @@ struct WalkLightReadingCard: View {
         .frame(maxWidth: .infinity)
         .background(Color.parchment)
         .cornerRadius(Constants.UI.CornerRadius.normal)
-        .opacity(isRevealed ? 1 : 0)
-        .scaleEffect(isRevealed ? 1 : 0.97)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("A light reading for this walk: \(reading.sentence)")
         .onLongPressGesture(minimumDuration: 1.0) {
@@ -58,24 +55,21 @@ struct WalkLightReadingCard_Previews: PreviewProvider {
                     sentence: "Your walk began 14 minutes before sunrise. The sun rose at 6:23.",
                     tier: .sunriseSunset,
                     symbolName: "sunrise"
-                ),
-                isRevealed: true
+                )
             )
             WalkLightReadingCard(
                 reading: LightReading(
                     sentence: "This walk happened during a total lunar eclipse. The moon turned red.",
                     tier: .lunarEclipse,
                     symbolName: "moon.circle.fill"
-                ),
-                isRevealed: true
+                )
             )
             WalkLightReadingCard(
                 reading: LightReading(
                     sentence: "You walked under a waxing gibbous moon, 78% illuminated.",
                     tier: .moonPhase,
                     symbolName: "moon.fill"
-                ),
-                isRevealed: false
+                )
             )
         }
         .padding()

@@ -72,7 +72,7 @@ struct WalkSummaryView: View {
                     promptsButton
                     detailsSection
                     if let reading = lightReading, hasRevealedLightReading {
-                        WalkLightReadingCard(reading: reading, isRevealed: true)
+                        WalkLightReadingCard(reading: reading)
                             .transition(.opacity.combined(with: .scale(scale: 0.97)))
                     }
                     shareCard
