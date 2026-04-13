@@ -91,6 +91,88 @@ enum CelestialCalculator {
         return normalize(longitude)
     }
 
+    // MARK: - Lunar Illumination
+
+    /// Illumination fraction of the moon as visible from Earth, in [0, 1].
+    /// 0 = new moon, 1 = full moon. Derived from the ecliptic-longitude
+    /// elongation of the moon from the sun.
+    static func lunarIllumination(T: Double) -> Double {
+        let sunLon = solarLongitude(T: T)
+        let moonLon = lunarLongitude(T: T)
+        return lunarIlluminationFromLongitudes(sunLongitude: sunLon, moonLongitude: moonLon)
+    }
+
+    /// Testable version that takes longitudes directly so unit tests can
+    /// exercise the wrap-around normalization alongside the phase
+    /// classifier. Note: the illumination formula `(1 - cos(θ))/2` is
+    /// even-symmetric in θ, so the normalization does not affect this
+    /// function's output. We normalize here for consistency with
+    /// `lunarPhaseFromLongitudes`, which DOES depend on the sign of the
+    /// elongation (new-vs-full and waxing-vs-waning discrimination).
+    static func lunarIlluminationFromLongitudes(sunLongitude: Double, moonLongitude: Double) -> Double {
+        var diff = moonLongitude - sunLongitude
+        if diff < 0 { diff += 360 }
+        let phase = radians(diff)
+        return (1 - cos(phase)) / 2
+    }
+
+    // MARK: - Lunar Phase Classification
+
+    enum LunarPhase: String {
+        case new
+        case waxingCrescent
+        case firstQuarter
+        case waxingGibbous
+        case full
+        case waningGibbous
+        case lastQuarter
+        case waningCrescent
+
+        var displayName: String {
+            switch self {
+            case .new: return "new"
+            case .waxingCrescent: return "waxing crescent"
+            case .firstQuarter: return "first quarter"
+            case .waxingGibbous: return "waxing gibbous"
+            case .full: return "full"
+            case .waningGibbous: return "waning gibbous"
+            case .lastQuarter: return "last quarter"
+            case .waningCrescent: return "waning crescent"
+            }
+        }
+    }
+
+    /// Classify the moon's current phase for a given UTC date.
+    static func lunarPhaseName(for date: Date) -> LunarPhase {
+        let T = julianCenturies(from: julianDayNumber(from: date))
+        let sunLon = solarLongitude(T: T)
+        let moonLon = lunarLongitude(T: T)
+        return lunarPhaseFromLongitudes(sunLongitude: sunLon, moonLongitude: moonLon)
+    }
+
+    /// Testable version taking longitudes directly. Normalizes the
+    /// elongation to [0, 360) before bucketing — without this, a moon
+    /// that has just wrapped past 360° (e.g. moonLon=10° with sunLon=350°)
+    /// would compute as elongation=-340°, fall through all 8 phase cases,
+    /// and hit the default branch with the wrong answer.
+    static func lunarPhaseFromLongitudes(sunLongitude: Double, moonLongitude: Double) -> LunarPhase {
+        var elongation = moonLongitude - sunLongitude
+        if elongation < 0 { elongation += 360 }
+        // Elongation is now in [0, 360). Divide into 8 phase buckets of 45° each,
+        // centered on new moon (0°), first quarter (90°), full (180°), last quarter (270°).
+        switch elongation {
+        case 0..<22.5, 337.5..<360: return .new
+        case 22.5..<67.5: return .waxingCrescent
+        case 67.5..<112.5: return .firstQuarter
+        case 112.5..<157.5: return .waxingGibbous
+        case 157.5..<202.5: return .full
+        case 202.5..<247.5: return .waningGibbous
+        case 247.5..<292.5: return .lastQuarter
+        case 292.5..<337.5: return .waningCrescent
+        default: return .new
+        }
+    }
+
     // MARK: - Planetary Longitudes (Simplified Heliocentric)
 
     static func mercuryLongitude(T: Double) -> Double {

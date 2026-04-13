@@ -3,6 +3,7 @@ import SwiftUI
 struct WalkSharingButtons: View {
 
     let walk: WalkInterface
+    var onShare: (() -> Void)? = nil
     @State private var showJourneySheet = false
     @State private var shareURL: URL?
     @State private var isGenerating = false
@@ -42,10 +43,15 @@ struct WalkSharingButtons: View {
             .background(Color.parchmentSecondary)
             .cornerRadius(Constants.UI.CornerRadius.normal)
             .id(shareVersion)
-            .sheet(isPresented: $showJourneySheet, onDismiss: { shareVersion += 1 }) {
+            .sheet(isPresented: $showJourneySheet, onDismiss: {
+                shareVersion += 1
+                onShare?()
+            }) {
                 WalkShareView(walk: walk)
             }
-            .sheet(item: $shareURL) { url in
+            .sheet(item: $shareURL, onDismiss: {
+                onShare?()
+            }) { url in
                 ShareSheet(items: [url])
             }
         }
@@ -207,6 +213,7 @@ struct WalkSharingButtons: View {
 
                 HStack(spacing: Constants.UI.Padding.small) {
                     Button {
+                        onShare?()
                         UIPasteboard.general.string = cached.url
                         copiedToastGeneration += 1
                         let gen = copiedToastGeneration
@@ -232,8 +239,10 @@ struct WalkSharingButtons: View {
                         )
                     }
 
-                    if let shareURL = URL(string: cached.url) {
-                        ShareLink(item: shareURL) {
+                    if let url = URL(string: cached.url) {
+                        Button {
+                            shareURL = url
+                        } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "square.and.arrow.up")
                                 Text("Share")

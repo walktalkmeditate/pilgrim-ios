@@ -7,6 +7,7 @@ struct WalkSummaryView: View {
 
     let walk: WalkInterface
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var audioPlayer = AudioPlayerModel()
     @ObservedObject private var transcriptionService = TranscriptionService.shared
     @State private var transcriptions: [UUID: String] = [:]
@@ -32,6 +33,9 @@ struct WalkSummaryView: View {
     @State private var revealPhase: RevealPhase = .hidden
     @State private var milestone: String?
     @State private var cachedCelestialSnapshot: CelestialSnapshot?
+    @State private var lightReading: LightReading?
+    @State private var hasRevealedLightReading: Bool = false
+    private let sharingTracker = WalkSharingTracker()
 
     private enum RevealPhase {
         case hidden, zoomed, revealed
@@ -68,6 +72,10 @@ struct WalkSummaryView: View {
                     }
                     promptsButton
                     detailsSection
+                    if let reading = lightReading, hasRevealedLightReading {
+                        WalkLightReadingCard(reading: reading)
+                            .transition(reduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.97)))
+                    }
                     shareCard
                 }
                 .padding(Constants.UI.Padding.normal)
@@ -106,6 +114,12 @@ struct WalkSummaryView: View {
                 startRevealSequence()
                 if UserPreferences.autoTranscribe.value && transcriptions.isEmpty {
                     pollForAutoTranscription()
+                }
+                if lightReading == nil {
+                    lightReading = LightReadingGenerator.generate(for: walk)
+                }
+                if let uuid = walk.uuid?.uuidString {
+                    hasRevealedLightReading = sharingTracker.hasShared(walkUUID: uuid)
                 }
             }
             .onDisappear {
@@ -793,7 +807,19 @@ struct WalkSummaryView: View {
     }
 
     private var shareCard: some View {
-        WalkSharingButtons(walk: walk)
+        WalkSharingButtons(walk: walk, onShare: markSharedAndReveal)
+    }
+
+    private func markSharedAndReveal() {
+        guard let uuid = walk.uuid?.uuidString else { return }
+        sharingTracker.markShared(walkUUID: uuid)
+        if reduceMotion {
+            hasRevealedLightReading = true
+        } else {
+            withAnimation(.easeInOut(duration: 1.2)) {
+                hasRevealedLightReading = true
+            }
+        }
     }
 
 }
