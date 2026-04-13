@@ -13,9 +13,8 @@ final class LightReadingTemplatesTests: XCTestCase {
 
     func testNoUnfilledPlaceholdersInTemplateText() {
         let knownPlaceholders: Set<String> = [
-            "{N}", "{time}", "{minutes}", "{pct}", "{showerName}", "{zhr}",
-            "{month}", "{year}", "{distanceKm}", "{phaseName}", "{marker}",
-            "{flavor}"
+            "{N}", "{time}", "{pct}", "{showerName}", "{zhr}",
+            "{month}", "{year}", "{distanceKm}", "{phaseName}"
         ]
         for tier in LightReading.Tier.allCases {
             for template in LightReadingTemplates.templates(for: tier) {
@@ -38,6 +37,19 @@ final class LightReadingTemplatesTests: XCTestCase {
             .reduce(0, +)
         XCTAssertGreaterThanOrEqual(total, 50)
         XCTAssertLessThanOrEqual(total, 100)
+    }
+
+    func testSeasonalMarkerTemplateMatchesPoolTemplate() {
+        let pool = LightReadingTemplates.templates(for: .seasonalMarker)
+        let allMarkers: [SeasonalMarker] = [
+            .springEquinox, .summerSolstice, .autumnEquinox, .winterSolstice,
+            .imbolc, .beltane, .lughnasadh, .samhain
+        ]
+        for marker in allMarkers {
+            let specific = LightReadingTemplates.seasonalMarkerTemplate(for: marker)
+            XCTAssertTrue(pool.contains { $0.text == specific.text },
+                "seasonalMarkerTemplate(for: .\(marker)) must return a template that's also in the pool")
+        }
     }
 
     func testNoExclamationPointsOrEmoji() {

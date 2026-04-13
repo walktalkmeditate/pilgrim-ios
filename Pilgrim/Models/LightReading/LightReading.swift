@@ -23,8 +23,8 @@ struct LightReading: Equatable {
         case newMoon           // ~10%
         case deepNight         // ~5-15%
         case sunriseSunset     // ~15-25%
-        case twilight          // ~15-25%
         case goldenHour        // ~20-30%
+        case twilight          // ~15-25%
         case moonPhase         // 100% baseline
 
         // Swift does NOT synthesize Comparable for Int-raw enums.

@@ -59,6 +59,10 @@ final class LightReadingGeneratorTests: XCTestCase {
             ("2026-06-21T12:00:00Z", "summer solstice"),
             ("2026-09-23T12:00:00Z", "autumn equinox"),
             ("2027-12-22T12:00:00Z", "winter solstice"),
+            ("2027-02-04T12:00:00Z", "imbolc"),
+            ("2027-05-05T12:00:00Z", "beltane"),
+            ("2027-08-07T12:00:00Z", "lughnasadh"),
+            ("2027-11-07T12:00:00Z", "samhain"),
         ]
         for (dateStr, expectedKeyword) in cases {
             let walk = syntheticWalk(
@@ -126,14 +130,16 @@ final class LightReadingGeneratorTests: XCTestCase {
         ISO8601DateFormatter().date(from: string)!
     }
 
-    private func syntheticWalk(startDate: Date, latitude: Double, longitude: Double) -> WalkInterface {
+    private static let fixedWalkUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+
+    private func syntheticWalk(startDate: Date, latitude: Double, longitude: Double, uuid: UUID = fixedWalkUUID) -> WalkInterface {
         let routeSample = WalkDataFactory.makeRouteDataSample(
             timestamp: startDate,
             latitude: latitude,
             longitude: longitude
         )
         return WalkDataFactory.makeWalk(
-            uuid: UUID(),
+            uuid: uuid,
             startDate: startDate,
             endDate: startDate.addingTimeInterval(1800),
             routeData: [routeSample]

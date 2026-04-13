@@ -159,6 +159,7 @@ enum LightReadingGenerator {
 
     private static func evaluateTwilight(features: Features, rng: inout SeededGenerator) -> LightReading? {
         guard let altitude = features.solarAltitude else { return nil }
+        // twilight: altitude in [-18, -6), goldenHour owns the -6° boundary
         guard altitude >= -18.0 && altitude < -6.0 else { return nil }
         let template = pickTemplate(for: .twilight, rng: &rng)
         return LightReading(sentence: template.text, tier: .twilight, symbolName: "sun.horizon")
@@ -166,6 +167,7 @@ enum LightReadingGenerator {
 
     private static func evaluateGoldenHour(features: Features, rng: inout SeededGenerator) -> LightReading? {
         guard let altitude = features.solarAltitude else { return nil }
+        // goldenHour: altitude in [-6, +6], inclusive on both ends; twilight stops at -6
         guard altitude >= -6.0 && altitude <= 6.0 else { return nil }
         let template = pickTemplate(for: .goldenHour, rng: &rng)
         return LightReading(sentence: template.text, tier: .goldenHour, symbolName: "sun.haze")

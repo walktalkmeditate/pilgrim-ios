@@ -31,7 +31,7 @@ enum LightReadingTemplates {
         LightReadingTemplate(text: "This walk happened during a total lunar eclipse. The moon turned red."),
         LightReadingTemplate(text: "A lunar eclipse was in progress. The moon moved through Earth's shadow while you walked."),
         LightReadingTemplate(text: "The moon was partially eclipsed during this walk. A piece of Earth's shadow crossed its face."),
-        LightReadingTemplate(text: "This walk coincided with a lunar eclipse. The moon dimmed to copper for {minutes} minutes."),
+        LightReadingTemplate(text: "This walk coincided with a lunar eclipse. The moon dimmed to copper."),
         LightReadingTemplate(text: "Earth stood between the sun and moon while you walked. A lunar eclipse was unfolding overhead."),
     ]
 
@@ -122,27 +122,27 @@ enum LightReadingTemplates {
         LightReadingTemplate(text: "You walked by {phaseName} moonlight. The moon showed {pct}% of its face."),
     ]
 
-    /// Returns the single template for a given seasonal marker. The seasonal-marker
-    /// tier has exactly one template per marker (unlike other tiers which use a pool),
-    /// so this is a direct index lookup rather than a seeded pick.
-    ///
-    /// Template order in the `seasonalMarker` pool must match this mapping:
-    /// 0 springEquinox, 1 summerSolstice, 2 autumnEquinox, 3 winterSolstice,
-    /// 4 imbolc, 5 beltane, 6 lughnasadh, 7 samhain.
+    /// Returns the single template for a given seasonal marker. Each marker maps
+    /// directly to its template text so future reorders of the pool array can't
+    /// silently mis-map a marker to the wrong sentence.
     static func seasonalMarkerTemplate(for marker: SeasonalMarker) -> LightReadingTemplate {
-        let pool = templates(for: .seasonalMarker)
-        let index: Int
         switch marker {
-        case .springEquinox:  index = 0
-        case .summerSolstice: index = 1
-        case .autumnEquinox:  index = 2
-        case .winterSolstice: index = 3
-        case .imbolc:         index = 4
-        case .beltane:        index = 5
-        case .lughnasadh:     index = 6
-        case .samhain:        index = 7
+        case .springEquinox:
+            return LightReadingTemplate(text: "You walked on the spring equinox. The year is beginning its long turn toward warmth.")
+        case .summerSolstice:
+            return LightReadingTemplate(text: "This walk happened on the summer solstice \u{2014} the longest day of the year.")
+        case .autumnEquinox:
+            return LightReadingTemplate(text: "You walked on the autumn equinox. The year tipping toward winter.")
+        case .winterSolstice:
+            return LightReadingTemplate(text: "You walked on the winter solstice. The longest night of the year. Light begins to return tomorrow.")
+        case .imbolc:
+            return LightReadingTemplate(text: "This walk fell on Imbolc \u{2014} the old Celtic midpoint between winter solstice and spring. The light is coming back.")
+        case .beltane:
+            return LightReadingTemplate(text: "You walked on Beltane. The old midpoint between spring and summer, when fires were lit on hillsides.")
+        case .lughnasadh:
+            return LightReadingTemplate(text: "This walk happened on Lughnasadh \u{2014} the beginning of the harvest season in the old calendar.")
+        case .samhain:
+            return LightReadingTemplate(text: "You walked on Samhain. The midpoint between autumn equinox and winter solstice, the old year's end.")
         }
-        precondition(index < pool.count, "seasonalMarker pool missing template at index \(index)")
-        return pool[index]
     }
 }

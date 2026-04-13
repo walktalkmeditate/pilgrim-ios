@@ -13,9 +13,9 @@ final class LightReadingModelTests: XCTestCase {
         XCTAssertLessThan(LightReading.Tier.fullMoon, .newMoon)
         XCTAssertLessThan(LightReading.Tier.newMoon, .deepNight)
         XCTAssertLessThan(LightReading.Tier.deepNight, .sunriseSunset)
-        XCTAssertLessThan(LightReading.Tier.sunriseSunset, .twilight)
-        XCTAssertLessThan(LightReading.Tier.twilight, .goldenHour)
-        XCTAssertLessThan(LightReading.Tier.goldenHour, .moonPhase)
+        XCTAssertLessThan(LightReading.Tier.sunriseSunset, .goldenHour)
+        XCTAssertLessThan(LightReading.Tier.goldenHour, .twilight)
+        XCTAssertLessThan(LightReading.Tier.twilight, .moonPhase)
     }
 
     // MARK: - stableSeed
