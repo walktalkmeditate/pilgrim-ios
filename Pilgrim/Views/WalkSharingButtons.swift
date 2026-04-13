@@ -225,9 +225,11 @@ struct WalkSharingButtons: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color.parchmentSecondary)
                         .foregroundColor(.stone)
-                        .cornerRadius(Constants.UI.CornerRadius.small)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.small)
+                                .strokeBorder(Color.stone.opacity(0.35), lineWidth: 1)
+                        )
                     }
 
                     if let shareURL = URL(string: cached.url) {
@@ -247,6 +249,7 @@ struct WalkSharingButtons: View {
                         }
                     }
                 }
+                .padding(.top, Constants.UI.Padding.small)
             }
         }
     }
