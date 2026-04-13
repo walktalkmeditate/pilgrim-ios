@@ -104,6 +104,15 @@ struct ProximityNotificationEvent: Equatable {
         }
         return ProximityNotificationEvent(id: UUID(), message: detail)
     }
+
+    /// Surfaced when a whisper placement attempt fails (server rejected the
+    /// request, network was down, etc.). The placement sheet has already
+    /// dismissed by the time we know — without this banner the failure is
+    /// invisible to the user. Wabi-sabi tone: no "Error", no exclamation,
+    /// suggests the natural metaphor and points at retry.
+    static func whisperPlaceFailed() -> Self {
+        ProximityNotificationEvent(id: UUID(), message: "The whisper didn\u{2019}t take root. Try again.")
+    }
 }
 
 extension View {

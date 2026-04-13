@@ -830,6 +830,10 @@ extension ActiveWalkView {
                 }
             } catch {
                 print("[ActiveWalk] Whisper placement failed: \(error)")
+                await MainActor.run {
+                    HapticPattern.whisperPlaceFailed.fire()
+                    proximityNotification = .whisperPlaceFailed()
+                }
             }
         }
     }
