@@ -13,7 +13,7 @@ final class LightReadingTemplatesTests: XCTestCase {
 
     func testNoUnfilledPlaceholdersInTemplateText() {
         let knownPlaceholders: Set<String> = [
-            "{N}", "{time}", "{pct}", "{showerName}", "{zhr}",
+            "{N}", "{unit}", "{time}", "{pct}", "{showerName}", "{zhr}",
             "{month}", "{year}", "{distanceKm}", "{phaseName}",
             "{season}", "{timeOfDay}"
         ]

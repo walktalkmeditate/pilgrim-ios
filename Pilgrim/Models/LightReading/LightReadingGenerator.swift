@@ -78,7 +78,7 @@ enum LightReadingGenerator {
     private static func evaluateSupermoon(features: Features, rng: inout SeededGenerator) -> LightReading? {
         guard let event = AstronomicalEvents.supermoon(near: features.walkDate) else { return nil }
         let template = pickTemplate(for: .supermoon, rng: &rng)
-        let distanceFormatted = event.distanceKm.formatted(.number.grouping(.automatic))
+        let distanceFormatted = event.distanceKm.formatted(.number.grouping(.automatic).locale(Locale(identifier: "en_US_POSIX")))
         let sentence = fillTemplate(template.text, values: [
             "month": monthName(for: event.date),
             "year": yearString(for: event.date),
@@ -151,15 +151,18 @@ enum LightReadingGenerator {
         let edge = isSunrise ? sunrise : sunset
         let delta = isSunrise ? sunriseDelta : sunsetDelta
         let minutes = max(1, Int((delta / 60).rounded()))
+        let minuteWord = minutes == 1 ? "minute" : "minutes"
         let subPool = isSunrise ? LightReadingTemplates.sunriseTemplates() : LightReadingTemplates.sunsetTemplates()
         precondition(!subPool.isEmpty, "sunrise/sunset sub-pool empty")
         let template = subPool[Int(rng.next() % UInt64(subPool.count))]
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeStyle = .short
         formatter.dateStyle = .none
         let timeString = formatter.string(from: edge)
         let sentence = fillTemplate(template.text, values: [
             "N": String(minutes),
+            "unit": minuteWord,
             "time": timeString
         ])
         let symbol = isSunrise ? "sunrise" : "sunset"
@@ -195,8 +198,8 @@ enum LightReadingGenerator {
 
     private static func evaluateDaylight(features: Features, rng: inout SeededGenerator) -> LightReading {
         let template = pickTemplate(for: .daylight, rng: &rng)
-        let season = seasonName(for: features.walkDate)
-        let timeOfDay = timeOfDayName(for: features.walkDate)
+        let season = seasonName(for: features.walkDate, longitude: features.longitude)
+        let timeOfDay = timeOfDayName(for: features.walkDate, longitude: features.longitude)
         let sentence = fillTemplate(template.text, values: [
             "season": season,
             "timeOfDay": timeOfDay
@@ -206,12 +209,11 @@ enum LightReadingGenerator {
 
     // MARK: - Daylight helpers
 
-    private static func seasonName(for date: Date) -> String {
+    private static func seasonName(for date: Date, longitude: Double?) -> String {
         // Northern-hemisphere month-to-season mapping. Southern-hemisphere users
         // will see an inverted season (e.g. "winter" in June). V2 can use walk
         // coordinates to determine hemisphere and flip accordingly.
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone.current
+        let calendar = localCalendar(longitude: longitude)
         let month = calendar.component(.month, from: date)
         switch month {
         case 3, 4, 5: return "spring"
@@ -221,9 +223,8 @@ enum LightReadingGenerator {
         }
     }
 
-    private static func timeOfDayName(for date: Date) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone.current
+    private static func timeOfDayName(for date: Date, longitude: Double?) -> String {
+        let calendar = localCalendar(longitude: longitude)
         let hour = calendar.component(.hour, from: date)
         switch hour {
         case 5..<11: return "morning"
@@ -232,6 +233,28 @@ enum LightReadingGenerator {
         case 18..<21: return "evening"
         default: return "late"
         }
+    }
+
+    private static func localCalendar(longitude: Double?) -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        if let longitude {
+            // 15° of longitude ≈ 1 hour of UTC offset. Precise to ±1 hour; walkers
+            // near timezone boundaries may see slight drift but not enough to shift
+            // their season or time-of-day bucket in practice.
+            let offsetHours = Int((longitude / 15.0).rounded())
+            let offsetSeconds = offsetHours * 3600
+            if let tz = TimeZone(secondsFromGMT: offsetSeconds) {
+                calendar.timeZone = tz
+            } else {
+                calendar.timeZone = TimeZone(identifier: "UTC")!
+            }
+        } else {
+            // No coordinates — fall back to UTC. Using the device's timezone would
+            // be worse because it could be wildly different from where the walker
+            // actually was.
+            calendar.timeZone = TimeZone(identifier: "UTC")!
+        }
+        return calendar
     }
 
     // MARK: - Template picking

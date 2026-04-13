@@ -88,15 +88,15 @@ enum LightReadingTemplates {
     ]
 
     private static let sunrisePool: [LightReadingTemplate] = [
-        LightReadingTemplate(text: "Your walk began {N} minutes before sunrise. The sun rose at {time}."),
-        LightReadingTemplate(text: "The sun rose at {time}, just {N} minutes after this walk started."),
+        LightReadingTemplate(text: "Your walk began {N} {unit} before sunrise. The sun rose at {time}."),
+        LightReadingTemplate(text: "The sun rose at {time}, just {N} {unit} after this walk started."),
         LightReadingTemplate(text: "You walked into sunrise. The sun cleared the horizon at {time}."),
     ]
 
     private static let sunsetPool: [LightReadingTemplate] = [
-        LightReadingTemplate(text: "The sun had set at {time}, {N} minutes before this walk began."),
+        LightReadingTemplate(text: "The sun had set at {time}, {N} {unit} before this walk began."),
         LightReadingTemplate(text: "You walked out of sunset. The sun dropped below the horizon at {time}."),
-        LightReadingTemplate(text: "This walk began {N} minutes after the sun went down at {time}."),
+        LightReadingTemplate(text: "This walk began {N} {unit} after the sun went down at {time}."),
     ]
 
     private static let twilight: [LightReadingTemplate] = [

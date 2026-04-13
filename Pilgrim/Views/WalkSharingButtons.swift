@@ -43,10 +43,15 @@ struct WalkSharingButtons: View {
             .background(Color.parchmentSecondary)
             .cornerRadius(Constants.UI.CornerRadius.normal)
             .id(shareVersion)
-            .sheet(isPresented: $showJourneySheet, onDismiss: { shareVersion += 1 }) {
+            .sheet(isPresented: $showJourneySheet, onDismiss: {
+                shareVersion += 1
+                onShare?()
+            }) {
                 WalkShareView(walk: walk)
             }
-            .sheet(item: $shareURL) { url in
+            .sheet(item: $shareURL, onDismiss: {
+                onShare?()
+            }) { url in
                 ShareSheet(items: [url])
             }
         }
@@ -62,7 +67,6 @@ struct WalkSharingButtons: View {
                 label: "Goshuin",
                 subtitle: "Share as image"
             ) {
-                onShare?()
                 isGenerating = true
                 let input = SealInput(walk: walk)
                 let suffix = Self.dateTimeFormatter.string(from: walk.startDate)
@@ -80,7 +84,6 @@ struct WalkSharingButtons: View {
                 label: "Etegami",
                 subtitle: "Share as postcard"
             ) {
-                onShare?()
                 isGenerating = true
                 let input = SealInput(walk: walk)
                 let suffix = Self.dateTimeFormatter.string(from: walk.startDate)
@@ -157,7 +160,6 @@ struct WalkSharingButtons: View {
     private var neverSharedSection: some View {
         VStack(spacing: Constants.UI.Padding.xs) {
             Button {
-                onShare?()
                 showJourneySheet = true
             } label: {
                 HStack(spacing: Constants.UI.Padding.small) {
@@ -237,8 +239,10 @@ struct WalkSharingButtons: View {
                         )
                     }
 
-                    if let shareURL = URL(string: cached.url) {
-                        ShareLink(item: shareURL) {
+                    if let url = URL(string: cached.url) {
+                        Button {
+                            shareURL = url
+                        } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "square.and.arrow.up")
                                 Text("Share")
@@ -252,7 +256,6 @@ struct WalkSharingButtons: View {
                             .foregroundColor(.parchment)
                             .cornerRadius(Constants.UI.CornerRadius.small)
                         }
-                        .simultaneousGesture(TapGesture().onEnded { onShare?() })
                     }
                 }
                 .padding(.top, Constants.UI.Padding.small)
@@ -316,7 +319,6 @@ struct WalkSharingButtons: View {
                 .padding(.horizontal, Constants.UI.Padding.big)
 
             Button {
-                onShare?()
                 showJourneySheet = true
             } label: {
                 Text("Share again")
