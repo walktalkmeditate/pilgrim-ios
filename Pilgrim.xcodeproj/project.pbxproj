@@ -264,6 +264,7 @@
 		A7FAA64A96429E4C49B70EB3 /* CairnService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9564A30CD3DE97895B7A42 /* CairnService.swift */; };
 		AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */; };
 		AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */; };
+		AA000002WALKLIGHTREADING /* WalkLightReadingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001WALKLIGHTREADING /* WalkLightReadingCard.swift */; };
 		AA0001010000000000000011 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000001 /* HomeView.swift */; };
 		AA0001010000000000000012 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000002 /* HomeViewModel.swift */; };
 		AA0001010000000000000013 /* WalkRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000003 /* WalkRowView.swift */; };
@@ -739,6 +740,7 @@
 		A8159CD04A05F3887CFD27E5 /* whisper-compassion-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-3.aac"; sourceTree = "<group>"; };
 		AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FootprintShape.swift; sourceTree = "<group>"; };
 		AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimLogoView.swift; sourceTree = "<group>"; };
+		AA000001WALKLIGHTREADING /* WalkLightReadingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkLightReadingCard.swift; sourceTree = "<group>"; };
 		AA0001010000000000000001 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AA0001010000000000000002 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		AA0001010000000000000003 /* WalkRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkRowView.swift; sourceTree = "<group>"; };
@@ -1407,6 +1409,7 @@
 				22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */,
 				22BC992C2941D9A800D9B1A5 /* PillView.swift */,
 				AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */,
+				AA000001WALKLIGHTREADING /* WalkLightReadingCard.swift */,
 				AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */,
 				22BC992E2941D9A800D9B1A5 /* ProgressView.swift */,
 				22BC99382941D9A800D9B1A5 /* WalkCard.swift */,
@@ -2331,6 +2334,7 @@
 				22834F8225422D8200057FEB /* HeartRateDataSampleInterface.swift in Sources */,
 				22BC993E2941D9A800D9B1A5 /* CardView.swift in Sources */,
 				AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */,
+				AA000002WALKLIGHTREADING /* WalkLightReadingCard.swift in Sources */,
 				AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */,
 				2226A3BF240C441700FF7A94 /* TextViewSetting.swift in Sources */,
 				22F0000D234A2055008CFAD2 /* Setting.swift in Sources */,
