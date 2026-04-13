@@ -75,6 +75,15 @@ struct WalkSummaryView: View {
             .scrollDismissesKeyboard(.interactively)
             .background(Color.parchment)
             .navigationBarTitleDisplayMode(.inline)
+            // Force the nav bar to paint a solid parchment background. Without
+            // this, SwiftUI's default "transparent at top, opaque on scroll"
+            // behavior leaks scroll content (transcription text, in practice)
+            // up behind the Done/title row, so a user scrolled to the
+            // recordings section sees fragments of the previous paragraph
+            // hovering above the title pill. Matching the body color hides
+            // content cleanly at the seam.
+            .toolbarBackground(Color.parchment, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(dateTitle)
