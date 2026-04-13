@@ -15,7 +15,7 @@ final class LightReadingTemplatesTests: XCTestCase {
         let knownPlaceholders: Set<String> = [
             "{N}", "{time}", "{minutes}", "{pct}", "{showerName}", "{zhr}",
             "{month}", "{year}", "{distanceKm}", "{phaseName}", "{marker}",
-            "{flavor}", "{eclipseDate}"
+            "{flavor}"
         ]
         for tier in LightReading.Tier.allCases {
             for template in LightReadingTemplates.templates(for: tier) {

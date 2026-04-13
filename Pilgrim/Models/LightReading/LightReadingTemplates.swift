@@ -32,7 +32,7 @@ enum LightReadingTemplates {
         LightReadingTemplate(text: "A lunar eclipse was in progress. The moon moved through Earth's shadow while you walked."),
         LightReadingTemplate(text: "The moon was partially eclipsed during this walk. A piece of Earth's shadow crossed its face."),
         LightReadingTemplate(text: "This walk coincided with a lunar eclipse. The moon dimmed to copper for {minutes} minutes."),
-        LightReadingTemplate(text: "Earth stood between the sun and moon while you walked. The eclipse reached its peak at {eclipseDate}."),
+        LightReadingTemplate(text: "Earth stood between the sun and moon while you walked. A lunar eclipse was unfolding overhead."),
     ]
 
     private static let supermoon: [LightReadingTemplate] = [
