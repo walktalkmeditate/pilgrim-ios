@@ -86,6 +86,7 @@ enum HapticPattern {
     case waypointDropped
     case whisperProximity
     case whisperPlaced
+    case placementFailed
     case cairnProximity
     case stonePlaced(tier: Int)
 
@@ -107,6 +108,18 @@ enum HapticPattern {
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.prepare()
             generator.impactOccurred()
+
+        case .placementFailed:
+            // A short, sharp double-tap — distinct from the gentle "placed"
+            // success haptic so a user with the phone in their pocket can
+            // feel the difference even without looking at the screen.
+            // Generic across whisper and stone placements; the on-screen
+            // banner carries the noun.
+            if !Self.playPlacementFailed() {
+                let generator = UINotificationFeedbackGenerator()
+                generator.prepare()
+                generator.notificationOccurred(.warning)
+            }
 
         case .cairnProximity:
             if !Self.playCairnProximity() {
@@ -133,6 +146,20 @@ enum HapticPattern {
             CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0),
             CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0.12),
             CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0.24)
+        ]
+        return HapticEngineHost.shared.play(events)
+    }
+
+    private static func playPlacementFailed() -> Bool {
+        // Two sharp, slightly firmer taps in quick succession. Higher
+        // sharpness than the success "placed" haptic and a tighter gap, so
+        // the body learns to read it as "something didn't take" without any
+        // visual cue.
+        let firm = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.55)
+        let sharp = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.85)
+        let events = [
+            CHHapticEvent(eventType: .hapticTransient, parameters: [firm, sharp], relativeTime: 0),
+            CHHapticEvent(eventType: .hapticTransient, parameters: [firm, sharp], relativeTime: 0.08)
         ]
         return HapticEngineHost.shared.play(events)
     }

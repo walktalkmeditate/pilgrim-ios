@@ -332,9 +332,6 @@ struct ActiveWalkView: View {
                 let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                 celestialSnapshot = CelestialCalculator.snapshot(for: Date(), system: system)
             }
-            if !WhisperPlayer.shared.allDownloaded {
-                WhisperPlayer.shared.downloadAll()
-            }
         }
     }
 
@@ -817,9 +814,15 @@ struct AudioWaveformView: View {
 extension ActiveWalkView {
 
     private func placeWhisper(whisper: WhisperDefinition, expiry: KanjiExpiryPicker.ExpiryDuration) {
-        guard let location = viewModel.currentLocation else { return }
-
-        HapticPattern.whisperPlaced.fire()
+        guard let location = viewModel.currentLocation else {
+            // Sheet has already dismissed by the time we land here, so a
+            // bare return looks identical to a successful placement. Fire
+            // the failure haptic + a "waiting for location" banner so the
+            // user knows to wait for GPS rather than retry blindly.
+            HapticPattern.placementFailed.fire()
+            proximityNotification = .placementUnavailable()
+            return
+        }
 
         Task {
             do {
@@ -831,6 +834,10 @@ extension ActiveWalkView {
                     expiryOption: expiry.apiValue
                 )
                 await MainActor.run {
+                    // Haptic fires AFTER server confirmation rather than
+                    // optimistically on tap, so a failed placement no
+                    // longer plays success-then-fail in sequence.
+                    HapticPattern.whisperPlaced.fire()
                     viewModel.whispersPlacedThisWalk += 1
                     WhisperPlayer.shared.play(whisper)
                     let localId = UUID().uuidString
@@ -848,16 +855,23 @@ extension ActiveWalkView {
                 }
             } catch {
                 print("[ActiveWalk] Whisper placement failed: \(error)")
+                await MainActor.run {
+                    HapticPattern.placementFailed.fire()
+                    proximityNotification = .whisperPlaceFailed()
+                }
             }
         }
     }
 
     private func placeStone() {
-        guard let location = viewModel.currentLocation else { return }
+        guard let location = viewModel.currentLocation else {
+            HapticPattern.placementFailed.fire()
+            proximityNotification = .placementUnavailable()
+            return
+        }
 
         let cairn = nearestCachedCairn()
         let tier = cairn?.tier.soundTier ?? 1
-        HapticPattern.stonePlaced(tier: tier).fire()
 
         Task {
             do {
@@ -866,6 +880,7 @@ extension ActiveWalkView {
                     longitude: location.longitude
                 )
                 await MainActor.run {
+                    HapticPattern.stonePlaced(tier: tier).fire()
                     viewModel.stonePlacedThisWalk = true
                     StonePlayer.shared.playForCount(result.stoneCount)
                     let nowISO = Self.isoFormatter.string(from: Date())
@@ -899,6 +914,10 @@ extension ActiveWalkView {
                 }
             } catch {
                 print("[ActiveWalk] Stone placement failed: \(error)")
+                await MainActor.run {
+                    HapticPattern.placementFailed.fire()
+                    proximityNotification = .stonePlaceFailed()
+                }
             }
         }
     }
@@ -923,7 +942,8 @@ extension ActiveWalkView {
             if let cached = GeoCacheService.shared.cachedWhispers.first(where: {
                 abs($0.latitude - coord.latitude) < 0.0001 && abs($0.longitude - coord.longitude) < 0.0001
             }),
-               let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
+               let category = cached.resolvedCategory,
+               let definition = WhisperManifestService.shared.placeableWhispers(for: category).randomElement() {
                 WhisperPlayer.shared.play(definition)
                 HapticPattern.whisperProximity.fire()
             }
@@ -953,7 +973,8 @@ extension ActiveWalkView {
             if UserPreferences.autoPlayWhisperOnProximity.value,
                UserPreferences.soundsEnabled.value {
                 if let cached = GeoCacheService.shared.cachedWhispers.first(where: { $0.id == whisperId }),
-                   let definition = WhisperCatalog.whisper(byId: cached.whisperId) {
+                   let category = cached.resolvedCategory,
+                   let definition = WhisperManifestService.shared.placeableWhispers(for: category).randomElement() {
                     WhisperPlayer.shared.play(definition)
                 }
             }

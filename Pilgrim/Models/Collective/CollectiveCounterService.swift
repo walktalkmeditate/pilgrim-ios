@@ -11,6 +11,19 @@ final class CollectiveCounterService: ObservableObject {
     private let pendingKey = "collectivePendingDelta"
     private let cachedStatsKey = "collectiveCachedStats"
 
+    /// How long a successful fetch suppresses subsequent fetches.
+    /// Settings is the only surface that calls `fetch()` on view
+    /// appearance, so without a TTL every settings open hits the
+    /// network. 216s is short enough that the counter still feels
+    /// alive between visits and long enough to absorb rapid
+    /// open/close. To bypass it (e.g. after a walk-end POST), set
+    /// `lastFetchedAt = nil` and call `fetch()` again — there is no
+    /// `force` flag, deliberately, so view code can't accidentally
+    /// defeat the gate.
+    private static let fetchTTL: TimeInterval = 216
+
+    private var lastFetchedAt: Date?
+
     private init() {
         loadCachedStats()
     }
@@ -51,12 +64,24 @@ final class CollectiveCounterService: ObservableObject {
     }
 
     func fetch() async {
+        if let last = lastFetchedAt, Date().timeIntervalSince(last) < Self.fetchTTL {
+            return
+        }
         guard let url = URL(string: baseURL) else { return }
+        // Bypass URLCache. The worker sends Cache-Control: max-age=10800
+        // (3 hours), so the default policy would serve cached responses
+        // for hours — including a fetch right after a walk POST, which
+        // is exactly the moment we want fresh data. The 216s in-memory
+        // TTL above is the only rate limiter we want.
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 10
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, _) = try await URLSession.shared.data(for: request)
             let decoded = try JSONDecoder().decode(CollectiveStats.self, from: data)
             await MainActor.run {
                 self.stats = decoded
+                self.lastFetchedAt = Date()
                 self.cacheStats(data)
                 self.checkMilestone(decoded.totalWalks)
             }
@@ -91,7 +116,20 @@ final class CollectiveCounterService: ObservableObject {
                         } else {
                             self.savePending(current)
                         }
+                        // Invalidate the TTL gate BEFORE attempting
+                        // the refetch. If the refetch fails (iOS
+                        // suspended the task because the user
+                        // pocketed their phone, network died, etc.),
+                        // the next call to fetch() — typically the
+                        // next Settings open — naturally hits the
+                        // network instead of being silently locked
+                        // into the pre-walk window for up to ~3.6
+                        // minutes. The refetch below is now a
+                        // best-effort optimization, not a
+                        // correctness requirement.
+                        self.lastFetchedAt = nil
                     }
+                    await self.fetch()
                 }
             }
         }

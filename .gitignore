@@ -103,3 +103,7 @@ backend/
 .idea/*
 !.idea/codeStyles/*
 .claude/settings.local.json
+
+# Wrangler / Node tooling artifacts (created when running wrangler from the repo)
+.wrangler/
+node_modules/

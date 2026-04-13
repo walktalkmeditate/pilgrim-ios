@@ -7,6 +7,7 @@ struct WhisperPlacementSheet: View {
     let onDismiss: () -> Void
 
     @ObservedObject private var whisperPlayer = WhisperPlayer.shared
+    @ObservedObject private var manifestService = WhisperManifestService.shared
     @State private var selectedCategory: WhisperCategory?
     @State private var selectedExpiry: KanjiExpiryPicker.ExpiryDuration = .sevenDays
     @State private var previewingCategory: WhisperCategory?
@@ -34,7 +35,7 @@ struct WhisperPlacementSheet: View {
 
                     ScrollView {
                         LazyVStack(spacing: 6) {
-                            ForEach(WhisperCategory.allCases, id: \.rawValue) { category in
+                            ForEach(manifestService.placeableCategories(), id: \.rawValue) { category in
                                 categoryRow(category)
                             }
                         }
@@ -45,7 +46,7 @@ struct WhisperPlacementSheet: View {
 
                 Button(action: {
                     guard let category = selectedCategory else { return }
-                    let whispers = WhisperCatalog.whispers(for: category)
+                    let whispers = manifestService.placeableWhispers(for: category)
                     guard let whisper = whispers.randomElement() else { return }
                     whisperPlayer.stop()
                     onPlace(whisper, selectedExpiry)
@@ -65,13 +66,12 @@ struct WhisperPlacementSheet: View {
 
             Spacer()
         }
-        .onAppear {
-            if !whisperPlayer.allDownloaded {
-                whisperPlayer.downloadAll()
-            }
-        }
         .onDisappear {
             whisperPlayer.stop()
+        }
+        .onChange(of: selectedCategory) { _, newValue in
+            guard let newValue else { return }
+            whisperPlayer.prefetchCategory(newValue)
         }
     }
 
@@ -87,7 +87,7 @@ struct WhisperPlacementSheet: View {
                         whisperPlayer.stop()
                         previewingCategory = nil
                     } else {
-                        let whispers = WhisperCatalog.whispers(for: category)
+                        let whispers = manifestService.whispers(for: category)
                         if let whisper = whispers.randomElement() {
                             whisperPlayer.preview(whisper)
                             previewingCategory = category
