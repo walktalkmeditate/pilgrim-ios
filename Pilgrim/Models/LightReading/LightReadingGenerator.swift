@@ -78,10 +78,11 @@ enum LightReadingGenerator {
     private static func evaluateSupermoon(features: Features, rng: inout SeededGenerator) -> LightReading? {
         guard let event = AstronomicalEvents.supermoon(near: features.walkDate) else { return nil }
         let template = pickTemplate(for: .supermoon, rng: &rng)
+        let distanceFormatted = event.distanceKm.formatted(.number.grouping(.automatic))
         let sentence = fillTemplate(template.text, values: [
             "month": monthName(for: event.date),
             "year": yearString(for: event.date),
-            "distanceKm": String(event.distanceKm),
+            "distanceKm": distanceFormatted,
             "pct": String(Int((features.illumination * 100).rounded()))
         ])
         return LightReading(sentence: sentence, tier: .supermoon, symbolName: "moon.stars.fill")
@@ -149,7 +150,7 @@ enum LightReadingGenerator {
         let isSunrise = sunriseDelta <= sunsetDelta
         let edge = isSunrise ? sunrise : sunset
         let delta = isSunrise ? sunriseDelta : sunsetDelta
-        let minutes = Int((delta / 60).rounded())
+        let minutes = max(1, Int((delta / 60).rounded()))
         let subPool = isSunrise ? LightReadingTemplates.sunriseTemplates() : LightReadingTemplates.sunsetTemplates()
         precondition(!subPool.isEmpty, "sunrise/sunset sub-pool empty")
         let template = subPool[Int(rng.next() % UInt64(subPool.count))]

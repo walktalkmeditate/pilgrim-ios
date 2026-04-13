@@ -94,7 +94,7 @@ enum LightReadingTemplates {
     ]
 
     private static let sunsetPool: [LightReadingTemplate] = [
-        LightReadingTemplate(text: "The sun had set at {time}, {N} minutes before this walk ended."),
+        LightReadingTemplate(text: "The sun had set at {time}, {N} minutes before this walk began."),
         LightReadingTemplate(text: "You walked out of sunset. The sun dropped below the horizon at {time}."),
         LightReadingTemplate(text: "This walk began {N} minutes after the sun went down at {time}."),
     ]

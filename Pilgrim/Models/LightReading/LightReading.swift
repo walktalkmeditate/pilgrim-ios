@@ -56,10 +56,18 @@ struct LightReading: Equatable {
     }
 }
 
-/// A simple seeded random number generator for deterministic template
-/// selection. Uses a linear congruential generator because we only need
-/// "different numbers for different seeds", not cryptographic quality.
-/// Constants are from Donald Knuth's MMIX LCG.
+/// A seeded linear congruential generator used exclusively by the
+/// light reading template picker. Deliberately NOT reusing the
+/// pre-existing `SeededRNG` in `Pilgrim/Models/SeededRNG.swift`
+/// because the light reading feature's core contract is "same walk
+/// produces the same reading forever" — if `SeededRNG`'s algorithm
+/// is ever changed, every historical light reading would shift, and
+/// users would see different text on walks they've already read.
+/// Keeping a dedicated generator isolates that contract: changes to
+/// `SeededRNG` cannot ripple into light readings.
+///
+/// Uses Knuth's MMIX constants (`6364136223846793005` multiplier,
+/// `1442695040888963407` increment).
 struct SeededGenerator: RandomNumberGenerator {
     private var state: UInt64
 

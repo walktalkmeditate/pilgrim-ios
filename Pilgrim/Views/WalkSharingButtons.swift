@@ -211,6 +211,7 @@ struct WalkSharingButtons: View {
 
                 HStack(spacing: Constants.UI.Padding.small) {
                     Button {
+                        onShare?()
                         UIPasteboard.general.string = cached.url
                         copiedToastGeneration += 1
                         let gen = copiedToastGeneration
@@ -251,6 +252,7 @@ struct WalkSharingButtons: View {
                             .foregroundColor(.parchment)
                             .cornerRadius(Constants.UI.CornerRadius.small)
                         }
+                        .simultaneousGesture(TapGesture().onEnded { onShare?() })
                     }
                 }
                 .padding(.top, Constants.UI.Padding.small)

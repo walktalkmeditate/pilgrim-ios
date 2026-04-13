@@ -35,3 +35,19 @@ final class WalkSharingTracker {
         Set(defaults.array(forKey: key) as? [String] ?? [])
     }
 }
+
+// MARK: - Historical backfill
+//
+// TODO(#backfill): Walks shared before this feature shipped have no entry in
+// WalkSharingTracker, so their Light Reading card won't reveal on re-visit
+// until the user taps a share action again.
+//
+// A launch-time backfill is not feasible here: ShareService stores cached
+// shares as individual UserDefaults keys keyed by "share:<UUID>" with no
+// central index, so enumerating them would require scanning the entire
+// UserDefaults domain — fragile and potentially slow on large installs.
+//
+// The v1 behaviour: all four share paths (Goshuin, Etegami, Copy, ShareLink)
+// now call onShare?(), so ANY share action on a historical walk will seed
+// the tracker going forward. The gap only affects users who shared before
+// this release AND do not share again — an acceptable V1 regression.

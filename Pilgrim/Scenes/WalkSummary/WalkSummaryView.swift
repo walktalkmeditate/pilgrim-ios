@@ -7,6 +7,7 @@ struct WalkSummaryView: View {
 
     let walk: WalkInterface
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var audioPlayer = AudioPlayerModel()
     @ObservedObject private var transcriptionService = TranscriptionService.shared
     @State private var transcriptions: [UUID: String] = [:]
@@ -73,7 +74,7 @@ struct WalkSummaryView: View {
                     detailsSection
                     if let reading = lightReading, hasRevealedLightReading {
                         WalkLightReadingCard(reading: reading)
-                            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                            .transition(reduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.97)))
                     }
                     shareCard
                 }
@@ -114,7 +115,9 @@ struct WalkSummaryView: View {
                 if UserPreferences.autoTranscribe.value && transcriptions.isEmpty {
                     pollForAutoTranscription()
                 }
-                lightReading = LightReadingGenerator.generate(for: walk)
+                if lightReading == nil {
+                    lightReading = LightReadingGenerator.generate(for: walk)
+                }
                 if let uuid = walk.uuid?.uuidString {
                     hasRevealedLightReading = sharingTracker.hasShared(walkUUID: uuid)
                 }
@@ -810,8 +813,12 @@ struct WalkSummaryView: View {
     private func markSharedAndReveal() {
         guard let uuid = walk.uuid?.uuidString else { return }
         sharingTracker.markShared(walkUUID: uuid)
-        withAnimation(.easeInOut(duration: 1.2)) {
+        if reduceMotion {
             hasRevealedLightReading = true
+        } else {
+            withAnimation(.easeInOut(duration: 1.2)) {
+                hasRevealedLightReading = true
+            }
         }
     }
 
