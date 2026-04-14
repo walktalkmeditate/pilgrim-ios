@@ -77,6 +77,28 @@ final class WalkPhotoMatcherTests: XCTestCase {
         XCTAssertTrue(result.isEmpty)
     }
 
+    func testFilter_dropsPhotoWithOnlyLatitude() {
+        let mid = Date(timeIntervalSince1970: 1700001800)
+        let result = WalkPhotoMatcher.filterCandidates(
+            sources: [source(creationDate: mid, latitude: 35.0116, longitude: nil)],
+            walkStartDate: walkStart,
+            walkEndDate: walkEnd,
+            pinnedIdentifiers: []
+        )
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testFilter_dropsPhotoWithOnlyLongitude() {
+        let mid = Date(timeIntervalSince1970: 1700001800)
+        let result = WalkPhotoMatcher.filterCandidates(
+            sources: [source(creationDate: mid, latitude: nil, longitude: 135.7681)],
+            walkStartDate: walkStart,
+            walkEndDate: walkEnd,
+            pinnedIdentifiers: []
+        )
+        XCTAssertTrue(result.isEmpty)
+    }
+
     func testFilter_dropsScreenshot() {
         let mid = Date(timeIntervalSince1970: 1700001800)
         let result = WalkPhotoMatcher.filterCandidates(
