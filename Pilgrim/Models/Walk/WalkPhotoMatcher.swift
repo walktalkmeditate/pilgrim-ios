@@ -3,12 +3,14 @@ import Photos
 
 /// Ephemeral candidate produced by `WalkPhotoMatcher`. Not persisted until the user pins it
 /// (at which point a `WalkPhoto` entity is created from the candidate's fields).
-public struct PhotoCandidate: Equatable {
+public struct PhotoCandidate: Equatable, Identifiable {
     public let localIdentifier: String
     public let capturedAt: Date
     public let capturedLat: Double
     public let capturedLng: Double
     public let isPinned: Bool
+
+    public var id: String { localIdentifier }
 }
 
 /// Input for the pure filter function. Strips `PHAsset` off the photo library side so the

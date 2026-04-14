@@ -38,9 +38,8 @@ struct PhotoReliquarySection: View {
             Text("Reliquary")
                 .font(Constants.Typography.heading)
                 .foregroundColor(.ink)
-            Text("\(candidates.count) photo\(candidates.count == 1 ? "" : "s") from this walk")
-                .font(Constants.Typography.caption)
-                .foregroundColor(.fog)
+                .padding(.horizontal, Constants.UI.Padding.normal)
+            PhotoCarouselView(candidates: candidates)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
