@@ -12,8 +12,8 @@ import SwiftUI
 struct PhotoReliquarySection: View {
 
     let walk: WalkInterface
+    @Binding var candidates: [PhotoCandidate]
 
-    @State private var candidates: [PhotoCandidate] = []
     @State private var isLoaded = false
 
     var body: some View {

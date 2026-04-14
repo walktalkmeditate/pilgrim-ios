@@ -29,6 +29,7 @@ struct WalkSummaryView: View {
     @State private var cameraDuration: TimeInterval = 0.4
     @State private var cachedSegments: [RouteSegment] = []
     @State private var cachedAnnotations: [PilgrimAnnotation] = []
+    @State private var photoCandidates: [PhotoCandidate] = []
     @State private var recentWalkSnippets: [WalkSnippet] = []
     @State private var revealPhase: RevealPhase = .hidden
     @State private var milestone: String?
@@ -48,7 +49,7 @@ struct WalkSummaryView: View {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     mapSection
-                    PhotoReliquarySection(walk: walk)
+                    PhotoReliquarySection(walk: walk, candidates: $photoCandidates)
                     intentionCard
                     elevationProfile
                     journeyQuote
@@ -244,6 +245,25 @@ struct WalkSummaryView: View {
         }
     }
 
+    private var combinedAnnotations: [PilgrimAnnotation] {
+        guard UserPreferences.walkReliquaryEnabled.value,
+              PermissionManager.standard.isPhotosGranted else {
+            return cachedAnnotations
+        }
+        let photoPins = photoCandidates
+            .filter { $0.isPinned }
+            .map { candidate in
+                PilgrimAnnotation(
+                    coordinate: CLLocationCoordinate2D(
+                        latitude: candidate.capturedLat,
+                        longitude: candidate.capturedLng
+                    ),
+                    kind: .photo(localIdentifier: candidate.localIdentifier)
+                )
+            }
+        return cachedAnnotations + photoPins
+    }
+
     private var mapSection: some View {
         Group {
             if !routeCoordinates.isEmpty {
@@ -251,7 +271,7 @@ struct WalkSummaryView: View {
                     isInteractive: revealPhase == .revealed,
                     showsUserLocation: false,
                     routeSegments: cachedSegments,
-                    pinAnnotations: cachedAnnotations,
+                    pinAnnotations: combinedAnnotations,
                     cameraCenter: $cameraCenter,
                     cameraZoom: $cameraZoom,
                     cameraBounds: cameraBounds,
