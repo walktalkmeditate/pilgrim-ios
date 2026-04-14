@@ -54,41 +54,51 @@ public enum WalkPhotoMatcher {
     /// to a `PhotoCandidateSource`, then delegates to `filterCandidates`. Requires Photos
     /// library read permission; caller must check `PermissionManager.standard.isPhotosGranted`
     /// before invoking.
+    ///
+    /// The PHAsset enumeration runs on a background queue so large photo libraries do not
+    /// block the caller. The `completion` closure is always invoked on the main thread —
+    /// callers can safely update UI from it.
     public static func findCandidates(
         for walk: WalkInterface,
         completion: @escaping ([PhotoCandidate]) -> Void
     ) {
-        let fetchOptions = PHFetchOptions()
-        fetchOptions.predicate = NSPredicate(
-            format: "creationDate >= %@ AND creationDate <= %@",
-            walk.startDate as NSDate,
-            walk.endDate as NSDate
-        )
-
-        let fetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
-
-        var sources: [PhotoCandidateSource] = []
-        sources.reserveCapacity(fetchResult.count)
-
-        fetchResult.enumerateObjects { asset, _, _ in
-            sources.append(PhotoCandidateSource(
-                localIdentifier: asset.localIdentifier,
-                creationDate: asset.creationDate,
-                latitude: asset.location?.coordinate.latitude,
-                longitude: asset.location?.coordinate.longitude,
-                isScreenshot: asset.mediaSubtypes.contains(.photoScreenshot)
-            ))
-        }
-
+        let startDate = walk.startDate
+        let endDate = walk.endDate
         let pinnedIdentifiers = Set(walk.walkPhotos.map { $0.localIdentifier })
 
-        let candidates = filterCandidates(
-            sources: sources,
-            walkStartDate: walk.startDate,
-            walkEndDate: walk.endDate,
-            pinnedIdentifiers: pinnedIdentifiers
-        )
+        DispatchQueue.global(qos: .userInitiated).async {
+            let fetchOptions = PHFetchOptions()
+            fetchOptions.predicate = NSPredicate(
+                format: "creationDate >= %@ AND creationDate <= %@",
+                startDate as NSDate,
+                endDate as NSDate
+            )
 
-        completion(candidates)
+            let fetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
+
+            var sources: [PhotoCandidateSource] = []
+            sources.reserveCapacity(fetchResult.count)
+
+            fetchResult.enumerateObjects { asset, _, _ in
+                sources.append(PhotoCandidateSource(
+                    localIdentifier: asset.localIdentifier,
+                    creationDate: asset.creationDate,
+                    latitude: asset.location?.coordinate.latitude,
+                    longitude: asset.location?.coordinate.longitude,
+                    isScreenshot: asset.mediaSubtypes.contains(.photoScreenshot)
+                ))
+            }
+
+            let candidates = filterCandidates(
+                sources: sources,
+                walkStartDate: startDate,
+                walkEndDate: endDate,
+                pinnedIdentifiers: pinnedIdentifiers
+            )
+
+            DispatchQueue.main.async {
+                completion(candidates)
+            }
+        }
     }
 }

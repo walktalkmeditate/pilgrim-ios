@@ -22,3 +22,4 @@
 "NSLocationWhenInUseUsageDescription" = "Pilgrim needs your location to track your walking route";
 "NSMotionUsageDescription" = "Pilgrim uses motion tracking to count your steps during walks";
 "NSMicrophoneUsageDescription" = "Pilgrim uses the microphone to record voice notes during your walks";
+"NSPhotoLibraryUsageDescription" = "Pilgrim shows photos you took along your walking routes, gathered into a reliquary for each walk. Photos are never uploaded or copied — they stay in Apple Photos, viewed only on your device.";

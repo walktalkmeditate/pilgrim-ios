@@ -10,6 +10,7 @@ struct PracticeCard: View {
     @State private var autoPlayWhisper = UserPreferences.autoPlayWhisperOnProximity.value
     @State private var walkReliquary = UserPreferences.walkReliquaryEnabled.value
     @State private var showPhotosDeniedNote = false
+    @State private var suppressReliquaryOnChange = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
@@ -80,12 +81,27 @@ struct PracticeCard: View {
                 description: "Find photos you took along each walk and pin them to the route. Photos stay in Apple Photos — never copied or uploaded.",
                 isOn: $walkReliquary
             ) { newValue in
+                // The denial path below programmatically flips `walkReliquary` back to false,
+                // which re-enters this onChange closure with `newValue == false`. Swallow that
+                // re-entry so the explicit-OFF branch does not stomp `showPhotosDeniedNote`.
+                if suppressReliquaryOnChange {
+                    suppressReliquaryOnChange = false
+                    return
+                }
+
                 if newValue {
                     showPhotosDeniedNote = false
                     PermissionManager.standard.checkPhotosPermission { granted in
+                        // Guard against a stale callback: if the user has since toggled off,
+                        // don't resurrect the ON state.
+                        guard walkReliquary else {
+                            UserPreferences.walkReliquaryEnabled.value = false
+                            return
+                        }
                         if granted {
                             UserPreferences.walkReliquaryEnabled.value = true
                         } else {
+                            suppressReliquaryOnChange = true
                             walkReliquary = false
                             UserPreferences.walkReliquaryEnabled.value = false
                             showPhotosDeniedNote = true
