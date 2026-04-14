@@ -4,9 +4,10 @@ import Photos
 /// Horizontal carousel of `PhotoCandidate` thumbnails for a walk's reliquary.
 ///
 /// One photo at a time can be in the "activated" state (long-pressed). While activated,
-/// a centered `mappin.circle.fill` icon overlays the thumbnail. Tapping the icon commits
-/// (or unpins) via the `onCommit` callback. Tapping the photo itself (not the icon)
-/// dismisses activation and routes to the full-screen preview via the `onPreview` callback.
+/// a centered `mappin.circle.fill` icon overlays the thumbnail; tapping that icon commits
+/// (or unpins) via the `onCommit` callback. Tapping the photo itself routes to the
+/// full-screen preview via the `onPreview` callback — both when activated (which also
+/// dismisses the activation) and when inactive (a plain tap-to-preview).
 ///
 /// Persistence happens upstream in `PhotoReliquarySection.commit(_:)` — the carousel only
 /// owns the activation/visual layer.
@@ -38,6 +39,15 @@ struct PhotoCarouselView: View {
         }
         .scrollPosition(id: $activePhotoID, anchor: .center)
         .scrollTargetBehavior(.viewAligned)
+        .onScrollPhaseChange { _, newPhase in
+            // The plan dictates that scrolling the carousel dismisses any active
+            // long-press activation. .interacting fires the moment the user starts
+            // a drag, so the activation goes away before the user even reaches a
+            // new item.
+            if newPhase == .interacting && activeID != nil {
+                activeID = nil
+            }
+        }
         .frame(height: PhotoThumbnailView.size + 8)
     }
 
@@ -103,9 +113,7 @@ struct PhotoThumbnailView: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActive)
             .contentShape(Rectangle())
             .onTapGesture {
-                if isActive {
-                    onPhotoTap()
-                }
+                onPhotoTap()
             }
             .onLongPressGesture(minimumDuration: 0.4) {
                 onLongPress()
@@ -168,7 +176,10 @@ struct PhotoThumbnailView: View {
             contentMode: .aspectFill,
             options: options
         ) { result, _ in
-            if let result {
+            // PHImageManager's resultHandler runs on an arbitrary serial queue when
+            // isSynchronous is false. Marshal to main before mutating @State.
+            guard let result else { return }
+            DispatchQueue.main.async {
                 self.image = result
             }
         }

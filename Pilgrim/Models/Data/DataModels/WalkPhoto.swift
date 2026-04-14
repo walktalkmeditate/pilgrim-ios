@@ -1,7 +1,7 @@
 import Foundation
 import CoreStore
 
-public typealias WalkPhoto = PilgrimV7.WorkoutPhoto
+public typealias WalkPhoto = PilgrimV7.WalkPhoto
 
 extension WalkPhoto: WalkPhotoInterface {
 

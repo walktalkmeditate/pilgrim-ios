@@ -22,6 +22,7 @@ struct PhotoPreviewSheet: View {
 
     @State private var image: UIImage?
     @State private var dragOffset: CGFloat = 0
+    @State private var hasCommitted = false
 
     var body: some View {
         ZStack {
@@ -74,6 +75,12 @@ struct PhotoPreviewSheet: View {
 
     private var pinButton: some View {
         Button(action: {
+            // The fullScreenCover dismiss animation leaves the button hit-testable
+            // for a few frames after the first tap. Without this guard, a fast
+            // double-tap would fire onCommit twice — pinning the photo and then
+            // immediately unpinning it before the sheet is gone.
+            guard !hasCommitted else { return }
+            hasCommitted = true
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
             onCommit()
             onDismiss()
@@ -128,7 +135,10 @@ struct PhotoPreviewSheet: View {
             contentMode: .aspectFit,
             options: options
         ) { result, _ in
-            if let result {
+            // PHImageManager's resultHandler runs on an arbitrary serial queue when
+            // isSynchronous is false. Marshal to main before mutating @State.
+            guard let result else { return }
+            DispatchQueue.main.async {
                 self.image = result
             }
         }

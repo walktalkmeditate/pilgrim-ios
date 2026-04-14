@@ -6,16 +6,16 @@ public enum PilgrimV7: DataModelProtocol {
     static let schema = CoreStoreSchema(
         modelVersion: PilgrimV7.identifier,
         entities: [
-            Entity<PilgrimV7.Workout>(PilgrimV7.Workout.identifier),
-            Entity<PilgrimV7.WorkoutPause>(PilgrimV7.WorkoutPause.identifier),
-            Entity<PilgrimV7.WorkoutEvent>(PilgrimV7.WorkoutEvent.identifier),
-            Entity<PilgrimV7.WorkoutRouteDataSample>(PilgrimV7.WorkoutRouteDataSample.identifier),
-            Entity<PilgrimV7.WorkoutHeartRateDataSample>(PilgrimV7.WorkoutHeartRateDataSample.identifier),
+            Entity<PilgrimV7.Walk>(PilgrimV7.Walk.identifier),
+            Entity<PilgrimV7.WalkPause>(PilgrimV7.WalkPause.identifier),
+            Entity<PilgrimV7.WalkEvent>(PilgrimV7.WalkEvent.identifier),
+            Entity<PilgrimV7.RouteDataSample>(PilgrimV7.RouteDataSample.identifier),
+            Entity<PilgrimV7.HeartRateDataSample>(PilgrimV7.HeartRateDataSample.identifier),
             Entity<PilgrimV7.Event>(PilgrimV7.Event.identifier),
             Entity<PilgrimV7.VoiceRecording>(PilgrimV7.VoiceRecording.identifier),
             Entity<PilgrimV7.ActivityInterval>(PilgrimV7.ActivityInterval.identifier),
             Entity<PilgrimV7.Waypoint>(PilgrimV7.Waypoint.identifier),
-            Entity<PilgrimV7.WorkoutPhoto>(PilgrimV7.WorkoutPhoto.identifier)
+            Entity<PilgrimV7.WalkPhoto>(PilgrimV7.WalkPhoto.identifier)
         ]
     )
 
@@ -25,7 +25,7 @@ public enum PilgrimV7: DataModelProtocol {
         entityMappings: [
             .transformEntity(
                 sourceEntity: PilgrimV6.Workout.identifier,
-                destinationEntity: PilgrimV7.Workout.identifier,
+                destinationEntity: PilgrimV7.Walk.identifier,
                 transformer: { (source: CustomSchemaMappingProvider.UnsafeSourceObject, create: () -> CustomSchemaMappingProvider.UnsafeDestinationObject) in
                     let dest = create()
                     dest.enumerateAttributes { (attr, srcAttr) in if let srcAttr { dest[attr] = source[srcAttr] } }
@@ -33,7 +33,7 @@ public enum PilgrimV7: DataModelProtocol {
             ),
             .transformEntity(
                 sourceEntity: PilgrimV6.WorkoutPause.identifier,
-                destinationEntity: PilgrimV7.WorkoutPause.identifier,
+                destinationEntity: PilgrimV7.WalkPause.identifier,
                 transformer: { (source: CustomSchemaMappingProvider.UnsafeSourceObject, create: () -> CustomSchemaMappingProvider.UnsafeDestinationObject) in
                     let dest = create()
                     dest.enumerateAttributes { (attr, srcAttr) in if let srcAttr { dest[attr] = source[srcAttr] } }
@@ -41,7 +41,7 @@ public enum PilgrimV7: DataModelProtocol {
             ),
             .transformEntity(
                 sourceEntity: PilgrimV6.WorkoutEvent.identifier,
-                destinationEntity: PilgrimV7.WorkoutEvent.identifier,
+                destinationEntity: PilgrimV7.WalkEvent.identifier,
                 transformer: { (source: CustomSchemaMappingProvider.UnsafeSourceObject, create: () -> CustomSchemaMappingProvider.UnsafeDestinationObject) in
                     let dest = create()
                     dest.enumerateAttributes { (attr, srcAttr) in if let srcAttr { dest[attr] = source[srcAttr] } }
@@ -49,7 +49,7 @@ public enum PilgrimV7: DataModelProtocol {
             ),
             .transformEntity(
                 sourceEntity: PilgrimV6.WorkoutRouteDataSample.identifier,
-                destinationEntity: PilgrimV7.WorkoutRouteDataSample.identifier,
+                destinationEntity: PilgrimV7.RouteDataSample.identifier,
                 transformer: { (source: CustomSchemaMappingProvider.UnsafeSourceObject, create: () -> CustomSchemaMappingProvider.UnsafeDestinationObject) in
                     let dest = create()
                     dest.enumerateAttributes { (attr, srcAttr) in if let srcAttr { dest[attr] = source[srcAttr] } }
@@ -57,7 +57,7 @@ public enum PilgrimV7: DataModelProtocol {
             ),
             .transformEntity(
                 sourceEntity: PilgrimV6.WorkoutHeartRateDataSample.identifier,
-                destinationEntity: PilgrimV7.WorkoutHeartRateDataSample.identifier,
+                destinationEntity: PilgrimV7.HeartRateDataSample.identifier,
                 transformer: { (source: CustomSchemaMappingProvider.UnsafeSourceObject, create: () -> CustomSchemaMappingProvider.UnsafeDestinationObject) in
                     let dest = create()
                     dest.enumerateAttributes { (attr, srcAttr) in if let srcAttr { dest[attr] = source[srcAttr] } }
@@ -95,7 +95,7 @@ public enum PilgrimV7: DataModelProtocol {
                     dest.enumerateAttributes { (attr, srcAttr) in if let srcAttr { dest[attr] = source[srcAttr] } }
                 }
             ),
-            .insertEntity(destinationEntity: PilgrimV7.WorkoutPhoto.identifier)
+            .insertEntity(destinationEntity: PilgrimV7.WalkPhoto.identifier)
         ]
     )
 
@@ -103,8 +103,8 @@ public enum PilgrimV7: DataModelProtocol {
         OutRunV1.self, OutRunV2.self, OutRunV3.self, OutRunV3to4.self, OutRunV4.self, PilgrimV1.self, PilgrimV2.self, PilgrimV3.self, PilgrimV4.self, PilgrimV5.self, PilgrimV6.self, PilgrimV7.self
     ]
 
-    // MARK: Workout
-    public final class Workout: CoreStoreObject, DataTypeProtocol {
+    // MARK: Walk
+    public final class Walk: CoreStoreObject, DataTypeProtocol {
 
         static let identifier = "Workout"
 
@@ -137,20 +137,20 @@ public enum PilgrimV7: DataModelProtocol {
 
         let _favicon = Value.Optional<String>("favicon")
 
-        let _heartRates = Relationship.ToManyOrdered<PilgrimV7.WorkoutHeartRateDataSample>("heartRates", inverse: { $0._workout })
-        let _routeData = Relationship.ToManyOrdered<PilgrimV7.WorkoutRouteDataSample>("routeData", inverse: { $0._workout })
-        let _pauses = Relationship.ToManyOrdered<PilgrimV7.WorkoutPause>("pauses", inverse: { $0._workout })
-        let _workoutEvents = Relationship.ToManyOrdered<PilgrimV7.WorkoutEvent>("workoutEvents", inverse: { $0._workout })
+        let _heartRates = Relationship.ToManyOrdered<PilgrimV7.HeartRateDataSample>("heartRates", inverse: { $0._workout })
+        let _routeData = Relationship.ToManyOrdered<PilgrimV7.RouteDataSample>("routeData", inverse: { $0._workout })
+        let _pauses = Relationship.ToManyOrdered<PilgrimV7.WalkPause>("pauses", inverse: { $0._workout })
+        let _workoutEvents = Relationship.ToManyOrdered<PilgrimV7.WalkEvent>("workoutEvents", inverse: { $0._workout })
         let _events = Relationship.ToManyUnordered<PilgrimV7.Event>("events", inverse: { $0._workouts })
         let _voiceRecordings = Relationship.ToManyOrdered<PilgrimV7.VoiceRecording>("voiceRecordings", inverse: { $0._workout })
         let _activityIntervals = Relationship.ToManyOrdered<PilgrimV7.ActivityInterval>("activityIntervals", inverse: { $0._workout })
         let _waypoints = Relationship.ToManyOrdered<PilgrimV7.Waypoint>("waypoints", inverse: { $0._workout })
-        let _walkPhotos = Relationship.ToManyOrdered<PilgrimV7.WorkoutPhoto>("walkPhotos", inverse: { $0._workout })
+        let _walkPhotos = Relationship.ToManyOrdered<PilgrimV7.WalkPhoto>("walkPhotos", inverse: { $0._workout })
 
     }
 
-    // MARK: WorkoutPause
-    public final class WorkoutPause: CoreStoreObject, DataTypeProtocol {
+    // MARK: WalkPause
+    public final class WalkPause: CoreStoreObject, DataTypeProtocol {
 
         static let identifier = "WorkoutPause"
 
@@ -159,12 +159,12 @@ public enum PilgrimV7: DataModelProtocol {
         let _endDate = Value.Required<Date>("endDate", initial: .init(timeIntervalSince1970: 0))
         let _pauseType = Value.Required<PilgrimV2.WorkoutPause.PauseType>("pauseType", initial: .manual)
 
-        let _workout = Relationship.ToOne<PilgrimV7.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV7.Walk>("workout")
 
     }
 
-    // MARK: WorkoutEvent
-    public final class WorkoutEvent: CoreStoreObject, DataTypeProtocol {
+    // MARK: WalkEvent
+    public final class WalkEvent: CoreStoreObject, DataTypeProtocol {
 
         static let identifier = "WorkoutEvent"
 
@@ -172,12 +172,12 @@ public enum PilgrimV7: DataModelProtocol {
         let _eventType = Value.Required<PilgrimV2.WorkoutEvent.EventType>("eventType", initial: .unknown)
         let _timestamp = Value.Required<Date>("timestamp", initial: .init(timeIntervalSince1970: 0), renamingIdentifier: "startDate")
 
-        let _workout = Relationship.ToOne<PilgrimV7.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV7.Walk>("workout")
 
     }
 
-    // MARK: WorkoutRouteDataSample
-    public final class WorkoutRouteDataSample: CoreStoreObject, DataTypeProtocol {
+    // MARK: RouteDataSample
+    public final class RouteDataSample: CoreStoreObject, DataTypeProtocol {
 
         static let identifier = "WorkoutRouteDataSample"
 
@@ -191,12 +191,12 @@ public enum PilgrimV7: DataModelProtocol {
         let _speed = Value.Required<Double>("speed", initial: -1)
         let _direction = Value.Required<Double>("direction", initial: -1)
 
-        let _workout = Relationship.ToOne<PilgrimV7.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV7.Walk>("workout")
 
     }
 
-    // MARK: WorkoutHeartRateDataSample
-    public final class WorkoutHeartRateDataSample: CoreStoreObject, DataTypeProtocol {
+    // MARK: HeartRateDataSample
+    public final class HeartRateDataSample: CoreStoreObject, DataTypeProtocol {
 
         static let identifier = "WorkoutHeartRateSample"
 
@@ -204,7 +204,7 @@ public enum PilgrimV7: DataModelProtocol {
         let _heartRate = Value.Required<Int>("heartRate", initial: 0)
         let _timestamp = Value.Required<Date>("timestamp", initial: .init(timeIntervalSince1970: 0))
 
-        let _workout = Relationship.ToOne<PilgrimV7.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV7.Walk>("workout")
 
     }
 
@@ -219,7 +219,7 @@ public enum PilgrimV7: DataModelProtocol {
         let _startDate = Value.Optional<Date>("startDate")
         let _endDate = Value.Optional<Date>("endDate")
 
-        let _workouts = Relationship.ToManyOrdered<PilgrimV7.Workout>("workouts")
+        let _workouts = Relationship.ToManyOrdered<PilgrimV7.Walk>("workouts")
 
     }
 
@@ -237,7 +237,7 @@ public enum PilgrimV7: DataModelProtocol {
         let _wordsPerMinute = Value.Optional<Double>("wordsPerMinute")
         let _isEnhanced = Value.Required<Bool>("isEnhanced", initial: false)
 
-        let _workout = Relationship.ToOne<PilgrimV7.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV7.Walk>("workout")
 
     }
 
@@ -251,7 +251,7 @@ public enum PilgrimV7: DataModelProtocol {
         let _startDate = Value.Required<Date>("startDate", initial: .init(timeIntervalSince1970: 0))
         let _endDate = Value.Required<Date>("endDate", initial: .init(timeIntervalSince1970: 0))
 
-        let _workout = Relationship.ToOne<PilgrimV7.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV7.Walk>("workout")
 
     }
 
@@ -267,14 +267,14 @@ public enum PilgrimV7: DataModelProtocol {
         let _icon = Value.Required<String>("icon", initial: "")
         let _timestamp = Value.Required<Date>("timestamp", initial: .init(timeIntervalSince1970: 0))
 
-        let _workout = Relationship.ToOne<PilgrimV7.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV7.Walk>("workout")
 
     }
 
-    // MARK: WorkoutPhoto
-    public final class WorkoutPhoto: CoreStoreObject, DataTypeProtocol {
+    // MARK: WalkPhoto
+    public final class WalkPhoto: CoreStoreObject, DataTypeProtocol {
 
-        static let identifier = "WorkoutPhoto"
+        static let identifier = "WalkPhoto"
 
         let _uuid = Value.Optional<UUID>("id")
         let _localIdentifier = Value.Required<String>("localIdentifier", initial: "")
@@ -283,7 +283,7 @@ public enum PilgrimV7: DataModelProtocol {
         let _capturedLng = Value.Required<Double>("capturedLng", initial: -1)
         let _keptAt = Value.Required<Date>("keptAt", initial: .init(timeIntervalSince1970: 0))
 
-        let _workout = Relationship.ToOne<PilgrimV7.Workout>("workout")
+        let _workout = Relationship.ToOne<PilgrimV7.Walk>("workout")
 
     }
 

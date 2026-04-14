@@ -22,7 +22,7 @@
 import Foundation
 import CoreLocation
 
-public typealias TempWalk = TempV4.Workout
+public typealias TempWalk = TempV4.Walk
 extension TempWalk: WalkInterface, Identifiable {
     public var id: UUID { uuid ?? UUID() }
 
@@ -62,7 +62,7 @@ extension TempWalk: WalkInterface, Identifiable {
     }
 }
 
-public typealias TempWalkPause = TempV4.WorkoutPause
+public typealias TempWalkPause = TempV4.WalkPause
 extension TempWalkPause: WalkPauseInterface {
     
     convenience init(from object: WalkPauseInterface) {
@@ -94,7 +94,7 @@ extension TempWalkPause: WalkPauseInterface {
     }
 }
 
-public typealias TempWalkEvent = TempV4.WorkoutEvent
+public typealias TempWalkEvent = TempV4.WalkEvent
 extension TempWalkEvent: WalkEventInterface {
     
     convenience init(from object: WalkEventInterface) {
@@ -107,7 +107,7 @@ extension TempWalkEvent: WalkEventInterface {
     }
 }
 
-public typealias TempRouteDataSample = TempV4.WorkoutRouteDataSample
+public typealias TempRouteDataSample = TempV4.RouteDataSample
 extension TempRouteDataSample: RouteDataSampleInterface {
     
     convenience init(from object: RouteDataSampleInterface) {
@@ -127,7 +127,7 @@ extension TempRouteDataSample: RouteDataSampleInterface {
     
 }
 
-public typealias TempHeartRateDataSample = TempV4.WorkoutHeartRateDataSample
+public typealias TempHeartRateDataSample = TempV4.HeartRateDataSample
 extension TempHeartRateDataSample: HeartRateDataSampleInterface {
     
     convenience init(from object: HeartRateDataSampleInterface) {

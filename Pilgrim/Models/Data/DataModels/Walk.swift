@@ -23,7 +23,7 @@ import Foundation
 import CoreLocation
 import CoreStore
 
-public typealias Walk = PilgrimV7.Workout
+public typealias Walk = PilgrimV7.Walk
 
 extension PilgrimV2.Workout {
 
