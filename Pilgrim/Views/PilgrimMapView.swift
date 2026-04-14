@@ -277,12 +277,7 @@ struct PilgrimMapView: UIViewRepresentable {
     private static func buildCircles(from pinAnnotations: [PilgrimAnnotation]) -> [CircleAnnotation] {
         var circles: [CircleAnnotation] = []
         for pin in pinAnnotations {
-            if case .endPoint = pin.kind {
-                var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
-                glow.circleRadius = 18
-                glow.circleColor = StyleColor(UIColor.stone)
-                glow.circleOpacity = 0.15
-                glow.circleStrokeWidth = 0
+            if let glow = glowCircle(for: pin) {
                 circles.append(glow)
             }
 
@@ -319,12 +314,40 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeColor = StyleColor(UIColor.stone)
                 circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
+            case .photo:
+                circle.circleRadius = 16
+                circle.circleColor = StyleColor(UIColor.stone)
+                circle.circleOpacity = 0.95
+                circle.circleStrokeColor = StyleColor(UIColor.stone)
+                circle.circleStrokeWidth = 2
+                circle.circleStrokeOpacity = 1.0
             case .waypoint, .whisper, .cairn:
                 continue
             }
             circles.append(circle)
         }
         return circles
+    }
+
+    private static func glowCircle(for pin: PilgrimAnnotation) -> CircleAnnotation? {
+        switch pin.kind {
+        case .endPoint:
+            var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
+            glow.circleRadius = 18
+            glow.circleColor = StyleColor(UIColor.stone)
+            glow.circleOpacity = 0.15
+            glow.circleStrokeWidth = 0
+            return glow
+        case .photo:
+            var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
+            glow.circleRadius = 22
+            glow.circleColor = StyleColor(UIColor.stone)
+            glow.circleOpacity = 0.18
+            glow.circleStrokeWidth = 0
+            return glow
+        default:
+            return nil
+        }
     }
 
     private static func buildPoints(from pinAnnotations: [PilgrimAnnotation]) -> [PointAnnotation] {
@@ -354,6 +377,13 @@ struct PilgrimMapView: UIViewRepresentable {
                 let iconSize: CGFloat = 12 + CGFloat(tier.rawValue)
                 if let image = renderSFSymbol("mountain.2", size: iconSize, color: .moss) {
                     point.image = .init(image: image, name: "cairn-\(tier.rawValue)")
+                }
+                point.iconSize = 1.0
+                points.append(point)
+            case .photo:
+                var point = PointAnnotation(coordinate: pin.coordinate)
+                if let image = renderSFSymbol("mappin.fill", size: 14, color: .parchment) {
+                    point.image = .init(image: image, name: "photo-pin")
                 }
                 point.iconSize = 1.0
                 points.append(point)
@@ -400,7 +430,7 @@ struct PilgrimMapView: UIViewRepresentable {
             var closest: (annotation: PilgrimAnnotation, distance: CLLocationDistance)?
             for pin in currentPinAnnotations {
                 switch pin.kind {
-                case .whisper, .cairn:
+                case .whisper, .cairn, .photo:
                     let pinLoc = CLLocation(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude)
                     let dist = tapLoc.distance(from: pinLoc)
                     if dist < 25, closest == nil || dist < closest!.distance {

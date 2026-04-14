@@ -14,6 +14,7 @@ struct PilgrimAnnotation: Identifiable {
         case endPoint
         case whisper(categoryColor: UIColor, isNearby: Bool)
         case cairn(stoneCount: Int, tier: CairnTier)
+        case photo(localIdentifier: String)
     }
 }
 
