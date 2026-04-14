@@ -578,6 +578,65 @@ struct DataManager {
         }
     }
 
+    // MARK: - Walk Photos
+
+    /// Creates a `WalkPhoto` entity linking a `PHAsset` (by `localIdentifier`) to the given
+    /// walk. Idempotent — a no-op if a `WalkPhoto` with the same `localIdentifier` is already
+    /// pinned to the walk. The photo's pixel data is never copied; only its identifier and
+    /// captured metadata.
+    public static func pinPhoto(
+        to walkID: UUID,
+        localIdentifier: String,
+        capturedAt: Date,
+        capturedLat: Double,
+        capturedLng: Double
+    ) {
+        dataStack.perform(asynchronous: { transaction in
+            guard let walk = transaction.edit(
+                queryObject(from: walkID, transaction: transaction) as Walk?
+            ) else { return }
+
+            let alreadyPinned = walk._walkPhotos.value.contains {
+                $0._localIdentifier.value == localIdentifier
+            }
+            guard !alreadyPinned else { return }
+
+            let photo = transaction.create(Into<WalkPhoto>())
+            photo._uuid .= UUID()
+            photo._localIdentifier .= localIdentifier
+            photo._capturedAt .= capturedAt
+            photo._capturedLat .= capturedLat
+            photo._capturedLng .= capturedLng
+            photo._keptAt .= Date()
+            photo._workout .= walk
+        }) { result in
+            if case .failure(let error) = result {
+                print("[DataManager] Failed to pin photo: \(error)")
+            }
+        }
+    }
+
+    /// Removes a `WalkPhoto` entity from the given walk. Idempotent — a no-op if no
+    /// `WalkPhoto` with the given `localIdentifier` is pinned. The underlying `PHAsset`
+    /// in Apple Photos is never touched.
+    public static func unpinPhoto(walkID: UUID, localIdentifier: String) {
+        dataStack.perform(asynchronous: { transaction in
+            guard let walk = transaction.edit(
+                queryObject(from: walkID, transaction: transaction) as Walk?
+            ) else { return }
+
+            if let existing = walk._walkPhotos.value.first(where: {
+                $0._localIdentifier.value == localIdentifier
+            }) {
+                transaction.delete(existing)
+            }
+        }) { result in
+            if case .failure(let error) = result {
+                print("[DataManager] Failed to unpin photo: \(error)")
+            }
+        }
+    }
+
     // MARK: - Event
     
     /**

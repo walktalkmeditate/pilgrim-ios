@@ -327,6 +327,7 @@
 		BBBB000000000000000016 /* WalkPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000015 /* WalkPhoto.swift */; };
 		BBBB000000000000000018 /* WalkPhotoMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000017 /* WalkPhotoMatcherTests.swift */; };
 		BBBB00000000000000001A /* WalkPhotoMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000019 /* WalkPhotoMatcher.swift */; };
+		BBBB00000000000000001C /* PhotoReliquarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000001B /* PhotoReliquarySection.swift */; };
 		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
@@ -803,6 +804,7 @@
 		BBBB000000000000000015 /* WalkPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkPhoto.swift; sourceTree = "<group>"; };
 		BBBB000000000000000017 /* WalkPhotoMatcherTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPhotoMatcherTests.swift; sourceTree = "<group>"; };
 		BBBB000000000000000019 /* WalkPhotoMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkPhotoMatcher.swift; sourceTree = "<group>"; };
+		BBBB00000000000000001B /* PhotoReliquarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoReliquarySection.swift; sourceTree = "<group>"; };
 		BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StonePlacementSheet.swift; sourceTree = "<group>"; };
 		BREATH000000000000000001 /* BreathTransitionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BreathTransitionView.swift; sourceTree = "<group>"; };
 		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1827,8 +1829,17 @@
 				C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */,
 				4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */,
+				BBBB00000000000000001D /* Reliquary */,
 			);
 			path = WalkSummary;
+			sourceTree = "<group>";
+		};
+		BBBB00000000000000001D /* Reliquary */ = {
+			isa = PBXGroup;
+			children = (
+				BBBB00000000000000001B /* PhotoReliquarySection.swift */,
+			);
+			path = Reliquary;
 			sourceTree = "<group>";
 		};
 		AA11BB22CC33DD44EE55FF66 /* Etegami */ = {
@@ -2565,6 +2576,7 @@
 				BBBB000000000000000008 /* Waypoint.swift in Sources */,
 				BBBB000000000000000016 /* WalkPhoto.swift in Sources */,
 				BBBB00000000000000001A /* WalkPhotoMatcher.swift in Sources */,
+				BBBB00000000000000001C /* PhotoReliquarySection.swift in Sources */,
 				BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */,
 				86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */,
 				52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */,

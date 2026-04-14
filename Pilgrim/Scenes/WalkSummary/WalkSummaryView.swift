@@ -48,6 +48,7 @@ struct WalkSummaryView: View {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     mapSection
+                    PhotoReliquarySection(walk: walk)
                     intentionCard
                     elevationProfile
                     journeyQuote
