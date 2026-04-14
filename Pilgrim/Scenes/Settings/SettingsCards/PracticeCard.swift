@@ -8,6 +8,8 @@ struct PracticeCard: View {
     @State private var isMetric = UserPreferences.distanceMeasurementType.safeValue == .kilometers
     @State private var contributeToCollective = UserPreferences.contributeToCollective.value
     @State private var autoPlayWhisper = UserPreferences.autoPlayWhisperOnProximity.value
+    @State private var walkReliquary = UserPreferences.walkReliquaryEnabled.value
+    @State private var showPhotosDeniedNote = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
@@ -72,8 +74,38 @@ struct PracticeCard: View {
             ) { newValue in
                 UserPreferences.autoPlayWhisperOnProximity.value = newValue
             }
+
+            settingToggle(
+                label: "Gather walk photos",
+                description: "Find photos you took along each walk and pin them to the route. Photos stay in Apple Photos — never copied or uploaded.",
+                isOn: $walkReliquary
+            ) { newValue in
+                if newValue {
+                    showPhotosDeniedNote = false
+                    PermissionManager.standard.checkPhotosPermission { granted in
+                        if granted {
+                            UserPreferences.walkReliquaryEnabled.value = true
+                        } else {
+                            walkReliquary = false
+                            UserPreferences.walkReliquaryEnabled.value = false
+                            showPhotosDeniedNote = true
+                        }
+                    }
+                } else {
+                    UserPreferences.walkReliquaryEnabled.value = false
+                    showPhotosDeniedNote = false
+                }
+            }
+
+            if showPhotosDeniedNote {
+                Text("Photo access was declined. To enable the reliquary, grant Photo Library access in iOS Settings → Pilgrim.")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+                    .padding(.top, 4)
+            }
         }
         .settingsCard()
         .animation(.easeInOut(duration: 0.2), value: celestialAwareness)
+        .animation(.easeInOut(duration: 0.2), value: showPhotosDeniedNote)
     }
 }

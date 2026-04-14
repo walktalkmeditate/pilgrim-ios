@@ -23,6 +23,7 @@ import Foundation
 import CoreLocation
 import CoreMotion
 import AVFoundation
+import Photos
 
 class PermissionManager: NSObject, CLLocationManagerDelegate {
 
@@ -127,6 +128,28 @@ class PermissionManager: NSObject, CLLocationManagerDelegate {
                     DispatchQueue.main.async { closure(true) }
                 default:
                     DispatchQueue.main.async { closure(false) }
+                }
+            }
+        default:
+            DispatchQueue.main.async { closure(false) }
+        }
+    }
+
+    // MARK: Photos
+
+    var isPhotosGranted: Bool {
+        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        return status == .authorized || status == .limited
+    }
+
+    func checkPhotosPermission(closure: @escaping (Bool) -> Void) {
+        switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
+        case .authorized, .limited:
+            DispatchQueue.main.async { closure(true) }
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
+                DispatchQueue.main.async {
+                    closure(status == .authorized || status == .limited)
                 }
             }
         default:
