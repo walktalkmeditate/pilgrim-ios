@@ -78,6 +78,14 @@ struct PilgrimWalk: Codable {
     let isRace: Bool
     let isUserModified: Bool
     let finishedRecording: Bool
+    /// Photos pinned to this walk, populated only when the user opts in at
+    /// export time. `nil` means "opted out" (or pre-reliquary `.pilgrim`
+    /// format) — the JSON key is omitted entirely so byte-equality with the
+    /// old format is preserved. An empty array means "opted in, no pinned
+    /// photos". The `PilgrimPhoto.embeddedPhotoFilename` of each entry is
+    /// populated by the builder when the photo bytes are actually written
+    /// into the archive's `photos/` directory.
+    let photos: [PilgrimPhoto]?
 }
 
 struct PilgrimStats: Codable {
@@ -222,6 +230,21 @@ struct PilgrimVoiceRecording: Codable {
 struct PilgrimHeartRate: Codable {
     let timestamp: Date
     let heartRate: Int
+}
+
+// MARK: - Photo
+
+/// A walk photo the user pinned to the reliquary. Only written to the export
+/// when the user opts in at export time. `embeddedPhotoFilename` is the name
+/// of the file under `photos/` in the ZIP archive — nil if the photo bytes
+/// are absent (e.g. the source PHAsset could not be resolved at export time).
+struct PilgrimPhoto: Codable {
+    let localIdentifier: String
+    let capturedAt: Date
+    let capturedLat: Double
+    let capturedLng: Double
+    let keptAt: Date
+    let embeddedPhotoFilename: String?
 }
 
 // MARK: - Workout Events
