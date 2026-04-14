@@ -56,7 +56,8 @@ extension TempWalk: WalkInterface, Identifiable {
             voiceRecordings: object.voiceRecordings.map { .init(from: $0) },
             activityIntervals: object.activityIntervals.map { .init(from: $0) },
             favicon: object.favicon,
-            waypoints: object.waypoints.map { TempV4.Waypoint(uuid: $0.uuid, latitude: $0.latitude, longitude: $0.longitude, label: $0.label, icon: $0.icon, timestamp: $0.timestamp) }
+            waypoints: object.waypoints.map { TempV4.Waypoint(uuid: $0.uuid, latitude: $0.latitude, longitude: $0.longitude, label: $0.label, icon: $0.icon, timestamp: $0.timestamp) },
+            walkPhotos: object.walkPhotos.map { TempV4.WalkPhoto(uuid: $0.uuid, localIdentifier: $0.localIdentifier, capturedAt: $0.capturedAt, capturedLat: $0.capturedLat, capturedLng: $0.capturedLng, keptAt: $0.keptAt) }
         )
     }
 }
@@ -165,6 +166,21 @@ extension TempWaypoint {
             label: object.label,
             icon: object.icon,
             timestamp: object.timestamp
+        )
+    }
+}
+
+public typealias TempWalkPhoto = TempV4.WalkPhoto
+extension TempWalkPhoto {
+
+    convenience init(from object: WalkPhotoInterface) {
+        self.init(
+            uuid: object.uuid,
+            localIdentifier: object.localIdentifier,
+            capturedAt: object.capturedAt,
+            capturedLat: object.capturedLat,
+            capturedLng: object.capturedLng,
+            keptAt: object.keptAt
         )
     }
 }

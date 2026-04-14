@@ -52,7 +52,7 @@ struct DataManager {
      - parameter migration: the closure being called on the event of a migration happening, including a `Progress` object indicating the progress of the migration
      - warning: If this method fails it does so in a fatal error, the app will crash as a result.
      */
-    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV6.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
+    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV7.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -319,6 +319,17 @@ struct DataManager {
             waypoint._timestamp .= tempWaypoint.timestamp
             waypoint._workout .= walk
         }
+
+        for tempPhoto in source.walkPhotos {
+            let photo = transaction.create(Into<WalkPhoto>())
+            photo._uuid .= tempPhoto.uuid ?? UUID()
+            photo._localIdentifier .= tempPhoto.localIdentifier
+            photo._capturedAt .= tempPhoto.capturedAt
+            photo._capturedLat .= tempPhoto.capturedLat
+            photo._capturedLng .= tempPhoto.capturedLng
+            photo._keptAt .= tempPhoto.keptAt
+            photo._workout .= walk
+        }
     }
 
     private static func persistNewRelatedEntities(
@@ -396,6 +407,17 @@ struct DataManager {
             waypoint._icon .= tempWaypoint.icon
             waypoint._timestamp .= tempWaypoint.timestamp
             waypoint._workout .= walk
+        }
+
+        for tempPhoto in source.walkPhotos where tempPhoto.uuid == nil {
+            let photo = transaction.create(Into<WalkPhoto>())
+            photo._uuid .= tempPhoto.uuid ?? UUID()
+            photo._localIdentifier .= tempPhoto.localIdentifier
+            photo._capturedAt .= tempPhoto.capturedAt
+            photo._capturedLat .= tempPhoto.capturedLat
+            photo._capturedLng .= tempPhoto.capturedLng
+            photo._keptAt .= tempPhoto.keptAt
+            photo._workout .= walk
         }
     }
 
@@ -813,6 +835,7 @@ struct DataManager {
             try transaction.deleteAll(From<VoiceRecording>())
             try transaction.deleteAll(From<ActivityInterval>())
             try transaction.deleteAll(From<Waypoint>())
+            try transaction.deleteAll(From<WalkPhoto>())
             try transaction.deleteAll(From<Event>())
 
         }) { (result) in

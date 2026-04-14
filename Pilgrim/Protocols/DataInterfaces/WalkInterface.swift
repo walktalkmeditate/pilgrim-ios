@@ -78,6 +78,8 @@ public protocol WalkInterface: DataInterface {
     var favicon: String? { get }
     /// A reference to `Waypoint`s associated with this walk.
     var waypoints: [WaypointInterface] { get }
+    /// A reference to pinned `WalkPhoto`s associated with this walk.
+    var walkPhotos: [WalkPhotoInterface] { get }
     var weatherCondition: String? { get }
     var weatherTemperature: Double? { get }
     var weatherHumidity: Double? { get }
@@ -114,6 +116,7 @@ public extension WalkInterface {
     var activityIntervals: [ActivityIntervalInterface] { [] }
     var favicon: String? { nil }
     var waypoints: [WaypointInterface] { [] }
+    var walkPhotos: [WalkPhotoInterface] { [] }
     var weatherCondition: String? { nil }
     var weatherTemperature: Double? { nil }
     var weatherHumidity: Double? { nil }

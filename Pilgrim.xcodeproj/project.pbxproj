@@ -320,6 +320,11 @@
 		BBBB000000000000000008 /* Waypoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000007 /* Waypoint.swift */; };
 		BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000009 /* WaypointMarkingSheet.swift */; };
 		BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000B /* WaypointCodableTests.swift */; };
+		BBBB00000000000000000E /* WalkPhotoCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000D /* WalkPhotoCodableTests.swift */; };
+		BBBB000000000000000010 /* WalkPhotoInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000F /* WalkPhotoInterface.swift */; };
+		BBBB000000000000000012 /* TempWalkPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000011 /* TempWalkPhoto.swift */; };
+		BBBB000000000000000014 /* PilgrimV7.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000013 /* PilgrimV7.swift */; };
+		BBBB000000000000000016 /* WalkPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000015 /* WalkPhoto.swift */; };
 		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
@@ -789,6 +794,11 @@
 		BBBB000000000000000007 /* Waypoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Waypoint.swift; sourceTree = "<group>"; };
 		BBBB000000000000000009 /* WaypointMarkingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointMarkingSheet.swift; sourceTree = "<group>"; };
 		BBBB00000000000000000B /* WaypointCodableTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WaypointCodableTests.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000D /* WalkPhotoCodableTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPhotoCodableTests.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000F /* WalkPhotoInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkPhotoInterface.swift; sourceTree = "<group>"; };
+		BBBB000000000000000011 /* TempWalkPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempWalkPhoto.swift; sourceTree = "<group>"; };
+		BBBB000000000000000013 /* PilgrimV7.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV7.swift; sourceTree = "<group>"; };
+		BBBB000000000000000015 /* WalkPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkPhoto.swift; sourceTree = "<group>"; };
 		BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StonePlacementSheet.swift; sourceTree = "<group>"; };
 		BREATH000000000000000001 /* BreathTransitionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BreathTransitionView.swift; sourceTree = "<group>"; };
 		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1031,6 +1041,7 @@
 				F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */,
 				A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */,
 				BBBB000000000000000005 /* PilgrimV6.swift */,
+				BBBB000000000000000013 /* PilgrimV7.swift */,
 			);
 			path = Versions;
 			sourceTree = "<group>";
@@ -1072,6 +1083,7 @@
 				22834F72254220FC00057FEB /* WalkPauseInterface.swift */,
 				22834F762542236000057FEB /* WalkEventInterface.swift */,
 				BBBB000000000000000001 /* WaypointInterface.swift */,
+				BBBB00000000000000000F /* WalkPhotoInterface.swift */,
 				22834F8525422E6900057FEB /* RouteDataSampleInterface.swift */,
 				22834F8125422D8200057FEB /* HeartRateDataSampleInterface.swift */,
 				227C690625423294000458BC /* EventInterface.swift */,
@@ -1104,6 +1116,7 @@
 				228CDFF92577C66B0023E8F7 /* Computation.swift */,
 				AA00020100000000000001 /* VoiceRecording.swift */,
 				BBBB000000000000000007 /* Waypoint.swift */,
+				BBBB000000000000000015 /* WalkPhoto.swift */,
 			);
 			path = DataModels;
 			sourceTree = "<group>";
@@ -1163,6 +1176,7 @@
 				22A5D03225C1AB2200C30786 /* TempV3.swift */,
 				22A5D03525C1ABDA00C30786 /* TempV4.swift */,
 				BBBB000000000000000003 /* TempWaypoint.swift */,
+				BBBB000000000000000011 /* TempWalkPhoto.swift */,
 			);
 			path = Versions;
 			sourceTree = "<group>";
@@ -1530,6 +1544,7 @@
 				AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */,
 				AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */,
 				BBBB00000000000000000B /* WaypointCodableTests.swift */,
+				BBBB00000000000000000D /* WalkPhotoCodableTests.swift */,
 				BB00CC010000000000000002 /* WelcomeViewModelTests.swift */,
 				PERM000100000004 /* PermissionsViewModelTests.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */,
@@ -2536,9 +2551,13 @@
 				CC00000100000000ABOUTV02 /* AboutView.swift in Sources */,
 				CC00000100000000SAFARV02 /* SafariView.swift in Sources */,
 				BBBB000000000000000002 /* WaypointInterface.swift in Sources */,
+				BBBB000000000000000010 /* WalkPhotoInterface.swift in Sources */,
 				BBBB000000000000000004 /* TempWaypoint.swift in Sources */,
+				BBBB000000000000000012 /* TempWalkPhoto.swift in Sources */,
 				BBBB000000000000000006 /* PilgrimV6.swift in Sources */,
+				BBBB000000000000000014 /* PilgrimV7.swift in Sources */,
 				BBBB000000000000000008 /* Waypoint.swift in Sources */,
+				BBBB000000000000000016 /* WalkPhoto.swift in Sources */,
 				BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */,
 				86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */,
 				52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */,
@@ -2628,6 +2647,7 @@
 				AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */,
 				AAAA000000000000000000F3 /* IntentionHistoryStoreTests.swift in Sources */,
 				BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */,
+				BBBB00000000000000000E /* WalkPhotoCodableTests.swift in Sources */,
 				BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */,
 				PERM000100000005 /* PermissionsViewModelTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */,

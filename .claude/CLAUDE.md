@@ -80,6 +80,7 @@ When adding dependencies, check if they use required-reason APIs. If the depende
 - **DataManager.deleteAll**: Errors must propagate (throw, not catch) so CoreStore rolls back. Never delete audio files from disk unless the database transaction committed successfully.
 - **Computation.calculateDurationData**: `activeDuration` is clamped to `max(0, ...)`. Consumers (WalkStats) must guard against zero `activeDuration` to avoid division by zero.
 - **SoundscapePlayer**: Always reset `isPlaying`, `currentAsset`, and `activePlayer` in error paths. Always stop `fadingOutPlayer` in `stop()`.
+- **Forward-only schema migrations** (`feat/walk-reliquary` only): this branch contains a `PilgrimV6 → PilgrimV7` CoreStore migration. CoreData/CoreStore migrations are one-way — once a database has been migrated, going back to a build that only knows the older schema will throw "incompatible store version" and the app will fail to launch. Recovery requires deleting and reinstalling the app, which wipes all walks. **Do not install this branch on devices with real data until the feature ships.** Test on a dedicated simulator only. Export real walks via Settings → Data → Export My Data before any real-device testing as a disaster-recovery snapshot.
 
 ## Key Constraints
 
