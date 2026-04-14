@@ -3,49 +3,135 @@ import Photos
 
 /// Horizontal carousel of `PhotoCandidate` thumbnails for a walk's reliquary.
 ///
-/// Pinned candidates display a small `mappin.fill` badge in the top-right corner.
-/// Stage 4c renders thumbnails and badges only — long-press activation and tap-to-preview
-/// gestures land in 4d/4f.
+/// One photo at a time can be in the "activated" state (long-pressed). While activated,
+/// a centered `mappin.circle.fill` icon overlays the thumbnail. Tapping the icon commits
+/// (or unpins). Tapping the photo itself (not the icon) dismisses activation and routes
+/// to the full-screen preview via the `onPreview` callback.
+///
+/// Optimistic state: pin/unpin updates the bound `candidates` immediately for instant
+/// visual feedback; the `DataManager` persistence happens asynchronously in the background.
 struct PhotoCarouselView: View {
 
-    let candidates: [PhotoCandidate]
+    @Binding var candidates: [PhotoCandidate]
+    let walkID: UUID
+    var onPreview: (PhotoCandidate) -> Void = { _ in }
+
+    @State private var activeID: String?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: Constants.UI.Padding.small) {
                 ForEach(candidates) { candidate in
-                    PhotoThumbnailView(candidate: candidate)
+                    PhotoThumbnailView(
+                        candidate: candidate,
+                        isActive: activeID == candidate.localIdentifier,
+                        onLongPress: { activate(candidate) },
+                        onPinTap: { commit(candidate) },
+                        onPhotoTap: { dismissAndPreview(candidate) }
+                    )
                 }
             }
             .padding(.horizontal, Constants.UI.Padding.normal)
         }
-        .frame(height: PhotoThumbnailView.size)
+        .frame(height: PhotoThumbnailView.size + 8)
+    }
+
+    private func activate(_ candidate: PhotoCandidate) {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        activeID = candidate.localIdentifier
+    }
+
+    private func commit(_ candidate: PhotoCandidate) {
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        activeID = nil
+
+        guard let index = candidates.firstIndex(where: {
+            $0.localIdentifier == candidate.localIdentifier
+        }) else { return }
+
+        let willBePinned = !candidates[index].isPinned
+
+        // Optimistic local update so the UI flips immediately.
+        candidates[index] = PhotoCandidate(
+            localIdentifier: candidate.localIdentifier,
+            capturedAt: candidate.capturedAt,
+            capturedLat: candidate.capturedLat,
+            capturedLng: candidate.capturedLng,
+            isPinned: willBePinned
+        )
+
+        if willBePinned {
+            DataManager.pinPhoto(
+                to: walkID,
+                localIdentifier: candidate.localIdentifier,
+                capturedAt: candidate.capturedAt,
+                capturedLat: candidate.capturedLat,
+                capturedLng: candidate.capturedLng
+            )
+        } else {
+            DataManager.unpinPhoto(walkID: walkID, localIdentifier: candidate.localIdentifier)
+        }
+    }
+
+    private func dismissAndPreview(_ candidate: PhotoCandidate) {
+        activeID = nil
+        onPreview(candidate)
     }
 }
 
 /// A single thumbnail in the reliquary carousel. Loads its image asynchronously from
-/// PhotoKit using the candidate's `localIdentifier`. Shows a pinned-badge overlay if the
-/// candidate has been committed as a `WalkPhoto`.
+/// PhotoKit using the candidate's `localIdentifier`.
+///
+/// Three visual states:
+///   - inactive + unpinned: just the thumbnail
+///   - inactive + pinned: thumbnail with a small `mappin.fill` badge in the top-right corner
+///   - active: thumbnail scaled up with a centered pin icon overlay (pin or unpin variant
+///     depending on current state). Tapping the icon commits; tapping the photo dismisses
+///     activation and routes to the preview.
 struct PhotoThumbnailView: View {
 
     static let size: CGFloat = 88
     private static let cornerRadius: CGFloat = 8
     private static let badgeInset: CGFloat = 4
+    private static let activeScale: CGFloat = 1.05
+    private static let centerIconSize: CGFloat = 32
+    private static let centerIconBackgroundSize: CGFloat = 44
 
     let candidate: PhotoCandidate
+    let isActive: Bool
+    var onLongPress: () -> Void = {}
+    var onPinTap: () -> Void = {}
+    var onPhotoTap: () -> Void = {}
 
     @State private var image: UIImage?
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            thumbnail
-            if candidate.isPinned {
-                pinnedBadge
+        thumbnail
+            .frame(width: Self.size, height: Self.size)
+            .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
+            .overlay(alignment: .topTrailing) {
+                if !isActive && candidate.isPinned {
+                    pinnedBadge
+                        .padding(Self.badgeInset)
+                }
             }
-        }
-        .frame(width: Self.size, height: Self.size)
-        .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
-        .onAppear { loadImage() }
+            .overlay {
+                if isActive {
+                    centeredPinButton
+                }
+            }
+            .scaleEffect(isActive ? Self.activeScale : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActive)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if isActive {
+                    onPhotoTap()
+                }
+            }
+            .onLongPressGesture(minimumDuration: 0.4) {
+                onLongPress()
+            }
+            .onAppear { loadImage() }
     }
 
     @ViewBuilder
@@ -68,7 +154,18 @@ struct PhotoThumbnailView: View {
             .padding(5)
             .background(Color.stone)
             .clipShape(Circle())
-            .padding(Self.badgeInset)
+    }
+
+    private var centeredPinButton: some View {
+        Button(action: onPinTap) {
+            Image(systemName: candidate.isPinned ? "mappin.slash.circle.fill" : "mappin.circle.fill")
+                .font(.system(size: Self.centerIconSize, weight: .semibold))
+                .foregroundColor(.stone)
+                .frame(width: Self.centerIconBackgroundSize, height: Self.centerIconBackgroundSize)
+                .background(Color.parchment.opacity(0.85))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func loadImage() {

@@ -39,7 +39,9 @@ struct PhotoReliquarySection: View {
                 .font(Constants.Typography.heading)
                 .foregroundColor(.ink)
                 .padding(.horizontal, Constants.UI.Padding.normal)
-            PhotoCarouselView(candidates: candidates)
+            if let walkID = walk.uuid {
+                PhotoCarouselView(candidates: $candidates, walkID: walkID)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
