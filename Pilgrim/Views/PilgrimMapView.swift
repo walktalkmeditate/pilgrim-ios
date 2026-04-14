@@ -12,6 +12,10 @@ struct PilgrimMapView: UIViewRepresentable {
     var routeSegments: [RouteSegment] = []
     var pinAnnotations: [PilgrimAnnotation] = []
     var onAnnotationTap: ((PilgrimAnnotation) -> Void)?
+    /// When non-nil, the photo pin matching this `localIdentifier` is rendered with a
+    /// brighter highlighted halo. Used by the reliquary to keep the carousel and the map
+    /// visually synchronized.
+    var activePhotoID: String?
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     var cameraBounds: MapCameraBounds?
@@ -29,6 +33,7 @@ struct PilgrimMapView: UIViewRepresentable {
         routeSegments: [RouteSegment] = [],
         pinAnnotations: [PilgrimAnnotation] = [],
         onAnnotationTap: ((PilgrimAnnotation) -> Void)? = nil,
+        activePhotoID: String? = nil,
         cameraCenter: Binding<CLLocationCoordinate2D?> = .constant(nil),
         cameraZoom: Binding<CGFloat> = .constant(14),
         cameraBounds: MapCameraBounds? = nil,
@@ -41,6 +46,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self.routeSegments = routeSegments
         self.pinAnnotations = pinAnnotations
         self.onAnnotationTap = onAnnotationTap
+        self.activePhotoID = activePhotoID
         self._cameraCenter = cameraCenter
         self._cameraZoom = cameraZoom
         self.cameraBounds = cameraBounds
@@ -80,7 +86,7 @@ struct PilgrimMapView: UIViewRepresentable {
             coordinator.circleManager = nil
             coordinator.pointManager = nil
             Self.applyRouteSource(coordinator.pendingSegments, on: mapView, coordinator: coordinator)
-            Self.applyAnnotations(coordinator.pendingAnnotations, on: mapView, coordinator: coordinator)
+            Self.applyAnnotations(coordinator.pendingAnnotations, activePhotoID: coordinator.pendingActivePhotoID, on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
         context.coordinator.mapView = mapView
@@ -90,6 +96,7 @@ struct PilgrimMapView: UIViewRepresentable {
     func updateUIView(_ mapView: MBMapView, context: Context) {
         context.coordinator.pendingSegments = routeSegments
         context.coordinator.pendingAnnotations = pinAnnotations
+        context.coordinator.pendingActivePhotoID = activePhotoID
         context.coordinator.onAnnotationTap = onAnnotationTap
         context.coordinator.currentPinAnnotations = pinAnnotations
 
@@ -111,7 +118,7 @@ struct PilgrimMapView: UIViewRepresentable {
         }
 
         Self.applyRouteSource(routeSegments, on: mapView, coordinator: context.coordinator)
-        Self.applyAnnotations(pinAnnotations, on: mapView, coordinator: context.coordinator)
+        Self.applyAnnotations(pinAnnotations, activePhotoID: activePhotoID, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
             let padding = UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
@@ -244,7 +251,7 @@ struct PilgrimMapView: UIViewRepresentable {
 
     // MARK: - Annotations
 
-    private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], on mapView: MBMapView, coordinator: Coordinator) {
+    private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], activePhotoID: String?, on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
 
         let routeLayerExists = mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer")
@@ -258,7 +265,7 @@ struct PilgrimMapView: UIViewRepresentable {
             }
         }
         if let circleManager = coordinator.circleManager {
-            circleManager.annotations = buildCircles(from: pinAnnotations)
+            circleManager.annotations = buildCircles(from: pinAnnotations, activePhotoID: activePhotoID)
         }
 
         if coordinator.pointManager == nil {
@@ -274,10 +281,10 @@ struct PilgrimMapView: UIViewRepresentable {
         }
     }
 
-    private static func buildCircles(from pinAnnotations: [PilgrimAnnotation]) -> [CircleAnnotation] {
+    private static func buildCircles(from pinAnnotations: [PilgrimAnnotation], activePhotoID: String? = nil) -> [CircleAnnotation] {
         var circles: [CircleAnnotation] = []
         for pin in pinAnnotations {
-            if let glow = glowCircle(for: pin) {
+            if let glow = glowCircle(for: pin, activePhotoID: activePhotoID) {
                 circles.append(glow)
             }
 
@@ -329,7 +336,7 @@ struct PilgrimMapView: UIViewRepresentable {
         return circles
     }
 
-    private static func glowCircle(for pin: PilgrimAnnotation) -> CircleAnnotation? {
+    private static func glowCircle(for pin: PilgrimAnnotation, activePhotoID: String? = nil) -> CircleAnnotation? {
         switch pin.kind {
         case .endPoint:
             var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
@@ -338,11 +345,12 @@ struct PilgrimMapView: UIViewRepresentable {
             glow.circleOpacity = 0.15
             glow.circleStrokeWidth = 0
             return glow
-        case .photo:
+        case .photo(let localIdentifier):
+            let isActive = activePhotoID == localIdentifier
             var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
-            glow.circleRadius = 22
+            glow.circleRadius = isActive ? 28 : 22
             glow.circleColor = StyleColor(UIColor.stone)
-            glow.circleOpacity = 0.18
+            glow.circleOpacity = isActive ? 0.32 : 0.18
             glow.circleStrokeWidth = 0
             return glow
         default:
@@ -415,6 +423,7 @@ struct PilgrimMapView: UIViewRepresentable {
         var lastSegments: [RouteSegment] = []
         var pendingSegments: [RouteSegment] = []
         var pendingAnnotations: [PilgrimAnnotation] = []
+        var pendingActivePhotoID: String?
         var currentColorScheme: ColorScheme = .light
         weak var mapView: MBMapView?
         var onAnnotationTap: ((PilgrimAnnotation) -> Void)?

@@ -23,22 +23,27 @@ struct WalkSummaryView: View {
         _cachedSegments = State(initialValue: Self.computeSegments(for: walk))
         _cachedAnnotations = State(initialValue: Self.computeAnnotations(for: walk))
     }
-    @State private var cameraBounds: MapCameraBounds?
-    @State private var cameraCenter: CLLocationCoordinate2D?
-    @State private var cameraZoom: CGFloat = 16
-    @State private var cameraDuration: TimeInterval = 0.4
-    @State private var cachedSegments: [RouteSegment] = []
-    @State private var cachedAnnotations: [PilgrimAnnotation] = []
-    @State private var photoCandidates: [PhotoCandidate] = []
+    // The camera, route, annotation, and reveal-phase state below intentionally drops
+    // `private` so the `WalkSummaryView+Map.swift` extension can read it. Kept internal-
+    // by-default to limit the API surface to the same module without splitting visibility
+    // further.
+    @State var cameraBounds: MapCameraBounds?
+    @State var cameraCenter: CLLocationCoordinate2D?
+    @State var cameraZoom: CGFloat = 16
+    @State var cameraDuration: TimeInterval = 0.4
+    @State var cachedSegments: [RouteSegment] = []
+    @State var cachedAnnotations: [PilgrimAnnotation] = []
+    @State var photoCandidates: [PhotoCandidate] = []
+    @State var activePhotoID: String?
     @State private var recentWalkSnippets: [WalkSnippet] = []
-    @State private var revealPhase: RevealPhase = .hidden
+    @State var revealPhase: RevealPhase = .hidden
     @State private var milestone: String?
     @State private var cachedCelestialSnapshot: CelestialSnapshot?
     @State private var lightReading: LightReading?
     @State private var hasRevealedLightReading: Bool = false
     private let sharingTracker = WalkSharingTracker()
 
-    private enum RevealPhase {
+    enum RevealPhase {
         case hidden, zoomed, revealed
     }
 
@@ -49,7 +54,11 @@ struct WalkSummaryView: View {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     mapSection
-                    PhotoReliquarySection(walk: walk, candidates: $photoCandidates)
+                    PhotoReliquarySection(
+                        walk: walk,
+                        candidates: $photoCandidates,
+                        activePhotoID: $activePhotoID
+                    )
                     intentionCard
                     elevationProfile
                     journeyQuote
@@ -245,60 +254,6 @@ struct WalkSummaryView: View {
         }
     }
 
-    private var combinedAnnotations: [PilgrimAnnotation] {
-        guard UserPreferences.walkReliquaryEnabled.value,
-              PermissionManager.standard.isPhotosGranted else {
-            return cachedAnnotations
-        }
-        let photoPins = photoCandidates
-            .filter { $0.isPinned }
-            .map { candidate in
-                PilgrimAnnotation(
-                    coordinate: CLLocationCoordinate2D(
-                        latitude: candidate.capturedLat,
-                        longitude: candidate.capturedLng
-                    ),
-                    kind: .photo(localIdentifier: candidate.localIdentifier)
-                )
-            }
-        return cachedAnnotations + photoPins
-    }
-
-    private var mapSection: some View {
-        Group {
-            if !routeCoordinates.isEmpty {
-                PilgrimMapView(
-                    isInteractive: revealPhase == .revealed,
-                    showsUserLocation: false,
-                    routeSegments: cachedSegments,
-                    pinAnnotations: combinedAnnotations,
-                    cameraCenter: $cameraCenter,
-                    cameraZoom: $cameraZoom,
-                    cameraBounds: cameraBounds,
-                    cameraDuration: cameraDuration
-                )
-                .frame(height: 320)
-                .mask(
-                    RadialGradient(
-                        gradient: Gradient(colors: [.white, .white, .white.opacity(0)]),
-                        center: .center,
-                        startRadius: 80,
-                        endRadius: 180
-                    )
-                )
-                .padding(.horizontal, -Constants.UI.Padding.normal)
-            } else {
-                RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
-                    .fill(Color.parchmentSecondary)
-                    .frame(height: 280)
-                    .overlay(
-                        Text("No route data")
-                            .font(Constants.Typography.body)
-                            .foregroundColor(.fog)
-                    )
-            }
-        }
-    }
 
     @ViewBuilder
     private var elevationProfile: some View {

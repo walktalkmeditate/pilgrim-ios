@@ -330,6 +330,7 @@
 		BBBB00000000000000001C /* PhotoReliquarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000001B /* PhotoReliquarySection.swift */; };
 		BBBB00000000000000001F /* PhotoCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000001E /* PhotoCarouselView.swift */; };
 		BBBB000000000000000021 /* PhotoPreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000020 /* PhotoPreviewSheet.swift */; };
+		BBBB000000000000000023 /* WalkSummaryView+Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000022 /* WalkSummaryView+Map.swift */; };
 		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
@@ -809,6 +810,7 @@
 		BBBB00000000000000001B /* PhotoReliquarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoReliquarySection.swift; sourceTree = "<group>"; };
 		BBBB00000000000000001E /* PhotoCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCarouselView.swift; sourceTree = "<group>"; };
 		BBBB000000000000000020 /* PhotoPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPreviewSheet.swift; sourceTree = "<group>"; };
+		BBBB000000000000000022 /* WalkSummaryView+Map.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalkSummaryView+Map.swift"; sourceTree = "<group>"; };
 		BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StonePlacementSheet.swift; sourceTree = "<group>"; };
 		BREATH000000000000000001 /* BreathTransitionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BreathTransitionView.swift; sourceTree = "<group>"; };
 		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1825,6 +1827,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0001010000000000000006 /* WalkSummaryView.swift */,
+				BBBB000000000000000022 /* WalkSummaryView+Map.swift */,
 				AA00040100000000000001 /* VoiceRecordingRow.swift */,
 				AA00040100000000000003 /* AudioPlayerModel.swift */,
 				AAAA00000000000000000EL2 /* ElevationProfileView.swift */,
@@ -2585,6 +2588,7 @@
 				BBBB00000000000000001C /* PhotoReliquarySection.swift in Sources */,
 				BBBB00000000000000001F /* PhotoCarouselView.swift in Sources */,
 				BBBB000000000000000021 /* PhotoPreviewSheet.swift in Sources */,
+				BBBB000000000000000023 /* WalkSummaryView+Map.swift in Sources */,
 				BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */,
 				86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */,
 				52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */,

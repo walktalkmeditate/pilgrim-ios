@@ -13,6 +13,7 @@ import Photos
 struct PhotoCarouselView: View {
 
     @Binding var candidates: [PhotoCandidate]
+    @Binding var activePhotoID: String?
     var onCommit: (PhotoCandidate) -> Void = { _ in }
     var onPreview: (PhotoCandidate) -> Void = { _ in }
 
@@ -29,10 +30,14 @@ struct PhotoCarouselView: View {
                         onPinTap: { commit(candidate) },
                         onPhotoTap: { dismissAndPreview(candidate) }
                     )
+                    .id(candidate.localIdentifier)
                 }
             }
+            .scrollTargetLayout()
             .padding(.horizontal, Constants.UI.Padding.normal)
         }
+        .scrollPosition(id: $activePhotoID, anchor: .center)
+        .scrollTargetBehavior(.viewAligned)
         .frame(height: PhotoThumbnailView.size + 8)
     }
 

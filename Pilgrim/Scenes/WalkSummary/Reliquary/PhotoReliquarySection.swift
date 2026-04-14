@@ -13,6 +13,7 @@ struct PhotoReliquarySection: View {
 
     let walk: WalkInterface
     @Binding var candidates: [PhotoCandidate]
+    @Binding var activePhotoID: String?
 
     @State private var isLoaded = false
     @State private var previewCandidate: PhotoCandidate?
@@ -49,6 +50,7 @@ struct PhotoReliquarySection: View {
                 .padding(.horizontal, Constants.UI.Padding.normal)
             PhotoCarouselView(
                 candidates: $candidates,
+                activePhotoID: $activePhotoID,
                 onCommit: { commit($0) },
                 onPreview: { previewCandidate = $0 }
             )
