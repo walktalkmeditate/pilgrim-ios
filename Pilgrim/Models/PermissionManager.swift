@@ -120,7 +120,7 @@ class PermissionManager: NSObject, CLLocationManagerDelegate {
             DispatchQueue.main.async { closure(true) }
         case .notDetermined:
             motionActivityManager = CMMotionActivityManager()
-            motionActivityManager?.queryActivityStarting(from: Date(), to: Date(), to: .main) { [weak self] (activity, error) in
+            motionActivityManager?.queryActivityStarting(from: Date(), to: Date(), to: .main) { [weak self] _, _ in
                 self?.motionActivityManager = nil
                 let auth = CMPedometer.authorizationStatus()
                 switch auth {

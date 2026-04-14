@@ -48,7 +48,7 @@ final class WalkPhotoCodableTests: XCTestCase {
         )
 
         let data = try JSONEncoder().encode(workout)
-        var json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         json.removeValue(forKey: "_walkPhotos")
         let stripped = try JSONSerialization.data(withJSONObject: json)
 
