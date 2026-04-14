@@ -14,7 +14,19 @@ enum PilgrimPackageError: Error {
 
 enum PilgrimPackageBuilder {
 
-    static func build(completion: @escaping (Result<URL, PilgrimPackageError>) -> Void) {
+    /// Build a `.pilgrim` archive.
+    ///
+    /// - parameter includePhotos: When true, the user's pinned reliquary
+    ///   photos are included in each walk's JSON (and in Stage 5c, their
+    ///   bytes are resized and written into the archive's `photos/`
+    ///   directory). Defaults to `false` so any caller that hasn't gone
+    ///   through the export confirmation sheet produces a photo-free
+    ///   archive — this defends against a future regression where someone
+    ///   adds a new call site and forgets about consent.
+    static func build(
+        includePhotos: Bool = false,
+        completion: @escaping (Result<URL, PilgrimPackageError>) -> Void
+    ) {
         let completion = safeClosure(from: completion)
 
         let systemString = UserPreferences.zodiacSystem.value
@@ -38,7 +50,12 @@ enum PilgrimPackageBuilder {
                 }
 
                 let pilgrimWalks = walks.compactMap {
-                    PilgrimPackageConverter.convert(walk: $0, system: system, celestialEnabled: celestialEnabled)
+                    PilgrimPackageConverter.convert(
+                        walk: $0,
+                        system: system,
+                        celestialEnabled: celestialEnabled,
+                        includePhotos: includePhotos
+                    )
                 }
                 let pilgrimEvents = PilgrimPackageConverter.convertEvents(events: events)
                 let manifest = PilgrimPackageConverter.buildManifest(
