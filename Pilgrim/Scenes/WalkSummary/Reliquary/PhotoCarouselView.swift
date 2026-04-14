@@ -5,15 +5,15 @@ import Photos
 ///
 /// One photo at a time can be in the "activated" state (long-pressed). While activated,
 /// a centered `mappin.circle.fill` icon overlays the thumbnail. Tapping the icon commits
-/// (or unpins). Tapping the photo itself (not the icon) dismisses activation and routes
-/// to the full-screen preview via the `onPreview` callback.
+/// (or unpins) via the `onCommit` callback. Tapping the photo itself (not the icon)
+/// dismisses activation and routes to the full-screen preview via the `onPreview` callback.
 ///
-/// Optimistic state: pin/unpin updates the bound `candidates` immediately for instant
-/// visual feedback; the `DataManager` persistence happens asynchronously in the background.
+/// Persistence happens upstream in `PhotoReliquarySection.commit(_:)` — the carousel only
+/// owns the activation/visual layer.
 struct PhotoCarouselView: View {
 
     @Binding var candidates: [PhotoCandidate]
-    let walkID: UUID
+    var onCommit: (PhotoCandidate) -> Void = { _ in }
     var onPreview: (PhotoCandidate) -> Void = { _ in }
 
     @State private var activeID: String?
@@ -44,33 +44,7 @@ struct PhotoCarouselView: View {
     private func commit(_ candidate: PhotoCandidate) {
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         activeID = nil
-
-        guard let index = candidates.firstIndex(where: {
-            $0.localIdentifier == candidate.localIdentifier
-        }) else { return }
-
-        let willBePinned = !candidates[index].isPinned
-
-        // Optimistic local update so the UI flips immediately.
-        candidates[index] = PhotoCandidate(
-            localIdentifier: candidate.localIdentifier,
-            capturedAt: candidate.capturedAt,
-            capturedLat: candidate.capturedLat,
-            capturedLng: candidate.capturedLng,
-            isPinned: willBePinned
-        )
-
-        if willBePinned {
-            DataManager.pinPhoto(
-                to: walkID,
-                localIdentifier: candidate.localIdentifier,
-                capturedAt: candidate.capturedAt,
-                capturedLat: candidate.capturedLat,
-                capturedLng: candidate.capturedLng
-            )
-        } else {
-            DataManager.unpinPhoto(walkID: walkID, localIdentifier: candidate.localIdentifier)
-        }
+        onCommit(candidate)
     }
 
     private func dismissAndPreview(_ candidate: PhotoCandidate) {

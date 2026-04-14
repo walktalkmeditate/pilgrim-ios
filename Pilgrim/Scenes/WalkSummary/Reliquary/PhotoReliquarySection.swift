@@ -15,6 +15,7 @@ struct PhotoReliquarySection: View {
     @Binding var candidates: [PhotoCandidate]
 
     @State private var isLoaded = false
+    @State private var previewCandidate: PhotoCandidate?
 
     var body: some View {
         Group {
@@ -24,6 +25,13 @@ struct PhotoReliquarySection: View {
         }
         .onAppear {
             loadCandidatesIfNeeded()
+        }
+        .fullScreenCover(item: $previewCandidate) { candidate in
+            PhotoPreviewSheet(
+                candidate: candidate,
+                onCommit: { commit(candidate) },
+                onDismiss: { previewCandidate = nil }
+            )
         }
     }
 
@@ -39,9 +47,11 @@ struct PhotoReliquarySection: View {
                 .font(Constants.Typography.heading)
                 .foregroundColor(.ink)
                 .padding(.horizontal, Constants.UI.Padding.normal)
-            if let walkID = walk.uuid {
-                PhotoCarouselView(candidates: $candidates, walkID: walkID)
-            }
+            PhotoCarouselView(
+                candidates: $candidates,
+                onCommit: { commit($0) },
+                onPreview: { previewCandidate = $0 }
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -53,6 +63,38 @@ struct PhotoReliquarySection: View {
 
         WalkPhotoMatcher.findCandidates(for: walk) { result in
             self.candidates = result
+        }
+    }
+
+    /// Persist the pin/unpin state for `candidate` and optimistically update the local
+    /// candidates array so the UI reflects the change immediately. Called from both the
+    /// carousel (long-press → pin button) and the preview sheet ("Pin to map" button).
+    private func commit(_ candidate: PhotoCandidate) {
+        guard let walkID = walk.uuid else { return }
+        guard let index = candidates.firstIndex(where: {
+            $0.localIdentifier == candidate.localIdentifier
+        }) else { return }
+
+        let willBePinned = !candidates[index].isPinned
+
+        candidates[index] = PhotoCandidate(
+            localIdentifier: candidate.localIdentifier,
+            capturedAt: candidate.capturedAt,
+            capturedLat: candidate.capturedLat,
+            capturedLng: candidate.capturedLng,
+            isPinned: willBePinned
+        )
+
+        if willBePinned {
+            DataManager.pinPhoto(
+                to: walkID,
+                localIdentifier: candidate.localIdentifier,
+                capturedAt: candidate.capturedAt,
+                capturedLat: candidate.capturedLat,
+                capturedLng: candidate.capturedLng
+            )
+        } else {
+            DataManager.unpinPhoto(walkID: walkID, localIdentifier: candidate.localIdentifier)
         }
     }
 }
