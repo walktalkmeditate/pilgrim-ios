@@ -133,8 +133,12 @@ struct DataSettingsView: View {
         PilgrimPackageBuilder.build { result in
             isExporting = false
             switch result {
-            case .success(let url):
-                exportURL = url
+            case .success(let buildResult):
+                exportURL = buildResult.url
+                // Stage 5c leaves DataSettingsView calling build() without
+                // includePhotos, so skippedPhotoCount is always 0 here.
+                // Stage 5e's export confirmation sheet surfaces skipped
+                // photos to the user when opting in.
             case .failure(let error):
                 alertTitle = "Export Failed"
                 alertMessage = describeError(error)

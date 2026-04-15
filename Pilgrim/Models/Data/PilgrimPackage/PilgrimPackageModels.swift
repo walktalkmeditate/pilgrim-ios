@@ -82,10 +82,15 @@ struct PilgrimWalk: Codable {
     /// export time. `nil` means "opted out" (or pre-reliquary `.pilgrim`
     /// format) — the JSON key is omitted entirely so byte-equality with the
     /// old format is preserved. An empty array means "opted in, no pinned
-    /// photos". The `PilgrimPhoto.embeddedPhotoFilename` of each entry is
-    /// populated by the builder when the photo bytes are actually written
-    /// into the archive's `photos/` directory.
-    let photos: [PilgrimPhoto]?
+    /// photos".
+    ///
+    /// Declared as `var` (the only mutable property on `PilgrimWalk`) so the
+    /// builder can populate each `PilgrimPhoto.embeddedPhotoFilename` after
+    /// it successfully writes photo bytes into the archive's `photos/`
+    /// directory. The converter produces walks with `embeddedPhotoFilename
+    /// == nil`; the builder runs `PilgrimPhotoEmbedder.embedPhotos` then
+    /// rewrites the array in place.
+    var photos: [PilgrimPhoto]?
 }
 
 struct PilgrimStats: Codable {
