@@ -163,7 +163,11 @@ enum PilgrimPackageBuilder {
     /// map (embedding failed) are dropped — the viewer has no bytes to
     /// render them, and carrying orphan metadata would give false
     /// expectation that the photo is in the archive.
-    private static func applyEmbeddedFilenames(
+    ///
+    /// Internal (not private) so `PilgrimPhotoEmbedderTests` can exercise
+    /// the drop-and-stamp logic directly without needing a live PhotoKit
+    /// round-trip.
+    static func applyEmbeddedFilenames(
         to walk: PilgrimWalk,
         using filenameMap: [String: String]
     ) -> PilgrimWalk {

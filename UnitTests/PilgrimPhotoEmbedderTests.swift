@@ -104,7 +104,130 @@ final class PilgrimPhotoEmbedderTests: XCTestCase {
         )
     }
 
+    // MARK: - applyEmbeddedFilenames (builder drop-and-stamp logic)
+
+    func testApplyEmbeddedFilenames_nilPhotos_passesThrough() {
+        let walk = makeWalk(photos: nil)
+        let updated = PilgrimPackageBuilder.applyEmbeddedFilenames(
+            to: walk,
+            using: ["anything": "file.jpg"]
+        )
+        XCTAssertNil(updated.photos)
+    }
+
+    func testApplyEmbeddedFilenames_emptyPhotos_staysEmpty() {
+        let walk = makeWalk(photos: [])
+        let updated = PilgrimPackageBuilder.applyEmbeddedFilenames(
+            to: walk,
+            using: [:]
+        )
+        XCTAssertEqual(updated.photos?.count, 0)
+    }
+
+    func testApplyEmbeddedFilenames_stampsFilenameOnKeptPhotos() throws {
+        let photo = makePhoto(localIdentifier: "A")
+        let walk = makeWalk(photos: [photo])
+        let updated = PilgrimPackageBuilder.applyEmbeddedFilenames(
+            to: walk,
+            using: ["A": "A.jpg"]
+        )
+        let kept = try XCTUnwrap(updated.photos?.first)
+        XCTAssertEqual(kept.embeddedPhotoFilename, "A.jpg")
+        XCTAssertEqual(kept.localIdentifier, "A", "Other fields must survive the stamp")
+    }
+
+    func testApplyEmbeddedFilenames_dropsPhotosMissingFromMap() {
+        let a = makePhoto(localIdentifier: "A")
+        let b = makePhoto(localIdentifier: "B")
+        let c = makePhoto(localIdentifier: "C")
+        let walk = makeWalk(photos: [a, b, c])
+        let updated = PilgrimPackageBuilder.applyEmbeddedFilenames(
+            to: walk,
+            using: ["A": "A.jpg", "C": "C.jpg"]
+        )
+        XCTAssertEqual(
+            updated.photos?.map { $0.localIdentifier },
+            ["A", "C"],
+            "Photos without filenames must be dropped; the viewer has no bytes to render them"
+        )
+        XCTAssertEqual(updated.photos?.map { $0.embeddedPhotoFilename }, ["A.jpg", "C.jpg"])
+    }
+
+    func testApplyEmbeddedFilenames_allPhotosDroppedWhenMapEmpty() {
+        let a = makePhoto(localIdentifier: "A")
+        let b = makePhoto(localIdentifier: "B")
+        let walk = makeWalk(photos: [a, b])
+        let updated = PilgrimPackageBuilder.applyEmbeddedFilenames(
+            to: walk,
+            using: [:]
+        )
+        // Empty array (not nil): the user opted in, embedding just
+        // happened to fail for every photo. skippedPhotoCount on the
+        // builder result carries the failure signal.
+        XCTAssertEqual(updated.photos?.count, 0)
+        XCTAssertNotNil(updated.photos, "Must stay non-nil — user opted in, failure ≠ opt-out")
+    }
+
+    func testApplyEmbeddedFilenames_preservesNonPhotoFields() throws {
+        let photo = makePhoto(localIdentifier: "A")
+        let walk = makeWalk(photos: [photo])
+        let updated = PilgrimPackageBuilder.applyEmbeddedFilenames(
+            to: walk,
+            using: ["A": "A.jpg"]
+        )
+        // The other 19 PilgrimWalk fields shouldn't have shifted.
+        XCTAssertEqual(updated.id, walk.id)
+        XCTAssertEqual(updated.type, walk.type)
+        XCTAssertEqual(updated.startDate, walk.startDate)
+        XCTAssertEqual(updated.endDate, walk.endDate)
+        XCTAssertEqual(updated.stats.distance, walk.stats.distance)
+        XCTAssertEqual(updated.intention, walk.intention)
+        XCTAssertEqual(updated.isUserModified, walk.isUserModified)
+    }
+
     // MARK: - Helpers
+
+    private func makePhoto(localIdentifier: String) -> PilgrimPhoto {
+        PilgrimPhoto(
+            localIdentifier: localIdentifier,
+            capturedAt: Date(timeIntervalSince1970: 1710001000),
+            capturedLat: 10,
+            capturedLng: 20,
+            keptAt: Date(timeIntervalSince1970: 1710002000),
+            embeddedPhotoFilename: nil
+        )
+    }
+
+    private func makeWalk(photos: [PilgrimPhoto]?) -> PilgrimWalk {
+        PilgrimWalk(
+            schemaVersion: "1.0",
+            id: UUID(),
+            type: "walking",
+            startDate: Date(timeIntervalSince1970: 1000),
+            endDate: Date(timeIntervalSince1970: 2000),
+            stats: PilgrimStats(
+                distance: 100, steps: nil,
+                activeDuration: 60, pauseDuration: 0,
+                ascent: 0, descent: 0,
+                burnedEnergy: nil,
+                talkDuration: 0, meditateDuration: 0
+            ),
+            weather: nil,
+            route: GeoJSONFeatureCollection(features: []),
+            pauses: [],
+            activities: [],
+            voiceRecordings: [],
+            intention: nil,
+            reflection: nil,
+            heartRates: [],
+            workoutEvents: [],
+            favicon: nil,
+            isRace: false,
+            isUserModified: false,
+            finishedRecording: true,
+            photos: photos
+        )
+    }
 
     /// Render a solid-color UIImage at the given size. Used as a stand-in
     /// for real photos; the resize pipeline doesn't care about content.

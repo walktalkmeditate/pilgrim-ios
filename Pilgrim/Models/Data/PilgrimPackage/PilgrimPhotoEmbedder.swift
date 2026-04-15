@@ -37,10 +37,19 @@ enum PilgrimPhotoEmbedder {
     /// synchronous `PHImageManager.requestImage` calls, which block the
     /// caller for the duration of each fetch (potentially several seconds
     /// per photo if the asset must be downloaded from iCloud).
+    ///
+    /// Apple's PhotoKit docs explicitly warn that synchronous `requestImage`
+    /// calls from the main thread can cause the system to terminate the
+    /// app, so this method fails loudly via `dispatchPrecondition` if it's
+    /// ever invoked on main. A future refactor that moves the call site
+    /// will trip this assertion in debug builds rather than hanging or
+    /// crashing in production.
     static func embedPhotos(
         from walks: [PilgrimWalk],
         into tempDir: URL
     ) -> EmbedResult {
+        dispatchPrecondition(condition: .notOnQueue(.main))
+
         let photosDir = tempDir.appendingPathComponent("photos")
         var filenameMap: [String: String] = [:]
         var skippedCount = 0
@@ -50,6 +59,17 @@ enum PilgrimPhotoEmbedder {
             guard let photos = walk.photos else { continue }
             for photo in photos {
                 autoreleasepool {
+                    // Dedupe: if the same localIdentifier appears across
+                    // multiple walks (shouldn't happen in practice — a
+                    // photo's creation date can only fall in one walk's
+                    // time window — but a matcher bug or a hand-seeded
+                    // database could produce duplicates), skip the
+                    // subsequent writes rather than overwrite the first
+                    // file or double-count skipped entries.
+                    guard filenameMap[photo.localIdentifier] == nil else {
+                        return
+                    }
+
                     guard let jpegData = encodePhoto(localIdentifier: photo.localIdentifier) else {
                         skippedCount += 1
                         return
@@ -148,11 +168,17 @@ enum PilgrimPhotoEmbedder {
         options.deliveryMode = .highQualityFormat
         options.isNetworkAccessAllowed = true
         options.version = .current
-        options.resizeMode = .fast
+        // `.exact` guarantees the delivered image matches the requested
+        // size (or the asset's native size if smaller). `.fast` can return
+        // a cached thumbnail — fine for browsing, but for an export we
+        // want the best available representation downsized by us. The
+        // cost is that PhotoKit may need to decode the full asset, but
+        // we're already serialized one-photo-at-a-time inside an
+        // autoreleasepool so peak memory stays bounded.
+        options.resizeMode = .exact
 
         // Request an image that's big enough to resize down to
-        // maxDimension without upscaling. 1200x1200 gives ~2x headroom,
-        // letting Core Image pick a reasonable mipmap level.
+        // maxDimension without upscaling. 1200x1200 gives ~2x headroom.
         let targetSize = CGSize(width: maxDimension * 2, height: maxDimension * 2)
 
         var resultImage: UIImage?
