@@ -11,6 +11,10 @@ final class WalkShareViewModel: ObservableObject {
     @Published var toggleElevation = true
     @Published var toggleActivityBreakdown = true
     @Published var toggleSteps = false
+    @Published var includeWaypoints = false
+
+    var waypointCount: Int { walk.waypoints.count }
+    var hasWaypoints: Bool { waypointCount > 0 }
 
     @Published var journal = ""
     @Published var selectedExpiry: ExpiryOption = .season
@@ -221,6 +225,19 @@ final class WalkShareViewModel: ObservableObject {
 
         let formatter = ISO8601DateFormatter()
 
+        let waypointPayload: [SharePayload.Waypoint]? = {
+            guard includeWaypoints, hasWaypoints else { return nil }
+            return walk.waypoints.map { wp in
+                SharePayload.Waypoint(
+                    lat: wp.latitude,
+                    lon: wp.longitude,
+                    label: wp.label,
+                    icon: wp.icon,
+                    ts: Int(wp.timestamp.timeIntervalSince1970)
+                )
+            }
+        }()
+
         return SharePayload(
             stats: stats,
             route: downsampled,
@@ -233,7 +250,8 @@ final class WalkShareViewModel: ObservableObject {
             toggledStats: toggledStats,
             placeStart: placeStart,
             placeEnd: placeEnd,
-            mark: markValue
+            mark: markValue,
+            waypoints: waypointPayload
         )
     }
 }

@@ -117,6 +117,13 @@ struct WalkShareView: View {
                 value: viewModel.formattedSteps,
                 isOn: $viewModel.toggleSteps
             )
+            if viewModel.hasWaypoints {
+                StatToggleRow(
+                    title: "Waypoints",
+                    value: "\(viewModel.waypointCount) \(viewModel.waypointCount == 1 ? "place" : "places") you marked",
+                    isOn: $viewModel.includeWaypoints
+                )
+            }
         }
     }
 
