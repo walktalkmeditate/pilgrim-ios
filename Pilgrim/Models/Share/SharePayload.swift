@@ -9,6 +9,7 @@ struct SharePayload: Encodable {
     let expiryDays: Int
     let units: String
     let startDate: String
+    let tzIdentifier: String?
     let toggledStats: [String]
     let placeStart: String?
     let placeEnd: String?
@@ -62,6 +63,7 @@ struct SharePayload: Encodable {
         case activityIntervals = "activity_intervals"
         case expiryDays = "expiry_days"
         case startDate = "start_date"
+        case tzIdentifier = "tz_identifier"
         case toggledStats = "toggled_stats"
         case placeStart = "place_start"
         case placeEnd = "place_end"

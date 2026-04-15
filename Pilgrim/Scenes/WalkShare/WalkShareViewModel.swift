@@ -229,6 +229,7 @@ final class WalkShareViewModel: ObservableObject {
             expiryDays: selectedExpiry.rawValue,
             units: isMetric ? "metric" : "imperial",
             startDate: formatter.string(from: walk.startDate),
+            tzIdentifier: TimeZone.current.identifier,
             toggledStats: toggledStats,
             placeStart: placeStart,
             placeEnd: placeEnd,
