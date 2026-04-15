@@ -161,6 +161,10 @@ enum PilgrimPackageSchema {
         "voiceRecordings": { "type": "array" },
         "heartRates": { "type": "array" },
         "workoutEvents": { "type": "array" },
+        "photos": {
+          "type": ["array", "null"],
+          "description": "Reliquary photos the user opted to include at export time. Each entry carries its PHAsset localIdentifier, GPS coordinates, captured/kept timestamps, and an optional embeddedPhotoFilename pointing at a file under the archive's photos/ directory. Absent entirely when the user opts out — older files and opted-out exports stay byte-identical."
+        },
         "intention": { "type": ["string", "null"] },
         "reflection": { "type": ["object", "null"] },
         "favicon": { "type": ["string", "null"] },

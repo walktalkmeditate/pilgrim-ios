@@ -81,12 +81,26 @@ final class PilgrimPackagePhotoTests: XCTestCase {
 
     func testWalk_decodesOlderFormatWithoutPhotosKey() throws {
         // Older .pilgrim files (pre-reliquary) don't have a "photos" key.
-        // Decode them by stripping the key from an encoded walk and confirming
-        // the result has photos == nil.
-        let walk = makeMinimalWalk()
+        // Start with a walk that HAS photos, encode to JSON (which emits the
+        // key), strip it from the dict, and confirm the decoder still handles
+        // the missing key by returning photos == nil. This regresses the
+        // backward-compat path if someone ever changes photos to non-optional.
+        let photo = PilgrimPhoto(
+            localIdentifier: "P1",
+            capturedAt: Date(timeIntervalSince1970: 1500),
+            capturedLat: 10,
+            capturedLng: 20,
+            keptAt: Date(timeIntervalSince1970: 2500),
+            embeddedPhotoFilename: nil
+        )
+        let walk = makeMinimalWalk(photos: [photo])
         let data = try encoder.encode(walk)
         var json = try XCTUnwrap(
             JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertNotNil(
+            json["photos"],
+            "Guard: the encoder must emit 'photos' when the walk has pinned photos"
         )
         json.removeValue(forKey: "photos")
         let stripped = try JSONSerialization.data(withJSONObject: json)
@@ -156,13 +170,15 @@ final class PilgrimPackagePhotoTests: XCTestCase {
     }
 
     func testConvert_includePhotosTrue_populatesMetadata() throws {
+        let capturedAt = Date(timeIntervalSince1970: 1710001000)
+        let keptAt = Date(timeIntervalSince1970: 1710002000)
         let photo = TempWalkPhoto(
             uuid: UUID(),
             localIdentifier: "ABC/L0/001",
-            capturedAt: Date(timeIntervalSince1970: 1710001000),
+            capturedAt: capturedAt,
             capturedLat: 35.0116,
             capturedLng: 135.7681,
-            keptAt: Date(timeIntervalSince1970: 1710002000)
+            keptAt: keptAt
         )
         let walk = makeTestWalk(walkPhotos: [photo])
         let pw = PilgrimPackageConverter.convert(
@@ -177,9 +193,68 @@ final class PilgrimPackagePhotoTests: XCTestCase {
         XCTAssertEqual(exportedPhoto.localIdentifier, "ABC/L0/001")
         XCTAssertEqual(exportedPhoto.capturedLat, 35.0116, accuracy: 0.0001)
         XCTAssertEqual(exportedPhoto.capturedLng, 135.7681, accuracy: 0.0001)
+        XCTAssertEqual(
+            exportedPhoto.capturedAt.timeIntervalSince1970,
+            capturedAt.timeIntervalSince1970,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            exportedPhoto.keptAt.timeIntervalSince1970,
+            keptAt.timeIntervalSince1970,
+            accuracy: 0.001
+        )
         // embeddedPhotoFilename stays nil at the converter layer; Stage 5c
         // (the builder) sets it when it actually writes the bytes.
         XCTAssertNil(exportedPhoto.embeddedPhotoFilename)
+    }
+
+    func testConvert_includePhotosTrue_preservesOrderAcrossMultiplePhotos() throws {
+        // Regression guard: if anyone ever `.sorted()`s or `.reversed()`s
+        // inside exportPhotos/importPhotos, or accidentally hands the array
+        // to a Set, this test catches it. Walk.walkPhotos is a CoreStore
+        // `ToManyOrdered` relationship — users have no expectation that
+        // reordering would be stable, but it should not silently drift.
+        let first = TempWalkPhoto(
+            uuid: UUID(),
+            localIdentifier: "first",
+            capturedAt: Date(timeIntervalSince1970: 1710001000),
+            capturedLat: 1, capturedLng: 1,
+            keptAt: Date(timeIntervalSince1970: 1710002000)
+        )
+        let second = TempWalkPhoto(
+            uuid: UUID(),
+            localIdentifier: "second",
+            capturedAt: Date(timeIntervalSince1970: 1710001100),
+            capturedLat: 2, capturedLng: 2,
+            keptAt: Date(timeIntervalSince1970: 1710002100)
+        )
+        let third = TempWalkPhoto(
+            uuid: UUID(),
+            localIdentifier: "third",
+            capturedAt: Date(timeIntervalSince1970: 1710001200),
+            capturedLat: 3, capturedLng: 3,
+            keptAt: Date(timeIntervalSince1970: 1710002200)
+        )
+        let walk = makeTestWalk(walkPhotos: [first, second, third])
+        let pw = PilgrimPackageConverter.convert(
+            walk: walk,
+            system: .tropical,
+            celestialEnabled: false,
+            includePhotos: true
+        )!
+
+        let ids = pw.photos?.map { $0.localIdentifier }
+        XCTAssertEqual(ids, ["first", "second", "third"])
+
+        // And the reverse direction preserves order through the full
+        // export → JSON → decode → convertToTemp round trip.
+        let data = try encoder.encode(pw)
+        let reimported = try decoder.decode(PilgrimWalk.self, from: data)
+        let reimportedTemp = PilgrimPackageConverter.convertToTemp(walk: reimported)
+        XCTAssertEqual(
+            reimportedTemp.walkPhotos.map { $0.localIdentifier },
+            ["first", "second", "third"]
+        )
     }
 
     func testConvert_includePhotosTrue_emptyArrayForWalkWithoutPhotos() {
@@ -229,6 +304,11 @@ final class PilgrimPackagePhotoTests: XCTestCase {
         )
         XCTAssertEqual(restoredPhoto.capturedLat, 43.7696, accuracy: 0.0001)
         XCTAssertEqual(restoredPhoto.capturedLng, 11.2558, accuracy: 0.0001)
+        XCTAssertEqual(
+            restoredPhoto.keptAt.timeIntervalSince1970,
+            keptAt.timeIntervalSince1970,
+            accuracy: 0.001
+        )
     }
 
     // MARK: - Helpers
