@@ -55,12 +55,26 @@ struct PhotoReliquarySection: View {
             loadCandidatesIfNeeded()
         }
         .onChange(of: scenePhase) { _, newPhase in
-            // Coming back from Settings: the user may have granted or
-            // revoked Photos access, so force a fresh fetch (bypassing
-            // the onAppear one-shot latch). Clearing candidates on the
-            // revoked path also forces the parent's combinedAnnotations
-            // to hide any photo pins still on the map.
-            if newPhase == .active {
+            // Foreground transition (app switch / screen unlock /
+            // returning from Settings). Only fetch when we actually
+            // need fresh data — re-fetching on every foreground wipes
+            // the in-memory pin state the user just created, because
+            // WalkPhotoMatcher's `walk.walkPhotos` read can race the
+            // CoreStore pin transaction and come back with
+            // isPinned=false.
+            //
+            // The only cases where we genuinely need to act:
+            //   - Gate is still open but candidates are empty → first
+            //     grant from iOS Settings, load now.
+            //   - Gate just closed while we were away → clear stale
+            //     candidates so the parent's combinedAnnotations drops
+            //     the map pins alongside the hidden carousel.
+            // Otherwise (gate open + candidates populated): do nothing
+            // and preserve the user's in-memory pin state.
+            guard newPhase == .active else { return }
+            if !shouldRender {
+                if !candidates.isEmpty { candidates = [] }
+            } else if candidates.isEmpty {
                 reloadCandidates()
             }
         }
