@@ -336,6 +336,7 @@
 		BBBB000000000000000029 /* PilgrimPhotoEmbedder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000028 /* PilgrimPhotoEmbedder.swift */; };
 		BBBB00000000000000002B /* PilgrimPhotoEmbedderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000002A /* PilgrimPhotoEmbedderTests.swift */; };
 		BBBB00000000000000002D /* ExportConfirmationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000002C /* ExportConfirmationSheet.swift */; };
+		BBBB00000000000000002F /* ExportConfirmationSheetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000002E /* ExportConfirmationSheetTests.swift */; };
 		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
@@ -821,6 +822,7 @@
 		BBBB000000000000000028 /* PilgrimPhotoEmbedder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPhotoEmbedder.swift; sourceTree = "<group>"; };
 		BBBB00000000000000002A /* PilgrimPhotoEmbedderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPhotoEmbedderTests.swift; sourceTree = "<group>"; };
 		BBBB00000000000000002C /* ExportConfirmationSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportConfirmationSheet.swift; sourceTree = "<group>"; };
+		BBBB00000000000000002E /* ExportConfirmationSheetTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportConfirmationSheetTests.swift; sourceTree = "<group>"; };
 		BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StonePlacementSheet.swift; sourceTree = "<group>"; };
 		BREATH000000000000000001 /* BreathTransitionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BreathTransitionView.swift; sourceTree = "<group>"; };
 		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1586,6 +1588,7 @@
 				EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */,
 				BBBB000000000000000024 /* PilgrimPackagePhotoTests.swift */,
 				BBBB00000000000000002A /* PilgrimPhotoEmbedderTests.swift */,
+				BBBB00000000000000002E /* ExportConfirmationSheetTests.swift */,
 				CC00000100000000UNTSTS01 /* UnitSystemTests.swift */,
 				GOSHUIN0000000000000006 /* GoshuinMilestonesTests.swift */,
 				5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */,
@@ -2715,6 +2718,7 @@
 				0E9B9341AEF918BA4BB7901C /* PilgrimPackageConverterTests.swift in Sources */,
 				BBBB000000000000000025 /* PilgrimPackagePhotoTests.swift in Sources */,
 				BBBB00000000000000002B /* PilgrimPhotoEmbedderTests.swift in Sources */,
+				BBBB00000000000000002F /* ExportConfirmationSheetTests.swift in Sources */,
 				CC00000200000000APPRTST1 /* AppearanceModeTests.swift in Sources */,
 				CC00000200000000UNTSTS01 /* UnitSystemTests.swift in Sources */,
 				GOSHUIN0000000000000005 /* GoshuinMilestonesTests.swift in Sources */,
