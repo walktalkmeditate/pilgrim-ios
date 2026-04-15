@@ -28,6 +28,26 @@ struct PhotoReliquarySection: View {
     /// refresh, say), only the most recent one applies.
     @State private var fetchGeneration: UInt = 0
 
+    /// True while a PHAsset fetch is in flight. Separate from
+    /// `isLoaded` (which is a one-shot latch for the onAppear path) so
+    /// the view can render a loading state between kickoff and
+    /// completion.
+    @State private var isFetching: Bool = false
+
+    /// Flipped to true 300ms after a fetch begins. Matches Apple's
+    /// loading-state patterns — fast fetches (cold cache under 300ms)
+    /// skip the skeleton entirely so there's no distracting flicker,
+    /// while slow fetches get a visible placeholder so the user knows
+    /// something is happening. Reset to false when the fetch resolves.
+    @State private var showLoadingSkeleton: Bool = false
+
+    /// Drives the skeleton placeholders' opacity oscillation. Toggled
+    /// to true in `onAppear` of the skeleton view; the `.animation`
+    /// modifier on each placeholder carries the repeatForever curve.
+    /// Single-bool toggle pattern (per project resource-safety rules)
+    /// avoids SwiftUI re-diffing leaks.
+    @State private var isShimmering: Bool = false
+
     /// Observed so the section re-renders when the app comes back from
     /// iOS Settings. Without this, a user who taps "Open Settings" in
     /// the permission-revoked prompt, grants Photos access, and returns
@@ -42,15 +62,22 @@ struct PhotoReliquarySection: View {
                 if isPermissionGranted {
                     if !candidates.isEmpty {
                         content
+                            .transition(.opacity)
+                    } else if showLoadingSkeleton {
+                        loadingSkeleton
+                            .transition(.opacity)
                     }
-                    // else: no candidates → render nothing (empty
-                    // walks shouldn't show empty section noise)
+                    // else: either within the 300ms grace period or
+                    // loaded with zero matching photos → render
+                    // nothing so empty walks stay visually quiet.
                 } else {
                     permissionRevokedPrompt
                 }
             }
             // else: toggle OFF → feature is invisible
         }
+        .animation(.easeInOut(duration: 0.3), value: candidates.isEmpty)
+        .animation(.easeInOut(duration: 0.3), value: showLoadingSkeleton)
         .onAppear {
             loadCandidatesIfNeeded()
         }
@@ -143,6 +170,43 @@ struct PhotoReliquarySection: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Shown during the slow-fetch path (>300ms) so the user knows
+    /// photos might be coming. Matches the real carousel's layout
+    /// (heading + row of 88pt squares) so there's no jump when the
+    /// real content replaces it. The placeholders shimmer via a
+    /// single-bool opacity toggle — safe per the project's
+    /// resource-safety rules on `.repeatForever`.
+    @ViewBuilder
+    private var loadingSkeleton: some View {
+        VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+            reliquaryHeading
+
+            HStack(spacing: Constants.UI.Padding.small) {
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.parchmentSecondary)
+                        .frame(width: 88, height: 88)
+                        .opacity(isShimmering ? 0.45 : 0.85)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, Constants.UI.Padding.normal)
+            // Decorative — heading already announces the section.
+            .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(
+            .easeInOut(duration: 1.1).repeatForever(autoreverses: true),
+            value: isShimmering
+        )
+        .onAppear {
+            isShimmering = true
+        }
+        .onDisappear {
+            isShimmering = false
+        }
+    }
+
     @ViewBuilder
     private var reliquaryHeading: some View {
         Text("Reliquary")
@@ -176,15 +240,30 @@ struct PhotoReliquarySection: View {
     private func reloadCandidates() {
         guard shouldRender else {
             if !candidates.isEmpty { candidates = [] }
+            isFetching = false
+            showLoadingSkeleton = false
             return
         }
         isLoaded = true
         fetchGeneration &+= 1
         let generation = fetchGeneration
+        isFetching = true
+        showLoadingSkeleton = false
+
+        // Deferred skeleton — only shows if the fetch takes longer
+        // than 300ms. Fast cold-cache hits skip the skeleton entirely
+        // so there's no flicker on the happy path.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            guard generation == self.fetchGeneration else { return }
+            guard self.isFetching else { return }
+            self.showLoadingSkeleton = true
+        }
 
         WalkPhotoMatcher.findCandidates(for: walk) { result in
             guard generation == self.fetchGeneration else { return }
             self.candidates = result
+            self.isFetching = false
+            self.showLoadingSkeleton = false
         }
     }
 

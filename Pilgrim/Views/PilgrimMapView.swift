@@ -254,6 +254,23 @@ struct PilgrimMapView: UIViewRepresentable {
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], activePhotoID: String?, on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
 
+        // Install (or refresh) the "photo image loaded" callback on
+        // the photo marker loader. Each async PHImageManager result
+        // triggers a redraw so the placeholder is replaced by the
+        // real photo thumbnail. Captured weakly to avoid a retain
+        // cycle — the coordinator owns the loader (which owns the
+        // closure), we just want the closure to bail if the map
+        // view has been torn down.
+        coordinator.photoMarkerLoader.onImageLoaded = { [weak mapView, weak coordinator] in
+            guard let mapView = mapView, let coordinator = coordinator else { return }
+            Self.applyAnnotations(
+                coordinator.currentPinAnnotations,
+                activePhotoID: coordinator.pendingActivePhotoID,
+                on: mapView,
+                coordinator: coordinator
+            )
+        }
+
         let routeLayerExists = mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer")
         let layerPosition: LayerPosition? = routeLayerExists ? .above("pilgrim-route-layer") : nil
 
@@ -276,7 +293,7 @@ struct PilgrimMapView: UIViewRepresentable {
             }
         }
         if let pointManager = coordinator.pointManager {
-            pointManager.annotations = buildPoints(from: pinAnnotations)
+            pointManager.annotations = buildPoints(from: pinAnnotations, coordinator: coordinator)
             pointManager.iconAllowOverlap = true
         }
     }
@@ -322,12 +339,13 @@ struct PilgrimMapView: UIViewRepresentable {
                 circle.circleStrokeWidth = 2
                 circle.circleStrokeOpacity = 1.0
             case .photo:
-                circle.circleRadius = 16
-                circle.circleColor = StyleColor(UIColor.stone)
-                circle.circleOpacity = 0.95
-                circle.circleStrokeColor = StyleColor(UIColor.stone)
-                circle.circleStrokeWidth = 2
-                circle.circleStrokeOpacity = 1.0
+                // Photo pins render as PointAnnotations with the
+                // actual photo thumbnail (or a parchment-filled
+                // placeholder while loading). The glow halo is still
+                // drawn here via `glowCircle` above. No filled
+                // CircleAnnotation in the middle — the thumbnail IS
+                // the marker.
+                continue
             case .waypoint, .whisper, .cairn:
                 continue
             }
@@ -358,7 +376,10 @@ struct PilgrimMapView: UIViewRepresentable {
         }
     }
 
-    private static func buildPoints(from pinAnnotations: [PilgrimAnnotation]) -> [PointAnnotation] {
+    private static func buildPoints(
+        from pinAnnotations: [PilgrimAnnotation],
+        coordinator: Coordinator
+    ) -> [PointAnnotation] {
         var points: [PointAnnotation] = []
         for pin in pinAnnotations {
             switch pin.kind {
@@ -388,10 +409,22 @@ struct PilgrimMapView: UIViewRepresentable {
                 }
                 point.iconSize = 1.0
                 points.append(point)
-            case .photo:
+            case .photo(let localIdentifier):
+                // Circular thumbnail of the actual photo (or a
+                // parchment placeholder while the async load
+                // resolves). Each marker has a unique name keyed by
+                // localIdentifier so Mapbox's image registry can
+                // address them independently.
                 var point = PointAnnotation(coordinate: pin.coordinate)
-                if let image = renderSFSymbol("mappin.fill", size: 14, color: .parchment) {
-                    point.image = .init(image: image, name: "photo-pin")
+                if let cached = coordinator.photoMarkerLoader.image(for: localIdentifier) {
+                    point.image = .init(image: cached, name: "photo-\(localIdentifier)")
+                } else {
+                    // Kick off the async load — when it resolves,
+                    // `PhotoMarkerImageLoader.onImageLoaded` fires
+                    // and re-applies annotations, at which point the
+                    // cache hit above will fire for this marker.
+                    coordinator.photoMarkerLoader.loadImage(localIdentifier: localIdentifier)
+                    point.image = .init(image: Self.cachedPhotoPlaceholder(), name: "photo-placeholder")
                 }
                 point.iconSize = 1.0
                 points.append(point)
@@ -400,6 +433,18 @@ struct PilgrimMapView: UIViewRepresentable {
             }
         }
         return points
+    }
+
+    /// Lazy-initialised stone placeholder so we only build it once
+    /// per process. Used while each real photo thumbnail is loading.
+    /// Returns non-optional — `PhotoMarkerImageBuilder.placeholder()`
+    /// is a pure Core Graphics helper that never fails.
+    private static var _cachedPhotoPlaceholder: UIImage?
+    private static func cachedPhotoPlaceholder() -> UIImage {
+        if let cached = _cachedPhotoPlaceholder { return cached }
+        let image = PhotoMarkerImageBuilder.placeholder()
+        _cachedPhotoPlaceholder = image
+        return image
     }
 
     private static func renderSFSymbol(_ name: String, size: CGFloat, color: UIColor) -> UIImage? {
@@ -429,6 +474,14 @@ struct PilgrimMapView: UIViewRepresentable {
         var onAnnotationTap: ((PilgrimAnnotation) -> Void)?
         var currentPinAnnotations: [PilgrimAnnotation] = []
         var tapGestureAdded = false
+
+        /// Loads circular photo-marker images for photo pin
+        /// annotations. Encapsulated in its own class so the
+        /// Coordinator stays under SwiftLint's type body length.
+        /// `buildPoints` reads the cache synchronously; cache misses
+        /// kick off an async load that invokes `onImageLoaded` once
+        /// complete, which the Coordinator wires to trigger a redraw.
+        let photoMarkerLoader = PhotoMarkerImageLoader()
 
         @objc func handleMapTap(_ gesture: UITapGestureRecognizer) {
             guard let mapView, let onAnnotationTap else { return }

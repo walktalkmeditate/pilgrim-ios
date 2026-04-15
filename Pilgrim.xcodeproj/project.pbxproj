@@ -296,6 +296,8 @@
 		AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */; };
 		AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */; };
 		AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000MF8 /* PilgrimMapView.swift */; };
+		BBBB000000000000000037 /* PhotoMarkerImageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000036 /* PhotoMarkerImageBuilder.swift */; };
+		BBBB00000000000000003B /* PhotoMarkerImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000003A /* PhotoMarkerImageLoader.swift */; };
 		AAAA0000000000000000F9 /* IntentionSettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0000000000000000F8 /* IntentionSettingView.swift */; };
 		AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0000000000000000FA /* WalkOptionsSheet.swift */; };
 		AABB000100000002 /* WelcomeAnimationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB000100000001 /* WelcomeAnimationState.swift */; };
@@ -326,6 +328,7 @@
 		BBBB000000000000000014 /* PilgrimV7.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000013 /* PilgrimV7.swift */; };
 		BBBB000000000000000016 /* WalkPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000015 /* WalkPhoto.swift */; };
 		BBBB000000000000000018 /* WalkPhotoMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000017 /* WalkPhotoMatcherTests.swift */; };
+		BBBB000000000000000039 /* PhotoMarkerImageBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000038 /* PhotoMarkerImageBuilderTests.swift */; };
 		BBBB00000000000000001A /* WalkPhotoMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000019 /* WalkPhotoMatcher.swift */; };
 		BBBB00000000000000001C /* PhotoReliquarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000001B /* PhotoReliquarySection.swift */; };
 		BBBB00000000000000001F /* PhotoCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000001E /* PhotoCarouselView.swift */; };
@@ -789,6 +792,8 @@
 		AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimAnnotation.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapStyle.swift; sourceTree = "<group>"; };
 		AAAA00000000000000000MF8 /* PilgrimMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimMapView.swift; sourceTree = "<group>"; };
+		BBBB000000000000000036 /* PhotoMarkerImageBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMarkerImageBuilder.swift; sourceTree = "<group>"; };
+		BBBB00000000000000003A /* PhotoMarkerImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMarkerImageLoader.swift; sourceTree = "<group>"; };
 		AAAA0000000000000000F8 /* IntentionSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionSettingView.swift; sourceTree = "<group>"; };
 		AAAA0000000000000000FA /* WalkOptionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkOptionsSheet.swift; sourceTree = "<group>"; };
 		AABB000100000001 /* WelcomeAnimationState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeAnimationState.swift; sourceTree = "<group>"; };
@@ -815,6 +820,7 @@
 		BBBB000000000000000013 /* PilgrimV7.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV7.swift; sourceTree = "<group>"; };
 		BBBB000000000000000015 /* WalkPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkPhoto.swift; sourceTree = "<group>"; };
 		BBBB000000000000000017 /* WalkPhotoMatcherTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPhotoMatcherTests.swift; sourceTree = "<group>"; };
+		BBBB000000000000000038 /* PhotoMarkerImageBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoMarkerImageBuilderTests.swift; sourceTree = "<group>"; };
 		BBBB000000000000000019 /* WalkPhotoMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkPhotoMatcher.swift; sourceTree = "<group>"; };
 		BBBB00000000000000001B /* PhotoReliquarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoReliquarySection.swift; sourceTree = "<group>"; };
 		BBBB00000000000000001E /* PhotoCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCarouselView.swift; sourceTree = "<group>"; };
@@ -1448,6 +1454,8 @@
 				22BC992F2941D9A800D9B1A5 /* FeatureView.swift */,
 				22BC99372941D9A800D9B1A5 /* FeatureViewModel.swift */,
 				AAAA00000000000000000MF8 /* PilgrimMapView.swift */,
+				BBBB000000000000000036 /* PhotoMarkerImageBuilder.swift */,
+				BBBB00000000000000003A /* PhotoMarkerImageLoader.swift */,
 				22BC99342941D9A800D9B1A5 /* MetricView.swift */,
 				56EEE45B2F70788E003F4391 /* StreakFlameView.swift */,
 				22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */,
@@ -1577,6 +1585,7 @@
 				BBBB00000000000000000B /* WaypointCodableTests.swift */,
 				BBBB00000000000000000D /* WalkPhotoCodableTests.swift */,
 				BBBB000000000000000017 /* WalkPhotoMatcherTests.swift */,
+				BBBB000000000000000038 /* PhotoMarkerImageBuilderTests.swift */,
 				BB00CC010000000000000002 /* WelcomeViewModelTests.swift */,
 				PERM000100000004 /* PermissionsViewModelTests.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */,
@@ -2423,6 +2432,8 @@
 				AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */,
 				AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */,
 				AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */,
+				BBBB000000000000000037 /* PhotoMarkerImageBuilder.swift in Sources */,
+				BBBB00000000000000003B /* PhotoMarkerImageLoader.swift in Sources */,
 				22834F73254220FC00057FEB /* WalkPauseInterface.swift in Sources */,
 				22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */,
 				221436BF2443746B0010D82B /* Event.swift in Sources */,
@@ -2711,6 +2722,7 @@
 				BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */,
 				BBBB00000000000000000E /* WalkPhotoCodableTests.swift in Sources */,
 				BBBB000000000000000018 /* WalkPhotoMatcherTests.swift in Sources */,
+				BBBB000000000000000039 /* PhotoMarkerImageBuilderTests.swift in Sources */,
 				BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */,
 				PERM000100000005 /* PermissionsViewModelTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */,
