@@ -9,7 +9,6 @@ struct DataSettingsView: View {
     @State private var isImporting = false
     @State private var isExportingRecordings = false
     @State private var showDocumentPicker = false
-    @State private var showJourneyViewer = false
     @State private var exportURL: URL?
     @State private var alertTitle = ""
     @State private var alertMessage = ""
@@ -182,6 +181,17 @@ struct DataSettingsView: View {
     /// turn calls `performExport(includePhotos:)` — or short-circuits
     /// with a "no walks" alert.
     private func exportData() {
+        // Re-entry guard: the `isBusy` button disable chain covers the
+        // build phase itself, but there are two gaps where isExporting
+        // is false and the button is enabled:
+        //   1. Confirmation sheet is up, waiting for user choice.
+        //   2. Build succeeded and the share sheet is visible.
+        // A rapid second tap in either gap would either swap the
+        // confirmation sheet mid-presentation (jarring) or queue a new
+        // sheet on top of the share sheet (stacked modals). Bail out
+        // if either state is active.
+        guard exportConfirmData == nil, exportURL == nil else { return }
+
         guard let data = computeExportConfirmData() else {
             alertTitle = "Export Failed"
             alertMessage = "No walks found to export."

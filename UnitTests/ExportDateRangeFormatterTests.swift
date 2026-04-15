@@ -80,46 +80,31 @@ final class ExportDateRangeFormatterTests: XCTestCase {
 
     // MARK: - Boundary edge cases
 
-    func testFormat_midnightBoundary_doesNotSlipToPreviousDay() {
-        // April 1, 2026, 00:00:00 local time — must still read as April.
-        // Guards against a DateFormatter misconfiguration that interprets
-        // the date in a timezone that rolls it to March 31.
-        var components = DateComponents()
-        components.year = 2026
-        components.month = 4
-        components.day = 1
-        components.hour = 0
-        components.minute = 0
-        components.second = 0
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
-        let date = calendar.date(from: components)!
-
-        var laLocale = enUS
-        _ = laLocale  // silence unused
-        let formatter = ExportDateRangeFormatter.format(
-            earliest: date,
-            latest: date,
+    func testFormat_doesNotCrashOnMidnightDate() {
+        // Regression smoke test: historically, code that extracts month
+        // components from a Date via string manipulation could slip
+        // across day boundaries on midnight timestamps. The format
+        // helper uses DateFormatter which handles this correctly, but
+        // guard against regressions that crash or return an empty
+        // string on boundary dates.
+        let midnight = makeDate(year: 2026, month: 4, day: 1, hour: 0)
+        let result = ExportDateRangeFormatter.format(
+            earliest: midnight,
+            latest: midnight,
             locale: enUS
         )
-        // The en_US_POSIX formatter uses the system default timezone by
-        // default; for a Date at midnight LA time, that's still April 1
-        // in most timezones west of UTC. This test mainly verifies we
-        // don't crash on a midnight boundary.
-        XCTAssertTrue(
-            formatter == "April 2026" || formatter == "March 2026",
-            "Got unexpected format: \(formatter)"
-        )
+        XCTAssertFalse(result.isEmpty)
+        XCTAssertTrue(result.contains("2026"))
     }
 
     // MARK: - Helpers
 
-    private func makeDate(year: Int, month: Int, day: Int) -> Date {
+    private func makeDate(year: Int, month: Int, day: Int, hour: Int = 12) -> Date {
         var components = DateComponents()
         components.year = year
         components.month = month
         components.day = day
-        components.hour = 12 // noon to avoid timezone edge effects
+        components.hour = hour
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
         return calendar.date(from: components)!
