@@ -1,6 +1,32 @@
 import Foundation
 import ZIPFoundation
 
+/// Reads a `.pilgrim` archive back into the app's database.
+///
+/// **Stage 5 photo handling**: archives produced by Stage 5+ may contain
+/// a top-level `photos/` directory carrying resized JPEG bytes for the
+/// user's pinned reliquary photos. The importer **silently tolerates**
+/// this directory:
+///
+/// - The unzip step extracts every file (including `photos/<x>.jpg`) into
+///   the per-import tempDir, but the importer **never reads or copies**
+///   the photo bytes into app storage. Photos are viewer-only by design.
+/// - Each walk's JSON `photos[]` array is decoded into `PilgrimPhoto`
+///   structs via the standard `Codable` path (Stage 5a's optional field).
+/// - `PilgrimPackageConverter.convertToTemp` calls
+///   `PilgrimPackagePhotoConverter.importPhotos` to map those into
+///   `TempWalkPhoto` entities — dropping `embeddedPhotoFilename` because
+///   the app side has no field for it. The persisted `WalkPhoto` rows
+///   carry only `localIdentifier + GPS + timestamps`.
+/// - The tempDir (including the `photos/` subdirectory) is removed via
+///   `defer` when `unpackAndDecode` returns. No photo bytes survive.
+///
+/// Result: on the receiving device, the imported walk has a populated
+/// reliquary IF the user's iCloud Photos library still resolves the
+/// localIdentifiers — which works for AirDrop between two devices on the
+/// same iCloud account. For everyone else, the metadata is preserved but
+/// the photos won't render in-app (they only render in the desktop viewer
+/// where the embedded JPEG bytes are read directly from the archive).
 enum PilgrimPackageImporter {
 
     static func importPackage(
@@ -23,7 +49,12 @@ enum PilgrimPackageImporter {
         }
     }
 
-    private static func unpackAndDecode(from url: URL) throws -> ([TempWalk], [TempEvent]) {
+    /// Unzips the archive at `url` and decodes the walks + events from
+    /// its JSON payload. Internal (not private) so unit tests can
+    /// exercise the parse pipeline against a fixture archive without
+    /// going through `DataManager.saveWalks` (which requires a live
+    /// CoreStore stack).
+    static func unpackAndDecode(from url: URL) throws -> ([TempWalk], [TempEvent]) {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory
             .appendingPathComponent("pilgrim-import-\(UUID().uuidString)")
