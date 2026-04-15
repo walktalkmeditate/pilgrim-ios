@@ -139,6 +139,10 @@ final class PilgrimPackageImporterTests: XCTestCase {
         let walksDir = stagingDir.appendingPathComponent("walks")
         try fm.createDirectory(at: walksDir, withIntermediateDirectories: true)
 
+        // Cleanup the staging dir even if zipItem throws — without
+        // this defer, a failed test would leak a tempDir on every run.
+        defer { try? fm.removeItem(at: stagingDir) }
+
         let encoder = PilgrimDateCoding.makeEncoder()
 
         for walk in walks {
@@ -188,7 +192,16 @@ final class PilgrimPackageImporterTests: XCTestCase {
         try? fm.removeItem(at: archiveURL)
         try fm.zipItem(at: stagingDir, to: archiveURL, shouldKeepParent: false)
 
-        try? fm.removeItem(at: stagingDir)
+        // Sanity check: a 0-byte archive would mean ZIPFoundation silently
+        // failed. The importer would then report "invalid package" with
+        // no clue that the fixture builder is broken. Catch it here with
+        // a clearer diagnosis.
+        let archiveSize = (try? fm.attributesOfItem(atPath: archiveURL.path)[.size] as? Int) ?? 0
+        XCTAssertGreaterThan(
+            archiveSize,
+            0,
+            "Fixture builder produced a 0-byte archive — ZIPFoundation may have silently failed"
+        )
 
         fixtureURLs.append(archiveURL)
         return archiveURL
