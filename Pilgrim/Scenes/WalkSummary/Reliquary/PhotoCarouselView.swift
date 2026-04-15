@@ -93,6 +93,7 @@ struct PhotoThumbnailView: View {
     var onPhotoTap: () -> Void = {}
 
     @State private var image: UIImage?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         thumbnail
@@ -110,7 +111,14 @@ struct PhotoThumbnailView: View {
                 }
             }
             .scaleEffect(isActive ? Self.activeScale : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActive)
+            // Honor Reduce Motion: when enabled, the activation state still
+            // flips (centered pin button appears, scale changes) but without
+            // the spring animation. Same pattern WalkSummaryView uses for
+            // its share-card reveal.
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.7),
+                value: isActive
+            )
             .contentShape(Rectangle())
             .onTapGesture {
                 onPhotoTap()
@@ -119,6 +127,25 @@ struct PhotoThumbnailView: View {
                 onLongPress()
             }
             .onAppear { loadImage() }
+            // VoiceOver: collapse the thumbnail into a single accessible
+            // element with a descriptive label and direct pin/unpin
+            // action. Sighted users use long-press → tap pin button;
+            // VoiceOver users skip the activation step entirely via the
+            // custom action.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabelText)
+            .accessibilityHint("Double tap to preview at full size")
+            .accessibilityAction(named: candidate.isPinned ? "Unpin from map" : "Pin to map") {
+                onPinTap()
+            }
+    }
+
+    private var accessibilityLabelText: String {
+        let dateText = candidate.capturedAt.formatted(date: .abbreviated, time: .shortened)
+        if candidate.isPinned {
+            return "Photo, captured \(dateText), pinned to map"
+        }
+        return "Photo, captured \(dateText)"
     }
 
     @ViewBuilder
@@ -141,6 +168,10 @@ struct PhotoThumbnailView: View {
             .padding(5)
             .background(Color.stone)
             .clipShape(Circle())
+            // Decorative — the parent thumbnail's accessibilityLabel
+            // already conveys "pinned to map". Hide from VoiceOver to
+            // avoid a duplicate "Pin" announcement.
+            .accessibilityHidden(true)
     }
 
     private var centeredPinButton: some View {
@@ -153,6 +184,7 @@ struct PhotoThumbnailView: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(candidate.isPinned ? "Unpin from map" : "Pin to map")
     }
 
     private func loadImage() {

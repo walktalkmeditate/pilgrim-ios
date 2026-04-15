@@ -2,12 +2,16 @@ import SwiftUI
 
 /// Walk summary section that renders the photo reliquary carousel.
 ///
-/// Hides itself entirely if any of these conditions fail:
-///   1. `UserPreferences.walkReliquaryEnabled` is OFF
-///   2. `PermissionManager.standard.isPhotosGranted` is false
-///   3. The walk has no GPS-tagged photos in its time window
+/// Three render states gated by the user's settings + iOS permission:
+///   1. Toggle OFF → renders nothing (feature is invisible until opt-in)
+///   2. Toggle ON, permission granted, candidates exist → renders carousel
+///   3. Toggle ON, permission granted, no candidates → renders nothing
+///      (no point showing an empty reliquary)
+///   4. Toggle ON, permission revoked in iOS Settings → renders a gentle
+///      prompt with a Settings deep link, so the user knows why their
+///      reliquary disappeared and can recover with one tap.
 ///
-/// When all three conditions are met, the section loads `PhotoCandidate`s via
+/// When state 2 is active, the section loads `PhotoCandidate`s via
 /// `WalkPhotoMatcher.findCandidates(for:)` and presents the carousel.
 struct PhotoReliquarySection: View {
 
@@ -20,9 +24,18 @@ struct PhotoReliquarySection: View {
 
     var body: some View {
         Group {
-            if shouldRender, !candidates.isEmpty {
-                content
+            if isToggleOn {
+                if isPermissionGranted {
+                    if !candidates.isEmpty {
+                        content
+                    }
+                    // else: no candidates → render nothing (empty
+                    // walks shouldn't show empty section noise)
+                } else {
+                    permissionRevokedPrompt
+                }
             }
+            // else: toggle OFF → feature is invisible
         }
         .onAppear {
             loadCandidatesIfNeeded()
@@ -36,18 +49,22 @@ struct PhotoReliquarySection: View {
         }
     }
 
-    private var shouldRender: Bool {
+    private var isToggleOn: Bool {
         UserPreferences.walkReliquaryEnabled.value
-            && PermissionManager.standard.isPhotosGranted
+    }
+
+    private var isPermissionGranted: Bool {
+        PermissionManager.standard.isPhotosGranted
+    }
+
+    private var shouldRender: Bool {
+        isToggleOn && isPermissionGranted
     }
 
     @ViewBuilder
     private var content: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-            Text("Reliquary")
-                .font(Constants.Typography.heading)
-                .foregroundColor(.ink)
-                .padding(.horizontal, Constants.UI.Padding.normal)
+            reliquaryHeading
             PhotoCarouselView(
                 candidates: $candidates,
                 activePhotoID: $activePhotoID,
@@ -56,6 +73,52 @@ struct PhotoReliquarySection: View {
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Shown when the reliquary toggle is ON but Photos permission has
+    /// been revoked in iOS Settings. The toggle stays ON in
+    /// UserPreferences (the user opted in once and we don't want to
+    /// silently flip it back), but the carousel can't load candidates
+    /// without permission. Surfacing a quiet prompt with a Settings
+    /// deep link tells the user why their reliquary disappeared and
+    /// gives them a one-tap recovery path.
+    @ViewBuilder
+    private var permissionRevokedPrompt: some View {
+        VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+            reliquaryHeading
+
+            Text("Photo access was revoked. Grant Photo Library access in iOS Settings to see photos from this walk.")
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
+                .padding(.horizontal, Constants.UI.Padding.normal)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(action: openIOSSettings) {
+                Text("Open Settings")
+                    .font(Constants.Typography.button)
+                    .foregroundColor(.stone)
+                    .padding(.horizontal, Constants.UI.Padding.normal)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var reliquaryHeading: some View {
+        Text("Reliquary")
+            .font(Constants.Typography.heading)
+            .foregroundColor(.ink)
+            .padding(.horizontal, Constants.UI.Padding.normal)
+            // VoiceOver: marks this as a heading so users navigating
+            // by heading rotor can jump directly to the reliquary
+            // section, matching how walk summary's other section
+            // titles are exposed.
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private func openIOSSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     private func loadCandidatesIfNeeded() {
