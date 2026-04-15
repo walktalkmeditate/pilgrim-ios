@@ -22,6 +22,20 @@ struct PhotoReliquarySection: View {
     @State private var isLoaded = false
     @State private var previewCandidate: PhotoCandidate?
 
+    /// Monotonic counter bumped on each fetch start. The completion
+    /// handler drops results whose generation no longer matches, so if
+    /// two fetches overlap (onAppear + a quickly-following scenePhase
+    /// refresh, say), only the most recent one applies.
+    @State private var fetchGeneration: UInt = 0
+
+    /// Observed so the section re-renders when the app comes back from
+    /// iOS Settings. Without this, a user who taps "Open Settings" in
+    /// the permission-revoked prompt, grants Photos access, and returns
+    /// to Pilgrim would still see the prompt — because the body has no
+    /// reason to re-evaluate (no @State changed, onAppear doesn't fire
+    /// for an already-visible view).
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
         Group {
             if isToggleOn {
@@ -39,6 +53,16 @@ struct PhotoReliquarySection: View {
         }
         .onAppear {
             loadCandidatesIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Coming back from Settings: the user may have granted or
+            // revoked Photos access, so force a fresh fetch (bypassing
+            // the onAppear one-shot latch). Clearing candidates on the
+            // revoked path also forces the parent's combinedAnnotations
+            // to hide any photo pins still on the map.
+            if newPhase == .active {
+                reloadCandidates()
+            }
         }
         .fullScreenCover(item: $previewCandidate) { candidate in
             PhotoPreviewSheet(
@@ -98,6 +122,8 @@ struct PhotoReliquarySection: View {
                     .font(Constants.Typography.button)
                     .foregroundColor(.stone)
                     .padding(.horizontal, Constants.UI.Padding.normal)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -123,10 +149,27 @@ struct PhotoReliquarySection: View {
 
     private func loadCandidatesIfNeeded() {
         guard !isLoaded else { return }
-        guard shouldRender else { return }
+        reloadCandidates()
+    }
+
+    /// Force-refresh the carousel data. Used for scene-phase triggers,
+    /// where the user may have granted or revoked permission in iOS
+    /// Settings since the last load — the `isLoaded` latch must be
+    /// bypassed so stale data doesn't survive a revoke/grant cycle.
+    /// Also clears stale candidates when the gate has closed, which
+    /// forces the parent view to re-derive `combinedAnnotations` so
+    /// map photo pins hide alongside the carousel.
+    private func reloadCandidates() {
+        guard shouldRender else {
+            if !candidates.isEmpty { candidates = [] }
+            return
+        }
         isLoaded = true
+        fetchGeneration &+= 1
+        let generation = fetchGeneration
 
         WalkPhotoMatcher.findCandidates(for: walk) { result in
+            guard generation == self.fetchGeneration else { return }
             self.candidates = result
         }
     }

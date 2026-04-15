@@ -134,7 +134,7 @@ struct PhotoThumbnailView: View {
             // custom action.
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityLabelText)
-            .accessibilityHint("Double tap to preview at full size")
+            .accessibilityHint("Shows photo at full size")
             .accessibilityAction(named: candidate.isPinned ? "Unpin from map" : "Pin to map") {
                 onPinTap()
             }
@@ -184,7 +184,6 @@ struct PhotoThumbnailView: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(candidate.isPinned ? "Unpin from map" : "Pin to map")
     }
 
     private func loadImage() {
