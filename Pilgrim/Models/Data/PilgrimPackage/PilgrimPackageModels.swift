@@ -250,6 +250,30 @@ struct PilgrimPhoto: Codable {
     let capturedLng: Double
     let keptAt: Date
     let embeddedPhotoFilename: String?
+    /// Base64 data URL for the JS bridge (in-app "My Journey"
+    /// viewer). Nil in normal .pilgrim exports — the key is omitted
+    /// from JSON so the file stays byte-identical to the archive
+    /// format. Only populated by JourneyViewerView when building
+    /// the loadData payload.
+    let inlineUrl: String?
+
+    init(
+        localIdentifier: String,
+        capturedAt: Date,
+        capturedLat: Double,
+        capturedLng: Double,
+        keptAt: Date,
+        embeddedPhotoFilename: String?,
+        inlineUrl: String? = nil
+    ) {
+        self.localIdentifier = localIdentifier
+        self.capturedAt = capturedAt
+        self.capturedLat = capturedLat
+        self.capturedLng = capturedLng
+        self.keptAt = keptAt
+        self.embeddedPhotoFilename = embeddedPhotoFilename
+        self.inlineUrl = inlineUrl
+    }
 }
 
 // MARK: - Workout Events
