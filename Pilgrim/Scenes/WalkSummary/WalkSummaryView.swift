@@ -132,6 +132,7 @@ struct WalkSummaryView: View {
                 if let uuid = walk.uuid?.uuidString {
                     hasRevealedLightReading = sharingTracker.hasShared(walkUUID: uuid)
                 }
+                loadReliquaryCandidates()
             }
             .onDisappear {
                 pollingTask?.cancel()
@@ -229,6 +230,23 @@ struct WalkSummaryView: View {
     }
 
     @State private var pollingTask: Task<Void, Never>?
+
+    /// Initiates the reliquary candidate fetch from the PARENT view
+    /// rather than from PhotoReliquarySection, so the result writes
+    /// directly to `@State var photoCandidates`. Setting @State from
+    /// the owning view's closure context is more reliable than
+    /// setting it via @Binding from a child's async completion —
+    /// the latter exhibited a SwiftUI propagation bug on device
+    /// where the @Binding write didn't trigger a re-render on the
+    /// initial walk summary open (builds 55-58).
+    private func loadReliquaryCandidates() {
+        guard UserPreferences.walkReliquaryEnabled.value,
+              PermissionManager.standard.isPhotosGranted else { return }
+
+        WalkPhotoMatcher.findCandidates(for: walk) { result in
+            self.photoCandidates = result
+        }
+    }
 
     private func pollForAutoTranscription() {
         pollingTask?.cancel()

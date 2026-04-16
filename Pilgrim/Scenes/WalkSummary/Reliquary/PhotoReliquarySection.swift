@@ -19,7 +19,6 @@ struct PhotoReliquarySection: View {
     @Binding var candidates: [PhotoCandidate]
     @Binding var activePhotoID: String?
 
-    @State private var isLoaded = false
     @State private var previewCandidate: PhotoCandidate?
 
     /// Monotonic counter bumped on each fetch start. The completion
@@ -78,27 +77,25 @@ struct PhotoReliquarySection: View {
         }
         .animation(.easeInOut(duration: 0.3), value: candidates.isEmpty)
         .animation(.easeInOut(duration: 0.3), value: showLoadingSkeleton)
-        .task(id: walk.uuid) {
-            // Initial load. `.task` is more reliable than
-            // `.onAppear` for async work — it integrates with Swift
-            // concurrency, auto-cancels on disappear, and reruns if
-            // walk.uuid changes (harmless for our single-walk
-            // presentation).
-            loadCandidatesIfNeeded()
-
-            // Defensive retry: on build 56 a real-device bug showed
-            // fresh walk summaries opening with an empty carousel
-            // despite the walk having matching photos — only an app
-            // switch recovered them. The exact race isn't pinned
-            // (possibly a view-mount / CoreStore commit / PhotoKit
-            // cache interaction during the seal reveal sequence),
-            // but a second fetch ~1s later reliably recovers. The
-            // generation counter ensures this retry doesn't collide
-            // with any in-flight callback from the first fetch.
-            try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled else { return }
-            if candidates.isEmpty && shouldRender {
-                reloadCandidates()
+        .onAppear {
+            // The parent (WalkSummaryView) handles the initial fetch.
+            // Here we just schedule the deferred skeleton so the user
+            // sees a loading indicator if the fetch takes >300ms.
+            if shouldRender && candidates.isEmpty {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    if self.candidates.isEmpty && self.shouldRender {
+                        self.showLoadingSkeleton = true
+                    }
+                }
+            }
+        }
+        .onChange(of: candidates.isEmpty) { _, isEmpty in
+            // Dismiss the skeleton when candidates arrive — whether
+            // from the parent's initial fetch or from a scenePhase
+            // reload. Also resets isFetching for cleanliness.
+            if !isEmpty {
+                showLoadingSkeleton = false
+                isFetching = false
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -245,11 +242,6 @@ struct PhotoReliquarySection: View {
         UIApplication.shared.open(url)
     }
 
-    private func loadCandidatesIfNeeded() {
-        guard !isLoaded else { return }
-        reloadCandidates()
-    }
-
     /// Force-refresh the carousel data. Used for scene-phase triggers,
     /// where the user may have granted or revoked permission in iOS
     /// Settings since the last load — the `isLoaded` latch must be
@@ -264,7 +256,6 @@ struct PhotoReliquarySection: View {
             showLoadingSkeleton = false
             return
         }
-        isLoaded = true
         fetchGeneration &+= 1
         let generation = fetchGeneration
         isFetching = true

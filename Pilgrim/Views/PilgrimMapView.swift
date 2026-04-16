@@ -410,19 +410,19 @@ struct PilgrimMapView: UIViewRepresentable {
                 point.iconSize = 1.0
                 points.append(point)
             case .photo(let localIdentifier):
-                // Circular thumbnail of the actual photo (or a
-                // parchment placeholder while the async load
-                // resolves). Each marker has a unique name keyed by
-                // localIdentifier so Mapbox's image registry can
-                // address them independently.
+                // Try synchronous load first — works instantly for
+                // local photos (~10-50ms). Falls back to async +
+                // placeholder only for iCloud-only photos where a
+                // network fetch would block the main thread.
                 var point = PointAnnotation(coordinate: pin.coordinate)
-                if let cached = coordinator.photoMarkerLoader.image(for: localIdentifier) {
-                    point.image = .init(image: cached, name: "photo-\(localIdentifier)")
+                if let image = coordinator.photoMarkerLoader.image(for: localIdentifier)
+                    ?? coordinator.photoMarkerLoader.loadImageSync(localIdentifier: localIdentifier) {
+                    point.image = .init(image: image, name: "photo-\(localIdentifier)")
                 } else {
-                    // Kick off the async load — when it resolves,
-                    // `PhotoMarkerImageLoader.onImageLoaded` fires
-                    // and re-applies annotations, at which point the
-                    // cache hit above will fire for this marker.
+                    // iCloud-only or deleted — async fallback with
+                    // placeholder. When the download finishes,
+                    // `onImageLoaded` fires and re-applies
+                    // annotations so the placeholder swaps out.
                     coordinator.photoMarkerLoader.loadImage(localIdentifier: localIdentifier)
                     point.image = .init(image: Self.cachedPhotoPlaceholder(), name: "photo-placeholder")
                 }

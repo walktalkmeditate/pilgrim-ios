@@ -37,11 +37,53 @@ final class PhotoMarkerImageLoader {
         images[localIdentifier]
     }
 
-    /// Kicks off an async PhotoKit fetch for `localIdentifier`,
-    /// builds a circular marker image via `PhotoMarkerImageBuilder`,
-    /// caches it, and invokes `onImageLoaded` so the caller can
-    /// redraw. No-op if the image is already cached or a request is
-    /// already in flight for this identifier.
+    /// Synchronous image load for the fast path (local photos on
+    /// this device). Uses `isSynchronous = true` with network
+    /// access disabled so it never blocks on iCloud downloads.
+    /// Returns nil if the photo is iCloud-only or no longer exists.
+    /// ~10-50ms per local photo — acceptable for the 1-5 pinned
+    /// photos typical in a walk's reliquary.
+    func loadImageSync(localIdentifier: String) -> UIImage? {
+        if let cached = images[localIdentifier] { return cached }
+
+        let fetchResult = PHAsset.fetchAssets(
+            withLocalIdentifiers: [localIdentifier],
+            options: nil
+        )
+        guard let asset = fetchResult.firstObject else { return nil }
+
+        let scale = UIScreen.main.scale
+        let targetSize = CGSize(
+            width: PhotoMarkerImageBuilder.defaultDiameter * 2 * scale,
+            height: PhotoMarkerImageBuilder.defaultDiameter * 2 * scale
+        )
+
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .highQualityFormat
+        options.isNetworkAccessAllowed = false
+        options.isSynchronous = true
+        options.resizeMode = .exact
+
+        var result: UIImage?
+        PHImageManager.default().requestImage(
+            for: asset,
+            targetSize: targetSize,
+            contentMode: .aspectFill,
+            options: options
+        ) { image, _ in
+            result = image
+        }
+
+        guard let image = result else { return nil }
+        let marker = PhotoMarkerImageBuilder.build(from: image)
+        images[localIdentifier] = marker
+        return marker
+    }
+
+    /// Async fallback for iCloud-only photos where the sync path
+    /// returned nil. Kicks off a network-enabled PhotoKit fetch,
+    /// caches the result, and invokes `onImageLoaded` so the map
+    /// can swap out the placeholder on a later render pass.
     func loadImage(localIdentifier: String) {
         guard images[localIdentifier] == nil else { return }
         guard !inFlightRequests.contains(localIdentifier) else { return }
