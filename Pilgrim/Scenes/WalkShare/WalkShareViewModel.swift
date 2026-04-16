@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import Photos
 
 @MainActor
 final class WalkShareViewModel: ObservableObject {
@@ -12,9 +13,17 @@ final class WalkShareViewModel: ObservableObject {
     @Published var toggleActivityBreakdown = true
     @Published var toggleSteps = false
     @Published var includeWaypoints = false
+    @Published var includePhotos = false
 
     var waypointCount: Int { walk.waypoints.count }
     var hasWaypoints: Bool { waypointCount > 0 }
+
+    var pinnedPhotoCount: Int { walk.walkPhotos.count }
+    var hasPinnedPhotos: Bool {
+        pinnedPhotoCount > 0
+            && UserPreferences.walkReliquaryEnabled.value
+            && PermissionManager.standard.isPhotosGranted
+    }
 
     @Published var journal = ""
     @Published var selectedExpiry: ExpiryOption = .season
@@ -154,6 +163,50 @@ final class WalkShareViewModel: ObservableObject {
         return (s, e)
     }
 
+    /// Loads a pinned photo as a low-res base64 JPEG for the share
+    /// payload. Synchronous (blocks main ~10-50ms per local photo).
+    /// Returns nil for deleted or iCloud-only photos, which are
+    /// silently dropped from the share.
+    private static func loadSharePhoto(
+        localIdentifier: String,
+        lat: Double,
+        lon: Double,
+        capturedAt: Date
+    ) -> SharePayload.Photo? {
+        let fetchResult = PHAsset.fetchAssets(
+            withLocalIdentifiers: [localIdentifier],
+            options: nil
+        )
+        guard let asset = fetchResult.firstObject else { return nil }
+
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .highQualityFormat
+        options.isNetworkAccessAllowed = false
+        options.isSynchronous = true
+        options.resizeMode = .exact
+
+        let targetSize = CGSize(width: 800, height: 800)
+
+        var result: SharePayload.Photo?
+        PHImageManager.default().requestImage(
+            for: asset,
+            targetSize: targetSize,
+            contentMode: .aspectFill,
+            options: options
+        ) { image, _ in
+            guard let image = image,
+                  let jpegData = image.jpegData(compressionQuality: 0.6) else { return }
+            let base64 = jpegData.base64EncodedString()
+            result = SharePayload.Photo(
+                lat: lat,
+                lon: lon,
+                ts: Int(capturedAt.timeIntervalSince1970),
+                data: base64
+            )
+        }
+        return result
+    }
+
     private func geocodeSingle(geocoder: CLGeocoder, location: CLLocation) async -> String? {
         do {
             let placemarks = try await geocoder.reverseGeocodeLocation(location)
@@ -238,6 +291,18 @@ final class WalkShareViewModel: ObservableObject {
             }
         }()
 
+        let photoPayload: [SharePayload.Photo]? = {
+            guard includePhotos, hasPinnedPhotos else { return nil }
+            return walk.walkPhotos.compactMap { photo in
+                Self.loadSharePhoto(
+                    localIdentifier: photo.localIdentifier,
+                    lat: photo.capturedLat,
+                    lon: photo.capturedLng,
+                    capturedAt: photo.capturedAt
+                )
+            }
+        }()
+
         return SharePayload(
             stats: stats,
             route: downsampled,
@@ -251,7 +316,8 @@ final class WalkShareViewModel: ObservableObject {
             placeStart: placeStart,
             placeEnd: placeEnd,
             mark: markValue,
-            waypoints: waypointPayload
+            waypoints: waypointPayload,
+            photos: photoPayload
         )
     }
 }
