@@ -23,21 +23,27 @@ struct WalkSummaryView: View {
         _cachedSegments = State(initialValue: Self.computeSegments(for: walk))
         _cachedAnnotations = State(initialValue: Self.computeAnnotations(for: walk))
     }
-    @State private var cameraBounds: MapCameraBounds?
-    @State private var cameraCenter: CLLocationCoordinate2D?
-    @State private var cameraZoom: CGFloat = 16
-    @State private var cameraDuration: TimeInterval = 0.4
-    @State private var cachedSegments: [RouteSegment] = []
-    @State private var cachedAnnotations: [PilgrimAnnotation] = []
+    // The camera, route, annotation, and reveal-phase state below intentionally drops
+    // `private` so the `WalkSummaryView+Map.swift` extension can read it. Kept internal-
+    // by-default to limit the API surface to the same module without splitting visibility
+    // further.
+    @State var cameraBounds: MapCameraBounds?
+    @State var cameraCenter: CLLocationCoordinate2D?
+    @State var cameraZoom: CGFloat = 16
+    @State var cameraDuration: TimeInterval = 0.4
+    @State var cachedSegments: [RouteSegment] = []
+    @State var cachedAnnotations: [PilgrimAnnotation] = []
+    @State var photoCandidates: [PhotoCandidate] = []
+    @State var activePhotoID: String?
     @State private var recentWalkSnippets: [WalkSnippet] = []
-    @State private var revealPhase: RevealPhase = .hidden
+    @State var revealPhase: RevealPhase = .hidden
     @State private var milestone: String?
     @State private var cachedCelestialSnapshot: CelestialSnapshot?
     @State private var lightReading: LightReading?
     @State private var hasRevealedLightReading: Bool = false
     private let sharingTracker = WalkSharingTracker()
 
-    private enum RevealPhase {
+    enum RevealPhase {
         case hidden, zoomed, revealed
     }
 
@@ -48,6 +54,11 @@ struct WalkSummaryView: View {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     mapSection
+                    PhotoReliquarySection(
+                        walk: walk,
+                        candidates: $photoCandidates,
+                        activePhotoID: $activePhotoID
+                    )
                     intentionCard
                     elevationProfile
                     journeyQuote
@@ -121,6 +132,7 @@ struct WalkSummaryView: View {
                 if let uuid = walk.uuid?.uuidString {
                     hasRevealedLightReading = sharingTracker.hasShared(walkUUID: uuid)
                 }
+                loadReliquaryCandidates()
             }
             .onDisappear {
                 pollingTask?.cancel()
@@ -133,7 +145,7 @@ struct WalkSummaryView: View {
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
-                    PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment)
+                    PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment, photoCandidates: photoCandidates)
                 }
             }
         }
@@ -219,6 +231,23 @@ struct WalkSummaryView: View {
 
     @State private var pollingTask: Task<Void, Never>?
 
+    /// Initiates the reliquary candidate fetch from the PARENT view
+    /// rather than from PhotoReliquarySection, so the result writes
+    /// directly to `@State var photoCandidates`. Setting @State from
+    /// the owning view's closure context is more reliable than
+    /// setting it via @Binding from a child's async completion —
+    /// the latter exhibited a SwiftUI propagation bug on device
+    /// where the @Binding write didn't trigger a re-render on the
+    /// initial walk summary open (builds 55-58).
+    private func loadReliquaryCandidates() {
+        guard UserPreferences.walkReliquaryEnabled.value,
+              PermissionManager.standard.isPhotosGranted else { return }
+
+        WalkPhotoMatcher.findCandidates(for: walk) { result in
+            self.photoCandidates = result
+        }
+    }
+
     private func pollForAutoTranscription() {
         pollingTask?.cancel()
         pollingTask = Task {
@@ -243,41 +272,6 @@ struct WalkSummaryView: View {
         }
     }
 
-    private var mapSection: some View {
-        Group {
-            if !routeCoordinates.isEmpty {
-                PilgrimMapView(
-                    isInteractive: revealPhase == .revealed,
-                    showsUserLocation: false,
-                    routeSegments: cachedSegments,
-                    pinAnnotations: cachedAnnotations,
-                    cameraCenter: $cameraCenter,
-                    cameraZoom: $cameraZoom,
-                    cameraBounds: cameraBounds,
-                    cameraDuration: cameraDuration
-                )
-                .frame(height: 320)
-                .mask(
-                    RadialGradient(
-                        gradient: Gradient(colors: [.white, .white, .white.opacity(0)]),
-                        center: .center,
-                        startRadius: 80,
-                        endRadius: 180
-                    )
-                )
-                .padding(.horizontal, -Constants.UI.Padding.normal)
-            } else {
-                RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
-                    .fill(Color.parchmentSecondary)
-                    .frame(height: 280)
-                    .overlay(
-                        Text("No route data")
-                            .font(Constants.Typography.body)
-                            .foregroundColor(.fog)
-                    )
-            }
-        }
-    }
 
     @ViewBuilder
     private var elevationProfile: some View {
@@ -807,7 +801,7 @@ struct WalkSummaryView: View {
     }
 
     private var shareCard: some View {
-        WalkSharingButtons(walk: walk, onShare: markSharedAndReveal)
+        WalkSharingButtons(walk: walk, pinnedPhotos: photoCandidates.filter(\.isPinned), onShare: markSharedAndReveal)
     }
 
     private func markSharedAndReveal() {

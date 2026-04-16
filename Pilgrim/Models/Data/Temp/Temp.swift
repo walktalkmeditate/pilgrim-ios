@@ -22,7 +22,7 @@
 import Foundation
 import CoreLocation
 
-public typealias TempWalk = TempV4.Workout
+public typealias TempWalk = TempV4.Walk
 extension TempWalk: WalkInterface, Identifiable {
     public var id: UUID { uuid ?? UUID() }
 
@@ -56,12 +56,13 @@ extension TempWalk: WalkInterface, Identifiable {
             voiceRecordings: object.voiceRecordings.map { .init(from: $0) },
             activityIntervals: object.activityIntervals.map { .init(from: $0) },
             favicon: object.favicon,
-            waypoints: object.waypoints.map { TempV4.Waypoint(uuid: $0.uuid, latitude: $0.latitude, longitude: $0.longitude, label: $0.label, icon: $0.icon, timestamp: $0.timestamp) }
+            waypoints: object.waypoints.map { TempV4.Waypoint(uuid: $0.uuid, latitude: $0.latitude, longitude: $0.longitude, label: $0.label, icon: $0.icon, timestamp: $0.timestamp) },
+            walkPhotos: object.walkPhotos.map { TempV4.WalkPhoto(uuid: $0.uuid, localIdentifier: $0.localIdentifier, capturedAt: $0.capturedAt, capturedLat: $0.capturedLat, capturedLng: $0.capturedLng, keptAt: $0.keptAt) }
         )
     }
 }
 
-public typealias TempWalkPause = TempV4.WorkoutPause
+public typealias TempWalkPause = TempV4.WalkPause
 extension TempWalkPause: WalkPauseInterface {
     
     convenience init(from object: WalkPauseInterface) {
@@ -93,7 +94,7 @@ extension TempWalkPause: WalkPauseInterface {
     }
 }
 
-public typealias TempWalkEvent = TempV4.WorkoutEvent
+public typealias TempWalkEvent = TempV4.WalkEvent
 extension TempWalkEvent: WalkEventInterface {
     
     convenience init(from object: WalkEventInterface) {
@@ -106,7 +107,7 @@ extension TempWalkEvent: WalkEventInterface {
     }
 }
 
-public typealias TempRouteDataSample = TempV4.WorkoutRouteDataSample
+public typealias TempRouteDataSample = TempV4.RouteDataSample
 extension TempRouteDataSample: RouteDataSampleInterface {
     
     convenience init(from object: RouteDataSampleInterface) {
@@ -126,7 +127,7 @@ extension TempRouteDataSample: RouteDataSampleInterface {
     
 }
 
-public typealias TempHeartRateDataSample = TempV4.WorkoutHeartRateDataSample
+public typealias TempHeartRateDataSample = TempV4.HeartRateDataSample
 extension TempHeartRateDataSample: HeartRateDataSampleInterface {
     
     convenience init(from object: HeartRateDataSampleInterface) {
@@ -165,6 +166,21 @@ extension TempWaypoint {
             label: object.label,
             icon: object.icon,
             timestamp: object.timestamp
+        )
+    }
+}
+
+public typealias TempWalkPhoto = TempV4.WalkPhoto
+extension TempWalkPhoto {
+
+    convenience init(from object: WalkPhotoInterface) {
+        self.init(
+            uuid: object.uuid,
+            localIdentifier: object.localIdentifier,
+            capturedAt: object.capturedAt,
+            capturedLat: object.capturedLat,
+            capturedLng: object.capturedLng,
+            keptAt: object.keptAt
         )
     }
 }

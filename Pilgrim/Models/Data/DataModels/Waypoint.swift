@@ -1,7 +1,7 @@
 import Foundation
 import CoreStore
 
-public typealias Waypoint = PilgrimV6.Waypoint
+public typealias Waypoint = PilgrimV7.Waypoint
 
 extension Waypoint: WaypointInterface {
 

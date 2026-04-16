@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import CoreStore
+import Photos
 
 struct JourneyViewerView: View {
 
@@ -64,8 +65,20 @@ struct JourneyViewerView: View {
                 return
             }
 
-            let pilgrimWalks = walks.compactMap {
-                PilgrimPackageConverter.convert(walk: $0, system: system, celestialEnabled: celestialEnabled)
+            let reliquaryEnabled = UserPreferences.walkReliquaryEnabled.value
+                && PermissionManager.standard.isPhotosGranted
+
+            var pilgrimWalks = walks.compactMap {
+                PilgrimPackageConverter.convert(
+                    walk: $0,
+                    system: system,
+                    celestialEnabled: celestialEnabled,
+                    includePhotos: reliquaryEnabled
+                )
+            }
+
+            if reliquaryEnabled {
+                pilgrimWalks = pilgrimWalks.map { Self.enrichWithInlinePhotos($0) }
             }
 
             let encoder = PilgrimDateCoding.makeEncoder()
@@ -88,6 +101,62 @@ struct JourneyViewerView: View {
         } catch {
             self.error = "Failed to load walks."
         }
+    }
+
+    /// Replaces each walk's photo entries with copies that carry a
+    /// base64 `inlineUrl` so the in-app viewer can render them via
+    /// the JS bridge (which has no access to a ZIP's photos/ dir).
+    /// Uses synchronous PHImageManager with network disabled so
+    /// local photos resolve in ~10-50ms each. iCloud-only photos
+    /// get nil (gracefully skipped by the viewer).
+    private static func enrichWithInlinePhotos(_ walk: PilgrimWalk) -> PilgrimWalk {
+        guard let photos = walk.photos, !photos.isEmpty else { return walk }
+
+        var enriched = walk
+        enriched.photos = photos.compactMap { photo in
+            guard let dataUrl = loadPhotoDataUrl(localIdentifier: photo.localIdentifier) else {
+                return nil
+            }
+            return PilgrimPhoto(
+                localIdentifier: photo.localIdentifier,
+                capturedAt: photo.capturedAt,
+                capturedLat: photo.capturedLat,
+                capturedLng: photo.capturedLng,
+                keptAt: photo.keptAt,
+                embeddedPhotoFilename: photo.embeddedPhotoFilename,
+                inlineUrl: dataUrl
+            )
+        }
+        return enriched
+    }
+
+    private static func loadPhotoDataUrl(localIdentifier: String) -> String? {
+        let fetchResult = PHAsset.fetchAssets(
+            withLocalIdentifiers: [localIdentifier],
+            options: nil
+        )
+        guard let asset = fetchResult.firstObject else { return nil }
+
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .highQualityFormat
+        options.isNetworkAccessAllowed = false
+        options.isSynchronous = true
+        options.resizeMode = .exact
+
+        let targetSize = CGSize(width: 600, height: 600)
+
+        var result: String?
+        PHImageManager.default().requestImage(
+            for: asset,
+            targetSize: targetSize,
+            contentMode: .aspectFill,
+            options: options
+        ) { image, _ in
+            guard let image = image,
+                  let jpegData = image.jpegData(compressionQuality: 0.7) else { return }
+            result = "data:image/jpeg;base64,\(jpegData.base64EncodedString())"
+        }
+        return result
     }
 }
 

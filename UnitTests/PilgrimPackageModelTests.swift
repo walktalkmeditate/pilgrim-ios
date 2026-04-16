@@ -267,7 +267,8 @@ final class PilgrimPackageModelTests: XCTestCase {
             favicon: "flame",
             isRace: false,
             isUserModified: true,
-            finishedRecording: true
+            finishedRecording: true,
+            photos: nil
         )
 
         let decoded = try roundTrip(walk)
@@ -371,7 +372,8 @@ final class PilgrimPackageModelTests: XCTestCase {
             favicon: nil,
             isRace: false,
             isUserModified: false,
-            finishedRecording: true
+            finishedRecording: true,
+            photos: nil
         )
     }
 }

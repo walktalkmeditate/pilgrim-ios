@@ -6,7 +6,15 @@ enum PilgrimPackageConverter {
 
     // MARK: - Walk Conversion
 
-    static func convert(walk: WalkInterface, system: ZodiacSystem, celestialEnabled: Bool) -> PilgrimWalk? {
+    /// `includePhotos: false` (the default) leaves `PilgrimWalk.photos` nil so
+    /// the JSON encoder omits the key and the file stays byte-identical to
+    /// the pre-reliquary format.
+    static func convert(
+        walk: WalkInterface,
+        system: ZodiacSystem,
+        celestialEnabled: Bool,
+        includePhotos: Bool = false
+    ) -> PilgrimWalk? {
         guard let id = walk.uuid else { return nil }
 
         let walkType: String = walk.workoutType == .walking ? "walking" : "unknown"
@@ -77,10 +85,6 @@ enum PilgrimPackageConverter {
             )
         }
 
-        let reflection: PilgrimReflection? = celestialEnabled
-            ? buildReflection(date: walk.startDate, system: system)
-            : nil
-
         return PilgrimWalk(
             schemaVersion: schemaVersion,
             id: id,
@@ -94,13 +98,14 @@ enum PilgrimPackageConverter {
             activities: activities,
             voiceRecordings: voiceRecordings,
             intention: walk.comment,
-            reflection: reflection,
+            reflection: celestialEnabled ? buildReflection(date: walk.startDate, system: system) : nil,
             heartRates: heartRates,
             workoutEvents: workoutEvents,
             favicon: walk.favicon,
             isRace: walk.isRace,
             isUserModified: walk.isUserModified,
-            finishedRecording: walk.finishedRecording
+            finishedRecording: walk.finishedRecording,
+            photos: PilgrimPackagePhotoConverter.exportPhotos(from: walk.walkPhotos, includePhotos: includePhotos)
         )
     }
 
@@ -306,6 +311,7 @@ enum PilgrimPackageConverter {
             activityIntervals: related.activities,
             favicon: walk.favicon,
             waypoints: waypoints,
+            walkPhotos: PilgrimPackagePhotoConverter.importPhotos(from: walk.photos),
             weatherCondition: walk.weather?.condition,
             weatherTemperature: walk.weather?.temperature,
             weatherHumidity: walk.weather?.humidity,

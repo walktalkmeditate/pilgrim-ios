@@ -65,6 +65,8 @@ struct UserPreferences {
     static let beginWithIntention = UserPreference.Required<Bool>(key: "beginWithIntention", defaultValue: false)
 
     static let celestialAwarenessEnabled = UserPreference.Required<Bool>(key: "celestialAwarenessEnabled", defaultValue: false)
+
+    static let walkReliquaryEnabled = UserPreference.Required<Bool>(key: "walkReliquaryEnabled", defaultValue: false)
     static let zodiacSystem = UserPreference.Required<String>(key: "zodiacSystem", defaultValue: "tropical")
     static let appearanceMode = UserPreference.Required<String>(key: "appearanceMode", defaultValue: "system")
 

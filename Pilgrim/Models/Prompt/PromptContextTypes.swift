@@ -36,3 +36,11 @@ struct WaypointContext {
     let timestamp: Date
     let coordinate: (lat: Double, lon: Double)
 }
+
+struct PhotoContextEntry {
+    let index: Int
+    let distanceIntoWalk: String
+    let time: String
+    let coordinate: (lat: Double, lon: Double)
+    let context: PhotoContext
+}

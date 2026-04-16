@@ -9,10 +9,12 @@ struct WalkShareView: View {
     @State private var showPodcastCard = false
 
     let walk: WalkInterface
+    let pinnedPhotos: [PhotoCandidate]
 
-    init(walk: WalkInterface) {
+    init(walk: WalkInterface, pinnedPhotos: [PhotoCandidate] = []) {
         self.walk = walk
-        _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk))
+        self.pinnedPhotos = pinnedPhotos
+        _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk, pinnedPhotos: pinnedPhotos))
     }
 
     private var isShared: Bool {
@@ -123,6 +125,23 @@ struct WalkShareView: View {
                     value: "\(viewModel.waypointCount) \(viewModel.waypointCount == 1 ? "place" : "places") you marked",
                     isOn: $viewModel.includeWaypoints
                 )
+            }
+            if viewModel.hasPinnedPhotos {
+                VStack(alignment: .leading, spacing: 4) {
+                    StatToggleRow(
+                        title: "Reliquary Photos",
+                        value: "\(viewModel.pinnedPhotoCount) \(viewModel.pinnedPhotoCount == 1 ? "photo" : "photos") you pinned",
+                        isOn: $viewModel.includePhotos
+                    )
+                    if viewModel.includePhotos {
+                        Text("Photos will be visible to anyone with the link.")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                            .padding(.horizontal, Constants.UI.Padding.normal)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: viewModel.includePhotos)
             }
         }
     }

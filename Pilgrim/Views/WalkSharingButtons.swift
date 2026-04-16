@@ -3,6 +3,7 @@ import SwiftUI
 struct WalkSharingButtons: View {
 
     let walk: WalkInterface
+    var pinnedPhotos: [PhotoCandidate] = []
     var onShare: (() -> Void)? = nil
     @State private var showJourneySheet = false
     @State private var shareURL: URL?
@@ -47,7 +48,7 @@ struct WalkSharingButtons: View {
                 shareVersion += 1
                 onShare?()
             }) {
-                WalkShareView(walk: walk)
+                WalkShareView(walk: walk, pinnedPhotos: pinnedPhotos)
             }
             .sheet(item: $shareURL, onDismiss: {
                 onShare?()

@@ -23,7 +23,7 @@ import Foundation
 import CoreLocation
 import CoreStore
 
-public typealias Walk = PilgrimV6.Workout
+public typealias Walk = PilgrimV7.Walk
 
 extension PilgrimV2.Workout {
 
@@ -144,6 +144,7 @@ extension Walk: WalkInterface {
     public var activityIntervals: [ActivityIntervalInterface] { threadSafeSyncReturn { self._activityIntervals.value } }
     public var favicon: String? { threadSafeSyncReturn { self._favicon.value } }
     public var waypoints: [WaypointInterface] { threadSafeSyncReturn { Array(self._waypoints.value) as [WaypointInterface] } }
+    public var walkPhotos: [WalkPhotoInterface] { threadSafeSyncReturn { Array(self._walkPhotos.value) as [WalkPhotoInterface] } }
     public var weatherCondition: String? { threadSafeSyncReturn { self._weatherCondition.value } }
     public var weatherTemperature: Double? { threadSafeSyncReturn { self._weatherTemperature.value } }
     public var weatherHumidity: Double? { threadSafeSyncReturn { self._weatherHumidity.value } }
@@ -185,6 +186,7 @@ extension Walk: TempValueConvertible {
                 activityIntervals: self._activityIntervals.value.map { $0.asTemp },
                 favicon: self._favicon.value,
                 waypoints: self._waypoints.value.map { $0.asTemp },
+                walkPhotos: self._walkPhotos.value.map { $0.asTemp },
                 weatherCondition: self._weatherCondition.value,
                 weatherTemperature: self._weatherTemperature.value,
                 weatherHumidity: self._weatherHumidity.value,

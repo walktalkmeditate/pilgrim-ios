@@ -23,10 +23,10 @@ import Foundation
 
 public enum TempV4 {
     
-    public class Workout: Codable, TempValueConvertible {
+    public class Walk: Codable, TempValueConvertible {
         
         public var uuid: UUID?
-        public var workoutType: Walk.WalkType
+        public var workoutType: PilgrimV2.Workout.WalkType
         public var distance: Double
         public var steps: Int?
         public var startDate: Date
@@ -52,11 +52,12 @@ public enum TempV4 {
         public var weatherWindSpeed: Double?
 
         var _waypoints: [TempV4.Waypoint]
+        var _walkPhotos: [TempV4.WalkPhoto]
 
-        var _heartRates: [TempV4.WorkoutHeartRateDataSample]
-        var _routeData: [TempV4.WorkoutRouteDataSample]
-        var _pauses: [TempV4.WorkoutPause]
-        var _workoutEvents: [TempV4.WorkoutEvent]
+        var _heartRates: [TempV4.HeartRateDataSample]
+        var _routeData: [TempV4.RouteDataSample]
+        var _pauses: [TempV4.WalkPause]
+        var _workoutEvents: [TempV4.WalkEvent]
         var _voiceRecordings: [TempV4.VoiceRecording]
         var _activityIntervals: [TempV4.ActivityInterval]
 
@@ -67,9 +68,10 @@ public enum TempV4 {
         public var voiceRecordings: [VoiceRecordingInterface] { _voiceRecordings }
         public var activityIntervals: [ActivityIntervalInterface] { _activityIntervals }
         public var waypoints: [WaypointInterface] { _waypoints }
+        public var walkPhotos: [WalkPhotoInterface] { _walkPhotos }
         public var events: [EventInterface] { throwOnAccess() }
         
-        public init(uuid: UUID?, workoutType: Walk.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.WorkoutHeartRateDataSample], routeData: [TempV4.WorkoutRouteDataSample], pauses: [TempV4.WorkoutPause], workoutEvents: [TempV4.WorkoutEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = [], favicon: String? = nil, waypoints: [TempV4.Waypoint] = [], weatherCondition: String? = nil, weatherTemperature: Double? = nil, weatherHumidity: Double? = nil, weatherWindSpeed: Double? = nil) {
+        public init(uuid: UUID?, workoutType: PilgrimV2.Workout.WalkType, distance: Double, steps: Int?, startDate: Date, endDate: Date, burnedEnergy: Double?, isRace: Bool, comment: String?, isUserModified: Bool, healthKitUUID: UUID?, finishedRecording: Bool, ascend: Double, descend: Double, activeDuration: Double, pauseDuration: Double, dayIdentifier: String, talkDuration: Double = 0, meditateDuration: Double = 0, heartRates: [TempV4.HeartRateDataSample], routeData: [TempV4.RouteDataSample], pauses: [TempV4.WalkPause], workoutEvents: [TempV4.WalkEvent], voiceRecordings: [TempV4.VoiceRecording] = [], activityIntervals: [TempV4.ActivityInterval] = [], favicon: String? = nil, waypoints: [TempV4.Waypoint] = [], walkPhotos: [TempV4.WalkPhoto] = [], weatherCondition: String? = nil, weatherTemperature: Double? = nil, weatherHumidity: Double? = nil, weatherWindSpeed: Double? = nil) {
             self.uuid = uuid
             self.workoutType = workoutType
             self.distance = distance
@@ -97,26 +99,27 @@ public enum TempV4 {
             self._activityIntervals = activityIntervals
             self.favicon = favicon
             self._waypoints = waypoints
+            self._walkPhotos = walkPhotos
             self.weatherCondition = weatherCondition
             self.weatherTemperature = weatherTemperature
             self.weatherHumidity = weatherHumidity
             self.weatherWindSpeed = weatherWindSpeed
         }
-        
+
         private enum CodingKeys: String, CodingKey {
             case uuid, workoutType, distance, steps, startDate, endDate
             case burnedEnergy, isRace, comment, isUserModified, healthKitUUID
             case finishedRecording, ascend, descend, activeDuration, pauseDuration
             case dayIdentifier, talkDuration, meditateDuration, favicon
             case weatherCondition, weatherTemperature, weatherHumidity, weatherWindSpeed
-            case _waypoints, _heartRates, _routeData, _pauses
+            case _waypoints, _walkPhotos, _heartRates, _routeData, _pauses
             case _workoutEvents, _voiceRecordings, _activityIntervals
         }
 
         public required init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             uuid = try container.decodeIfPresent(UUID.self, forKey: .uuid)
-            workoutType = try container.decode(Walk.WalkType.self, forKey: .workoutType)
+            workoutType = try container.decode(PilgrimV2.Workout.WalkType.self, forKey: .workoutType)
             distance = try container.decode(Double.self, forKey: .distance)
             steps = try container.decodeIfPresent(Int.self, forKey: .steps)
             startDate = try container.decode(Date.self, forKey: .startDate)
@@ -140,10 +143,11 @@ public enum TempV4 {
             weatherHumidity = try container.decodeIfPresent(Double.self, forKey: .weatherHumidity)
             weatherWindSpeed = try container.decodeIfPresent(Double.self, forKey: .weatherWindSpeed)
             _waypoints = try container.decodeIfPresent([TempV4.Waypoint].self, forKey: ._waypoints) ?? []
-            _heartRates = try container.decode([TempV4.WorkoutHeartRateDataSample].self, forKey: ._heartRates)
-            _routeData = try container.decode([TempV4.WorkoutRouteDataSample].self, forKey: ._routeData)
-            _pauses = try container.decode([TempV4.WorkoutPause].self, forKey: ._pauses)
-            _workoutEvents = try container.decode([TempV4.WorkoutEvent].self, forKey: ._workoutEvents)
+            _walkPhotos = try container.decodeIfPresent([TempV4.WalkPhoto].self, forKey: ._walkPhotos) ?? []
+            _heartRates = try container.decode([TempV4.HeartRateDataSample].self, forKey: ._heartRates)
+            _routeData = try container.decode([TempV4.RouteDataSample].self, forKey: ._routeData)
+            _pauses = try container.decode([TempV4.WalkPause].self, forKey: ._pauses)
+            _workoutEvents = try container.decode([TempV4.WalkEvent].self, forKey: ._workoutEvents)
             _voiceRecordings = try container.decodeIfPresent([TempV4.VoiceRecording].self, forKey: ._voiceRecordings) ?? []
             _activityIntervals = try container.decodeIfPresent([TempV4.ActivityInterval].self, forKey: ._activityIntervals) ?? []
         }
@@ -161,14 +165,14 @@ public enum TempV4 {
         }
     }
 
-    public class WorkoutPause: Codable, TempValueConvertible {
-        
+    public class WalkPause: Codable, TempValueConvertible {
+
         public var uuid: UUID?
         public var startDate: Date
         public var endDate: Date
-        public var pauseType: WalkPause.PauseType
+        public var pauseType: PilgrimV2.WorkoutPause.PauseType
 
-        public init(uuid: UUID?, startDate: Date, endDate: Date, pauseType: WalkPause.PauseType) {
+        public init(uuid: UUID?, startDate: Date, endDate: Date, pauseType: PilgrimV2.WorkoutPause.PauseType) {
             self.uuid = uuid
             self.startDate = startDate
             self.endDate = endDate
@@ -180,13 +184,13 @@ public enum TempV4 {
         }
     }
 
-    public class WorkoutEvent: Codable, TempValueConvertible {
-        
+    public class WalkEvent: Codable, TempValueConvertible {
+
         public var uuid: UUID?
-        public var eventType: WalkEvent.EventType
+        public var eventType: PilgrimV2.WorkoutEvent.EventType
         public var timestamp: Date
 
-        public init(uuid: UUID?, eventType: WalkEvent.EventType, timestamp: Date) {
+        public init(uuid: UUID?, eventType: PilgrimV2.WorkoutEvent.EventType, timestamp: Date) {
             self.uuid = uuid
             self.eventType = eventType
             self.timestamp = timestamp
@@ -197,7 +201,7 @@ public enum TempV4 {
         }
     }
     
-    public class WorkoutRouteDataSample: Codable, TempValueConvertible {
+    public class RouteDataSample: Codable, TempValueConvertible {
         
         public var uuid: UUID?
         public var timestamp: Date
@@ -226,7 +230,7 @@ public enum TempV4 {
         }
     }
     
-    public class WorkoutHeartRateDataSample: Codable, TempValueConvertible {
+    public class HeartRateDataSample: Codable, TempValueConvertible {
         
         public var uuid: UUID?
         public var heartRate: Int

@@ -52,7 +52,7 @@ struct DataManager {
      - parameter migration: the closure being called on the event of a migration happening, including a `Progress` object indicating the progress of the migration
      - warning: If this method fails it does so in a fatal error, the app will crash as a result.
      */
-    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV6.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
+    public static func setup(dataModel: DataModelProtocol.Type = PilgrimV7.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
         
         let completion = safeClosure(from: completion)
         
@@ -83,7 +83,7 @@ struct DataManager {
             storage,
             completion: { result in
                 switch result {
-                case .success(_):
+                case .success:
                     
                     if let intermediate = destinationModel as? IntermediateDataModelProtocol.Type {
                         if !intermediate.intermediateMappingActions(dataStack) {
@@ -132,7 +132,7 @@ struct DataManager {
 
         saveWalks(
             objects: [object],
-            completion: { success, error, walks in
+            completion: { _, error, walks in
                 if let walk = walks.first {
                     completion(true, nil, walk)
                 } else {
@@ -248,7 +248,37 @@ struct DataManager {
         to walk: Walk,
         in transaction: BaseDataTransaction
     ) {
-        for tempPause in source.pauses {
+        persistPauses(source.pauses, to: walk, in: transaction)
+        persistWalkEvents(source.workoutEvents, to: walk, in: transaction)
+        persistRouteData(source.routeData, to: walk, in: transaction)
+        persistHeartRates(source.heartRates, to: walk, in: transaction)
+        persistVoiceRecordings(source.voiceRecordings, to: walk, in: transaction)
+        persistActivityIntervals(source.activityIntervals, to: walk, in: transaction)
+        persistWaypoints(source.waypoints, to: walk, in: transaction)
+        persistWalkPhotos(source.walkPhotos, to: walk, in: transaction)
+    }
+
+    private static func persistNewRelatedEntities(
+        from source: WalkInterface,
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        persistPauses(source.pauses.filter { $0.uuid == nil }, to: walk, in: transaction)
+        persistWalkEvents(source.workoutEvents.filter { $0.uuid == nil }, to: walk, in: transaction)
+        persistRouteData(source.routeData.filter { $0.uuid == nil }, to: walk, in: transaction)
+        persistHeartRates(source.heartRates.filter { $0.uuid == nil }, to: walk, in: transaction)
+        persistVoiceRecordings(source.voiceRecordings.filter { $0.uuid == nil }, to: walk, in: transaction)
+        persistActivityIntervals(source.activityIntervals.filter { $0.uuid == nil }, to: walk, in: transaction)
+        persistWaypoints(source.waypoints.filter { $0.uuid == nil }, to: walk, in: transaction)
+        persistWalkPhotos(source.walkPhotos.filter { $0.uuid == nil }, to: walk, in: transaction)
+    }
+
+    private static func persistPauses(
+        _ pauses: [WalkPauseInterface],
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        for tempPause in pauses {
             let pause = transaction.create(Into<WalkPause>())
             pause._uuid .= tempPause.uuid ?? UUID()
             pause._startDate .= tempPause.startDate
@@ -256,16 +286,28 @@ struct DataManager {
             pause._pauseType .= tempPause.pauseType
             pause._workout .= walk
         }
+    }
 
-        for tempWalkEvent in source.workoutEvents {
+    private static func persistWalkEvents(
+        _ events: [WalkEventInterface],
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        for tempWalkEvent in events {
             let walkEvent = transaction.create(Into<WalkEvent>())
             walkEvent._uuid .= tempWalkEvent.uuid ?? UUID()
             walkEvent._eventType .= tempWalkEvent.eventType
             walkEvent._timestamp .= tempWalkEvent.timestamp
             walkEvent._workout .= walk
         }
+    }
 
-        for tempSample in source.routeData {
+    private static func persistRouteData(
+        _ samples: [RouteDataSampleInterface],
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        for tempSample in samples {
             let routeSample = transaction.create(Into<RouteDataSample>())
             routeSample._uuid .= tempSample.uuid ?? UUID()
             routeSample._latitude .= tempSample.latitude
@@ -278,16 +320,28 @@ struct DataManager {
             routeSample._direction .= tempSample.direction
             routeSample._workout .= walk
         }
+    }
 
-        for tempSample in source.heartRates {
+    private static func persistHeartRates(
+        _ samples: [HeartRateDataSampleInterface],
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        for tempSample in samples {
             let heartRateSample = transaction.create(Into<HeartRateDataSample>())
             heartRateSample._uuid .= tempSample.uuid ?? UUID()
             heartRateSample._heartRate .= tempSample.heartRate
             heartRateSample._timestamp .= tempSample.timestamp
             heartRateSample._workout .= walk
         }
+    }
 
-        for tempRecording in source.voiceRecordings {
+    private static func persistVoiceRecordings(
+        _ recordings: [VoiceRecordingInterface],
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        for tempRecording in recordings {
             let recording = transaction.create(Into<VoiceRecording>())
             recording._uuid .= tempRecording.uuid ?? UUID()
             recording._startDate .= tempRecording.startDate
@@ -299,8 +353,14 @@ struct DataManager {
             recording._isEnhanced .= tempRecording.isEnhanced
             recording._workout .= walk
         }
+    }
 
-        for tempInterval in source.activityIntervals {
+    private static func persistActivityIntervals(
+        _ intervals: [ActivityIntervalInterface],
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        for tempInterval in intervals {
             let interval = transaction.create(Into<ActivityInterval>())
             interval._uuid .= tempInterval.uuid ?? UUID()
             interval._activityType .= tempInterval.activityType
@@ -308,8 +368,14 @@ struct DataManager {
             interval._endDate .= tempInterval.endDate
             interval._workout .= walk
         }
+    }
 
-        for tempWaypoint in source.waypoints {
+    private static func persistWaypoints(
+        _ waypoints: [WaypointInterface],
+        to walk: Walk,
+        in transaction: BaseDataTransaction
+    ) {
+        for tempWaypoint in waypoints {
             let waypoint = transaction.create(Into<Waypoint>())
             waypoint._uuid .= tempWaypoint.uuid ?? UUID()
             waypoint._latitude .= tempWaypoint.latitude
@@ -321,81 +387,20 @@ struct DataManager {
         }
     }
 
-    private static func persistNewRelatedEntities(
-        from source: WalkInterface,
+    private static func persistWalkPhotos(
+        _ photos: [WalkPhotoInterface],
         to walk: Walk,
         in transaction: BaseDataTransaction
     ) {
-        for tempPause in source.pauses where tempPause.uuid == nil {
-            let pause = transaction.create(Into<WalkPause>())
-            pause._uuid .= tempPause.uuid ?? UUID()
-            pause._startDate .= tempPause.startDate
-            pause._endDate .= tempPause.endDate
-            pause._pauseType .= tempPause.pauseType
-            pause._workout .= walk
-        }
-
-        for tempWalkEvent in source.workoutEvents where tempWalkEvent.uuid == nil {
-            let walkEvent = transaction.create(Into<WalkEvent>())
-            walkEvent._uuid .= tempWalkEvent.uuid ?? UUID()
-            walkEvent._eventType .= tempWalkEvent.eventType
-            walkEvent._timestamp .= tempWalkEvent.timestamp
-            walkEvent._workout .= walk
-        }
-
-        for tempSample in source.routeData where tempSample.uuid == nil {
-            let routeSample = transaction.create(Into<RouteDataSample>())
-            routeSample._uuid .= tempSample.uuid ?? UUID()
-            routeSample._latitude .= tempSample.latitude
-            routeSample._longitude .= tempSample.longitude
-            routeSample._altitude .= tempSample.altitude
-            routeSample._timestamp .= tempSample.timestamp
-            routeSample._horizontalAccuracy .= tempSample.horizontalAccuracy
-            routeSample._verticalAccuracy .= tempSample.verticalAccuracy
-            routeSample._speed .= tempSample.speed
-            routeSample._direction .= tempSample.direction
-            routeSample._workout .= walk
-        }
-
-        for tempSample in source.heartRates where tempSample.uuid == nil {
-            let heartRateSample = transaction.create(Into<HeartRateDataSample>())
-            heartRateSample._uuid .= tempSample.uuid ?? UUID()
-            heartRateSample._heartRate .= tempSample.heartRate
-            heartRateSample._timestamp .= tempSample.timestamp
-            heartRateSample._workout .= walk
-        }
-
-        for tempRecording in source.voiceRecordings where tempRecording.uuid == nil {
-            let recording = transaction.create(Into<VoiceRecording>())
-            recording._uuid .= tempRecording.uuid ?? UUID()
-            recording._startDate .= tempRecording.startDate
-            recording._endDate .= tempRecording.endDate
-            recording._duration .= tempRecording.duration
-            recording._fileRelativePath .= tempRecording.fileRelativePath
-            recording._transcription .= tempRecording.transcription
-            recording._wordsPerMinute .= tempRecording.wordsPerMinute
-            recording._isEnhanced .= tempRecording.isEnhanced
-            recording._workout .= walk
-        }
-
-        for tempInterval in source.activityIntervals where tempInterval.uuid == nil {
-            let interval = transaction.create(Into<ActivityInterval>())
-            interval._uuid .= tempInterval.uuid ?? UUID()
-            interval._activityType .= tempInterval.activityType
-            interval._startDate .= tempInterval.startDate
-            interval._endDate .= tempInterval.endDate
-            interval._workout .= walk
-        }
-
-        for tempWaypoint in source.waypoints where tempWaypoint.uuid == nil {
-            let waypoint = transaction.create(Into<Waypoint>())
-            waypoint._uuid .= tempWaypoint.uuid ?? UUID()
-            waypoint._latitude .= tempWaypoint.latitude
-            waypoint._longitude .= tempWaypoint.longitude
-            waypoint._label .= tempWaypoint.label
-            waypoint._icon .= tempWaypoint.icon
-            waypoint._timestamp .= tempWaypoint.timestamp
-            waypoint._workout .= walk
+        for tempPhoto in photos {
+            let photo = transaction.create(Into<WalkPhoto>())
+            photo._uuid .= tempPhoto.uuid ?? UUID()
+            photo._localIdentifier .= tempPhoto.localIdentifier
+            photo._capturedAt .= tempPhoto.capturedAt
+            photo._capturedLat .= tempPhoto.capturedLat
+            photo._capturedLng .= tempPhoto.capturedLng
+            photo._keptAt .= tempPhoto.keptAt
+            photo._workout .= walk
         }
     }
 
@@ -530,7 +535,7 @@ struct DataManager {
     }
 
     public static func updateVoiceRecordingTranscription(uuid: UUID, transcription: String) {
-        dataStack.perform(asynchronous: { transaction -> Void in
+        dataStack.perform(asynchronous: { transaction in
             if let recording = transaction.edit(
                 queryObject(from: uuid, transaction: transaction) as VoiceRecording?
             ) {
@@ -544,7 +549,7 @@ struct DataManager {
     }
 
     public static func updateVoiceRecordingWordsPerMinute(uuid: UUID, wordsPerMinute: Double) {
-        dataStack.perform(asynchronous: { transaction -> Void in
+        dataStack.perform(asynchronous: { transaction in
             if let recording = transaction.edit(
                 queryObject(from: uuid, transaction: transaction) as VoiceRecording?
             ) {
@@ -560,7 +565,7 @@ struct DataManager {
     // MARK: - Favicon
 
     public static func setFavicon(walkID: UUID, favicon: WalkFavicon?) {
-        dataStack.perform(asynchronous: { transaction -> Void in
+        dataStack.perform(asynchronous: { transaction in
             if let walk = transaction.edit(
                 queryObject(from: walkID, transaction: transaction) as Walk?
             ) {
@@ -569,6 +574,65 @@ struct DataManager {
         }) { result in
             if case .failure(let error) = result {
                 print("[DataManager] Failed to set favicon: \(error)")
+            }
+        }
+    }
+
+    // MARK: - Walk Photos
+
+    /// Creates a `WalkPhoto` entity linking a `PHAsset` (by `localIdentifier`) to the given
+    /// walk. Idempotent — a no-op if a `WalkPhoto` with the same `localIdentifier` is already
+    /// pinned to the walk. The photo's pixel data is never copied; only its identifier and
+    /// captured metadata.
+    public static func pinPhoto(
+        to walkID: UUID,
+        localIdentifier: String,
+        capturedAt: Date,
+        capturedLat: Double,
+        capturedLng: Double
+    ) {
+        dataStack.perform(asynchronous: { transaction in
+            guard let walk = transaction.edit(
+                queryObject(from: walkID, transaction: transaction) as Walk?
+            ) else { return }
+
+            let alreadyPinned = walk._walkPhotos.value.contains {
+                $0._localIdentifier.value == localIdentifier
+            }
+            guard !alreadyPinned else { return }
+
+            let photo = transaction.create(Into<WalkPhoto>())
+            photo._uuid .= UUID()
+            photo._localIdentifier .= localIdentifier
+            photo._capturedAt .= capturedAt
+            photo._capturedLat .= capturedLat
+            photo._capturedLng .= capturedLng
+            photo._keptAt .= Date()
+            photo._workout .= walk
+        }) { result in
+            if case .failure(let error) = result {
+                print("[DataManager] Failed to pin photo: \(error)")
+            }
+        }
+    }
+
+    /// Removes a `WalkPhoto` entity from the given walk. Idempotent — a no-op if no
+    /// `WalkPhoto` with the given `localIdentifier` is pinned. The underlying `PHAsset`
+    /// in Apple Photos is never touched.
+    public static func unpinPhoto(walkID: UUID, localIdentifier: String) {
+        dataStack.perform(asynchronous: { transaction in
+            guard let walk = transaction.edit(
+                queryObject(from: walkID, transaction: transaction) as Walk?
+            ) else { return }
+
+            if let existing = walk._walkPhotos.value.first(where: {
+                $0._localIdentifier.value == localIdentifier
+            }) {
+                transaction.delete(existing)
+            }
+        }) { result in
+            if case .failure(let error) = result {
+                print("[DataManager] Failed to unpin photo: \(error)")
             }
         }
     }
@@ -591,7 +655,7 @@ struct DataManager {
         
         saveEvents(
             objects: [object],
-            completion: { success, error, events in
+            completion: { _, error, events in
                 if let event = events.first {
                     completion(true, nil, event)
                 } else {
@@ -803,7 +867,7 @@ struct DataManager {
 
         let allRecordingPaths: [String] = (try? dataStack.fetchAll(From<VoiceRecording>()))?.compactMap { $0._fileRelativePath.value } ?? []
 
-        dataStack.perform(asynchronous: { (transaction) -> Void in
+        dataStack.perform(asynchronous: { transaction in
 
             try transaction.deleteAll(From<Walk>())
             try transaction.deleteAll(From<WalkPause>())
@@ -813,6 +877,7 @@ struct DataManager {
             try transaction.deleteAll(From<VoiceRecording>())
             try transaction.deleteAll(From<ActivityInterval>())
             try transaction.deleteAll(From<Waypoint>())
+            try transaction.deleteAll(From<WalkPhoto>())
             try transaction.deleteAll(From<Event>())
 
         }) { (result) in
