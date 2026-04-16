@@ -85,13 +85,13 @@ enum PhotoContextAnalyzer {
     // MARK: - Cache
 
     static func cachedContext(for localIdentifier: String) -> PhotoContext? {
-        let key = cachePrefix + localIdentifier.hashValue.description
+        let key = cachePrefix + localIdentifier.replacingOccurrences(of: "/", with: "_")
         guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(PhotoContext.self, from: data)
     }
 
     private static func cacheContext(_ context: PhotoContext, for localIdentifier: String) {
-        let key = cachePrefix + localIdentifier.hashValue.description
+        let key = cachePrefix + localIdentifier.replacingOccurrences(of: "/", with: "_")
         if let data = try? JSONEncoder().encode(context) {
             UserDefaults.standard.set(data, forKey: key)
         }

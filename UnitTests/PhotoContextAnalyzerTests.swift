@@ -80,7 +80,7 @@ final class PhotoContextAnalyzerTests: XCTestCase {
             dominantColor: "#FF0000"
         )
 
-        let key = "photo_context_" + "test-id-cache".hashValue.description
+        let key = "photo_context_" + "test-id-cache".replacingOccurrences(of: "/", with: "_")
         let data = try JSONEncoder().encode(context)
         UserDefaults.standard.set(data, forKey: key)
 
