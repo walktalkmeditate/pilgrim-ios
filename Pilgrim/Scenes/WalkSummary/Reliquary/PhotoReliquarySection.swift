@@ -78,8 +78,28 @@ struct PhotoReliquarySection: View {
         }
         .animation(.easeInOut(duration: 0.3), value: candidates.isEmpty)
         .animation(.easeInOut(duration: 0.3), value: showLoadingSkeleton)
-        .onAppear {
+        .task(id: walk.uuid) {
+            // Initial load. `.task` is more reliable than
+            // `.onAppear` for async work — it integrates with Swift
+            // concurrency, auto-cancels on disappear, and reruns if
+            // walk.uuid changes (harmless for our single-walk
+            // presentation).
             loadCandidatesIfNeeded()
+
+            // Defensive retry: on build 56 a real-device bug showed
+            // fresh walk summaries opening with an empty carousel
+            // despite the walk having matching photos — only an app
+            // switch recovered them. The exact race isn't pinned
+            // (possibly a view-mount / CoreStore commit / PhotoKit
+            // cache interaction during the seal reveal sequence),
+            // but a second fetch ~1s later reliably recovers. The
+            // generation counter ensures this retry doesn't collide
+            // with any in-flight callback from the first fetch.
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            if candidates.isEmpty && shouldRender {
+                reloadCandidates()
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             // Foreground transition (app switch / screen unlock /
