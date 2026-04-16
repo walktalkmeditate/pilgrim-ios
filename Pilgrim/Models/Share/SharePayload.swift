@@ -9,10 +9,12 @@ struct SharePayload: Encodable {
     let expiryDays: Int
     let units: String
     let startDate: String
+    let tzIdentifier: String?
     let toggledStats: [String]
     let placeStart: String?
     let placeEnd: String?
     let mark: String?
+    let waypoints: [Waypoint]?
 
     struct Stats: Encodable {
         let distance: Double?
@@ -57,14 +59,22 @@ struct SharePayload: Encodable {
         }
     }
 
+    struct Waypoint: Encodable {
+        let lat: Double
+        let lon: Double
+        let label: String
+        let icon: String
+        let ts: Int
+    }
+
     enum CodingKeys: String, CodingKey {
-        case stats, route, journal, units
+        case stats, route, journal, units, waypoints, mark
         case activityIntervals = "activity_intervals"
         case expiryDays = "expiry_days"
         case startDate = "start_date"
+        case tzIdentifier = "tz_identifier"
         case toggledStats = "toggled_stats"
         case placeStart = "place_start"
         case placeEnd = "place_end"
-        case mark
     }
 }
