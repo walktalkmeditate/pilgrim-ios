@@ -47,7 +47,8 @@ struct PromptGenerator {
             placeNames: placeNames, routeSpeeds: routeSpeeds,
             recentWalkSnippets: recentWalkSnippets, intention: intention,
             waypoints: waypoints, weather: weather,
-            lunarPhase: LunarPhase.current(date: startDate), celestial: nil
+            lunarPhase: LunarPhase.current(date: startDate), celestial: nil,
+            photoContexts: [], narrativeArc: nil
         )
         return generate(style: style, context: context)
     }
@@ -72,7 +73,8 @@ struct PromptGenerator {
             placeNames: placeNames, routeSpeeds: routeSpeeds,
             recentWalkSnippets: recentWalkSnippets, intention: intention,
             waypoints: waypoints, weather: weather,
-            lunarPhase: LunarPhase.current(date: startDate), celestial: nil
+            lunarPhase: LunarPhase.current(date: startDate), celestial: nil,
+            photoContexts: [], narrativeArc: nil
         )
         return generateCustom(customStyle: customStyle, context: context)
     }
@@ -96,7 +98,8 @@ struct PromptGenerator {
             placeNames: placeNames, routeSpeeds: routeSpeeds,
             recentWalkSnippets: recentWalkSnippets, intention: intention,
             waypoints: waypoints, weather: weather,
-            lunarPhase: LunarPhase.current(date: startDate), celestial: nil
+            lunarPhase: LunarPhase.current(date: startDate), celestial: nil,
+            photoContexts: [], narrativeArc: nil
         )
         return generateAll(context: context)
     }

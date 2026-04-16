@@ -145,7 +145,7 @@ struct WalkSummaryView: View {
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationView {
-                    PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment)
+                    PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment, photoCandidates: photoCandidates)
                 }
             }
         }

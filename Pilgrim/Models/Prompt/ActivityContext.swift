@@ -14,6 +14,8 @@ struct ActivityContext {
     let weather: String?
     let lunarPhase: LunarPhase
     let celestial: CelestialSnapshot?
+    let photoContexts: [PhotoContextEntry]
+    let narrativeArc: NarrativeArc?
 
     var hasSpeech: Bool { !recordings.isEmpty }
 }
@@ -32,7 +34,9 @@ extension ActivityContext {
         waypoints: [WaypointContext] = [],
         weather: String? = nil,
         lunarPhase: LunarPhase? = nil,
-        celestial: CelestialSnapshot? = nil
+        celestial: CelestialSnapshot? = nil,
+        photoContexts: [PhotoContextEntry] = [],
+        narrativeArc: NarrativeArc? = nil
     ) -> ActivityContext {
         ActivityContext(
             recordings: recordings,
@@ -47,7 +51,9 @@ extension ActivityContext {
             waypoints: waypoints,
             weather: weather,
             lunarPhase: lunarPhase ?? LunarPhase.current(date: startDate),
-            celestial: celestial
+            celestial: celestial,
+            photoContexts: photoContexts,
+            narrativeArc: narrativeArc
         )
     }
 }
