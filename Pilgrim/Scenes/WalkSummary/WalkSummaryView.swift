@@ -801,7 +801,7 @@ struct WalkSummaryView: View {
     }
 
     private var shareCard: some View {
-        WalkSharingButtons(walk: walk, onShare: markSharedAndReveal)
+        WalkSharingButtons(walk: walk, pinnedPhotos: photoCandidates.filter(\.isPinned), onShare: markSharedAndReveal)
     }
 
     private func markSharedAndReveal() {

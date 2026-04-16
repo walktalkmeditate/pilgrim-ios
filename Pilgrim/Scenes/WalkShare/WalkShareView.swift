@@ -9,10 +9,12 @@ struct WalkShareView: View {
     @State private var showPodcastCard = false
 
     let walk: WalkInterface
+    let pinnedPhotos: [PhotoCandidate]
 
-    init(walk: WalkInterface) {
+    init(walk: WalkInterface, pinnedPhotos: [PhotoCandidate] = []) {
         self.walk = walk
-        _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk))
+        self.pinnedPhotos = pinnedPhotos
+        _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk, pinnedPhotos: pinnedPhotos))
     }
 
     private var isShared: Bool {

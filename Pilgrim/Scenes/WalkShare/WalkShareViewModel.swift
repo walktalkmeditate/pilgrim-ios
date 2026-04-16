@@ -6,6 +6,7 @@ import Photos
 final class WalkShareViewModel: ObservableObject {
 
     let walk: WalkInterface
+    let pinnedPhotos: [PhotoCandidate]
 
     @Published var toggleDistance = true
     @Published var toggleDuration = true
@@ -18,7 +19,7 @@ final class WalkShareViewModel: ObservableObject {
     var waypointCount: Int { walk.waypoints.count }
     var hasWaypoints: Bool { waypointCount > 0 }
 
-    var pinnedPhotoCount: Int { walk.walkPhotos.count }
+    var pinnedPhotoCount: Int { pinnedPhotos.count }
     var hasPinnedPhotos: Bool {
         pinnedPhotoCount > 0
             && UserPreferences.walkReliquaryEnabled.value
@@ -121,8 +122,9 @@ final class WalkShareViewModel: ObservableObject {
         return "\(steps.formatted())"
     }
 
-    init(walk: WalkInterface) {
+    init(walk: WalkInterface, pinnedPhotos: [PhotoCandidate] = []) {
         self.walk = walk
+        self.pinnedPhotos = pinnedPhotos
         if let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid), !cached.isExpired {
             shareState = .success(url: cached.url)
             cachedExpiryDate = cached.expiry
@@ -185,7 +187,7 @@ final class WalkShareViewModel: ObservableObject {
         options.isSynchronous = true
         options.resizeMode = .exact
 
-        let targetSize = CGSize(width: 800, height: 800)
+        let targetSize = CGSize(width: 600, height: 600)
 
         var result: SharePayload.Photo?
         PHImageManager.default().requestImage(
@@ -195,7 +197,7 @@ final class WalkShareViewModel: ObservableObject {
             options: options
         ) { image, _ in
             guard let image = image,
-                  let jpegData = image.jpegData(compressionQuality: 0.6) else { return }
+                  let jpegData = image.jpegData(compressionQuality: 0.5) else { return }
             let base64 = jpegData.base64EncodedString()
             result = SharePayload.Photo(
                 lat: lat,
@@ -293,7 +295,7 @@ final class WalkShareViewModel: ObservableObject {
 
         let photoPayload: [SharePayload.Photo]? = {
             guard includePhotos, hasPinnedPhotos else { return nil }
-            return walk.walkPhotos.compactMap { photo in
+            return pinnedPhotos.compactMap { photo in
                 Self.loadSharePhoto(
                     localIdentifier: photo.localIdentifier,
                     lat: photo.capturedLat,
