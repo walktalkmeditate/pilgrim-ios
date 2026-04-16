@@ -65,9 +65,13 @@ A dedicated meditation mode with an animated breathing circle. Set the rhythm (i
 
 Downloadable meditation guide packs with spoken prompts during walks and meditation. Seven ambient soundscapes — forest, rain, ocean, stream, birds, fire, crickets — play seamlessly in the background with crossfade looping. Customizable bells mark the start and end of walks and meditation sessions.
 
+**The Walk Reliquary**
+
+Photos you happened to take along a walk appear in a quiet carousel on your walk summary — gathered passively from Apple Photos by time and GPS. Nothing is copied, nothing is uploaded, nothing is stored; the app holds only a reference back to Apple Photos. Long-press a photo and tap the pin to commit it as a relic: it becomes a circular thumbnail anchored to exactly where you stood when you took it. Scroll the carousel and the corresponding map pin glows. Tap a map pin and the carousel scrolls to meet it. Opt-in, default off. Photos without GPS are excluded. Screenshots are filtered out.
+
 **AI writing prompts**
 
-Six prompt styles — contemplative, reflective, creative, gratitude, philosophical, journaling — generated from your transcriptions and walk context. Copy them into your favorite AI and turn a walk into writing.
+Six prompt styles — contemplative, reflective, creative, gratitude, philosophical, journaling — generated from your transcriptions, walk context, and pinned photos. The app reads your photos on-device via the Vision framework — detecting landscapes, text, people, colors — and weaves what it finds into the prompts. All analysis is local. Copy them into your favorite AI and turn a walk into writing.
 
 **Goshuin seals**
 
@@ -79,7 +83,7 @@ Moon phase, zodiac sign, and planetary hour appear in the walk context. A contem
 
 **Sharing**
 
-Share a walk as a goshuin seal image, a hand-painted etegami postcard, or an ephemeral HTML walk page (no login required). The walk is yours to keep or share as you see fit.
+Share a walk as a goshuin seal image, a hand-painted etegami postcard, or an ephemeral HTML walk page (no login required). Shared pages render on Mapbox's outdoors style with terrain contours and trail markings. Optionally include waypoints and pinned photos — both off by default, per-share opt-in. The walk is yours to keep or share as you see fit.
 
 **Walk with the collective**
 
@@ -210,7 +214,7 @@ Pilgrim carries a migration chain from its origin as OutRun through six Pilgrim-
 
 ```
 OutRunV1 → OutRunV2 → OutRunV3 → OutRunV3to4 → OutRunV4
-→ PilgrimV1 → PilgrimV2 → PilgrimV3 → PilgrimV4 → PilgrimV5 → PilgrimV6
+→ PilgrimV1 → PilgrimV2 → PilgrimV3 → PilgrimV4 → PilgrimV5 → PilgrimV6 → PilgrimV7
 ```
 
 The CoreStore entity names (`OutRunV1`–`V4`, `PilgrimV1`) and migration identifiers are frozen — they cannot be renamed without breaking upgrades for existing users.
