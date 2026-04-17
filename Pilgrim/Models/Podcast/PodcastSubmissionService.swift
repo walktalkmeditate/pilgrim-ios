@@ -139,16 +139,21 @@ final class PodcastSubmissionService {
         reflection: String?
     ) async throws {
         let first = walk.routeData.first
+        let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
         var weather: String?
         if let condition = walk.weatherCondition {
             weather = condition
             if let temp = walk.weatherTemperature {
-                weather = "\(condition), \(Int(temp))\u{00B0}C"
+                weather = "\(condition), \(WeatherSnapshot.formatTemperature(temp, imperial: imperial))"
             }
         }
 
+        let distanceText = imperial
+            ? String(format: "%.1f mi", walk.distance / 1609.344)
+            : String(format: "%.1f km", walk.distance / 1000)
+
         var metadata: [String: Any] = [
-            "distance_km": walk.distance / 1000,
+            "distance": distanceText,
             "active_duration": walk.activeDuration,
             "talk_duration": walk.talkDuration,
             "meditate_duration": walk.meditateDuration,
