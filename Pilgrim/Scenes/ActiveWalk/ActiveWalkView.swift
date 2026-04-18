@@ -542,7 +542,9 @@ struct ActiveWalkView: View {
             onAnnotationTap: { annotation in
                 handleAnnotationTap(annotation)
             },
-            bottomInset: mapBottomInset
+            bottomInset: mapBottomInset,
+            initialCamera: viewModel.mapCameraSeed,
+            fadesInOnStyleLoad: true
         )
     }
 

@@ -24,6 +24,18 @@ struct PilgrimMapView: UIViewRepresentable {
     /// shifts its content so the user puck / fit bounds appear above this
     /// region instead of being hidden under a bottom sheet.
     var bottomInset: CGFloat = 0
+    /// Initial camera for the underlying `MapView` — applied once at
+    /// construction via `MapInitOptions(cameraOptions:)` so the very first
+    /// rendered frame lands near the user rather than at Mapbox's default
+    /// world view. Ignored after creation; later camera moves go through
+    /// `cameraCenter`/`cameraBounds`/follow-puck as usual.
+    var initialCamera: MapCameraSeed.Seed?
+    /// When `true`, the map starts invisible and fades in once the style
+    /// has loaded. Intended for full-screen immersive maps (active walk)
+    /// where the first-paint is visually jarring. Off by default so the
+    /// walk summary and other embedded maps keep their existing reveal
+    /// choreography.
+    var fadesInOnStyleLoad: Bool = false
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -38,7 +50,9 @@ struct PilgrimMapView: UIViewRepresentable {
         cameraZoom: Binding<CGFloat> = .constant(14),
         cameraBounds: MapCameraBounds? = nil,
         cameraDuration: TimeInterval = 0.4,
-        bottomInset: CGFloat = 0
+        bottomInset: CGFloat = 0,
+        initialCamera: MapCameraSeed.Seed? = nil,
+        fadesInOnStyleLoad: Bool = false
     ) {
         self.isInteractive = isInteractive
         self.showsUserLocation = showsUserLocation
@@ -52,6 +66,8 @@ struct PilgrimMapView: UIViewRepresentable {
         self.cameraBounds = cameraBounds
         self.cameraDuration = cameraDuration
         self.bottomInset = bottomInset
+        self.initialCamera = initialCamera
+        self.fadesInOnStyleLoad = fadesInOnStyleLoad
     }
 
     func makeCoordinator() -> Coordinator {
@@ -61,8 +77,29 @@ struct PilgrimMapView: UIViewRepresentable {
     func makeUIView(context: Context) -> MBMapView {
         let isDark = colorScheme == .dark
         let styleURI: StyleURI = isDark ? .dark : .light
-        let mapView = MBMapView(frame: .zero, mapInitOptions: MapInitOptions(styleURI: styleURI))
+        let cameraOptions: CameraOptions
+        if let seed = initialCamera {
+            cameraOptions = CameraOptions(center: seed.center, zoom: seed.zoom)
+        } else {
+            cameraOptions = CameraOptions()
+        }
+        let mapView = MBMapView(
+            frame: .zero,
+            mapInitOptions: MapInitOptions(cameraOptions: cameraOptions, styleURI: styleURI)
+        )
         mapView.preferredFramesPerSecond = 30
+
+        if fadesInOnStyleLoad {
+            mapView.alpha = 0
+            // Failsafe: if `onStyleLoaded` never fires (airplane mode on a
+            // cold-cache device, style server 5xx, etc.) the user would be
+            // stuck looking at parchment forever. Force the fade after 3s
+            // regardless so a broken map at least becomes visible.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak mapView] in
+                guard let mapView, mapView.alpha < 1 else { return }
+                UIView.animate(withDuration: 0.3) { mapView.alpha = 1 }
+            }
+        }
 
         mapView.gestures.options.panEnabled = isInteractive
         mapView.gestures.options.pinchEnabled = isInteractive
@@ -77,9 +114,15 @@ struct PilgrimMapView: UIViewRepresentable {
 
         context.coordinator.currentColorScheme = colorScheme
 
+        let shouldFade = fadesInOnStyleLoad
         mapView.mapboxMap.onStyleLoaded.observeNext { [coordinator = context.coordinator] _ in
             let mode: PilgrimMapStyle.Mode = coordinator.currentColorScheme == .dark ? .dark : .light
             PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap, mode: mode)
+            if shouldFade, mapView.alpha < 1 {
+                UIView.animate(withDuration: 0.5, delay: 0, options: [.curveEaseOut]) {
+                    mapView.alpha = 1
+                }
+            }
             coordinator.lastSegments = []
             if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }

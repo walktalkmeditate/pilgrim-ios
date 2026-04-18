@@ -60,9 +60,16 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     var onWalkCompleted: ((TempWalk) -> Void)?
 
+    /// Best-available starting camera for the live walk map, computed once
+    /// at walk start so every re-render of `ActiveWalkView.mapSection` uses
+    /// the same seed. Avoids re-querying CoreLocation and CoreStore on
+    /// every SwiftUI body evaluation.
+    let mapCameraSeed: MapCameraSeed.Seed?
+
     private var cancellables: [AnyCancellable] = []
 
     init() {
+        self.mapCameraSeed = MapCameraSeed.forActiveWalk()
         self.builder = WalkBuilder()
         self.locationManagement = LocationManagement(builder: builder)
         self.altitudeManagement = AltitudeManagement(builder: builder)
