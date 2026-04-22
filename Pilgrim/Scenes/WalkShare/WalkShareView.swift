@@ -378,6 +378,11 @@ struct WalkShareView: View {
 
     private func openPreview(url: String) {
         guard let parsedURL = URL(string: url) else { return }
+        // If the user taps to open during the 800ms ritual beat, cancel the
+        // pending reveal so its haptic + redundant showPreview assignment
+        // don't fire on an already-open modal.
+        revealTask?.cancel()
+        revealTask = nil
         if webViewLoaderHolder.loader == nil {
             webViewLoaderHolder.create(url: parsedURL)
         }

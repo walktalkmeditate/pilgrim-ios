@@ -72,6 +72,7 @@ struct WalkSharePreviewView: View {
                 failureView
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.easeInOut(duration: 0.3), value: loader.loadState)
         .accessibilitySortPriority(2)
     }
