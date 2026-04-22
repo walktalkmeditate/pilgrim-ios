@@ -313,9 +313,12 @@ struct WalkShareView: View {
                             .font(.caption)
                             .foregroundColor(.fog.opacity(0.4))
                             .padding(8)
+                            .accessibilityHidden(true)
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("View shared walk page")
+                .accessibilityHint("Opens the scroll of your shared walk")
 
                 HStack(spacing: 6) {
                     Text("Shared")
