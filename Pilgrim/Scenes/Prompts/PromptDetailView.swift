@@ -11,7 +11,7 @@ struct PromptDetailView: View {
     @State private var copyResetWorkItem: DispatchWorkItem?
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Constants.UI.Padding.big) {

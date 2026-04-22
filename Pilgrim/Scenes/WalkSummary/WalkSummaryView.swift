@@ -50,7 +50,7 @@ struct WalkSummaryView: View {
     @State private var animatedDistance: Double = 0
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     mapSection
@@ -144,7 +144,7 @@ struct WalkSummaryView: View {
                 }
             }
             .sheet(isPresented: $showPrompts) {
-                NavigationView {
+                NavigationStack {
                     PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment, photoCandidates: photoCandidates)
                 }
             }
