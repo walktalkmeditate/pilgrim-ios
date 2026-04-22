@@ -58,7 +58,6 @@ struct WalkSharePreviewView: View {
         ZStack {
             WebViewRepresentable(webView: loader.webView)
                 .opacity(loader.loadState == .loaded ? 1 : 0)
-                .animation(.easeInOut(duration: 0.3), value: loader.loadState)
 
             if loader.loadState == .loading {
                 skeleton
@@ -68,6 +67,7 @@ struct WalkSharePreviewView: View {
                 failureView
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: loader.loadState)
     }
 
     private var skeleton: some View {
