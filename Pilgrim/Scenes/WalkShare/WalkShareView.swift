@@ -4,8 +4,6 @@ struct WalkShareView: View {
 
     @StateObject private var viewModel: WalkShareViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var showCopiedToast = false
-    @State private var toastGeneration = 0
     @State private var showPodcastCard = false
     @State private var showPreview = false
     @State private var revealTask: Task<Void, Never>?
