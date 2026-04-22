@@ -54,6 +54,7 @@ struct WalkSharePreviewView: View {
         .padding(.horizontal, Constants.UI.Padding.normal)
         .padding(.vertical, Constants.UI.Padding.small)
         .background(Color.parchment)
+        .accessibilitySortPriority(3)
     }
 
     // MARK: - Content area
@@ -72,6 +73,7 @@ struct WalkSharePreviewView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: loader.loadState)
+        .accessibilitySortPriority(2)
     }
 
     private var skeleton: some View {
@@ -130,6 +132,7 @@ struct WalkSharePreviewView: View {
             Color.parchment
                 .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: -2)
         )
+        .accessibilitySortPriority(1)
     }
 
     private var copyButton: some View {
