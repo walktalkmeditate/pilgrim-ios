@@ -155,8 +155,8 @@ struct ActiveWalkView: View {
             // as belt-and-suspenders.
             UIApplication.shared.isIdleTimerDisabled = false
         }) {
-            MeditationView(soundManagement: viewModel.soundManagement) {
-                viewModel.endMeditationSilently()
+            MeditationView(soundManagement: viewModel.soundManagement) { endDate in
+                viewModel.endMeditationSilently(endDate: endDate)
                 showMeditation = false
             }
         }

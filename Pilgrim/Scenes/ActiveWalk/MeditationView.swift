@@ -4,7 +4,7 @@ import Combine
 struct MeditationView: View {
 
     let soundManagement: SoundManagement
-    let onDismiss: () -> Void
+    let onDismiss: (Date) -> Void
 
     @State private var phase: BreathPhase = .inhale
     @State private var circleScale: CGFloat = 0.45
@@ -26,6 +26,7 @@ struct MeditationView: View {
     @State private var milestoneFlash: Double = 0
     @State private var breathGeneration: Int = 0
     @State private var hasDismissed = false
+    @State private var closingEndDate: Date?
     @State private var particles: [MeditationParticle] = []
     @State private var rippleRings: [RippleRing] = []
     @State private var voiceRings: [VoiceRing] = []
@@ -106,7 +107,7 @@ struct MeditationView: View {
             clock.stop()
             if !hasDismissed {
                 hasDismissed = true
-                onDismiss()
+                onDismiss(closingEndDate ?? Date())
             }
         }
         .sheet(isPresented: $showMeditationOptions) {
@@ -607,6 +608,14 @@ struct MeditationView: View {
 
     private func beginClosingCeremony() {
         guard !isClosing else { return }
+        // Capture end-of-meditation synchronously at Done-tap. The ceremony
+        // plays for 6.5s before onDismiss fires; recording Date() at dismiss
+        // time inflates the walk's meditation interval by the ceremony's
+        // full duration. closingEndDate mirrors it so the onDisappear
+        // fallback reports the same moment if iOS tears down the view mid-
+        // ceremony.
+        let endDate = Date()
+        closingEndDate = endDate
         voicePlayingCancellable?.cancel()
         voicePlayingCancellable = nil
         meditationGuide?.stopGuiding()
@@ -637,7 +646,7 @@ struct MeditationView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) {
             guard self.isClosing, !self.hasDismissed else { return }
             self.hasDismissed = true
-            self.onDismiss()
+            self.onDismiss(endDate)
         }
     }
 

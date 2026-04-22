@@ -280,8 +280,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         )
     }
 
-    func endMeditationSilently() {
-        finalizeMeditation()
+    func endMeditationSilently(endDate: Date = Date()) {
+        finalizeMeditation(endDate: endDate)
         isMeditating = false
         locationManagement.restoreDefaultPower()
     }
@@ -300,13 +300,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         return intervals
     }
 
-    private func finalizeMeditation() {
+    private func finalizeMeditation(endDate: Date = Date()) {
         guard let start = meditationStartDate else { return }
         let interval = TempActivityInterval(
             uuid: nil,
             activityType: .meditation,
             startDate: start,
-            endDate: Date()
+            endDate: endDate
         )
         meditationIntervals.append(interval)
         meditationStartDate = nil
