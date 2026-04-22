@@ -41,9 +41,15 @@ final class WebViewLoaderTests: XCTestCase {
         XCTAssertFalse(loader.shouldAllowNavigation(to: external))
     }
 
-    func testShouldAllowNavigation_differentPathSameHost_returnsFalse() {
+    func testShouldAllowNavigation_differentPathSameHost_returnsTrue() {
         let loader = WebViewLoader(url: shareURL)
         let other = URL(string: "https://walk.pilgrimapp.org/xyz999")!
-        XCTAssertFalse(loader.shouldAllowNavigation(to: other))
+        XCTAssertTrue(loader.shouldAllowNavigation(to: other))
+    }
+
+    func testShouldAllowNavigation_trailingSlashVariant_returnsTrue() {
+        let loader = WebViewLoader(url: shareURL)
+        let redirected = URL(string: "https://walk.pilgrimapp.org/abc123/")!
+        XCTAssertTrue(loader.shouldAllowNavigation(to: redirected))
     }
 }

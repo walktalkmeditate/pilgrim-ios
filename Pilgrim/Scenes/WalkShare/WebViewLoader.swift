@@ -56,7 +56,7 @@ final class WebViewLoader: ObservableObject {
     }
 
     func shouldAllowNavigation(to url: URL) -> Bool {
-        return url == initialURL
+        return url.host == initialURL.host
     }
 }
 
