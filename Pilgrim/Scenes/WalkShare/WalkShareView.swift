@@ -78,6 +78,36 @@ struct WalkShareView: View {
                 }
             }
         }
+        .fullScreenCover(isPresented: $showPreview, onDismiss: {
+            webViewLoaderHolder.clear()
+            previewURL = nil
+        }) {
+            if let loader = webViewLoaderHolder.loader, let url = previewURL {
+                WalkSharePreviewView(
+                    loader: loader,
+                    shareURL: url,
+                    onDismiss: { showPreview = false }
+                )
+            }
+        }
+        .background(
+            Group {
+                if let loader = webViewLoaderHolder.loader, !showPreview {
+                    WebViewRepresentable(webView: loader.webView)
+                        .frame(width: 0, height: 0)
+                        .opacity(0)
+                        .allowsHitTesting(false)
+                }
+            }
+        )
+        .onChange(of: viewModel.shareState) { oldValue, newValue in
+            triggerRitualIfNeeded(old: oldValue, new: newValue)
+        }
+        .onDisappear {
+            revealTask?.cancel()
+            revealTask = nil
+            webViewLoaderHolder.clear()
+        }
     }
 
     // MARK: - Route Preview
@@ -353,6 +383,27 @@ struct WalkShareView: View {
         }
         previewURL = url
         showPreview = true
+    }
+
+    private func triggerRitualIfNeeded(
+        old: WalkShareViewModel.ShareState,
+        new: WalkShareViewModel.ShareState
+    ) {
+        guard case .uploading = old, case .success(let url) = new else { return }
+        guard let parsedURL = URL(string: url) else { return }
+
+        webViewLoaderHolder.create(url: parsedURL)
+        previewURL = url
+
+        revealTask?.cancel()
+        revealTask = Task {
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                showPreview = true
+            }
+        }
     }
 }
 
