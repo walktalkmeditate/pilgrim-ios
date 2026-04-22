@@ -64,7 +64,7 @@ This distinction is the entire persistence story: the `.uploading → .success` 
 Shown inside the modal when the webview has not yet painted by the time the modal opens. Aesthetic: "the page being drawn."
 
 - Parchment background (matches the real page's background).
-- Faint Cormorant-styled ghost lines for heading and body text, using `Color.fog.opacity(~0.2)`.
+- Faint Cormorant Garamond ghost lines for heading and body text, using `Color.fog.opacity(~0.2)` (tune against the rendered page during implementation).
 - Soft ink outline sketch where the route will render.
 - Crossfades out (~0.3 s) when `WKNavigationDelegate.webView(_:didFinish:)` fires for the share URL's navigation.
 
@@ -81,17 +81,18 @@ Replaces the current `.success` card structure at `WalkShareView.swift:267–327
 
 - **Route preview**: the existing route preview component, reused. **Tappable** — tap re-opens the modal.
 - Small chevron-right glyph in the corner of the route preview as a discoverability hint.
-- Below the route preview: serif *"Shared"* label + existing expiry line *"Returns to the trail on X"*.
+- Below the route preview: serif *"Shared ✓"* label (checkmark glyph) + existing expiry line *"Returns to the trail on X"*.
 - **Copy and Share buttons are removed from the card.** They live in the modal.
-- Card footer: a quiet tap affordance reading *"View scroll"* in `Constants.Typography.caption`, fog color, centered below the expiry line.
+- Card footer: a quiet tap affordance reading *"View scroll"* in `Constants.Typography.caption`, fog color, centered below the expiry line. The tap target extends via `.contentShape(Rectangle())` and vertical padding so the hit region meets the 44×44 pt HIG minimum even though the glyph is small.
 
 ### Re-Opening the Modal Later
 
 From the condensed card, tapping the route preview or the "View scroll" caption re-opens the modal. This path:
 
 - Does **not** use the 800 ms beat (deliberate action, not ritual).
-- Does not play a haptic on reveal (no need — the user initiated it themselves).
-- Uses the same `WKWebView` prefetch behavior: if the webview isn't already loaded in memory, it loads fresh. (We do not persist the webview across dismissals — see memory safety below.)
+- Does **not** play a haptic on reveal (no need — the user initiated it themselves).
+- **Uses the same slide-up animation** (0.6 s `easeOut`, or crossfade under Reduce Motion). The visual vocabulary stays constant; what differs between ritual and re-open is only the pre-roll beat and haptic.
+- Webview loads from scratch each time. We do not persist the `WKWebView` across dismissals (see memory safety below). The skeleton appears during first paint on every re-open.
 
 ## Technical Architecture
 
@@ -102,9 +103,32 @@ From the condensed card, tapping the route preview or the "View scroll" caption 
 
 ### Prefetch
 
-- Start loading the share URL in a hidden `WKWebView` the moment `shareState` becomes `.success`.
+- Start loading the share URL in a hidden `WKWebView` the moment `shareState` becomes `.success` via a fresh-share transition. The hidden webview is mounted in the view hierarchy with `.frame(width: 0, height: 0)` (not `.hidden()` — `WKWebView` needs to be in the hierarchy to actually load) and sits behind the success card until the modal opens.
 - When the modal opens, reuse the same webview instance (wired through `@StateObject` or a coordinator).
-- In the cached-share path (no modal auto-fires), prefetch is deferred until the user taps to open the modal.
+- In the cached-share path, prefetch does not fire. The webview loads from scratch the first time the user taps to open the modal. Skeleton handles the perceived-latency gap.
+
+### Ritual Cancellation Safety
+
+The 800 ms contemplative beat is implemented as a Swift `Task` with a sleep + cancellation guard, not `DispatchQueue.asyncAfter` — so that if the view disappears (user dismisses the walk summary, app backgrounds, etc.) during the beat, the delayed modal reveal cancels cleanly. Pattern (iOS 17+ `onChange` with both old and new values):
+
+```swift
+@State private var revealTask: Task<Void, Never>?
+
+...
+
+.onChange(of: viewModel.shareState) { oldValue, newValue in
+    guard case .uploading = oldValue, case .success = newValue else { return }
+    revealTask?.cancel()
+    revealTask = Task {
+        try? await Task.sleep(for: .milliseconds(800))
+        guard !Task.isCancelled else { return }
+        showPreview = true
+    }
+}
+.onDisappear { revealTask?.cancel() }
+```
+
+This follows the resource-safety discipline in `.claude/CLAUDE.md` for timer/async cancellation. It also doubles as the State Signal for the ritual — see below.
 
 ### Navigation Policy
 
@@ -141,10 +165,15 @@ Consistent with the project's resource-safety discipline (`.claude/CLAUDE.md`):
 - `Pilgrim/Scenes/WalkShare/WebViewRepresentable.swift` — new file, `UIViewRepresentable` wrapping `WKWebView` with navigation delegate.
 - `Pilgrim/Scenes/WalkShare/WalkShareViewModel.swift` — no changes expected; the state machine already distinguishes fresh vs cached cleanly (see State Signal above).
 
+## Device & Appearance Considerations
+
+- **iPad**: the project targets iPhone + iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). `.fullScreenCover` on iPad presents as an iPad-sized full-screen modal, not a floating form sheet — which is correct for the ritual framing (we want immersion, not a windowed preview). No iPad-specific layout code needed for v1; rely on standard SwiftUI adaptive layout. Verify Copy/Share bar renders correctly at iPad widths during testing.
+- **Dark mode**: colors used in the modal (parchment, stone, fog) must be chosen deliberately. Per `feedback_shadow_color_not_adaptive`, adaptive `ink`/`fog` colors can invert and become bright halos in dark mode. For the floating action bar's top shadow, use a **fixed** dark color (e.g., `Color.black.opacity(0.08)`), not `Color.ink.opacity(...)`. Verify modal in both appearances during testing.
+
 ## Accessibility
 
 - **Reduce Motion**: handled via the crossfade fallback specified in the reveal animation table above.
-- **VoiceOver**: focus order on modal reveal is (1) *"Your walk."* caption, (2) webview content, (3) Copy / Share / Done bar. Implement via `.accessibilitySortPriority` or an explicit focus trap.
+- **VoiceOver**: focus order on modal reveal is (1) *"Your walk."* caption, (2) webview content, (3) Copy / Share / Done bar. Implement via `.accessibilitySortPriority` (higher number = earlier in focus order), not a custom focus trap — the native SwiftUI approach composes more cleanly with `.fullScreenCover`.
 - **Dynamic Type**: the webview text is governed by the hosted page's CSS in `pilgrim-worker`, not `Constants.Typography`. The existing page needs to respect the iOS system font size. **Known gap** — filed as a follow-up to address in `pilgrim-worker`; not blocking this iOS change.
 - **Haptics**: a single soft impact on reveal. No haptic on any other interaction (Copy already has toast feedback; Share hands off to the system sheet).
 
@@ -161,6 +190,9 @@ Manual and automated checks to add:
 7. **VoiceOver navigation** — enable VoiceOver, confirm focus order.
 8. **Leak probe** — open/dismiss modal 20× during a simulated walk, verify `WKWebView` instance count returns to zero in Instruments' allocation tracker. Run during a 30+ minute simulated walk to check for cumulative drift.
 9. **External link interception** — temporarily add a link to the hosted page (pilgrim-worker dev), confirm tapping it opens Safari rather than navigating inside the modal.
+10. **Ritual cancellation** — initiate share, then during the 800 ms beat (introduce a larger delay temporarily if needed to reproduce reliably), navigate away from the walk summary or background the app. Confirm the modal does not appear spuriously on return.
+11. **Dark mode** — switch appearance mid-preview, confirm floating action bar's shadow and background remain legible, no adaptive-color inversions.
+12. **iPad layout** — run preview on iPad simulator, confirm modal is full-screen (not form-sheet) and Copy/Share bar renders at the wider width without awkward gaps.
 
 ## Decisions & Tradeoffs
 
