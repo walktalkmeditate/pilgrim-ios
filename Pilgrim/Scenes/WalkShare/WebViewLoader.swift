@@ -2,6 +2,7 @@ import Foundation
 import WebKit
 import Combine
 
+@MainActor
 final class WebViewLoader: ObservableObject {
 
     enum LoadState: Equatable {
@@ -35,8 +36,10 @@ final class WebViewLoader: ObservableObject {
     }
 
     deinit {
-        webView.navigationDelegate = nil
-        webView.stopLoading()
+        MainActor.assumeIsolated {
+            webView.navigationDelegate = nil
+            webView.stopLoading()
+        }
     }
 
     func retry() {
@@ -66,31 +69,43 @@ private final class NavigationDelegate: NSObject, WKNavigationDelegate {
         decidePolicyFor navigationAction: WKNavigationAction,
         decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
     ) {
-        guard let url = navigationAction.request.url,
-              let loader = loader else {
+        guard let url = navigationAction.request.url else {
             decisionHandler(.cancel)
             return
         }
 
-        if loader.shouldAllowNavigation(to: url) {
-            decisionHandler(.allow)
-        } else {
-            decisionHandler(.cancel)
-            DispatchQueue.main.async {
+        // WKNavigationDelegate callbacks are documented to arrive on the main thread.
+        // MainActor.assumeIsolated lets us call into the @MainActor-isolated loader
+        // synchronously (required because decisionHandler must be invoked before returning).
+        MainActor.assumeIsolated {
+            guard let loader = loader else {
+                decisionHandler(.cancel)
+                return
+            }
+            if loader.shouldAllowNavigation(to: url) {
+                decisionHandler(.allow)
+            } else {
+                decisionHandler(.cancel)
                 UIApplication.shared.open(url)
             }
         }
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        loader?.handleDidFinish()
+        MainActor.assumeIsolated {
+            loader?.handleDidFinish()
+        }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        loader?.handleDidFail()
+        MainActor.assumeIsolated {
+            loader?.handleDidFail()
+        }
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        loader?.handleDidFail()
+        MainActor.assumeIsolated {
+            loader?.handleDidFail()
+        }
     }
 }

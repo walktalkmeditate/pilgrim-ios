@@ -1,6 +1,7 @@
 import XCTest
 @testable import Pilgrim
 
+@MainActor
 final class WebViewLoaderTests: XCTestCase {
 
     private let shareURL = URL(string: "https://walk.pilgrimapp.org/abc123")!
