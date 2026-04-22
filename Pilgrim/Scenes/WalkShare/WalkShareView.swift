@@ -7,6 +7,7 @@ struct WalkShareView: View {
     @State private var showPodcastCard = false
     @State private var showPreview = false
     @State private var revealTask: Task<Void, Never>?
+    @State private var podcastRevealTask: Task<Void, Never>?
     @StateObject private var webViewLoaderHolder = WebViewLoaderHolder()
     @State private var previewURL: String?
 
@@ -67,10 +68,23 @@ struct WalkShareView: View {
                     }
                 }
             }
-            .onChange(of: isShared) { _, shared in
-                guard shared, !showPodcastCard,
-                      PodcastSubmissionService.shared.isEligible(walk: walk) else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        }
+        // Reveal the podcast card after the ritual modal dismisses, not at
+        // the moment of share success. The previous 800ms-after-success
+        // trigger collided with the ritual's own reveal — the card animated
+        // invisibly behind the modal, and its haptic doubled up with the
+        // ritual's. Tying the reveal to `showPreview` going true → false
+        // gives the card a visible fade-in and separates the two haptics.
+        .onChange(of: showPreview) { wasShowing, isShowing in
+            guard wasShowing, !isShowing,
+                  !showPodcastCard,
+                  isShared,
+                  PodcastSubmissionService.shared.isEligible(walk: walk) else { return }
+            podcastRevealTask?.cancel()
+            podcastRevealTask = Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
                     withAnimation(.easeOut(duration: 0.5)) {
                         showPodcastCard = true
                     }
@@ -106,6 +120,8 @@ struct WalkShareView: View {
         .onDisappear {
             revealTask?.cancel()
             revealTask = nil
+            podcastRevealTask?.cancel()
+            podcastRevealTask = nil
             // Guard against iOS versions / scene configs where onDisappear
             // fires on the parent while the cover is still presented (e.g.,
             // app backgrounded with modal open). Clearing the loader mid-
