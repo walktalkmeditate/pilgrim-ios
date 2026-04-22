@@ -232,6 +232,7 @@
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
 		LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */; };
 		LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVRP01 /* WebViewRepresentable.swift */; };
+		LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */; };
 		73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */; };
 		758B907703CD5A6120536B37 /* ProximityDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C415FCDCD38A1DE0212C8451 /* ProximityDetectionService.swift */; };
 		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
@@ -528,6 +529,7 @@
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoaderTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVRP01 /* WebViewRepresentable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewRepresentable.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSharePreviewView.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		12245A2A15EE8E64818B6D3F /* ActivityContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityContext.swift; sourceTree = "<group>"; };
 		123512C2E2D2088520214836 /* CairnVisualGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnVisualGenerator.swift; sourceTree = "<group>"; };
@@ -1794,6 +1796,7 @@
 				4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */,
 				LR00000100000000LRWVLD01 /* WebViewLoader.swift */,
 				LR00000100000000LRWVRP01 /* WebViewRepresentable.swift */,
+				LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */,
 			);
 			path = WalkShare;
 			sourceTree = "<group>";
@@ -2729,6 +2732,7 @@
 				9C3309EA59D57A4224524F68 /* WhisperManifestService.swift in Sources */,
 				LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */,
 				LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */,
+				LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
