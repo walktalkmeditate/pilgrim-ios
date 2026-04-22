@@ -4,9 +4,13 @@ struct WalkShareView: View {
 
     @StateObject private var viewModel: WalkShareViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var showCopiedToast = false
-    @State private var toastGeneration = 0
     @State private var showPodcastCard = false
+    @State private var showPreview = false
+    @State private var revealTask: Task<Void, Never>?
+    @State private var podcastRevealTask: Task<Void, Never>?
+    @State private var ritualDidFire = false
+    @StateObject private var webViewLoaderHolder = WebViewLoaderHolder()
+    @State private var previewURL: String?
 
     let walk: WalkInterface
     let pinnedPhotos: [PhotoCandidate]
@@ -65,15 +69,73 @@ struct WalkShareView: View {
                     }
                 }
             }
-            .onChange(of: isShared) { _, shared in
-                guard shared, !showPodcastCard,
-                      PodcastSubmissionService.shared.isEligible(walk: walk) else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        }
+        // Reveal the podcast card after the ritual modal dismisses, not at
+        // the moment of share success. The previous 800ms-after-success
+        // trigger collided with the ritual's own reveal — the card animated
+        // invisibly behind the modal, and its haptic doubled up with the
+        // ritual's. Tying the reveal to `showPreview` going true → false
+        // gives the card a visible fade-in and separates the two haptics.
+        .onChange(of: showPreview) { wasShowing, isShowing in
+            // Only reveal after a FRESH-share modal dismiss (ritualDidFire).
+            // Cache-hit re-entry via the walk summary's tappable URL also
+            // dismisses the modal via showPreview true → false, and without
+            // this gate the podcast card would spuriously appear on every
+            // re-view of a walk that was shared weeks ago.
+            guard wasShowing, !isShowing,
+                  ritualDidFire,
+                  !showPodcastCard,
+                  isShared,
+                  PodcastSubmissionService.shared.isEligible(walk: walk) else { return }
+            ritualDidFire = false
+            podcastRevealTask?.cancel()
+            podcastRevealTask = Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
                     withAnimation(.easeOut(duration: 0.5)) {
                         showPodcastCard = true
                     }
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                 }
+            }
+        }
+        .fullScreenCover(isPresented: $showPreview, onDismiss: {
+            webViewLoaderHolder.clear()
+            previewURL = nil
+        }) {
+            if let loader = webViewLoaderHolder.loader, let url = previewURL {
+                WalkSharePreviewView(
+                    loader: loader,
+                    shareURL: url,
+                    onDismiss: { showPreview = false }
+                )
+            }
+        }
+        .background(
+            Group {
+                if let loader = webViewLoaderHolder.loader, !showPreview {
+                    WebViewRepresentable(webView: loader.webView)
+                        .frame(width: 0, height: 0)
+                        .opacity(0)
+                        .allowsHitTesting(false)
+                }
+            }
+        )
+        .onChange(of: viewModel.shareState) { oldValue, newValue in
+            triggerRitualIfNeeded(old: oldValue, new: newValue)
+        }
+        .onDisappear {
+            revealTask?.cancel()
+            revealTask = nil
+            podcastRevealTask?.cancel()
+            podcastRevealTask = nil
+            // Guard against iOS versions / scene configs where onDisappear
+            // fires on the parent while the cover is still presented (e.g.,
+            // app backgrounded with modal open). Clearing the loader mid-
+            // presentation would leave the cover rendering an empty view.
+            if !showPreview {
+                webViewLoaderHolder.clear()
             }
         }
     }
@@ -266,61 +328,47 @@ struct WalkShareView: View {
 
         case .success(let url):
             VStack(spacing: Constants.UI.Padding.normal) {
-                routePreview
+                Button {
+                    openPreview(url: url)
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        routePreview
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.fog.opacity(0.4))
+                            .padding(8)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("View shared walk page")
+                .accessibilityHint("Opens the scroll of your shared walk")
 
-                Text(url)
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.stone)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                HStack(spacing: 6) {
+                    Text("Shared")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.stone)
+                    Image(systemName: "checkmark")
+                        .font(.caption)
+                        .foregroundColor(.moss)
+                }
 
                 Text("Returns to the trail on \(expiryDateFormatted)")
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                     .italic()
 
-                HStack(spacing: Constants.UI.Padding.small) {
-                    Button {
-                        UIPasteboard.general.string = url
-                        toastGeneration += 1
-                        let gen = toastGeneration
-                        showCopiedToast = true
-                        Task {
-                            try? await Task.sleep(for: .seconds(2))
-                            if toastGeneration == gen { showCopiedToast = false }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: showCopiedToast ? "checkmark" : "doc.on.doc")
-                            Text(showCopiedToast ? "Copied" : "Copy")
-                                .font(Constants.Typography.button)
-                                .minimumScaleFactor(0.8)
-                                .lineLimit(1)
-                        }
+                Button {
+                    openPreview(url: url)
+                } label: {
+                    Text("View scroll")
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color.parchmentSecondary)
-                        .foregroundColor(.stone)
-                        .cornerRadius(Constants.UI.CornerRadius.small)
-                    }
-
-                    if let shareURL = URL(string: url) {
-                        ShareLink(item: shareURL) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share")
-                                    .font(Constants.Typography.button)
-                                    .minimumScaleFactor(0.8)
-                                    .lineLimit(1)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.stone)
-                            .foregroundColor(.parchment)
-                            .cornerRadius(Constants.UI.CornerRadius.small)
-                        }
-                    }
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
             .padding(Constants.UI.Padding.normal)
             .background(Color.parchmentSecondary)
@@ -359,6 +407,57 @@ struct WalkShareView: View {
             .font(Constants.Typography.micro)
             .foregroundColor(.fog)
             .tracking(1.5)
+    }
+
+    private func openPreview(url: String) {
+        guard let parsedURL = URL(string: url) else { return }
+        // If the user taps to open during the 800ms ritual beat, cancel the
+        // pending reveal so its haptic + redundant showPreview assignment
+        // don't fire on an already-open modal.
+        revealTask?.cancel()
+        revealTask = nil
+        if webViewLoaderHolder.loader == nil {
+            webViewLoaderHolder.create(url: parsedURL)
+        }
+        previewURL = url
+        showPreview = true
+    }
+
+    private func triggerRitualIfNeeded(
+        old: WalkShareViewModel.ShareState,
+        new: WalkShareViewModel.ShareState
+    ) {
+        guard case .uploading = old, case .success(let url) = new else { return }
+        guard let parsedURL = URL(string: url) else { return }
+
+        webViewLoaderHolder.create(url: parsedURL)
+        previewURL = url
+        ritualDidFire = true
+
+        revealTask?.cancel()
+        revealTask = Task {
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                showPreview = true
+            }
+        }
+    }
+}
+
+// MARK: - WebViewLoaderHolder
+
+@MainActor
+private final class WebViewLoaderHolder: ObservableObject {
+    @Published var loader: WebViewLoader?
+
+    func create(url: URL) {
+        loader = WebViewLoader(url: url)
+    }
+
+    func clear() {
+        loader = nil
     }
 }
 

@@ -201,11 +201,25 @@ struct WalkSharingButtons: View {
                         .tracking(1.5)
                 }
 
-                Text(cached.url)
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.stone)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                Button {
+                    showJourneySheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(cached.url)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.stone)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                            .foregroundColor(.stone.opacity(0.4))
+                            .accessibilityHidden(true)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("View shared walk page")
+                .accessibilityHint("Opens the walk share details to re-view the scroll")
 
                 Text("Returns to the trail on \(Self.expiryFormatter.string(from: cached.expiry))")
                     .font(Constants.Typography.caption)
