@@ -8,6 +8,7 @@ struct WalkShareView: View {
     @State private var showPreview = false
     @State private var revealTask: Task<Void, Never>?
     @State private var podcastRevealTask: Task<Void, Never>?
+    @State private var ritualDidFire = false
     @StateObject private var webViewLoaderHolder = WebViewLoaderHolder()
     @State private var previewURL: String?
 
@@ -76,10 +77,17 @@ struct WalkShareView: View {
         // ritual's. Tying the reveal to `showPreview` going true → false
         // gives the card a visible fade-in and separates the two haptics.
         .onChange(of: showPreview) { wasShowing, isShowing in
+            // Only reveal after a FRESH-share modal dismiss (ritualDidFire).
+            // Cache-hit re-entry via the walk summary's tappable URL also
+            // dismisses the modal via showPreview true → false, and without
+            // this gate the podcast card would spuriously appear on every
+            // re-view of a walk that was shared weeks ago.
             guard wasShowing, !isShowing,
+                  ritualDidFire,
                   !showPodcastCard,
                   isShared,
                   PodcastSubmissionService.shared.isEligible(walk: walk) else { return }
+            ritualDidFire = false
             podcastRevealTask?.cancel()
             podcastRevealTask = Task {
                 try? await Task.sleep(for: .milliseconds(500))
@@ -424,6 +432,7 @@ struct WalkShareView: View {
 
         webViewLoaderHolder.create(url: parsedURL)
         previewURL = url
+        ritualDidFire = true
 
         revealTask?.cancel()
         revealTask = Task {
