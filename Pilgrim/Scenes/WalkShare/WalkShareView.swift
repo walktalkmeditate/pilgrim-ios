@@ -27,7 +27,7 @@ struct WalkShareView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.big) {
                     if isShared {
