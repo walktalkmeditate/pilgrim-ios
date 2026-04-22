@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct WalkSharePreviewView: View {
 
@@ -26,7 +27,10 @@ struct WalkSharePreviewView: View {
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.3).delay(0.2)) {
+            let reduceMotion = UIAccessibility.isReduceMotionEnabled
+            let delay = reduceMotion ? 0.0 : 0.2
+            let duration = reduceMotion ? 0.2 : 0.3
+            withAnimation(.easeInOut(duration: duration).delay(delay)) {
                 captionOpacity = 1
             }
         }
