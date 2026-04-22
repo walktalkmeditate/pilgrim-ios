@@ -106,7 +106,13 @@ struct WalkShareView: View {
         .onDisappear {
             revealTask?.cancel()
             revealTask = nil
-            webViewLoaderHolder.clear()
+            // Guard against iOS versions / scene configs where onDisappear
+            // fires on the parent while the cover is still presented (e.g.,
+            // app backgrounded with modal open). Clearing the loader mid-
+            // presentation would leave the cover rendering an empty view.
+            if !showPreview {
+                webViewLoaderHolder.clear()
+            }
         }
     }
 
