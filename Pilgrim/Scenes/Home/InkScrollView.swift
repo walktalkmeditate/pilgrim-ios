@@ -589,6 +589,24 @@ struct InkScrollView: View {
 
     // MARK: - Path rendering
 
+    private func turningColorForSegment(index: Int) -> Color? {
+        guard index >= 0 && index < snapshots.count else { return nil }
+        let snapshot = snapshots[index]
+        let hemisphereRawValue = UserPreferences.hemisphereOverride.value
+        let latitude: Double
+        if let raw = hemisphereRawValue, let hemisphere = Hemisphere(rawValue: raw) {
+            latitude = hemisphere == .southern ? -1 : 1
+        } else {
+            latitude = 1
+        }
+        let coord = CLLocationCoordinate2D(latitude: latitude, longitude: 0)
+        guard let turning = TurningDayService.turning(for: snapshot.startDate, at: coord),
+              let color = turning.color else {
+            return nil
+        }
+        return color
+    }
+
     private func pathSegmentOpacity(index: Int, total: Int) -> Double {
         guard total > 1 else { return 0.35 }
         let normalized = Double(index) / Double(total - 1)
@@ -596,6 +614,9 @@ struct InkScrollView: View {
     }
 
     private func pathSegmentColor(index: Int) -> Color {
+        if let turningColor = turningColorForSegment(index: index) {
+            return turningColor.opacity(0.85)
+        }
         guard index < snapshots.count else { return .ink }
         let month = Calendar.current.component(.month, from: snapshots[index].startDate)
         let colorName: String
