@@ -1,10 +1,5 @@
 import UIKit
 
-enum Hemisphere: Int {
-    case northern = 0
-    case southern = 1
-}
-
 enum ShiftIntensity {
     case full
     case moderate

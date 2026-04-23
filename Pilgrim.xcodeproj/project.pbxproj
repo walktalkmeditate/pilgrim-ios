@@ -231,6 +231,8 @@
 		LR00000200000000LRSHTR02 /* WalkSharingTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSHTR02 /* WalkSharingTrackerTests.swift */; };
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
 		LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */; };
+		LR00000200000000LRHEMS01 /* Hemisphere.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRHEMS01 /* Hemisphere.swift */; };
+		LR00000200000000LRHEMST1 /* HemisphereTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRHEMST1 /* HemisphereTests.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
 		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
 		LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */; };
@@ -531,6 +533,8 @@
 		LR00000100000000LRSHTR02 /* WalkSharingTrackerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSharingTrackerTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoaderTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRHEMS01 /* Hemisphere.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Hemisphere.swift; sourceTree = "<group>"; };
+		LR00000100000000LRHEMST1 /* HemisphereTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HemisphereTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardRecoveryTests.swift; sourceTree = "<group>"; };
@@ -1407,6 +1411,7 @@
 				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
 				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
 				CC00000100000000SEEDRG01 /* SeededRNG.swift */,
+				LR00000100000000LRHEMS01 /* Hemisphere.swift */,
 				8534424C43418F78E8F15520 /* Share */,
 				499729B7A6894D15BED563EE /* Seal */,
 				AA11BB22CC33DD44EE55FF66 /* Etegami */,
@@ -1646,6 +1651,7 @@
 				LR00000100000000LRGENR02 /* LightReadingGeneratorTests.swift */,
 				LR00000100000000LRSHTR02 /* WalkSharingTrackerTests.swift */,
 				LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */,
+				LR00000100000000LRHEMST1 /* HemisphereTests.swift */,
 				LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */,
 				LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */,
 				LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */,
@@ -2740,6 +2746,7 @@
 				DA6DDA89F11F4728B6B553A1 /* WhisperManifest.swift in Sources */,
 				9C3309EA59D57A4224524F68 /* WhisperManifestService.swift in Sources */,
 				LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */,
+				LR00000200000000LRHEMS01 /* Hemisphere.swift in Sources */,
 				LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */,
 				LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */,
 			);
@@ -2799,6 +2806,7 @@
 				LR00000200000000LRGENR02 /* LightReadingGeneratorTests.swift in Sources */,
 				LR00000200000000LRSHTR02 /* WalkSharingTrackerTests.swift in Sources */,
 				LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */,
+				LR00000200000000LRHEMST1 /* HemisphereTests.swift in Sources */,
 				LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */,
 				LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */,
 				LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */,
