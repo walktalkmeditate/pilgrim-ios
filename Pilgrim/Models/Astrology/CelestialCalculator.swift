@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 
 enum CelestialCalculator {
@@ -352,6 +353,48 @@ enum CelestialCalculator {
         if abs(lon - 225.0) < threshold { return .samhain }
 
         return nil
+    }
+
+    // MARK: - Sunrise Azimuth
+
+    /// Compass azimuth (degrees clockwise from true north) where the sun rises
+    /// on the given date at the given location. Returns nil if the sun does
+    /// not rise that day (polar night/day).
+    ///
+    /// Uses the standard formula:
+    ///   cos(A) = (sin(δ) - sin(φ) · sin(h)) / (cos(φ) · cos(h))
+    /// where δ is the sun's declination, φ is the observer's latitude, and
+    /// h is the sun's altitude at sunrise (~-0.833° accounting for refraction
+    /// and solar disk radius).
+    ///
+    /// Accuracy ~1-2 degrees, sufficient for a visual orientation marker.
+    static func sunriseAzimuth(at coordinate: CLLocationCoordinate2D, on date: Date) -> CLLocationDirection? {
+        let lat = coordinate.latitude
+        let T = julianCenturies(from: julianDayNumber(from: date))
+        let sunLon = solarLongitude(T: T)
+
+        let obliquity = 23.439291 - 0.0130042 * T
+        let declination = degrees(asin(
+            sin(radians(obliquity)) * sin(radians(sunLon))
+        ))
+
+        let h: Double = -0.833
+
+        let phi = radians(lat)
+        let delta = radians(declination)
+        let hRad = radians(h)
+
+        let cosLat = cos(phi)
+        guard abs(cosLat) > 1e-9 else { return nil }
+
+        let numerator = sin(delta) - sin(phi) * sin(hRad)
+        let denominator = cosLat * cos(hRad)
+        let cosA = numerator / denominator
+
+        guard cosA >= -1.0 && cosA <= 1.0 else { return nil }
+
+        let azimuth = degrees(acos(cosA))
+        return azimuth
     }
 
     // MARK: - Internal Helpers
