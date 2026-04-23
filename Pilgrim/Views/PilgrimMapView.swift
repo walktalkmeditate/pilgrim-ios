@@ -39,6 +39,9 @@ struct PilgrimMapView: UIViewRepresentable {
     /// walk summary and other embedded maps keep their existing reveal
     /// choreography.
     var fadesInOnStyleLoad: Bool = false
+    /// Color for walking-activity route segments. Defaults to `.moss`. Pass the
+    /// turning's color on solstice/equinox walks so those segments reflect the day.
+    var walkingColor: UIColor = .moss
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -56,6 +59,7 @@ struct PilgrimMapView: UIViewRepresentable {
         bottomInset: CGFloat = 0,
         initialCamera: MapCameraSeed.Seed? = nil,
         fadesInOnStyleLoad: Bool = false,
+        walkingColor: UIColor = .moss,
         isMeditating: Binding<Bool> = .constant(false)
     ) {
         self.isInteractive = isInteractive
@@ -73,6 +77,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self.bottomInset = bottomInset
         self.initialCamera = initialCamera
         self.fadesInOnStyleLoad = fadesInOnStyleLoad
+        self.walkingColor = walkingColor
     }
 
     func makeCoordinator() -> Coordinator {
@@ -133,7 +138,7 @@ struct PilgrimMapView: UIViewRepresentable {
             if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             coordinator.circleManager = nil
             coordinator.pointManager = nil
-            Self.applyRouteSource(coordinator.pendingSegments, on: mapView, coordinator: coordinator)
+            Self.applyRouteSource(coordinator.pendingSegments, walkingColor: coordinator.walkingColor, on: mapView, coordinator: coordinator)
             Self.applyAnnotations(coordinator.pendingAnnotations, activePhotoID: coordinator.pendingActivePhotoID, on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
@@ -152,6 +157,7 @@ struct PilgrimMapView: UIViewRepresentable {
         context.coordinator.pendingActivePhotoID = activePhotoID
         context.coordinator.onAnnotationTap = onAnnotationTap
         context.coordinator.currentPinAnnotations = pinAnnotations
+        context.coordinator.walkingColor = walkingColor
 
         if !context.coordinator.tapGestureAdded, onAnnotationTap != nil {
             let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleMapTap(_:)))
@@ -171,7 +177,7 @@ struct PilgrimMapView: UIViewRepresentable {
         }
 
         if context.coordinator.shouldRender {
-            Self.applyRouteSource(routeSegments, on: mapView, coordinator: context.coordinator)
+            Self.applyRouteSource(routeSegments, walkingColor: walkingColor, on: mapView, coordinator: context.coordinator)
         } else {
             context.coordinator.hasDeferredRouteUpdate = true
         }
@@ -242,7 +248,7 @@ struct PilgrimMapView: UIViewRepresentable {
 
     private static let sourceId = "pilgrim-route"
 
-    private static func applyRouteSource(_ routeSegments: [RouteSegment], on mapView: MBMapView, coordinator: Coordinator) {
+    private static func applyRouteSource(_ routeSegments: [RouteSegment], walkingColor: UIColor = .moss, on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
         guard routeSegments != coordinator.lastSegments else { return }
         coordinator.lastSegments = routeSegments
@@ -291,7 +297,7 @@ struct PilgrimMapView: UIViewRepresentable {
                         UIColor.dawn
                         "talking"
                         UIColor.rust
-                        UIColor.moss
+                        walkingColor
                     }
                 )
                 try mapView.mapboxMap.addLayer(layer)
@@ -543,6 +549,7 @@ struct PilgrimMapView: UIViewRepresentable {
         let photoMarkerLoader = PhotoMarkerImageLoader()
 
         fileprivate var isAppInBackground: Bool = false
+        fileprivate var walkingColor: UIColor = .moss
 
         fileprivate var isMeditating: Bool = false {
             didSet { refreshRenderState() }
@@ -583,7 +590,7 @@ struct PilgrimMapView: UIViewRepresentable {
             mapView.preferredFramesPerSecond = shouldRender ? PilgrimMapView.renderFPS : 0
 
             if shouldRender && !wasRendering && hasDeferredRouteUpdate {
-                PilgrimMapView.applyRouteSource(pendingSegments, on: mapView, coordinator: self)
+                PilgrimMapView.applyRouteSource(pendingSegments, walkingColor: walkingColor, on: mapView, coordinator: self)
                 hasDeferredRouteUpdate = false
             }
         }

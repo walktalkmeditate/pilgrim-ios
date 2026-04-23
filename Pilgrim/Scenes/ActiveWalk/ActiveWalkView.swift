@@ -570,6 +570,7 @@ struct ActiveWalkView: View {
             bottomInset: mapBottomInset,
             initialCamera: viewModel.mapCameraSeed,
             fadesInOnStyleLoad: true,
+            walkingColor: activeTurning?.uiColor ?? .moss,
             isMeditating: $viewModel.isMeditating
         )
     }
