@@ -20,6 +20,22 @@ class WalkSessionGuard {
 
     private static let tag = "[SessionGuard]"
 
+    /// The `WalkCheckpoint.schemaVersion` value this build can decode and recover.
+    /// Bump in lockstep with `WalkCheckpoint.schemaVersion` whenever the on-disk
+    /// shape changes; older builds will refuse to decode mismatched checkpoints.
+    private static let supportedSchemaVersion = 1
+
+    /// Provisional (in-flight) recordings — the ones created by
+    /// `VoiceRecordingManagement.checkpointVoiceRecording()` — are the only
+    /// voice recordings with a nil UUID in our pipeline. Finalized recordings
+    /// get a UUID in `finalizeRecording()`; orphan-reconnected recordings get
+    /// one in `reconnectOrphanedRecordings`. Kept as a static helper so both
+    /// the checkpoint log site and the recovery sanitization loop share the
+    /// same definition of "in-flight."
+    static func isProvisional(_ recording: VoiceRecordingInterface) -> Bool {
+        recording.uuid == nil
+    }
+
     // MARK: - Power Tiers
 
     enum PowerTier: Equatable, CustomStringConvertible {
@@ -144,10 +160,7 @@ class WalkSessionGuard {
             )
             try data.write(to: url, options: .atomic)
             checkpointCount += 1
-            // Provisional snapshots from checkpointVoiceRecording() are the only
-            // voice recordings with a nil UUID; finalized ones get one in
-            // finalizeRecording(). See VoiceRecordingManagement.swift.
-            let talkFlag = snapshot.voiceRecordings.contains { $0.uuid == nil } ? " (inflight)" : ""
+            let talkFlag = snapshot.voiceRecordings.contains(where: Self.isProvisional) ? " (inflight)" : ""
             print("\(Self.tag) CHECKPOINT #\(checkpointCount) — tier: \(currentTier), routes: \(snapshot.routeData.count), pauses: \(snapshot.pauses.count), recordings: \(snapshot.voiceRecordings.count)\(talkFlag), intervals: \(snapshot.activityIntervals.count), size: \(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
         } catch {
             print("\(Self.tag) CHECKPOINT WRITE FAILED: \(error)")
@@ -298,6 +311,13 @@ class WalkSessionGuard {
             return
         }
 
+        guard checkpoint.schemaVersion == Self.supportedSchemaVersion else {
+            print("\(tag) RECOVERY FAILED — unsupported schemaVersion: \(checkpoint.schemaVersion) (this build supports \(Self.supportedSchemaVersion))")
+            try? FileManager.default.removeItem(at: url)
+            completion(nil)
+            return
+        }
+
         if DataManager.objectHasDuplicate(uuid: checkpoint.walkUUID, objectType: Walk.self) {
             print("\(tag) RECOVERY — stale checkpoint (walk already saved), deleting")
             try? FileManager.default.removeItem(at: url)
@@ -311,10 +331,7 @@ class WalkSessionGuard {
 
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let sanitized = walk._voiceRecordings.map { recording -> TempVoiceRecording in
-            // Only provisional (in-flight) recordings — identified by nil UUID —
-            // may have unfinalized .m4a files. Finalized and orphan-reconnected
-            // recordings were already proven playable when they were written.
-            guard recording.uuid == nil, !recording.fileRelativePath.isEmpty else {
+            guard isProvisional(recording), !recording.fileRelativePath.isEmpty else {
                 return recording
             }
             let url = docs.appendingPathComponent(recording.fileRelativePath)

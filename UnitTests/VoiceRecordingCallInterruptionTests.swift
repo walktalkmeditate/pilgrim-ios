@@ -7,7 +7,6 @@ final class VoiceRecordingCallInterruptionTests: XCTestCase {
     func test_callChanged_stopsRecording_whenCallConnects() {
         let builder = WalkBuilder()
         let mgmt = VoiceRecordingManagement(builder: builder)
-        builder.setStatus(.recording)
 
         mgmt._test_setActiveRecording(
             start: Date(timeIntervalSinceNow: -10),
@@ -24,7 +23,6 @@ final class VoiceRecordingCallInterruptionTests: XCTestCase {
     func test_callChanged_doesNothing_whenCallNotConnected() {
         let builder = WalkBuilder()
         let mgmt = VoiceRecordingManagement(builder: builder)
-        builder.setStatus(.recording)
 
         mgmt._test_setActiveRecording(
             start: Date(timeIntervalSinceNow: -10),
