@@ -202,6 +202,41 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
             startRecording()
         }
     }
+
+    /// Returns a provisional `TempVoiceRecording` capturing the currently-active
+    /// recording's start + elapsed duration so far, or `nil` if no recording is
+    /// active. Mirrors the meditation-interval provisional pattern in
+    /// `ActiveWalkViewModel.checkpointActivityIntervals()`. The returned recording
+    /// has the real in-flight file path; on recovery, the file may or may not be
+    /// playable depending on whether AVAudioRecorder wrote its moov atom before
+    /// the process died.
+    public func checkpointVoiceRecording() -> TempVoiceRecording? {
+        guard isRecording,
+              let start = currentRecordingStart,
+              let relativePath = currentRecordingRelativePath else {
+            return nil
+        }
+        let now = Date()
+        return TempVoiceRecording(
+            uuid: nil,
+            startDate: start,
+            endDate: now,
+            duration: now.timeIntervalSince(start),
+            fileRelativePath: relativePath,
+            isEnhanced: false
+        )
+    }
+
+    #if DEBUG
+    /// Test-only hook. Sets the internal state that `startRecording()` would set
+    /// without requiring AVAudioSession permission in the unit-test environment.
+    func _test_setActiveRecording(start: Date, relativePath: String) {
+        currentRecordingStart = start
+        currentRecordingRelativePath = relativePath
+        recordingStartDate = start
+        isRecording = true
+    }
+    #endif
 }
 
 extension VoiceRecordingManagement: AVAudioRecorderDelegate {
