@@ -22,15 +22,18 @@ The spec does not cover `chiefrubberduck.com` (deferred; not load-bearing) or th
 
 ```
 ~/GitHub/rubberduck/walk/          pilgrim-landing              chiefrubberduck.com
-│                                   │                            │
-├── CLAUDE.md (character bible)     ├── /walk (new page)         └── (deferred)
-├── entries/*.md                    │     static HTML/CSS/JS
-├── state.json                      │     fetches feed.json
-├── routes/                         │     on load
-│   ├── queue.json                  │
-│   └── shikoku-88.json             ├── footer.png (new)
-├── feed.json  ◄────── built ──┐    │     tiny duck icon,
-└── scripts/                    │   │     linked → /walk
+  (remote:                          │                            │
+   walktalkmeditate/                ├── /walk (new page)         └── (deferred)
+   rubberduck-walk)                 │     static HTML/CSS/JS
+│                                   │     fetches feed.json
+├── CLAUDE.md (character bible)     │     on load
+├── entries/*.md                    │
+├── state.json                      │
+├── routes/                         ├── footer.png (new)
+│   ├── queue.json                  │     tiny duck icon,
+│   └── shikoku-88.json             │     linked → /walk
+├── feed.json  ◄────── built ──┐    │
+└── scripts/                    │   │
     ├── advance.ts              │   │
     ├── build-feed.ts           │   │
     ├── purge.sh                │   │
@@ -40,23 +43,26 @@ The spec does not cover `chiefrubberduck.com` (deferred; not load-bearing) or th
 ~/GitHub/rubberduck/walk ──────►│   │
                                 ▼   │
                       jsDelivr CDN ─┘
-                      cdn.jsdelivr.net/gh/<owner>/walk@main/feed.json
+          cdn.jsdelivr.net/gh/walktalkmeditate/rubberduck-walk@main/feed.json
 ```
+
+**Paths and URLs:**
+
+- Local working directory: `/Users/rubberduck/GitHub/rubberduck/walk/`
+- GitHub remote: `https://github.com/walktalkmeditate/rubberduck-walk` (public — required by jsDelivr)
+- Feed URL: `https://cdn.jsdelivr.net/gh/walktalkmeditate/rubberduck-walk@main/feed.json`
+- Purge URL: `https://purge.jsdelivr.net/gh/walktalkmeditate/rubberduck-walk@main/feed.json`
 
 **Two flows write the repo:**
 
 1. **Daily `/schedule`** — Claude Code runs once per day. Reads `state.json`, advances position, generates a draft entry, self-reviews against CLAUDE.md, either publishes or emits a silence entry. Commits, pushes, purges.
 
-2. **Local CLI** (`./duck <subcommand>`) — optional human entrypoints:
-   - `./duck offer` — write an entry by hand (bypasses LLM)
-   - `./duck next <route-id>` — when duck is resting, begin the next route
-   - `./duck status` — print current state
-   - `./duck preview` — render feed locally
+2. **Local CLI** (`./duck <subcommand>`) — optional human entrypoints. Full list in the "Local CLI" section below; principal commands: `offer` (hand-written short entry), `letter` (longer human-authored writing), `next <route-id>` (begin the next route after resting).
 
 **pilgrim-landing consumes jsDelivr:**
 
 - `/walk` is a new static page (HTML/CSS/JS, no build step)
-- On load: `fetch('https://cdn.jsdelivr.net/gh/<owner>/walk@main/feed.json')`
+- On load: `fetch('https://cdn.jsdelivr.net/gh/walktalkmeditate/rubberduck-walk@main/feed.json')`
 - Renders map + trail of past entries + journal-styled entry list
 - Footer of all pilgrim-landing pages gets a small static duck .png linked to `/walk`
 
@@ -233,7 +239,7 @@ A single Claude Code invocation per day. The `/schedule` skill already installed
    ```
    git commit -am "the duck walks"
    git push
-   curl https://purge.jsdelivr.net/gh/<owner>/walk@main/feed.json
+   curl https://purge.jsdelivr.net/gh/walktalkmeditate/rubberduck-walk@main/feed.json
    ```
 
 ### Local CLI
@@ -330,6 +336,19 @@ Entry files are deleted from `entries/` after 365 days (the daily build script p
 - Links to `/walk`
 - No hover effect, no label, no explanation
 
+### Duck assets
+
+Source files (provided, to be committed to `rubberduck-walk/assets/` and optimized/resized as needed):
+
+- `~/Downloads/chiefrubberduck.png` — static duck (used for footer icon, resized to 24–32px)
+- `~/Downloads/chiefrubberduck-transparent.gif` — animated duck (used as current-position marker on the `/walk` map)
+
+Both are already transparent-background. At ship time:
+
+- Generate PNG variants at 24px, 32px, and 48px (Retina) for the footer
+- Keep the GIF at its native size for the map marker (may need alpha optimization if the file is heavier than needed on mobile)
+- Commit optimized variants to `pilgrim-landing/assets/duck/`
+
 ## Character bible (lives in repo `CLAUDE.md`)
 
 This is the authoritative voice document loaded on every cron run. It governs `kind: offering`, `kind: notice`, `kind: silence`, and `kind: threshold` entries. It does **not** apply to `kind: letter` — letters are human-authored and intentionally unconstrained.
@@ -402,11 +421,39 @@ Before publishing any generated entry, verify:
 
 ## Weather integration
 
-- Source: [Open-Meteo](https://open-meteo.com/) — free, no API key, good global coverage
-- Request: current conditions at `state.coords`
-- Feeds into generation as context (*"current weather: light rain, 14°C"*)
-- Not surfaced directly in entries; just influences mood
-- If the API is down, skip — generation proceeds without weather context
+Source: [Open-Meteo](https://open-meteo.com/) — free, no API key, good global coverage.
+
+**Endpoint:**
+
+```
+GET https://api.open-meteo.com/v1/forecast
+    ?latitude={state.coords[0]}
+    &longitude={state.coords[1]}
+    &current=temperature_2m,weather_code,precipitation
+```
+
+**Response shape (consumed fields):**
+
+```json
+{
+  "current": {
+    "temperature_2m": 15.5,
+    "weather_code": 1,
+    "precipitation": 0.0
+  }
+}
+```
+
+`weather_code` is a WMO code (0 = clear, 1–3 = mainly clear to overcast, 45/48 = fog, 51–67 = rain/drizzle, 71–77 = snow, 80–82 = showers, 95–99 = thunderstorm). Map it to a short English string (*"clear"*, *"overcast"*, *"light rain"*, *"fog"*) before feeding into the generation prompt.
+
+**Usage rules:**
+
+- Fetch once per daily cron run, at the duck's current coords
+- Pass into generation as a single-line context string (*"weather: light rain, 14°C"*)
+- Do not surface weather directly in the entry body; it only influences mood
+- Do not store weather in `state.json` (it's a transient input, not state)
+- On API failure, skip silently — generation proceeds without weather context
+- Store the final string in the entry's `weather` frontmatter field for archival reference
 
 ## Non-goals / YAGNI
 
@@ -424,11 +471,9 @@ Before publishing any generated entry, verify:
 
 ## Open decisions (to resolve during implementation)
 
-- **GitHub repo name/org.** `chiefrubberduck/walk`? `jivxjp/walk`? Something else? Must be public (jsDelivr only serves public repos).
-- **Which `.png` and `.gif` assets** from chiefrubberduck.com to reuse as footer icon and current-position indicator. Need to be small and work at 24–32px for footer.
-- **Exact silence-entry visual treatment** on `/walk` — what "(silence)" looks like typographically.
-- **Weather API integration details** — which Open-Meteo endpoint, what fields to pass into generation context.
-- **Closure sites for future routes** (Kumano, Caminos) — research and populate at route activation time; don't block Shikoku work.
+- **Exact silence-entry visual treatment** on `/walk` — what "(silence)" looks like typographically; settled during CSS authoring.
+- **Closure sites for future routes** (Kumano Kodo → Nachi Falls is tentative; Caminos → Fisterra is tentative for Francés but other Camino variants are TBD) — research and populate at route activation time; don't block Shikoku work.
+- **Asset size optimization budget** — at what point does the GIF file size become a mobile concern on `/walk`; settled during asset pipeline work.
 
 ## Implementation order (rough)
 
