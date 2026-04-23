@@ -236,6 +236,8 @@
 		LR00000200000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */; };
 		LR00000200000000LRHEMS01 /* Hemisphere.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRHEMS01 /* Hemisphere.swift */; };
 		LR00000200000000LRHEMST1 /* HemisphereTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRHEMST1 /* HemisphereTests.swift */; };
+		LR00000200000000LRTDYS01 /* TurningDayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTDYS01 /* TurningDayService.swift */; };
+		LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
 		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
 		LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */; };
@@ -540,6 +542,8 @@
 		LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonalMarkerTurningTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRHEMS01 /* Hemisphere.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Hemisphere.swift; sourceTree = "<group>"; };
 		LR00000100000000LRHEMST1 /* HemisphereTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HemisphereTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTDYS01 /* TurningDayService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TurningDayService.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TurningDayServiceTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardRecoveryTests.swift; sourceTree = "<group>"; };
@@ -1663,6 +1667,7 @@
 				LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */,
 				LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */,
 				LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */,
+				LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1797,6 +1802,7 @@
 				3A98AEE09143482AA1EFE5DC /* SolarHorizon.swift */,
 				AE8823B55D944B53A5149E70 /* AstronomicalEvents.swift */,
 				LR00000100000000LRSMTR01 /* SeasonalMarker+Turnings.swift */,
+				LR00000100000000LRTDYS01 /* TurningDayService.swift */,
 			);
 			path = Astrology;
 			sourceTree = "<group>";
@@ -2708,6 +2714,7 @@
 				3E99F36DBCDB461C99F60DA5 /* SolarHorizon.swift in Sources */,
 				EE11900E0BF7483C9154DC21 /* AstronomicalEvents.swift in Sources */,
 				LR00000200000000LRSMTR01 /* SeasonalMarker+Turnings.swift in Sources */,
+				LR00000200000000LRTDYS01 /* TurningDayService.swift in Sources */,
 				LR00000200000000LRMODEL1 /* LightReading.swift in Sources */,
 				LR00000200000000LRTMPL01 /* LightReadingTemplates.swift in Sources */,
 				LR00000200000000LRGENR01 /* LightReadingGenerator.swift in Sources */,
@@ -2822,6 +2829,7 @@
 				LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */,
 				LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */,
 				LR00000200000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift in Sources */,
+				LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
