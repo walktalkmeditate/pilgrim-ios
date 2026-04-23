@@ -97,7 +97,7 @@ date: 2026-04-22
 route: shikoku-88
 stage: 12
 stageName: Shōzanji
-coords: [33.8851, 134.0342]
+coords: [134.0342, 33.8851]
 kind: offering           # offering | notice | silence | threshold | letter
 glyph: 🪨
 weather: clear           # pulled from Open-Meteo at generation time
@@ -122,7 +122,7 @@ date: 2026-05-02
 route: shikoku-88
 stage: 13
 stageName: Dainichiji
-coords: [33.9124, 134.1207]
+coords: [134.1207, 33.9124]
 kind: letter
 glyph: 🕯️
 author: — the pilgrim
@@ -144,7 +144,7 @@ had a frayed rope. I rang it anyway.
   "route": "shikoku-88",
   "stage": 12,
   "stageName": "Shōzanji",
-  "coords": [33.8851, 134.0342],
+  "coords": [134.0342, 33.8851],
   "mode": "walking",
   "modeEnteredAt": "2026-03-15",
   "lastAdvancedAt": "2026-04-22"
@@ -179,7 +179,7 @@ Human-editable. When the duck enters `beginning` mode via `./duck next`, the spe
     "routeName": "Shikoku Henro",
     "stage": 12,
     "stageName": "Shōzanji",
-    "coords": [33.8851, 134.0342],
+    "coords": [134.0342, 33.8851],
     "mode": "walking",
     "progress": 0.136
   },
@@ -189,7 +189,7 @@ Human-editable. When the duck enters `beginning` mode via `./duck next`, the spe
       "route": "shikoku-88",
       "stage": 12,
       "stageName": "Shōzanji",
-      "coords": [33.8851, 134.0342],
+      "coords": [134.0342, 33.8851],
       "kind": "offering",
       "glyph": "🪨",
       "body_html": "<p>A stone by the door. No one had moved it. No one needed to.</p>",
@@ -197,7 +197,7 @@ Human-editable. When the duck enters `beginning` mode via `./duck next`, the spe
     }
   ],
   "routePath": {
-    "shikoku-88": [[34.085, 134.553], [33.958, 134.412], ...]
+    "shikoku-88": [[134.553, 34.085], [134.412, 33.958], ...]
   }
 }
 ```
@@ -427,8 +427,8 @@ Source: [Open-Meteo](https://open-meteo.com/) — free, no API key, good global 
 
 ```
 GET https://api.open-meteo.com/v1/forecast
-    ?latitude={state.coords[0]}
-    &longitude={state.coords[1]}
+    ?latitude={state.coords[1]}
+    &longitude={state.coords[0]}
     &current=temperature_2m,weather_code,precipitation
 ```
 

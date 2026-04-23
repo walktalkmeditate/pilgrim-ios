@@ -229,7 +229,7 @@ export type DuckMode = "walking" | "completing" | "resting" | "beginning";
 
 export type EntryKind = "offering" | "notice" | "silence" | "threshold" | "letter";
 
-export type Coords = [number, number]; // [latitude, longitude]
+export type Coords = [number, number]; // [longitude, latitude] — GeoJSON convention
 
 export interface State {
   route: string;
@@ -355,17 +355,17 @@ Add the `closure` field manually (open-pilgrimages may not have Kōya-san):
   "country": "JP",
   "distanceKm": 1200,
   "stages": [
-    { "index": 1, "name": "Ryōzenji", "coords": [34.128, 134.537] },
-    { "index": 88, "name": "Ōkuboji", "coords": [34.218, 134.051] }
+    { "index": 1, "name": "Ryōzenji", "coords": [134.537, 34.128] },
+    { "index": 88, "name": "Ōkuboji", "coords": [134.051, 34.218] }
   ],
   "closure": {
     "name": "Kōya-san Okunoin",
-    "coords": [34.2167, 135.589],
+    "coords": [135.589, 34.2167],
     "transitStages": [
-      { "index": 1, "name": "Tokushima port", "coords": [34.067, 134.555] },
-      { "index": 2, "name": "Wakayama", "coords": [34.230, 135.170] },
-      { "index": 3, "name": "Hashimoto", "coords": [34.312, 135.604] },
-      { "index": 4, "name": "Kōya-san Okunoin", "coords": [34.2167, 135.589] }
+      { "index": 1, "name": "Tokushima port", "coords": [134.555, 34.067] },
+      { "index": 2, "name": "Wakayama", "coords": [135.170, 34.230] },
+      { "index": 3, "name": "Hashimoto", "coords": [135.604, 34.312] },
+      { "index": 4, "name": "Kōya-san Okunoin", "coords": [135.589, 34.2167] }
     ]
   }
 }
@@ -405,7 +405,7 @@ The duck starts at Temple 1.
   "route": "shikoku-88",
   "stage": 1,
   "stageName": "Ryōzenji",
-  "coords": [34.128, 134.537],
+  "coords": [134.537, 34.128],
   "mode": "walking",
   "modeEnteredAt": "2026-04-23",
   "lastAdvancedAt": "2026-04-23"
@@ -460,7 +460,7 @@ date: 2026-04-23
 route: shikoku-88
 stage: 1
 stageName: Ryōzenji
-coords: [34.128, 134.537]
+coords: [134.537, 34.128]
 kind: offering
 glyph: 🪨
 weather: clear, 15°C
@@ -472,7 +472,7 @@ A stone by the door. No one had moved it. No one needed to.
   assert.equal(result.date, "2026-04-23");
   assert.equal(result.kind, "offering");
   assert.equal(result.glyph, "🪨");
-  assert.deepEqual(result.coords, [34.128, 134.537]);
+  assert.deepEqual(result.coords, [134.537, 34.128]);
   assert.deepEqual(result.paragraphs, [
     "A stone by the door. No one had moved it. No one needed to.",
   ]);
@@ -485,7 +485,7 @@ date: 2026-05-02
 route: shikoku-88
 stage: 13
 stageName: Dainichiji
-coords: [33.9, 134.1]
+coords: [134.1, 33.9]
 kind: letter
 glyph: 🕯️
 author: — the pilgrim
@@ -510,7 +510,7 @@ date: 2026-04-30
 route: shikoku-88
 stage: 5
 stageName: Jizōji
-coords: [34.1, 134.5]
+coords: [134.5, 34.1]
 kind: silence
 glyph: 〰️
 ---
@@ -526,7 +526,7 @@ date: 2026-04-23
 route: shikoku-88
 stage: 1
 stageName: Ryōzenji
-coords: [34.128, 134.537]
+coords: [134.537, 34.128]
 kind: offering
 glyph: 🪨
 ---
@@ -694,16 +694,16 @@ const shikoku: Route = {
   country: "JP",
   distanceKm: 1200,
   stages: [
-    { index: 1, name: "Ryōzenji", coords: [34.128, 134.537] },
-    { index: 2, name: "Gokurakuji", coords: [34.130, 134.556] },
-    { index: 3, name: "Konsenji", coords: [34.135, 134.570] },
+    { index: 1, name: "Ryōzenji", coords: [134.537, 34.128] },
+    { index: 2, name: "Gokurakuji", coords: [134.556, 34.130] },
+    { index: 3, name: "Konsenji", coords: [134.570, 34.135] },
   ],
   closure: {
     name: "Kōya-san",
-    coords: [34.216, 135.589],
+    coords: [135.589, 34.216],
     transitStages: [
-      { index: 1, name: "Wakayama", coords: [34.23, 135.17] },
-      { index: 2, name: "Kōya-san", coords: [34.216, 135.589] },
+      { index: 1, name: "Wakayama", coords: [135.17, 34.23] },
+      { index: 2, name: "Kōya-san", coords: [135.589, 34.216] },
     ],
   },
 };
@@ -713,7 +713,7 @@ test("advance moves duck from stage 1 to stage 2 during walking", () => {
     route: "shikoku-88",
     stage: 1,
     stageName: "Ryōzenji",
-    coords: [34.128, 134.537],
+    coords: [134.537, 34.128],
     mode: "walking",
     modeEnteredAt: "2026-04-20",
     lastAdvancedAt: "2026-04-22",
@@ -730,7 +730,7 @@ test("advance flips to completing when final stage reached", () => {
     route: "shikoku-88",
     stage: 3,
     stageName: "Konsenji",
-    coords: [34.135, 134.570],
+    coords: [134.570, 34.135],
     mode: "walking",
     modeEnteredAt: "2026-04-20",
     lastAdvancedAt: "2026-04-22",
@@ -747,7 +747,7 @@ test("advance flips to resting when closure site reached", () => {
     route: "shikoku-88",
     stage: 1,
     stageName: "Wakayama",
-    coords: [34.23, 135.17],
+    coords: [135.17, 34.23],
     mode: "completing",
     modeEnteredAt: "2026-04-23",
     lastAdvancedAt: "2026-04-23",
@@ -763,7 +763,7 @@ test("advance does not move during resting", () => {
     route: "shikoku-88",
     stage: 2,
     stageName: "Kōya-san",
-    coords: [34.216, 135.589],
+    coords: [135.589, 34.216],
     mode: "resting",
     modeEnteredAt: "2026-04-24",
     lastAdvancedAt: "2026-04-24",
@@ -906,7 +906,7 @@ const kumano: Route = {
   country: "JP",
   distanceKm: 150,
   stages: [
-    { index: 1, name: "Takijiri-oji", coords: [33.778, 135.507] },
+    { index: 1, name: "Takijiri-oji", coords: [135.507, 33.778] },
   ],
 };
 
@@ -915,7 +915,7 @@ test("beginRoute flips from resting to beginning at stage 1 of new route", () =>
     route: "shikoku-88",
     stage: 2,
     stageName: "Kōya-san",
-    coords: [34.216, 135.589],
+    coords: [135.589, 34.216],
     mode: "resting",
     modeEnteredAt: "2026-12-14",
     lastAdvancedAt: "2026-12-14",
@@ -933,7 +933,7 @@ test("beginRoute throws if state is not resting", () => {
     route: "shikoku-88",
     stage: 5,
     stageName: "Jizōji",
-    coords: [34.1, 134.5],
+    coords: [134.5, 34.1],
     mode: "walking",
     modeEnteredAt: "2026-04-20",
     lastAdvancedAt: "2026-05-01",
@@ -1001,8 +1001,8 @@ const shikoku: Route = {
   country: "JP",
   distanceKm: 1200,
   stages: [
-    { index: 1, name: "Ryōzenji", coords: [34.128, 134.537] },
-    { index: 2, name: "Gokurakuji", coords: [34.130, 134.556] },
+    { index: 1, name: "Ryōzenji", coords: [134.537, 34.128] },
+    { index: 2, name: "Gokurakuji", coords: [134.556, 34.130] },
   ],
 };
 
@@ -1010,7 +1010,7 @@ const state: State = {
   route: "shikoku-88",
   stage: 2,
   stageName: "Gokurakuji",
-  coords: [34.130, 134.556],
+  coords: [134.556, 34.130],
   mode: "walking",
   modeEnteredAt: "2026-04-20",
   lastAdvancedAt: "2026-04-23",
@@ -1021,7 +1021,7 @@ const recentEntry: Entry = {
   route: "shikoku-88",
   stage: 2,
   stageName: "Gokurakuji",
-  coords: [34.130, 134.556],
+  coords: [134.556, 34.130],
   kind: "offering",
   glyph: "🪨",
   body: "A stone.",
@@ -1073,8 +1073,8 @@ test("buildFeed sorts entries newest first", () => {
 test("buildFeed includes routePath with stage coords", () => {
   const feed = buildFeed({ state, route: shikoku, entries: [], today: "2026-04-23" });
   assert.deepEqual(feed.routePath["shikoku-88"], [
-    [34.128, 134.537],
-    [34.130, 134.556],
+    [134.537, 34.128],
+    [134.556, 34.130],
   ]);
 });
 
@@ -1378,7 +1378,7 @@ interface OpenMeteoResponse {
 }
 
 export async function fetchWeather(coords: Coords): Promise<string | null> {
-  const [lat, lon] = coords;
+  const [lon, lat] = coords;
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,weather_code,precipitation`;
@@ -1817,7 +1817,7 @@ date: 2026-04-23
 route: shikoku-88
 stage: 1
 stageName: Ryōzenji
-coords: [34.128, 134.537]
+coords: [134.537, 34.128]
 kind: offering
 glyph: 🪨
 weather: clear, 15°C
@@ -1866,7 +1866,7 @@ date: 2026-04-23
 route: shikoku-88
 stage: 1
 stageName: Ryōzenji
-coords: [34.128, 134.537]
+coords: [134.537, 34.128]
 kind: offering
 glyph: ⛩️
 ---
@@ -1889,7 +1889,7 @@ date: 2026-04-24
 route: shikoku-88
 stage: 2
 stageName: Gokurakuji
-coords: [34.130, 134.556]
+coords: [134.556, 34.130]
 kind: offering
 glyph: 🪨
 ---
@@ -1907,7 +1907,7 @@ Expected: feed has 2 entries, newest first, duck at stage 2.
 
 - [ ] **Step 4: Reset state back to stage 1**
 
-Edit `state.json`: set `stage: 1, stageName: "Ryōzenji", coords: [34.128, 134.537], lastAdvancedAt: "2026-04-22"`.
+Edit `state.json`: set `stage: 1, stageName: "Ryōzenji", coords: [134.537, 34.128], lastAdvancedAt: "2026-04-22"`.
 
 - [ ] **Step 5: Commit**
 
@@ -2363,8 +2363,8 @@ All user-supplied content is rendered via `textContent`. Duck prose is plain tex
     const path = feed.routePath[feed.duck.route];
     if (!path || path.length < 2) return;
 
-    const lats = path.map((p) => p[0]);
-    const lons = path.map((p) => p[1]);
+    const lons = path.map((p) => p[0]);
+    const lats = path.map((p) => p[1]);
     const minLat = Math.min(...lats);
     const maxLat = Math.max(...lats);
     const minLon = Math.min(...lons);
@@ -2376,7 +2376,7 @@ All user-supplied content is rendered via `textContent`. Duck prose is plain tex
     const H = 400;
     const PAD = 40;
 
-    function project([lat, lon]) {
+    function project([lon, lat]) {
       const x = PAD + ((lon - minLon) / lonRange) * (W - 2 * PAD);
       const y = PAD + ((maxLat - lat) / latRange) * (H - 2 * PAD);
       return [x, y];
