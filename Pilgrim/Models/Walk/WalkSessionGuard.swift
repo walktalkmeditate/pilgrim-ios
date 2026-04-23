@@ -20,6 +20,22 @@ class WalkSessionGuard {
 
     private static let tag = "[SessionGuard]"
 
+    /// The `WalkCheckpoint.schemaVersion` value this build can decode and recover.
+    /// Tracks the writer's current version directly — bumping `WalkCheckpoint.currentSchemaVersion`
+    /// automatically narrows the set of checkpoints older builds will accept.
+    private static let supportedSchemaVersion = WalkCheckpoint.currentSchemaVersion
+
+    /// Provisional (in-flight) recordings — the ones created by
+    /// `VoiceRecordingManagement.checkpointVoiceRecording()` — are the only
+    /// voice recordings with a nil UUID in our pipeline. Finalized recordings
+    /// get a UUID in `finalizeRecording()`; orphan-reconnected recordings get
+    /// one in `reconnectOrphanedRecordings`. Kept as a static helper so both
+    /// the checkpoint log site and the recovery sanitization loop share the
+    /// same definition of "in-flight."
+    static func isProvisional(_ recording: VoiceRecordingInterface) -> Bool {
+        recording.uuid == nil
+    }
+
     // MARK: - Power Tiers
 
     enum PowerTier: Equatable, CustomStringConvertible {
@@ -122,6 +138,10 @@ class WalkSessionGuard {
         if let viewModel {
             let intervals = viewModel.checkpointActivityIntervals()
             snapshot.replaceActivityIntervals(intervals)
+
+            if let inflightTalk = viewModel.voiceRecordingManagement.checkpointVoiceRecording() {
+                snapshot.appendVoiceRecordings([inflightTalk])
+            }
         }
 
         if walkUUID == nil {
@@ -140,7 +160,8 @@ class WalkSessionGuard {
             )
             try data.write(to: url, options: .atomic)
             checkpointCount += 1
-            print("\(Self.tag) CHECKPOINT #\(checkpointCount) — tier: \(currentTier), routes: \(snapshot.routeData.count), pauses: \(snapshot.pauses.count), recordings: \(snapshot.voiceRecordings.count), intervals: \(snapshot.activityIntervals.count), size: \(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
+            let talkFlag = snapshot.voiceRecordings.contains(where: Self.isProvisional) ? " (inflight)" : ""
+            print("\(Self.tag) CHECKPOINT #\(checkpointCount) — tier: \(currentTier), routes: \(snapshot.routeData.count), pauses: \(snapshot.pauses.count), recordings: \(snapshot.voiceRecordings.count)\(talkFlag), intervals: \(snapshot.activityIntervals.count), size: \(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
         } catch {
             print("\(Self.tag) CHECKPOINT WRITE FAILED: \(error)")
         }
@@ -215,6 +236,52 @@ class WalkSessionGuard {
 
     // MARK: - Recovery
 
+    /// Replaces a recording's file path with `""` (metadata-only) when the
+    /// underlying `.m4a` is unplayable — the canonical signature of an
+    /// AVAudioRecorder that was SIGKILL'd before `stop()` wrote its moov atom.
+    /// Duration is preserved so the Talk timer still reads correctly after
+    /// recovery; the walk summary row will show "Recording unavailable" and
+    /// suppress playback controls.
+    ///
+    /// Parameters:
+    /// - recording: the provisional recording from the checkpoint
+    /// - fileURL: absolute URL of the on-disk file. Pass `nil` to skip the
+    ///   disk check entirely (used in tests with the `durationProbe` param).
+    /// - durationProbe: returns the playable duration for a file. In
+    ///   production, defaults to `AVURLAsset(url:).duration` seconds.
+    ///   Override in tests to avoid AVFoundation dependencies.
+    static func sanitizeRecording(
+        _ recording: TempVoiceRecording,
+        fileURL: URL?,
+        durationProbe: (URL) -> Double = WalkSessionGuard.defaultDurationProbe
+    ) -> TempVoiceRecording {
+        guard let fileURL else { return recording }
+
+        let playableSeconds = durationProbe(fileURL)
+        guard playableSeconds <= 0 else {
+            return recording
+        }
+
+        try? FileManager.default.removeItem(at: fileURL)
+
+        return TempVoiceRecording(
+            uuid: recording.uuid,
+            startDate: recording.startDate,
+            endDate: recording.endDate,
+            duration: recording.duration,
+            fileRelativePath: "",
+            transcription: nil,
+            wordsPerMinute: nil,
+            isEnhanced: false
+        )
+    }
+
+    private static func defaultDurationProbe(_ url: URL) -> Double {
+        let asset = AVURLAsset(url: url)
+        let seconds = CMTimeGetSeconds(asset.duration)
+        return seconds.isFinite ? seconds : 0
+    }
+
     static func recoverIfNeeded(completion: @escaping (Date?) -> Void) {
         guard DataManager.dataStack != nil else {
             print("\(tag) RECOVERY SKIPPED — DataManager not ready")
@@ -244,6 +311,13 @@ class WalkSessionGuard {
             return
         }
 
+        guard checkpoint.schemaVersion == Self.supportedSchemaVersion else {
+            print("\(tag) RECOVERY FAILED — unsupported schemaVersion: \(checkpoint.schemaVersion) (this build supports \(Self.supportedSchemaVersion))")
+            try? FileManager.default.removeItem(at: url)
+            completion(nil)
+            return
+        }
+
         if DataManager.objectHasDuplicate(uuid: checkpoint.walkUUID, objectType: Walk.self) {
             print("\(tag) RECOVERY — stale checkpoint (walk already saved), deleting")
             try? FileManager.default.removeItem(at: url)
@@ -254,6 +328,16 @@ class WalkSessionGuard {
         let walk = checkpoint.walk
         let recordingDirUUID = extractRecordingDirectoryUUID(from: walk) ?? checkpoint.walkUUID
         reconnectOrphanedRecordings(walk: walk, walkUUID: recordingDirUUID)
+
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let sanitized = walk._voiceRecordings.map { recording -> TempVoiceRecording in
+            guard isProvisional(recording), !recording.fileRelativePath.isEmpty else {
+                return recording
+            }
+            let url = docs.appendingPathComponent(recording.fileRelativePath)
+            return sanitizeRecording(recording, fileURL: url)
+        }
+        walk.replaceVoiceRecordings(sanitized)
 
         print("\(tag) RECOVERY — saving walk: start=\(walk.startDate), end=\(walk.endDate), routes=\(walk.routeData.count), pauses=\(walk.pauses.count), recordings=\(walk.voiceRecordings.count), intervals=\(walk.activityIntervals.count), waypoints=\(walk.waypoints.count)")
 

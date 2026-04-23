@@ -58,6 +58,7 @@ final class PodcastSubmissionService {
         }
 
         for (index, recording) in freshRecordings.enumerated() {
+            guard !recording.fileRelativePath.isEmpty else { continue }
             let audioURL = docs.appendingPathComponent(recording.fileRelativePath)
             guard FileManager.default.fileExists(atPath: audioURL.path) else { continue }
 

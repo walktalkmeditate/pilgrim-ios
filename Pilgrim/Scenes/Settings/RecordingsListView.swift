@@ -431,6 +431,7 @@ struct RecordingsListView: View {
     }
 
     private func isFileAvailable(_ relativePath: String) -> Bool {
+        guard !relativePath.isEmpty else { return false }
         guard !deletedPaths.contains(relativePath) else { return false }
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return FileManager.default.fileExists(atPath: docs.appendingPathComponent(relativePath).path)

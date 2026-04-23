@@ -114,6 +114,7 @@ final class TranscriptionService: ObservableObject {
 
         for (index, recording) in recordings.enumerated() {
             guard let uuid = recording.uuid else { continue }
+            guard !recording.fileRelativePath.isEmpty else { continue }
 
             await MainActor.run { state = .transcribing(current: index + 1, total: total) }
 
@@ -143,6 +144,7 @@ final class TranscriptionService: ObservableObject {
 
     func transcribeSingle(_ recording: VoiceRecordingInterface) async -> String? {
         guard let uuid = recording.uuid else { return nil }
+        guard !recording.fileRelativePath.isEmpty else { return nil }
         let started = await MainActor.run { () -> Bool in
             guard !isTranscribing else { return false }
             isTranscribing = true
