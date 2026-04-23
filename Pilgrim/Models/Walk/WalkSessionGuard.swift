@@ -21,9 +21,9 @@ class WalkSessionGuard {
     private static let tag = "[SessionGuard]"
 
     /// The `WalkCheckpoint.schemaVersion` value this build can decode and recover.
-    /// Bump in lockstep with `WalkCheckpoint.schemaVersion` whenever the on-disk
-    /// shape changes; older builds will refuse to decode mismatched checkpoints.
-    private static let supportedSchemaVersion = 1
+    /// Tracks the writer's current version directly — bumping `WalkCheckpoint.currentSchemaVersion`
+    /// automatically narrows the set of checkpoints older builds will accept.
+    private static let supportedSchemaVersion = WalkCheckpoint.currentSchemaVersion
 
     /// Provisional (in-flight) recordings — the ones created by
     /// `VoiceRecordingManagement.checkpointVoiceRecording()` — are the only
