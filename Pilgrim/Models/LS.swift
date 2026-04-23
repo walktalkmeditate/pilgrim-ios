@@ -23,6 +23,20 @@ import Foundation
 
 /// A struct containg only static subscripts and needed enumerations to enable easier localisation.
 struct LS {
+
+    /// Banner text shown on the home scroll during solstices.
+    static let turningSolsticeBanner = NSLocalizedString(
+        "turning.solstice.banner",
+        value: "Today the sun stands still",
+        comment: "Home-scroll banner text on winter or summer solstice."
+    )
+
+    /// Banner text shown on the home scroll during equinoxes.
+    static let turningEquinoxBanner = NSLocalizedString(
+        "turning.equinox.banner",
+        value: "Today, day equals night",
+        comment: "Home-scroll banner text on spring or autumn equinox."
+    )
     
     /**
      Returns a localised string for the provided key and specified source.
