@@ -170,7 +170,11 @@ struct PilgrimMapView: UIViewRepresentable {
             return
         }
 
-        Self.applyRouteSource(routeSegments, on: mapView, coordinator: context.coordinator)
+        if context.coordinator.shouldRender {
+            Self.applyRouteSource(routeSegments, on: mapView, coordinator: context.coordinator)
+        } else {
+            context.coordinator.hasDeferredRouteUpdate = true
+        }
         Self.applyAnnotations(pinAnnotations, activePhotoID: activePhotoID, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
@@ -520,6 +524,8 @@ struct PilgrimMapView: UIViewRepresentable {
         var lastBottomInset: CGFloat = 0
         var lastSegments: [RouteSegment] = []
         var pendingSegments: [RouteSegment] = []
+        /// True when we deferred at least one `applyRouteSource` call while paused.
+        fileprivate var hasDeferredRouteUpdate: Bool = false
         var pendingAnnotations: [PilgrimAnnotation] = []
         var pendingActivePhotoID: String?
         var currentColorScheme: ColorScheme = .light
@@ -573,7 +579,13 @@ struct PilgrimMapView: UIViewRepresentable {
 
         private func refreshRenderState() {
             guard let mapView else { return }
+            let wasRendering = mapView.preferredFramesPerSecond > 0
             mapView.preferredFramesPerSecond = shouldRender ? PilgrimMapView.renderFPS : 0
+
+            if shouldRender && !wasRendering && hasDeferredRouteUpdate {
+                PilgrimMapView.applyRouteSource(pendingSegments, on: mapView, coordinator: self)
+                hasDeferredRouteUpdate = false
+            }
         }
 
         @objc func handleMapTap(_ gesture: UITapGestureRecognizer) {
