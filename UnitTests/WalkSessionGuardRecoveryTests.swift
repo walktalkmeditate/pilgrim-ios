@@ -6,7 +6,6 @@ final class WalkSessionGuardRecoveryTests: XCTestCase {
     func test_checkpointVoiceRecording_snapshot_can_be_appended_to_checkpoint() {
         let vm = ActiveWalkViewModel()
         let builder = vm.builder
-        builder.setStatus(.recording)
 
         vm.voiceRecordingManagement._test_setActiveRecording(
             start: Date(timeIntervalSinceNow: -42),
@@ -53,6 +52,8 @@ final class WalkSessionGuardRecoveryTests: XCTestCase {
         XCTAssertEqual(sanitized.fileRelativePath, "")
         XCTAssertEqual(sanitized.duration, 30, accuracy: 0.1,
                        "duration must be preserved for the Talk timer")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: brokenFile.path),
+                       "unplayable file must be removed from disk")
     }
 
     func test_sanitizeUnplayableRecordings_preservesPath_whenFilePlayable() throws {

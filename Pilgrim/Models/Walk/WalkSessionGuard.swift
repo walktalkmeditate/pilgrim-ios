@@ -311,7 +311,12 @@ class WalkSessionGuard {
 
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let sanitized = walk._voiceRecordings.map { recording -> TempVoiceRecording in
-            guard !recording.fileRelativePath.isEmpty else { return recording }
+            // Only provisional (in-flight) recordings — identified by nil UUID —
+            // may have unfinalized .m4a files. Finalized and orphan-reconnected
+            // recordings were already proven playable when they were written.
+            guard recording.uuid == nil, !recording.fileRelativePath.isEmpty else {
+                return recording
+            }
             let url = docs.appendingPathComponent(recording.fileRelativePath)
             return sanitizeRecording(recording, fileURL: url)
         }
