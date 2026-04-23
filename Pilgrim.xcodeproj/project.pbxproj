@@ -232,6 +232,7 @@
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
 		LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
+		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
 		LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */; };
 		LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVRP01 /* WebViewRepresentable.swift */; };
 		LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */; };
@@ -531,6 +532,7 @@
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoaderTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardRecoveryTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVRP01 /* WebViewRepresentable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewRepresentable.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSharePreviewView.swift; sourceTree = "<group>"; };
@@ -1645,6 +1647,7 @@
 				LR00000100000000LRSHTR02 /* WalkSharingTrackerTests.swift */,
 				LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */,
 				LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */,
+				LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */,
 				LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */,
 			);
 			path = UnitTests;
@@ -2797,6 +2800,7 @@
 				LR00000200000000LRSHTR02 /* WalkSharingTrackerTests.swift in Sources */,
 				LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */,
 				LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */,
+				LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */,
 				LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

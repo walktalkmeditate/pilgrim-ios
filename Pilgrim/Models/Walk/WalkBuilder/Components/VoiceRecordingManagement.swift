@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import CallKit
 import Combine
 import CombineExt
 
@@ -21,6 +22,7 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     @Published public private(set) var audioLevel: Float = 0
 
     private var meteringTimer: Timer?
+    private let callObserver: CXCallObserver = CXCallObserver()
 
     public required init(builder: WalkBuilder) {
         super.init()
@@ -30,6 +32,8 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         builder.registerPreSnapshotFlush { [weak self] in
             self?.flushCurrentRecording()
         }
+
+        callObserver.setDelegate(self, queue: .main)
     }
 
     public func bind(builder: WalkBuilder) {
@@ -116,9 +120,14 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     }
 
     public func stopRecording() {
-        guard isRecording, let recorder = audioRecorder else { return }
+        // Relaxed from `guard isRecording, let recorder = audioRecorder` to
+        // tolerate the #if DEBUG _test_setActiveRecording path, which sets
+        // isRecording=true without a real AVAudioRecorder. In production
+        // these flags always move together — see startRecording /
+        // flushCurrentRecording / commitRecording.
+        guard isRecording else { return }
         stopMetering()
-        recorder.stop()
+        audioRecorder?.stop()
         isRecording = false
         recordingStartDate = nil
         audioRecorder = nil
@@ -244,4 +253,22 @@ extension VoiceRecordingManagement: AVAudioRecorderDelegate {
     public func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
         commitRecording(successfully: flag)
     }
+}
+
+extension VoiceRecordingManagement: CXCallObserverDelegate {
+
+    public func callObserver(_ observer: CXCallObserver, callChanged call: CXCall) {
+        handleCallStateChange(hasConnected: call.hasConnected, hasEnded: call.hasEnded)
+    }
+
+    private func handleCallStateChange(hasConnected: Bool, hasEnded: Bool) {
+        guard hasConnected, !hasEnded, isRecording else { return }
+        stopRecording()
+    }
+
+    #if DEBUG
+    func _test_simulateCallChanged(hasConnected: Bool, hasEnded: Bool) {
+        handleCallStateChange(hasConnected: hasConnected, hasEnded: hasEnded)
+    }
+    #endif
 }
