@@ -122,6 +122,10 @@ class WalkSessionGuard {
         if let viewModel {
             let intervals = viewModel.checkpointActivityIntervals()
             snapshot.replaceActivityIntervals(intervals)
+
+            if let inflightTalk = viewModel.voiceRecordingManagement.checkpointVoiceRecording() {
+                snapshot.appendVoiceRecordings([inflightTalk])
+            }
         }
 
         if walkUUID == nil {
@@ -140,7 +144,11 @@ class WalkSessionGuard {
             )
             try data.write(to: url, options: .atomic)
             checkpointCount += 1
-            print("\(Self.tag) CHECKPOINT #\(checkpointCount) — tier: \(currentTier), routes: \(snapshot.routeData.count), pauses: \(snapshot.pauses.count), recordings: \(snapshot.voiceRecordings.count), intervals: \(snapshot.activityIntervals.count), size: \(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
+            // Provisional snapshots from checkpointVoiceRecording() are the only
+            // voice recordings with a nil UUID; finalized ones get one in
+            // finalizeRecording(). See VoiceRecordingManagement.swift.
+            let talkFlag = snapshot.voiceRecordings.contains { $0.uuid == nil } ? " (inflight)" : ""
+            print("\(Self.tag) CHECKPOINT #\(checkpointCount) — tier: \(currentTier), routes: \(snapshot.routeData.count), pauses: \(snapshot.pauses.count), recordings: \(snapshot.voiceRecordings.count)\(talkFlag), intervals: \(snapshot.activityIntervals.count), size: \(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
         } catch {
             print("\(Self.tag) CHECKPOINT WRITE FAILED: \(error)")
         }

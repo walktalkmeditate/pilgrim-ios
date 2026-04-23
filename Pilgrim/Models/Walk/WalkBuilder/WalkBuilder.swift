@@ -499,12 +499,20 @@ public class WalkBuilder: ApplicationStateObserver {
     }
     
     // MARK: - ApplicationStateObserver
-    
+
     /// Implementation of the `ApplicationStateObserver` protocol sending a suspension command to all subscribers when not recording to save battery life.
     func didUpdateApplicationState(to state: ApplicationState) {
         self.uiSuspensionRelay.accept(state == .background)
         guard !self.statusRelay.value.isActiveStatus else { return }
         self.suspensionRelay.accept(state == .background)
     }
-    
+
+    // MARK: - Test Hooks
+
+    #if DEBUG
+    func _test_setStartDate(_ date: Date) {
+        startDateRelay.accept(date)
+    }
+    #endif
+
 }
