@@ -544,7 +544,8 @@ struct ActiveWalkView: View {
             },
             bottomInset: mapBottomInset,
             initialCamera: viewModel.mapCameraSeed,
-            fadesInOnStyleLoad: true
+            fadesInOnStyleLoad: true,
+            isMeditating: $viewModel.isMeditating
         )
     }
 

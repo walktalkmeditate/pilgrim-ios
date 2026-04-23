@@ -6,6 +6,8 @@ typealias MBMapView = MapboxMaps.MapView
 
 struct PilgrimMapView: UIViewRepresentable {
 
+    private static let renderFPS: Int = 30
+
     var isInteractive: Bool = true
     var showsUserLocation: Bool = true
     var followsUserLocation: Bool = false
@@ -18,6 +20,7 @@ struct PilgrimMapView: UIViewRepresentable {
     var activePhotoID: String?
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
+    @Binding var isMeditating: Bool
     var cameraBounds: MapCameraBounds?
     var cameraDuration: TimeInterval = 0.4
     /// Bottom padding (in points) reserved for an overlay sheet. The map
@@ -52,7 +55,8 @@ struct PilgrimMapView: UIViewRepresentable {
         cameraDuration: TimeInterval = 0.4,
         bottomInset: CGFloat = 0,
         initialCamera: MapCameraSeed.Seed? = nil,
-        fadesInOnStyleLoad: Bool = false
+        fadesInOnStyleLoad: Bool = false,
+        isMeditating: Binding<Bool> = .constant(false)
     ) {
         self.isInteractive = isInteractive
         self.showsUserLocation = showsUserLocation
@@ -63,6 +67,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self.activePhotoID = activePhotoID
         self._cameraCenter = cameraCenter
         self._cameraZoom = cameraZoom
+        self._isMeditating = isMeditating
         self.cameraBounds = cameraBounds
         self.cameraDuration = cameraDuration
         self.bottomInset = bottomInset
@@ -87,7 +92,7 @@ struct PilgrimMapView: UIViewRepresentable {
             frame: .zero,
             mapInitOptions: MapInitOptions(cameraOptions: cameraOptions, styleURI: styleURI)
         )
-        mapView.preferredFramesPerSecond = 30
+        mapView.preferredFramesPerSecond = Self.renderFPS
 
         if fadesInOnStyleLoad {
             mapView.alpha = 0
@@ -133,10 +138,15 @@ struct PilgrimMapView: UIViewRepresentable {
         }.store(in: &context.coordinator.cancellables)
 
         context.coordinator.mapView = mapView
+        context.coordinator.startObservingAppLifecycle()
+        context.coordinator.isMeditating = isMeditating
         return mapView
     }
 
     func updateUIView(_ mapView: MBMapView, context: Context) {
+        if context.coordinator.isMeditating != isMeditating {
+            context.coordinator.isMeditating = isMeditating
+        }
         context.coordinator.pendingSegments = routeSegments
         context.coordinator.pendingAnnotations = pinAnnotations
         context.coordinator.pendingActivePhotoID = activePhotoID
@@ -526,6 +536,46 @@ struct PilgrimMapView: UIViewRepresentable {
         /// complete, which the Coordinator wires to trigger a redraw.
         let photoMarkerLoader = PhotoMarkerImageLoader()
 
+        fileprivate var isAppInBackground: Bool = false
+
+        fileprivate var isMeditating: Bool = false {
+            didSet { refreshRenderState() }
+        }
+
+        fileprivate var shouldRender: Bool {
+            !isAppInBackground && !isMeditating
+        }
+
+        func startObservingAppLifecycle() {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleDidEnterBackground),
+                name: UIApplication.didEnterBackgroundNotification,
+                object: nil
+            )
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleWillEnterForeground),
+                name: UIApplication.willEnterForegroundNotification,
+                object: nil
+            )
+        }
+
+        @objc private func handleDidEnterBackground() {
+            isAppInBackground = true
+            refreshRenderState()
+        }
+
+        @objc private func handleWillEnterForeground() {
+            isAppInBackground = false
+            refreshRenderState()
+        }
+
+        private func refreshRenderState() {
+            guard let mapView else { return }
+            mapView.preferredFramesPerSecond = shouldRender ? PilgrimMapView.renderFPS : 0
+        }
+
         @objc func handleMapTap(_ gesture: UITapGestureRecognizer) {
             guard let mapView, let onAnnotationTap else { return }
             let tapPoint = gesture.location(in: mapView)
@@ -552,6 +602,7 @@ struct PilgrimMapView: UIViewRepresentable {
         }
 
         deinit {
+            NotificationCenter.default.removeObserver(self)
             if let mapView {
                 if let manager = circleManager { mapView.annotations.removeAnnotationManager(withId: manager.id) }
                 if let manager = pointManager { mapView.annotations.removeAnnotationManager(withId: manager.id) }
