@@ -1,3 +1,4 @@
+import CoreLocation
 import SwiftUI
 
 struct InkScrollView: View {
@@ -55,9 +56,11 @@ struct InkScrollView: View {
         let segments = renderer.segmentPaths()
 
         return ZStack(alignment: .top) {
+            turningBanner
+
             Group {
                 if !snapshots.isEmpty {
-                    journeySummaryHeader(width: width)
+                    journeySummaryHeader(width: width, topOffset: currentTurning != nil ? 64 : 0)
                 }
 
                 ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
@@ -121,7 +124,7 @@ struct InkScrollView: View {
 
     // MARK: - Journey summary header (tappable cycling)
 
-    private func journeySummaryHeader(width: CGFloat) -> some View {
+    private func journeySummaryHeader(width: CGFloat, topOffset: CGFloat = 0) -> some View {
         let totalDistance = snapshots.first?.cumulativeDistance ?? 0
         let totalWalks = snapshots.count
         let firstDate = snapshots.last?.startDate ?? Date()
@@ -160,7 +163,7 @@ struct InkScrollView: View {
             .foregroundColor(.fog.opacity(0.7))
             .contentTransition(.numericText())
         }
-        .position(x: width / 2, y: 16)
+        .position(x: width / 2, y: 16 + topOffset)
         .opacity(hasAppeared ? 1 : 0)
         .animation(.easeOut(duration: 0.8).delay(0.5), value: hasAppeared)
         .onTapGesture {
@@ -186,6 +189,50 @@ struct InkScrollView: View {
             return String(format: "%.1f km walked", meters / 1000)
         }
         return String(format: "%.0f m walked", meters)
+    }
+
+    // MARK: - Turning day banner
+
+    private var currentTurning: SeasonalMarker? {
+        let hemisphereRawValue = UserPreferences.hemisphereOverride.value
+        let latitude: Double
+        if let raw = hemisphereRawValue, let hemisphere = Hemisphere(rawValue: raw) {
+            latitude = hemisphere == .southern ? -1 : 1
+        } else {
+            latitude = 1
+        }
+        let coord = CLLocationCoordinate2D(latitude: latitude, longitude: 0)
+        return TurningDayService.turning(for: Date(), at: coord)
+    }
+
+    @ViewBuilder
+    private var turningBanner: some View {
+        if let turning = currentTurning,
+           let text = turning.bannerText,
+           let kanji = turning.kanji {
+            HStack(spacing: 8) {
+                Text(text)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.fog)
+                Text("·")
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.fog.opacity(0.5))
+                if let color = turning.color {
+                    Text(kanji)
+                        .font(Constants.Typography.body)
+                        .foregroundColor(color)
+                } else {
+                    Text(kanji)
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, Constants.UI.Padding.big)
+            .padding(.bottom, Constants.UI.Padding.small)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(text). \(turning.name).")
+        }
     }
 
     // MARK: - Dot with effects
