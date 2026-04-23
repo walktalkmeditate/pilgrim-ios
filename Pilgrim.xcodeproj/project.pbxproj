@@ -168,6 +168,7 @@
 		2E45C3D0E8EAC7789774F479 /* whisper-stillness-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = 061E977B7C29F32543182E9B /* whisper-stillness-2.aac */; };
 		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
 		327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */; };
+		4A1B2C3D4E5F6A7B8C9D0E1F /* InkScrollView+TurningMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2C3D4E5F6A7B8C9D0E1F2A /* InkScrollView+TurningMarkers.swift */; };
 		37049E79926C85FEE92366A2 /* GeneratedPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */; };
 		3BF183E8A14BB56BB9A98EF8 /* whisper-courage-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = 983897F799EB8C90B591419F /* whisper-courage-2.aac */; };
 		3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */; };
@@ -784,6 +785,7 @@
 		98AE88EB65E9E2DBE7F0A927 /* whisper-stillness-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-1.aac"; sourceTree = "<group>"; };
 		9A4614D1D6F2BC24176FEAC8 /* WhisperDefinition.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperDefinition.swift; sourceTree = "<group>"; };
 		9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "InkScrollView+LunarMarkers.swift"; sourceTree = "<group>"; };
+		5B2C3D4E5F6A7B8C9D0E1F2A /* InkScrollView+TurningMarkers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "InkScrollView+TurningMarkers.swift"; sourceTree = "<group>"; };
 		9C521BB1A2B7532A340C53D5 /* whisper-play-10.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-10.aac"; sourceTree = "<group>"; };
 		A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometryTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
@@ -1897,6 +1899,7 @@
 				CC00000100000000MILEST01 /* MilestoneMarkerView.swift */,
 				CC00000100000000WKSTRT01 /* WalkStartView.swift */,
 				9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */,
+				5B2C3D4E5F6A7B8C9D0E1F2A /* InkScrollView+TurningMarkers.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -2724,6 +2727,7 @@
 				LR00000200000000LRSHTR01 /* WalkSharingTracker.swift in Sources */,
 				56ED2CA2C618854F7461544B /* CelestialVignetteView.swift in Sources */,
 				327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */,
+				4A1B2C3D4E5F6A7B8C9D0E1F /* InkScrollView+TurningMarkers.swift in Sources */,
 				8D5BC6B95A9A7459DA5738FC /* PilgrimPackageModels.swift in Sources */,
 				00897FB3A531A62A892EE9A6 /* PilgrimPackageConverter.swift in Sources */,
 				BBBB000000000000000027 /* PilgrimPackagePhotoConverter.swift in Sources */,

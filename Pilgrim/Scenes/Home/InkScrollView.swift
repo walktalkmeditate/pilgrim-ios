@@ -79,6 +79,7 @@ struct InkScrollView: View {
 
             Group {
                 dateLabels(positions: positions, viewportWidth: width)
+                turningMarkers(positions: positions)
                 lunarMarkers(positions: positions, viewportWidth: width)
                 milestoneMarkers(width: width, positions: positions)
 
