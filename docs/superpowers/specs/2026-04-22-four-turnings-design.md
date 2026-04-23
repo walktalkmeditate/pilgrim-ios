@@ -2,7 +2,7 @@
 
 ## Summary
 
-Acknowledge the four astronomical turning points of the year — the two solstices and two equinoxes — with quiet, distributed touches across Pilgrim: a banner on the home ink-scroll, a permanent scroll-margin glyph marking today forever, a faint kanji watermark during the walk itself, a walking-segment route color, a sunrise-azimuth ray on the live map, and a kanji suffix on the walk summary's date title.
+Acknowledge the four astronomical turning points of the year — the two solstices and two equinoxes — with quiet, distributed touches across Pilgrim: a banner on the home ink-scroll, a permanent inline kanji marker on the user's walk history, a faint kanji watermark during the walk itself, a walking-segment route color, a sunrise-azimuth ray on the live map, a kanji suffix on the walk summary's date title, and a matching seal color so the goshuin collection encodes the rhythm of turnings walked.
 
 No badges. No push notifications. No achievements. The app simply knows when the sun stands still or balance returns, and marks the day lightly.
 
@@ -136,6 +136,33 @@ Two additions to `WalkSummaryView`:
 
 **Not in the summary**: the sunrise-azimuth ray. The ray is a live-walk feature — it orients the user in the moment. The archival summary doesn't need it.
 
+### Goshuin Seal Color
+
+For walks that fell on a turning day, the goshuin seal's color is locked to that turning's color — the **same hex values** used for the route. This creates a color thread running from the live route → the summary route → the shared page route → the seal revealed post-walk → the seal in the goshuin collection → the exported PNG.
+
+The seal palette at `SealColorPalette.swift` currently picks from 4 curated categories (warm/cool/accent/neutral) based on the walk's favicon + a hash byte. The turning check is a **pre-check that bypasses that curation** on turning days:
+
+```swift
+static func uiColor(for input: SealInput) -> UIColor {
+    if let turning = TurningDayService.turning(
+        for: input.startDate,
+        at: input.routePoints.first.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+    ), let sealColor = turning.sealColor {
+        return sealColor.resolvedColor(for: currentTrait)
+    }
+    return uiColor(for: favicon, hashByte: bytes[30])  // existing logic
+}
+```
+
+Four new `SealColor` entries are added to `SealColorPalette`, with the same hex values as the route palette (jade / gold / claret / indigo) plus their dark-mode variants. They are **not** included in the `warmColors` / `coolColors` / `accentColors` / `neutralColors` arrays — they exist only as turning-day overrides. New CSS vars (`--seal-turning-jade`, etc.) are declared so the hosted share page can render matching-colored seals after the worker follow-up.
+
+**Touchpoints where the seal color is seen:**
+- `SealRevealView` — post-walk reveal animation uses the turning color
+- `GoshuinView` — the collection view renders turning-day seals in their turning color
+- `SealGenerator.generate(from:size:)` — the exported PNG bakes the color in, so a seal shared via the Goshuin social-share button carries the turning color outside the app
+
+Because `SealInput` already carries `startDate` and `routePoints` (first point = starting coordinate for hemisphere), no new data needs to flow into `SealGenerator` — the turning override is computed from existing input.
+
 ### Shared HTML Page (pilgrim-worker handoff)
 
 Out of scope for this iOS spec, but flagging the handoff contract so the worker PR can follow cleanly:
@@ -166,7 +193,8 @@ In a new file `Pilgrim/Models/Astrology/SeasonalMarker+Turnings.swift`:
 
 - `var kanji: String?` — "春分" / "夏至" / "秋分" / "冬至" for the 4 turnings; nil for the cross-quarter days (which this feature doesn't surface).
 - `var bannerText: String?` — *"Today, day equals night"* (equinoxes) or *"Today the sun stands still"* (solstices); nil for cross-quarter. Localized via `LS.swift`.
-- `var color: Color?` — the walking-segment override color; nil for cross-quarter.
+- `var color: Color?` — the walking-segment override color (jade / gold / claret / indigo); nil for cross-quarter.
+- `var sealColor: SealColor?` — the `SealColorPalette.SealColor` entry to use for the goshuin seal on this turning, matching the route color exactly (same hex); nil for cross-quarter.
 - `var isTurning: Bool` — true iff the case is one of the 4 main turnings.
 
 VoiceOver-accessible label uses the existing `name` property ("Spring Equinox" etc.), which needs to flow through `LS.swift` for localization.
@@ -195,6 +223,8 @@ VoiceOver-accessible label uses the existing `name` property ("Spring Equinox" e
 - `Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` — `dateTitleFormatted` appends kanji for turning-day walks
 - `Pilgrim/Scenes/WalkShare/WalkShareViewModel.swift` + `ShareService.swift` — adds `turningDay` to the share payload (forward-compatible; worker doesn't need to consume it immediately)
 - `Pilgrim/Models/LS.swift` — new localized strings for banner copy and VoiceOver labels
+- `Pilgrim/Models/Seal/SealColorPalette.swift` — 4 new `SealColor` entries (`turningJade`, `turningGold`, `turningClaret`, `turningIndigo`) with matching CSS vars; new `uiColor(for input: SealInput)` entry point that pre-checks for turning day before falling back to the existing favicon/hash selection
+- `Pilgrim/Models/Seal/SealGenerator.swift:44` — call site updated from `uiColor(for: favicon, hashByte:)` to `uiColor(for: input)` so turning detection runs automatically
 
 **Unchanged (but noted):**
 - `Pilgrim/Models/LightReading/LightReadingGenerator.swift` — already surfaces seasonal-marker readings on turning days. No changes needed. The Four Turnings feature layers visual acknowledgments on top of this existing textual one.
@@ -216,6 +246,8 @@ VoiceOver-accessible label uses the existing `name` property ("Spring Equinox" e
 4. `SeasonalMarker.kanji` / `.bannerText` / `.color` return correct values for the 4 turnings and nil for cross-quarter cases.
 5. `CelestialCalculator.sunriseAzimuth(at:on:)` — returns ~90° (due east) at the equator on equinox, returns extreme values at high latitudes on solstice (e.g., ~128° summer solstice at 60° N), returns nil above the arctic circle on winter solstice.
 6. Walk spanning local midnight: a walk starting at 23:55 on a turning day remains classified as a turning-day walk even though most of its route is recorded the next day (classification uses start date).
+7. `SealColorPalette.uiColor(for: SealInput)` — on a turning-day input, returns the turning's seal color regardless of the walk's favicon or hash byte. Same input without a turning-day date returns the existing favicon/hash color (regression check).
+8. Seal color dark-mode variant: each of the 4 new `SealColor` entries returns the correct dark-mode hex when resolved against a dark trait collection.
 
 ### Manual checks
 
@@ -247,6 +279,7 @@ VoiceOver-accessible label uses the existing `name` property ("Spring Equinox" e
 - **Scroll-margin glyph is permanent.** Users who walk many turnings accumulate a long-term artifact in their history. This is the feature's long-tail reward.
 - **Sunrise azimuth, not sunset.** Only one ray to avoid visual clutter. Sunrise is the more-walked time (especially in summer). Sunset rays could be added in v1.1 as an enhancement if users want them.
 - **Turning-color applies to shared HTML too.** Preserves visual continuity across surfaces (active walk → summary → shared page). Requires a small payload change and worker-side follow-up.
+- **Goshuin seal color matches the route color on turning days.** The seal is the most distilled artifact of a walk; locking its color to the turning extends the color thread all the way to the user's accumulated goshuin collection. Over years, a user's collection visually encodes the rhythm of the turnings they walked. This deliberately **bypasses the seal palette's favicon-character curation** — on a turning day the cosmic event trumps the walk's personal character. Non-turning walks still use the existing favicon/hash logic unchanged.
 - **No achievement/badge/streak framing.** Pilgrim is not that kind of app.
 
 ## Open Questions (for implementation)
