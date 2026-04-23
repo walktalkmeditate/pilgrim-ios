@@ -367,6 +367,7 @@
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */; };
+		LR00000200000000LRSCPT01 /* SealColorPaletteTurningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSCPT01 /* SealColorPaletteTurningTests.swift */; };
 		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
 		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
 		CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPEAR01 /* AppearanceMode.swift */; };
@@ -941,6 +942,7 @@
 		D4BACC6CBB52976FAD25B897 /* whisper-gratitude-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-gratitude-3.aac"; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRSCPT01 /* SealColorPaletteTurningTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTurningTests.swift; sourceTree = "<group>"; };
 		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
@@ -1640,6 +1642,7 @@
 				2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */,
 				E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */,
 				D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */,
+				LR00000100000000LRSCPT01 /* SealColorPaletteTurningTests.swift */,
 				A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */,
 				FF22BB33CC44DD55EE66FF88 /* EtegamiRouteStrokeTests.swift */,
 				BB44CC55DD66EE77FF88AABB /* EtegamiTextGeneratorTests.swift */,
@@ -2801,6 +2804,7 @@
 				BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */,
 				0F2670E277C94DDDB875E31C /* SealHashComputerTests.swift in Sources */,
 				C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */,
+				LR00000200000000LRSCPT01 /* SealColorPaletteTurningTests.swift in Sources */,
 				F9A0B1C2D3E4F5A6B7C8D9E0 /* SealGeometryTests.swift in Sources */,
 				FF22BB33CC44DD55EE66FF77 /* EtegamiRouteStrokeTests.swift in Sources */,
 				BB44CC55DD66EE77FF88AA99 /* EtegamiTextGeneratorTests.swift in Sources */,

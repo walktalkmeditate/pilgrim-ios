@@ -55,4 +55,16 @@ extension SeasonalMarker {
         case .imbolc, .beltane, .lughnasadh, .samhain: return false
         }
     }
+
+    /// `SealColorPalette` entry for the goshuin seal on this turning.
+    /// Nil for cross-quarter.
+    var sealColor: SealColorPalette.SealColor? {
+        switch self {
+        case .springEquinox:  return SealColorPalette.turningJade
+        case .summerSolstice: return SealColorPalette.turningGold
+        case .autumnEquinox:  return SealColorPalette.turningClaret
+        case .winterSolstice: return SealColorPalette.turningIndigo
+        case .imbolc, .beltane, .lughnasadh, .samhain: return nil
+        }
+    }
 }

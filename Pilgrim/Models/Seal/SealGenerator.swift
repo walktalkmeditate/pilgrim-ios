@@ -41,7 +41,7 @@ enum SealGenerator {
         let geo = SealGeometry(bytes: bytes, size: size, meditateRatio: meditateRatio, talkRatio: talkRatio)
 
         let favicon = input.favicon.flatMap { WalkFavicon(rawValue: $0) }
-        let color = SealColorPalette.uiColor(for: favicon, hashByte: bytes[30])
+        let color = SealColorPalette.uiColor(for: input)
 
         let date = input.startDate
         let calendar = Calendar.current

@@ -1,3 +1,4 @@
+import CoreLocation
 import UIKit
 
 enum SealColorPalette {
@@ -36,6 +37,29 @@ enum SealColorPalette {
     static let accentColors  = [indigo, gold, twilight, amethyst]
     static let neutralColors = [stone, dawn, fog]
 
+    // MARK: - Turning (solstice / equinox overrides — not in warm/cool/accent/neutral)
+
+    static let turningJade = SealColor(
+        light: UIColor(named: "turningJade") ?? UIColor(hex: "#74B495"),
+        dark:  UIColor(named: "turningJade") ?? UIColor(hex: "#88C5A0"),
+        cssVar: "--seal-turning-jade"
+    )
+    static let turningGold = SealColor(
+        light: UIColor(named: "turningGold") ?? UIColor(hex: "#C9A646"),
+        dark:  UIColor(named: "turningGold") ?? UIColor(hex: "#D5B55D"),
+        cssVar: "--seal-turning-gold"
+    )
+    static let turningClaret = SealColor(
+        light: UIColor(named: "turningClaret") ?? UIColor(hex: "#8B4455"),
+        dark:  UIColor(named: "turningClaret") ?? UIColor(hex: "#A26070"),
+        cssVar: "--seal-turning-claret"
+    )
+    static let turningIndigo = SealColor(
+        light: UIColor(named: "turningIndigo") ?? UIColor(hex: "#2377A4"),
+        dark:  UIColor(named: "turningIndigo") ?? UIColor(hex: "#4691BA"),
+        cssVar: "--seal-turning-indigo"
+    )
+
     static func color(for favicon: WalkFavicon?, hashByte: UInt8) -> SealColor {
         switch favicon {
         case .flame:
@@ -54,5 +78,20 @@ enum SealColorPalette {
         return UIColor { traits in
             traits.userInterfaceStyle == .dark ? sealColor.dark : sealColor.light
         }
+    }
+
+    /// Entry point used by SealGenerator. Pre-checks for a turning day and
+    /// returns the matching turning seal color; otherwise falls back to the
+    /// existing favicon+hash selection.
+    static func uiColor(for input: SealInput) -> UIColor {
+        let firstPoint = input.routePoints.first
+        let coord = firstPoint.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+        if let turning = TurningDayService.turning(for: input.startDate, at: coord),
+           let sealColor = turning.sealColor {
+            return sealColor.light
+        }
+        let favicon = input.favicon.flatMap { WalkFavicon(rawValue: $0) }
+        let bytes = SealHashComputer.hexToBytes(SealHashComputer.computeHashFromInput(input))
+        return uiColor(for: favicon, hashByte: bytes[30])
     }
 }
