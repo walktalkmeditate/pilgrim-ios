@@ -156,6 +156,10 @@ public enum TempV4 {
             _activityIntervals = intervals
         }
 
+        public func replaceVoiceRecordings(_ recordings: [TempV4.VoiceRecording]) {
+            self._voiceRecordings = recordings
+        }
+
         public func appendVoiceRecordings(_ recordings: [TempV4.VoiceRecording]) {
             _voiceRecordings.append(contentsOf: recordings)
         }

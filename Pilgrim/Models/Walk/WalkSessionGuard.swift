@@ -223,6 +223,52 @@ class WalkSessionGuard {
 
     // MARK: - Recovery
 
+    /// Replaces a recording's file path with `""` (metadata-only) when the
+    /// underlying `.m4a` is unplayable — the canonical signature of an
+    /// AVAudioRecorder that was SIGKILL'd before `stop()` wrote its moov atom.
+    /// Duration is preserved so the Talk timer still reads correctly after
+    /// recovery; the walk summary row will show "Recording unavailable" and
+    /// suppress playback controls.
+    ///
+    /// Parameters:
+    /// - recording: the provisional recording from the checkpoint
+    /// - fileURL: absolute URL of the on-disk file. Pass `nil` to skip the
+    ///   disk check entirely (used in tests with the `durationProbe` param).
+    /// - durationProbe: returns the playable duration for a file. In
+    ///   production, defaults to `AVURLAsset(url:).duration` seconds.
+    ///   Override in tests to avoid AVFoundation dependencies.
+    static func sanitizeRecording(
+        _ recording: TempVoiceRecording,
+        fileURL: URL?,
+        durationProbe: (URL) -> Double = WalkSessionGuard.defaultDurationProbe
+    ) -> TempVoiceRecording {
+        guard let fileURL else { return recording }
+
+        let playableSeconds = durationProbe(fileURL)
+        guard playableSeconds <= 0 else {
+            return recording
+        }
+
+        try? FileManager.default.removeItem(at: fileURL)
+
+        return TempVoiceRecording(
+            uuid: recording.uuid,
+            startDate: recording.startDate,
+            endDate: recording.endDate,
+            duration: recording.duration,
+            fileRelativePath: "",
+            transcription: nil,
+            wordsPerMinute: nil,
+            isEnhanced: false
+        )
+    }
+
+    private static func defaultDurationProbe(_ url: URL) -> Double {
+        let asset = AVURLAsset(url: url)
+        let seconds = CMTimeGetSeconds(asset.duration)
+        return seconds.isFinite ? seconds : 0
+    }
+
     static func recoverIfNeeded(completion: @escaping (Date?) -> Void) {
         guard DataManager.dataStack != nil else {
             print("\(tag) RECOVERY SKIPPED — DataManager not ready")
@@ -262,6 +308,14 @@ class WalkSessionGuard {
         let walk = checkpoint.walk
         let recordingDirUUID = extractRecordingDirectoryUUID(from: walk) ?? checkpoint.walkUUID
         reconnectOrphanedRecordings(walk: walk, walkUUID: recordingDirUUID)
+
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let sanitized = walk._voiceRecordings.map { recording -> TempVoiceRecording in
+            guard !recording.fileRelativePath.isEmpty else { return recording }
+            let url = docs.appendingPathComponent(recording.fileRelativePath)
+            return sanitizeRecording(recording, fileURL: url)
+        }
+        walk.replaceVoiceRecordings(sanitized)
 
         print("\(tag) RECOVERY — saving walk: start=\(walk.startDate), end=\(walk.endDate), routes=\(walk.routeData.count), pauses=\(walk.pauses.count), recordings=\(walk.voiceRecordings.count), intervals=\(walk.activityIntervals.count), waypoints=\(walk.waypoints.count)")
 

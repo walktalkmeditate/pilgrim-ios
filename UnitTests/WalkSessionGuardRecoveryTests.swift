@@ -27,4 +27,69 @@ final class WalkSessionGuardRecoveryTests: XCTestCase {
                        "Recordings/DEADBEEF/rec.m4a")
         XCTAssertEqual(snapshot?.voiceRecordings.first?.duration ?? 0, 42, accuracy: 1.0)
     }
+
+    func test_sanitizeUnplayableRecordings_clearsPath_forMoovLessFile() throws {
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("WalkSessionGuardRecoveryTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmpDir) }
+
+        let brokenFile = tmpDir.appendingPathComponent("broken.m4a")
+        try Data().write(to: brokenFile)
+
+        let recording = TempVoiceRecording(
+            uuid: nil,
+            startDate: Date(timeIntervalSinceNow: -30),
+            endDate: Date(),
+            duration: 30,
+            fileRelativePath: "ignored/broken.m4a",
+            isEnhanced: false
+        )
+
+        let sanitized = WalkSessionGuard.sanitizeRecording(
+            recording,
+            fileURL: brokenFile
+        )
+        XCTAssertEqual(sanitized.fileRelativePath, "")
+        XCTAssertEqual(sanitized.duration, 30, accuracy: 0.1,
+                       "duration must be preserved for the Talk timer")
+    }
+
+    func test_sanitizeUnplayableRecordings_preservesPath_whenFilePlayable() throws {
+        let playable = TempVoiceRecording(
+            uuid: nil,
+            startDate: Date(),
+            endDate: Date().addingTimeInterval(5),
+            duration: 5,
+            fileRelativePath: "Recordings/ABC/rec.m4a",
+            isEnhanced: false
+        )
+
+        let sanitized = WalkSessionGuard.sanitizeRecording(
+            playable,
+            fileURL: nil,
+            durationProbe: { _ in 5.0 }
+        )
+        XCTAssertEqual(sanitized.fileRelativePath, "Recordings/ABC/rec.m4a")
+    }
+
+    func test_sanitizeUnplayableRecordings_preservesPath_whenProbeReportsPositive() {
+        let recording = TempVoiceRecording(
+            uuid: nil,
+            startDate: Date(),
+            endDate: Date().addingTimeInterval(5),
+            duration: 5,
+            fileRelativePath: "Recordings/ABC/rec.m4a",
+            isEnhanced: false
+        )
+        let fakeURL = URL(fileURLWithPath: "/does/not/exist.m4a")
+
+        let sanitized = WalkSessionGuard.sanitizeRecording(
+            recording,
+            fileURL: fakeURL,
+            durationProbe: { _ in 5.0 }
+        )
+
+        XCTAssertEqual(sanitized.fileRelativePath, "Recordings/ABC/rec.m4a")
+    }
 }
