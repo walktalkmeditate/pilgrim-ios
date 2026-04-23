@@ -64,6 +64,24 @@ struct ActiveWalkView: View {
         return AudioManifestService.shared.asset(byId: id)?.displayName
     }
 
+    private var activeTurning: SeasonalMarker? {
+        let hemisphereRaw = UserPreferences.hemisphereOverride.value
+        let hemisphere = hemisphereRaw.flatMap { Hemisphere(rawValue: $0) } ?? .northern
+        let coord = hemisphere == .southern
+            ? CLLocationCoordinate2D(latitude: -1, longitude: 0)
+            : CLLocationCoordinate2D(latitude: 1, longitude: 0)
+        return TurningDayService.turning(for: Date(), at: coord)
+    }
+
+    @ViewBuilder
+    private var turningWatermark: some View {
+        if let turning = activeTurning, let kanji = turning.kanji {
+            Text(kanji)
+                .font(.system(size: 18, weight: .light))
+                .foregroundColor(.stone.opacity(0.18))
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             // Full-screen map background (ignores safe area to fill entire screen)
@@ -99,6 +117,13 @@ struct ActiveWalkView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, minimizedSheetHeight)
                 .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
+
+            // Turning-day kanji watermark — faint decoration on solstices/equinoxes
+            turningWatermark
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, minimizedSheetHeight + 16)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
 
             // Bottom sheet with stats and controls
             bottomSheet
