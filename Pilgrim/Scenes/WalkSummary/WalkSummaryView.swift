@@ -158,7 +158,20 @@ struct WalkSummaryView: View {
     }()
 
     private var dateTitle: String {
-        Self.dateTitleFormatter.string(from: walk.startDate)
+        let base = Self.dateTitleFormatter.string(from: walk.startDate)
+        if let kanji = walkTurning?.kanji {
+            return "\(base) · \(kanji)"
+        }
+        return base
+    }
+
+    var walkTurning: SeasonalMarker? {
+        let hemisphereRaw = UserPreferences.hemisphereOverride.value
+        let hemisphere = hemisphereRaw.flatMap { Hemisphere(rawValue: $0) } ?? .northern
+        let coord = hemisphere == .southern
+            ? CLLocationCoordinate2D(latitude: -1, longitude: 0)
+            : CLLocationCoordinate2D(latitude: 1, longitude: 0)
+        return TurningDayService.turning(for: walk.startDate, at: coord)
     }
 
     private var promptsButton: some View {
