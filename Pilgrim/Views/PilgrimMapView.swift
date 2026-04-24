@@ -42,17 +42,6 @@ struct PilgrimMapView: UIViewRepresentable {
     /// Color for walking-activity route segments. Defaults to `.moss`. Pass the
     /// turning's color on solstice/equinox walks so those segments reflect the day.
     var walkingColor: UIColor = .moss
-    /// Optional sunrise-azimuth ray from the user's location. Rendered only on
-    /// turning days; nil elsewhere.
-    var sunriseRay: SunriseRay? = nil
-    /// Current user location coordinate, forwarded from CoreLocation via the walk
-    /// view model. Used to position the sunrise-ray origin as the user moves.
-    var userLocation: CLLocationCoordinate2D? = nil
-
-    struct SunriseRay {
-        let azimuth: CLLocationDirection
-        let color: UIColor
-    }
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -71,8 +60,6 @@ struct PilgrimMapView: UIViewRepresentable {
         initialCamera: MapCameraSeed.Seed? = nil,
         fadesInOnStyleLoad: Bool = false,
         walkingColor: UIColor = .moss,
-        sunriseRay: SunriseRay? = nil,
-        userLocation: CLLocationCoordinate2D? = nil,
         isMeditating: Binding<Bool> = .constant(false)
     ) {
         self.isInteractive = isInteractive
@@ -91,8 +78,6 @@ struct PilgrimMapView: UIViewRepresentable {
         self.initialCamera = initialCamera
         self.fadesInOnStyleLoad = fadesInOnStyleLoad
         self.walkingColor = walkingColor
-        self.sunriseRay = sunriseRay
-        self.userLocation = userLocation
     }
 
     func makeCoordinator() -> Coordinator {
@@ -150,14 +135,11 @@ struct PilgrimMapView: UIViewRepresentable {
             }
             coordinator.lastSegments = []
             coordinator.lastAppliedWalkingColor = nil
-            coordinator.hasSunriseRayLayer = false
-            coordinator.lastAppliedRayColor = nil
             if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             coordinator.circleManager = nil
             coordinator.pointManager = nil
             Self.applyRouteSource(coordinator.pendingSegments, walkingColor: coordinator.walkingColor, on: mapView, coordinator: coordinator)
-            Self.applySunriseRay(coordinator.sunriseRay, userLocation: coordinator.lastKnownUserLocation, on: mapView, coordinator: coordinator)
             Self.applyAnnotations(coordinator.pendingAnnotations, activePhotoID: coordinator.pendingActivePhotoID, on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
@@ -177,8 +159,6 @@ struct PilgrimMapView: UIViewRepresentable {
         context.coordinator.onAnnotationTap = onAnnotationTap
         context.coordinator.currentPinAnnotations = pinAnnotations
         context.coordinator.walkingColor = walkingColor
-        context.coordinator.sunriseRay = sunriseRay
-        if let loc = userLocation { context.coordinator.lastKnownUserLocation = loc }
 
         if !context.coordinator.tapGestureAdded, onAnnotationTap != nil {
             let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleMapTap(_:)))
@@ -202,7 +182,6 @@ struct PilgrimMapView: UIViewRepresentable {
         } else {
             context.coordinator.hasDeferredRouteUpdate = true
         }
-        Self.applySunriseRay(sunriseRay, userLocation: userLocation ?? context.coordinator.lastKnownUserLocation, on: mapView, coordinator: context.coordinator)
         Self.applyAnnotations(pinAnnotations, activePhotoID: activePhotoID, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
@@ -358,106 +337,6 @@ struct PilgrimMapView: UIViewRepresentable {
             } catch {
                 print("[PilgrimMapView] Failed to add route layer: \(error)")
             }
-        }
-    }
-
-    // MARK: - Sunrise Ray
-
-    private static let sunriseRaySourceId = "pilgrim-sunrise-ray"
-    private static let sunriseRayLayerId = "pilgrim-sunrise-ray-layer"
-
-    private static func coordinate(
-        from origin: CLLocationCoordinate2D,
-        bearingDegrees: CLLocationDirection,
-        distanceMeters: Double
-    ) -> CLLocationCoordinate2D {
-        let earthRadius = 6_371_000.0
-        let bearingRad = bearingDegrees * .pi / 180.0
-        let lat1 = origin.latitude * .pi / 180.0
-        let lon1 = origin.longitude * .pi / 180.0
-        let angular = distanceMeters / earthRadius
-
-        let lat2 = asin(
-            sin(lat1) * cos(angular) +
-            cos(lat1) * sin(angular) * cos(bearingRad)
-        )
-        let lon2 = lon1 + atan2(
-            sin(bearingRad) * sin(angular) * cos(lat1),
-            cos(angular) - sin(lat1) * sin(lat2)
-        )
-        return CLLocationCoordinate2D(
-            latitude: lat2 * 180.0 / .pi,
-            longitude: lon2 * 180.0 / .pi
-        )
-    }
-
-    private static func applySunriseRay(
-        _ ray: SunriseRay?,
-        userLocation: CLLocationCoordinate2D?,
-        on mapView: MBMapView,
-        coordinator: Coordinator
-    ) {
-        guard mapView.mapboxMap.isStyleLoaded else { return }
-
-        guard let ray, let origin = userLocation else {
-            if coordinator.hasSunriseRayLayer {
-                do {
-                    try mapView.mapboxMap.removeLayer(withId: sunriseRayLayerId)
-                    try mapView.mapboxMap.removeSource(withId: sunriseRaySourceId)
-                } catch {
-                    print("[PilgrimMapView] Failed to remove sunrise ray: \(error)")
-                }
-                coordinator.hasSunriseRayLayer = false
-            }
-            return
-        }
-
-        let endpoint = coordinate(from: origin, bearingDegrees: ray.azimuth, distanceMeters: 1000)
-        let feature = Feature(geometry: .lineString(LineString([origin, endpoint])))
-        let collection = FeatureCollection(features: [feature])
-
-        // If the ray's color changed since we last drew it (e.g., walk crossed
-        // midnight from one turning into another), tear down the layer so the
-        // creation path below re-runs with the new color baked into lineColor.
-        let colorChanged = coordinator.lastAppliedRayColor != ray.color
-        if colorChanged && coordinator.hasSunriseRayLayer {
-            do {
-                try mapView.mapboxMap.removeLayer(withId: sunriseRayLayerId)
-                try mapView.mapboxMap.removeSource(withId: sunriseRaySourceId)
-            } catch {
-                print("[PilgrimMapView] Failed to remove sunrise ray for color update: \(error)")
-            }
-            coordinator.hasSunriseRayLayer = false
-        }
-
-        if coordinator.hasSunriseRayLayer && mapView.mapboxMap.sourceExists(withId: sunriseRaySourceId) {
-            do {
-                try mapView.mapboxMap.updateGeoJSONSource(
-                    withId: sunriseRaySourceId,
-                    geoJSON: .featureCollection(collection)
-                )
-            } catch {
-                print("[PilgrimMapView] Failed to update sunrise ray source: \(error)")
-            }
-            return
-        }
-
-        do {
-            var source = GeoJSONSource(id: sunriseRaySourceId)
-            source.data = .featureCollection(collection)
-            try mapView.mapboxMap.addSource(source)
-
-            var layer = LineLayer(id: sunriseRayLayerId, source: sunriseRaySourceId)
-            layer.lineWidth = .constant(2)
-            layer.lineCap = .constant(.round)
-            layer.lineJoin = .constant(.round)
-            layer.lineOpacity = .constant(0.15)
-            layer.lineColor = .constant(StyleColor(ray.color))
-            try mapView.mapboxMap.addLayer(layer)
-            coordinator.hasSunriseRayLayer = true
-            coordinator.lastAppliedRayColor = ray.color
-        } catch {
-            print("[PilgrimMapView] Failed to add sunrise ray layer: \(error)")
         }
     }
 
@@ -704,15 +583,6 @@ struct PilgrimMapView: UIViewRepresentable {
         /// midnight into a turning day), comparing against this value lets
         /// `applyRouteSource` know to recreate the layer with the new color.
         fileprivate var lastAppliedWalkingColor: UIColor?
-        fileprivate var sunriseRay: SunriseRay?
-        fileprivate var hasSunriseRayLayer: Bool = false
-        /// Tracks the ray color baked into the sunrise-ray layer's lineColor.
-        /// When the turning's color changes (rare — same midnight-crossing
-        /// edge as the route's walkingColor), this differs from `sunriseRay.color`
-        /// and forces the layer to be recreated rather than just updated in place
-        /// with new geometry only.
-        fileprivate var lastAppliedRayColor: UIColor?
-        fileprivate var lastKnownUserLocation: CLLocationCoordinate2D?
 
         fileprivate var isMeditating: Bool = false {
             didSet { refreshRenderState() }

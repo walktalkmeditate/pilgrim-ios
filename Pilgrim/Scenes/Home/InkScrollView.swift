@@ -54,13 +54,17 @@ struct InkScrollView: View {
         let renderer = CalligraphyPathRenderer(snapshots: snapshots, width: width)
         let positions = renderer.dotPositions()
         let segments = renderer.segmentPaths()
+        // Vertical offset applied to the calligraphy path (segments + dots +
+        // date/lunar/milestone markers) so the dots don't crowd the journey
+        // summary text when the turning banner adds height at the top.
+        let turningOffset: CGFloat = currentTurning != nil ? 36 : 0
 
         return ZStack(alignment: .top) {
             turningBanner
 
             Group {
                 if !snapshots.isEmpty {
-                    journeySummaryHeader(width: width, topOffset: currentTurning != nil ? 36 : 0)
+                    journeySummaryHeader(width: width, topOffset: turningOffset)
                 }
 
                 ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
@@ -72,10 +76,12 @@ struct InkScrollView: View {
                         .opacity(hasAppeared ? 1 : 0)
                         .animation(.easeOut(duration: 1.2).delay(0.2), value: hasAppeared)
                 }
+                .offset(y: turningOffset)
 
             }
 
             dotsLayer(positions: positions, viewportWidth: width, viewportHeight: height)
+                .offset(y: turningOffset)
 
             Group {
                 dateLabels(positions: positions, viewportWidth: width)
@@ -86,9 +92,10 @@ struct InkScrollView: View {
                     emptyState(width: width)
                 }
             }
+            .offset(y: turningOffset)
             .transaction { $0.animation = nil }
         }
-        .frame(width: width, height: renderer.totalHeight)
+        .frame(width: width, height: renderer.totalHeight + turningOffset)
         .onAppear {
             configureHaptics(positions: positions, renderer: renderer)
         }

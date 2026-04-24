@@ -133,6 +133,10 @@ struct WalkDotView: View {
     }
 
     private var dotColor: Color {
+        if let turning = TurningDayService.turning(for: snapshot.startDate, hemisphere: .current),
+           let color = turning.color {
+            return color
+        }
         let month = Calendar.current.component(.month, from: snapshot.startDate)
         let colorName: String
         switch month {
