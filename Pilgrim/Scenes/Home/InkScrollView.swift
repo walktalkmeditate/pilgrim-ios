@@ -60,7 +60,7 @@ struct InkScrollView: View {
 
             Group {
                 if !snapshots.isEmpty {
-                    journeySummaryHeader(width: width, topOffset: currentTurning != nil ? 64 : 0)
+                    journeySummaryHeader(width: width, topOffset: currentTurning != nil ? 36 : 0)
                 }
 
                 ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
@@ -79,7 +79,6 @@ struct InkScrollView: View {
 
             Group {
                 dateLabels(positions: positions, viewportWidth: width)
-                turningMarkers(positions: positions)
                 lunarMarkers(positions: positions, viewportWidth: width)
                 milestoneMarkers(width: width, positions: positions)
 
@@ -205,24 +204,23 @@ struct InkScrollView: View {
            let kanji = turning.kanji {
             HStack(spacing: 8) {
                 Text(text)
-                    .font(Constants.Typography.body)
+                    .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                 Text("·")
-                    .font(Constants.Typography.body)
+                    .font(Constants.Typography.caption)
                     .foregroundColor(.fog.opacity(0.5))
                 if let color = turning.color {
                     Text(kanji)
-                        .font(Constants.Typography.body)
+                        .font(Constants.Typography.caption)
                         .foregroundColor(color)
                 } else {
                     Text(kanji)
-                        .font(Constants.Typography.body)
+                        .font(Constants.Typography.caption)
                         .foregroundColor(.ink)
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, Constants.UI.Padding.big)
-            .padding(.bottom, Constants.UI.Padding.small)
+            .padding(.vertical, Constants.UI.Padding.small)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(text). \(turning.name).")
         }
@@ -273,6 +271,10 @@ struct InkScrollView: View {
     }
 
     private func dotSeasonalColor(for snapshot: WalkSnapshot) -> Color {
+        if let turning = TurningDayService.turning(for: snapshot.startDate, hemisphere: .current),
+           let color = turning.color {
+            return color
+        }
         let month = Calendar.current.component(.month, from: snapshot.startDate)
         let colorName: String
         switch month {
