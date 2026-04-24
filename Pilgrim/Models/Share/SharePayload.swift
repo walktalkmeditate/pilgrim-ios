@@ -16,6 +16,7 @@ struct SharePayload: Encodable {
     let mark: String?
     let waypoints: [Waypoint]?
     let photos: [Photo]?
+    var turningDay: String? = nil
 
     struct Stats: Encodable {
         let distance: Double?
@@ -84,5 +85,6 @@ struct SharePayload: Encodable {
         case toggledStats = "toggled_stats"
         case placeStart = "place_start"
         case placeEnd = "place_end"
+        case turningDay = "turning_day"
     }
 }
