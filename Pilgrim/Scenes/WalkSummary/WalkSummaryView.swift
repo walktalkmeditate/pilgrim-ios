@@ -166,12 +166,7 @@ struct WalkSummaryView: View {
     }
 
     var walkTurning: SeasonalMarker? {
-        let hemisphereRaw = UserPreferences.hemisphereOverride.value
-        let hemisphere = hemisphereRaw.flatMap { Hemisphere(rawValue: $0) } ?? .northern
-        let coord = hemisphere == .southern
-            ? CLLocationCoordinate2D(latitude: -1, longitude: 0)
-            : CLLocationCoordinate2D(latitude: 1, longitude: 0)
-        return TurningDayService.turning(for: walk.startDate, at: coord)
+        TurningDayService.turning(for: walk.startDate, hemisphere: .current)
     }
 
     private var promptsButton: some View {

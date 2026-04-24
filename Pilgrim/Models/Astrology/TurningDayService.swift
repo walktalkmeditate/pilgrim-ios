@@ -23,11 +23,32 @@ enum TurningDayService {
     ///            the date is not a turning day (including cross-quarter
     ///            astronomical markers, which this feature doesn't surface).
     static func turning(for date: Date, at coordinate: CLLocationCoordinate2D?) -> SeasonalMarker? {
-        let snapshot = CelestialCalculator.snapshot(for: date)
-        guard let astronomical = snapshot.seasonalMarker, astronomical.isTurning else {
+        // Use the lightweight `seasonalMarker(for:)` rather than the full
+        // `snapshot(for:)` — we only need the marker, not planetary positions.
+        // Called per-snapshot in scroll loops and per-body-eval in views,
+        // so the saving compounds.
+        guard let astronomical = CelestialCalculator.seasonalMarker(for: date),
+              astronomical.isTurning else {
             return nil
         }
         let hemisphere = Hemisphere(coordinate: coordinate)
+        return mapping(astronomical: astronomical, hemisphere: hemisphere)
+    }
+
+    /// Convenience for the common "today, at the user's stored hemisphere"
+    /// case. Avoids duplicating the `UserPreferences.hemisphereOverride`
+    /// boilerplate at each call site.
+    static func turningForToday(hemisphere: Hemisphere = Hemisphere.current) -> SeasonalMarker? {
+        turning(for: Date(), hemisphere: hemisphere)
+    }
+
+    /// Variant that takes a hemisphere directly — skips the synthetic-
+    /// coordinate dance that `turning(for:at:)` does internally.
+    static func turning(for date: Date, hemisphere: Hemisphere) -> SeasonalMarker? {
+        guard let astronomical = CelestialCalculator.seasonalMarker(for: date),
+              astronomical.isTurning else {
+            return nil
+        }
         return mapping(astronomical: astronomical, hemisphere: hemisphere)
     }
 

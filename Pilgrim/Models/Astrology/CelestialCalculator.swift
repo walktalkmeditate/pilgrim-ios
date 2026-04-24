@@ -3,6 +3,19 @@ import Foundation
 
 enum CelestialCalculator {
 
+    /// Lightweight seasonal-marker lookup. Computes only the sun's longitude
+    /// and its proximity to the cardinal/cross-quarter angles — skips all
+    /// the planetary-position, lunar-phase, planetary-hour, and element
+    /// balance work that the full `snapshot(for:)` does. Use this in hot
+    /// paths (SwiftUI body re-evals, per-snapshot loops) where only the
+    /// seasonal marker matters.
+    static func seasonalMarker(for date: Date) -> SeasonalMarker? {
+        let jd = julianDayNumber(from: date)
+        let T = julianCenturies(from: jd)
+        let sunLon = solarLongitude(T: T)
+        return seasonalMarker(sunLongitude: sunLon)
+    }
+
     static func snapshot(for date: Date, system: ZodiacSystem = .tropical) -> CelestialSnapshot {
         let jd = julianDayNumber(from: date)
         let T = julianCenturies(from: jd)

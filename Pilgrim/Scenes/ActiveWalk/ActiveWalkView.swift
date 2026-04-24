@@ -65,12 +65,7 @@ struct ActiveWalkView: View {
     }
 
     private var activeTurning: SeasonalMarker? {
-        let hemisphereRaw = UserPreferences.hemisphereOverride.value
-        let hemisphere = hemisphereRaw.flatMap { Hemisphere(rawValue: $0) } ?? .northern
-        let coord = hemisphere == .southern
-            ? CLLocationCoordinate2D(latitude: -1, longitude: 0)
-            : CLLocationCoordinate2D(latitude: 1, longitude: 0)
-        return TurningDayService.turning(for: Date(), at: coord)
+        TurningDayService.turningForToday()
     }
 
     private var sunriseRay: PilgrimMapView.SunriseRay? {

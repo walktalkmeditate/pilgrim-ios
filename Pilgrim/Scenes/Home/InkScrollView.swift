@@ -195,15 +195,7 @@ struct InkScrollView: View {
     // MARK: - Turning day banner
 
     private var currentTurning: SeasonalMarker? {
-        let hemisphereRawValue = UserPreferences.hemisphereOverride.value
-        let latitude: Double
-        if let raw = hemisphereRawValue, let hemisphere = Hemisphere(rawValue: raw) {
-            latitude = hemisphere == .southern ? -1 : 1
-        } else {
-            latitude = 1
-        }
-        let coord = CLLocationCoordinate2D(latitude: latitude, longitude: 0)
-        return TurningDayService.turning(for: Date(), at: coord)
+        TurningDayService.turningForToday()
     }
 
     @ViewBuilder
@@ -592,19 +584,7 @@ struct InkScrollView: View {
     private func turningColorForSegment(index: Int) -> Color? {
         guard index >= 0 && index < snapshots.count else { return nil }
         let snapshot = snapshots[index]
-        let hemisphereRawValue = UserPreferences.hemisphereOverride.value
-        let latitude: Double
-        if let raw = hemisphereRawValue, let hemisphere = Hemisphere(rawValue: raw) {
-            latitude = hemisphere == .southern ? -1 : 1
-        } else {
-            latitude = 1
-        }
-        let coord = CLLocationCoordinate2D(latitude: latitude, longitude: 0)
-        guard let turning = TurningDayService.turning(for: snapshot.startDate, at: coord),
-              let color = turning.color else {
-            return nil
-        }
-        return color
+        return TurningDayService.turning(for: snapshot.startDate, hemisphere: .current)?.color
     }
 
     private func pathSegmentOpacity(index: Int, total: Int) -> Double {

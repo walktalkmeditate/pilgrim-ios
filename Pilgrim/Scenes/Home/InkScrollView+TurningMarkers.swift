@@ -31,19 +31,15 @@ extension InkScrollView {
     }
 
     private func computeTurningMarkers(positions: [CalligraphyPathRenderer.DotPosition]) -> [TurningMarker] {
+        // Defensive: if the renderer's dot positions are out of sync with the
+        // snapshots collection (mid-update transient), return empty rather
+        // than zipping mismatched data. The next render pass will recover.
         guard positions.count == snapshots.count else { return [] }
-        let hemisphereRawValue = UserPreferences.hemisphereOverride.value
-        let latitude: Double
-        if let raw = hemisphereRawValue, let hemisphere = Hemisphere(rawValue: raw) {
-            latitude = hemisphere == .southern ? -1 : 1
-        } else {
-            latitude = 1
-        }
-        let coord = CLLocationCoordinate2D(latitude: latitude, longitude: 0)
+        let hemisphere = Hemisphere.current
 
         var markers: [TurningMarker] = []
         for (snapshot, position) in zip(snapshots, positions) {
-            guard let turning = TurningDayService.turning(for: snapshot.startDate, at: coord),
+            guard let turning = TurningDayService.turning(for: snapshot.startDate, hemisphere: hemisphere),
                   let kanji = turning.kanji,
                   let color = turning.color else {
                 continue
