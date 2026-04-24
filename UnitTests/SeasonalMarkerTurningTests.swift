@@ -58,6 +58,47 @@ final class SeasonalMarkerTurningTests: XCTestCase {
         XCTAssertNil(SeasonalMarker.imbolc.colorAssetName)
     }
 
+    // MARK: - evocativePhrase
+
+    func testEvocativePhrase_winterSolstice() {
+        XCTAssertEqual(SeasonalMarker.winterSolstice.evocativePhrase, "The longest night. From here, light returns.")
+    }
+
+    func testEvocativePhrase_summerSolstice() {
+        XCTAssertEqual(SeasonalMarker.summerSolstice.evocativePhrase, "The longest day. The wheel begins to turn back toward stillness.")
+    }
+
+    func testEvocativePhrase_springEquinox() {
+        XCTAssertEqual(SeasonalMarker.springEquinox.evocativePhrase, "Light is rising. The thaw.")
+    }
+
+    func testEvocativePhrase_autumnEquinox() {
+        XCTAssertEqual(SeasonalMarker.autumnEquinox.evocativePhrase, "Light is fading. The harvest.")
+    }
+
+    func testEvocativePhrase_crossQuarter_returnsNil() {
+        XCTAssertNil(SeasonalMarker.imbolc.evocativePhrase)
+        XCTAssertNil(SeasonalMarker.beltane.evocativePhrase)
+        XCTAssertNil(SeasonalMarker.lughnasadh.evocativePhrase)
+        XCTAssertNil(SeasonalMarker.samhain.evocativePhrase)
+    }
+
+    // MARK: - sealColor
+
+    func testSealColor_forEachTurning() {
+        XCTAssertNotNil(SeasonalMarker.springEquinox.sealColor)
+        XCTAssertNotNil(SeasonalMarker.summerSolstice.sealColor)
+        XCTAssertNotNil(SeasonalMarker.autumnEquinox.sealColor)
+        XCTAssertNotNil(SeasonalMarker.winterSolstice.sealColor)
+    }
+
+    func testSealColor_crossQuarter_returnsNil() {
+        XCTAssertNil(SeasonalMarker.imbolc.sealColor)
+        XCTAssertNil(SeasonalMarker.beltane.sealColor)
+        XCTAssertNil(SeasonalMarker.lughnasadh.sealColor)
+        XCTAssertNil(SeasonalMarker.samhain.sealColor)
+    }
+
     // MARK: - isTurning
 
     func testIsTurning_trueForFourMainMarkers() {

@@ -289,6 +289,8 @@
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
 		AA00020100000000000004 /* VoiceRecordingManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000003 /* VoiceRecordingManagement.swift */; };
 		AA00030100000000000002 /* MeditationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00030100000000000001 /* MeditationView.swift */; };
+		BB00031100000000000002 /* TurningRitualCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031100000000000001 /* TurningRitualCard.swift */; };
+		BB00031200000000000002 /* ActiveWalkSubviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031200000000000001 /* ActiveWalkSubviews.swift */; };
 		AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000001 /* VoiceRecordingRow.swift */; };
 		AA00040100000000000004 /* AudioPlayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000003 /* AudioPlayerModel.swift */; };
 		AA33BB44CC55DD66EE77FF88 /* EtegamiTextGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */; };
@@ -808,6 +810,8 @@
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
 		AA00020100000000000003 /* VoiceRecordingManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingManagement.swift; sourceTree = "<group>"; };
 		AA00030100000000000001 /* MeditationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationView.swift; sourceTree = "<group>"; };
+		BB00031100000000000001 /* TurningRitualCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TurningRitualCard.swift; sourceTree = "<group>"; };
+		BB00031200000000000001 /* ActiveWalkSubviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkSubviews.swift; sourceTree = "<group>"; };
 		AA00040100000000000001 /* VoiceRecordingRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingRow.swift; sourceTree = "<group>"; };
 		AA00040100000000000003 /* AudioPlayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerModel.swift; sourceTree = "<group>"; };
 		AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiTextGenerator.swift; sourceTree = "<group>"; };
@@ -1913,6 +1917,8 @@
 				AAAA0000000000000000FA /* WalkOptionsSheet.swift */,
 				3542AA50A2E8FA62E52758C7 /* WhisperPlacementSheet.swift */,
 				BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */,
+				BB00031100000000000001 /* TurningRitualCard.swift */,
+				BB00031200000000000001 /* ActiveWalkSubviews.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -2609,6 +2615,8 @@
 				AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */,
 				AAAA0000000000000000F9 /* IntentionSettingView.swift in Sources */,
 				AA00030100000000000002 /* MeditationView.swift in Sources */,
+				BB00031100000000000002 /* TurningRitualCard.swift in Sources */,
+				BB00031200000000000002 /* ActiveWalkSubviews.swift in Sources */,
 				AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */,
 				AA0001010000000000000016 /* WalkSummaryView.swift in Sources */,
 				AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */,

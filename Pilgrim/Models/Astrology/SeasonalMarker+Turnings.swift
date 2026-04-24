@@ -23,6 +23,18 @@ extension SeasonalMarker {
         }
     }
 
+    /// Evocative body copy shown in the turning ritual card (tappable kanji
+    /// watermark on the active walk). Localized via LS. Nil for cross-quarter.
+    var evocativePhrase: String? {
+        switch self {
+        case .winterSolstice: return LS.turningWinterSolsticePhrase
+        case .summerSolstice: return LS.turningSummerSolsticePhrase
+        case .springEquinox:  return LS.turningSpringEquinoxPhrase
+        case .autumnEquinox:  return LS.turningAutumnEquinoxPhrase
+        case .imbolc, .beltane, .lughnasadh, .samhain: return nil
+        }
+    }
+
     /// Asset Catalog color name for this turning's walking-segment color.
     /// Nil for cross-quarter.
     var colorAssetName: String? {

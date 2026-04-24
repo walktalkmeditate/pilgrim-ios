@@ -15,6 +15,7 @@ struct ActiveWalkView: View {
     @State private var showWaypointFailed = false
     @State private var showWhisperSheet = false
     @State private var showStoneSheet = false
+    @State private var showTurningCard = false
     @State private var tappedCairn: CachedCairn?
     @State private var proximityNotification: ProximityNotificationEvent?
     @State private var hasCheckedAutoIntention = false
@@ -68,12 +69,29 @@ struct ActiveWalkView: View {
         TurningDayService.turningForToday()
     }
 
+    /// Faint kanji watermark above the stats sheet on turning days. Tap
+    /// opens a contemplative ritual card.
+    ///
+    /// The visible glyph stays small (18pt fixed) so it remains ambient
+    /// even at large Dynamic Type — it's decoration, not a primary
+    /// information element. The tap target uses `.contentShape` with
+    /// generous padding so even fingers and VoiceOver users can hit it
+    /// reliably.
     @ViewBuilder
     private var turningWatermark: some View {
         if let turning = activeTurning, let kanji = turning.kanji {
-            Text(kanji)
-                .font(.system(size: 18, weight: .light))
-                .foregroundColor(.stone.opacity(0.18))
+            Button {
+                showTurningCard = true
+            } label: {
+                Text(kanji)
+                    .font(.system(size: 18, weight: .light))
+                    .foregroundColor(.stone.opacity(0.18))
+                    .padding(Constants.UI.Padding.normal)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(turning.name)
+            .accessibilityHint(LS.turningWatermarkA11yHint)
         }
     }
 
@@ -113,12 +131,14 @@ struct ActiveWalkView: View {
                 .padding(.bottom, minimizedSheetHeight)
                 .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
 
-            // Turning-day kanji watermark — faint decoration on solstices/equinoxes
+            // Turning-day kanji watermark — tap opens a contemplative ritual
+            // card. Hit testing is gated to active walk states + sheet
+            // minimized so it doesn't compete with the bottom sheet drag
+            // affordance when expanded.
             turningWatermark
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, minimizedSheetHeight + 16)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+                .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
 
             // Bottom sheet with stats and controls
             bottomSheet
@@ -310,6 +330,14 @@ struct ActiveWalkView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(isPresented: $showTurningCard) {
+            if let turning = activeTurning {
+                TurningRitualCard(turning: turning)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(Color.parchment.opacity(0.95))
+            }
         }
         .proximityNotification(event: $proximityNotification)
         .onReceive(viewModel.proximityService.proximityEvents) { event in
@@ -749,88 +777,6 @@ struct ActiveWalkView: View {
         }
     }
 
-}
-
-struct TimeMetricItem: View {
-    let label: String
-    let value: String
-    let icon: String
-    var isActive: Bool = false
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(isActive ? .rust : .stone)
-            Text(value)
-                .font(Constants.Typography.statValue)
-                .foregroundColor(.ink)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-            Text(label)
-                .font(Constants.Typography.statLabel)
-                .foregroundColor(.fog)
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-struct LivePaceSparklineView: View {
-    let values: [Double]
-
-    var body: some View {
-        GeometryReader { geo in
-            let filtered = values.filter { $0 > 0 }
-            if filtered.count > 1 {
-                let maxVal = filtered.max() ?? 1
-                let minVal = filtered.min() ?? 0
-                let range = max(maxVal - minVal, 0.5)
-
-                Path { path in
-                    for (i, val) in filtered.enumerated() {
-                        let x = geo.size.width * CGFloat(i) / CGFloat(filtered.count - 1)
-                        let normalized = (val - minVal) / range
-                        let y = geo.size.height * (1 - CGFloat(normalized))
-                        if i == 0 {
-                            path.move(to: CGPoint(x: x, y: y))
-                        } else {
-                            path.addLine(to: CGPoint(x: x, y: y))
-                        }
-                    }
-                }
-                .stroke(Color.stone.opacity(0.4), style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-            }
-        }
-    }
-}
-
-struct AudioWaveformView: View {
-
-    let level: Float
-
-    private let barCount = 5
-    private let barWeights: [Float] = [0.6, 0.8, 1.0, 0.8, 0.6]
-
-    var body: some View {
-        HStack(spacing: 3) {
-            ForEach(0..<barCount, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.rust)
-                    .frame(width: 4, height: barHeight(for: index))
-            }
-        }
-        .animation(.easeOut(duration: 0.08), value: level)
-    }
-
-    private func barHeight(for index: Int) -> CGFloat {
-        let weight = CGFloat(barWeights[index])
-        let amplitude = CGFloat(level) * weight
-        let minHeight: CGFloat = 4
-        let maxHeight: CGFloat = 24
-        return minHeight + amplitude * (maxHeight - minHeight)
-    }
 }
 
 // MARK: - Whisper & Stone Actions
