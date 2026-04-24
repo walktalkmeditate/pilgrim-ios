@@ -85,4 +85,31 @@ final class CelestialCalculatorSunriseAzimuthTests: XCTestCase {
             }
         }
     }
+
+    // MARK: - seasonalMarker(for:) parity with snapshot(for:).seasonalMarker
+
+    /// The lightweight `seasonalMarker(for:)` helper must return the same
+    /// marker as the full `snapshot(for:)` for any date — they share the
+    /// same underlying calculation. This guards against future refactors
+    /// that might desync the two paths.
+    func testSeasonalMarker_matchesSnapshotResult_acrossYear() {
+        let testDates = [
+            date(year: 2024, month: 1, day: 15),   // mid-winter — nil expected
+            date(year: 2024, month: 3, day: 20),   // spring equinox
+            date(year: 2024, month: 5, day: 5),    // beltane (cross-quarter)
+            date(year: 2024, month: 6, day: 20),   // summer solstice
+            date(year: 2024, month: 8, day: 7),    // lughnasadh (cross-quarter)
+            date(year: 2024, month: 9, day: 22),   // autumn equinox
+            date(year: 2024, month: 11, day: 7),   // samhain (cross-quarter)
+            date(year: 2024, month: 12, day: 21),  // winter solstice
+        ]
+        for d in testDates {
+            let lightweight = CelestialCalculator.seasonalMarker(for: d)
+            let full = CelestialCalculator.snapshot(for: d).seasonalMarker
+            XCTAssertEqual(
+                lightweight, full,
+                "seasonalMarker(for: \(d)) returned \(String(describing: lightweight)) but snapshot returned \(String(describing: full))"
+            )
+        }
+    }
 }

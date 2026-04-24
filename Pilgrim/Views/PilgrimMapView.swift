@@ -149,6 +149,7 @@ struct PilgrimMapView: UIViewRepresentable {
                 }
             }
             coordinator.lastSegments = []
+            coordinator.lastAppliedWalkingColor = nil
             coordinator.hasSunriseRayLayer = false
             if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
@@ -270,6 +271,32 @@ struct PilgrimMapView: UIViewRepresentable {
 
     private static func applyRouteSource(_ routeSegments: [RouteSegment], walkingColor: UIColor = .moss, on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
+
+        // If walkingColor changed since the layer was last applied (e.g., a
+        // walk crossed midnight into a turning day, or the user's hemisphere
+        // preference flipped), tear down the existing layers + source so the
+        // creation path below re-runs with the new color baked into the
+        // match expression. Without this, the layer's lineColor would stay
+        // frozen at whatever color was current when it was first created.
+        let colorChanged = coordinator.lastAppliedWalkingColor != walkingColor
+        if colorChanged {
+            do {
+                if mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer") {
+                    try mapView.mapboxMap.removeLayer(withId: "pilgrim-route-layer")
+                }
+                if mapView.mapboxMap.layerExists(withId: "pilgrim-route-casing") {
+                    try mapView.mapboxMap.removeLayer(withId: "pilgrim-route-casing")
+                }
+                if mapView.mapboxMap.sourceExists(withId: Self.sourceId) {
+                    try mapView.mapboxMap.removeSource(withId: Self.sourceId)
+                }
+            } catch {
+                print("[PilgrimMapView] Failed to remove route layer for color update: \(error)")
+            }
+            // Force the segment-equality early-return below to fall through.
+            coordinator.lastSegments = []
+        }
+
         guard routeSegments != coordinator.lastSegments else { return }
         coordinator.lastSegments = routeSegments
 
@@ -321,6 +348,7 @@ struct PilgrimMapView: UIViewRepresentable {
                     }
                 )
                 try mapView.mapboxMap.addLayer(layer)
+                coordinator.lastAppliedWalkingColor = walkingColor
 
                 if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
                 if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
@@ -655,6 +683,11 @@ struct PilgrimMapView: UIViewRepresentable {
 
         fileprivate var isAppInBackground: Bool = false
         fileprivate var walkingColor: UIColor = .moss
+        /// Tracks the walking color baked into the current Mapbox layer's
+        /// match expression. When `walkingColor` changes (e.g., walk crosses
+        /// midnight into a turning day), comparing against this value lets
+        /// `applyRouteSource` know to recreate the layer with the new color.
+        fileprivate var lastAppliedWalkingColor: UIColor?
         fileprivate var sunriseRay: SunriseRay?
         fileprivate var hasSunriseRayLayer: Bool = false
         fileprivate var lastKnownUserLocation: CLLocationCoordinate2D?
