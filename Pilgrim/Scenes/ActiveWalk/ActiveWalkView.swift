@@ -73,6 +73,18 @@ struct ActiveWalkView: View {
         return TurningDayService.turning(for: Date(), at: coord)
     }
 
+    private var sunriseRay: PilgrimMapView.SunriseRay? {
+        guard let turning = activeTurning, let color = turning.uiColor else { return nil }
+        let coord: CLLocationCoordinate2D
+        if let sample = viewModel.currentLocation {
+            coord = CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude)
+        } else {
+            coord = CLLocationCoordinate2D(latitude: 40.0, longitude: 0.0)
+        }
+        guard let azimuth = CelestialCalculator.sunriseAzimuth(at: coord, on: Date()) else { return nil }
+        return PilgrimMapView.SunriseRay(azimuth: azimuth, color: color)
+    }
+
     @ViewBuilder
     private var turningWatermark: some View {
         if let turning = activeTurning, let kanji = turning.kanji {
@@ -559,6 +571,9 @@ struct ActiveWalkView: View {
                 kind: .waypoint(label: wp.label, icon: wp.icon)
             )
         }
+        let currentCoord: CLLocationCoordinate2D? = viewModel.currentLocation.map {
+            CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+        }
         return PilgrimMapView(
             showsUserLocation: true,
             followsUserLocation: true,
@@ -571,6 +586,8 @@ struct ActiveWalkView: View {
             initialCamera: viewModel.mapCameraSeed,
             fadesInOnStyleLoad: true,
             walkingColor: activeTurning?.uiColor ?? .moss,
+            sunriseRay: sunriseRay,
+            userLocation: currentCoord,
             isMeditating: $viewModel.isMeditating
         )
     }
