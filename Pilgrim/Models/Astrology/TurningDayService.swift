@@ -38,9 +38,28 @@ enum TurningDayService {
     /// Convenience for the common "today, at the user's stored hemisphere"
     /// case. Avoids duplicating the `UserPreferences.hemisphereOverride`
     /// boilerplate at each call site.
+    ///
+    /// In DEBUG builds, honors `testingDate` if it has been set via the
+    /// `--turning-stub <name>` launch arg (parsed in `AppDelegate`). Lets
+    /// you visually QA the feature on simulator on any non-turning day.
     static func turningForToday(hemisphere: Hemisphere = Hemisphere.current) -> SeasonalMarker? {
-        turning(for: Date(), hemisphere: hemisphere)
+        #if DEBUG
+        return turning(for: testingDate ?? Date(), hemisphere: hemisphere)
+        #else
+        return turning(for: Date(), hemisphere: hemisphere)
+        #endif
     }
+
+    #if DEBUG
+    /// Override for `turningForToday()` queries. Set via the
+    /// `--turning-stub <winter-solstice|summer-solstice|spring-equinox|autumn-equinox>`
+    /// launch arg parsed in `AppDelegate`. Affects only the "today" surfaces
+    /// (home banner, active-walk watermark, route color, sunrise ray); past
+    /// walks still use their actual `startDate`. To test historical surfaces,
+    /// start a walk with the stub on, finish it (its `startDate` becomes the
+    /// stubbed turning date), then relaunch without the stub.
+    nonisolated(unsafe) static var testingDate: Date?
+    #endif
 
     /// Variant that takes a hemisphere directly — skips the synthetic-
     /// coordinate dance that `turning(for:at:)` does internally.
