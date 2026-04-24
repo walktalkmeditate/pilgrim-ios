@@ -68,15 +68,21 @@ enum TurningDayService {
         return mapping(astronomical: astronomical, hemisphere: hemisphere)
     }
 
-    /// In DEBUG builds with `testingDate` set, every turning query uses the
-    /// stubbed date instead of the caller's date. Effect: ALL surfaces
-    /// (banner, watermark, route color, ray, scroll markers, summary date,
-    /// seal color, share payload) render as if the stubbed turning were
-    /// active. Past walks classify as the stubbed turning while the stub
-    /// is on, then revert when it's removed.
+    /// In DEBUG with `testingDate` set, queries for dates that fall on the
+    /// real "today" are routed through the stubbed turning. Queries for
+    /// historical dates (yesterday, last week, last year) are NOT affected
+    /// — past walks keep their actual classification.
+    ///
+    /// This means: while the stub is on, the home banner shows the stubbed
+    /// turning, and any walk you do today inherits the stubbed turning's
+    /// treatment everywhere (route color, summary kanji, seal color, share
+    /// payload). Walks from any other day classify normally.
     private static func effectiveQueryDate(for date: Date) -> Date {
         #if DEBUG
-        return testingDate ?? date
+        guard let stub = testingDate, Calendar.current.isDateInToday(date) else {
+            return date
+        }
+        return stub
         #else
         return date
         #endif
