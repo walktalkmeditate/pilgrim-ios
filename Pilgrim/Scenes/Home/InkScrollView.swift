@@ -1,3 +1,4 @@
+import CoreLocation
 import SwiftUI
 
 struct InkScrollView: View {
@@ -53,11 +54,17 @@ struct InkScrollView: View {
         let renderer = CalligraphyPathRenderer(snapshots: snapshots, width: width)
         let positions = renderer.dotPositions()
         let segments = renderer.segmentPaths()
+        // Vertical offset applied to the calligraphy path (segments + dots +
+        // date/lunar/milestone markers) so the dots don't crowd the journey
+        // summary text when the turning banner adds height at the top.
+        let turningOffset: CGFloat = currentTurning != nil ? 36 : 0
 
         return ZStack(alignment: .top) {
+            turningBanner
+
             Group {
                 if !snapshots.isEmpty {
-                    journeySummaryHeader(width: width)
+                    journeySummaryHeader(width: width, topOffset: turningOffset)
                 }
 
                 ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
@@ -69,10 +76,12 @@ struct InkScrollView: View {
                         .opacity(hasAppeared ? 1 : 0)
                         .animation(.easeOut(duration: 1.2).delay(0.2), value: hasAppeared)
                 }
+                .offset(y: turningOffset)
 
             }
 
             dotsLayer(positions: positions, viewportWidth: width, viewportHeight: height)
+                .offset(y: turningOffset)
 
             Group {
                 dateLabels(positions: positions, viewportWidth: width)
@@ -83,9 +92,10 @@ struct InkScrollView: View {
                     emptyState(width: width)
                 }
             }
+            .offset(y: turningOffset)
             .transaction { $0.animation = nil }
         }
-        .frame(width: width, height: renderer.totalHeight)
+        .frame(width: width, height: renderer.totalHeight + turningOffset)
         .onAppear {
             configureHaptics(positions: positions, renderer: renderer)
         }
@@ -121,7 +131,7 @@ struct InkScrollView: View {
 
     // MARK: - Journey summary header (tappable cycling)
 
-    private func journeySummaryHeader(width: CGFloat) -> some View {
+    private func journeySummaryHeader(width: CGFloat, topOffset: CGFloat = 0) -> some View {
         let totalDistance = snapshots.first?.cumulativeDistance ?? 0
         let totalWalks = snapshots.count
         let firstDate = snapshots.last?.startDate ?? Date()
@@ -160,7 +170,7 @@ struct InkScrollView: View {
             .foregroundColor(.fog.opacity(0.7))
             .contentTransition(.numericText())
         }
-        .position(x: width / 2, y: 16)
+        .position(x: width / 2, y: 16 + topOffset)
         .opacity(hasAppeared ? 1 : 0)
         .animation(.easeOut(duration: 0.8).delay(0.5), value: hasAppeared)
         .onTapGesture {
@@ -186,6 +196,41 @@ struct InkScrollView: View {
             return String(format: "%.1f km walked", meters / 1000)
         }
         return String(format: "%.0f m walked", meters)
+    }
+
+    // MARK: - Turning day banner
+
+    private var currentTurning: SeasonalMarker? {
+        TurningDayService.turningForToday()
+    }
+
+    @ViewBuilder
+    private var turningBanner: some View {
+        if let turning = currentTurning,
+           let text = turning.bannerText,
+           let kanji = turning.kanji {
+            HStack(spacing: 8) {
+                Text(text)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+                Text("·")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog.opacity(0.5))
+                if let color = turning.color {
+                    Text(kanji)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(color)
+                } else {
+                    Text(kanji)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.ink)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Constants.UI.Padding.small)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(text). \(turning.name).")
+        }
     }
 
     // MARK: - Dot with effects
@@ -233,6 +278,10 @@ struct InkScrollView: View {
     }
 
     private func dotSeasonalColor(for snapshot: WalkSnapshot) -> Color {
+        if let turning = TurningDayService.turning(for: snapshot.startDate, hemisphere: .current),
+           let color = turning.color {
+            return color
+        }
         let month = Calendar.current.component(.month, from: snapshot.startDate)
         let colorName: String
         switch month {
@@ -541,6 +590,12 @@ struct InkScrollView: View {
 
     // MARK: - Path rendering
 
+    private func turningColorForSegment(index: Int) -> Color? {
+        guard index >= 0 && index < snapshots.count else { return nil }
+        let snapshot = snapshots[index]
+        return TurningDayService.turning(for: snapshot.startDate, hemisphere: .current)?.color
+    }
+
     private func pathSegmentOpacity(index: Int, total: Int) -> Double {
         guard total > 1 else { return 0.35 }
         let normalized = Double(index) / Double(total - 1)
@@ -548,6 +603,9 @@ struct InkScrollView: View {
     }
 
     private func pathSegmentColor(index: Int) -> Color {
+        if let turningColor = turningColorForSegment(index: index) {
+            return turningColor.opacity(0.85)
+        }
         guard index < snapshots.count else { return .ink }
         let month = Calendar.current.component(.month, from: snapshots[index].startDate)
         let colorName: String

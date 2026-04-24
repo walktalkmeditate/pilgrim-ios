@@ -39,6 +39,9 @@ struct PilgrimMapView: UIViewRepresentable {
     /// walk summary and other embedded maps keep their existing reveal
     /// choreography.
     var fadesInOnStyleLoad: Bool = false
+    /// Color for walking-activity route segments. Defaults to `.moss`. Pass the
+    /// turning's color on solstice/equinox walks so those segments reflect the day.
+    var walkingColor: UIColor = .moss
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -56,6 +59,7 @@ struct PilgrimMapView: UIViewRepresentable {
         bottomInset: CGFloat = 0,
         initialCamera: MapCameraSeed.Seed? = nil,
         fadesInOnStyleLoad: Bool = false,
+        walkingColor: UIColor = .moss,
         isMeditating: Binding<Bool> = .constant(false)
     ) {
         self.isInteractive = isInteractive
@@ -73,6 +77,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self.bottomInset = bottomInset
         self.initialCamera = initialCamera
         self.fadesInOnStyleLoad = fadesInOnStyleLoad
+        self.walkingColor = walkingColor
     }
 
     func makeCoordinator() -> Coordinator {
@@ -129,11 +134,12 @@ struct PilgrimMapView: UIViewRepresentable {
                 }
             }
             coordinator.lastSegments = []
+            coordinator.lastAppliedWalkingColor = nil
             if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             coordinator.circleManager = nil
             coordinator.pointManager = nil
-            Self.applyRouteSource(coordinator.pendingSegments, on: mapView, coordinator: coordinator)
+            Self.applyRouteSource(coordinator.pendingSegments, walkingColor: coordinator.walkingColor, on: mapView, coordinator: coordinator)
             Self.applyAnnotations(coordinator.pendingAnnotations, activePhotoID: coordinator.pendingActivePhotoID, on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
@@ -152,6 +158,7 @@ struct PilgrimMapView: UIViewRepresentable {
         context.coordinator.pendingActivePhotoID = activePhotoID
         context.coordinator.onAnnotationTap = onAnnotationTap
         context.coordinator.currentPinAnnotations = pinAnnotations
+        context.coordinator.walkingColor = walkingColor
 
         if !context.coordinator.tapGestureAdded, onAnnotationTap != nil {
             let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleMapTap(_:)))
@@ -171,7 +178,7 @@ struct PilgrimMapView: UIViewRepresentable {
         }
 
         if context.coordinator.shouldRender {
-            Self.applyRouteSource(routeSegments, on: mapView, coordinator: context.coordinator)
+            Self.applyRouteSource(routeSegments, walkingColor: walkingColor, on: mapView, coordinator: context.coordinator)
         } else {
             context.coordinator.hasDeferredRouteUpdate = true
         }
@@ -242,8 +249,34 @@ struct PilgrimMapView: UIViewRepresentable {
 
     private static let sourceId = "pilgrim-route"
 
-    private static func applyRouteSource(_ routeSegments: [RouteSegment], on mapView: MBMapView, coordinator: Coordinator) {
+    private static func applyRouteSource(_ routeSegments: [RouteSegment], walkingColor: UIColor = .moss, on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
+
+        // If walkingColor changed since the layer was last applied (e.g., a
+        // walk crossed midnight into a turning day, or the user's hemisphere
+        // preference flipped), tear down the existing layers + source so the
+        // creation path below re-runs with the new color baked into the
+        // match expression. Without this, the layer's lineColor would stay
+        // frozen at whatever color was current when it was first created.
+        let colorChanged = coordinator.lastAppliedWalkingColor != walkingColor
+        if colorChanged {
+            do {
+                if mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer") {
+                    try mapView.mapboxMap.removeLayer(withId: "pilgrim-route-layer")
+                }
+                if mapView.mapboxMap.layerExists(withId: "pilgrim-route-casing") {
+                    try mapView.mapboxMap.removeLayer(withId: "pilgrim-route-casing")
+                }
+                if mapView.mapboxMap.sourceExists(withId: Self.sourceId) {
+                    try mapView.mapboxMap.removeSource(withId: Self.sourceId)
+                }
+            } catch {
+                print("[PilgrimMapView] Failed to remove route layer for color update: \(error)")
+            }
+            // Force the segment-equality early-return below to fall through.
+            coordinator.lastSegments = []
+        }
+
         guard routeSegments != coordinator.lastSegments else { return }
         coordinator.lastSegments = routeSegments
 
@@ -291,10 +324,11 @@ struct PilgrimMapView: UIViewRepresentable {
                         UIColor.dawn
                         "talking"
                         UIColor.rust
-                        UIColor.moss
+                        walkingColor
                     }
                 )
                 try mapView.mapboxMap.addLayer(layer)
+                coordinator.lastAppliedWalkingColor = walkingColor
 
                 if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
                 if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
@@ -543,6 +577,12 @@ struct PilgrimMapView: UIViewRepresentable {
         let photoMarkerLoader = PhotoMarkerImageLoader()
 
         fileprivate var isAppInBackground: Bool = false
+        fileprivate var walkingColor: UIColor = .moss
+        /// Tracks the walking color baked into the current Mapbox layer's
+        /// match expression. When `walkingColor` changes (e.g., walk crosses
+        /// midnight into a turning day), comparing against this value lets
+        /// `applyRouteSource` know to recreate the layer with the new color.
+        fileprivate var lastAppliedWalkingColor: UIColor?
 
         fileprivate var isMeditating: Bool = false {
             didSet { refreshRenderState() }
@@ -583,7 +623,7 @@ struct PilgrimMapView: UIViewRepresentable {
             mapView.preferredFramesPerSecond = shouldRender ? PilgrimMapView.renderFPS : 0
 
             if shouldRender && !wasRendering && hasDeferredRouteUpdate {
-                PilgrimMapView.applyRouteSource(pendingSegments, on: mapView, coordinator: self)
+                PilgrimMapView.applyRouteSource(pendingSegments, walkingColor: walkingColor, on: mapView, coordinator: self)
                 hasDeferredRouteUpdate = false
             }
         }

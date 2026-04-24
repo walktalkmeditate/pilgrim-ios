@@ -73,6 +73,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             UserDefaults.standard.set(true, forKey: soundscapeMigrationKey)
         }
 
+        #if DEBUG
+        Self.parseTurningStubLaunchArg()
+        #endif
+
         DataManager.setup(
             completion: { _ in
                 
@@ -137,6 +141,50 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 }
             }
         }
+    }
+
+    /// Parses `--turning-stub <name>` from the launch args and sets
+    /// `TurningDayService.testingDate` so every turning query returns the
+    /// stubbed marker for visual QA. Names: `winter-solstice`,
+    /// `summer-solstice`, `spring-equinox`, `autumn-equinox`. No-op if
+    /// the arg is absent or unrecognized. DEBUG-only.
+    static func parseTurningStubLaunchArg() {
+        // Bail out under XCTest — Xcode's test action inherits launch args
+        // from the run action, which would otherwise poison every unit test
+        // that exercises TurningDayService. Detected via the NSClassFromString
+        // check (XCTestCase is loaded into the test host process, not the app).
+        guard NSClassFromString("XCTestCase") == nil else { return }
+
+        let args = CommandLine.arguments
+        guard let idx = args.firstIndex(of: "--turning-stub"),
+              idx + 1 < args.count else { return }
+        let name = args[idx + 1]
+        let calendar = Calendar(identifier: .gregorian)
+        let year = calendar.component(.year, from: Date())
+        var components = DateComponents()
+        components.year = year
+        components.hour = 12
+        components.timeZone = TimeZone(identifier: "UTC")
+        switch name {
+        case "winter-solstice":
+            components.month = 12
+            components.day = 21
+        case "summer-solstice":
+            components.month = 6
+            components.day = 20
+        case "spring-equinox":
+            components.month = 3
+            components.day = 20
+        case "autumn-equinox":
+            components.month = 9
+            components.day = 22
+        default:
+            print("[TurningStub] unknown stub: \(name) — expected winter-solstice / summer-solstice / spring-equinox / autumn-equinox")
+            return
+        }
+        guard let date = calendar.date(from: components) else { return }
+        TurningDayService.testingDate = date
+        print("[TurningStub] turningForToday() will return \(name) (\(date))")
     }
     #endif
 

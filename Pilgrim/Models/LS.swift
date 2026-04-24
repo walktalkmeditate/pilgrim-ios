@@ -23,7 +23,57 @@ import Foundation
 
 /// A struct containg only static subscripts and needed enumerations to enable easier localisation.
 struct LS {
-    
+
+    /// Banner text shown on the home scroll during solstices.
+    static let turningSolsticeBanner = NSLocalizedString(
+        "turning.solstice.banner",
+        value: "Today the sun stands still",
+        comment: "Home-scroll banner text on winter or summer solstice."
+    )
+
+    /// Banner text shown on the home scroll during equinoxes.
+    static let turningEquinoxBanner = NSLocalizedString(
+        "turning.equinox.banner",
+        value: "Today, day equals night",
+        comment: "Home-scroll banner text on spring or autumn equinox."
+    )
+
+    /// Evocative phrase shown on the turning ritual card for the winter solstice.
+    static let turningWinterSolsticePhrase = NSLocalizedString(
+        "turning.phrase.winter_solstice",
+        value: "The longest night. From here, light returns.",
+        comment: "Contemplative card body shown when tapping the winter-solstice watermark."
+    )
+
+    /// Evocative phrase shown on the turning ritual card for the summer solstice.
+    static let turningSummerSolsticePhrase = NSLocalizedString(
+        "turning.phrase.summer_solstice",
+        value: "The longest day. The wheel begins to turn back toward stillness.",
+        comment: "Contemplative card body shown when tapping the summer-solstice watermark."
+    )
+
+    /// Evocative phrase shown on the turning ritual card for the spring equinox.
+    static let turningSpringEquinoxPhrase = NSLocalizedString(
+        "turning.phrase.spring_equinox",
+        value: "Light is rising. The thaw.",
+        comment: "Contemplative card body shown when tapping the spring-equinox watermark."
+    )
+
+    /// Evocative phrase shown on the turning ritual card for the autumn equinox.
+    static let turningAutumnEquinoxPhrase = NSLocalizedString(
+        "turning.phrase.autumn_equinox",
+        value: "Light is fading. The harvest.",
+        comment: "Contemplative card body shown when tapping the autumn-equinox watermark."
+    )
+
+    /// VoiceOver hint for the tappable kanji watermark on turning days.
+    static let turningWatermarkA11yHint = NSLocalizedString(
+        "turning.watermark.a11y_hint",
+        value: "Opens a contemplative card about today's turning",
+        comment: "VoiceOver hint for tapping the faint kanji watermark on the active walk map during a solstice or equinox."
+    )
+
+
     /**
      Returns a localised string for the provided key and specified source.
      - parameter key: the key pointing to the localised string

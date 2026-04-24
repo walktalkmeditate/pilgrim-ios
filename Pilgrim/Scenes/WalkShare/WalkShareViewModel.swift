@@ -305,7 +305,7 @@ final class WalkShareViewModel: ObservableObject {
             }
         }()
 
-        return SharePayload(
+        var payload = SharePayload(
             stats: stats,
             route: downsampled,
             activityIntervals: intervals,
@@ -321,5 +321,23 @@ final class WalkShareViewModel: ObservableObject {
             waypoints: waypointPayload,
             photos: photoPayload
         )
+        payload.turningDay = turningDayCode()
+        return payload
+    }
+
+    private func turningDayCode() -> String? {
+        let firstCoord = walk.routeData.first.map {
+            CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+        }
+        guard let marker = TurningDayService.turning(for: walk.startDate, at: firstCoord) else {
+            return nil
+        }
+        switch marker {
+        case .winterSolstice: return "winter-solstice"
+        case .summerSolstice: return "summer-solstice"
+        case .springEquinox:  return "spring-equinox"
+        case .autumnEquinox:  return "autumn-equinox"
+        case .imbolc, .beltane, .lughnasadh, .samhain: return nil
+        }
     }
 }

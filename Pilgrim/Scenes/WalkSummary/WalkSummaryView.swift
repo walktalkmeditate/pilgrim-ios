@@ -158,7 +158,15 @@ struct WalkSummaryView: View {
     }()
 
     private var dateTitle: String {
-        Self.dateTitleFormatter.string(from: walk.startDate)
+        let base = Self.dateTitleFormatter.string(from: walk.startDate)
+        if let kanji = walkTurning?.kanji {
+            return "\(base) · \(kanji)"
+        }
+        return base
+    }
+
+    var walkTurning: SeasonalMarker? {
+        TurningDayService.turning(for: walk.startDate, hemisphere: .current)
     }
 
     private var promptsButton: some View {

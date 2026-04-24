@@ -220,6 +220,7 @@
 		72F3855194AE5C4010A607C4 /* WhisperManifestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */; };
 		3388473FDC9340D4B1E61E75 /* CelestialCalculatorIlluminationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */; };
 		48CE4EDDAB9C4702A5BAAB87 /* SolarHorizonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */; };
+		CC00000200000000CCSRAZMT /* CelestialCalculatorSunriseAzimuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000CCSRAZMT /* CelestialCalculatorSunriseAzimuthTests.swift */; };
 		07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */; };
 		LR00000200000000LRMODEL1 /* LightReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRMODEL1 /* LightReading.swift */; };
 		LR00000200000000LRTESTS1 /* LightReadingModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTESTS1 /* LightReadingModelTests.swift */; };
@@ -231,6 +232,12 @@
 		LR00000200000000LRSHTR02 /* WalkSharingTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSHTR02 /* WalkSharingTrackerTests.swift */; };
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
 		LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */; };
+		LR00000200000000LRSMTR01 /* SeasonalMarker+Turnings.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSMTR01 /* SeasonalMarker+Turnings.swift */; };
+		LR00000200000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */; };
+		LR00000200000000LRHEMS01 /* Hemisphere.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRHEMS01 /* Hemisphere.swift */; };
+		LR00000200000000LRHEMST1 /* HemisphereTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRHEMST1 /* HemisphereTests.swift */; };
+		LR00000200000000LRTDYS01 /* TurningDayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTDYS01 /* TurningDayService.swift */; };
+		LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
 		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
 		LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */; };
@@ -282,6 +289,8 @@
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
 		AA00020100000000000004 /* VoiceRecordingManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000003 /* VoiceRecordingManagement.swift */; };
 		AA00030100000000000002 /* MeditationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00030100000000000001 /* MeditationView.swift */; };
+		BB00031100000000000002 /* TurningRitualCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031100000000000001 /* TurningRitualCard.swift */; };
+		BB00031200000000000002 /* ActiveWalkSubviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031200000000000001 /* ActiveWalkSubviews.swift */; };
 		AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000001 /* VoiceRecordingRow.swift */; };
 		AA00040100000000000004 /* AudioPlayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000003 /* AudioPlayerModel.swift */; };
 		AA33BB44CC55DD66EE77FF88 /* EtegamiTextGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */; };
@@ -360,6 +369,7 @@
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */; };
+		LR00000200000000LRSCPT01 /* SealColorPaletteTurningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSCPT01 /* SealColorPaletteTurningTests.swift */; };
 		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
 		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
 		CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPEAR01 /* AppearanceMode.swift */; };
@@ -531,6 +541,12 @@
 		LR00000100000000LRSHTR02 /* WalkSharingTrackerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSharingTrackerTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoaderTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRSMTR01 /* SeasonalMarker+Turnings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SeasonalMarker+Turnings.swift"; sourceTree = "<group>"; };
+		LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonalMarkerTurningTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRHEMS01 /* Hemisphere.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Hemisphere.swift; sourceTree = "<group>"; };
+		LR00000100000000LRHEMST1 /* HemisphereTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HemisphereTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTDYS01 /* TurningDayService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TurningDayService.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TurningDayServiceTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardRecoveryTests.swift; sourceTree = "<group>"; };
@@ -733,6 +749,7 @@
 		5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestServiceTests.swift; sourceTree = "<group>"; };
 		C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculatorIlluminationTests.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SolarHorizonTests.swift; sourceTree = "<group>"; };
+		CC00000100000000CCSRAZMT /* CelestialCalculatorSunriseAzimuthTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculatorSunriseAzimuthTests.swift; sourceTree = "<group>"; };
 		50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstronomicalEventsTests.swift; sourceTree = "<group>"; };
 		5D9564A30CD3DE97895B7A42 /* CairnService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnService.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
@@ -793,6 +810,8 @@
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
 		AA00020100000000000003 /* VoiceRecordingManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingManagement.swift; sourceTree = "<group>"; };
 		AA00030100000000000001 /* MeditationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationView.swift; sourceTree = "<group>"; };
+		BB00031100000000000001 /* TurningRitualCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TurningRitualCard.swift; sourceTree = "<group>"; };
+		BB00031200000000000001 /* ActiveWalkSubviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkSubviews.swift; sourceTree = "<group>"; };
 		AA00040100000000000001 /* VoiceRecordingRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingRow.swift; sourceTree = "<group>"; };
 		AA00040100000000000003 /* AudioPlayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerModel.swift; sourceTree = "<group>"; };
 		AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiTextGenerator.swift; sourceTree = "<group>"; };
@@ -927,6 +946,7 @@
 		D4BACC6CBB52976FAD25B897 /* whisper-gratitude-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-gratitude-3.aac"; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRSCPT01 /* SealColorPaletteTurningTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTurningTests.swift; sourceTree = "<group>"; };
 		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
@@ -1407,6 +1427,7 @@
 				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
 				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
 				CC00000100000000SEEDRG01 /* SeededRNG.swift */,
+				LR00000100000000LRHEMS01 /* Hemisphere.swift */,
 				8534424C43418F78E8F15520 /* Share */,
 				499729B7A6894D15BED563EE /* Seal */,
 				AA11BB22CC33DD44EE55FF66 /* Etegami */,
@@ -1625,6 +1646,7 @@
 				2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */,
 				E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */,
 				D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */,
+				LR00000100000000LRSCPT01 /* SealColorPaletteTurningTests.swift */,
 				A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */,
 				FF22BB33CC44DD55EE66FF88 /* EtegamiRouteStrokeTests.swift */,
 				BB44CC55DD66EE77FF88AABB /* EtegamiTextGeneratorTests.swift */,
@@ -1640,15 +1662,19 @@
 				5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */,
 				C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */,
+				CC00000100000000CCSRAZMT /* CelestialCalculatorSunriseAzimuthTests.swift */,
 				50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */,
 				LR00000100000000LRTESTS1 /* LightReadingModelTests.swift */,
 				LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */,
 				LR00000100000000LRGENR02 /* LightReadingGeneratorTests.swift */,
 				LR00000100000000LRSHTR02 /* WalkSharingTrackerTests.swift */,
 				LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */,
+				LR00000100000000LRHEMST1 /* HemisphereTests.swift */,
 				LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */,
 				LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */,
 				LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */,
+				LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */,
+				LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1782,6 +1808,8 @@
 				0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */,
 				3A98AEE09143482AA1EFE5DC /* SolarHorizon.swift */,
 				AE8823B55D944B53A5149E70 /* AstronomicalEvents.swift */,
+				LR00000100000000LRSMTR01 /* SeasonalMarker+Turnings.swift */,
+				LR00000100000000LRTDYS01 /* TurningDayService.swift */,
 			);
 			path = Astrology;
 			sourceTree = "<group>";
@@ -1889,6 +1917,8 @@
 				AAAA0000000000000000FA /* WalkOptionsSheet.swift */,
 				3542AA50A2E8FA62E52758C7 /* WhisperPlacementSheet.swift */,
 				BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */,
+				BB00031100000000000001 /* TurningRitualCard.swift */,
+				BB00031200000000000001 /* ActiveWalkSubviews.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -2585,6 +2615,8 @@
 				AA0001010000000000000015 /* ActiveWalkViewModel.swift in Sources */,
 				AAAA0000000000000000F9 /* IntentionSettingView.swift in Sources */,
 				AA00030100000000000002 /* MeditationView.swift in Sources */,
+				BB00031100000000000002 /* TurningRitualCard.swift in Sources */,
+				BB00031200000000000002 /* ActiveWalkSubviews.swift in Sources */,
 				AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */,
 				AA0001010000000000000016 /* WalkSummaryView.swift in Sources */,
 				AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */,
@@ -2692,6 +2724,8 @@
 				44B04EE19F844EACEBD0DB0F /* CelestialCalculator.swift in Sources */,
 				3E99F36DBCDB461C99F60DA5 /* SolarHorizon.swift in Sources */,
 				EE11900E0BF7483C9154DC21 /* AstronomicalEvents.swift in Sources */,
+				LR00000200000000LRSMTR01 /* SeasonalMarker+Turnings.swift in Sources */,
+				LR00000200000000LRTDYS01 /* TurningDayService.swift in Sources */,
 				LR00000200000000LRMODEL1 /* LightReading.swift in Sources */,
 				LR00000200000000LRTMPL01 /* LightReadingTemplates.swift in Sources */,
 				LR00000200000000LRGENR01 /* LightReadingGenerator.swift in Sources */,
@@ -2740,6 +2774,7 @@
 				DA6DDA89F11F4728B6B553A1 /* WhisperManifest.swift in Sources */,
 				9C3309EA59D57A4224524F68 /* WhisperManifestService.swift in Sources */,
 				LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */,
+				LR00000200000000LRHEMS01 /* Hemisphere.swift in Sources */,
 				LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */,
 				LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */,
 			);
@@ -2777,6 +2812,7 @@
 				BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */,
 				0F2670E277C94DDDB875E31C /* SealHashComputerTests.swift in Sources */,
 				C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */,
+				LR00000200000000LRSCPT01 /* SealColorPaletteTurningTests.swift in Sources */,
 				F9A0B1C2D3E4F5A6B7C8D9E0 /* SealGeometryTests.swift in Sources */,
 				FF22BB33CC44DD55EE66FF77 /* EtegamiRouteStrokeTests.swift in Sources */,
 				BB44CC55DD66EE77FF88AA99 /* EtegamiTextGeneratorTests.swift in Sources */,
@@ -2793,15 +2829,19 @@
 				72F3855194AE5C4010A607C4 /* WhisperManifestServiceTests.swift in Sources */,
 				3388473FDC9340D4B1E61E75 /* CelestialCalculatorIlluminationTests.swift in Sources */,
 				48CE4EDDAB9C4702A5BAAB87 /* SolarHorizonTests.swift in Sources */,
+				CC00000200000000CCSRAZMT /* CelestialCalculatorSunriseAzimuthTests.swift in Sources */,
 				07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */,
 				LR00000200000000LRTESTS1 /* LightReadingModelTests.swift in Sources */,
 				LR00000200000000LRTMPL02 /* LightReadingTemplatesTests.swift in Sources */,
 				LR00000200000000LRGENR02 /* LightReadingGeneratorTests.swift in Sources */,
 				LR00000200000000LRSHTR02 /* WalkSharingTrackerTests.swift in Sources */,
 				LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */,
+				LR00000200000000LRHEMST1 /* HemisphereTests.swift in Sources */,
 				LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */,
 				LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */,
 				LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */,
+				LR00000200000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift in Sources */,
+				LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
