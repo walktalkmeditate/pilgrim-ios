@@ -33,6 +33,21 @@ struct CelestialVignetteView: View {
                 .fill(Color.parchmentSecondary)
                 .shadow(color: .ink.opacity(0.08), radius: 4, y: 2)
         )
+        .overlay(turningHalo)
+    }
+
+    /// On solstice / equinox days, draws a soft colored ring around the
+    /// vignette capsule — a corona that quietly marks the day. The ring
+    /// uses the turning's color (jade / gold / claret / indigo) at low
+    /// opacity so it reads as ambient rather than a notification.
+    @ViewBuilder
+    private var turningHalo: some View {
+        if let turning = TurningDayService.turningForToday(),
+           let color = turning.color {
+            Capsule()
+                .stroke(color.opacity(0.55), lineWidth: 1.5)
+                .shadow(color: color.opacity(0.4), radius: 4)
+        }
     }
 
     private func symbolText(_ string: String) -> some View {
