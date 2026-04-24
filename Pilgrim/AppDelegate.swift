@@ -144,11 +144,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     }
 
     /// Parses `--turning-stub <name>` from the launch args and sets
-    /// `TurningDayService.testingDate` so today's queries return the
-    /// stubbed turning. Names: `winter-solstice`, `summer-solstice`,
-    /// `spring-equinox`, `autumn-equinox`. No-op if the arg is absent
-    /// or unrecognized. DEBUG-only.
+    /// `TurningDayService.testingDate` so every turning query returns the
+    /// stubbed marker for visual QA. Names: `winter-solstice`,
+    /// `summer-solstice`, `spring-equinox`, `autumn-equinox`. No-op if
+    /// the arg is absent or unrecognized. DEBUG-only.
     static func parseTurningStubLaunchArg() {
+        // Bail out under XCTest — Xcode's test action inherits launch args
+        // from the run action, which would otherwise poison every unit test
+        // that exercises TurningDayService. Detected via the NSClassFromString
+        // check (XCTestCase is loaded into the test host process, not the app).
+        guard NSClassFromString("XCTestCase") == nil else { return }
+
         let args = CommandLine.arguments
         guard let idx = args.firstIndex(of: "--turning-stub"),
               idx + 1 < args.count else { return }
