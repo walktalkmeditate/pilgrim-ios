@@ -58,4 +58,38 @@ if [ "$BUNDLED_COUNT" -ne "$WHISPER_COUNT" ]; then
     fail "File count ($BUNDLED_COUNT) does not match manifest count ($WHISPER_COUNT)"
 fi
 
-pass "Bootstrap ready. If new .aac files were added, remember to register them in the Xcode project via scripts/release.sh bootstrap-whispers (Task 11) or manually with the xcodeproj gem."
+step "Registering new files in Xcode project"
+PROJECT="Pilgrim.xcodeproj"
+[ -d "$PROJECT" ] || fail "$PROJECT not found"
+command -v ruby >/dev/null || fail "ruby not on PATH"
+ruby -e "require 'xcodeproj'" 2>/dev/null || fail "xcodeproj gem not installed (gem install xcodeproj)"
+
+EXPECTED=$(jq -r '.whispers[] | "\(.audioFileName).aac"' "$BOOTSTRAP_JSON")
+
+ADDED=$(echo "$EXPECTED" | ruby -e '
+require "xcodeproj"
+project = Xcodeproj::Project.open("Pilgrim.xcodeproj")
+target = project.targets.find { |t| t.name == "Pilgrim" } or abort "Pilgrim target not found"
+group = project.main_group["Pilgrim"]["Support Files"] or abort "Support Files group not found"
+added = []
+STDIN.each_line do |line|
+    filename = line.strip
+    next if filename.empty?
+    next if group.files.any? { |f| f.path == filename }
+    file_ref = group.new_file(filename)
+    target.resources_build_phase.add_file_reference(file_ref)
+    added << filename
+end
+project.save unless added.empty?
+added.each { |f| puts f }
+')
+
+if [ -n "$ADDED" ]; then
+    echo "$ADDED" | while IFS= read -r f; do echo "  · $f"; done
+    NEW_COUNT=$(echo "$ADDED" | wc -l | tr -d ' ')
+    pass "Registered $NEW_COUNT new file(s) in Xcode project"
+else
+    pass "All whisper files already registered in Xcode project"
+fi
+
+pass "Bootstrap ready."

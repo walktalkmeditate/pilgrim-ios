@@ -361,7 +361,7 @@ bootstrap_whispers() {
         fail "scripts/regen-whisper-bootstrap.sh not found or not executable"
     fi
     scripts/regen-whisper-bootstrap.sh
-    pass "Whisper bootstrap regenerated. If new .aac files were added, verify they are in the Xcode target's Copy Bundle Resources phase."
+    pass "Whisper bootstrap regenerated and Xcode project updated."
 }
 
 cmd_whatsnew() {
