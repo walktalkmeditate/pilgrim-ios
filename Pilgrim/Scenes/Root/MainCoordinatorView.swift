@@ -111,6 +111,9 @@ class MainCoordinator: ObservableObject {
     }
 
     private func requestReviewIfAppropriate() {
+        #if DEBUG
+        if CommandLine.arguments.contains("--demo-mode") { return }
+        #endif
         let count = (try? DataManager.dataStack.fetchCount(From<Walk>())) ?? 0
         guard count >= 3 else { return }
         if let scene = UIApplication.shared.connectedScenes
