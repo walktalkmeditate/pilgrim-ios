@@ -30,6 +30,7 @@
 		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
 		1BED3236A44370D58ED31DCC /* whisper-presence-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 2FCBF13CCEBEB5026330B0FD /* whisper-presence-3.aac */; };
 		1CEE0C61ECFD38178275EDE5 /* CairnTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEFB40EDD8525B65D45062C /* CairnTier.swift */; };
+		1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */; };
 		202AAC44744BC3E55F46A01A /* ProximityTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089F9DF63AFA0F902D41D768 /* ProximityTarget.swift */; };
 		2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCA829423DF100F54277 /* View+Navigation.swift */; };
 		2201BCAB29423E1600F54277 /* NavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCAA29423E1600F54277 /* NavigationLink.swift */; };
@@ -524,6 +525,7 @@
 
 /* Begin PBXFileReference section */
 		008E97D4312732C8F271886C /* AstrologyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstrologyModels.swift; sourceTree = "<group>"; };
+		0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = JourneyEditorView.swift; sourceTree = "<group>"; };
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
 		061E977B7C29F32543182E9B /* whisper-stillness-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-2.aac"; sourceTree = "<group>"; };
 		089F9DF63AFA0F902D41D768 /* ProximityTarget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityTarget.swift; sourceTree = "<group>"; };
@@ -2040,6 +2042,7 @@
 				F1066617851420CAB7B50442 /* DataSettingsView.swift */,
 				BBBB00000000000000002C /* ExportConfirmationSheet.swift */,
 				BBBB000000000000000030 /* ExportDateRangeFormatter.swift */,
+				0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -2785,6 +2788,7 @@
 				LR00000200000000LRHEMS01 /* Hemisphere.swift in Sources */,
 				LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */,
 				LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */,
+				1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
