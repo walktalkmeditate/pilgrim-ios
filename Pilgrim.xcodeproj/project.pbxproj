@@ -306,6 +306,7 @@
 		B6EE97B5CE406DEAF57A3EEC /* whisper-presence-5.aac in Resources */ = {isa = PBXBuildFile; fileRef = 27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */; };
 		B97AE0EC614F740DA0BF99D7 /* whisper-play-8.aac in Resources */ = {isa = PBXBuildFile; fileRef = 6E9C51C681E296C685A851E3 /* whisper-play-8.aac */; };
 		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
+		BABACBE432D649DEE348D186 /* AppearanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152CAA55785727B15491AF7C /* AppearanceView.swift */; };
 		BB00031100000000000002 /* TurningRitualCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031100000000000001 /* TurningRitualCard.swift */; };
 		BB00031200000000000002 /* ActiveWalkSubviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031200000000000001 /* ActiveWalkSubviews.swift */; };
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
@@ -538,6 +539,7 @@
 		123512C2E2D2088520214836 /* CairnVisualGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnVisualGenerator.swift; sourceTree = "<group>"; };
 		14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialVignetteView.swift; sourceTree = "<group>"; };
 		14EDD1EBEAA426237532A44F /* whisper-compassion-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-2.aac"; sourceTree = "<group>"; };
+		152CAA55785727B15491AF7C /* AppearanceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppearanceView.swift; sourceTree = "<group>"; };
 		16BE9557700152F043C359DC /* WalkShareView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareView.swift; sourceTree = "<group>"; };
 		1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDownloadManager.swift; sourceTree = "<group>"; };
 		1BA57CE96EE3401595264807 /* ActivityInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInterval.swift; sourceTree = "<group>"; };
@@ -2043,6 +2045,7 @@
 				BBBB00000000000000002C /* ExportConfirmationSheet.swift */,
 				BBBB000000000000000030 /* ExportDateRangeFormatter.swift */,
 				0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */,
+				152CAA55785727B15491AF7C /* AppearanceView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -2789,6 +2792,7 @@
 				LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */,
 				LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */,
 				1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */,
+				BABACBE432D649DEE348D186 /* AppearanceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
