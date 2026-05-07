@@ -79,7 +79,10 @@ struct JourneyEditorView: View {
             }
 
             if reliquaryEnabled {
-                pilgrimWalks = pilgrimWalks.map { Self.enrichWithInlinePhotos($0) }
+                let snapshot = pilgrimWalks
+                pilgrimWalks = await Task.detached(priority: .userInitiated) {
+                    snapshot.map { Self.enrichWithInlinePhotos($0) }
+                }.value
             }
 
             let encoder = PilgrimDateCoding.makeEncoder()
