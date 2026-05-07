@@ -31,6 +31,30 @@ final class AppearanceModeTests: XCTestCase {
     func testResolvedScheme_dark_returnsDark() {
         XCTAssertEqual(AppearanceMode.dark.resolvedScheme, .dark)
     }
+
+    func testInit_constellation_fromRawString() {
+        XCTAssertEqual(AppearanceMode(rawValue: "constellation"), .constellation)
+    }
+
+    func testResolvedScheme_constellation_returnsDark() {
+        XCTAssertEqual(AppearanceMode.constellation.resolvedScheme, .dark)
+    }
+
+    func testIsConstellation_constellation_returnsTrue() {
+        XCTAssertTrue(AppearanceMode.constellation.isConstellation)
+    }
+
+    func testIsConstellation_dark_returnsFalse() {
+        XCTAssertFalse(AppearanceMode.dark.isConstellation)
+    }
+
+    func testIsConstellation_light_returnsFalse() {
+        XCTAssertFalse(AppearanceMode.light.isConstellation)
+    }
+
+    func testIsConstellation_system_returnsFalse() {
+        XCTAssertFalse(AppearanceMode.system.isConstellation)
+    }
 }
 
 final class AppearanceManagerTests: XCTestCase {
