@@ -173,7 +173,7 @@ struct JourneyWebView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
-        webView.load(URLRequest(url: URL(string: "https://view.pilgrimapp.org")!))
+        webView.load(URLRequest(url: Config.Web.viewer))
         return webView
     }
 

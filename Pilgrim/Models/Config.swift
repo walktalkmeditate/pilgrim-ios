@@ -95,4 +95,9 @@ enum Config {
         static let cdnBaseURL = URL(string: "https://cdn.pilgrimapp.org/audio/whisper")!
     }
 
+    enum Web {
+        static let viewer = URL(string: "https://view.pilgrimapp.org")!
+        static let editor = URL(string: "https://edit.pilgrimapp.org")!
+    }
+
 }
