@@ -93,8 +93,13 @@ struct DataSettingsView: View {
                         .font(Constants.Typography.body)
                         .foregroundColor(.ink)
                 }
+                NavigationLink(destination: JourneyEditorView()) {
+                    Text("Edit My Journey")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                }
             } footer: {
-                Text("Opens view.pilgrimapp.org and renders all your walks in the browser. Your data stays on your device — nothing is uploaded.")
+                Text("View renders your walks at view.pilgrimapp.org. Edit opens edit.pilgrimapp.org for in-browser editing. Your walk data is not uploaded; the JSON is injected into the browser via the JS bridge.")
                     .font(Constants.Typography.caption)
             }
 
