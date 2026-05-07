@@ -227,6 +227,7 @@
 		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
 		76B622EBDD59AD9489586120 /* DateFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */; };
 		785609582C94A30C974B0F72 /* PilgrimPackageImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */; };
+		78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */; };
 		7978824143C5D5E81A6A3E06 /* StonePlacementSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */; };
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
 		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
@@ -400,6 +401,7 @@
 		CC55DD66EE77FF88AA99BB05 /* EtegamiGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC55DD66EE77FF88AA99BB06 /* EtegamiGenerator.swift */; };
 		CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */; };
 		CDEC060CA36CBA19C2EA39EE /* whisper-play-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = FBB03F0409BA1A1EFD7917BC /* whisper-play-1.aac */; };
+		CFDAC9CE88E02E670B7D75B0 /* ConstellationStarGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */; };
 		D0E01E2C230520CA2D6344A5 /* whisper-play-12.aac in Resources */ = {isa = PBXBuildFile; fileRef = D30651941E3AA93F6BB14A1D /* whisper-play-12.aac */; };
 		D62B90461A22862A8FDA006C /* VoiceGuideDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */; };
 		D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */; };
@@ -743,6 +745,7 @@
 		65CE1DB41D3DBD404C28973D /* MeditationGuideManagementTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagementTests.swift; sourceTree = "<group>"; };
 		6C077B3FA336178A9F4CBC6F /* whisper-play-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-4.aac"; sourceTree = "<group>"; };
 		6E9C51C681E296C685A851E3 /* whisper-play-8.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-8.aac"; sourceTree = "<group>"; };
+		6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationStarGenerationTests.swift; sourceTree = "<group>"; };
 		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
 		721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Combine.swift"; sourceTree = "<group>"; };
 		74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestService.swift; sourceTree = "<group>"; };
@@ -950,6 +953,7 @@
 		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
 		EE11AA22BB33CC44DD55EE77 /* EtegamiRouteStroke.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiRouteStroke.swift; sourceTree = "<group>"; };
 		EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformCache.swift; sourceTree = "<group>"; };
+		EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationOverlay.swift; sourceTree = "<group>"; };
 		EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageConverterTests.swift; sourceTree = "<group>"; };
 		F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Light.otf"; sourceTree = "<group>"; };
 		F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Regular.otf"; sourceTree = "<group>"; };
@@ -1527,6 +1531,7 @@
 				WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */,
 				1D3271A2D5ABEDAEBF7A3BDD /* KanjiExpiryPicker.swift */,
 				4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */,
+				EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1685,6 +1690,7 @@
 				LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */,
 				LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */,
 				LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */,
+				6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -2793,6 +2799,7 @@
 				LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */,
 				1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */,
 				BABACBE432D649DEE348D186 /* AppearanceView.swift in Sources */,
+				78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2858,6 +2865,7 @@
 				LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */,
 				LR00000200000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift in Sources */,
 				LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */,
+				CFDAC9CE88E02E670B7D75B0 /* ConstellationStarGenerationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
