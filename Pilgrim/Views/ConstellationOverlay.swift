@@ -119,7 +119,7 @@ struct ConstellationOverlay: View {
     }
 
     static func generateStars(canvasSize: CGSize) -> [Star] {
-        let count = Int.random(in: 1...12)
+        let count = Int.random(in: 5...14)
         return (0..<count).map { _ in
             let layer = Star.Layer.allCases.randomElement()!
             let useWarm = Double.random(in: 0...1) < 0.3
@@ -127,7 +127,7 @@ struct ConstellationOverlay: View {
                 position: CGPoint(x: CGFloat.random(in: 0.05...0.95), y: CGFloat.random(in: 0.05...0.95)),
                 layer: layer,
                 radius: layer.radius,
-                baseOpacity: 0.3 + Double.random(in: 0...0.3),
+                baseOpacity: 0.6 + Double.random(in: 0...0.35),
                 twinkleFrequencyHz: Double.random(in: 0.3...0.8),
                 twinklePhaseRadians: Double.random(in: 0...(2 * .pi)),
                 tint: useWarm ? .warm : .cool
@@ -168,9 +168,9 @@ struct Star {
         case far, mid, near
         var radius: CGFloat {
             switch self {
-            case .far:  return 0.8
-            case .mid:  return 1.3
-            case .near: return 2.0
+            case .far:  return 1.2
+            case .mid:  return 1.8
+            case .near: return 2.6
             }
         }
     }

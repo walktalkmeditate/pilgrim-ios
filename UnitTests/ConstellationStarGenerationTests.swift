@@ -6,8 +6,8 @@ final class ConstellationStarGenerationTests: XCTestCase {
     func testGenerateStars_countWithinRange() {
         for _ in 0..<50 {
             let stars = ConstellationOverlay.generateStars(canvasSize: CGSize(width: 393, height: 852))
-            XCTAssertGreaterThanOrEqual(stars.count, 1, "Star count must be ≥ 1")
-            XCTAssertLessThanOrEqual(stars.count, 12, "Star count must be ≤ 12")
+            XCTAssertGreaterThanOrEqual(stars.count, 5, "Star count must be ≥ 5")
+            XCTAssertLessThanOrEqual(stars.count, 14, "Star count must be ≤ 14")
         }
     }
 

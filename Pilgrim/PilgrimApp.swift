@@ -30,12 +30,12 @@ struct PilgrimApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
-                if appearanceManager.isConstellation {
-                    Color(red: 0.039, green: 0.039, blue: 0.071)
-                        .ignoresSafeArea()
-                }
                 RootCoordinatorView(viewModel: RootCoordinatorViewModel())
                 if appearanceManager.isConstellation {
+                    Color(red: 0.039, green: 0.039, blue: 0.071)
+                        .opacity(0.35)
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
                     ConstellationOverlay()
                 }
             }
