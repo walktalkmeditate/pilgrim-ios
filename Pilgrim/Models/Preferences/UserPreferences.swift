@@ -70,6 +70,16 @@ struct UserPreferences {
     static let zodiacSystem = UserPreference.Required<String>(key: "zodiacSystem", defaultValue: "tropical")
     static let appearanceMode = UserPreference.Required<String>(key: "appearanceMode", defaultValue: "system")
 
+    /// UUID string → archivedAt (epoch seconds). Stores walks the user has
+    /// archived via the pilgrim-viewer/edit web app; iOS strips heavy data
+    /// for these walks and emits them to manifest.archived[] on export.
+    /// Empty default. Mutate only via the helpers below — direct .value
+    /// assignment from user code is not race-safe.
+    static let archivedWalkRegistry = UserPreference.Required<[String: Double]>(
+        key: "archivedWalkRegistry",
+        defaultValue: [:]
+    )
+
     static let dynamicVoiceEnabled = UserPreference.Required<Bool>(key: "dynamicVoiceEnabled", defaultValue: true)
     static let autoTranscribe = UserPreference.Required<Bool>(key: "autoTranscribe", defaultValue: false)
 
@@ -104,4 +114,40 @@ struct UserPreferences {
         }
     }
 
+}
+
+extension UserPreferences {
+
+    /// Serializes registry mutations. Reads are lock-free (UserDefaults is
+    /// per-key atomic); only the read-modify-write needs the queue.
+    private static let archivedRegistryQueue = DispatchQueue(
+        label: "org.walktalkmeditate.pilgrim.archivedRegistry"
+    )
+
+    static func isArchivedWalk(uuid: UUID) -> Bool {
+        archivedWalkRegistry.value[uuid.uuidString] != nil
+    }
+
+    static func archivedAt(uuid: UUID) -> Date? {
+        guard let epoch = archivedWalkRegistry.value[uuid.uuidString] else {
+            return nil
+        }
+        return Date(timeIntervalSince1970: epoch)
+    }
+
+    static func markWalkArchived(uuid: UUID, archivedAt: Date) {
+        archivedRegistryQueue.sync {
+            var registry = archivedWalkRegistry.value
+            registry[uuid.uuidString] = archivedAt.timeIntervalSince1970
+            archivedWalkRegistry.value = registry
+        }
+    }
+
+    static func unmarkWalkArchived(uuid: UUID) {
+        archivedRegistryQueue.sync {
+            var registry = archivedWalkRegistry.value
+            registry.removeValue(forKey: uuid.uuidString)
+            archivedWalkRegistry.value = registry
+        }
+    }
 }
