@@ -25,6 +25,7 @@
 		0F2670E277C94DDDB875E31C /* SealHashComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */; };
 		0F963291E27EF3F9723C8240 /* whisper-play-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 1C0C607162BDD498F2ED5A96 /* whisper-play-3.aac */; };
 		11C747B0EAF53D9F444C6243 /* DataSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1066617851420CAB7B50442 /* DataSettingsView.swift */; };
+		12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */; };
 		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
 		18163919B90D2DC9D6ED730F /* PilgrimPackageModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD8506242AA6CD81468A74B /* PilgrimPackageModelTests.swift */; };
 		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
@@ -407,6 +408,7 @@
 		CDEC060CA36CBA19C2EA39EE /* whisper-play-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = FBB03F0409BA1A1EFD7917BC /* whisper-play-1.aac */; };
 		CFDAC9CE88E02E670B7D75B0 /* ConstellationStarGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */; };
 		D0E01E2C230520CA2D6344A5 /* whisper-play-12.aac in Resources */ = {isa = PBXBuildFile; fileRef = D30651941E3AA93F6BB14A1D /* whisper-play-12.aac */; };
+		D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */; };
 		D62B90461A22862A8FDA006C /* VoiceGuideDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */; };
 		D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */; };
 		D9B0FCF6475717C81CEAC35D /* AudioPriorityQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */; };
@@ -719,6 +721,7 @@
 		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
 		4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityNotificationView.swift; sourceTree = "<group>"; };
 		50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstronomicalEventsTests.swift; sourceTree = "<group>"; };
+		5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ArchivedWalkPrivacyTests.swift; sourceTree = "<group>"; };
 		567070352F733CB000FD1910 /* JourneyViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewerView.swift; sourceTree = "<group>"; };
 		567070932F74218400FD1910 /* PilgrimWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PilgrimWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		567070942F74218400FD1910 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -744,6 +747,7 @@
 		5D9564A30CD3DE97895B7A42 /* CairnService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnService.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		5FC22282979316268A19DABF /* whisper-gratitude-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-gratitude-2.aac"; sourceTree = "<group>"; };
+		60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporterArchivedTests.swift; sourceTree = "<group>"; };
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
 		62963F6ED9C823C21B05E003 /* whisper-lightness-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-lightness-1.aac"; sourceTree = "<group>"; };
 		62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserPreferencesArchivedTests.swift; sourceTree = "<group>"; };
@@ -1702,6 +1706,8 @@
 				LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */,
 				6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */,
 				62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */,
+				60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */,
+				5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -2882,6 +2888,8 @@
 				CFDAC9CE88E02E670B7D75B0 /* ConstellationStarGenerationTests.swift in Sources */,
 				CB7ADD4EA290BD08EFFF402B /* UserPreferencesArchivedTests.swift in Sources */,
 				847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */,
+				D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */,
+				12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

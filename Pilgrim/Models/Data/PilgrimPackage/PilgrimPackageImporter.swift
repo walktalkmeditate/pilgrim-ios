@@ -1,4 +1,5 @@
 import Foundation
+import CoreStore
 import ZIPFoundation
 
 /// Reads a `.pilgrim` archive back into the app's database.
@@ -37,9 +38,9 @@ enum PilgrimPackageImporter {
 
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                let (walks, events) = try unpackAndDecode(from: url)
+                let (walks, events, archived) = try unpackAndDecode(from: url)
                 DispatchQueue.main.async {
-                    saveData(walks: walks, events: events, completion: completion)
+                    saveData(walks: walks, events: events, archived: archived, completion: completion)
                 }
             } catch let error as PilgrimPackageError {
                 completion(.failure(error))
@@ -49,12 +50,11 @@ enum PilgrimPackageImporter {
         }
     }
 
-    /// Unzips the archive at `url` and decodes the walks + events from
-    /// its JSON payload. Internal (not private) so unit tests can
-    /// exercise the parse pipeline against a fixture archive without
-    /// going through `DataManager.saveWalks` (which requires a live
-    /// CoreStore stack).
-    static func unpackAndDecode(from url: URL) throws -> ([TempWalk], [TempEvent]) {
+    /// Unzips the archive at `url` and decodes the walks + events + archived
+    /// entries from its JSON payload. Internal (not private) so unit tests can
+    /// exercise the parse pipeline against a fixture archive without going
+    /// through `DataManager.saveWalks` (which requires a live CoreStore stack).
+    static func unpackAndDecode(from url: URL) throws -> ([TempWalk], [TempEvent], [PilgrimArchivedWalk]) {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory
             .appendingPathComponent("pilgrim-import-\(UUID().uuidString)")
@@ -119,27 +119,62 @@ enum PilgrimPackageImporter {
 
         let tempEvents = PilgrimPackageConverter.convertEvents(manifest.events)
 
-        return (tempWalks, tempEvents)
+        return (tempWalks, tempEvents, manifest.archivedOrEmpty)
     }
 
     private static func saveData(
         walks: [TempWalk],
         events: [TempEvent],
+        archived: [PilgrimArchivedWalk],
         completion: @escaping (Result<Int, PilgrimPackageError>) -> Void
     ) {
-        guard !walks.isEmpty else {
+        let localRegistry = UserPreferences.archivedWalkRegistry.value
+
+        let filteredWalks = walks.filter { walk in
+            guard let uuid = walk.uuid else { return true }
+            if localRegistry[uuid.uuidString] != nil {
+                print("[PilgrimPackageImporter] Skipping walk \(uuid) — already archived locally")
+                return false
+            }
+            return true
+        }
+
+        if filteredWalks.isEmpty && archived.isEmpty {
             completion(.success(0))
             return
         }
 
-        DataManager.saveWalks(objects: walks) { success, error, savedWalks in
+        if filteredWalks.isEmpty {
+            applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
+                switch result {
+                case .success:
+                    completion(.success(0))
+                case .failure(let error):
+                    completion(.failure(.fileSystemError(error)))
+                }
+            }
+            return
+        }
+
+        DataManager.saveWalks(objects: filteredWalks) { success, error, savedWalks in
             if success {
+                let savedCount = savedWalks.count
+
+                let saveEventsAndApplyArchived = {
+                    applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
+                        if case .failure(let err) = result {
+                            print("[PilgrimPackageImporter] Archive apply failed: \(err)")
+                        }
+                        completion(.success(savedCount))
+                    }
+                }
+
                 if !events.isEmpty {
                     DataManager.saveEvents(objects: events) { _, _, _ in
-                        completion(.success(savedWalks.count))
+                        saveEventsAndApplyArchived()
                     }
                 } else {
-                    completion(.success(savedWalks.count))
+                    saveEventsAndApplyArchived()
                 }
             } else if let error = error {
                 completion(.failure(.fileSystemError(
@@ -151,5 +186,129 @@ enum PilgrimPackageImporter {
                 completion(.success(savedWalks.count))
             }
         }
+    }
+
+    /// Applies archived walk entries from a `.pilgrim` manifest into CoreStore.
+    ///
+    /// For each entry:
+    /// - If a Walk with the same UUID exists, strips its heavy data (route,
+    ///   photos, recordings, heart rates, waypoints, pauses, events,
+    ///   activity intervals, weather, comment, favicon). Surface stats
+    ///   (distance, durations, steps) are left unchanged.
+    /// - If no Walk exists, creates a stub with the archived stats and dates.
+    ///
+    /// In both cases, the UUID is registered post-commit via
+    /// `UserPreferences.markWalkArchived`. Audio files captured before the
+    /// transaction commits are deleted post-commit.
+    ///
+    /// Internal (not private) so tests can call it with an in-memory DataStack.
+    static func applyArchivedEntries(
+        _ archived: [PilgrimArchivedWalk],
+        dataStack: DataStack,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        guard !archived.isEmpty else {
+            completion(.success(()))
+            return
+        }
+
+        dataStack.perform(asynchronous: { transaction -> ([URL], [(UUID, Date)]) in
+
+            var capturedFileURLs: [URL] = []
+            var archivedMap: [(UUID, Date)] = []
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+
+            for payload in archived {
+                let uuid = payload.id
+                let archivedAt = Date(timeIntervalSince1970: payload.archivedAt)
+
+                if let walk = try? transaction.fetchOne(From<Walk>().where(\._uuid == uuid)),
+                   let editableWalk = transaction.edit(walk) {
+                    capturedFileURLs += stripHeavyData(from: editableWalk, docs: docs, in: transaction)
+                } else {
+                    createStubWalk(for: payload, in: transaction)
+                }
+
+                archivedMap.append((uuid, archivedAt))
+            }
+
+            return (capturedFileURLs, archivedMap)
+
+        }) { result in
+            switch result {
+            case .success(let (fileURLs, archivedMap)):
+                for (uuid, archivedAt) in archivedMap {
+                    UserPreferences.markWalkArchived(uuid: uuid, archivedAt: archivedAt)
+                }
+                for url in fileURLs {
+                    do {
+                        try FileManager.default.removeItem(at: url)
+                    } catch {
+                        print("[ArchiveImport] Could not remove \(url.lastPathComponent): \(error)")
+                    }
+                }
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    private static func stripHeavyData(
+        from walk: Walk,
+        docs: URL,
+        in transaction: AsynchronousDataTransaction
+    ) -> [URL] {
+        var fileURLs: [URL] = []
+        let recordings = walk._voiceRecordings.value
+        for recording in recordings {
+            let path = recording._fileRelativePath.value
+            if !path.isEmpty {
+                fileURLs.append(docs.appendingPathComponent(path))
+            }
+        }
+
+        for rec in recordings { transaction.delete(rec) }
+        for sample in walk._routeData.value { transaction.delete(sample) }
+        for photo in walk._walkPhotos.value { transaction.delete(photo) }
+        for rate in walk._heartRates.value { transaction.delete(rate) }
+        for waypoint in walk._waypoints.value { transaction.delete(waypoint) }
+        for pause in walk._pauses.value { transaction.delete(pause) }
+        for event in walk._workoutEvents.value { transaction.delete(event) }
+        for interval in walk._activityIntervals.value { transaction.delete(interval) }
+
+        walk._comment .= nil
+        walk._favicon .= nil
+        walk._weatherCondition .= nil
+        walk._weatherTemperature .= nil
+        walk._weatherHumidity .= nil
+        walk._weatherWindSpeed .= nil
+
+        return fileURLs
+    }
+
+    private static func createStubWalk(
+        for payload: PilgrimArchivedWalk,
+        in transaction: AsynchronousDataTransaction
+    ) {
+        let startDate = Date(timeIntervalSince1970: payload.startDate)
+        let stub = transaction.create(Into<Walk>())
+        stub._uuid .= payload.id
+        stub._workoutType .= .walking
+        stub._startDate .= startDate
+        stub._endDate .= Date(timeIntervalSince1970: payload.endDate)
+        stub._distance .= payload.stats.distance
+        stub._activeDuration .= payload.stats.activeDuration
+        stub._pauseDuration .= 0
+        stub._talkDuration .= payload.stats.talkDuration
+        stub._meditateDuration .= payload.stats.meditateDuration
+        stub._steps .= payload.stats.steps
+        stub._ascend .= 0
+        stub._descend .= 0
+        stub._isUserModified .= true
+        stub._isRace .= false
+        stub._finishedRecording .= true
+        stub._dayIdentifier .= CustomDateFormatting.dayIdentifier(forDate: startDate)
+        stub._healthKitUUID .= nil
     }
 }
