@@ -23,7 +23,7 @@ struct InkScrollView: View {
             ScrollView {
                 scrollContent(width: outerGeo.size.width, height: outerGeo.size.height)
             }
-            .background(Color.parchment)
+            .canvasBackground()
             .onScrollGeometryChange(for: CGFloat.self) { geo in
                 geo.contentOffset.y
             } action: { _, newOffset in

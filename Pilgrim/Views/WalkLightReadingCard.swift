@@ -35,7 +35,7 @@ struct WalkLightReadingCard: View {
         .padding(.vertical, Constants.UI.Padding.big)
         .padding(.horizontal, Constants.UI.Padding.normal)
         .frame(maxWidth: .infinity)
-        .background(Color.parchment)
+        .canvasBackground()
         .cornerRadius(Constants.UI.CornerRadius.normal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("A light reading for this walk: \(reading.sentence)")

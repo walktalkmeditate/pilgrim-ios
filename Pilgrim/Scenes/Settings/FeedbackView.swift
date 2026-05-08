@@ -18,7 +18,7 @@ struct FeedbackView: View {
                 formContent
             }
         }
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationTitle("Trail Note")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -201,7 +201,7 @@ struct FeedbackView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.parchment)
+        .canvasBackground()
         .transition(.opacity)
     }
 }

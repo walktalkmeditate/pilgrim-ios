@@ -90,11 +90,27 @@ struct ConstellationOverlay: View {
     private func drawStar(gc: GraphicsContext, star: Star, size: CGSize, opacity: Double) {
         let x = star.position.x * size.width
         let y = star.position.y * size.height
-        let radius = star.radius
-        let rect = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
+        let glowRadius = star.radius * 2  // halo extends 2x beyond core
+        let rect = CGRect(
+            x: x - glowRadius,
+            y: y - glowRadius,
+            width: glowRadius * 2,
+            height: glowRadius * 2
+        )
         let tint = star.tint
-        let color = Color(red: tint.r, green: tint.g, blue: tint.b, opacity: opacity)
-        gc.fill(Path(ellipseIn: rect), with: .color(color))
+        let baseColor = Color(red: tint.r, green: tint.g, blue: tint.b)
+        let gradient = Gradient(stops: [
+            .init(color: baseColor.opacity(opacity), location: 0.0),
+            .init(color: baseColor.opacity(opacity * 0.6), location: 0.3),
+            .init(color: baseColor.opacity(0.0), location: 1.0)
+        ])
+        let shading = GraphicsContext.Shading.radialGradient(
+            gradient,
+            center: CGPoint(x: x, y: y),
+            startRadius: 0,
+            endRadius: glowRadius
+        )
+        gc.fill(Path(ellipseIn: rect), with: shading)
     }
 
     private func drawShootingStar(gc: GraphicsContext, line: ShootingLine, elapsed: Double, size: CGSize) {
@@ -128,7 +144,7 @@ struct ConstellationOverlay: View {
                 layer: layer,
                 radius: layer.radius,
                 baseOpacity: 0.6 + Double.random(in: 0...0.35),
-                twinkleFrequencyHz: Double.random(in: 0.3...0.8),
+                twinkleFrequencyHz: Double.random(in: 0.2...0.4),
                 twinklePhaseRadians: Double.random(in: 0...(2 * .pi)),
                 tint: useWarm ? .warm : .cool
             )

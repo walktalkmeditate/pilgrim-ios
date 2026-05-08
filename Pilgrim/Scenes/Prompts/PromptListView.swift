@@ -64,7 +64,7 @@ struct PromptListView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationTitle("AI Prompts")
         .sheet(item: $selectedPrompt) { prompt in
             PromptDetailView(prompt: prompt)

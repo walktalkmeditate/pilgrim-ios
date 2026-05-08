@@ -53,7 +53,7 @@ struct WalkSharePreviewView: View {
         }
         .padding(.horizontal, Constants.UI.Padding.normal)
         .padding(.vertical, Constants.UI.Padding.small)
-        .background(Color.parchment)
+        .canvasBackground()
         .accessibilitySortPriority(3)
     }
 

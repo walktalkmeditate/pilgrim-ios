@@ -39,7 +39,7 @@ struct JourneyViewerView: View {
                 .padding()
             }
         }
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {

@@ -41,7 +41,7 @@ struct PromptDetailView: View {
                     .padding(.top, Constants.UI.Padding.small)
                     .padding(.bottom, Constants.UI.Padding.normal)
             }
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

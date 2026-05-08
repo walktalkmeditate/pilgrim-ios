@@ -37,7 +37,7 @@ struct AboutView: View {
             .padding(.horizontal, Constants.UI.Padding.big)
         }
         .scrollContentBackground(.hidden)
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

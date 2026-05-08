@@ -33,7 +33,7 @@ struct SoundSettingsView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationTitle("Sounds")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -261,7 +261,7 @@ struct SoundSettingsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationTitle(picker.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -27,7 +27,7 @@ struct GoshuinView: View {
                 bookContent
                 shareButton
             }
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationTitle("Goshuin")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

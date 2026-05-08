@@ -43,7 +43,7 @@ struct SettingsView: View {
                 .padding(.bottom, Constants.UI.Padding.breathingRoom)
             }
             .coordinateSpace(name: "scroll")
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {

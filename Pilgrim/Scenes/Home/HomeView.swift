@@ -17,7 +17,7 @@ struct HomeView: View {
                 }
             )
             .id(unitKey)
-            .background(Color.parchment)
+            .canvasBackground()
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("Pilgrim Log")

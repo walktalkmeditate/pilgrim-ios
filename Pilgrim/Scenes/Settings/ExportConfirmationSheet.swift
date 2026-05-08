@@ -49,7 +49,7 @@ struct ExportConfirmationSheet: View {
             }
             buttonBar
         }
-        .background(Color.parchment)
+        .canvasBackground()
     }
 
     // MARK: - Sections

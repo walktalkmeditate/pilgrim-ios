@@ -26,7 +26,7 @@ struct VoiceGuideSettingsView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationTitle("Voice Guide")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

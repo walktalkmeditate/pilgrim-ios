@@ -24,8 +24,8 @@ final class ConstellationStarGenerationTests: XCTestCase {
     func testGenerateStars_twinkleFrequencyWithinAudibleRange() {
         let stars = ConstellationOverlay.generateStars(canvasSize: CGSize(width: 393, height: 852))
         for star in stars {
-            // WCAG 2.3.1 — must be < 3 Hz; design target ≤ 1 Hz
-            XCTAssertLessThanOrEqual(star.twinkleFrequencyHz, 1.0)
+            // WCAG 2.3.1 — must be < 3 Hz; design target ≤ 0.5 Hz (~3s period)
+            XCTAssertLessThanOrEqual(star.twinkleFrequencyHz, 0.5)
             XCTAssertGreaterThan(star.twinkleFrequencyHz, 0.0)
         }
     }

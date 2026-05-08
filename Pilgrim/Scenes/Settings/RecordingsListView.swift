@@ -30,7 +30,7 @@ struct RecordingsListView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -352,7 +352,7 @@ struct RecordingsListView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.parchment)
+        .canvasBackground()
     }
 
     // MARK: - Data Loading
