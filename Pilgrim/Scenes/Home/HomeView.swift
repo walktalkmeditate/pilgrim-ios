@@ -7,6 +7,7 @@ struct HomeView: View {
     @State private var selectedWalk: Walk?
     @State private var showGoshuin = false
     @State private var unitKey: String = UserPreferences.distanceMeasurementType.safeValue.symbol
+    @State private var isWalkExpanded = false
 
     var body: some View {
         NavigationStack {
@@ -14,7 +15,8 @@ struct HomeView: View {
                 snapshots: viewModel.walkSnapshots,
                 onTapWalk: { id in
                     selectedWalk = viewModel.walk(for: id)
-                }
+                },
+                onExpandedChange: { isWalkExpanded = $0 }
             )
             .id(unitKey)
             .canvasBackground()
@@ -38,15 +40,17 @@ struct HomeView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .overlay(alignment: .bottomTrailing) {
-                if !viewModel.walks.isEmpty {
+                if !viewModel.walks.isEmpty && !isWalkExpanded {
                     GoshuinFAB(
                         latestWalk: viewModel.walks.first,
                         action: { showGoshuin = true }
                     )
                     .padding(.trailing, Constants.UI.Padding.normal)
                     .padding(.bottom, Constants.UI.Padding.big)
+                    .transition(.opacity)
                 }
             }
+            .animation(.easeInOut(duration: 0.2), value: isWalkExpanded)
             .sheet(item: $selectedWalk) { walk in
                 WalkSummaryView(walk: walk)
             }

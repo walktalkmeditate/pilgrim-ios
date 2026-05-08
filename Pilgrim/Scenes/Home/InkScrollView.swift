@@ -5,6 +5,7 @@ struct InkScrollView: View {
 
     let snapshots: [WalkSnapshot]
     let onTapWalk: (UUID) -> Void
+    var onExpandedChange: ((Bool) -> Void)? = nil
 
     @State private var previewSnapshot: WalkSnapshot?
     @State private var previewPosition: CGPoint = .zero
@@ -47,6 +48,11 @@ struct InkScrollView: View {
             DispatchQueue.main.async {
                 hasAppeared = true
             }
+        }
+        .onChange(of: expandedSnapshot != nil) { _, isExpanded in
+            // Notify parent so HomeView can hide chrome (e.g. GoshuinFAB)
+            // that would otherwise layer above the in-view popup.
+            onExpandedChange?(isExpanded)
         }
     }
 
