@@ -6,14 +6,44 @@ struct WalkDotView: View {
     let position: CGPoint
     let opacity: Double
     let isNewest: Bool
+    let isArchived: Bool
     let onTap: (UUID) -> Void
     let sceneryView: AnyView?
+
+    init(
+        snapshot: WalkSnapshot,
+        position: CGPoint,
+        opacity: Double,
+        isNewest: Bool,
+        isArchived: Bool = false,
+        onTap: @escaping (UUID) -> Void,
+        sceneryView: AnyView? = nil
+    ) {
+        self.snapshot = snapshot
+        self.position = position
+        self.opacity = opacity
+        self.isNewest = isNewest
+        self.isArchived = isArchived
+        self.onTap = onTap
+        self.sceneryView = sceneryView
+    }
 
     private let minSize: CGFloat = 8
     private let maxSize: CGFloat = 22
 
     var body: some View {
         let size = dotSize
+
+        if isArchived {
+            Circle()
+                .stroke(Color.fog.opacity(0.5), lineWidth: 1)
+                .frame(width: size * 0.6, height: size * 0.6)
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+                .position(position)
+                .onTapGesture { onTap(snapshot.id) }
+                .accessibilityLabel(accessibilityText)
+        } else {
 
         ZStack {
             if isNewest {
@@ -76,6 +106,7 @@ struct WalkDotView: View {
         .position(position)
         .onTapGesture { onTap(snapshot.id) }
         .accessibilityLabel(accessibilityText)
+        }
     }
 
     // MARK: - Favicon overlay
