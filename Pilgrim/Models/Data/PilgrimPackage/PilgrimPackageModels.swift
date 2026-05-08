@@ -28,6 +28,11 @@ struct PilgrimManifest: Codable {
     let customPromptStyles: [PilgrimCustomPromptStyle]
     let intentions: [String]
     let events: [PilgrimEvent]
+    let archived: [PilgrimArchivedWalk]?
+
+    var archivedOrEmpty: [PilgrimArchivedWalk] {
+        archived ?? []
+    }
 }
 
 struct PilgrimPreferences: Codable {
@@ -54,6 +59,24 @@ struct PilgrimEvent: Codable {
     let startDate: Date?
     let endDate: Date?
     let walkIds: [UUID]
+}
+
+// MARK: - Archived Walk
+
+struct PilgrimArchivedWalk: Codable {
+    let id: UUID
+    let startDate: Double
+    let endDate: Double
+    let archivedAt: Double
+    let stats: Stats
+
+    struct Stats: Codable {
+        let distance: Double
+        let activeDuration: Double
+        let talkDuration: Double
+        let meditateDuration: Double
+        let steps: Int?
+    }
 }
 
 // MARK: - Walk

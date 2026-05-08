@@ -271,7 +271,8 @@ enum PilgrimPackageConverter {
             preferences: preferences,
             customPromptStyles: customStyles,
             intentions: intentionStore.intentions,
-            events: events
+            events: events,
+            archived: nil
         )
     }
 
