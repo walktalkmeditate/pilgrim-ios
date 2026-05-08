@@ -44,10 +44,16 @@ enum GoshuinShareRenderer {
         from walks: [SealInput],
         allWalks: [SealInput]
     ) -> [SealInput] {
+        let archivedRegistry = UserPreferences.archivedWalkRegistry.value
+        let candidates = walks.filter { walk in
+            guard let uuid = walk.uuid else { return true }
+            return archivedRegistry[uuid] == nil
+        }
+
         var result: [SealInput] = []
         var includedUUIDs: Set<String> = []
 
-        let sortedByDate = walks.sorted { $0.startDate < $1.startDate }
+        let sortedByDate = candidates.sorted { $0.startDate < $1.startDate }
 
         for (index, walk) in sortedByDate.enumerated() {
             guard result.count < maxSeals else { break }
@@ -64,7 +70,7 @@ enum GoshuinShareRenderer {
             }
         }
 
-        let recentFirst = walks.sorted { $0.startDate > $1.startDate }
+        let recentFirst = candidates.sorted { $0.startDate > $1.startDate }
         for walk in recentFirst {
             guard result.count < maxSeals else { break }
             guard let uuid = walk.uuid else { continue }

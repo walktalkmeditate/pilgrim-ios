@@ -70,6 +70,11 @@ enum GoshuinMilestones {
         input: SealInput?,
         allInputs: [SealInput]
     ) -> Set<Milestone> {
+        if let uuid = input?.uuid,
+           UserPreferences.archivedWalkRegistry.value[uuid] != nil {
+            return []
+        }
+
         var milestones: Set<Milestone> = []
         let walkNumber = walkIndex + 1
 
