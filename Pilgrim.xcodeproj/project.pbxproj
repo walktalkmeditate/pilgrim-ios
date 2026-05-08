@@ -232,6 +232,7 @@
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
 		7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */; };
 		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
+		847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */; };
 		86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */; };
 		8921FE4FE62B2D5D9770989C /* whisper-play-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = F42B3177F3066393F8828357 /* whisper-play-2.aac */; };
 		8A200FA63DDEC6D859F1C4EE /* WalkShareViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */; };
@@ -975,6 +976,7 @@
 		F578B62CF2FE5D35049BA99E /* PendingPlacement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PendingPlacement.swift; sourceTree = "<group>"; };
 		F5DBDBA14D74B3061F349DA5 /* whisper-stillness-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-3.aac"; sourceTree = "<group>"; };
 		F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */ = {isa = PBXFileReference; includeInIndex = 1; path = "whispers-bootstrap.json"; sourceTree = "<group>"; };
+		F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ArchivedWalkFixtures.swift; sourceTree = "<group>"; };
 		FA2E3CE11CDA4BC19D37CF82 /* SealInput.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealInput.swift; sourceTree = "<group>"; };
 		FBB03F0409BA1A1EFD7917BC /* whisper-play-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-1.aac"; sourceTree = "<group>"; };
 		FE2B671C6679119F8E9A7508 /* HapticManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
@@ -1813,6 +1815,7 @@
 				EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */,
 				4181215714A52E71449BC390 /* WalkDataFactory.swift */,
 				721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */,
+				F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -2878,6 +2881,7 @@
 				LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */,
 				CFDAC9CE88E02E670B7D75B0 /* ConstellationStarGenerationTests.swift in Sources */,
 				CB7ADD4EA290BD08EFFF402B /* UserPreferencesArchivedTests.swift in Sources */,
+				847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
