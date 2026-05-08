@@ -128,6 +128,14 @@ extension UserPreferences {
         archivedWalkRegistry.value[uuid.uuidString] != nil
     }
 
+    /// String overload for call sites that already hold the UUID as a
+    /// String (e.g. SealInput.uuid in the Goshuin pipeline). Skips the
+    /// UUID(uuidString:) round-trip — the registry key is already a
+    /// String anyway.
+    static func isArchivedWalk(uuidString: String) -> Bool {
+        archivedWalkRegistry.value[uuidString] != nil
+    }
+
     static func archivedAt(uuid: UUID) -> Date? {
         guard let epoch = archivedWalkRegistry.value[uuid.uuidString] else {
             return nil
@@ -148,6 +156,18 @@ extension UserPreferences {
             var registry = archivedWalkRegistry.value
             registry.removeValue(forKey: uuid.uuidString)
             archivedWalkRegistry.value = registry
+        }
+    }
+
+    /// Wipes the entire registry. Used by `DataManager.deleteAll` after
+    /// every walk is removed from CoreStore — registry entries pointing
+    /// at deleted walks would otherwise accumulate as orphans. Goes
+    /// through the same serial queue as the per-UUID mutations so a
+    /// concurrent `markWalkArchived` from an in-flight import can't
+    /// resurrect an entry between the wipe and the user's next save.
+    static func clearArchivedRegistry() {
+        archivedRegistryQueue.sync {
+            archivedWalkRegistry.value = [:]
         }
     }
 }

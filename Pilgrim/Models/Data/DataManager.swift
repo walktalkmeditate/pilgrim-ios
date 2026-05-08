@@ -890,7 +890,7 @@ struct DataManager {
             case .success:
                 cleanupRecordingFiles(relativePaths: allRecordingPaths)
                 cleanupEmptyRecordingsDirectory()
-                UserPreferences.archivedWalkRegistry.value = [:]
+                UserPreferences.clearArchivedRegistry()
                 completion(true, nil)
             case .failure(let error):
                 completion(false, .databaseError(error: error))

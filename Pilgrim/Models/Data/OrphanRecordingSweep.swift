@@ -38,7 +38,8 @@ enum OrphanRecordingSweep {
             return
         }
 
-        for case let fileURL as URL in enumerator where fileURL.pathExtension == "m4a" {
+        let audioExtensions: Set<String> = ["m4a", "wav"]
+        for case let fileURL as URL in enumerator where audioExtensions.contains(fileURL.pathExtension.lowercased()) {
             guard let relativePath = relativePath(of: fileURL, from: docs) else { continue }
             guard !referenced.contains(relativePath) else { continue }
 

@@ -71,7 +71,7 @@ enum GoshuinMilestones {
         allInputs: [SealInput]
     ) -> Set<Milestone> {
         if let uuid = input?.uuid,
-           UserPreferences.archivedWalkRegistry.value[uuid] != nil {
+           UserPreferences.isArchivedWalk(uuidString: uuid) {
             return []
         }
 
