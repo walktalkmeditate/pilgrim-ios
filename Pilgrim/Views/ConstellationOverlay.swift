@@ -14,14 +14,25 @@ struct ConstellationOverlay: View {
         GeometryReader { geo in
             content(canvasSize: geo.size)
                 .onAppear {
-                    if stars.isEmpty {
-                        stars = Self.generateStars(canvasSize: geo.size)
-                    }
+                    populateStarsIfNeeded(size: geo.size)
+                }
+                .onChange(of: geo.size) { _, newSize in
+                    populateStarsIfNeeded(size: newSize)
                 }
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private func populateStarsIfNeeded(size: CGSize) {
+        // GeometryReader can fire .onAppear with a zero-sized proposal
+        // before SwiftUI completes layout — generating stars then leaves
+        // the field empty until the Canvas redraws with a real size on a
+        // later TimelineView tick. Wait for a real size before populating
+        // and re-evaluate on size changes (rotation, sheet present/dismiss).
+        guard stars.isEmpty, size.width > 1, size.height > 1 else { return }
+        stars = Self.generateStars(canvasSize: size)
     }
 
     @ViewBuilder
