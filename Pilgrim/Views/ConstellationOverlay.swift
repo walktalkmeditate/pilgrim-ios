@@ -7,9 +7,21 @@ struct ConstellationOverlay: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
-    @State private var stars: [Star] = []
-    @State private var nebulae: [Nebula] = []
+    @State private var stars: [Star]
+    @State private var nebulae: [Nebula]
     @State private var shooting: ShootingState = .idle
+
+    init() {
+        // Populate at view-init time. Star positions are normalized 0..1
+        // so the canvas-size hint here doesn't affect placement once they
+        // render. Nebula radii are absolute points and use a screen-ish
+        // hint. .onAppear was unreliable for triggering this — state
+        // mutations from there didn't always propagate to the Canvas
+        // before some later body re-eval (e.g. shooting-star ~30s in).
+        let hint = CGSize(width: 393, height: 852)
+        _stars = State(initialValue: Self.generateStars(canvasSize: hint))
+        _nebulae = State(initialValue: Self.generateNebulae(canvasSize: hint))
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -18,29 +30,6 @@ struct ConstellationOverlay: View {
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .onAppear {
-            // Populate immediately with a default size if needed. Positions
-            // are normalized 0..1 so they survive any later canvas size —
-            // there's no advantage to waiting for GeometryReader to settle,
-            // and previously stars stayed empty until a much later body
-            // re-eval (e.g. first shooting-star state change ~30s in)
-            // unstuck them visually. Generating up front breaks that
-            // dependency.
-            populateIfNeeded()
-        }
-    }
-
-    private func populateIfNeeded() {
-        // Canvas size at generation time doesn't matter — Star.position is
-        // normalized and gets multiplied by the current canvas size on each
-        // draw. Use a screen-ish hint so nebula radii feel right.
-        let hint = CGSize(width: 393, height: 852)
-        if stars.isEmpty {
-            stars = Self.generateStars(canvasSize: hint)
-        }
-        if nebulae.isEmpty {
-            nebulae = Self.generateNebulae(canvasSize: hint)
-        }
     }
 
     @ViewBuilder
