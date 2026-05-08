@@ -4,6 +4,8 @@ struct ConstellationOverlay: View {
 
     static let staticOpacity: Double = 0.6
 
+    let includesNebulae: Bool
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -11,16 +13,19 @@ struct ConstellationOverlay: View {
     @State private var nebulae: [Nebula]
     @State private var shooting: ShootingState = .idle
 
-    init() {
+    init(includesNebulae: Bool = true) {
         // Populate at view-init time. Star positions are normalized 0..1
         // so the canvas-size hint here doesn't affect placement once they
         // render. Nebula radii are absolute points and use a screen-ish
         // hint. .onAppear was unreliable for triggering this — state
         // mutations from there didn't always propagate to the Canvas
         // before some later body re-eval (e.g. shooting-star ~30s in).
+        self.includesNebulae = includesNebulae
         let hint = CGSize(width: 393, height: 852)
         _stars = State(initialValue: Self.generateStars(canvasSize: hint))
-        _nebulae = State(initialValue: Self.generateNebulae(canvasSize: hint))
+        _nebulae = State(
+            initialValue: includesNebulae ? Self.generateNebulae(canvasSize: hint) : []
+        )
     }
 
     var body: some View {
