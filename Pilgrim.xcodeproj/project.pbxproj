@@ -230,6 +230,7 @@
 		78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */; };
 		7978824143C5D5E81A6A3E06 /* StonePlacementSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */; };
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
+		7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */; };
 		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
 		86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */; };
 		8921FE4FE62B2D5D9770989C /* whisper-play-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = F42B3177F3066393F8828357 /* whisper-play-2.aac */; };
@@ -530,6 +531,7 @@
 /* Begin PBXFileReference section */
 		008E97D4312732C8F271886C /* AstrologyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstrologyModels.swift; sourceTree = "<group>"; };
 		0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = JourneyEditorView.swift; sourceTree = "<group>"; };
+		03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationDecor.swift; sourceTree = "<group>"; };
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
 		061E977B7C29F32543182E9B /* whisper-stillness-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-2.aac"; sourceTree = "<group>"; };
 		089F9DF63AFA0F902D41D768 /* ProximityTarget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityTarget.swift; sourceTree = "<group>"; };
@@ -1535,6 +1537,7 @@
 				4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */,
 				EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */,
 				1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */,
+				03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2804,6 +2807,7 @@
 				BABACBE432D649DEE348D186 /* AppearanceView.swift in Sources */,
 				78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */,
 				C5DF3101E0A3BF214B2FE127 /* CanvasBackground.swift in Sources */,
+				7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

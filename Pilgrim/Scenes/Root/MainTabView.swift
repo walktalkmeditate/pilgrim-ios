@@ -34,11 +34,13 @@ struct MainTabView: View {
             coordinator.handleActiveWalkDismiss()
         }) { vm in
             ActiveWalkView(viewModel: vm, onCancel: { coordinator.cancelWalk() })
+                .constellationDecorated()
         }
         .sheet(item: $coordinator.completedSnapshot, onDismiss: {
             coordinator.handleSummaryDismiss()
         }) { snapshot in
             WalkSummaryView(walk: snapshot)
+                .constellationDecorated()
         }
         .alert("Save Failed", isPresented: $coordinator.showSaveError) {
             Button("Dismiss") {
