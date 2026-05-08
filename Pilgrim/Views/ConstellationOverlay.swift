@@ -8,6 +8,7 @@ struct ConstellationOverlay: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     @State private var stars: [Star] = []
+    @State private var nebulae: [Nebula] = []
     @State private var shooting: ShootingState = .idle
 
     var body: some View {
@@ -31,8 +32,13 @@ struct ConstellationOverlay: View {
         // the field empty until the Canvas redraws with a real size on a
         // later TimelineView tick. Wait for a real size before populating
         // and re-evaluate on size changes (rotation, sheet present/dismiss).
-        guard stars.isEmpty, size.width > 1, size.height > 1 else { return }
-        stars = Self.generateStars(canvasSize: size)
+        guard size.width > 1, size.height > 1 else { return }
+        if stars.isEmpty {
+            stars = Self.generateStars(canvasSize: size)
+        }
+        if nebulae.isEmpty {
+            nebulae = Self.generateNebulae(canvasSize: size)
+        }
     }
 
     @ViewBuilder
@@ -48,8 +54,13 @@ struct ConstellationOverlay: View {
 
     private func staticView(canvasSize: CGSize) -> some View {
         Canvas { gc, size in
+            drawCosmicGradient(gc: gc, size: size)
+            for nebula in nebulae {
+                drawNebula(gc: gc, nebula: nebula, size: size, time: 0)
+            }
             for star in stars {
-                drawStar(gc: gc, star: star, size: size, opacity: Self.staticOpacity)
+                let pos = staticPosition(for: star, size: size)
+                drawStar(gc: gc, position: pos, radius: star.radius, tint: star.tint, opacity: Self.staticOpacity)
             }
         }
     }
@@ -60,10 +71,17 @@ struct ConstellationOverlay: View {
                 let now = ctx.date
                 let t = now.timeIntervalSinceReferenceDate
 
+                drawCosmicGradient(gc: gc, size: size)
+
+                for nebula in nebulae {
+                    drawNebula(gc: gc, nebula: nebula, size: size, time: t)
+                }
+
                 for star in stars {
                     let phase = sin(t * 2 * .pi * star.twinkleFrequencyHz + star.twinklePhaseRadians)
                     let opacity = star.baseOpacity * (0.5 + 0.5 * phase)
-                    drawStar(gc: gc, star: star, size: size, opacity: opacity)
+                    let pos = driftedPosition(for: star, time: t, size: size)
+                    drawStar(gc: gc, position: pos, radius: star.radius, tint: star.tint, opacity: opacity)
                 }
 
                 if case .active(let start, let line) = shooting {
@@ -98,14 +116,13 @@ struct ConstellationOverlay: View {
         }
     }
 
-    private func drawStar(gc: GraphicsContext, star: Star, size: CGSize, opacity: Double) {
-        let x = star.position.x * size.width
-        let y = star.position.y * size.height
-        let tint = star.tint
+    private func drawStar(gc: GraphicsContext, position: CGPoint, radius: CGFloat, tint: Star.Tint, opacity: Double) {
+        let x = position.x
+        let y = position.y
         let baseColor = Color(red: tint.r, green: tint.g, blue: tint.b)
 
         // Soft outer halo — large, dim, single-color fill so it reads as glow.
-        let haloRadius = star.radius * 3.5
+        let haloRadius = radius * 3.5
         let haloRect = CGRect(
             x: x - haloRadius,
             y: y - haloRadius,
@@ -118,7 +135,7 @@ struct ConstellationOverlay: View {
         )
 
         // Mid ring — pulls the eye toward the bright core.
-        let midRadius = star.radius * 1.8
+        let midRadius = radius * 1.8
         let midRect = CGRect(
             x: x - midRadius,
             y: y - midRadius,
@@ -132,15 +149,105 @@ struct ConstellationOverlay: View {
 
         // Bright core — sharp, near-white pinpoint.
         let coreRect = CGRect(
-            x: x - star.radius,
-            y: y - star.radius,
-            width: star.radius * 2,
-            height: star.radius * 2
+            x: x - radius,
+            y: y - radius,
+            width: radius * 2,
+            height: radius * 2
         )
         gc.fill(
             Path(ellipseIn: coreRect),
             with: .color(baseColor.opacity(opacity))
         )
+    }
+
+    private func staticPosition(for star: Star, size: CGSize) -> CGPoint {
+        CGPoint(x: star.position.x * size.width, y: star.position.y * size.height)
+    }
+
+    private func driftedPosition(for star: Star, time: TimeInterval, size: CGSize) -> CGPoint {
+        // Layer-keyed drift speed in points-per-second.
+        // Far layer drifts slowest; near layer drifts fastest — depth illusion.
+        // Vertical sway is a tiny sin oscillation per-star so the field feels
+        // alive without any star traveling far from its anchor.
+        let speed: CGFloat
+        switch star.layer {
+        case .far:  speed = 0.4
+        case .mid:  speed = 0.9
+        case .near: speed = 1.6
+        }
+
+        let basePixelX = star.position.x * size.width
+        let driftX = CGFloat(time) * speed
+        let cycle = size.width + 80  // wrap range — extends past edges so wraps aren't visible
+        var wrappedX = (basePixelX + driftX).truncatingRemainder(dividingBy: cycle)
+        if wrappedX < 0 { wrappedX += cycle }
+
+        let basePixelY = star.position.y * size.height
+        // Subtle vertical sway. Amplitude scales with depth layer (near layer
+        // sways most). Period derived deterministically from the star's
+        // twinkle phase so each star sways at a stable cadence.
+        let swayAmplitude: CGFloat = (star.layer == .near) ? 10 : (star.layer == .mid ? 6 : 4)
+        let swayPeriodSeconds: Double = 30.0 + (star.twinklePhaseRadians / (2 * .pi)) * 30.0
+        let swayHz = 1.0 / swayPeriodSeconds
+        let pixelY = basePixelY + swayAmplitude * CGFloat(sin(time * 2 * .pi * swayHz + star.twinklePhaseRadians))
+
+        return CGPoint(x: wrappedX, y: pixelY)
+    }
+
+    private func drawCosmicGradient(gc: GraphicsContext, size: CGSize) {
+        // Slightly brighter center fading to flat indigo at the edges.
+        // Adds cosmic depth beneath the flat #0a0a12 canvasBackground.
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let radius = max(size.width, size.height) * 0.7
+        let rect = CGRect(x: 0, y: 0, width: size.width, height: size.height)
+        let centerTint = Color(red: 0.10, green: 0.10, blue: 0.16)
+        let gradient = Gradient(stops: [
+            .init(color: centerTint.opacity(0.55), location: 0.0),
+            .init(color: centerTint.opacity(0.18), location: 0.5),
+            .init(color: Color.clear, location: 1.0)
+        ])
+        let shading = GraphicsContext.Shading.radialGradient(
+            gradient,
+            center: center,
+            startRadius: 0,
+            endRadius: radius
+        )
+        gc.fill(Path(rect), with: shading)
+    }
+
+    private func drawNebula(gc: GraphicsContext, nebula: Nebula, size: CGSize, time: TimeInterval) {
+        let baseX = nebula.basePosition.x * size.width
+        let baseY = nebula.basePosition.y * size.height
+        let driftX = CGFloat(time) * nebula.driftSpeed
+        // Wrap range covers off-screen on both sides so the soft halo
+        // never abruptly snaps back to start. At t=0, the nebula renders
+        // at its base position.
+        let cycle = size.width + nebula.radius * 2
+        let shifted = baseX + driftX + nebula.radius
+        var modded = shifted.truncatingRemainder(dividingBy: cycle)
+        if modded < 0 { modded += cycle }
+        let centerX = modded - nebula.radius
+
+        let rect = CGRect(
+            x: centerX - nebula.radius,
+            y: baseY - nebula.radius,
+            width: nebula.radius * 2,
+            height: nebula.radius * 2
+        )
+        let tint = nebula.tint
+        let color = Color(red: tint.r, green: tint.g, blue: tint.b)
+        let gradient = Gradient(stops: [
+            .init(color: color.opacity(0.10), location: 0.0),
+            .init(color: color.opacity(0.04), location: 0.5),
+            .init(color: Color.clear, location: 1.0)
+        ])
+        let shading = GraphicsContext.Shading.radialGradient(
+            gradient,
+            center: CGPoint(x: centerX, y: baseY),
+            startRadius: 0,
+            endRadius: nebula.radius
+        )
+        gc.fill(Path(ellipseIn: rect), with: shading)
     }
 
     private func drawShootingStar(gc: GraphicsContext, line: ShootingLine, elapsed: Double, size: CGSize) {
@@ -238,4 +345,33 @@ struct ShootingLine {
 enum ShootingState {
     case idle
     case active(start: Date, line: ShootingLine)
+}
+
+struct Nebula {
+    let basePosition: CGPoint   // 0..1 normalized
+    let radius: CGFloat         // points
+    let tint: Tint
+    let driftSpeed: CGFloat     // pt/sec — very slow
+
+    struct Tint {
+        let r: Double
+        let g: Double
+        let b: Double
+        static let violet = Tint(r: 0.42, g: 0.22, b: 0.62)
+        static let indigo = Tint(r: 0.22, g: 0.30, b: 0.65)
+        static let plum   = Tint(r: 0.55, g: 0.28, b: 0.55)
+    }
+}
+
+extension ConstellationOverlay {
+    static func generateNebulae(canvasSize: CGSize) -> [Nebula] {
+        // 2-3 large soft blotches at gentle parallax-style drift speeds.
+        // Positions chosen to spread across the canvas without overlap.
+        let candidates: [Nebula] = [
+            Nebula(basePosition: CGPoint(x: 0.25, y: 0.20), radius: 220, tint: .violet, driftSpeed: 0.6),
+            Nebula(basePosition: CGPoint(x: 0.75, y: 0.55), radius: 260, tint: .indigo, driftSpeed: 0.4),
+            Nebula(basePosition: CGPoint(x: 0.45, y: 0.85), radius: 180, tint: .plum,   driftSpeed: 0.8)
+        ]
+        return Array(candidates.shuffled().prefix(Int.random(in: 2...3)))
+    }
 }
