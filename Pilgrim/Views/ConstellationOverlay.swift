@@ -14,30 +14,32 @@ struct ConstellationOverlay: View {
     var body: some View {
         GeometryReader { geo in
             content(canvasSize: geo.size)
-                .onAppear {
-                    populateStarsIfNeeded(size: geo.size)
-                }
-                .onChange(of: geo.size) { _, newSize in
-                    populateStarsIfNeeded(size: newSize)
-                }
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+        .onAppear {
+            // Populate immediately with a default size if needed. Positions
+            // are normalized 0..1 so they survive any later canvas size —
+            // there's no advantage to waiting for GeometryReader to settle,
+            // and previously stars stayed empty until a much later body
+            // re-eval (e.g. first shooting-star state change ~30s in)
+            // unstuck them visually. Generating up front breaks that
+            // dependency.
+            populateIfNeeded()
+        }
     }
 
-    private func populateStarsIfNeeded(size: CGSize) {
-        // GeometryReader can fire .onAppear with a zero-sized proposal
-        // before SwiftUI completes layout — generating stars then leaves
-        // the field empty until the Canvas redraws with a real size on a
-        // later TimelineView tick. Wait for a real size before populating
-        // and re-evaluate on size changes (rotation, sheet present/dismiss).
-        guard size.width > 1, size.height > 1 else { return }
+    private func populateIfNeeded() {
+        // Canvas size at generation time doesn't matter — Star.position is
+        // normalized and gets multiplied by the current canvas size on each
+        // draw. Use a screen-ish hint so nebula radii feel right.
+        let hint = CGSize(width: 393, height: 852)
         if stars.isEmpty {
-            stars = Self.generateStars(canvasSize: size)
+            stars = Self.generateStars(canvasSize: hint)
         }
         if nebulae.isEmpty {
-            nebulae = Self.generateNebulae(canvasSize: size)
+            nebulae = Self.generateNebulae(canvasSize: hint)
         }
     }
 
@@ -237,8 +239,9 @@ struct ConstellationOverlay: View {
         let tint = nebula.tint
         let color = Color(red: tint.r, green: tint.g, blue: tint.b)
         let gradient = Gradient(stops: [
-            .init(color: color.opacity(0.10), location: 0.0),
-            .init(color: color.opacity(0.04), location: 0.5),
+            .init(color: color.opacity(0.32), location: 0.0),
+            .init(color: color.opacity(0.16), location: 0.35),
+            .init(color: color.opacity(0.06), location: 0.7),
             .init(color: Color.clear, location: 1.0)
         ])
         let shading = GraphicsContext.Shading.radialGradient(
@@ -357,20 +360,25 @@ struct Nebula {
         let r: Double
         let g: Double
         let b: Double
-        static let violet = Tint(r: 0.42, g: 0.22, b: 0.62)
-        static let indigo = Tint(r: 0.22, g: 0.30, b: 0.65)
-        static let plum   = Tint(r: 0.55, g: 0.28, b: 0.55)
+        // Lighter, more saturated picks — at 0.32 max opacity these read
+        // as soft purple/blue mist against the #0a0a12 indigo canvas.
+        static let violet = Tint(r: 0.62, g: 0.42, b: 0.92)
+        static let indigo = Tint(r: 0.40, g: 0.52, b: 0.92)
+        static let plum   = Tint(r: 0.78, g: 0.52, b: 0.82)
     }
 }
 
 extension ConstellationOverlay {
     static func generateNebulae(canvasSize: CGSize) -> [Nebula] {
         // 2-3 large soft blotches at gentle parallax-style drift speeds.
-        // Positions chosen to spread across the canvas without overlap.
+        // Larger radii (260-340pt) make the gradient soft enough that the
+        // brighter tints don't read as solid blobs — instead they feel
+        // like distant cosmic clouds. Positions chosen to spread across
+        // the canvas without overlap.
         let candidates: [Nebula] = [
-            Nebula(basePosition: CGPoint(x: 0.25, y: 0.20), radius: 220, tint: .violet, driftSpeed: 0.6),
-            Nebula(basePosition: CGPoint(x: 0.75, y: 0.55), radius: 260, tint: .indigo, driftSpeed: 0.4),
-            Nebula(basePosition: CGPoint(x: 0.45, y: 0.85), radius: 180, tint: .plum,   driftSpeed: 0.8)
+            Nebula(basePosition: CGPoint(x: 0.25, y: 0.20), radius: 280, tint: .violet, driftSpeed: 0.6),
+            Nebula(basePosition: CGPoint(x: 0.75, y: 0.55), radius: 340, tint: .indigo, driftSpeed: 0.4),
+            Nebula(basePosition: CGPoint(x: 0.45, y: 0.85), radius: 260, tint: .plum,   driftSpeed: 0.8)
         ]
         return Array(candidates.shuffled().prefix(Int.random(in: 2...3)))
     }
