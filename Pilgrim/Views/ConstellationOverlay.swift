@@ -90,27 +90,46 @@ struct ConstellationOverlay: View {
     private func drawStar(gc: GraphicsContext, star: Star, size: CGSize, opacity: Double) {
         let x = star.position.x * size.width
         let y = star.position.y * size.height
-        let glowRadius = star.radius * 2  // halo extends 2x beyond core
-        let rect = CGRect(
-            x: x - glowRadius,
-            y: y - glowRadius,
-            width: glowRadius * 2,
-            height: glowRadius * 2
-        )
         let tint = star.tint
         let baseColor = Color(red: tint.r, green: tint.g, blue: tint.b)
-        let gradient = Gradient(stops: [
-            .init(color: baseColor.opacity(opacity), location: 0.0),
-            .init(color: baseColor.opacity(opacity * 0.6), location: 0.3),
-            .init(color: baseColor.opacity(0.0), location: 1.0)
-        ])
-        let shading = GraphicsContext.Shading.radialGradient(
-            gradient,
-            center: CGPoint(x: x, y: y),
-            startRadius: 0,
-            endRadius: glowRadius
+
+        // Soft outer halo — large, dim, single-color fill so it reads as glow.
+        let haloRadius = star.radius * 3.5
+        let haloRect = CGRect(
+            x: x - haloRadius,
+            y: y - haloRadius,
+            width: haloRadius * 2,
+            height: haloRadius * 2
         )
-        gc.fill(Path(ellipseIn: rect), with: shading)
+        gc.fill(
+            Path(ellipseIn: haloRect),
+            with: .color(baseColor.opacity(opacity * 0.18))
+        )
+
+        // Mid ring — pulls the eye toward the bright core.
+        let midRadius = star.radius * 1.8
+        let midRect = CGRect(
+            x: x - midRadius,
+            y: y - midRadius,
+            width: midRadius * 2,
+            height: midRadius * 2
+        )
+        gc.fill(
+            Path(ellipseIn: midRect),
+            with: .color(baseColor.opacity(opacity * 0.45))
+        )
+
+        // Bright core — sharp, near-white pinpoint.
+        let coreRect = CGRect(
+            x: x - star.radius,
+            y: y - star.radius,
+            width: star.radius * 2,
+            height: star.radius * 2
+        )
+        gc.fill(
+            Path(ellipseIn: coreRect),
+            with: .color(baseColor.opacity(opacity))
+        )
     }
 
     private func drawShootingStar(gc: GraphicsContext, line: ShootingLine, elapsed: Double, size: CGSize) {

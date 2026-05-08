@@ -81,6 +81,16 @@ struct SeasonalColorEngine {
     }
 
     static func seasonalColor(named name: String, intensity: ShiftIntensity) -> UIColor {
+        // Constellation mode forces the primary canvas color to deep indigo
+        // so app-wide surfaces (sheets, list backgrounds, presentationBackground,
+        // ZStack fills) all resolve to the same #0a0a12 the body uses on
+        // pilgrim-podcast / pilgrim-landing. Cards keep their parchmentSecondary
+        // value so they read as warm patches against the cool indigo bg —
+        // matching the podcast's intentional layering.
+        if name == "parchment" && UserPreferences.appearanceMode.value == "constellation" {
+            return UIColor(red: 0.039, green: 0.039, blue: 0.071, alpha: 1.0)
+        }
+
         let date = debugDateOverride ?? Date()
         let hemisphere = storedHemisphere
 
