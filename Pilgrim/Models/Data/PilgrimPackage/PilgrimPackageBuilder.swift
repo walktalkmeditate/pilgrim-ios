@@ -50,6 +50,8 @@ enum PilgrimPackageBuilder {
         let system: ZodiacSystem = systemString == "sidereal" ? .sidereal : .tropical
         let celestialEnabled = UserPreferences.celestialAwarenessEnabled.value
 
+        let archivedRegistry = UserPreferences.archivedWalkRegistry.value
+
         DataManager.dataStack.perform(asynchronous: { transaction -> ([Walk], [Event]) in
             let walks = try transaction.fetchAll(
                 From<Walk>().orderBy(.ascending(\._startDate))
@@ -66,18 +68,27 @@ enum PilgrimPackageBuilder {
                     return
                 }
 
-                let pilgrimWalks = walks.compactMap {
-                    PilgrimPackageConverter.convert(
-                        walk: $0,
+                var archivedEntries: [PilgrimArchivedWalk] = []
+                var pilgrimWalks: [PilgrimWalk] = []
+
+                for walk in walks {
+                    if let entry = PilgrimPackageConverter.buildArchivedEntry(walk: walk, registry: archivedRegistry) {
+                        archivedEntries.append(entry)
+                    } else if let pilgrimWalk = PilgrimPackageConverter.convert(
+                        walk: walk,
                         system: system,
                         celestialEnabled: celestialEnabled,
                         includePhotos: includePhotos
-                    )
+                    ) {
+                        pilgrimWalks.append(pilgrimWalk)
+                    }
                 }
+
                 let pilgrimEvents = PilgrimPackageConverter.convertEvents(events: events)
                 let manifest = PilgrimPackageConverter.buildManifest(
                     walkCount: pilgrimWalks.count,
-                    events: pilgrimEvents
+                    events: pilgrimEvents,
+                    archivedEntries: archivedEntries
                 )
 
                 DispatchQueue.global(qos: .userInitiated).async {

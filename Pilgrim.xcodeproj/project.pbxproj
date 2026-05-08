@@ -355,6 +355,7 @@
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */; };
 		C5DF3101E0A3BF214B2FE127 /* CanvasBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */; };
+		C950A11E1333A7241A632EAD /* PilgrimPackageExporterArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */; };
 		CB7ADD4EA290BD08EFFF402B /* UserPreferencesArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */; };
 		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
 		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
@@ -939,6 +940,7 @@
 		CC55DD66EE77FF88AA99BB06 /* EtegamiGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiGenerator.swift; sourceTree = "<group>"; };
 		CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeneratedPrompt.swift; sourceTree = "<group>"; };
 		CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideFileStore.swift; sourceTree = "<group>"; };
+		D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageExporterArchivedTests.swift; sourceTree = "<group>"; };
 		D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayload.swift; sourceTree = "<group>"; };
 		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityListView.swift; sourceTree = "<group>"; };
@@ -1708,6 +1710,7 @@
 				62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */,
 				60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */,
 				5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */,
+				D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -2890,6 +2893,7 @@
 				847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */,
 				D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */,
 				12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */,
+				C950A11E1333A7241A632EAD /* PilgrimPackageExporterArchivedTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
