@@ -31,6 +31,7 @@
 		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
 		1BED3236A44370D58ED31DCC /* whisper-presence-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 2FCBF13CCEBEB5026330B0FD /* whisper-presence-3.aac */; };
 		1CEE0C61ECFD38178275EDE5 /* CairnTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEFB40EDD8525B65D45062C /* CairnTier.swift */; };
+		1D99785282035E297C602465 /* OrphanRecordingSweep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */; };
 		1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */; };
 		202AAC44744BC3E55F46A01A /* ProximityTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089F9DF63AFA0F902D41D768 /* ProximityTarget.swift */; };
 		2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCA829423DF100F54277 /* View+Navigation.swift */; };
@@ -752,6 +753,7 @@
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
 		62963F6ED9C823C21B05E003 /* whisper-lightness-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-lightness-1.aac"; sourceTree = "<group>"; };
 		62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserPreferencesArchivedTests.swift; sourceTree = "<group>"; };
+		65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrphanRecordingSweep.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973C /* MeditationGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973D /* MeditationGuideManagementTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagementTests.swift; sourceTree = "<group>"; };
@@ -1611,6 +1613,7 @@
 				22A5459B26E7F8DE00E19B0B /* UnitConverterInverse.swift */,
 				228B4F9227CA6C5400CD82E5 /* NewWalk.swift */,
 				8AF2425E48F3B1C39A109755 /* PilgrimPackage */,
+				65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -2823,6 +2826,7 @@
 				78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */,
 				C5DF3101E0A3BF214B2FE127 /* CanvasBackground.swift in Sources */,
 				7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */,
+				1D99785282035E297C602465 /* OrphanRecordingSweep.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

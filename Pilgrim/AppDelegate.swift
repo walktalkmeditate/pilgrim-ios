@@ -79,7 +79,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
 
         DataManager.setup(
             completion: { _ in
-                
+
+                OrphanRecordingSweep.run()
+
                 AudioManifestService.shared.syncIfNeeded()
                 VoiceGuideManifestService.shared.syncIfNeeded()
                 WhisperManifestService.shared.syncIfNeeded()
