@@ -198,20 +198,44 @@ struct JourneyEditorWebView: UIViewRepresentable {
             injected = true
 
             let jsonObj = jsonObject()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                Task { @MainActor in
-                    do {
-                        _ = try await webView.callAsyncJavaScript(
-                            "window.pilgrimEditor.loadData(data)",
-                            arguments: ["data": jsonObj],
-                            contentWorld: .page
-                        )
-                    } catch {
-                        print("[JourneyEditor] JS injection failed: \(error)")
-                    }
-                    self?.isLoading = false
+            Task { @MainActor in
+                do {
+                    try await waitForBridgeReady(in: webView)
+                    // edit.pilgrimapp.org runs the same JS bundle as
+                    // view.pilgrimapp.org with edit features enabled —
+                    // the bridge API is `window.pilgrimViewer`, NOT
+                    // `pilgrimEditor`. There is no separate editor
+                    // global.
+                    _ = try await webView.callAsyncJavaScript(
+                        "window.pilgrimViewer.loadData(data)",
+                        arguments: ["data": jsonObj],
+                        contentWorld: .page
+                    )
+                } catch {
+                    print("[JourneyEditor] JS injection failed: \(error)")
                 }
+                isLoading = false
             }
+        }
+
+        /// Polls `window.pilgrimViewer` until it's defined, up to ~5s.
+        /// Replaces a fixed 1.0s sleep that silently failed when the JS
+        /// bundle took longer to initialize.
+        @MainActor
+        private func waitForBridgeReady(in webView: WKWebView) async throws {
+            let pollMs: UInt64 = 100
+            let maxAttempts = 50  // 50 × 100ms = 5s
+            for _ in 0..<maxAttempts {
+                if let ready = try? await webView.callAsyncJavaScript(
+                    "return typeof window.pilgrimViewer === 'object' && typeof window.pilgrimViewer.loadData === 'function'",
+                    arguments: [:],
+                    contentWorld: .page
+                ) as? Bool, ready {
+                    return
+                }
+                try await Task.sleep(nanoseconds: pollMs * 1_000_000)
+            }
+            print("[JourneyEditor] window.pilgrimViewer not ready after 5s — bridge missing or page failed")
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
