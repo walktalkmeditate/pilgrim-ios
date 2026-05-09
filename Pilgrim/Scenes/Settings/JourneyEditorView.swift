@@ -183,44 +183,75 @@ struct JourneyEditorView: View {
 }
 
 /// JS shim injected into the editor page. Intercepts `<a download>` clicks
-/// targeting `blob:` URLs and forwards the bytes to iOS via the
-/// `savePilgrim` message handler instead of letting WKWebView swallow the
-/// download. Returning early from the click suppresses WebKit's default
-/// no-op behavior so the page doesn't double-trigger.
+/// targeting `blob:` URLs by reading the blob via fetch() and forwarding
+/// the bytes to iOS through the `savePilgrim` message handler. Returns
+/// early from the original click() to suppress WKWebView's native
+/// download path (which fails with "DownloadFailed" because blob URLs
+/// have no Content-Disposition header for the system download manager).
+///
+/// We override `HTMLAnchorElement.prototype.click` AND wrap
+/// `dispatchEvent` for click events on download anchors, because some
+/// bundlers compile `a.click()` down to dispatchEvent under the hood.
 private let savePilgrimShimJS: String = """
 (function() {
   if (window.__pilgrimSaveShimInstalled) return;
   window.__pilgrimSaveShimInstalled = true;
+
+  function captureBlobAndSend(anchor) {
+    fetch(anchor.href)
+      .then(function(r) { return r.blob(); })
+      .then(function(blob) {
+        return blob.arrayBuffer().then(function(buf) {
+          const bytes = new Uint8Array(buf);
+          let binary = '';
+          const chunk = 0x8000;
+          for (let i = 0; i < bytes.length; i += chunk) {
+            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+          }
+          const base64 = btoa(binary);
+          window.webkit.messageHandlers.savePilgrim.postMessage({
+            filename: anchor.download || 'walk.pilgrim',
+            base64: base64,
+            mime: blob.type || 'application/octet-stream'
+          });
+        });
+      })
+      .catch(function(err) {
+        console.error('[savePilgrimShim] capture failed:', err);
+      });
+  }
+
+  function isDownloadAnchor(target) {
+    return target instanceof HTMLAnchorElement
+      && target.download
+      && typeof target.href === 'string'
+      && target.href.indexOf('blob:') === 0;
+  }
+
+  // Capture-phase listener catches the click before WebKit's native
+  // download handling kicks in. Calling preventDefault + stopPropagation
+  // suppresses the native download attempt.
+  document.addEventListener('click', function(ev) {
+    const target = ev.target.closest ? ev.target.closest('a[download]') : null;
+    if (target && isDownloadAnchor(target)) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      captureBlobAndSend(target);
+    }
+  }, true);
+
+  // Belt-and-suspenders: also override the prototype click() for any
+  // bundled code path that bypasses dispatchEvent entirely.
   const origClick = HTMLAnchorElement.prototype.click;
   HTMLAnchorElement.prototype.click = function() {
     try {
-      const isBlob = typeof this.href === 'string' && this.href.indexOf('blob:') === 0;
-      if (this.download && isBlob) {
-        fetch(this.href)
-          .then(function(r) { return r.blob(); })
-          .then(function(blob) {
-            return blob.arrayBuffer().then(function(buf) {
-              const bytes = new Uint8Array(buf);
-              let binary = '';
-              const chunk = 0x8000;
-              for (let i = 0; i < bytes.length; i += chunk) {
-                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-              }
-              const base64 = btoa(binary);
-              window.webkit.messageHandlers.savePilgrim.postMessage({
-                filename: this.download || 'walk.pilgrim',
-                base64: base64,
-                mime: blob.type || 'application/octet-stream'
-              });
-            }.bind(this));
-          }.bind(this))
-          .catch(function(err) {
-            console.error('[savePilgrimShim] failed:', err);
-          });
+      if (isDownloadAnchor(this)) {
+        captureBlobAndSend(this);
         return;
       }
     } catch (err) {
-      console.error('[savePilgrimShim] click intercept threw:', err);
+      console.error('[savePilgrimShim] prototype click intercept threw:', err);
     }
     return origClick.apply(this, arguments);
   };
@@ -262,7 +293,11 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
         Coordinator(walksJSON: walksJSON, isLoading: $isLoading, savedFile: $savedFile)
     }
 
-    fileprivate class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    fileprivate class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKDownloadDelegate {
+
+        // Stores the destination URL we hand WKDownload so we can present
+        // it once the download finishes.
+        private var pendingDownloadDestination: URL?
         let walksJSON: String
         @Binding var isLoading: Bool
         @Binding var savedFile: PilgrimSaveItem?
@@ -335,6 +370,68 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             DispatchQueue.main.async { [weak self] in
                 self?.isLoading = false
             }
+        }
+
+        // MARK: - WKDownloadDelegate (backup for any save path the JS shim misses)
+
+        /// Catches blob: URL navigations that escape the JS-shim layer
+        /// (e.g. WebKit's native download path triggered by a bundled
+        /// `<a download>` click that didn't go through prototype.click).
+        /// Routes to .download so we can capture the bytes via WKDownload.
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationAction: WKNavigationAction,
+            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+        ) {
+            if let url = navigationAction.request.url, url.scheme == "blob" {
+                decisionHandler(.download)
+                return
+            }
+            decisionHandler(.allow)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            navigationAction: WKNavigationAction,
+            didBecome download: WKDownload
+        ) {
+            download.delegate = self
+        }
+
+        func download(
+            _ download: WKDownload,
+            decideDestinationUsing response: URLResponse,
+            suggestedFilename: String,
+            completionHandler: @escaping (URL?) -> Void
+        ) {
+            // The blob URL won't have a useful suggestedFilename. Use the
+            // download attribute if exposed; otherwise fall back to
+            // walk.pilgrim. Write into NSTemporaryDirectory so the Share
+            // Sheet can read it.
+            let name: String
+            if !suggestedFilename.isEmpty, suggestedFilename != "Unknown" {
+                name = suggestedFilename
+            } else {
+                name = "walk.pilgrim"
+            }
+            let safeName = name.replacingOccurrences(of: "/", with: "_")
+            let dest = FileManager.default.temporaryDirectory.appendingPathComponent(safeName)
+            try? FileManager.default.removeItem(at: dest)
+            pendingDownloadDestination = dest
+            completionHandler(dest)
+        }
+
+        func downloadDidFinish(_ download: WKDownload) {
+            guard let dest = pendingDownloadDestination else { return }
+            pendingDownloadDestination = nil
+            DispatchQueue.main.async { [weak self] in
+                self?.savedFile = PilgrimSaveItem(url: dest)
+            }
+        }
+
+        func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+            print("[JourneyEditor] WKDownload failed: \(error)")
+            pendingDownloadDestination = nil
         }
 
         // MARK: - WKScriptMessageHandler
