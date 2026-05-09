@@ -21,7 +21,19 @@ struct VoiceRecordingRow: View {
 
     @State private var isEditing = false
     @State private var editText = ""
+    @State private var isTranscriptionExpanded = false
     @FocusState private var isEditFocused: Bool
+
+    private static let transcriptionExpandThreshold = 280
+
+    /// True when the text is plausibly tall enough to be clipped by the
+    /// 7-line read-mode clamp. Char-count alone misses newline-heavy short
+    /// texts; line-count alone misses single-line walls. Either trigger
+    /// shows the toggle so the user is never stranded with hidden content.
+    private static func shouldOfferExpand(_ text: String) -> Bool {
+        text.count > transcriptionExpandThreshold
+            || text.split(separator: "\n", omittingEmptySubsequences: false).count > 7
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -142,18 +154,30 @@ struct VoiceRecordingRow: View {
                             }
                         }
                     } else {
-                        Text(transcription)
-                            .font(Constants.Typography.body)
-                            .foregroundColor(.ink)
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.parchmentTertiary)
-                            .cornerRadius(8)
-                            .onTapGesture {
-                                editText = transcription
-                                isEditing = true
-                                isEditFocused = true
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(transcription)
+                                .font(Constants.Typography.body)
+                                .foregroundColor(.ink)
+                                .lineLimit(isTranscriptionExpanded ? nil : 7)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .onTapGesture {
+                                    editText = transcription
+                                    isEditing = true
+                                    isEditFocused = true
+                                }
+                            if Self.shouldOfferExpand(transcription) {
+                                Button {
+                                    isTranscriptionExpanded.toggle()
+                                } label: {
+                                    Text(isTranscriptionExpanded ? "Show less" : "Show more")
+                                        .font(Constants.Typography.caption)
+                                        .foregroundColor(.stone)
+                                }
                             }
+                        }
+                        .padding(8)
+                        .background(Color.parchmentTertiary)
+                        .cornerRadius(8)
                     }
 
                     if !isEditing {

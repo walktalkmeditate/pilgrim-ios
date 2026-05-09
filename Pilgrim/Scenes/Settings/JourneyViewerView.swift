@@ -14,6 +14,7 @@ struct JourneyViewerView: View {
             if let json = walksJSON {
                 JourneyWebView(walksJSON: json, isLoading: $isLoading)
                     .ignoresSafeArea(edges: .bottom)
+                    .opacity(isLoading ? 0 : 1)
             }
 
             if isLoading {

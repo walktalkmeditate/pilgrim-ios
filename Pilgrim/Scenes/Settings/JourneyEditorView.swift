@@ -26,6 +26,10 @@ struct JourneyEditorView: View {
     @State private var pilgrimPayload: PilgrimPayload?
     @State private var error: String?
     @State private var savedFile: PilgrimSaveItem?
+    /// `.sheet(item:)` nils `savedFile` before `onDismiss` runs, so the
+    /// dismissal closure can't reach the URL. Mirror it here so cleanup
+    /// can find the temp file after the share sheet closes.
+    @State private var pendingTempCleanup: URL?
 
     var body: some View {
         ZStack {
@@ -33,9 +37,11 @@ struct JourneyEditorView: View {
                 JourneyEditorWebView(
                     payload: payload,
                     isLoading: $isLoading,
-                    savedFile: $savedFile
+                    savedFile: $savedFile,
+                    pendingTempCleanup: $pendingTempCleanup
                 )
                 .ignoresSafeArea(edges: .bottom)
+                .opacity(isLoading ? 0 : 1)
             }
 
             if isLoading {
@@ -71,12 +77,9 @@ struct JourneyEditorView: View {
             }
         }
         .sheet(item: $savedFile, onDismiss: {
-            // The Share Sheet has been closed (whether the user saved or
-            // cancelled). Clean up the temp file — the share sheet has
-            // already either copied the bytes to the user's chosen
-            // destination or the user has decided not to keep them.
-            if let url = savedFile?.url {
+            if let url = pendingTempCleanup {
                 try? FileManager.default.removeItem(at: url)
+                pendingTempCleanup = nil
             }
         }) { item in
             ShareSheet(items: [item.url])
@@ -155,6 +158,7 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
     let payload: PilgrimPayload
     @Binding var isLoading: Bool
     @Binding var savedFile: PilgrimSaveItem?
+    @Binding var pendingTempCleanup: URL?
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -200,27 +204,32 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
     func updateUIView(_ uiView: WKWebView, context: Context) {}
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(payload: payload, isLoading: $isLoading, savedFile: $savedFile)
+        Coordinator(
+            payload: payload,
+            isLoading: $isLoading,
+            savedFile: $savedFile,
+            pendingTempCleanup: $pendingTempCleanup
+        )
     }
 
-    fileprivate class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKDownloadDelegate {
+    fileprivate class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
 
-        // Stores the destination URL we hand WKDownload so we can present
-        // it once the download finishes.
-        private var pendingDownloadDestination: URL?
         let payload: PilgrimPayload
         @Binding var isLoading: Bool
         @Binding var savedFile: PilgrimSaveItem?
+        @Binding var pendingTempCleanup: URL?
         private var injected = false
 
         fileprivate init(
             payload: PilgrimPayload,
             isLoading: Binding<Bool>,
-            savedFile: Binding<PilgrimSaveItem?>
+            savedFile: Binding<PilgrimSaveItem?>,
+            pendingTempCleanup: Binding<URL?>
         ) {
             self.payload = payload
             self._isLoading = isLoading
             self._savedFile = savedFile
+            self._pendingTempCleanup = pendingTempCleanup
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -230,10 +239,6 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             Task { @MainActor in
                 do {
                     try await waitForBridgeReady(in: webView)
-                    // Use loadFile (added in pilgrim-viewer v1.4.5) so the
-                    // editor's save flow has the original .pilgrim ZIP
-                    // buffer. loadData alone leaves originalPilgrimBuffer
-                    // undefined and save bails silently.
                     _ = try await webView.callAsyncJavaScript(
                         "await window.pilgrimViewer.loadFile(filename, base64); return true;",
                         arguments: [
@@ -242,7 +247,6 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
                         ],
                         contentWorld: .page
                     )
-                    print("[JourneyEditor] loadFile injected, \(payload.base64.count) base64 chars")
                 } catch {
                     print("[JourneyEditor] JS injection failed: \(error)")
                 }
@@ -250,9 +254,6 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             }
         }
 
-        /// Polls `window.pilgrimViewer.loadFile` until it's defined, up to
-        /// ~5s. Replaces a fixed sleep that silently failed when the JS
-        /// bundle took longer to initialize.
         @MainActor
         private func waitForBridgeReady(in webView: WKWebView) async throws {
             let pollMs: UInt64 = 100
@@ -284,94 +285,19 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             }
         }
 
-        // MARK: - WKDownloadDelegate (backup for any save path the JS shim misses)
-
-        /// Catches blob: URL navigations that escape the JS-shim layer
-        /// (e.g. WebKit's native download path triggered by a bundled
-        /// `<a download>` click that didn't go through prototype.click).
-        /// Routes to .download so we can capture the bytes via WKDownload.
-        func webView(
-            _ webView: WKWebView,
-            decidePolicyFor navigationAction: WKNavigationAction,
-            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
-        ) {
-            let url = navigationAction.request.url?.absoluteString ?? "<no url>"
-            if let scheme = navigationAction.request.url?.scheme, scheme == "blob" {
-                print("[JourneyEditor] decidePolicyFor blob URL → .download (\(url.prefix(80)))")
-                decisionHandler(.download)
-                return
-            }
-            print("[JourneyEditor] decidePolicyFor → .allow (\(url.prefix(80)))")
-            decisionHandler(.allow)
-        }
-
-        func webView(
-            _ webView: WKWebView,
-            navigationAction: WKNavigationAction,
-            didBecome download: WKDownload
-        ) {
-            print("[JourneyEditor] navigationAction didBecome WKDownload")
-            download.delegate = self
-        }
-
-        func download(
-            _ download: WKDownload,
-            decideDestinationUsing response: URLResponse,
-            suggestedFilename: String,
-            completionHandler: @escaping (URL?) -> Void
-        ) {
-            // The blob URL won't have a useful suggestedFilename. Use the
-            // download attribute if exposed; otherwise fall back to
-            // walk.pilgrim. Write into NSTemporaryDirectory so the Share
-            // Sheet can read it.
-            let name: String
-            if !suggestedFilename.isEmpty, suggestedFilename != "Unknown" {
-                name = suggestedFilename
-            } else {
-                name = "walk.pilgrim"
-            }
-            let safeName = name.replacingOccurrences(of: "/", with: "_")
-            let dest = FileManager.default.temporaryDirectory.appendingPathComponent(safeName)
-            try? FileManager.default.removeItem(at: dest)
-            pendingDownloadDestination = dest
-            completionHandler(dest)
-        }
-
-        func downloadDidFinish(_ download: WKDownload) {
-            guard let dest = pendingDownloadDestination else { return }
-            pendingDownloadDestination = nil
-            DispatchQueue.main.async { [weak self] in
-                self?.savedFile = PilgrimSaveItem(url: dest)
-            }
-        }
-
-        func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
-            print("[JourneyEditor] WKDownload failed: \(error)")
-            pendingDownloadDestination = nil
-        }
-
         // MARK: - WKScriptMessageHandler
 
         func userContentController(
             _ userContentController: WKUserContentController,
             didReceive message: WKScriptMessage
         ) {
-            if message.name == "pilgrimDebug" {
-                if let s = message.body as? String {
-                    print("[PilgrimWeb] \(s)")
-                }
-                return
-            }
-
-            print("[JourneyEditor] message arrived: \(message.name)")
             guard message.name == "savePilgrim",
                   let payload = message.body as? [String: Any],
                   let base64 = payload["base64"] as? String,
                   let data = Data(base64Encoded: base64) else {
-                print("[JourneyEditor] savePilgrim message malformed: \(message.body)")
+                print("[JourneyEditor] savePilgrim message malformed")
                 return
             }
-            print("[JourneyEditor] savePilgrim received \(data.count) bytes")
 
             let filename = (payload["filename"] as? String) ?? "walk.pilgrim"
             let safeName = filename.replacingOccurrences(of: "/", with: "_")
@@ -384,6 +310,7 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
                 }
                 try data.write(to: tempURL, options: .atomic)
                 DispatchQueue.main.async { [weak self] in
+                    self?.pendingTempCleanup = tempURL
                     self?.savedFile = PilgrimSaveItem(url: tempURL)
                 }
             } catch {

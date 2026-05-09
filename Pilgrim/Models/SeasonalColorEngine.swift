@@ -81,14 +81,9 @@ struct SeasonalColorEngine {
     }
 
     static func seasonalColor(named name: String, intensity: ShiftIntensity) -> UIColor {
-        // Constellation mode forces the primary canvas color to deep indigo
-        // so app-wide surfaces (sheets, list backgrounds, presentationBackground,
-        // ZStack fills) all resolve to the same #0a0a12 the body uses on
-        // pilgrim-podcast / pilgrim-landing. Cards keep their parchmentSecondary
-        // value so they read as warm patches against the cool indigo bg —
-        // matching the podcast's intentional layering.
-        if name == "parchment" && UserPreferences.appearanceMode.value == "constellation" {
-            return UIColor(red: 0.039, green: 0.039, blue: 0.071, alpha: 1.0)
+        if UserPreferences.appearanceMode.value == "constellation",
+           let override = constellationOverride(named: name) {
+            return override
         }
 
         let date = debugDateOverride ?? Date()
@@ -125,6 +120,29 @@ struct SeasonalColorEngine {
     }
 
     // MARK: - Private
+
+    /// Constellation mode replaces the default palette with a starlit indigo
+    /// + lavender scheme matching pilgrim-podcast's `.constellation` CSS.
+    /// Returning nil here means "fall through to seasonal-shift logic", which
+    /// is the right behavior for tokens that aren't part of the override
+    /// (e.g. moss, rust). Bypasses the per-name asset lookup entirely so
+    /// these aren't subject to seasonal hue/saturation shifts.
+    private static func constellationOverride(named name: String) -> UIColor? {
+        switch name {
+        case "parchment":
+            return UIColor(red: 0.039, green: 0.039, blue: 0.071, alpha: 1.0)  // #0a0a12
+        case "parchmentSecondary":
+            return UIColor(red: 0.078, green: 0.071, blue: 0.157, alpha: 1.0)  // #141228
+        case "parchmentTertiary":
+            return UIColor(red: 0.102, green: 0.094, blue: 0.204, alpha: 1.0)  // #1A1834
+        case "stone":
+            return UIColor(red: 0.784, green: 0.753, blue: 1.0, alpha: 1.0)    // #C8C0FF
+        case "ink":
+            return UIColor(red: 0.910, green: 0.878, blue: 1.0, alpha: 1.0)    // #E8E0FF
+        default:
+            return nil
+        }
+    }
 
     private static var storedHemisphere: Hemisphere {
         guard let raw = UserPreferences.hemisphereOverride.value else {

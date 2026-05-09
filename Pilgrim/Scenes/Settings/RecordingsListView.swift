@@ -21,6 +21,17 @@ struct RecordingsListView: View {
     @State private var editingTranscriptionText = ""
     @FocusState private var isTranscriptionEditFocused: Bool
 
+    private static let transcriptionExpandThreshold = 280
+
+    /// True when the text is plausibly tall enough to be clipped by the
+    /// 7-line read-mode clamp. Char-count alone misses newline-heavy short
+    /// texts; line-count alone misses single-line walls. Either trigger
+    /// shows the toggle so the user is never stranded with hidden content.
+    private static func shouldOfferExpand(_ text: String) -> Bool {
+        text.count > transcriptionExpandThreshold
+            || text.split(separator: "\n", omittingEmptySubsequences: false).count > 7
+    }
+
     var body: some View {
         Group {
             if walkSections.isEmpty {
@@ -287,21 +298,38 @@ struct RecordingsListView: View {
                 }
             }
         } else {
+            let isExpanded = uuid.map { expandedTranscriptions.contains($0) } ?? false
             HStack(alignment: .top) {
-                Text(text)
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.ink)
-                    .padding(Constants.UI.Padding.small)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.parchmentTertiary)
-                    .cornerRadius(Constants.UI.CornerRadius.small)
-                    .onTapGesture {
-                        if let uuid {
-                            editingTranscriptionText = text
-                            editingTranscriptionUUID = uuid
-                            isTranscriptionEditFocused = true
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(text)
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                        .lineLimit(isExpanded ? nil : 7)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onTapGesture {
+                            if let uuid {
+                                editingTranscriptionText = text
+                                editingTranscriptionUUID = uuid
+                                isTranscriptionEditFocused = true
+                            }
+                        }
+                    if let uuid, Self.shouldOfferExpand(text) {
+                        Button {
+                            if expandedTranscriptions.contains(uuid) {
+                                expandedTranscriptions.remove(uuid)
+                            } else {
+                                expandedTranscriptions.insert(uuid)
+                            }
+                        } label: {
+                            Text(isExpanded ? "Show less" : "Show more")
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.stone)
                         }
                     }
+                }
+                .padding(Constants.UI.Padding.small)
+                .background(Color.parchmentTertiary)
+                .cornerRadius(Constants.UI.CornerRadius.small)
                 Button {
                     UIPasteboard.general.string = text
                 } label: {
