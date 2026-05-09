@@ -44,13 +44,14 @@ final class VoiceGuideDownloadManager: ObservableObject {
                     _ = await download(prompt: prompt, packId: pack.id)
                 }
                 completed += 1
+                let progressSnapshot = Double(completed) / Double(total)
                 await MainActor.run {
-                    self.downloadProgress[pack.id] = Double(completed) / Double(total)
+                    self.downloadProgress[pack.id] = progressSnapshot
                 }
             }
 
             await MainActor.run {
-                self.activeDownloads.remove(pack.id)
+                _ = self.activeDownloads.remove(pack.id)
             }
         }
         downloadTasks[pack.id] = task

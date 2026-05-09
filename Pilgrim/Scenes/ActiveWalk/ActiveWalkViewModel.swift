@@ -129,7 +129,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
         Task { [weak self] in
             let snapshot = await WeatherService.shared.fetchCurrent(for: location)
-            await MainActor.run {
+            await MainActor.run { [weak self] in
                 if let snapshot {
                     self?.weatherSnapshot = snapshot
                     self?.builder.weatherSnapshot = snapshot

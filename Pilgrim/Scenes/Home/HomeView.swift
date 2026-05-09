@@ -93,7 +93,7 @@ struct HomeView: View {
     #endif
 }
 
-extension Walk: @retroactive Identifiable {
+extension Walk: Identifiable {
     private static let nilSentinel = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
     public var id: UUID { uuid ?? Self.nilSentinel }
 }

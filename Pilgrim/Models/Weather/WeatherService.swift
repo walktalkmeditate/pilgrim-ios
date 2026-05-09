@@ -137,6 +137,14 @@ final class WeatherService {
             return .wind
         case .haze, .smoky, .blowingDust:
             return .haze
+        case .frigid:
+            return .clear
+        case .hail:
+            return .heavyRain
+        case .sunFlurries:
+            return .snow
+        case .sunShowers:
+            return .lightRain
         @unknown default:
             return .clear
         }
