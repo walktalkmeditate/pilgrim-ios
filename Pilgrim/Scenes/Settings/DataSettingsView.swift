@@ -275,9 +275,9 @@ struct DataSettingsView: View {
             if accessing { url.stopAccessingSecurityScopedResource() }
             isImporting = false
             switch result {
-            case .success(let count):
+            case .success(let summary):
                 alertTitle = "Import Complete"
-                alertMessage = "\(count) walk\(count == 1 ? "" : "s") imported."
+                alertMessage = describeImportSummary(summary)
                 showAlert = true
             case .failure(let error):
                 alertTitle = "Import Failed"
@@ -285,6 +285,28 @@ struct DataSettingsView: View {
                 showAlert = true
             }
         }
+    }
+
+    /// Builds the user-facing message for the import-complete alert.
+    /// Tended files (replaced > 0 or archived > 0) get a richer summary
+    /// so the user understands edits and archives landed even when no
+    /// new walks were added; fresh-export merges keep the simple count.
+    private func describeImportSummary(_ summary: ImportSummary) -> String {
+        if summary.totalChanges == 0 {
+            return "No changes — every walk in this file is already on this device."
+        }
+
+        var parts: [String] = []
+        if summary.added > 0 {
+            parts.append("\(summary.added) walk\(summary.added == 1 ? "" : "s") added")
+        }
+        if summary.replaced > 0 {
+            parts.append("\(summary.replaced) walk\(summary.replaced == 1 ? "" : "s") tended")
+        }
+        if summary.archived > 0 {
+            parts.append("\(summary.archived) walk\(summary.archived == 1 ? "" : "s") archived")
+        }
+        return parts.joined(separator: ", ") + "."
     }
 
     // MARK: - Export Recordings

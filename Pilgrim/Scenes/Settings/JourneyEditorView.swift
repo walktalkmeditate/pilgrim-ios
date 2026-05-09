@@ -150,96 +150,6 @@ struct JourneyEditorView: View {
     }
 }
 
-/// JS shim injected into the editor page. Intercepts `<a download>` clicks
-/// targeting `blob:` URLs by reading the blob via fetch() and forwarding
-/// the bytes to iOS through the `savePilgrim` message handler. Returns
-/// early from the original click() to suppress WKWebView's native
-/// download path (which fails with "DownloadFailed" because blob URLs
-/// have no Content-Disposition header for the system download manager).
-///
-/// We override `HTMLAnchorElement.prototype.click` AND wrap
-/// `dispatchEvent` for click events on download anchors, because some
-/// bundlers compile `a.click()` down to dispatchEvent under the hood.
-private let savePilgrimShimJS: String = """
-(function() {
-  function dlog(msg) {
-    try { window.webkit.messageHandlers.pilgrimDebug.postMessage(msg); } catch (e) {}
-  }
-
-  dlog('[shim] script start');
-  if (window.__pilgrimSaveShimInstalled) { dlog('[shim] already installed'); return; }
-  window.__pilgrimSaveShimInstalled = true;
-
-  // Probe: is the savePilgrim handler actually present?
-  try {
-    var present = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.savePilgrim);
-    dlog('[shim] webkit.messageHandlers.savePilgrim present? ' + present);
-  } catch (err) {
-    dlog('[shim] handler probe threw: ' + err);
-  }
-
-  function captureBlobAndSend(anchor) {
-    dlog('[shim] captureBlobAndSend triggered, filename=' + anchor.download);
-    fetch(anchor.href)
-      .then(function(r) { return r.blob(); })
-      .then(function(blob) {
-        return blob.arrayBuffer().then(function(buf) {
-          const bytes = new Uint8Array(buf);
-          let binary = '';
-          const chunk = 0x8000;
-          for (let i = 0; i < bytes.length; i += chunk) {
-            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-          }
-          const base64 = btoa(binary);
-          dlog('[shim] posting savePilgrim, bytes=' + bytes.length);
-          window.webkit.messageHandlers.savePilgrim.postMessage({
-            filename: anchor.download || 'walk.pilgrim',
-            base64: base64,
-            mime: blob.type || 'application/octet-stream'
-          });
-        });
-      })
-      .catch(function(err) {
-        dlog('[shim] captureBlobAndSend failed: ' + err);
-      });
-  }
-
-  function isDownloadAnchor(target) {
-    return target instanceof HTMLAnchorElement
-      && target.download
-      && typeof target.href === 'string'
-      && target.href.indexOf('blob:') === 0;
-  }
-
-  document.addEventListener('click', function(ev) {
-    const target = ev.target.closest ? ev.target.closest('a[download]') : null;
-    if (target && isDownloadAnchor(target)) {
-      dlog('[shim] capture-phase intercepted click, blob=' + target.href.slice(0, 30));
-      ev.preventDefault();
-      ev.stopPropagation();
-      ev.stopImmediatePropagation();
-      captureBlobAndSend(target);
-    }
-  }, true);
-
-  const origClick = HTMLAnchorElement.prototype.click;
-  HTMLAnchorElement.prototype.click = function() {
-    try {
-      if (isDownloadAnchor(this)) {
-        dlog('[shim] prototype.click intercepted, blob=' + this.href.slice(0, 30));
-        captureBlobAndSend(this);
-        return;
-      }
-    } catch (err) {
-      dlog('[shim] prototype intercept threw: ' + err);
-    }
-    return origClick.apply(this, arguments);
-  };
-
-  dlog('[shim] install complete');
-})();
-"""
-
 fileprivate struct JourneyEditorWebView: UIViewRepresentable {
 
     let payload: PilgrimPayload
@@ -259,14 +169,7 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
         config.websiteDataStore = .nonPersistent()
 
         let userContent = WKUserContentController()
-        let shim = WKUserScript(
-            source: savePilgrimShimJS,
-            injectionTime: .atDocumentEnd,
-            forMainFrameOnly: true
-        )
-        userContent.addUserScript(shim)
         userContent.add(context.coordinator, name: "savePilgrim")
-        userContent.add(context.coordinator, name: "pilgrimDebug")
         config.userContentController = userContent
 
         let webView = WKWebView(frame: .zero, configuration: config)

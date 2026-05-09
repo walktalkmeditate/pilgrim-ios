@@ -28,19 +28,40 @@ import ZIPFoundation
 /// same iCloud account. For everyone else, the metadata is preserved but
 /// the photos won't render in-app (they only render in the desktop viewer
 /// where the embedded JPEG bytes are read directly from the archive).
+/// What an import actually did. `added` walks are net-new on this
+/// device. `replaced` walks were already present and got overwritten
+/// with the tended version (only happens for tended files —
+/// `manifest.modifications[]` non-empty or `manifest.archived[]`
+/// non-empty). `archived` walks transitioned to the archived state.
+struct ImportSummary: Equatable {
+    let added: Int
+    let replaced: Int
+    let archived: Int
+
+    static let empty = ImportSummary(added: 0, replaced: 0, archived: 0)
+
+    var totalChanges: Int { added + replaced + archived }
+}
+
 enum PilgrimPackageImporter {
 
     static func importPackage(
         from url: URL,
-        completion: @escaping (Result<Int, PilgrimPackageError>) -> Void
+        completion: @escaping (Result<ImportSummary, PilgrimPackageError>) -> Void
     ) {
         let completion = safeClosure(from: completion)
 
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                let (walks, events, archived) = try unpackAndDecode(from: url)
+                let (walks, events, archived, isTended) = try unpackAndDecode(from: url)
                 DispatchQueue.main.async {
-                    saveData(walks: walks, events: events, archived: archived, completion: completion)
+                    saveData(
+                        walks: walks,
+                        events: events,
+                        archived: archived,
+                        isTended: isTended,
+                        completion: completion
+                    )
                 }
             } catch let error as PilgrimPackageError {
                 completion(.failure(error))
@@ -54,7 +75,7 @@ enum PilgrimPackageImporter {
     /// entries from its JSON payload. Internal (not private) so unit tests can
     /// exercise the parse pipeline against a fixture archive without going
     /// through `DataManager.saveWalks` (which requires a live CoreStore stack).
-    static func unpackAndDecode(from url: URL) throws -> ([TempWalk], [TempEvent], [PilgrimArchivedWalk]) {
+    static func unpackAndDecode(from url: URL) throws -> ([TempWalk], [TempEvent], [PilgrimArchivedWalk], Bool) {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory
             .appendingPathComponent("pilgrim-import-\(UUID().uuidString)")
@@ -119,14 +140,15 @@ enum PilgrimPackageImporter {
 
         let tempEvents = PilgrimPackageConverter.convertEvents(manifest.events)
 
-        return (tempWalks, tempEvents, manifest.archivedOrEmpty)
+        return (tempWalks, tempEvents, manifest.archivedOrEmpty, manifest.isTended)
     }
 
     private static func saveData(
         walks: [TempWalk],
         events: [TempEvent],
         archived: [PilgrimArchivedWalk],
-        completion: @escaping (Result<Int, PilgrimPackageError>) -> Void
+        isTended: Bool,
+        completion: @escaping (Result<ImportSummary, PilgrimPackageError>) -> Void
     ) {
         let localRegistry = UserPreferences.archivedWalkRegistry.value
 
@@ -140,15 +162,17 @@ enum PilgrimPackageImporter {
         }
 
         if filteredWalks.isEmpty && archived.isEmpty {
-            completion(.success(0))
+            completion(.success(.empty))
             return
         }
+
+        let archivedCount = archived.count
 
         if filteredWalks.isEmpty {
             applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
                 switch result {
                 case .success:
-                    completion(.success(0))
+                    completion(.success(ImportSummary(added: 0, replaced: 0, archived: archivedCount)))
                 case .failure(let error):
                     completion(.failure(.fileSystemError(error)))
                 }
@@ -156,34 +180,100 @@ enum PilgrimPackageImporter {
             return
         }
 
-        DataManager.saveWalks(objects: filteredWalks) { success, error, savedWalks in
-            if success {
-                let savedCount = savedWalks.count
+        // Tended files (manifest.modifications[] or manifest.archived[]
+        // non-empty) carry the user's edits applied via the web editor.
+        // The per-walk JSON payloads ALREADY reflect the post-edit state,
+        // so we overwrite by UUID — delete the existing CoreStore row
+        // and let saveWalks insert the tended version. Fresh exports
+        // stay append-only-by-UUID so the cross-device merge use case
+        // (drop two .pilgrim files in succession) keeps working.
+        let preflight: (@escaping (Int) -> Void) -> Void = { next in
+            guard isTended else {
+                next(0)
+                return
+            }
+            deleteExistingWalksMatching(filteredWalks) { replacedCount in
+                next(replacedCount)
+            }
+        }
 
-                let saveEventsAndApplyArchived = {
-                    applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
-                        if case .failure(let err) = result {
-                            print("[PilgrimPackageImporter] Archive apply failed: \(err)")
+        preflight { replacedCount in
+            DataManager.saveWalks(objects: filteredWalks) { success, error, savedWalks in
+                if success {
+                    let totalSaved = savedWalks.count
+                    let addedCount = max(0, totalSaved - replacedCount)
+
+                    let saveEventsAndApplyArchived = {
+                        applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
+                            if case .failure(let err) = result {
+                                print("[PilgrimPackageImporter] Archive apply failed: \(err)")
+                            }
+                            completion(.success(ImportSummary(
+                                added: addedCount,
+                                replaced: replacedCount,
+                                archived: archivedCount
+                            )))
                         }
-                        completion(.success(savedCount))
                     }
-                }
 
-                if !events.isEmpty {
-                    DataManager.saveEvents(objects: events) { _, _, _ in
+                    if !events.isEmpty {
+                        DataManager.saveEvents(objects: events) { _, _, _ in
+                            saveEventsAndApplyArchived()
+                        }
+                    } else {
                         saveEventsAndApplyArchived()
                     }
+                } else if let error = error {
+                    completion(.failure(.fileSystemError(
+                        NSError(domain: "PilgrimPackageImporter",
+                                code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "\(error)"])
+                    )))
                 } else {
-                    saveEventsAndApplyArchived()
+                    completion(.success(ImportSummary(
+                        added: savedWalks.count,
+                        replaced: replacedCount,
+                        archived: archivedCount
+                    )))
                 }
-            } else if let error = error {
-                completion(.failure(.fileSystemError(
-                    NSError(domain: "PilgrimPackageImporter",
-                            code: -1,
-                            userInfo: [NSLocalizedDescriptionKey: "\(error)"])
-                )))
-            } else {
-                completion(.success(savedWalks.count))
+            }
+        }
+    }
+
+    /// For each walk in `incoming` whose UUID matches an existing
+    /// CoreStore Walk, deletes the existing row in a single transaction.
+    /// Calls back on the main queue with the number of rows deleted.
+    /// Used by the tended-import path before re-inserting the edited
+    /// versions via `DataManager.saveWalks`.
+    private static func deleteExistingWalksMatching(
+        _ incoming: [TempWalk],
+        completion: @escaping (Int) -> Void
+    ) {
+        let incomingUUIDs = Set(incoming.compactMap { $0.uuid })
+        guard !incomingUUIDs.isEmpty else {
+            completion(0)
+            return
+        }
+
+        DataManager.dataStack.perform(asynchronous: { transaction -> Int in
+            var deleted = 0
+            for uuid in incomingUUIDs {
+                let existing = try transaction.fetchAll(
+                    From<Walk>().where(\Walk._uuid == uuid)
+                )
+                for walk in existing {
+                    transaction.delete(walk)
+                    deleted += 1
+                }
+            }
+            return deleted
+        }) { result in
+            switch result {
+            case .success(let count):
+                completion(count)
+            case .failure(let error):
+                print("[PilgrimPackageImporter] Tended-overwrite delete failed: \(error)")
+                completion(0)
             }
         }
     }

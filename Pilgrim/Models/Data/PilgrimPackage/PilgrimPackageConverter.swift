@@ -280,7 +280,11 @@ enum PilgrimPackageConverter {
             customPromptStyles: customStyles,
             intentions: intentionStore.intentions,
             events: events,
-            archived: archivedEntries.isEmpty ? nil : archivedEntries
+            archived: archivedEntries.isEmpty ? nil : archivedEntries,
+            // iOS only authors fresh exports — edits never originate on
+            // device, only via the web editor. Always emit nil so the
+            // file isn't mistaken for a tended file on re-import.
+            modifications: nil
         )
     }
 

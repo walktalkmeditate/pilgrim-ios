@@ -25,7 +25,7 @@ final class PilgrimPackageImporterTests: XCTestCase {
         let walk = makeMinimalPilgrimWalk(photos: nil)
         let archive = try buildFixtureArchive(walks: [walk], includePhotosDirectory: false)
 
-        let (decoded, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+        let (decoded, _, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
 
         XCTAssertEqual(decoded.count, 1)
         XCTAssertTrue(
@@ -51,7 +51,7 @@ final class PilgrimPackageImporterTests: XCTestCase {
             includePhotosDirectory: true
         )
 
-        let (decoded, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+        let (decoded, _, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
 
         let imported = try XCTUnwrap(decoded.first)
         XCTAssertEqual(imported.walkPhotos.count, 1)
@@ -96,7 +96,7 @@ final class PilgrimPackageImporterTests: XCTestCase {
             photoFileContents: Data(repeating: 0xFF, count: 1024) // dummy "JPEG" bytes
         )
 
-        let (decoded, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+        let (decoded, _, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
 
         XCTAssertEqual(decoded.count, 1)
         XCTAssertEqual(decoded.first?.walkPhotos.count, 1)
@@ -117,7 +117,7 @@ final class PilgrimPackageImporterTests: XCTestCase {
             photoFileContents: Data(repeating: 0x00, count: 256)
         )
 
-        let (decoded, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+        let (decoded, _, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
 
         XCTAssertEqual(decoded.count, 1)
         XCTAssertTrue(decoded.first?.walkPhotos.isEmpty ?? false)
@@ -170,7 +170,8 @@ final class PilgrimPackageImporterTests: XCTestCase {
             customPromptStyles: [],
             intentions: [],
             events: [],
-            archived: nil
+            archived: nil,
+            modifications: nil
         )
         let manifestData = try encoder.encode(manifest)
         try manifestData.write(to: stagingDir.appendingPathComponent("manifest.json"))

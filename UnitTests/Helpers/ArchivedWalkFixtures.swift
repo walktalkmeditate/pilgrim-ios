@@ -24,7 +24,8 @@ enum ArchivedWalkFixtures {
             customPromptStyles: [],
             intentions: [],
             events: [],
-            archived: archived
+            archived: archived,
+            modifications: nil
         )
     }
 
