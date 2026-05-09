@@ -113,7 +113,7 @@ struct JourneyViewerView: View {
     /// Uses synchronous PHImageManager with network disabled so
     /// local photos resolve in ~10-50ms each. iCloud-only photos
     /// get nil (gracefully skipped by the viewer).
-    private static func enrichWithInlinePhotos(_ walk: PilgrimWalk) -> PilgrimWalk {
+    nonisolated private static func enrichWithInlinePhotos(_ walk: PilgrimWalk) -> PilgrimWalk {
         guard let photos = walk.photos, !photos.isEmpty else { return walk }
 
         var enriched = walk
@@ -134,7 +134,7 @@ struct JourneyViewerView: View {
         return enriched
     }
 
-    private static func loadPhotoDataUrl(localIdentifier: String) -> String? {
+    nonisolated private static func loadPhotoDataUrl(localIdentifier: String) -> String? {
         let fetchResult = PHAsset.fetchAssets(
             withLocalIdentifiers: [localIdentifier],
             options: nil

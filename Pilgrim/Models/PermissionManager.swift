@@ -92,15 +92,15 @@ class PermissionManager: NSObject, CLLocationManagerDelegate {
     // MARK: Microphone
 
     var isMicrophoneGranted: Bool {
-        AVAudioSession.sharedInstance().recordPermission == .granted
+        AVAudioApplication.shared.recordPermission == .granted
     }
 
     func checkMicrophonePermission(closure: @escaping (Bool) -> Void) {
-        switch AVAudioSession.sharedInstance().recordPermission {
+        switch AVAudioApplication.shared.recordPermission {
         case .granted:
             DispatchQueue.main.async { closure(true) }
         case .undetermined:
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            AVAudioApplication.requestRecordPermission { granted in
                 DispatchQueue.main.async { closure(granted) }
             }
         default:

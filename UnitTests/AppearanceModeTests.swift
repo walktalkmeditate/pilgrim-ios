@@ -65,12 +65,20 @@ final class AppearanceManagerTests: XCTestCase {
     }
 
     func testPreferenceDefault_isSystem() {
-        // Tests the API contract — `defaultValue` falls through when no
-        // user value is set. Avoids exercising UserDefaults round-trip
-        // because the simulator's persistent prefs (set by interactive
-        // app use) bleed into the test process via cfprefsd, making the
-        // round-trip test environment-dependent.
+        // Two-part assertion to avoid cfprefsd shared-state poisoning
+        // (the test host shares UserDefaults with the interactively-installed
+        // app on the same sim, so removing "appearanceMode" can race with
+        // a writeback from the running app). Part 1 asserts the constant.
+        // Part 2 exercises the round-trip on a unique key the test owns.
         XCTAssertEqual(UserPreferences.appearanceMode.defaultValue, "system")
+
+        let isolatedKey = "test_appearanceMode_default_\(UUID().uuidString)"
+        let isolatedPref = UserPreference.Required<String>(
+            key: isolatedKey,
+            defaultValue: "system"
+        )
+        XCTAssertEqual(isolatedPref.value, "system")
+        UserDefaults.standard.removeObject(forKey: isolatedKey)
     }
 
     func testResolvedScheme_defaultIsNil() {

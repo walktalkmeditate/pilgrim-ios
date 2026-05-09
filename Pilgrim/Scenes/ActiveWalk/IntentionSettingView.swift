@@ -289,13 +289,13 @@ struct IntentionSettingView: View {
     // MARK: - Voice Permission
 
     private func startVoiceRecording() {
-        switch AVAudioSession.sharedInstance().recordPermission {
+        switch AVAudioApplication.shared.recordPermission {
         case .granted:
             recorder.startRecording()
         case .denied:
             showMicDenied = true
         case .undetermined:
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            AVAudioApplication.requestRecordPermission { granted in
                 DispatchQueue.main.async {
                     if granted {
                         recorder.startRecording()

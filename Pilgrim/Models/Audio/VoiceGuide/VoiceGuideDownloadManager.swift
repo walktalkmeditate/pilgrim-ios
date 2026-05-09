@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 final class VoiceGuideDownloadManager: ObservableObject {
 
     static let shared = VoiceGuideDownloadManager()

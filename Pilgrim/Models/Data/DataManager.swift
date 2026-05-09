@@ -88,7 +88,7 @@ struct DataManager {
                     if let intermediate = destinationModel as? IntermediateDataModelProtocol.Type {
                         if !intermediate.intermediateMappingActions(dataStack) {
                             print("[DataManager] Intermediate mapping actions of \(destinationModel) were unsuccessful")
-                            completion(.intermediateMappingActionsFailed(version: intermediate))
+                            completion(.intermediateMappingActionsFailed(versionIdentifier: intermediate.identifier))
                             return
                         }
                     }

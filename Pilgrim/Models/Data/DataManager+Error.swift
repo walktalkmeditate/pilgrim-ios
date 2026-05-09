@@ -32,14 +32,14 @@ extension DataManager {
         /// CoreStore failed to add the SQLiteStorage to the DataStack.
         case failedToAddStorage(error: CoreStoreError)
         /// While performing intermediate mapping actions in between migrations, the mapping action closure returned with a failure indication.
-        case intermediateMappingActionsFailed(version: DataModelProtocol.Type)
-        
+        case intermediateMappingActionsFailed(versionIdentifier: String)
+
         var debugDescription: String {
             switch self {
             case .failedToAddStorage(let error):
                 return "CoreStore failed to add the SQLiteStorage to the DataStack:\n \(error.debugDescription)"
-            case .intermediateMappingActionsFailed(let version):
-                return "While performing intermediate mapping actions in between migrations, the mapping action closure returned with a failure indication for version: \(version.identifier)"
+            case .intermediateMappingActionsFailed(let versionIdentifier):
+                return "While performing intermediate mapping actions in between migrations, the mapping action closure returned with a failure indication for version: \(versionIdentifier)"
             }
         }
     }

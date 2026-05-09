@@ -345,7 +345,7 @@ struct WalkSharingButtons: View {
 
     // MARK: - File Helpers
 
-    static func writeToTemp(image: UIImage, name: String) -> URL {
+    nonisolated static func writeToTemp(image: UIImage, name: String) -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).png")
         try? image.pngData()?.write(to: url, options: .atomic)
         return url
