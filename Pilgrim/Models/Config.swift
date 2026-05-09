@@ -21,6 +21,7 @@
 
 import UIKit
 import Foundation
+import StoreKit
 
 enum Config {
     
@@ -76,8 +77,25 @@ enum Config {
     }
     
     /// A boolean indicating whether or not the receipt provided through by the App Store was generated for a sandbox / non-release environment; in other words: it indicates if the app was downloaded through another way than the App Store
+    /// (including TestFlight). Populated asynchronously from `AppTransaction.shared` at launch via `warmSandboxReceiptCache`. Defaults to `false`
+    /// (treat as release) until the cache is warmed — only used by the Settings release-status row, which re-renders on read.
+    nonisolated(unsafe) private static var cachedSandboxReceipt: Bool = false
+
     static var hasSanboxReceipt: Bool {
-        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        cachedSandboxReceipt
+    }
+
+    /// Call once at app launch. Safe to call on background tasks. The
+    /// `AppTransaction.shared` call may briefly hit the network the first
+    /// time the app runs after install, then caches in StoreKit.
+    static func warmSandboxReceiptCache() async {
+        guard let verification = try? await AppTransaction.shared else { return }
+        let transaction: AppTransaction
+        switch verification {
+        case .verified(let value), .unverified(let value, _):
+            transaction = value
+        }
+        cachedSandboxReceipt = transaction.environment == .sandbox
     }
 
     enum Audio {
