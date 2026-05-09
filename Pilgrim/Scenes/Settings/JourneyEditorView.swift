@@ -268,6 +268,14 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
 
+        // Use a non-persistent data store so the editor's JS chunks
+        // aren't served from a stale WKWebView URL cache. Without this,
+        // Safari/WebKit can hand back the prior version of the bundle
+        // even after a fresh deploy at edit.pilgrimapp.org — and the
+        // prior version doesn't know about the savePilgrim host bridge,
+        // which is exactly the failure the user was seeing.
+        config.websiteDataStore = .nonPersistent()
+
         let userContent = WKUserContentController()
         let shim = WKUserScript(
             source: savePilgrimShimJS,
@@ -283,7 +291,13 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
-        webView.load(URLRequest(url: Config.Web.editor))
+
+        // Force-reload from the network on every entry. We can't rely on
+        // the WKWebView's HTTP cache to invalidate when the editor
+        // deploys a new bundle.
+        var request = URLRequest(url: Config.Web.editor)
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        webView.load(request)
         return webView
     }
 
