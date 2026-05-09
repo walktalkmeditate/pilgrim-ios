@@ -32,6 +32,7 @@ struct GoshuinPageView: View {
             allWalks: allWalks
         )
         let isMilestone = !milestones.isEmpty
+        let isArchived = walk.uuid.map { UserPreferences.isArchivedWalk(uuid: $0) } ?? false
 
         return VStack(spacing: 4) {
             ZStack {
@@ -39,19 +40,25 @@ struct GoshuinPageView: View {
                     .fill(Color.ink.opacity(0.04))
                     .frame(width: 132, height: 132)
 
-                if isMilestone {
+                if isMilestone && !isArchived {
                     Circle()
                         .stroke(Color.dawn.opacity(0.5), lineWidth: 2)
                         .frame(width: 136, height: 136)
                 }
 
                 SealThumbnailView(walk: walk)
+                    .opacity(isArchived ? 0.45 : 1.0)
             }
             .onTapGesture {
-                if let uuid = walk.uuid { onSelectWalk(uuid) }
+                guard !isArchived, let uuid = walk.uuid else { return }
+                onSelectWalk(uuid)
             }
 
-            if let milestone = milestones.first {
+            if isArchived {
+                Text("Archived")
+                    .font(Constants.Typography.caption)
+                    .foregroundStyle(Color.fog.opacity(0.7))
+            } else if let milestone = milestones.first {
                 Text(GoshuinMilestones.label(for: milestone))
                     .font(Constants.Typography.caption)
                     .foregroundStyle(Color.fog)

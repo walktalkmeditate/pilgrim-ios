@@ -351,6 +351,7 @@
 		BBBB000000000000000041 /* PhotoNarrativeArc.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000040 /* PhotoNarrativeArc.swift */; };
 		BBBB000000000000000043 /* PhotoNarrativeArcTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000042 /* PhotoNarrativeArcTests.swift */; };
 		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
+		BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
@@ -952,6 +953,7 @@
 		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
 		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
+		DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecordingPathRecovery.swift; sourceTree = "<group>"; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
 		DD2DDA53AB9BF3A478409478 /* whisper-play-9.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-9.aac"; sourceTree = "<group>"; };
@@ -1614,6 +1616,7 @@
 				228B4F9227CA6C5400CD82E5 /* NewWalk.swift */,
 				8AF2425E48F3B1C39A109755 /* PilgrimPackage */,
 				65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */,
+				DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -2827,6 +2830,7 @@
 				C5DF3101E0A3BF214B2FE127 /* CanvasBackground.swift in Sources */,
 				7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */,
 				1D99785282035E297C602465 /* OrphanRecordingSweep.swift in Sources */,
+				BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

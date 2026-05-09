@@ -80,7 +80,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         DataManager.setup(
             completion: { _ in
 
-                OrphanRecordingSweep.run()
+                RecordingPathRecovery.run {
+                    OrphanRecordingSweep.run()
+                }
 
                 AudioManifestService.shared.syncIfNeeded()
                 VoiceGuideManifestService.shared.syncIfNeeded()

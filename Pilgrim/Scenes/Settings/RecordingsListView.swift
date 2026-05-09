@@ -306,13 +306,6 @@ struct RecordingsListView: View {
                         .foregroundColor(.ink)
                         .lineLimit(isExpanded ? nil : 7)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .onTapGesture {
-                            if let uuid {
-                                editingTranscriptionText = text
-                                editingTranscriptionUUID = uuid
-                                isTranscriptionEditFocused = true
-                            }
-                        }
                     if let uuid, Self.shouldOfferExpand(text) {
                         Button {
                             if expandedTranscriptions.contains(uuid) {
@@ -330,12 +323,27 @@ struct RecordingsListView: View {
                 .padding(Constants.UI.Padding.small)
                 .background(Color.parchmentTertiary)
                 .cornerRadius(Constants.UI.CornerRadius.small)
-                Button {
-                    UIPasteboard.general.string = text
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.caption)
-                        .foregroundColor(.fog)
+                VStack(spacing: 12) {
+                    if let uuid {
+                        Button {
+                            editingTranscriptionText = text
+                            editingTranscriptionUUID = uuid
+                            isTranscriptionEditFocused = true
+                        } label: {
+                            Image(systemName: "pencil")
+                                .font(.caption)
+                                .foregroundColor(.fog)
+                                .frame(minWidth: 32, minHeight: 32)
+                        }
+                    }
+                    Button {
+                        UIPasteboard.general.string = text
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .font(.caption)
+                            .foregroundColor(.fog)
+                            .frame(minWidth: 32, minHeight: 32)
+                    }
                 }
             }
         }

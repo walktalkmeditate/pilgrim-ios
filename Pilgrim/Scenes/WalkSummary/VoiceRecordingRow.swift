@@ -160,11 +160,6 @@ struct VoiceRecordingRow: View {
                                 .foregroundColor(.ink)
                                 .lineLimit(isTranscriptionExpanded ? nil : 7)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .onTapGesture {
-                                    editText = transcription
-                                    isEditing = true
-                                    isEditFocused = true
-                                }
                             if Self.shouldOfferExpand(transcription) {
                                 Button {
                                     isTranscriptionExpanded.toggle()
@@ -181,19 +176,31 @@ struct VoiceRecordingRow: View {
                     }
 
                     if !isEditing {
-                        VStack(spacing: 8) {
+                        VStack(spacing: 12) {
+                            Button {
+                                editText = transcription
+                                isEditing = true
+                                isEditFocused = true
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .font(.caption)
+                                    .foregroundColor(.fog)
+                                    .frame(minWidth: 32, minHeight: 32)
+                            }
                             Button {
                                 UIPasteboard.general.string = transcription
                             } label: {
                                 Image(systemName: "doc.on.doc")
                                     .font(.caption)
                                     .foregroundColor(.fog)
+                                    .frame(minWidth: 32, minHeight: 32)
                             }
                             if fileAvailable {
                                 Button(action: onRetranscribe) {
                                     Image(systemName: "arrow.clockwise")
                                         .font(.caption)
                                         .foregroundColor(.fog)
+                                        .frame(minWidth: 32, minHeight: 32)
                                 }
                             }
                         }
