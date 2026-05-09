@@ -4,6 +4,7 @@ import CoreStore
 struct SettingsView: View {
 
     @StateObject private var permissionVM = PermissionStatusViewModel()
+    @EnvironmentObject private var appearanceManager: AppearanceManager
     @State private var walkCount = 0
     @State private var totalDistance: Double = 0
     @State private var totalMeditationSeconds: TimeInterval = 0
@@ -13,7 +14,13 @@ struct SettingsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        NavigationStack {
+        // Reading themeID forces body to re-evaluate when the user flips
+        // appearance mode, so all Color.parchmentSecondary / .ink / .stone
+        // reads inside the body resolve to fresh values. The NavigationStack
+        // below is implemented with internal @State so its push stack
+        // (Appearance, About, etc.) survives the body re-eval.
+        _ = appearanceManager.themeID
+        return NavigationStack {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.big) {
                     pullToRevealTagline

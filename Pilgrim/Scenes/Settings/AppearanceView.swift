@@ -3,6 +3,7 @@ import SwiftUI
 struct AppearanceView: View {
 
     @State private var mode: String = UserPreferences.appearanceMode.value
+    @EnvironmentObject private var appearanceManager: AppearanceManager
 
     private struct ModeEntry: Identifiable {
         let value: String
@@ -20,7 +21,11 @@ struct AppearanceView: View {
     ]
 
     var body: some View {
-        List(entries) { entry in
+        // Touch themeID so this view's body re-evaluates on mode change —
+        // ensures the just-picked mode's bg + text update in place without
+        // dismissing the picker.
+        _ = appearanceManager.themeID
+        return List(entries) { entry in
             Button {
                 UserPreferences.appearanceMode.value = entry.value
                 mode = entry.value

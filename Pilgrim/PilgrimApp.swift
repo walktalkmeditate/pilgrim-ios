@@ -31,7 +31,6 @@ struct PilgrimApp: App {
         WindowGroup {
             ZStack {
                 RootCoordinatorView(viewModel: RootCoordinatorViewModel())
-                    .id(appearanceManager.themeID)
                 if appearanceManager.isConstellation {
                     ConstellationOverlay()
                 }
