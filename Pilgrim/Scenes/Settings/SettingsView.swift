@@ -14,12 +14,6 @@ struct SettingsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        // Reading themeID forces body to re-evaluate when the user flips
-        // appearance mode, so all Color.parchmentSecondary / .ink / .stone
-        // reads inside the body resolve to fresh values. The NavigationStack
-        // below is implemented with internal @State so its push stack
-        // (Appearance, About, etc.) survives the body re-eval.
-        _ = appearanceManager.themeID
         return NavigationStack {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.big) {
@@ -48,6 +42,11 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, Constants.UI.Padding.normal)
                 .padding(.bottom, Constants.UI.Padding.breathingRoom)
+                // Force the card stack to rebuild on appearance flip — each
+                // card uses Color.parchmentSecondary etc that don't observe
+                // the theme themselves. .id() inside the ScrollView keeps
+                // scroll position; .id() outside ScrollView would reset it.
+                .id(appearanceManager.themeID)
             }
             .coordinateSpace(name: "scroll")
             .canvasBackground()

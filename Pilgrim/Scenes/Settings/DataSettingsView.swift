@@ -86,6 +86,7 @@ struct DataSettingsView: View {
                 Text("Export creates a .pilgrim archive with all your walks, transcriptions, and settings. Import restores walks from a .pilgrim file.")
                     .font(Constants.Typography.caption)
             }
+            .pilgrimListRow()
 
             Section {
                 NavigationLink(destination: JourneyViewerView()) {
@@ -102,6 +103,7 @@ struct DataSettingsView: View {
                 Text("View renders your walks at view.pilgrimapp.org. Edit opens edit.pilgrimapp.org for in-browser editing. Your walk data is not uploaded; the JSON is injected into the browser via the JS bridge.")
                     .font(Constants.Typography.caption)
             }
+            .pilgrimListRow()
 
             if recordingCount > 0 {
                 Section {
@@ -128,6 +130,7 @@ struct DataSettingsView: View {
                     Text("Exports all voice recording audio files as a zip archive. These are not included in the data export.")
                         .font(Constants.Typography.caption)
                 }
+                .pilgrimListRow()
             }
         }
         .scrollContentBackground(.hidden)

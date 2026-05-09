@@ -75,6 +75,11 @@ struct AboutView: View {
                     setAlternateIcon("AppIconDark")
                 }
             }
+            if UIApplication.shared.alternateIconName != "AppIconConstellation" {
+                Button("Use constellation icon") {
+                    setAlternateIcon("AppIconConstellation")
+                }
+            }
             if let current = UIApplication.shared.alternateIconName, current != "AppIconDefault" {
                 Button("Reset to default") {
                     setAlternateIcon("AppIconDefault")

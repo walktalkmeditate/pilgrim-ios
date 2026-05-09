@@ -88,7 +88,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 VoiceGuideManifestService.shared.syncIfNeeded()
                 WhisperManifestService.shared.syncIfNeeded()
                 Task { await CollectiveCounterService.shared.fetch() }
-                Task { await Config.warmSandboxReceiptCache() }
 
                 #if DEBUG
                 if CommandLine.arguments.contains("--demo-mode") {

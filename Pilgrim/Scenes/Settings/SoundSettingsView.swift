@@ -24,12 +24,12 @@ struct SoundSettingsView: View {
 
     var body: some View {
         List {
-            mainToggleSection
+            mainToggleSection.pilgrimListRow()
             if soundsEnabled {
-                walkSection
-                meditationSection
-                volumeSection
-                storageSection
+                walkSection.pilgrimListRow()
+                meditationSection.pilgrimListRow()
+                volumeSection.pilgrimListRow()
+                storageSection.pilgrimListRow()
             }
         }
         .scrollContentBackground(.hidden)

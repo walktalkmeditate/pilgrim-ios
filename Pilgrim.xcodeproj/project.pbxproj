@@ -223,6 +223,7 @@
 		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
 		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
 		6F8AA2EEEDD08C727B89AB94 /* VoiceGuideScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */; };
+		713149F4D1CD5020989CF81D /* View+ListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86222C880AE25FA86DCC6C66 /* View+ListRow.swift */; };
 		72F3855194AE5C4010A607C4 /* WhisperManifestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */; };
 		73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */; };
 		758B907703CD5A6120536B37 /* ProximityDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C415FCDCD38A1DE0212C8451 /* ProximityDetectionService.swift */; };
@@ -772,6 +773,7 @@
 		83BD1C5A8539657B3A5EC6BD /* whisper-presence-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-4.aac"; sourceTree = "<group>"; };
 		841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestService.swift; sourceTree = "<group>"; };
 		8585A815173A295C2F468057 /* WhisperService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
+		86222C880AE25FA86DCC6C66 /* View+ListRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "View+ListRow.swift"; sourceTree = "<group>"; };
 		862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPromptVoices.swift; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareViewModel.swift; sourceTree = "<group>"; };
@@ -1572,6 +1574,7 @@
 				22BC99512941DC9900D9B1A5 /* Color.swift */,
 				2201BCAA29423E1600F54277 /* NavigationLink.swift */,
 				2201BCA829423DF100F54277 /* View+Navigation.swift */,
+				86222C880AE25FA86DCC6C66 /* View+ListRow.swift */,
 			);
 			path = SwiftUI;
 			sourceTree = "<group>";
@@ -2831,6 +2834,7 @@
 				7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */,
 				1D99785282035E297C602465 /* OrphanRecordingSweep.swift in Sources */,
 				BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */,
+				713149F4D1CD5020989CF81D /* View+ListRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3100,7 +3104,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconConstellation AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = accentColor;
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;
@@ -3126,7 +3130,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconConstellation AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = accentColor;
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;

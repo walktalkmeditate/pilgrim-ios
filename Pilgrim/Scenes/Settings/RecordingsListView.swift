@@ -77,6 +77,7 @@ struct RecordingsListView: View {
                     } header: {
                         sectionHeader(for: section)
                     }
+                    .pilgrimListRow()
                 }
 
                 Section {
@@ -100,6 +101,7 @@ struct RecordingsListView: View {
                         Button("Cancel", role: .cancel) {}
                     }
                 }
+                .pilgrimListRow()
             }
         }
         .searchable(text: $searchText, prompt: "Search transcriptions")

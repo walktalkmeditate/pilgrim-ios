@@ -9,9 +9,15 @@ struct MainTabView: View {
     @State private var selectedTab: MainTab = .path
     @State private var sealShareURL: URL?
     @StateObject private var coordinator = MainCoordinator()
+    @EnvironmentObject private var appearanceManager: AppearanceManager
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        // Touch themeID so the body re-evaluates on appearance flip and
+        // .tint(.stone) below recomputes to the new mode's accent color.
+        // selectedTab + coordinator @State survive a body re-eval (only
+        // identity change resets @State).
+        _ = appearanceManager.themeID
+        return TabView(selection: $selectedTab) {
             Tab("Path", systemImage: "figure.walk", value: .path) {
                 WalkStartView(onStartWalk: { mode in
                     coordinator.startWalk(mode: mode)

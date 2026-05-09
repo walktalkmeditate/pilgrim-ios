@@ -52,6 +52,7 @@ struct AppearanceView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .pilgrimListRow()
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
