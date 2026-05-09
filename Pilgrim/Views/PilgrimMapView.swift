@@ -290,14 +290,10 @@ struct PilgrimMapView: UIViewRepresentable {
         let collection = FeatureCollection(features: features)
 
         if mapView.mapboxMap.sourceExists(withId: Self.sourceId) {
-            do {
-                try mapView.mapboxMap.updateGeoJSONSource(
-                    withId: Self.sourceId,
-                    geoJSON: .featureCollection(collection)
-                )
-            } catch {
-                print("[PilgrimMapView] Failed to update route source: \(error)")
-            }
+            mapView.mapboxMap.updateGeoJSONSource(
+                withId: Self.sourceId,
+                geoJSON: .featureCollection(collection)
+            )
         } else {
             do {
                 var source = GeoJSONSource(id: Self.sourceId)

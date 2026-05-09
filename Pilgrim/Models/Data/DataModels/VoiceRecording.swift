@@ -13,7 +13,7 @@ extension VoiceRecording: VoiceRecordingInterface {
     public var transcription: String? { threadSafeSyncReturn { self._transcription.value } }
     public var wordsPerMinute: Double? { threadSafeSyncReturn { self._wordsPerMinute.value } }
     public var isEnhanced: Bool { threadSafeSyncReturn { self._isEnhanced.value } }
-    public var workout: WalkInterface? { self._workout.value as? WalkInterface }
+    public var workout: WalkInterface? { self._workout.value }
 
 }
 

@@ -50,7 +50,9 @@ struct WalkCard: View {
                     .frame(width: width / 2.25, height: 125)
                     .cornerRadius(Constants.UI.CornerRadius.small)
                     .onAppear { viewModel.loadImage(colorScheme: colorScheme) }
-                    .onChange(of: colorScheme, perform: viewModel.loadImage)
+                    .onChange(of: colorScheme) { _, newValue in
+                        viewModel.loadImage(colorScheme: newValue)
+                    }
             }
             .padding(Constants.UI.Padding.small)
             .background(Color.secondaryBackground)

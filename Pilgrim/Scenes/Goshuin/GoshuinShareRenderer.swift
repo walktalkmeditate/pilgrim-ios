@@ -283,8 +283,6 @@ enum GoshuinShareRenderer {
 
         let spacing: CGFloat = 30
         let rowSpacing: CGFloat = 40
-        let totalGridWidth = CGFloat(columns) * sealSize + CGFloat(columns - 1) * spacing
-        let gridOriginX = (canvasSize.width - totalGridWidth) / 2
         let gridOriginY: CGFloat = 275
 
         var rng = SeededRNG(seed: UInt64(selected.count))

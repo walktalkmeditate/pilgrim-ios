@@ -31,7 +31,7 @@ struct SetupCoordinatorView: View {
 
             case .breathTransition:
                 BreathTransitionView {
-                    UserPreferences.applyUnitSystem(metric: Locale.current.usesMetricSystem)
+                    UserPreferences.applyUnitSystem(metric: Locale.current.measurementSystem == .metric)
                     UserPreferences.isSetUp.value = true
                 }
                 .transition(.opacity)
