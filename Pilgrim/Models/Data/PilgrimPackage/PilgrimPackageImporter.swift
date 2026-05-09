@@ -314,8 +314,19 @@ enum PilgrimPackageImporter {
 
                 let recordings = editableWalk._voiceRecordings.value
                     .sorted { $0._startDate.value < $1._startDate.value }
+
+                // Count guard: if the editor added or removed recordings (the
+                // .pilgrim format does not currently support this, but a
+                // future format might), the startDate-ordinal match would
+                // assign paths to the wrong recordings. Skip restore for
+                // this walk and log — accepting empty paths is safer than
+                // silently corrupting the audio mapping.
+                guard recordings.count == recordingPaths.count else {
+                    print("[PilgrimPackageImporter] Skipping path restore for walk \(walkUUID.uuidString.prefix(8)) — count mismatch (\(recordings.count) recordings vs \(recordingPaths.count) captured paths)")
+                    continue
+                }
+
                 for (idx, recording) in recordings.enumerated() {
-                    guard idx < recordingPaths.count else { break }
                     let path = recordingPaths[idx]
                     guard !path.isEmpty else { continue }
                     if let editableRec = transaction.edit(recording) {

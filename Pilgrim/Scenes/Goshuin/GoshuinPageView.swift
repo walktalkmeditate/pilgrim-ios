@@ -22,6 +22,9 @@ struct GoshuinPageView: View {
         .padding(Constants.UI.Padding.normal)
         .background(parchmentBackground)
         .cornerRadius(Constants.UI.CornerRadius.normal)
+        // Bottom padding gives the TabView page-indicator dots room
+        // to breathe — without this they sit flush against the card.
+        .padding(.bottom, Constants.UI.Padding.big)
     }
 
     private func sealCell(walk: WalkInterface, walkIndex: Int) -> some View {
@@ -66,9 +69,17 @@ struct GoshuinPageView: View {
         }
     }
 
+    @ViewBuilder
     private var parchmentBackground: some View {
-        let patina = patinaColor
-        return Color.parchment.overlay(patina)
+        // In constellation mode, use parchmentSecondary (#141228 cool indigo)
+        // so the card reads as a distinct surface against the deeper #0a0a12
+        // canvas. The earth-toned dawn patina is suppressed in this mode —
+        // it warms the card brown which clashes with the starlit palette.
+        if UserPreferences.appearanceMode.value == "constellation" {
+            Color.parchmentSecondary
+        } else {
+            Color.parchment.overlay(patinaColor)
+        }
     }
 
 }

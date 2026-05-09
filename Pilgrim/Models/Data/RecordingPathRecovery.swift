@@ -68,8 +68,18 @@ enum RecordingPathRecovery {
                 return lDate < rDate
             }
 
+            // The creation-date heuristic assumes 1:1 file-to-recording
+            // mapping. iCloud restore can shuffle creation dates, and a
+            // count mismatch between orphans and unreferenced files means
+            // we cannot reliably pair them. Log and refuse partial pairing
+            // — the user is better served seeing "unavailable" than getting
+            // a wrong recording for a different recording's slot.
+            guard sortedFiles.count == orphans.count else {
+                print("[RecordingPathRecovery] Skipping walk \(walkUUID.uuidString.prefix(8)) — count mismatch (\(orphans.count) orphans vs \(sortedFiles.count) unreferenced files); creation-date heuristic unsafe under count drift")
+                continue
+            }
+
             for (idx, recording) in orphans.enumerated() {
-                guard idx < sortedFiles.count else { break }
                 guard let editable = transaction.edit(recording) else { continue }
                 let rel = "Recordings/\(walkUUID.uuidString)/\(sortedFiles[idx].lastPathComponent)"
                 editable._fileRelativePath .= rel
