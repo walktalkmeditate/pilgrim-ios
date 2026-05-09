@@ -9,18 +9,29 @@ fileprivate struct PilgrimSaveItem: Identifiable {
     let url: URL
 }
 
+/// Pre-built `.pilgrim` zip payload for the editor. The editor's save flow
+/// requires the original ZIP buffer (so it can apply mods on top of the
+/// existing archive structure rather than reconstructing from scratch),
+/// so we ship the actual zip bytes via the `pilgrimViewer.loadFile`
+/// bridge — `loadData` only sets walks/manifest and the editor would bail
+/// at save time with `originalPilgrimBuffer` undefined.
+fileprivate struct PilgrimPayload {
+    let filename: String
+    let base64: String
+}
+
 struct JourneyEditorView: View {
 
     @State private var isLoading = true
-    @State private var walksJSON: String?
+    @State private var pilgrimPayload: PilgrimPayload?
     @State private var error: String?
     @State private var savedFile: PilgrimSaveItem?
 
     var body: some View {
         ZStack {
-            if let json = walksJSON {
+            if let payload = pilgrimPayload {
                 JourneyEditorWebView(
-                    walksJSON: json,
+                    payload: payload,
                     isLoading: $isLoading,
                     savedFile: $savedFile
                 )
@@ -31,7 +42,7 @@ struct JourneyEditorView: View {
                 VStack(spacing: Constants.UI.Padding.normal) {
                     SwiftUI.ProgressView()
                         .tint(.stone)
-                    Text(walksJSON == nil ? "Preparing your journey..." : "Opening editor...")
+                    Text(pilgrimPayload == nil ? "Preparing your journey..." : "Opening editor...")
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
                 }
@@ -73,112 +84,69 @@ struct JourneyEditorView: View {
         .task { await prepareData() }
     }
 
+    /// Build the actual `.pilgrim` ZIP via `PilgrimPackageBuilder` (the
+    /// same code path used for export). The editor's save flow needs the
+    /// original ZIP bytes loaded into `originalPilgrimBuffer` — sending
+    /// only walks JSON via `pilgrimViewer.loadData` leaves that slot
+    /// undefined and save bails silently.
     private func prepareData() async {
-        let systemString = UserPreferences.zodiacSystem.value
-        let system: ZodiacSystem = systemString == "sidereal" ? .sidereal : .tropical
-        let celestialEnabled = UserPreferences.celestialAwarenessEnabled.value
-
+        let walkCount: Int
         do {
-            let walks: [Walk] = try DataManager.dataStack.fetchAll(
-                From<Walk>().orderBy(.ascending(\._startDate))
-            )
-            guard !walks.isEmpty else {
-                error = "No walks yet. Take a walk first."
-                isLoading = false
-                return
-            }
-
-            let reliquaryEnabled = UserPreferences.walkReliquaryEnabled.value
-                && PermissionManager.standard.isPhotosGranted
-
-            var pilgrimWalks = walks.compactMap {
-                PilgrimPackageConverter.convert(
-                    walk: $0,
-                    system: system,
-                    celestialEnabled: celestialEnabled,
-                    includePhotos: reliquaryEnabled
-                )
-            }
-
-            if reliquaryEnabled {
-                let snapshot = pilgrimWalks
-                pilgrimWalks = await Task.detached(priority: .userInitiated) {
-                    snapshot.map { Self.enrichWithInlinePhotos($0) }
-                }.value
-            }
-
-            let encoder = PilgrimDateCoding.makeEncoder()
-            let walksData = try encoder.encode(pilgrimWalks)
-
-            let manifest = PilgrimPackageConverter.buildManifest(
-                walkCount: pilgrimWalks.count,
-                events: []
-            )
-            let manifestData = try encoder.encode(manifest)
-
-            guard let walksString = String(data: walksData, encoding: .utf8),
-                  let manifestString = String(data: manifestData, encoding: .utf8) else {
-                error = "Failed to encode walk data."
-                isLoading = false
-                return
-            }
-
-            let json = "{\"walks\":\(walksString),\"manifest\":\(manifestString)}"
-            await MainActor.run { walksJSON = json }
+            walkCount = try DataManager.dataStack.fetchCount(From<Walk>())
         } catch {
             self.error = "Failed to load walks."
             isLoading = false
+            return
         }
+        guard walkCount > 0 else {
+            error = "No walks yet. Take a walk first."
+            isLoading = false
+            return
+        }
+
+        let reliquaryEnabled = UserPreferences.walkReliquaryEnabled.value
+            && PermissionManager.standard.isPhotosGranted
+
+        let payload: PilgrimPayload
+        do {
+            payload = try await Self.buildPayload(includePhotos: reliquaryEnabled)
+        } catch let buildError as PilgrimPackageError {
+            print("[JourneyEditor] PilgrimPackageBuilder failed: \(buildError)")
+            self.error = "Failed to package walks for editing."
+            isLoading = false
+            return
+        } catch {
+            print("[JourneyEditor] PilgrimPackageBuilder failed: \(error)")
+            self.error = "Failed to package walks for editing."
+            isLoading = false
+            return
+        }
+
+        await MainActor.run { pilgrimPayload = payload }
     }
 
-    private static func enrichWithInlinePhotos(_ walk: PilgrimWalk) -> PilgrimWalk {
-        guard let photos = walk.photos, !photos.isEmpty else { return walk }
-
-        var enriched = walk
-        enriched.photos = photos.compactMap { photo in
-            guard let dataUrl = loadPhotoDataUrl(localIdentifier: photo.localIdentifier) else {
-                return nil
+    /// Bridges `PilgrimPackageBuilder.build`'s completion-handler API to
+    /// async-await, reads the resulting `.pilgrim` file off the main
+    /// actor, base64-encodes it, then deletes the temp file.
+    private static func buildPayload(includePhotos: Bool) async throws -> PilgrimPayload {
+        let result: PilgrimPackageBuildResult = try await withCheckedThrowingContinuation { cont in
+            PilgrimPackageBuilder.build(includePhotos: includePhotos) { result in
+                switch result {
+                case .success(let value):
+                    cont.resume(returning: value)
+                case .failure(let error):
+                    cont.resume(throwing: error)
+                }
             }
-            return PilgrimPhoto(
-                localIdentifier: photo.localIdentifier,
-                capturedAt: photo.capturedAt,
-                capturedLat: photo.capturedLat,
-                capturedLng: photo.capturedLng,
-                keptAt: photo.keptAt,
-                embeddedPhotoFilename: photo.embeddedPhotoFilename,
-                inlineUrl: dataUrl
-            )
         }
-        return enriched
-    }
 
-    private static func loadPhotoDataUrl(localIdentifier: String) -> String? {
-        let fetchResult = PHAsset.fetchAssets(
-            withLocalIdentifiers: [localIdentifier],
-            options: nil
-        )
-        guard let asset = fetchResult.firstObject else { return nil }
-
-        let options = PHImageRequestOptions()
-        options.deliveryMode = .highQualityFormat
-        options.isNetworkAccessAllowed = false
-        options.isSynchronous = true
-        options.resizeMode = .exact
-
-        let targetSize = CGSize(width: 600, height: 600)
-
-        var result: String?
-        PHImageManager.default().requestImage(
-            for: asset,
-            targetSize: targetSize,
-            contentMode: .aspectFill,
-            options: options
-        ) { image, _ in
-            guard let image = image,
-                  let jpegData = image.jpegData(compressionQuality: 0.7) else { return }
-            result = "data:image/jpeg;base64,\(jpegData.base64EncodedString())"
-        }
-        return result
+        return try await Task.detached(priority: .userInitiated) {
+            defer { try? FileManager.default.removeItem(at: result.url) }
+            let data = try Data(contentsOf: result.url)
+            let base64 = data.base64EncodedString()
+            let filename = result.url.lastPathComponent
+            return PilgrimPayload(filename: filename, base64: base64)
+        }.value
     }
 }
 
@@ -194,10 +162,24 @@ struct JourneyEditorView: View {
 /// bundlers compile `a.click()` down to dispatchEvent under the hood.
 private let savePilgrimShimJS: String = """
 (function() {
-  if (window.__pilgrimSaveShimInstalled) return;
+  function dlog(msg) {
+    try { window.webkit.messageHandlers.pilgrimDebug.postMessage(msg); } catch (e) {}
+  }
+
+  dlog('[shim] script start');
+  if (window.__pilgrimSaveShimInstalled) { dlog('[shim] already installed'); return; }
   window.__pilgrimSaveShimInstalled = true;
 
+  // Probe: is the savePilgrim handler actually present?
+  try {
+    var present = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.savePilgrim);
+    dlog('[shim] webkit.messageHandlers.savePilgrim present? ' + present);
+  } catch (err) {
+    dlog('[shim] handler probe threw: ' + err);
+  }
+
   function captureBlobAndSend(anchor) {
+    dlog('[shim] captureBlobAndSend triggered, filename=' + anchor.download);
     fetch(anchor.href)
       .then(function(r) { return r.blob(); })
       .then(function(blob) {
@@ -209,6 +191,7 @@ private let savePilgrimShimJS: String = """
             binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
           }
           const base64 = btoa(binary);
+          dlog('[shim] posting savePilgrim, bytes=' + bytes.length);
           window.webkit.messageHandlers.savePilgrim.postMessage({
             filename: anchor.download || 'walk.pilgrim',
             base64: base64,
@@ -217,7 +200,7 @@ private let savePilgrimShimJS: String = """
         });
       })
       .catch(function(err) {
-        console.error('[savePilgrimShim] capture failed:', err);
+        dlog('[shim] captureBlobAndSend failed: ' + err);
       });
   }
 
@@ -228,12 +211,10 @@ private let savePilgrimShimJS: String = """
       && target.href.indexOf('blob:') === 0;
   }
 
-  // Capture-phase listener catches the click before WebKit's native
-  // download handling kicks in. Calling preventDefault + stopPropagation
-  // suppresses the native download attempt.
   document.addEventListener('click', function(ev) {
     const target = ev.target.closest ? ev.target.closest('a[download]') : null;
     if (target && isDownloadAnchor(target)) {
+      dlog('[shim] capture-phase intercepted click, blob=' + target.href.slice(0, 30));
       ev.preventDefault();
       ev.stopPropagation();
       ev.stopImmediatePropagation();
@@ -241,26 +222,27 @@ private let savePilgrimShimJS: String = """
     }
   }, true);
 
-  // Belt-and-suspenders: also override the prototype click() for any
-  // bundled code path that bypasses dispatchEvent entirely.
   const origClick = HTMLAnchorElement.prototype.click;
   HTMLAnchorElement.prototype.click = function() {
     try {
       if (isDownloadAnchor(this)) {
+        dlog('[shim] prototype.click intercepted, blob=' + this.href.slice(0, 30));
         captureBlobAndSend(this);
         return;
       }
     } catch (err) {
-      console.error('[savePilgrimShim] prototype click intercept threw:', err);
+      dlog('[shim] prototype intercept threw: ' + err);
     }
     return origClick.apply(this, arguments);
   };
+
+  dlog('[shim] install complete');
 })();
 """
 
 fileprivate struct JourneyEditorWebView: UIViewRepresentable {
 
-    let walksJSON: String
+    let payload: PilgrimPayload
     @Binding var isLoading: Bool
     @Binding var savedFile: PilgrimSaveItem?
 
@@ -284,6 +266,7 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
         )
         userContent.addUserScript(shim)
         userContent.add(context.coordinator, name: "savePilgrim")
+        userContent.add(context.coordinator, name: "pilgrimDebug")
         config.userContentController = userContent
 
         let webView = WKWebView(frame: .zero, configuration: config)
@@ -291,6 +274,16 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
+
+        // Allow Safari Web Inspector to attach in Debug builds. iOS 16.4+
+        // requires this explicit opt-in even for development builds; without
+        // it WKWebViews show as "No Inspectable Applications" in Safari's
+        // Develop menu.
+        #if DEBUG
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
+        #endif
 
         // Force-reload from the network on every entry. We can't rely on
         // the WKWebView's HTTP cache to invalidate when the editor
@@ -304,7 +297,7 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
     func updateUIView(_ uiView: WKWebView, context: Context) {}
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(walksJSON: walksJSON, isLoading: $isLoading, savedFile: $savedFile)
+        Coordinator(payload: payload, isLoading: $isLoading, savedFile: $savedFile)
     }
 
     fileprivate class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKDownloadDelegate {
@@ -312,17 +305,17 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
         // Stores the destination URL we hand WKDownload so we can present
         // it once the download finishes.
         private var pendingDownloadDestination: URL?
-        let walksJSON: String
+        let payload: PilgrimPayload
         @Binding var isLoading: Bool
         @Binding var savedFile: PilgrimSaveItem?
         private var injected = false
 
         fileprivate init(
-            walksJSON: String,
+            payload: PilgrimPayload,
             isLoading: Binding<Bool>,
             savedFile: Binding<PilgrimSaveItem?>
         ) {
-            self.walksJSON = walksJSON
+            self.payload = payload
             self._isLoading = isLoading
             self._savedFile = savedFile
         }
@@ -331,20 +324,22 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             guard !injected else { return }
             injected = true
 
-            let jsonObj = jsonObject()
             Task { @MainActor in
                 do {
                     try await waitForBridgeReady(in: webView)
-                    // edit.pilgrimapp.org runs the same JS bundle as
-                    // view.pilgrimapp.org with edit features enabled —
-                    // the bridge API is `window.pilgrimViewer`, NOT
-                    // `pilgrimEditor`. There is no separate editor
-                    // global.
+                    // Use loadFile (added in pilgrim-viewer v1.4.5) so the
+                    // editor's save flow has the original .pilgrim ZIP
+                    // buffer. loadData alone leaves originalPilgrimBuffer
+                    // undefined and save bails silently.
                     _ = try await webView.callAsyncJavaScript(
-                        "window.pilgrimViewer.loadData(data)",
-                        arguments: ["data": jsonObj],
+                        "await window.pilgrimViewer.loadFile(filename, base64); return true;",
+                        arguments: [
+                            "filename": payload.filename,
+                            "base64": payload.base64
+                        ],
                         contentWorld: .page
                     )
+                    print("[JourneyEditor] loadFile injected, \(payload.base64.count) base64 chars")
                 } catch {
                     print("[JourneyEditor] JS injection failed: \(error)")
                 }
@@ -352,8 +347,8 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             }
         }
 
-        /// Polls `window.pilgrimViewer` until it's defined, up to ~5s.
-        /// Replaces a fixed 1.0s sleep that silently failed when the JS
+        /// Polls `window.pilgrimViewer.loadFile` until it's defined, up to
+        /// ~5s. Replaces a fixed sleep that silently failed when the JS
         /// bundle took longer to initialize.
         @MainActor
         private func waitForBridgeReady(in webView: WKWebView) async throws {
@@ -361,7 +356,7 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             let maxAttempts = 50  // 50 × 100ms = 5s
             for _ in 0..<maxAttempts {
                 if let ready = try? await webView.callAsyncJavaScript(
-                    "return typeof window.pilgrimViewer === 'object' && typeof window.pilgrimViewer.loadData === 'function'",
+                    "return typeof window.pilgrimViewer === 'object' && typeof window.pilgrimViewer.loadFile === 'function'",
                     arguments: [:],
                     contentWorld: .page
                 ) as? Bool, ready {
@@ -369,7 +364,7 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
                 }
                 try await Task.sleep(nanoseconds: pollMs * 1_000_000)
             }
-            print("[JourneyEditor] window.pilgrimViewer not ready after 5s — bridge missing or page failed")
+            print("[JourneyEditor] window.pilgrimViewer.loadFile not ready after 5s — bridge missing or page failed")
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -397,10 +392,13 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             decidePolicyFor navigationAction: WKNavigationAction,
             decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
         ) {
-            if let url = navigationAction.request.url, url.scheme == "blob" {
+            let url = navigationAction.request.url?.absoluteString ?? "<no url>"
+            if let scheme = navigationAction.request.url?.scheme, scheme == "blob" {
+                print("[JourneyEditor] decidePolicyFor blob URL → .download (\(url.prefix(80)))")
                 decisionHandler(.download)
                 return
             }
+            print("[JourneyEditor] decidePolicyFor → .allow (\(url.prefix(80)))")
             decisionHandler(.allow)
         }
 
@@ -409,6 +407,7 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             navigationAction: WKNavigationAction,
             didBecome download: WKDownload
         ) {
+            print("[JourneyEditor] navigationAction didBecome WKDownload")
             download.delegate = self
         }
 
@@ -454,13 +453,22 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             _ userContentController: WKUserContentController,
             didReceive message: WKScriptMessage
         ) {
+            if message.name == "pilgrimDebug" {
+                if let s = message.body as? String {
+                    print("[PilgrimWeb] \(s)")
+                }
+                return
+            }
+
+            print("[JourneyEditor] message arrived: \(message.name)")
             guard message.name == "savePilgrim",
                   let payload = message.body as? [String: Any],
                   let base64 = payload["base64"] as? String,
                   let data = Data(base64Encoded: base64) else {
-                print("[JourneyEditor] savePilgrim message malformed")
+                print("[JourneyEditor] savePilgrim message malformed: \(message.body)")
                 return
             }
+            print("[JourneyEditor] savePilgrim received \(data.count) bytes")
 
             let filename = (payload["filename"] as? String) ?? "walk.pilgrim"
             let safeName = filename.replacingOccurrences(of: "/", with: "_")
@@ -480,12 +488,5 @@ fileprivate struct JourneyEditorWebView: UIViewRepresentable {
             }
         }
 
-        private func jsonObject() -> Any {
-            guard let data = walksJSON.data(using: .utf8),
-                  let obj = try? JSONSerialization.jsonObject(with: data) else {
-                return [:]
-            }
-            return obj
-        }
     }
 }
