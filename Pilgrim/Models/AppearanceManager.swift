@@ -6,6 +6,15 @@ final class AppearanceManager: ObservableObject {
     @Published private(set) var resolvedScheme: ColorScheme?
     @Published private(set) var isConstellation: Bool
 
+    /// Bumps every time the appearance mode changes. Use as `.id(...)` key
+    /// on view-tree roots so SwiftUI rebuilds children that don't directly
+    /// observe AppearanceManager. Necessary because Color.parchmentSecondary
+    /// (and friends) compute their UIColor at body-eval time, but
+    /// constellation→dark doesn't change UITraitCollection.userInterfaceStyle
+    /// (both are .dark), so UIColor dynamic providers don't re-fire and the
+    /// stale indigo card bg sticks.
+    @Published private(set) var themeID: Int = 0
+
     private var cancellables = Set<AnyCancellable>()
 
     init() {
@@ -24,6 +33,7 @@ final class AppearanceManager: ObservableObject {
                 if schemeChanged { self.animateTransition() }
                 self.resolvedScheme = next.scheme
                 self.isConstellation = next.constellation
+                self.themeID &+= 1
             }
             .store(in: &cancellables)
     }
