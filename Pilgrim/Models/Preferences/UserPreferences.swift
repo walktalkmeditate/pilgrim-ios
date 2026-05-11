@@ -59,6 +59,11 @@ struct UserPreferences {
 
     static let contributeToCollective = UserPreference.Required<Bool>(key: "contributeToCollective", defaultValue: false)
     static let lastSeenCollectiveWalks = UserPreference.Required<Int>(key: "lastSeenCollectiveWalks", defaultValue: 0)
+    /// False on fresh install; flipped to true the first time the collective
+    /// counter resolves so the next sacred-number check uses the true
+    /// "last seen" rather than the default 0 (which would fire every
+    /// already-crossed milestone as if the user had been there for it).
+    static let hasInitializedCollectiveMilestones = UserPreference.Required<Bool>(key: "hasInitializedCollectiveMilestones", defaultValue: false)
 
     static let autoPlayWhisperOnProximity = UserPreference.Required<Bool>(key: "autoPlayWhisperOnProximity", defaultValue: true)
 
