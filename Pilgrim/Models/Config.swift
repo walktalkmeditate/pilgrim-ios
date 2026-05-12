@@ -75,7 +75,10 @@ enum Config {
         return (Bundle.main.path(forResource: "embedded", ofType: "mobileprovision") != nil)
     }
     
-    /// A boolean indicating whether or not the receipt provided through by the App Store was generated for a sandbox / non-release environment; in other words: it indicates if the app was downloaded through another way than the App Store
+    /// A boolean indicating whether or not the receipt provided through by the App Store was generated for a sandbox / non-release environment; in other words: it indicates if the app was downloaded through another way than the App Store (including TestFlight).
+    ///
+    /// Note: `Bundle.appStoreReceiptURL` is deprecated as of iOS 18 in favour of `AppTransaction.shared`. We intentionally keep the deprecated path because (a) Pilgrim never asks the user to sign in to an Apple Account, and (b) `AppTransaction.shared` triggers an Apple Account sign-in prompt on simulators / dev builds where no account is configured. The warning is a known, accepted cost; the alternative is worse UX. Tracked in issue #41.
+    @available(iOS, deprecated: 18.0, message: "Bundle.appStoreReceiptURL is deprecated but kept on purpose — see comment.")
     static var hasSanboxReceipt: Bool {
         return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
     }
@@ -93,6 +96,11 @@ enum Config {
     enum Whisper {
         static let manifestURL = URL(string: "https://cdn.pilgrimapp.org/audio/whisper/manifest.json")!
         static let cdnBaseURL = URL(string: "https://cdn.pilgrimapp.org/audio/whisper")!
+    }
+
+    enum Web {
+        static let viewer = URL(string: "https://view.pilgrimapp.org")!
+        static let editor = URL(string: "https://edit.pilgrimapp.org")!
     }
 
 }

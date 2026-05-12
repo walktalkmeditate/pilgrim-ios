@@ -199,7 +199,7 @@ final class TranscriptionService: ObservableObject {
         let segments = results.flatMap { $0.segments }
         guard let first = segments.first, let last = segments.last,
               last.end > first.start else { return nil }
-        let words = segments.flatMap { $0.words }
+        let words = segments.compactMap { $0.words }.flatMap { $0 }
         let wordCount: Int
         if !words.isEmpty {
             wordCount = words.count

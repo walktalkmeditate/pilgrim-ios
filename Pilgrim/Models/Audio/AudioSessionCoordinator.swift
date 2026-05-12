@@ -72,10 +72,10 @@ final class AudioSessionCoordinator {
                 try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
                 try session.setActive(true)
             case .recordingOnly:
-                try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth])
+                try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
                 try session.setActive(true)
             case .recordAndPlay:
-                try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth, .mixWithOthers])
+                try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP, .mixWithOthers])
                 try session.setActive(true)
             }
         } catch {

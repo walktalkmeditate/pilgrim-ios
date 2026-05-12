@@ -234,7 +234,15 @@ enum PilgrimPackageConverter {
 
     // MARK: - Manifest
 
-    static func buildManifest(walkCount: Int, events: [PilgrimEvent]) -> PilgrimManifest {
+    /// Builds the manifest. Pass `archivedEntries` pre-built by iterating walks
+    /// through `buildArchivedEntry(walk:registry:)`. Passes `nil` (not `[]`) when
+    /// the array is empty so the JSON key is omitted and stays compatible with
+    /// older importers that don't know the field.
+    static func buildManifest(
+        walkCount: Int,
+        events: [PilgrimEvent],
+        archivedEntries: [PilgrimArchivedWalk] = []
+    ) -> PilgrimManifest {
         let formatter = MeasurementFormatter()
         let distanceUnit = formatter.string(from: UserPreferences.distanceMeasurementType.safeValue)
         let altitudeUnit = formatter.string(from: UserPreferences.altitudeMeasurementType.safeValue)
@@ -271,7 +279,44 @@ enum PilgrimPackageConverter {
             preferences: preferences,
             customPromptStyles: customStyles,
             intentions: intentionStore.intentions,
-            events: events
+            events: events,
+            archived: archivedEntries.isEmpty ? nil : archivedEntries,
+            // iOS only authors fresh exports — edits never originate on
+            // device, only via the web editor. Always emit nil so the
+            // file isn't mistaken for a tended file on re-import.
+            modifications: nil
+        )
+    }
+
+    // MARK: - Archived Entry
+
+    /// Returns a `PilgrimArchivedWalk` for `walk` if its UUID is in `registry`,
+    /// otherwise `nil`. When non-nil, the caller must skip the normal
+    /// `convert(walk:...)` path — archived walks live only in `manifest.archived[]`,
+    /// not as `walks/UUID.json` files.
+    ///
+    /// `archivedAt` comes from the registry value (epoch seconds stored at the
+    /// time the user archived the walk). Using the stored timestamp — not `Date.now`
+    /// — ensures the field is stable across repeated exports.
+    static func buildArchivedEntry(
+        walk: WalkInterface,
+        registry: [String: Double]
+    ) -> PilgrimArchivedWalk? {
+        guard let uuid = walk.uuid,
+              let archivedAtEpoch = registry[uuid.uuidString] else { return nil }
+
+        return PilgrimArchivedWalk(
+            id: uuid,
+            startDate: walk.startDate.timeIntervalSince1970,
+            endDate: walk.endDate.timeIntervalSince1970,
+            archivedAt: archivedAtEpoch,
+            stats: PilgrimArchivedWalk.Stats(
+                distance: walk.distance,
+                activeDuration: walk.activeDuration,
+                talkDuration: walk.talkDuration,
+                meditateDuration: walk.meditateDuration,
+                steps: walk.steps
+            )
         )
     }
 

@@ -118,7 +118,7 @@ class MainCoordinator: ObservableObject {
         guard count >= 3 else { return }
         if let scene = UIApplication.shared.connectedScenes
             .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-            SKStoreReviewController.requestReview(in: scene)
+            Task { @MainActor in AppStore.requestReview(in: scene) }
         }
     }
 

@@ -58,8 +58,8 @@ public enum UserPreference {
             publisher.accept(nil)
         }
         
-        private static func typeSafeGet<Object>(for key: String) -> Object? {
-            return UserDefaults.standard.object(forKey: key) as? Object
+        private static func typeSafeGet<T>(for key: String) -> T? {
+            return UserDefaults.standard.object(forKey: key) as? T
         }
         
     }

@@ -4,6 +4,7 @@ import CoreStore
 struct SettingsView: View {
 
     @StateObject private var permissionVM = PermissionStatusViewModel()
+    @EnvironmentObject private var appearanceManager: AppearanceManager
     @State private var walkCount = 0
     @State private var totalDistance: Double = 0
     @State private var totalMeditationSeconds: TimeInterval = 0
@@ -13,7 +14,7 @@ struct SettingsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        NavigationStack {
+        return NavigationStack {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.big) {
                     pullToRevealTagline
@@ -41,9 +42,14 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, Constants.UI.Padding.normal)
                 .padding(.bottom, Constants.UI.Padding.breathingRoom)
+                // Force the card stack to rebuild on appearance flip — each
+                // card uses Color.parchmentSecondary etc that don't observe
+                // the theme themselves. .id() inside the ScrollView keeps
+                // scroll position; .id() outside ScrollView would reset it.
+                .id(appearanceManager.themeID)
             }
             .coordinateSpace(name: "scroll")
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {

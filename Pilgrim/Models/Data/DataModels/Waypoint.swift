@@ -11,7 +11,7 @@ extension Waypoint: WaypointInterface {
     public var label: String { threadSafeSyncReturn { self._label.value } }
     public var icon: String { threadSafeSyncReturn { self._icon.value } }
     public var timestamp: Date { threadSafeSyncReturn { self._timestamp.value } }
-    public var workout: WalkInterface? { self._workout.value as? WalkInterface }
+    public var workout: WalkInterface? { self._workout.value }
 
 }
 

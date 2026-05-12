@@ -13,20 +13,20 @@ struct VoiceGuideSettingsView: View {
 
     var body: some View {
         List {
-            enableSection
+            enableSection.pilgrimListRow()
             if enabled {
                 if manifestService.isSyncing && manifestService.packs.isEmpty {
-                    loadingSection
+                    loadingSection.pilgrimListRow()
                 } else if manifestService.packs.isEmpty {
-                    emptySection
+                    emptySection.pilgrimListRow()
                 } else {
-                    packsSection
-                    volumeSection
+                    packsSection.pilgrimListRow()
+                    volumeSection.pilgrimListRow()
                 }
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationTitle("Voice Guide")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

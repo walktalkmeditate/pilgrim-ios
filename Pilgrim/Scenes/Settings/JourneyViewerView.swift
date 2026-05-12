@@ -14,6 +14,7 @@ struct JourneyViewerView: View {
             if let json = walksJSON {
                 JourneyWebView(walksJSON: json, isLoading: $isLoading)
                     .ignoresSafeArea(edges: .bottom)
+                    .opacity(isLoading ? 0 : 1)
             }
 
             if isLoading {
@@ -39,7 +40,7 @@ struct JourneyViewerView: View {
                 .padding()
             }
         }
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -78,7 +79,10 @@ struct JourneyViewerView: View {
             }
 
             if reliquaryEnabled {
-                pilgrimWalks = pilgrimWalks.map { Self.enrichWithInlinePhotos($0) }
+                let snapshot = pilgrimWalks
+                pilgrimWalks = await Task.detached(priority: .userInitiated) {
+                    snapshot.map { Self.enrichWithInlinePhotos($0) }
+                }.value
             }
 
             let encoder = PilgrimDateCoding.makeEncoder()
@@ -109,7 +113,7 @@ struct JourneyViewerView: View {
     /// Uses synchronous PHImageManager with network disabled so
     /// local photos resolve in ~10-50ms each. iCloud-only photos
     /// get nil (gracefully skipped by the viewer).
-    private static func enrichWithInlinePhotos(_ walk: PilgrimWalk) -> PilgrimWalk {
+    nonisolated private static func enrichWithInlinePhotos(_ walk: PilgrimWalk) -> PilgrimWalk {
         guard let photos = walk.photos, !photos.isEmpty else { return walk }
 
         var enriched = walk
@@ -130,7 +134,7 @@ struct JourneyViewerView: View {
         return enriched
     }
 
-    private static func loadPhotoDataUrl(localIdentifier: String) -> String? {
+    nonisolated private static func loadPhotoDataUrl(localIdentifier: String) -> String? {
         let fetchResult = PHAsset.fetchAssets(
             withLocalIdentifiers: [localIdentifier],
             options: nil
@@ -173,7 +177,7 @@ struct JourneyWebView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
-        webView.load(URLRequest(url: URL(string: "https://view.pilgrimapp.org")!))
+        webView.load(URLRequest(url: Config.Web.viewer))
         return webView
     }
 
@@ -198,20 +202,40 @@ struct JourneyWebView: UIViewRepresentable {
             injected = true
 
             let jsonObj = jsonObject()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                Task { @MainActor in
-                    do {
-                        _ = try await webView.callAsyncJavaScript(
-                            "window.pilgrimViewer.loadData(data)",
-                            arguments: ["data": jsonObj],
-                            contentWorld: .page
-                        )
-                    } catch {
-                        print("[JourneyViewer] JS injection failed: \(error)")
-                    }
-                    self?.isLoading = false
+            Task { @MainActor in
+                do {
+                    try await waitForBridgeReady(in: webView)
+                    _ = try await webView.callAsyncJavaScript(
+                        "window.pilgrimViewer.loadData(data)",
+                        arguments: ["data": jsonObj],
+                        contentWorld: .page
+                    )
+                } catch {
+                    print("[JourneyViewer] JS injection failed: \(error)")
                 }
+                isLoading = false
             }
+        }
+
+        /// Polls `window.pilgrimViewer` until it's defined, up to ~5s.
+        /// The previous fixed 1.0s sleep was a guess that broke when the
+        /// JS bundle took longer to initialize (in which case the
+        /// injection silently failed and the dropzone stayed visible).
+        @MainActor
+        private func waitForBridgeReady(in webView: WKWebView) async throws {
+            let pollMs: UInt64 = 100
+            let maxAttempts = 50  // 50 × 100ms = 5s
+            for _ in 0..<maxAttempts {
+                if let ready = try? await webView.callAsyncJavaScript(
+                    "return typeof window.pilgrimViewer === 'object' && typeof window.pilgrimViewer.loadData === 'function'",
+                    arguments: [:],
+                    contentWorld: .page
+                ) as? Bool, ready {
+                    return
+                }
+                try await Task.sleep(nanoseconds: pollMs * 1_000_000)
+            }
+            print("[JourneyViewer] window.pilgrimViewer not ready after 5s — bridge missing or page failed")
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {

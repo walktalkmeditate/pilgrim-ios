@@ -31,6 +31,30 @@ final class AppearanceModeTests: XCTestCase {
     func testResolvedScheme_dark_returnsDark() {
         XCTAssertEqual(AppearanceMode.dark.resolvedScheme, .dark)
     }
+
+    func testInit_constellation_fromRawString() {
+        XCTAssertEqual(AppearanceMode(rawValue: "constellation"), .constellation)
+    }
+
+    func testResolvedScheme_constellation_returnsDark() {
+        XCTAssertEqual(AppearanceMode.constellation.resolvedScheme, .dark)
+    }
+
+    func testIsConstellation_constellation_returnsTrue() {
+        XCTAssertTrue(AppearanceMode.constellation.isConstellation)
+    }
+
+    func testIsConstellation_dark_returnsFalse() {
+        XCTAssertFalse(AppearanceMode.dark.isConstellation)
+    }
+
+    func testIsConstellation_light_returnsFalse() {
+        XCTAssertFalse(AppearanceMode.light.isConstellation)
+    }
+
+    func testIsConstellation_system_returnsFalse() {
+        XCTAssertFalse(AppearanceMode.system.isConstellation)
+    }
 }
 
 final class AppearanceManagerTests: XCTestCase {
@@ -41,8 +65,20 @@ final class AppearanceManagerTests: XCTestCase {
     }
 
     func testPreferenceDefault_isSystem() {
-        UserPreferences.appearanceMode.delete()
-        XCTAssertEqual(UserPreferences.appearanceMode.value, "system")
+        // Two-part assertion to avoid cfprefsd shared-state poisoning
+        // (the test host shares UserDefaults with the interactively-installed
+        // app on the same sim, so removing "appearanceMode" can race with
+        // a writeback from the running app). Part 1 asserts the constant.
+        // Part 2 exercises the round-trip on a unique key the test owns.
+        XCTAssertEqual(UserPreferences.appearanceMode.defaultValue, "system")
+
+        let isolatedKey = "test_appearanceMode_default_\(UUID().uuidString)"
+        let isolatedPref = UserPreference.Required<String>(
+            key: isolatedKey,
+            defaultValue: "system"
+        )
+        XCTAssertEqual(isolatedPref.value, "system")
+        UserDefaults.standard.removeObject(forKey: isolatedKey)
     }
 
     func testResolvedScheme_defaultIsNil() {
@@ -84,5 +120,73 @@ final class AppearanceManagerTests: XCTestCase {
         UserPreferences.appearanceMode.value = "bogus"
         let manager = AppearanceManager()
         XCTAssertNil(manager.resolvedScheme)
+    }
+
+    func testIsConstellation_default_isFalse() {
+        UserPreferences.appearanceMode.value = "system"
+        let manager = AppearanceManager()
+        XCTAssertFalse(manager.isConstellation)
+    }
+
+    func testIsConstellation_constellation_isTrueAndSchemeIsDark() {
+        UserPreferences.appearanceMode.value = "constellation"
+        let manager = AppearanceManager()
+        XCTAssertTrue(manager.isConstellation)
+        XCTAssertEqual(manager.resolvedScheme, .dark)
+    }
+
+    func testIsConstellation_updatesWhenPreferenceChanges() {
+        UserPreferences.appearanceMode.value = "system"
+        let manager = AppearanceManager()
+        XCTAssertFalse(manager.isConstellation)
+
+        let exp = expectation(description: "isConstellation flips")
+        let cancellable = manager.$isConstellation
+            .dropFirst()
+            .sink { _ in exp.fulfill() }
+
+        UserPreferences.appearanceMode.value = "constellation"
+        waitForExpectations(timeout: 1.0)
+        cancellable.cancel()
+
+        XCTAssertTrue(manager.isConstellation)
+        XCTAssertEqual(manager.resolvedScheme, .dark)
+    }
+
+    func testIsConstellation_darkToConstellation_flipsWithoutSchemeChange() {
+        UserPreferences.appearanceMode.value = "dark"
+        let manager = AppearanceManager()
+        XCTAssertFalse(manager.isConstellation)
+        XCTAssertEqual(manager.resolvedScheme, .dark)
+
+        let exp = expectation(description: "isConstellation flips to true")
+        let cancellable = manager.$isConstellation
+            .dropFirst()
+            .sink { _ in exp.fulfill() }
+
+        UserPreferences.appearanceMode.value = "constellation"
+        waitForExpectations(timeout: 1.0)
+        cancellable.cancel()
+
+        XCTAssertTrue(manager.isConstellation)
+        XCTAssertEqual(manager.resolvedScheme, .dark)
+    }
+
+    func testIsConstellation_constellationToDark_flipsWithoutSchemeChange() {
+        UserPreferences.appearanceMode.value = "constellation"
+        let manager = AppearanceManager()
+        XCTAssertTrue(manager.isConstellation)
+
+        let exp = expectation(description: "isConstellation flips to false")
+        let cancellable = manager.$isConstellation
+            .dropFirst()
+            .sink { _ in exp.fulfill() }
+
+        UserPreferences.appearanceMode.value = "dark"
+        waitForExpectations(timeout: 1.0)
+        cancellable.cancel()
+
+        XCTAssertFalse(manager.isConstellation)
+        XCTAssertEqual(manager.resolvedScheme, .dark)
     }
 }

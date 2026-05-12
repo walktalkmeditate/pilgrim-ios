@@ -59,6 +59,11 @@ struct UserPreferences {
 
     static let contributeToCollective = UserPreference.Required<Bool>(key: "contributeToCollective", defaultValue: false)
     static let lastSeenCollectiveWalks = UserPreference.Required<Int>(key: "lastSeenCollectiveWalks", defaultValue: 0)
+    /// False on fresh install; flipped to true the first time the collective
+    /// counter resolves so the next sacred-number check uses the true
+    /// "last seen" rather than the default 0 (which would fire every
+    /// already-crossed milestone as if the user had been there for it).
+    static let hasInitializedCollectiveMilestones = UserPreference.Required<Bool>(key: "hasInitializedCollectiveMilestones", defaultValue: false)
 
     static let autoPlayWhisperOnProximity = UserPreference.Required<Bool>(key: "autoPlayWhisperOnProximity", defaultValue: true)
 
@@ -69,6 +74,16 @@ struct UserPreferences {
     static let walkReliquaryEnabled = UserPreference.Required<Bool>(key: "walkReliquaryEnabled", defaultValue: false)
     static let zodiacSystem = UserPreference.Required<String>(key: "zodiacSystem", defaultValue: "tropical")
     static let appearanceMode = UserPreference.Required<String>(key: "appearanceMode", defaultValue: "system")
+
+    /// UUID string → archivedAt (epoch seconds). Stores walks the user has
+    /// archived via the pilgrim-viewer/edit web app; iOS strips heavy data
+    /// for these walks and emits them to manifest.archived[] on export.
+    /// Empty default. Mutate only via the helpers below — direct .value
+    /// assignment from user code is not race-safe.
+    static let archivedWalkRegistry = UserPreference.Required<[String: Double]>(
+        key: "archivedWalkRegistry",
+        defaultValue: [:]
+    )
 
     static let dynamicVoiceEnabled = UserPreference.Required<Bool>(key: "dynamicVoiceEnabled", defaultValue: true)
     static let autoTranscribe = UserPreference.Required<Bool>(key: "autoTranscribe", defaultValue: false)
@@ -104,4 +119,60 @@ struct UserPreferences {
         }
     }
 
+}
+
+extension UserPreferences {
+
+    /// Serializes registry mutations. Reads are lock-free (UserDefaults is
+    /// per-key atomic); only the read-modify-write needs the queue.
+    private static let archivedRegistryQueue = DispatchQueue(
+        label: "org.walktalkmeditate.pilgrim.archivedRegistry"
+    )
+
+    static func isArchivedWalk(uuid: UUID) -> Bool {
+        archivedWalkRegistry.value[uuid.uuidString] != nil
+    }
+
+    /// String overload for call sites that already hold the UUID as a
+    /// String (e.g. SealInput.uuid in the Goshuin pipeline). Skips the
+    /// UUID(uuidString:) round-trip — the registry key is already a
+    /// String anyway.
+    static func isArchivedWalk(uuidString: String) -> Bool {
+        archivedWalkRegistry.value[uuidString] != nil
+    }
+
+    static func archivedAt(uuid: UUID) -> Date? {
+        guard let epoch = archivedWalkRegistry.value[uuid.uuidString] else {
+            return nil
+        }
+        return Date(timeIntervalSince1970: epoch)
+    }
+
+    static func markWalkArchived(uuid: UUID, archivedAt: Date) {
+        archivedRegistryQueue.sync {
+            var registry = archivedWalkRegistry.value
+            registry[uuid.uuidString] = archivedAt.timeIntervalSince1970
+            archivedWalkRegistry.value = registry
+        }
+    }
+
+    static func unmarkWalkArchived(uuid: UUID) {
+        archivedRegistryQueue.sync {
+            var registry = archivedWalkRegistry.value
+            registry.removeValue(forKey: uuid.uuidString)
+            archivedWalkRegistry.value = registry
+        }
+    }
+
+    /// Wipes the entire registry. Used by `DataManager.deleteAll` after
+    /// every walk is removed from CoreStore — registry entries pointing
+    /// at deleted walks would otherwise accumulate as orphans. Goes
+    /// through the same serial queue as the per-UUID mutations so a
+    /// concurrent `markWalkArchived` from an in-flight import can't
+    /// resurrect an entry between the wipe and the user's next save.
+    static func clearArchivedRegistry() {
+        archivedRegistryQueue.sync {
+            archivedWalkRegistry.value = [:]
+        }
+    }
 }

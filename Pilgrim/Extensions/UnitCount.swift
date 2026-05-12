@@ -21,8 +21,8 @@
 
 import Foundation
 
-class UnitCount: Unit {
-    
+final class UnitCount: Unit, @unchecked Sendable {
+
     static let count = UnitCount(symbol: "")
-    
+
 }

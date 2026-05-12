@@ -326,7 +326,9 @@ final class PilgrimPackageModelTests: XCTestCase {
                     endDate: Date(timeIntervalSince1970: 5000),
                     walkIds: [walkId]
                 )
-            ]
+            ],
+            archived: nil,
+            modifications: nil
         )
 
         let decoded = try roundTrip(manifest)

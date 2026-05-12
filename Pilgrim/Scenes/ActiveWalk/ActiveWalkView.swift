@@ -199,6 +199,7 @@ struct ActiveWalkView: View {
                 viewModel.endMeditationSilently(endDate: endDate)
                 showMeditation = false
             }
+            .constellationDecorated(nebulae: false)
         }
         .sheet(isPresented: $showOptions) {
             WalkOptionsSheet(

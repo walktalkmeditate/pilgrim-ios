@@ -11,10 +11,17 @@ struct PilgrimLogoView: View {
     @State private var breathScale: CGFloat = 1.0
     @AppStorage("selectedVoiceGuidePackId") private var selectedGuideId: String?
     @AppStorage("voiceGuideEnabled") private var voiceGuideEnabled = false
+    @AppStorage("appearanceMode") private var appearanceMode: String = "system"
 
     private static let guideIds: Set<String> = ["breeze", "drift", "dusk", "ember", "river", "sage", "stone"]
 
     private var logoImageName: String {
+        // Constellation mode wins over voice-guide-themed variants — the
+        // starlit indigo mark is the visual anchor of the night-walk
+        // appearance. Voice-guide logos still render in light/dark.
+        if appearanceMode == "constellation" {
+            return "pilgrimLogo-constellation"
+        }
         if voiceGuideEnabled, let id = selectedGuideId, Self.guideIds.contains(id) {
             return "pilgrimLogo-\(id)"
         }

@@ -29,8 +29,14 @@ struct PilgrimApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootCoordinatorView(viewModel: RootCoordinatorViewModel())
-                .preferredColorScheme(appearanceManager.resolvedScheme)
+            ZStack {
+                RootCoordinatorView(viewModel: RootCoordinatorViewModel())
+                if appearanceManager.isConstellation {
+                    ConstellationOverlay()
+                }
+            }
+            .environmentObject(appearanceManager)
+            .preferredColorScheme(appearanceManager.resolvedScheme)
         }
     }
 }

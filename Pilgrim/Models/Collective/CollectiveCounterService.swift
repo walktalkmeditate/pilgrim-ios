@@ -160,11 +160,40 @@ final class CollectiveCounterService: ObservableObject {
         }
     }
 
-    private func checkMilestone(_ totalWalks: Int) {
-        let lastSeen = UserPreferences.lastSeenCollectiveWalks.value
-        let sacredNumbers = [108, 1_080, 2_160, 10_000, 33_333, 88_000, 108_000]
+    /// Sacred-number thresholds, ascending. The init-fast-forward
+    /// (`last(where:)`) AND the normal `for ... break` loop both depend
+    /// on this ordering: `last(where:)` would otherwise return iteration-
+    /// last not max, and the loop's `break` would skip later milestones
+    /// if a smaller number appeared after a larger one.
+    private static let sacredNumbers = [108, 1_080, 2_160, 10_000, 33_333, 88_000, 108_000]
 
-        for number in sacredNumbers {
+    private func checkMilestone(_ totalWalks: Int) {
+        assert(
+            Self.sacredNumbers == Self.sacredNumbers.sorted(),
+            "sacredNumbers must be sorted ascending — last(where:) and the milestone loop rely on it"
+        )
+
+        // First-ever load on this device: seed lastSeen to the highest
+        // already-crossed sacred number and skip the fire. A user who
+        // installs after the collective has already passed 108 walks
+        // should not get the bell + animation as if they were present
+        // for it — they should only see milestones for crossings that
+        // happen DURING their tenure. Upgrading users with a saved
+        // lastSeen also get fast-forwarded to the highest currently-
+        // crossed number, so they don't see one bell per launch while
+        // catching up across milestones they missed while uninstalled.
+        if !UserPreferences.hasInitializedCollectiveMilestones.value {
+            let savedLastSeen = UserPreferences.lastSeenCollectiveWalks.value
+            let highestCrossed = Self.sacredNumbers.last(where: { totalWalks >= $0 }) ?? 0
+            if highestCrossed > savedLastSeen {
+                UserPreferences.lastSeenCollectiveWalks.value = highestCrossed
+            }
+            UserPreferences.hasInitializedCollectiveMilestones.value = true
+            return
+        }
+
+        let lastSeen = UserPreferences.lastSeenCollectiveWalks.value
+        for number in Self.sacredNumbers {
             if totalWalks >= number && lastSeen < number {
                 milestone = CollectiveMilestone.forNumber(number)
                 UserPreferences.lastSeenCollectiveWalks.value = number

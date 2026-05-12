@@ -28,7 +28,7 @@ struct CustomPromptEditorView: View {
                 }
                 .padding(Constants.UI.Padding.normal)
             }
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationTitle(editingStyle == nil ? "New Prompt Style" : "Edit Prompt Style")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

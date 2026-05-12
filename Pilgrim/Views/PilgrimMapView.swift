@@ -201,13 +201,18 @@ struct PilgrimMapView: UIViewRepresentable {
             context.coordinator.lastBottomInset = bottomInset
 
             if let bounds = cameraBounds {
-                let camera = mapView.mapboxMap.camera(
-                    for: [bounds.sw, bounds.ne],
-                    padding: UIEdgeInsets(top: 40, left: 30, bottom: 40 + bottomInset, right: 30),
-                    bearing: nil,
-                    pitch: nil
-                )
-                mapView.camera.ease(to: camera, duration: cameraDuration)
+                do {
+                    let camera = try mapView.mapboxMap.camera(
+                        for: [bounds.sw, bounds.ne],
+                        camera: CameraOptions(),
+                        coordinatesPadding: UIEdgeInsets(top: 40, left: 30, bottom: 40 + bottomInset, right: 30),
+                        maxZoom: nil,
+                        offset: nil
+                    )
+                    mapView.camera.ease(to: camera, duration: cameraDuration)
+                } catch {
+                    print("[PilgrimMapView] camera(for:bounds:) failed: \(error)")
+                }
             } else if let center = cameraCenter {
                 let camera: CameraOptions
                 if bottomInset > 0 {
@@ -290,14 +295,10 @@ struct PilgrimMapView: UIViewRepresentable {
         let collection = FeatureCollection(features: features)
 
         if mapView.mapboxMap.sourceExists(withId: Self.sourceId) {
-            do {
-                try mapView.mapboxMap.updateGeoJSONSource(
-                    withId: Self.sourceId,
-                    geoJSON: .featureCollection(collection)
-                )
-            } catch {
-                print("[PilgrimMapView] Failed to update route source: \(error)")
-            }
+            mapView.mapboxMap.updateGeoJSONSource(
+                withId: Self.sourceId,
+                geoJSON: .featureCollection(collection)
+            )
         } else {
             do {
                 var source = GeoJSONSource(id: Self.sourceId)

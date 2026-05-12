@@ -39,8 +39,9 @@ final class AudioDownloadManager: ObservableObject {
                     }
                 }
                 completed += 1
+                let progressSnapshot = Double(completed) / Double(total)
                 await MainActor.run {
-                    self.downloadProgress = Double(completed) / Double(total)
+                    self.downloadProgress = progressSnapshot
                 }
             }
 

@@ -17,6 +17,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     let voiceGuideManagement = VoiceGuideManagement()
     private var sessionGuard: WalkSessionGuard?
 
+    /// Bumped before each weather-retry chain to invalidate stale closures.
+    /// CLAUDE.md resource-safety policy: long walks must not leak GCD timers
+    /// past viewmodel deinit. Without this generation gate, a 10s retry timer
+    /// kept the ViewModel weakly referenced and fired no-ops well after the
+    /// walk ended.
+    private var weatherRetryGeneration: Int = 0
+
     @Published var status: WalkBuilder.Status = .waiting
     @Published var duration: String = "0:00"
     @Published var distance: String = UserPreferences.distanceMeasurementType.safeValue == .miles ? "0.00 mi" : "0.00 km"
@@ -109,6 +116,9 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func fetchWeather(retryOnFailure: Bool = false) {
+        weatherRetryGeneration += 1
+        let generation = weatherRetryGeneration
+
         let clLocation: CLLocation?
         if let sample = currentLocation {
             clLocation = CLLocation(latitude: sample.latitude, longitude: sample.longitude)
@@ -120,25 +130,33 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
         guard let location = clLocation else {
             if retryOnFailure {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
-                    self?.fetchWeather(retryOnFailure: false)
-                }
+                scheduleWeatherRetry(generation: generation)
             }
             return
         }
 
         Task { [weak self] in
             let snapshot = await WeatherService.shared.fetchCurrent(for: location)
-            await MainActor.run {
+            await MainActor.run { [weak self] in
+                guard let self, self.weatherRetryGeneration == generation else { return }
                 if let snapshot {
-                    self?.weatherSnapshot = snapshot
-                    self?.builder.weatherSnapshot = snapshot
+                    self.weatherSnapshot = snapshot
+                    self.builder.weatherSnapshot = snapshot
                 } else if retryOnFailure {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
-                        self?.fetchWeather(retryOnFailure: false)
-                    }
+                    self.scheduleWeatherRetry(generation: generation)
                 }
             }
+        }
+    }
+
+    /// Generation-gated 10s retry. Closure becomes a no-op if any caller
+    /// invokes `fetchWeather` again or the viewmodel deallocs — preventing
+    /// the GCD timer from holding state past walk-end.
+    private func scheduleWeatherRetry(generation: Int) {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(10))
+            guard let self, self.weatherRetryGeneration == generation else { return }
+            self.fetchWeather(retryOnFailure: false)
         }
     }
 
@@ -229,7 +247,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func toggleVoiceRecording() {
         if !voiceRecordingManagement.isRecording
-            && AVAudioSession.sharedInstance().recordPermission == .denied {
+            && AVAudioApplication.shared.recordPermission == .denied {
             showMicrophonePermissionNeeded = true
             return
         }

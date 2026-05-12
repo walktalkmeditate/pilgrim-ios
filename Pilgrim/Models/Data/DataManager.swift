@@ -88,7 +88,7 @@ struct DataManager {
                     if let intermediate = destinationModel as? IntermediateDataModelProtocol.Type {
                         if !intermediate.intermediateMappingActions(dataStack) {
                             print("[DataManager] Intermediate mapping actions of \(destinationModel) were unsuccessful")
-                            completion(.intermediateMappingActionsFailed(version: intermediate))
+                            completion(.intermediateMappingActionsFailed(versionIdentifier: intermediate.identifier))
                             return
                         }
                     }
@@ -835,6 +835,8 @@ struct DataManager {
      */
     public static func deleteObject<ObjectType: DataTypeProtocol>(object: ObjectType, completion: @escaping (_ success: Bool, _ error: DataManager.DeleteError?) -> Void) {
 
+        let walkUUID = (object as? Walk)?.uuid
+
         dataStack.perform(asynchronous: { (transaction) -> [String] in
 
             var filePaths: [String] = []
@@ -849,6 +851,9 @@ struct DataManager {
             switch result {
             case .success(let filePaths):
                 cleanupRecordingFiles(relativePaths: filePaths)
+                if let uuid = walkUUID {
+                    UserPreferences.unmarkWalkArchived(uuid: uuid)
+                }
                 completion(true, nil)
             case .failure(let error):
                 completion(false, .databaseError(error: error))
@@ -885,6 +890,7 @@ struct DataManager {
             case .success:
                 cleanupRecordingFiles(relativePaths: allRecordingPaths)
                 cleanupEmptyRecordingsDirectory()
+                UserPreferences.clearArchivedRegistry()
                 completion(true, nil)
             case .failure(let error):
                 completion(false, .databaseError(error: error))

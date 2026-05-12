@@ -24,16 +24,16 @@ struct SoundSettingsView: View {
 
     var body: some View {
         List {
-            mainToggleSection
+            mainToggleSection.pilgrimListRow()
             if soundsEnabled {
-                walkSection
-                meditationSection
-                volumeSection
-                storageSection
+                walkSection.pilgrimListRow()
+                meditationSection.pilgrimListRow()
+                volumeSection.pilgrimListRow()
+                storageSection.pilgrimListRow()
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationTitle("Sounds")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -261,7 +261,7 @@ struct SoundSettingsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationTitle(picker.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

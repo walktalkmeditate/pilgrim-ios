@@ -4,26 +4,43 @@ import Combine
 final class AppearanceManager: ObservableObject {
 
     @Published private(set) var resolvedScheme: ColorScheme?
+    @Published private(set) var isConstellation: Bool
+
+    /// Bumps every time the appearance mode changes. Use as `.id(...)` key
+    /// on view-tree roots so SwiftUI rebuilds children that don't directly
+    /// observe AppearanceManager. Necessary because Color.parchmentSecondary
+    /// (and friends) compute their UIColor at body-eval time, but
+    /// constellation→dark doesn't change UITraitCollection.userInterfaceStyle
+    /// (both are .dark), so UIColor dynamic providers don't re-fire and the
+    /// stale indigo card bg sticks.
+    @Published private(set) var themeID: Int = 0
 
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        resolvedScheme = Self.resolve(UserPreferences.appearanceMode.value)
+        let initial = Self.resolve(UserPreferences.appearanceMode.value)
+        resolvedScheme = initial.scheme
+        isConstellation = initial.constellation
 
         UserPreferences.appearanceMode.publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newValue in
                 guard let self else { return }
-                let newScheme = Self.resolve(newValue)
-                guard newScheme != self.resolvedScheme else { return }
-                self.animateTransition()
-                self.resolvedScheme = newScheme
+                let next = Self.resolve(newValue)
+                let schemeChanged = next.scheme != self.resolvedScheme
+                let constellationChanged = next.constellation != self.isConstellation
+                guard schemeChanged || constellationChanged else { return }
+                if schemeChanged { self.animateTransition() }
+                self.resolvedScheme = next.scheme
+                self.isConstellation = next.constellation
+                self.themeID &+= 1
             }
             .store(in: &cancellables)
     }
 
-    private static func resolve(_ raw: String) -> ColorScheme? {
-        (AppearanceMode(rawValue: raw) ?? .system).resolvedScheme
+    private static func resolve(_ raw: String) -> (scheme: ColorScheme?, constellation: Bool) {
+        let mode = AppearanceMode(rawValue: raw) ?? .system
+        return (mode.resolvedScheme, mode.isConstellation)
     }
 
     private func animateTransition() {

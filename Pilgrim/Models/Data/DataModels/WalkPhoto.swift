@@ -11,7 +11,7 @@ extension WalkPhoto: WalkPhotoInterface {
     public var capturedLat: Double { threadSafeSyncReturn { self._capturedLat.value } }
     public var capturedLng: Double { threadSafeSyncReturn { self._capturedLng.value } }
     public var keptAt: Date { threadSafeSyncReturn { self._keptAt.value } }
-    public var workout: WalkInterface? { self._workout.value as? WalkInterface }
+    public var workout: WalkInterface? { self._workout.value }
 
 }
 

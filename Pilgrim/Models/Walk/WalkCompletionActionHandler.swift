@@ -78,23 +78,11 @@ class WalkCompletionActionHandler {
         }
         
         self.didPerformAction = true
-        
-        var messageKey = ""
-        
+
         if let builder = self.builder {
-            
             builder.continueWalk(from: self.snapshot)
-            
-            messageKey = "NewWalkCompletion.Continue.Success"
-            
-        } else {
-            
-            messageKey = "NewWalkCompletion.Continue.Error"
-            
         }
-        
-        // would normally show continuing or error banner
-        
+
         print("Imagine the walk would continue")
         
     }

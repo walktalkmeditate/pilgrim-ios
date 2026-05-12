@@ -92,7 +92,7 @@ struct WalkSummaryView: View {
                 .padding(Constants.UI.Padding.normal)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationBarTitleDisplayMode(.inline)
             // Force the nav bar to paint a solid parchment background. Without
             // this, SwiftUI's default "transparent at top, opaque on scroll"

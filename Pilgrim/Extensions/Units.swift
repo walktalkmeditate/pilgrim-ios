@@ -48,13 +48,13 @@ extension UnitLength: StandardizedUnit {
     
     static var standardBigLocalUnit: Unit {
         get {
-            return Locale.current.usesMetricSystem ? UnitLength.kilometers : UnitLength.miles
+            return Locale.current.measurementSystem == .metric ? UnitLength.kilometers : UnitLength.miles
         }
     }
     
     static var standardSmallLocalUnit: Unit {
         get {
-            return Locale.current.usesMetricSystem ? UnitLength.meters : UnitLength.feet
+            return Locale.current.measurementSystem == .metric ? UnitLength.meters : UnitLength.feet
         }
     }
 }
@@ -110,13 +110,13 @@ extension UnitSpeed: StandardizedUnit {
     
     static var standardBigLocalUnit: Unit {
         get {
-            return Locale.current.usesMetricSystem ? UnitSpeed.kilometersPerHour : UnitSpeed.milesPerHour
+            return Locale.current.measurementSystem == .metric ? UnitSpeed.kilometersPerHour : UnitSpeed.milesPerHour
         }
     }
     
     static var standardSmallLocalUnit: Unit {
         get {
-            return Locale.current.usesMetricSystem ? UnitSpeed.metersPerSecond : .feetPerSecond
+            return Locale.current.measurementSystem == .metric ? UnitSpeed.metersPerSecond : .feetPerSecond
         }
     }
     
@@ -169,13 +169,13 @@ extension UnitMass: StandardizedUnit {
     
     static var standardBigLocalUnit: Unit {
         get {
-            return Locale.current.usesMetricSystem ? UnitMass.kilograms : UnitMass.pounds
+            return Locale.current.measurementSystem == .metric ? UnitMass.kilograms : UnitMass.pounds
         }
     }
     
     static var standardSmallLocalUnit: Unit {
         get {
-            return Locale.current.usesMetricSystem ? UnitMass.grams : UnitMass.ounces
+            return Locale.current.measurementSystem == .metric ? UnitMass.grams : UnitMass.ounces
         }
     }
 }

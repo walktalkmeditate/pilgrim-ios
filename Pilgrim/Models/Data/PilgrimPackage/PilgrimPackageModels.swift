@@ -28,6 +28,33 @@ struct PilgrimManifest: Codable {
     let customPromptStyles: [PilgrimCustomPromptStyle]
     let intentions: [String]
     let events: [PilgrimEvent]
+    let archived: [PilgrimArchivedWalk]?
+    /// Edits the user applied via `pilgrim-viewer/edit`. iOS doesn't
+    /// replay these op-by-op — the editor already applied them before
+    /// writing this file, and the per-walk JSON payloads carry the
+    /// post-mod state. We only check `isEmpty` to detect "tended file"
+    /// vs. "fresh export"; tended files trigger overwrite-by-UUID in
+    /// the importer so the user's edits actually land on the device.
+    let modifications: [PilgrimModification]?
+
+    var archivedOrEmpty: [PilgrimArchivedWalk] {
+        archived ?? []
+    }
+
+    /// True when this `.pilgrim` carries edits or archives applied via
+    /// the web editor. Drives the importer's overwrite-by-UUID path.
+    var isTended: Bool {
+        (modifications?.isEmpty == false) || (archived?.isEmpty == false)
+    }
+}
+
+/// Open-ended placeholder for entries in `manifest.modifications[]`.
+/// iOS doesn't replay individual ops — only checks the array length to
+/// detect tended files. Schema kept loose so future additions in the
+/// web editor (new op types, payload changes) don't break import.
+struct PilgrimModification: Codable {
+    let op: String?
+    let walkId: String?
 }
 
 struct PilgrimPreferences: Codable {
@@ -54,6 +81,24 @@ struct PilgrimEvent: Codable {
     let startDate: Date?
     let endDate: Date?
     let walkIds: [UUID]
+}
+
+// MARK: - Archived Walk
+
+struct PilgrimArchivedWalk: Codable {
+    let id: UUID
+    let startDate: Double
+    let endDate: Double
+    let archivedAt: Double
+    let stats: Stats
+
+    struct Stats: Codable {
+        let distance: Double
+        let activeDuration: Double
+        let talkDuration: Double
+        let meditateDuration: Double
+        let steps: Int?
+    }
 }
 
 // MARK: - Walk

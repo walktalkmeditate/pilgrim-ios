@@ -107,3 +107,6 @@ backend/
 # Wrangler / Node tooling artifacts (created when running wrangler from the repo)
 .wrangler/
 node_modules/
+
+.kaijutsu/
+app-issues.log

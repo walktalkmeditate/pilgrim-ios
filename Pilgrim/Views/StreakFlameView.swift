@@ -24,6 +24,9 @@ struct StreakFlameView: View {
                     .scaleEffect(flicker2 ? 1.05 : 0.95)
                     .opacity(flicker2 ? 1.0 : 0.7)
             }
+            // Lock flame to a constant bounding box so the scaleEffect
+            // flicker doesn't relayout the HStack and bounce the text.
+            .frame(width: 16, height: 16)
 
             Text("\(days) days, the path unbroken")
                 .font(Constants.Typography.caption)

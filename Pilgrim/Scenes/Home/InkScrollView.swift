@@ -5,6 +5,7 @@ struct InkScrollView: View {
 
     let snapshots: [WalkSnapshot]
     let onTapWalk: (UUID) -> Void
+    var onExpandedChange: ((Bool) -> Void)? = nil
 
     @State private var previewSnapshot: WalkSnapshot?
     @State private var previewPosition: CGPoint = .zero
@@ -23,7 +24,7 @@ struct InkScrollView: View {
             ScrollView {
                 scrollContent(width: outerGeo.size.width, height: outerGeo.size.height)
             }
-            .background(Color.parchment)
+            .canvasBackground()
             .onScrollGeometryChange(for: CGFloat.self) { geo in
                 geo.contentOffset.y
             } action: { _, newOffset in
@@ -47,6 +48,11 @@ struct InkScrollView: View {
             DispatchQueue.main.async {
                 hasAppeared = true
             }
+        }
+        .onChange(of: expandedSnapshot != nil) { _, isExpanded in
+            // Notify parent so HomeView can hide chrome (e.g. GoshuinFAB)
+            // that would otherwise layer above the in-view popup.
+            onExpandedChange?(isExpanded)
         }
     }
 
@@ -247,6 +253,7 @@ struct InkScrollView: View {
             position: position,
             opacity: opacity,
             isNewest: isNewest,
+            isArchived: UserPreferences.isArchivedWalk(uuid: snapshot.id),
             onTap: { id in handleDotTap(snapshot: snapshot, position: position, id: id) },
             sceneryView: sceneryView
         )
@@ -297,6 +304,11 @@ struct InkScrollView: View {
 
     // MARK: - Expand card
 
+    private var isExpandedArchived: Bool {
+        guard let snapshot = expandedSnapshot else { return false }
+        return UserPreferences.isArchivedWalk(uuid: snapshot.id)
+    }
+
     @ViewBuilder
     private var expandCard: some View {
         if let snapshot = expandedSnapshot {
@@ -311,45 +323,63 @@ struct InkScrollView: View {
 
                 VStack(spacing: 10) {
                     HStack {
-                        FootprintShape()
-                            .fill(seasonColor.opacity(0.3))
-                            .frame(width: 12, height: 18)
+                        if isExpandedArchived {
+                            FootprintShape()
+                                .stroke(Color.fog, lineWidth: 1)
+                                .frame(width: 12, height: 18)
+                        } else {
+                            FootprintShape()
+                                .fill(seasonColor.opacity(0.3))
+                                .frame(width: 12, height: 18)
+                        }
 
-                        if let raw = snapshot.favicon, let fav = WalkFavicon(rawValue: raw) {
-                            Image(systemName: fav.icon)
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(seasonColor)
+                        if !isExpandedArchived {
+                            if let raw = snapshot.favicon, let fav = WalkFavicon(rawValue: raw) {
+                                Image(systemName: fav.icon)
+                                    .font(Constants.Typography.caption)
+                                    .foregroundColor(seasonColor)
+                            }
                         }
 
                         Text(Self.expandDateFormatter.string(from: snapshot.startDate))
                             .font(Constants.Typography.annotation)
-                            .foregroundColor(.ink)
+                            .foregroundColor(isExpandedArchived ? .fog : .ink)
 
                         Spacer()
 
-                        if snapshot.isShared {
-                            Image(systemName: "link")
-                                .font(.system(size: 10))
-                                .foregroundColor(.stone)
-                                .opacity(0.5)
-                        }
-
-                        if let celestial = expandedCelestial {
-                            let moonSign = celestial.system == .tropical
-                                ? celestial.position(for: .moon)?.tropical.sign
-                                : celestial.position(for: .moon)?.sidereal.sign
-                            if let moonSign {
-                                Text("\(celestial.planetaryHour.planet.symbol)\(moonSign.symbol)")
+                        if !isExpandedArchived {
+                            if snapshot.isShared {
+                                Image(systemName: "link")
                                     .font(.system(size: 10))
+                                    .foregroundColor(.stone)
+                                    .opacity(0.5)
+                            }
+
+                            if let celestial = expandedCelestial {
+                                let moonSign = celestial.system == .tropical
+                                    ? celestial.position(for: .moon)?.tropical.sign
+                                    : celestial.position(for: .moon)?.sidereal.sign
+                                if let moonSign {
+                                    Text("\(celestial.planetaryHour.planet.symbol)\(moonSign.symbol)")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.fog)
+                                }
+                            }
+
+                            if let condStr = snapshot.weatherCondition,
+                               let cond = WeatherCondition(rawValue: condStr) {
+                                Image(systemName: cond.icon)
+                                    .font(Constants.Typography.caption)
                                     .foregroundColor(.fog)
                             }
                         }
 
-                        if let condStr = snapshot.weatherCondition,
-                           let cond = WeatherCondition(rawValue: condStr) {
-                            Image(systemName: cond.icon)
-                                .font(Constants.Typography.caption)
-                                .foregroundColor(.fog)
+                        if isExpandedArchived {
+                            HStack(spacing: 4) {
+                                Image(systemName: "circle.dotted").font(.system(size: 10))
+                                Text("Released").font(Constants.Typography.caption)
+                            }
+                            .foregroundColor(.fog)
                         }
                     }
 
@@ -365,24 +395,34 @@ struct InkScrollView: View {
                         expandStat(value: Self.formatPace(snapshot.averagePace), label: "pace")
                     }
 
-                    miniActivityBar(snapshot: snapshot)
+                    if !isExpandedArchived {
+                        miniActivityBar(snapshot: snapshot)
+                    }
 
                     activityPills(snapshot: snapshot)
 
-                    Button {
-                        let id = snapshot.id
-                        withAnimation(.spring(duration: 0.25)) { expandedSnapshot = nil }
-                        onTapWalk(id)
-                    } label: {
-                        Text("View details \(Image(systemName: "arrow.right"))")
-                            .font(Constants.Typography.annotation)
-                            .foregroundColor(.parchment)
+                    if isExpandedArchived {
+                        Text("Released — full record removed")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
-                            .background(Color.stone.opacity(0.8))
-                            .clipShape(Capsule())
+                    } else {
+                        Button {
+                            let id = snapshot.id
+                            withAnimation(.spring(duration: 0.25)) { expandedSnapshot = nil }
+                            onTapWalk(id)
+                        } label: {
+                            Text("View details \(Image(systemName: "arrow.right"))")
+                                .font(Constants.Typography.annotation)
+                                .foregroundColor(.parchment)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(Color.stone.opacity(0.8))
+                                .clipShape(Capsule())
+                        }
+                        .accessibilityIdentifier("walk_details_button")
                     }
-                    .accessibilityIdentifier("walk_details_button")
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity)
@@ -392,6 +432,18 @@ struct InkScrollView: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(seasonColor.opacity(0.10))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.parchmentSecondary.opacity(isExpandedArchived ? 0.5 : 0))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(
+                                    Color.fog.opacity(0.4),
+                                    style: StrokeStyle(lineWidth: 1, dash: isExpandedArchived ? [4, 3] : [])
+                                )
+                                .opacity(isExpandedArchived ? 1 : 0)
                         )
                         .shadow(color: .ink.opacity(0.1), radius: 12, y: -4)
                 )
@@ -801,6 +853,7 @@ struct InkScrollView: View {
                 position: .zero,
                 opacity: 1,
                 isNewest: false,
+                isArchived: UserPreferences.isArchivedWalk(uuid: snap.id),
                 onTap: { _ in },
                 sceneryView: nil
             )

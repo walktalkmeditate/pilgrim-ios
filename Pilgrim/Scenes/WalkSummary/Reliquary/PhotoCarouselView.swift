@@ -73,7 +73,7 @@ struct PhotoCarouselView: View {
 ///
 /// Three visual states:
 ///   - inactive + unpinned: just the thumbnail
-///   - inactive + pinned: thumbnail with a small `mappin.fill` badge in the top-right corner
+///   - inactive + pinned: thumbnail with a small `mappin` badge in the top-right corner
 ///   - active: thumbnail scaled up with a centered pin icon overlay (pin or unpin variant
 ///     depending on current state). Tapping the icon commits; tapping the photo dismisses
 ///     activation and routes to the preview.
@@ -162,7 +162,7 @@ struct PhotoThumbnailView: View {
     }
 
     private var pinnedBadge: some View {
-        Image(systemName: "mappin.fill")
+        Image(systemName: "mappin")
             .font(.system(size: 11, weight: .semibold))
             .foregroundColor(.parchment)
             .padding(5)

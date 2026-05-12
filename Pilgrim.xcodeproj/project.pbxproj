@@ -25,11 +25,14 @@
 		0F2670E277C94DDDB875E31C /* SealHashComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */; };
 		0F963291E27EF3F9723C8240 /* whisper-play-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 1C0C607162BDD498F2ED5A96 /* whisper-play-3.aac */; };
 		11C747B0EAF53D9F444C6243 /* DataSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1066617851420CAB7B50442 /* DataSettingsView.swift */; };
+		12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */; };
 		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
 		18163919B90D2DC9D6ED730F /* PilgrimPackageModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD8506242AA6CD81468A74B /* PilgrimPackageModelTests.swift */; };
 		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
 		1BED3236A44370D58ED31DCC /* whisper-presence-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 2FCBF13CCEBEB5026330B0FD /* whisper-presence-3.aac */; };
 		1CEE0C61ECFD38178275EDE5 /* CairnTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEFB40EDD8525B65D45062C /* CairnTier.swift */; };
+		1D99785282035E297C602465 /* OrphanRecordingSweep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */; };
+		1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */; };
 		202AAC44744BC3E55F46A01A /* ProximityTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089F9DF63AFA0F902D41D768 /* ProximityTarget.swift */; };
 		2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCA829423DF100F54277 /* View+Navigation.swift */; };
 		2201BCAB29423E1600F54277 /* NavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCAA29423E1600F54277 /* NavigationLink.swift */; };
@@ -220,15 +223,19 @@
 		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
 		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
 		6F8AA2EEEDD08C727B89AB94 /* VoiceGuideScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */; };
+		713149F4D1CD5020989CF81D /* View+ListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86222C880AE25FA86DCC6C66 /* View+ListRow.swift */; };
 		72F3855194AE5C4010A607C4 /* WhisperManifestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7DE0447F8973BEB15D0D9A /* WhisperManifestServiceTests.swift */; };
 		73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */; };
 		758B907703CD5A6120536B37 /* ProximityDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C415FCDCD38A1DE0212C8451 /* ProximityDetectionService.swift */; };
 		764C2FC0EBC04F779B97EA92 /* WalkCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */; };
 		76B622EBDD59AD9489586120 /* DateFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */; };
 		785609582C94A30C974B0F72 /* PilgrimPackageImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */; };
+		78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */; };
 		7978824143C5D5E81A6A3E06 /* StonePlacementSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */; };
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
+		7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */; };
 		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
+		847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */; };
 		86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */; };
 		8921FE4FE62B2D5D9770989C /* whisper-play-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = F42B3177F3066393F8828357 /* whisper-play-2.aac */; };
 		8A200FA63DDEC6D859F1C4EE /* WalkShareViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */; };
@@ -305,6 +312,7 @@
 		B6EE97B5CE406DEAF57A3EEC /* whisper-presence-5.aac in Resources */ = {isa = PBXBuildFile; fileRef = 27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */; };
 		B97AE0EC614F740DA0BF99D7 /* whisper-play-8.aac in Resources */ = {isa = PBXBuildFile; fileRef = 6E9C51C681E296C685A851E3 /* whisper-play-8.aac */; };
 		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
+		BABACBE432D649DEE348D186 /* AppearanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152CAA55785727B15491AF7C /* AppearanceView.swift */; };
 		BB00031100000000000002 /* TurningRitualCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031100000000000001 /* TurningRitualCard.swift */; };
 		BB00031200000000000002 /* ActiveWalkSubviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031200000000000001 /* ActiveWalkSubviews.swift */; };
 		BB00AA010000000000000002 /* PilgrimV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00AA010000000000000001 /* PilgrimV1.swift */; };
@@ -344,10 +352,14 @@
 		BBBB000000000000000041 /* PhotoNarrativeArc.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000040 /* PhotoNarrativeArc.swift */; };
 		BBBB000000000000000043 /* PhotoNarrativeArcTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000042 /* PhotoNarrativeArcTests.swift */; };
 		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
+		BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */; };
+		C5DF3101E0A3BF214B2FE127 /* CanvasBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */; };
+		C950A11E1333A7241A632EAD /* PilgrimPackageExporterArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */; };
+		CB7ADD4EA290BD08EFFF402B /* UserPreferencesArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */; };
 		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
 		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
 		CC00000200000000APPEAR01 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000APPEAR01 /* AppearanceMode.swift */; };
@@ -398,7 +410,9 @@
 		CC55DD66EE77FF88AA99BB05 /* EtegamiGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC55DD66EE77FF88AA99BB06 /* EtegamiGenerator.swift */; };
 		CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */; };
 		CDEC060CA36CBA19C2EA39EE /* whisper-play-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = FBB03F0409BA1A1EFD7917BC /* whisper-play-1.aac */; };
+		CFDAC9CE88E02E670B7D75B0 /* ConstellationStarGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */; };
 		D0E01E2C230520CA2D6344A5 /* whisper-play-12.aac in Resources */ = {isa = PBXBuildFile; fileRef = D30651941E3AA93F6BB14A1D /* whisper-play-12.aac */; };
+		D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */; };
 		D62B90461A22862A8FDA006C /* VoiceGuideDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */; };
 		D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */; };
 		D9B0FCF6475717C81CEAC35D /* AudioPriorityQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */; };
@@ -524,6 +538,8 @@
 
 /* Begin PBXFileReference section */
 		008E97D4312732C8F271886C /* AstrologyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstrologyModels.swift; sourceTree = "<group>"; };
+		0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = JourneyEditorView.swift; sourceTree = "<group>"; };
+		03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationDecor.swift; sourceTree = "<group>"; };
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
 		061E977B7C29F32543182E9B /* whisper-stillness-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-2.aac"; sourceTree = "<group>"; };
 		089F9DF63AFA0F902D41D768 /* ProximityTarget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityTarget.swift; sourceTree = "<group>"; };
@@ -536,6 +552,7 @@
 		123512C2E2D2088520214836 /* CairnVisualGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnVisualGenerator.swift; sourceTree = "<group>"; };
 		14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialVignetteView.swift; sourceTree = "<group>"; };
 		14EDD1EBEAA426237532A44F /* whisper-compassion-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-2.aac"; sourceTree = "<group>"; };
+		152CAA55785727B15491AF7C /* AppearanceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppearanceView.swift; sourceTree = "<group>"; };
 		16BE9557700152F043C359DC /* WalkShareView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareView.swift; sourceTree = "<group>"; };
 		1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDownloadManager.swift; sourceTree = "<group>"; };
 		1BA57CE96EE3401595264807 /* ActivityInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInterval.swift; sourceTree = "<group>"; };
@@ -543,6 +560,7 @@
 		1C0C607162BDD498F2ED5A96 /* whisper-play-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-3.aac"; sourceTree = "<group>"; };
 		1D3271A2D5ABEDAEBF7A3BDD /* KanjiExpiryPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KanjiExpiryPicker.swift; sourceTree = "<group>"; };
 		1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioPriorityQueue.swift; sourceTree = "<group>"; };
+		1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CanvasBackground.swift; sourceTree = "<group>"; };
 		2201BCA829423DF100F54277 /* View+Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Navigation.swift"; sourceTree = "<group>"; };
 		2201BCAA29423E1600F54277 /* NavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLink.swift; sourceTree = "<group>"; };
 		2204A1DC255ACB1100906CFE /* DataTypeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTypeProtocol.swift; sourceTree = "<group>"; };
@@ -707,6 +725,7 @@
 		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
 		4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityNotificationView.swift; sourceTree = "<group>"; };
 		50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstronomicalEventsTests.swift; sourceTree = "<group>"; };
+		5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ArchivedWalkPrivacyTests.swift; sourceTree = "<group>"; };
 		567070352F733CB000FD1910 /* JourneyViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewerView.swift; sourceTree = "<group>"; };
 		567070932F74218400FD1910 /* PilgrimWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PilgrimWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		567070942F74218400FD1910 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -732,13 +751,17 @@
 		5D9564A30CD3DE97895B7A42 /* CairnService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnService.swift; sourceTree = "<group>"; };
 		5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		5FC22282979316268A19DABF /* whisper-gratitude-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-gratitude-2.aac"; sourceTree = "<group>"; };
+		60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporterArchivedTests.swift; sourceTree = "<group>"; };
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
 		62963F6ED9C823C21B05E003 /* whisper-lightness-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-lightness-1.aac"; sourceTree = "<group>"; };
+		62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserPreferencesArchivedTests.swift; sourceTree = "<group>"; };
+		65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrphanRecordingSweep.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973C /* MeditationGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973D /* MeditationGuideManagementTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagementTests.swift; sourceTree = "<group>"; };
 		6C077B3FA336178A9F4CBC6F /* whisper-play-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-4.aac"; sourceTree = "<group>"; };
 		6E9C51C681E296C685A851E3 /* whisper-play-8.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-8.aac"; sourceTree = "<group>"; };
+		6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationStarGenerationTests.swift; sourceTree = "<group>"; };
 		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
 		721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Combine.swift"; sourceTree = "<group>"; };
 		74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestService.swift; sourceTree = "<group>"; };
@@ -750,6 +773,7 @@
 		83BD1C5A8539657B3A5EC6BD /* whisper-presence-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-4.aac"; sourceTree = "<group>"; };
 		841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestService.swift; sourceTree = "<group>"; };
 		8585A815173A295C2F468057 /* WhisperService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
+		86222C880AE25FA86DCC6C66 /* View+ListRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "View+ListRow.swift"; sourceTree = "<group>"; };
 		862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPromptVoices.swift; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareViewModel.swift; sourceTree = "<group>"; };
@@ -921,6 +945,7 @@
 		CC55DD66EE77FF88AA99BB06 /* EtegamiGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiGenerator.swift; sourceTree = "<group>"; };
 		CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeneratedPrompt.swift; sourceTree = "<group>"; };
 		CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideFileStore.swift; sourceTree = "<group>"; };
+		D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageExporterArchivedTests.swift; sourceTree = "<group>"; };
 		D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayload.swift; sourceTree = "<group>"; };
 		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityListView.swift; sourceTree = "<group>"; };
@@ -930,6 +955,7 @@
 		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
 		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
+		DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecordingPathRecovery.swift; sourceTree = "<group>"; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
 		DD2DDA53AB9BF3A478409478 /* whisper-play-9.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-9.aac"; sourceTree = "<group>"; };
@@ -946,6 +972,7 @@
 		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
 		EE11AA22BB33CC44DD55EE77 /* EtegamiRouteStroke.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiRouteStroke.swift; sourceTree = "<group>"; };
 		EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformCache.swift; sourceTree = "<group>"; };
+		EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationOverlay.swift; sourceTree = "<group>"; };
 		EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageConverterTests.swift; sourceTree = "<group>"; };
 		F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Light.otf"; sourceTree = "<group>"; };
 		F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Regular.otf"; sourceTree = "<group>"; };
@@ -961,6 +988,7 @@
 		F578B62CF2FE5D35049BA99E /* PendingPlacement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PendingPlacement.swift; sourceTree = "<group>"; };
 		F5DBDBA14D74B3061F349DA5 /* whisper-stillness-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-3.aac"; sourceTree = "<group>"; };
 		F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */ = {isa = PBXFileReference; includeInIndex = 1; path = "whispers-bootstrap.json"; sourceTree = "<group>"; };
+		F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ArchivedWalkFixtures.swift; sourceTree = "<group>"; };
 		FA2E3CE11CDA4BC19D37CF82 /* SealInput.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealInput.swift; sourceTree = "<group>"; };
 		FBB03F0409BA1A1EFD7917BC /* whisper-play-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-1.aac"; sourceTree = "<group>"; };
 		FE2B671C6679119F8E9A7508 /* HapticManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
@@ -1523,6 +1551,9 @@
 				WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */,
 				1D3271A2D5ABEDAEBF7A3BDD /* KanjiExpiryPicker.swift */,
 				4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */,
+				EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */,
+				1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */,
+				03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1543,6 +1574,7 @@
 				22BC99512941DC9900D9B1A5 /* Color.swift */,
 				2201BCAA29423E1600F54277 /* NavigationLink.swift */,
 				2201BCA829423DF100F54277 /* View+Navigation.swift */,
+				86222C880AE25FA86DCC6C66 /* View+ListRow.swift */,
 			);
 			path = SwiftUI;
 			sourceTree = "<group>";
@@ -1586,6 +1618,8 @@
 				22A5459B26E7F8DE00E19B0B /* UnitConverterInverse.swift */,
 				228B4F9227CA6C5400CD82E5 /* NewWalk.swift */,
 				8AF2425E48F3B1C39A109755 /* PilgrimPackage */,
+				65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */,
+				DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -1681,6 +1715,11 @@
 				LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */,
 				LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */,
 				LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */,
+				6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */,
+				62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */,
+				60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */,
+				5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */,
+				D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1794,6 +1833,7 @@
 				EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */,
 				4181215714A52E71449BC390 /* WalkDataFactory.swift */,
 				721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */,
+				F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -2040,6 +2080,8 @@
 				F1066617851420CAB7B50442 /* DataSettingsView.swift */,
 				BBBB00000000000000002C /* ExportConfirmationSheet.swift */,
 				BBBB000000000000000030 /* ExportDateRangeFormatter.swift */,
+				0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */,
+				152CAA55785727B15491AF7C /* AppearanceView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -2785,6 +2827,14 @@
 				LR00000200000000LRHEMS01 /* Hemisphere.swift in Sources */,
 				LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */,
 				LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */,
+				1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */,
+				BABACBE432D649DEE348D186 /* AppearanceView.swift in Sources */,
+				78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */,
+				C5DF3101E0A3BF214B2FE127 /* CanvasBackground.swift in Sources */,
+				7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */,
+				1D99785282035E297C602465 /* OrphanRecordingSweep.swift in Sources */,
+				BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */,
+				713149F4D1CD5020989CF81D /* View+ListRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2850,6 +2900,12 @@
 				LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */,
 				LR00000200000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift in Sources */,
 				LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */,
+				CFDAC9CE88E02E670B7D75B0 /* ConstellationStarGenerationTests.swift in Sources */,
+				CB7ADD4EA290BD08EFFF402B /* UserPreferencesArchivedTests.swift in Sources */,
+				847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */,
+				D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */,
+				12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */,
+				C950A11E1333A7241A632EAD /* PilgrimPackageExporterArchivedTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3048,20 +3104,20 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconConstellation AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = accentColor;
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				INFOPLIST_FILE = "$(SRCROOT)/Pilgrim/Support Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3074,20 +3130,20 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconDefault AppIconDark AppIconConstellation AppIconBreeze AppIconDrift AppIconDusk AppIconEmber AppIconRiver AppIconSage AppIconStone";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = accentColor;
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				INFOPLIST_FILE = "$(SRCROOT)/Pilgrim/Support Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3103,11 +3159,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_TEAM = QT27QDFZ7N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -3124,11 +3180,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_TEAM = QT27QDFZ7N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -3147,7 +3203,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -3162,7 +3218,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.PilgrimWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3185,7 +3241,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -3200,7 +3256,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.PilgrimWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3219,14 +3275,14 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.ScreenshotTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -3246,14 +3302,14 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.ScreenshotTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;

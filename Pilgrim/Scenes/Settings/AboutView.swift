@@ -37,7 +37,7 @@ struct AboutView: View {
             .padding(.horizontal, Constants.UI.Padding.big)
         }
         .scrollContentBackground(.hidden)
-        .background(Color.parchment)
+        .canvasBackground()
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -73,6 +73,11 @@ struct AboutView: View {
             if UIApplication.shared.alternateIconName != "AppIconDark" {
                 Button("Use dark icon") {
                     setAlternateIcon("AppIconDark")
+                }
+            }
+            if UIApplication.shared.alternateIconName != "AppIconConstellation" {
+                Button("Use constellation icon") {
+                    setAlternateIcon("AppIconConstellation")
                 }
             }
             if let current = UIApplication.shared.alternateIconName, current != "AppIconDefault" {

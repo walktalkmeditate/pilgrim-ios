@@ -48,7 +48,7 @@ struct WalkShareView: View {
                 }
                 .padding(Constants.UI.Padding.normal)
             }
-            .background(Color.parchment)
+            .canvasBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {

@@ -67,7 +67,7 @@ class PermissionStatusViewModel: ObservableObject {
     }
 
     static func readMicrophoneState() -> PermissionState {
-        switch AVAudioSession.sharedInstance().recordPermission {
+        switch AVAudioApplication.shared.recordPermission {
         case .granted: return .granted
         case .undetermined: return .notDetermined
         case .denied: return .denied

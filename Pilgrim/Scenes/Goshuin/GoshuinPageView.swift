@@ -22,6 +22,9 @@ struct GoshuinPageView: View {
         .padding(Constants.UI.Padding.normal)
         .background(parchmentBackground)
         .cornerRadius(Constants.UI.CornerRadius.normal)
+        // Bottom padding gives the TabView page-indicator dots room
+        // to breathe — without this they sit flush against the card.
+        .padding(.bottom, Constants.UI.Padding.big)
     }
 
     private func sealCell(walk: WalkInterface, walkIndex: Int) -> some View {
@@ -32,6 +35,7 @@ struct GoshuinPageView: View {
             allWalks: allWalks
         )
         let isMilestone = !milestones.isEmpty
+        let isArchived = walk.uuid.map { UserPreferences.isArchivedWalk(uuid: $0) } ?? false
 
         return VStack(spacing: 4) {
             ZStack {
@@ -39,19 +43,25 @@ struct GoshuinPageView: View {
                     .fill(Color.ink.opacity(0.04))
                     .frame(width: 132, height: 132)
 
-                if isMilestone {
+                if isMilestone && !isArchived {
                     Circle()
                         .stroke(Color.dawn.opacity(0.5), lineWidth: 2)
                         .frame(width: 136, height: 136)
                 }
 
                 SealThumbnailView(walk: walk)
+                    .opacity(isArchived ? 0.45 : 1.0)
             }
             .onTapGesture {
-                if let uuid = walk.uuid { onSelectWalk(uuid) }
+                guard !isArchived, let uuid = walk.uuid else { return }
+                onSelectWalk(uuid)
             }
 
-            if let milestone = milestones.first {
+            if isArchived {
+                Text("Archived")
+                    .font(Constants.Typography.caption)
+                    .foregroundStyle(Color.fog.opacity(0.7))
+            } else if let milestone = milestones.first {
                 Text(GoshuinMilestones.label(for: milestone))
                     .font(Constants.Typography.caption)
                     .foregroundStyle(Color.fog)
@@ -59,9 +69,17 @@ struct GoshuinPageView: View {
         }
     }
 
+    @ViewBuilder
     private var parchmentBackground: some View {
-        let patina = patinaColor
-        return Color.parchment.overlay(patina)
+        // In constellation mode, use parchmentSecondary (#141228 cool indigo)
+        // so the card reads as a distinct surface against the deeper #0a0a12
+        // canvas. The earth-toned dawn patina is suppressed in this mode —
+        // it warms the card brown which clashes with the starlit palette.
+        if UserPreferences.appearanceMode.value == "constellation" {
+            Color.parchmentSecondary
+        } else {
+            Color.parchment.overlay(patinaColor)
+        }
     }
 
 }
