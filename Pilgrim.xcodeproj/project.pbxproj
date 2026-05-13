@@ -303,6 +303,7 @@
 		ACF07FD2C47613FD87D08EE7 /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */; };
 		AEEE78F348F94AFAE50C2CCA /* CachedWhisper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3023392A906A22FDA4E0B84A /* CachedWhisper.swift */; };
 		B0261DB7EE2F64C26CF7A41F /* VoiceGuideFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */; };
+		B1B77C4B2BCFC984DB3D8244 /* LaunchLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119C8CECDB3E592FD5E40D38 /* LaunchLoadingView.swift */; };
 		B3B167A980AE4EF4F8982EAA /* whisper-play-5.aac in Resources */ = {isa = PBXBuildFile; fileRef = 22F5B51BC494516AF77C1861 /* whisper-play-5.aac */; };
 		B3C4D5E6F7A8B9C0D1E2F3A4 /* SealColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B5C6D7E8F9A0B1C2D3E4F5 /* SealColorPalette.swift */; };
 		B3D4E5F6A7B8C9D0E1F2A3B5 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */; };
@@ -548,6 +549,7 @@
 		0BEFB40EDD8525B65D45062C /* CairnTier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnTier.swift; sourceTree = "<group>"; };
 		0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculator.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
+		119C8CECDB3E592FD5E40D38 /* LaunchLoadingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LaunchLoadingView.swift; sourceTree = "<group>"; };
 		12245A2A15EE8E64818B6D3F /* ActivityContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityContext.swift; sourceTree = "<group>"; };
 		123512C2E2D2088520214836 /* CairnVisualGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnVisualGenerator.swift; sourceTree = "<group>"; };
 		14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialVignetteView.swift; sourceTree = "<group>"; };
@@ -1182,6 +1184,7 @@
 				225C0F782931D27900B9B45F /* RootCoordinatorViewModel.swift */,
 				AA0001010000000000000007 /* MainCoordinatorView.swift */,
 				CC00000100000000MAINTB01 /* MainTabView.swift */,
+				119C8CECDB3E592FD5E40D38 /* LaunchLoadingView.swift */,
 			);
 			path = Root;
 			sourceTree = "<group>";
@@ -2835,6 +2838,7 @@
 				1D99785282035E297C602465 /* OrphanRecordingSweep.swift in Sources */,
 				BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */,
 				713149F4D1CD5020989CF81D /* View+ListRow.swift in Sources */,
+				B1B77C4B2BCFC984DB3D8244 /* LaunchLoadingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -65,23 +65,27 @@ struct AboutView: View {
             isPresented: $showIconConfirmation,
             titleVisibility: .visible
         ) {
+            let current = UIApplication.shared.alternateIconName
+
             if let guideId = UserPreferences.voiceGuideEnabled.value ? selectedGuideId : nil,
-               let iconName = PilgrimLogoView.appIconName(for: guideId),
-               UIApplication.shared.alternateIconName != iconName {
-                Button("Use as app icon") {
+               let iconName = PilgrimLogoView.appIconName(for: guideId) {
+                Button(current == iconName ? "Use as app icon ✓" : "Use as app icon") {
                     setAlternateIcon(iconName)
                 }
             }
-            if UIApplication.shared.alternateIconName != "AppIconDark" {
-                Button("Use dark icon") {
-                    setAlternateIcon("AppIconDark")
-                }
+
+            Button(current == "AppIconDark" ? "Use dark icon ✓" : "Use dark icon") {
+                setAlternateIcon("AppIconDark")
             }
-            if let current = UIApplication.shared.alternateIconName, current != "AppIconDefault" {
-                Button("Reset to default") {
-                    setAlternateIcon("AppIconDefault")
-                }
+
+            Button(current == "AppIconConstellation" ? "Use constellation icon ✓" : "Use constellation icon") {
+                setAlternateIcon("AppIconConstellation")
             }
+
+            Button(current == nil ? "Reset to default ✓" : "Reset to default") {
+                setAlternateIcon(nil)
+            }
+
             Button("Cancel", role: .cancel) {}
         }
     }

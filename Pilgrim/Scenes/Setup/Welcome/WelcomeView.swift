@@ -47,6 +47,9 @@ struct WelcomeView: View {
                 .font(Constants.Typography.displayMedium)
                 .foregroundColor(.fog)
                 .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .minimumScaleFactor(0.7)
                 .opacity(animation.showQuote ? 1 : 0)
 
             Spacer()
@@ -82,13 +85,16 @@ struct WelcomeView: View {
             // (vs. burying it in Settings) earns trust in the first 90s
             // and signals Pilgrim's no-accounts, no-tracking posture
             // before the user is asked for anything.
-            Text("No accounts. Your recordings stay private — they never leave your device.")
+            Text("No accounts. Your recordings stay private and on your device.")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
                 .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .minimumScaleFactor(0.85)
                 .padding(.top, Constants.UI.Padding.normal)
                 .opacity(animation.showButton ? 0.7 : 0)
-                .accessibilityLabel("No accounts required. Your recordings stay private and never leave your device.")
+                .accessibilityLabel("No accounts. Your recordings stay private and on your device.")
         }
         .padding(.horizontal, Constants.UI.Padding.big)
         .padding(.bottom, Constants.UI.Padding.normal)

@@ -8,7 +8,7 @@ struct RootCoordinatorView: View {
     var body: some View {
         switch appDelegate.appLaunchState {
         case .loading:
-            SwiftUI.ProgressView("Loading...")
+            LaunchLoadingView()
         case .migration:
             SwiftUI.ProgressView("Migrating data...")
         case .done:

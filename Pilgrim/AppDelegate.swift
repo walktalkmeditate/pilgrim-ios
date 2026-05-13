@@ -32,7 +32,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
+        let launchStart = CFAbsoluteTimeGetCurrent()
+        func mark(_ stage: String) {
+            #if DEBUG
+            let dt = (CFAbsoluteTimeGetCurrent() - launchStart) * 1000
+            print(String(format: "[LaunchProfile] +%.0fms — %@", dt, stage))
+            #endif
+        }
+        mark("entered didFinishLaunching")
+
         MapboxMapsOptions.tileStoreUsageMode = .readOnly
+        mark("after Mapbox init")
 
         // Clean up any Live Activities left over from a previous session
         // that ended abnormally (crash, force-quit, OOM kill). Any activity
@@ -41,6 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         // screen Live Activity hang around even though the app thinks the
         // walk is finished.
         WalkActivityManager.shared.endAllStaleActivities()
+        mark("after endAllStaleActivities")
 
         // One-time migration: seed bell + soundscape preferences with
         // their initial values for users who have never explicitly set
@@ -72,6 +83,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             }
             UserDefaults.standard.set(true, forKey: soundscapeMigrationKey)
         }
+        mark("after soundscape migration")
 
         #if DEBUG
         Self.parseTurningStubLaunchArg()
@@ -79,16 +91,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
 
         DataManager.setup(
             completion: { _ in
+                mark("DataManager.setup completion fired")
 
-                RecordingPathRecovery.run {
-                    OrphanRecordingSweep.run()
-                }
-
-                AudioManifestService.shared.syncIfNeeded()
-                VoiceGuideManifestService.shared.syncIfNeeded()
-                WhisperManifestService.shared.syncIfNeeded()
-                Task { await CollectiveCounterService.shared.fetch() }
-
+                // Demo-mode seeds walks before showing the UI — keep it
+                // ahead of `.done` so the welcome flow renders against a
+                // populated DB.
                 #if DEBUG
                 if CommandLine.arguments.contains("--demo-mode") {
                     self.seedDemoData {
@@ -98,7 +105,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 }
                 #endif
 
+                // Flip `.done` IMMEDIATELY so WelcomeView can render. The
+                // post-setup work below (recording recovery, manifest
+                // syncs, collective counter) is all fire-and-forget and
+                // does not need to gate the UI.
                 self.appLaunchState = .done
+                mark("appLaunchState = .done (WelcomeView can render)")
+
+                RecordingPathRecovery.run {
+                    OrphanRecordingSweep.run()
+                }
+
+                AudioManifestService.shared.syncIfNeeded()
+                VoiceGuideManifestService.shared.syncIfNeeded()
+                WhisperManifestService.shared.syncIfNeeded()
+                Task { await CollectiveCounterService.shared.fetch() }
+                mark("post-setup fire-and-forgets dispatched")
 
 
             }, migration: { _ in

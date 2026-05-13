@@ -53,9 +53,18 @@ struct DataManager {
      - warning: If this method fails it does so in a fatal error, the app will crash as a result.
      */
     public static func setup(dataModel: DataModelProtocol.Type = PilgrimV7.self, completion: @escaping (DataManager.SetupError?) -> Void, migration: @escaping (Progress) -> Void) {
-        
+
+        let setupStart = CFAbsoluteTimeGetCurrent()
+        func dmMark(_ stage: String) {
+            #if DEBUG
+            let dt = (CFAbsoluteTimeGetCurrent() - setupStart) * 1000
+            print(String(format: "[LaunchProfile.DM] +%.0fms — %@", dt, stage))
+            #endif
+        }
+        dmMark("setup() entered for \(dataModel)")
+
         let completion = safeClosure(from: completion)
-        
+
         // setup storage
         let storage = SQLiteStore(
             fileName: "Pilgrim.sqlite",
@@ -67,38 +76,46 @@ struct DataManager {
             localStorageOptions: .none
         )
         self.storage = storage
-        
+        dmMark("SQLiteStore + mappingProviders built")
+
         // select relevant versions
         let currentVersion = storage.currentORModel(from: dataModel.migrationChain)
+        dmMark("currentORModel resolved (current=\(currentVersion.map { String(describing: $0) } ?? "nil"))")
+
         var relevants = dataModel.migrationChain.filter { (type) -> Bool in
             // relevent version should include the final type (dataModel) and all intermediate models, but it is important that they are successors of current version of the storage otherwise the models might be incompatible
             type == dataModel || (currentVersion != nil ? type is IntermediateDataModelProtocol && (type.isSuccessor(to: currentVersion!) || type == currentVersion) : false)
         }
-            
+
         let destinationModel = relevants.removeFirst()
         dataStack = DataStack(oRMigrationChain: dataModel.migrationChain, oRDataModel: destinationModel)
-        
+        dmMark("DataStack built (destination=\(destinationModel), remaining relevants=\(relevants.count))")
+
         // adding storage
         if let progress = dataStack.addStorage(
             storage,
             completion: { result in
+                dmMark("addStorage completion fired")
                 switch result {
                 case .success:
-                    
+
                     if let intermediate = destinationModel as? IntermediateDataModelProtocol.Type {
                         if !intermediate.intermediateMappingActions(dataStack) {
                             print("[DataManager] Intermediate mapping actions of \(destinationModel) were unsuccessful")
                             completion(.intermediateMappingActionsFailed(versionIdentifier: intermediate.identifier))
                             return
                         }
+                        dmMark("intermediateMappingActions done")
                     }
-                    
+
                     if relevants.first != nil {
+                        dmMark("recursing into next setup() for \(relevants.first!)")
                         setup(dataModel: dataModel, completion: completion, migration: migration)
                     } else {
+                        dmMark("all migration steps complete, calling completion")
                         completion(nil)
                     }
-                    
+
                 case .failure(let error):
                     print("[DataManager] Failed to add storage for \(dataModel)\nError: \(error)")
                     completion(.failedToAddStorage(error: error))
@@ -106,10 +123,12 @@ struct DataManager {
             }
         ) {
             // handling migration
+            dmMark("addStorage progress callback fired (migration required)")
             DispatchQueue.main.async {
                 migration(progress)
             }
         }
+        dmMark("addStorage call returned (async work in flight)")
     }
     
     // MARK: - Walk
