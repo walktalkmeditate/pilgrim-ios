@@ -52,7 +52,17 @@ struct WelcomeView: View {
             Spacer()
 
             footprintsView
+
+            // Breath cue framing the walking-prints animation — turns dead
+            // load time into intentional ritual so first-time users read
+            // the wait as design, not latency.
+            Text("Take a breath. We're right with you.")
+                .font(Constants.Typography.caption.italic())
+                .foregroundColor(.fog)
+                .multilineTextAlignment(.center)
+                .padding(.top, Constants.UI.Padding.small)
                 .padding(.bottom, Constants.UI.Padding.big)
+                .opacity(animation.showQuote ? 0.85 : 0)
 
             Button(action: beginTapped) {
                 Text(LS["Welcome.Begin"])
@@ -67,6 +77,18 @@ struct WelcomeView: View {
             .opacity(animation.showButton ? 1 : 0)
             .offset(y: animation.showButton ? 0 : 30)
             .disabled(animation.isExiting)
+
+            // Privacy promise on-screen at sign-up. Surfacing this here
+            // (vs. burying it in Settings) earns trust in the first 90s
+            // and signals Pilgrim's no-accounts, no-tracking posture
+            // before the user is asked for anything.
+            Text("No accounts. Your recordings stay private — they never leave your device.")
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
+                .multilineTextAlignment(.center)
+                .padding(.top, Constants.UI.Padding.normal)
+                .opacity(animation.showButton ? 0.7 : 0)
+                .accessibilityLabel("No accounts required. Your recordings stay private and never leave your device.")
         }
         .padding(.horizontal, Constants.UI.Padding.big)
         .padding(.bottom, Constants.UI.Padding.normal)

@@ -29,6 +29,8 @@ struct AboutView: View {
                 }
                 openSource
                 divider
+                dataSources
+                divider
                 motto
                 seasonalVignette
 
@@ -37,7 +39,7 @@ struct AboutView: View {
             .padding(.horizontal, Constants.UI.Padding.big)
         }
         .scrollContentBackground(.hidden)
-        .canvasBackground()
+        .background(Color.parchment)
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -73,11 +75,6 @@ struct AboutView: View {
             if UIApplication.shared.alternateIconName != "AppIconDark" {
                 Button("Use dark icon") {
                     setAlternateIcon("AppIconDark")
-                }
-            }
-            if UIApplication.shared.alternateIconName != "AppIconConstellation" {
-                Button("Use constellation icon") {
-                    setAlternateIcon("AppIconConstellation")
                 }
             }
             if let current = UIApplication.shared.alternateIconName, current != "AppIconDefault" {
@@ -298,6 +295,31 @@ struct AboutView: View {
             .foregroundColor(.stone)
             .padding(.vertical, Constants.UI.Padding.small + Constants.UI.Padding.xs)
         }
+    }
+
+    // MARK: - Data Sources
+
+    private var dataSources: some View {
+        VStack(alignment: .leading, spacing: Constants.UI.Padding.normal - Constants.UI.Padding.xs) {
+            Text("DATA SOURCES")
+                .font(Constants.Typography.caption)
+                .tracking(2)
+                .foregroundColor(.stone.opacity(0.6))
+                .padding(.top, Constants.UI.Padding.big)
+
+            Text("Weather conditions and temperature recorded with each walk are fetched at the start of the walk from Apple's WeatherKit service.")
+                .font(Constants.Typography.body)
+                .foregroundColor(.ink)
+
+            linkRow(
+                icon: "cloud.sun",
+                label: "\u{F8FF} Weather — Legal attribution",
+                url: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!
+            )
+        }
+        .padding(.bottom, Constants.UI.Padding.big)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .sectionAppear(index: 4, appeared: appeared, reduceMotion: reduceMotion)
     }
 
     // MARK: - Motto
