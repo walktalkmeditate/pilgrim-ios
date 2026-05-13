@@ -110,3 +110,4 @@ node_modules/
 
 .kaijutsu/
 app-issues.log
+.blitz/
