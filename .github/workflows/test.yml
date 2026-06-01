@@ -40,13 +40,41 @@ jobs:
       - name: Copy Secrets
         run: cp Secrets.xcconfig.example Secrets.xcconfig
 
+      - name: Boot Simulator
+        run: |
+          # Pre-boot so cold-boot latency doesn't eat xcodebuild's launch
+          # timeout. The macos-26 runner intermittently hung with the test
+          # runner never beginning execution when boot raced the test host.
+          xcrun simctl boot "iPhone 17 Pro" || true
+          xcrun simctl bootstatus "iPhone 17 Pro" -b
+
       - name: Build and Test
         run: |
-          xcodebuild test \
-            -workspace Pilgrim.xcworkspace \
-            -scheme Pilgrim \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-            -skip-testing:ScreenshotTests \
-            -quiet \
-            CODE_SIGNING_ALLOWED=NO
+          # Retry once with a clean simulator re-boot in between: the
+          # macos-26 sim occasionally wedges on launch (tests never start).
+          # -quiet dropped so a genuine failure is actually diagnosable.
+          run_tests() {
+            xcodebuild test \
+              -workspace Pilgrim.xcworkspace \
+              -scheme Pilgrim \
+              -sdk iphonesimulator \
+              -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+              -skip-testing:ScreenshotTests \
+              -resultBundlePath "TestResults-$1.xcresult" \
+              CODE_SIGNING_ALLOWED=NO
+          }
+          if run_tests 1; then exit 0; fi
+          echo "::warning::Test run 1 failed — resetting simulator and retrying"
+          xcrun simctl shutdown "iPhone 17 Pro" || true
+          xcrun simctl boot "iPhone 17 Pro" || true
+          xcrun simctl bootstatus "iPhone 17 Pro" -b
+          run_tests 2
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults-*.xcresult
+          retention-days: 7
+          if-no-files-found: ignore
