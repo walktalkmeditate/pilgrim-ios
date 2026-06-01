@@ -49,10 +49,11 @@ enum CelestialCalculator {
         let components = utc.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
         let Y = Double(components.year!)
         let M = Double(components.month!)
-        let D = Double(components.day!)
-            + Double(components.hour!) / 24.0
-            + Double(components.minute!) / 1440.0
-            + Double(components.second!) / 86400.0
+        let day = Double(components.day!)
+        let hour = Double(components.hour!)
+        let minute = Double(components.minute!)
+        let second = Double(components.second!)
+        let D = day + hour / 24.0 + minute / 1440.0 + second / 86400.0
 
         var y = Y
         var m = M
