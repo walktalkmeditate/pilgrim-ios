@@ -202,41 +202,11 @@ struct DataManager {
         let validatedObjects = filteredObjects
         
         dataStack.perform(asynchronous: { (transaction) -> [Walk] in
-            
+
             var walks = [Walk]()
 
             for object in validatedObjects {
-
-                let walk = transaction.create(Into<Walk>())
-                walk._uuid .= object.uuid ?? UUID()
-                walk._workoutType .= object.workoutType
-                walk._distance .= object.distance
-                walk._steps .= object.steps
-                walk._startDate .= object.startDate
-                walk._endDate .= object.endDate
-                walk._burnedEnergy .= object.burnedEnergy
-                walk._isRace .= object.isRace
-                walk._comment .= object.comment
-                walk._isUserModified .= object.isUserModified
-                walk._healthKitUUID .= object.healthKitUUID
-
-                walk._ascend .= object.ascend
-                walk._descend .= object.descend
-                walk._activeDuration .= object.activeDuration
-                walk._pauseDuration .= object.pauseDuration
-                walk._dayIdentifier .= object.dayIdentifier
-                walk._talkDuration .= object.talkDuration
-                walk._meditateDuration .= object.meditateDuration
-
-                walk._favicon .= object.favicon
-                walk._weatherCondition .= object.weatherCondition
-                walk._weatherTemperature .= object.weatherTemperature
-                walk._weatherHumidity .= object.weatherHumidity
-                walk._weatherWindSpeed .= object.weatherWindSpeed
-
-                persistRelatedEntities(from: object, to: walk, in: transaction)
-                walks.append(walk)
-
+                walks.append(createWalk(from: object, in: transaction))
             }
 
             return walks
@@ -254,12 +224,50 @@ struct DataManager {
                     // last case: walks.count must be equal to validatedObjects.count
                     completion(true, .notAllValid, walks)
                 }
-                
+
             case .failure(let error):
                 completion(false, .databaseError(error: error), [])
             }
         }
-        
+
+    }
+
+    /// Internal (not private) so `DataManager+Replace.swift` can reuse the
+    /// exact insert logic `saveWalks` uses.
+    static func createWalk(
+        from object: WalkInterface,
+        in transaction: BaseDataTransaction
+    ) -> Walk {
+
+        let walk = transaction.create(Into<Walk>())
+        walk._uuid .= object.uuid ?? UUID()
+        walk._workoutType .= object.workoutType
+        walk._distance .= object.distance
+        walk._steps .= object.steps
+        walk._startDate .= object.startDate
+        walk._endDate .= object.endDate
+        walk._burnedEnergy .= object.burnedEnergy
+        walk._isRace .= object.isRace
+        walk._comment .= object.comment
+        walk._isUserModified .= object.isUserModified
+        walk._healthKitUUID .= object.healthKitUUID
+
+        walk._ascend .= object.ascend
+        walk._descend .= object.descend
+        walk._activeDuration .= object.activeDuration
+        walk._pauseDuration .= object.pauseDuration
+        walk._dayIdentifier .= object.dayIdentifier
+        walk._talkDuration .= object.talkDuration
+        walk._meditateDuration .= object.meditateDuration
+
+        walk._favicon .= object.favicon
+        walk._weatherCondition .= object.weatherCondition
+        walk._weatherTemperature .= object.weatherTemperature
+        walk._weatherHumidity .= object.weatherHumidity
+        walk._weatherWindSpeed .= object.weatherWindSpeed
+
+        persistRelatedEntities(from: object, to: walk, in: transaction)
+        return walk
     }
 
     private static func persistRelatedEntities(

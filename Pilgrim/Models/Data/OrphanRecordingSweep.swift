@@ -1,6 +1,62 @@
 import Foundation
 import CoreStore
 
+/// Serializes the launch cleanup chain: the orphan sweep deletes any audio
+/// file not referenced by a VoiceRecording row, so it must not run until
+/// (a) `RecordingPathRecovery` has back-filled empty paths AND (b) a crashed
+/// walk's checkpoint recovery has committed its rows — otherwise the sweep
+/// would delete the very recordings recovery is about to reference (AF2).
+///
+/// `WalkSessionGuard.recoverIfNeeded` runs from MainCoordinator, which never
+/// constructs during onboarding/migration sessions. To avoid sweep
+/// starvation there, AppDelegate resolves the recovery dependency
+/// immediately when no checkpoint file exists. When a checkpoint exists but
+/// its recovery save fails, the gate intentionally never opens this session
+/// — skipping a sweep is safe; sweeping pre-commit is not.
+final class OrphanSweepGate {
+
+    static let shared = OrphanSweepGate { OrphanRecordingSweep.run() }
+
+    private let sweep: () -> Void
+    private var pathRecoveryComplete = false
+    private var walkRecoveryResolved = false
+    private var sweepStarted = false
+
+    init(sweep: @escaping () -> Void) {
+        self.sweep = sweep
+    }
+
+    func notePathRecoveryComplete() {
+        onMain {
+            self.pathRecoveryComplete = true
+            self.runIfReady()
+        }
+    }
+
+    /// "Resolved" means no checkpoint blocks the sweep: recovery committed,
+    /// the checkpoint was discarded, or none existed in the first place.
+    func noteWalkRecoveryResolved() {
+        onMain {
+            self.walkRecoveryResolved = true
+            self.runIfReady()
+        }
+    }
+
+    private func onMain(_ work: @escaping () -> Void) {
+        if Thread.isMainThread {
+            work()
+        } else {
+            DispatchQueue.main.async(execute: work)
+        }
+    }
+
+    private func runIfReady() {
+        guard pathRecoveryComplete, walkRecoveryResolved, !sweepStarted else { return }
+        sweepStarted = true
+        sweep()
+    }
+}
+
 enum OrphanRecordingSweep {
 
     /// One-shot at app launch. Enumerates all .m4a files under the Recordings
@@ -9,13 +65,15 @@ enum OrphanRecordingSweep {
     /// referenced. Errors are logged but never thrown — this is best-effort
     /// cleanup that catches files left behind by failed post-archive deletion
     /// (Task 4) or any walk-delete path that did not clean up its files.
-    static func run() {
+    static func run(completion: (() -> Void)? = nil) {
         DataManager.dataStack.perform(asynchronous: { transaction in
             try collectReferencedRelativePaths(in: transaction)
         }, success: { referenced in
             sweepFiles(notMatching: referenced)
+            completion?()
         }, failure: { error in
             print("[OrphanRecordingSweep] CoreStore fetch failed: \(error)")
+            completion?()
         })
     }
 

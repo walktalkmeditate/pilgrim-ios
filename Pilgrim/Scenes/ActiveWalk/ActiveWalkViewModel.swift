@@ -228,7 +228,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     func stop() {
         cancellables.removeAll()
         proximityService.stopListening()
-        sessionGuard?.stopAndCleanup()
+        // Checkpoint deletion happens in MainCoordinator's saveWalk success
+        // callback (AF1) — a failed save must leave the checkpoint on disk
+        // so launch recovery can restore the walk.
+        sessionGuard?.stop()
         finalizeMeditation()
         soundManagement.onWalkEnd()
         voiceGuideManagement.stopGuiding()

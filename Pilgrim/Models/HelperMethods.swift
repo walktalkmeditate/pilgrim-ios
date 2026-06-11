@@ -130,3 +130,21 @@ public func safeClosure<Parameter1, Parameter2, Parameter3>(from closure: @escap
         }
     }
 }
+
+/**
+ This function can be used to create a closure being performed on the main thread from another one.
+
+ Usage Example:
+ ```
+ let safeCompletion = safeClosure(from: completion)
+ ```
+
+ - parameter closure: the closure that is supposed to be performed on the main thread
+ */
+public func safeClosure<Parameter1, Parameter2, Parameter3, Parameter4, Parameter5>(from closure: @escaping (Parameter1, Parameter2, Parameter3, Parameter4, Parameter5) -> Void) -> ((Parameter1, Parameter2, Parameter3, Parameter4, Parameter5) -> Void) {
+    return { parameter1, parameter2, parameter3, parameter4, parameter5 in
+        DispatchQueue.main.async {
+            closure(parameter1, parameter2, parameter3, parameter4, parameter5)
+        }
+    }
+}

@@ -60,6 +60,13 @@ class MainCoordinator: ObservableObject {
         vm.onWalkCompleted = { [weak self, weak vm] snapshot in
             snapshot.comment = vm?.intention
             DataManager.saveWalk(object: snapshot) { success, _, walk in
+                if success {
+                    // The save transaction is confirmed — only now is the
+                    // crash-recovery checkpoint safe to discard (AF1). On
+                    // failure it stays on disk and recoverIfNeeded re-saves
+                    // the walk at next launch.
+                    WalkSessionGuard.deleteCheckpointFile()
+                }
                 guard let self else { return }
                 if success {
                     snapshot.uuid = walk?.uuid

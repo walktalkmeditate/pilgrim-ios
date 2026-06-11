@@ -112,8 +112,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 self.appLaunchState = .done
                 mark("appLaunchState = .done (WelcomeView can render)")
 
+                // Launch cleanup ordering (AF2): the orphan sweep runs only
+                // once BOTH path recovery has finished AND any crashed-walk
+                // checkpoint has been recovered (WalkSessionGuard resolves
+                // the gate from MainCoordinator). The no-checkpoint fast
+                // path below keeps the sweep alive for onboarding/migration
+                // sessions where MainCoordinator never constructs.
                 RecordingPathRecovery.run {
-                    OrphanRecordingSweep.run()
+                    OrphanSweepGate.shared.notePathRecoveryComplete()
+                }
+                if !FileManager.default.fileExists(atPath: WalkSessionGuard.checkpointFileURL().path) {
+                    OrphanSweepGate.shared.noteWalkRecoveryResolved()
                 }
 
                 AudioManifestService.shared.syncIfNeeded()

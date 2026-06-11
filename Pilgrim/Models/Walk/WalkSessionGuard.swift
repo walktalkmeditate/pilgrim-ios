@@ -111,15 +111,28 @@ class WalkSessionGuard {
         restartTimer()
     }
 
-    func stopAndCleanup() {
+    /// Tears down timers/observers/power adjustments but leaves the
+    /// checkpoint file on disk. The checkpoint must outlive the save
+    /// transaction: the walk-end flow calls this, then deletes the file via
+    /// `WalkSessionGuard.deleteCheckpointFile()` only inside the
+    /// `DataManager.saveWalk` success callback. A failed save keeps the
+    /// checkpoint so `recoverIfNeeded` restores the walk on next launch.
+    func stop() {
         print("\(Self.tag) STOP — wrote \(checkpointCount) checkpoints during session")
         checkpointTimer?.invalidate()
         checkpointTimer = nil
         cancellables.removeAll()
         locationManagement?.restoreDefaultPower()
         UIDevice.current.isBatteryMonitoringEnabled = false
-        deleteCheckpointFile()
         Self.active = nil
+    }
+
+    /// User-discard path (walk cancel): tears down AND removes the
+    /// checkpoint — the user explicitly threw the walk away, so there is
+    /// nothing to recover.
+    func stopAndCleanup() {
+        stop()
+        Self.deleteCheckpointFile()
     }
 
     deinit {
@@ -220,14 +233,14 @@ class WalkSessionGuard {
         return appSupport.appendingPathComponent("walk_checkpoint.json")
     }
 
-    private func deleteCheckpointFile() {
-        let url = Self.checkpointFileURL()
+    static func deleteCheckpointFile() {
+        let url = checkpointFileURL()
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         do {
             try FileManager.default.removeItem(at: url)
-            print("\(Self.tag) CLEANUP — checkpoint file deleted")
+            print("\(tag) CLEANUP — checkpoint file deleted")
         } catch {
-            print("\(Self.tag) CLEANUP FAILED: \(error), retrying in 1s")
+            print("\(tag) CLEANUP FAILED: \(error), retrying in 1s")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 try? FileManager.default.removeItem(at: url)
             }
@@ -282,7 +295,15 @@ class WalkSessionGuard {
         return seconds.isFinite ? seconds : 0
     }
 
-    static func recoverIfNeeded(completion: @escaping (Date?) -> Void) {
+    /// `sweepGate` is resolved on every path that leaves no checkpoint
+    /// blocking the orphan sweep (no file, file deleted, or recovery
+    /// committed). It is deliberately NOT resolved when the recovery save
+    /// fails and the checkpoint is kept — sweeping then would delete the
+    /// crashed walk's audio files before their DB rows exist (AF2).
+    static func recoverIfNeeded(
+        sweepGate: OrphanSweepGate = .shared,
+        completion: @escaping (Date?) -> Void
+    ) {
         guard DataManager.dataStack != nil else {
             print("\(tag) RECOVERY SKIPPED — DataManager not ready")
             completion(nil)
@@ -293,34 +314,15 @@ class WalkSessionGuard {
 
         guard FileManager.default.fileExists(atPath: url.path) else {
             print("\(tag) RECOVERY — no checkpoint file found")
+            sweepGate.noteWalkRecoveryResolved()
             completion(nil)
             return
         }
 
         print("\(tag) RECOVERY — checkpoint file found, decoding...")
 
-        let checkpoint: WalkCheckpoint
-        do {
-            let data = try Data(contentsOf: url)
-            checkpoint = try JSONDecoder().decode(WalkCheckpoint.self, from: data)
-            print("\(tag) RECOVERY — decoded: schema=\(checkpoint.schemaVersion), walkUUID=\(checkpoint.walkUUID.uuidString.prefix(8))..., checkpointDate=\(checkpoint.checkpointDate)")
-        } catch {
-            print("\(tag) RECOVERY FAILED — decode error: \(error)")
-            try? FileManager.default.removeItem(at: url)
-            completion(nil)
-            return
-        }
-
-        guard checkpoint.schemaVersion == Self.supportedSchemaVersion else {
-            print("\(tag) RECOVERY FAILED — unsupported schemaVersion: \(checkpoint.schemaVersion) (this build supports \(Self.supportedSchemaVersion))")
-            try? FileManager.default.removeItem(at: url)
-            completion(nil)
-            return
-        }
-
-        if DataManager.objectHasDuplicate(uuid: checkpoint.walkUUID, objectType: Walk.self) {
-            print("\(tag) RECOVERY — stale checkpoint (walk already saved), deleting")
-            try? FileManager.default.removeItem(at: url)
+        guard let checkpoint = decodeRecoverableCheckpoint(at: url) else {
+            sweepGate.noteWalkRecoveryResolved()
             completion(nil)
             return
         }
@@ -341,6 +343,53 @@ class WalkSessionGuard {
 
         print("\(tag) RECOVERY — saving walk: start=\(walk.startDate), end=\(walk.endDate), routes=\(walk.routeData.count), pauses=\(walk.pauses.count), recordings=\(walk.voiceRecordings.count), intervals=\(walk.activityIntervals.count), waypoints=\(walk.waypoints.count)")
 
+        let recovered = makeRecoveredWalk(from: checkpoint)
+
+        DataManager.saveWalk(object: recovered) { success, error, _ in
+            if success {
+                try? FileManager.default.removeItem(at: url)
+                print("\(tag) RECOVERY SUCCESS — walk from \(walk.startDate) saved, checkpoint deleted")
+                sweepGate.noteWalkRecoveryResolved()
+                completion(walk.startDate)
+            } else {
+                print("\(tag) RECOVERY SAVE FAILED: \(String(describing: error)), keeping checkpoint for retry")
+                completion(nil)
+            }
+        }
+    }
+
+    /// Decodes and validates the checkpoint at `url`. Returns nil — after
+    /// deleting the file — when it is undecodable, from an unsupported
+    /// schema version, or stale (its walk is already in the database).
+    private static func decodeRecoverableCheckpoint(at url: URL) -> WalkCheckpoint? {
+        let checkpoint: WalkCheckpoint
+        do {
+            let data = try Data(contentsOf: url)
+            checkpoint = try JSONDecoder().decode(WalkCheckpoint.self, from: data)
+            print("\(tag) RECOVERY — decoded: schema=\(checkpoint.schemaVersion), walkUUID=\(checkpoint.walkUUID.uuidString.prefix(8))..., checkpointDate=\(checkpoint.checkpointDate)")
+        } catch {
+            print("\(tag) RECOVERY FAILED — decode error: \(error)")
+            try? FileManager.default.removeItem(at: url)
+            return nil
+        }
+
+        guard checkpoint.schemaVersion == Self.supportedSchemaVersion else {
+            print("\(tag) RECOVERY FAILED — unsupported schemaVersion: \(checkpoint.schemaVersion) (this build supports \(Self.supportedSchemaVersion))")
+            try? FileManager.default.removeItem(at: url)
+            return nil
+        }
+
+        if DataManager.objectHasDuplicate(uuid: checkpoint.walkUUID, objectType: Walk.self) {
+            print("\(tag) RECOVERY — stale checkpoint (walk already saved), deleting")
+            try? FileManager.default.removeItem(at: url)
+            return nil
+        }
+
+        return checkpoint
+    }
+
+    private static func makeRecoveredWalk(from checkpoint: WalkCheckpoint) -> NewWalk {
+        let walk = checkpoint.walk
         let recovered = NewWalk(
             workoutType: walk.workoutType,
             distance: walk.distance,
@@ -364,17 +413,7 @@ class WalkSessionGuard {
             weatherWindSpeed: walk.weatherWindSpeed
         )
         recovered.uuid = checkpoint.walkUUID
-
-        DataManager.saveWalk(object: recovered) { success, error, _ in
-            if success {
-                try? FileManager.default.removeItem(at: url)
-                print("\(tag) RECOVERY SUCCESS — walk from \(walk.startDate) saved, checkpoint deleted")
-                completion(walk.startDate)
-            } else {
-                print("\(tag) RECOVERY SAVE FAILED: \(String(describing: error)), keeping checkpoint for retry")
-                completion(nil)
-            }
-        }
+        return recovered
     }
 
     private static func extractRecordingDirectoryUUID(from walk: TempWalk) -> UUID? {
