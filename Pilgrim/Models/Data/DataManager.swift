@@ -561,30 +561,69 @@ struct DataManager {
         try? FileManager.default.removeItem(at: recordingsDir)
     }
 
-    public static func updateVoiceRecordingTranscription(uuid: UUID, transcription: String) {
-        dataStack.perform(asynchronous: { transaction in
-            if let recording = transaction.edit(
-                queryObject(from: uuid, transaction: transaction) as VoiceRecording?
-            ) {
-                recording._transcription .= transcription
-            }
-        }) { result in
-            if case .failure(let error) = result {
-                print("[DataManager] Failed to update transcription: \(error)")
-            }
+    /// Completion reports `false` both when the transaction fails AND when
+    /// the recording row no longer exists (e.g. replaced by a concurrent
+    /// tended import) — callers must not treat either case as "saved".
+    /// The `dataStack` parameter exists so tests can supply an in-memory
+    /// stack; production call sites use the default.
+    public static func updateVoiceRecordingTranscription(
+        uuid: UUID,
+        transcription: String,
+        dataStack: DataStack = DataManager.dataStack,
+        completion: ((Bool) -> Void)? = nil
+    ) {
+        updateVoiceRecording(uuid: uuid, dataStack: dataStack, completion: completion, failureLabel: "transcription") {
+            $0._transcription .= transcription
         }
     }
 
-    public static func updateVoiceRecordingWordsPerMinute(uuid: UUID, wordsPerMinute: Double) {
-        dataStack.perform(asynchronous: { transaction in
-            if let recording = transaction.edit(
+    public static func updateVoiceRecordingWordsPerMinute(
+        uuid: UUID,
+        wordsPerMinute: Double,
+        dataStack: DataStack = DataManager.dataStack,
+        completion: ((Bool) -> Void)? = nil
+    ) {
+        updateVoiceRecording(uuid: uuid, dataStack: dataStack, completion: completion, failureLabel: "WPM") {
+            $0._wordsPerMinute .= wordsPerMinute
+        }
+    }
+
+    public static func updateVoiceRecordingIsEnhanced(
+        uuid: UUID,
+        isEnhanced: Bool,
+        dataStack: DataStack = DataManager.dataStack,
+        completion: ((Bool) -> Void)? = nil
+    ) {
+        updateVoiceRecording(uuid: uuid, dataStack: dataStack, completion: completion, failureLabel: "isEnhanced") {
+            $0._isEnhanced .= isEnhanced
+        }
+    }
+
+    private static func updateVoiceRecording(
+        uuid: UUID,
+        dataStack: DataStack,
+        completion: ((Bool) -> Void)?,
+        failureLabel: String,
+        applyEdit: @escaping (VoiceRecording) -> Void
+    ) {
+        dataStack.perform(asynchronous: { transaction -> Bool in
+            guard let recording = transaction.edit(
                 queryObject(from: uuid, transaction: transaction) as VoiceRecording?
-            ) {
-                recording._wordsPerMinute .= wordsPerMinute
+            ) else {
+                return false
             }
+            applyEdit(recording)
+            return true
         }) { result in
-            if case .failure(let error) = result {
-                print("[DataManager] Failed to update WPM for \(uuid): \(error)")
+            switch result {
+            case .success(let found):
+                if !found {
+                    print("[DataManager] \(failureLabel) update skipped — recording \(uuid) no longer exists")
+                }
+                completion?(found)
+            case .failure(let error):
+                print("[DataManager] Failed to update \(failureLabel) for \(uuid): \(error)")
+                completion?(false)
             }
         }
     }

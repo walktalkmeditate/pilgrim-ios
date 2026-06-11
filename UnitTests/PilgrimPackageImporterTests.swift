@@ -25,7 +25,7 @@ final class PilgrimPackageImporterTests: XCTestCase {
         let walk = makeMinimalPilgrimWalk(photos: nil)
         let archive = try buildFixtureArchive(walks: [walk], includePhotosDirectory: false)
 
-        let (decoded, _, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+        let decoded = try PilgrimPackageImporter.unpackAndDecode(from: archive).walks
 
         XCTAssertEqual(decoded.count, 1)
         XCTAssertTrue(
@@ -51,7 +51,7 @@ final class PilgrimPackageImporterTests: XCTestCase {
             includePhotosDirectory: true
         )
 
-        let (decoded, _, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+        let decoded = try PilgrimPackageImporter.unpackAndDecode(from: archive).walks
 
         let imported = try XCTUnwrap(decoded.first)
         XCTAssertEqual(imported.walkPhotos.count, 1)
@@ -96,7 +96,7 @@ final class PilgrimPackageImporterTests: XCTestCase {
             photoFileContents: Data(repeating: 0xFF, count: 1024) // dummy "JPEG" bytes
         )
 
-        let (decoded, _, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+        let decoded = try PilgrimPackageImporter.unpackAndDecode(from: archive).walks
 
         XCTAssertEqual(decoded.count, 1)
         XCTAssertEqual(decoded.first?.walkPhotos.count, 1)
@@ -117,10 +117,40 @@ final class PilgrimPackageImporterTests: XCTestCase {
             photoFileContents: Data(repeating: 0x00, count: 256)
         )
 
-        let (decoded, _, _, _) = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+        let decoded = try PilgrimPackageImporter.unpackAndDecode(from: archive).walks
 
         XCTAssertEqual(decoded.count, 1)
         XCTAssertTrue(decoded.first?.walkPhotos.isEmpty ?? false)
+    }
+
+    // MARK: - Skipped-walk accounting (AF28)
+
+    func testUnpackAndDecode_corruptWalkFile_isCountedAsSkipped_notSilentlyDropped() throws {
+        let walks = [makeMinimalPilgrimWalk(photos: nil), makeMinimalPilgrimWalk(photos: nil)]
+        let archive = try buildFixtureArchive(
+            walks: walks,
+            includePhotosDirectory: false,
+            corruptWalkFileCount: 1
+        )
+
+        let package = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+
+        XCTAssertEqual(package.walks.count, 2, "the readable walks must still import")
+        XCTAssertEqual(
+            package.skippedWalks, 1,
+            "an undecodable walk file must surface in the result, not vanish into a success report"
+        )
+    }
+
+    func testUnpackAndDecode_allWalksReadable_reportsZeroSkipped() throws {
+        let archive = try buildFixtureArchive(
+            walks: [makeMinimalPilgrimWalk(photos: nil)],
+            includePhotosDirectory: false
+        )
+
+        let package = try PilgrimPackageImporter.unpackAndDecode(from: archive)
+
+        XCTAssertEqual(package.skippedWalks, 0)
     }
 
     // MARK: - Fixture builder
@@ -131,7 +161,8 @@ final class PilgrimPackageImporterTests: XCTestCase {
     private func buildFixtureArchive(
         walks: [PilgrimWalk],
         includePhotosDirectory: Bool,
-        photoFileContents: Data = Data(repeating: 0xFF, count: 256)
+        photoFileContents: Data = Data(repeating: 0xFF, count: 256),
+        corruptWalkFileCount: Int = 0
     ) throws -> URL {
         let fm = FileManager.default
         let stagingDir = fm.temporaryDirectory
@@ -149,6 +180,13 @@ final class PilgrimPackageImporterTests: XCTestCase {
             let data = try encoder.encode(walk)
             let walkFile = walksDir.appendingPathComponent("\(walk.id.uuidString).json")
             try data.write(to: walkFile)
+        }
+
+        for index in 0..<corruptWalkFileCount {
+            // Truncated JSON — the shape a cut-off transfer leaves behind
+            // when the ZIP container itself still opens.
+            let garbage = Data("{\"schemaVersion\": \"1.0\", \"id\": \"trunc".utf8)
+            try garbage.write(to: walksDir.appendingPathComponent("corrupt-\(index).json"))
         }
 
         // Minimal manifest the importer can decode (schemaVersion check

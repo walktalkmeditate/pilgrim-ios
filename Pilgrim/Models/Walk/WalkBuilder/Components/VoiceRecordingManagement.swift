@@ -167,26 +167,50 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         }
 
         let end = Date()
-        let enhanced = UserPreferences.dynamicVoiceEnabled.value
-        finalizeRecording(start: start, end: end, relativePath: relativePath, isEnhanced: enhanced)
+        let recordingUUID = UUID()
+        // isEnhanced is finalized as false and flipped only after
+        // VoiceEnhancer reports success — the flag must never claim an
+        // enhancement that failed (it round-trips through checkpoints
+        // and exports).
+        finalizeRecording(uuid: recordingUUID, start: start, end: end, relativePath: relativePath)
 
-        if enhanced {
+        if UserPreferences.dynamicVoiceEnabled.value {
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             let fileURL = docs.appendingPathComponent(relativePath)
-            VoiceEnhancer.shared.enhance(fileURL) { _ in }
+            VoiceEnhancer.shared.enhance(fileURL) { [weak self] success in
+                guard success else {
+                    print("[VoiceRecordingManagement] Enhancement failed — recording \(recordingUUID) stays raw")
+                    return
+                }
+                self?.markRecordingEnhanced(uuid: recordingUUID)
+            }
         }
     }
 
-    private func finalizeRecording(start: Date, end: Date, relativePath: String, isEnhanced: Bool = false) {
+    private func finalizeRecording(uuid: UUID, start: Date, end: Date, relativePath: String) {
         let recording = TempVoiceRecording(
-            uuid: UUID(),
+            uuid: uuid,
             startDate: start,
             endDate: end,
             duration: end.timeIntervalSince(start),
             fileRelativePath: relativePath,
-            isEnhanced: isEnhanced
+            isEnhanced: false
         )
         voiceRecordingsRelay.accept(voiceRecordingsRelay.value + [recording])
+    }
+
+    /// Runs on the main queue (VoiceEnhancer completes there). If the walk
+    /// is still in progress the relay entry is updated in place; if it was
+    /// already saved (relay reset on walk completion), the persisted row is
+    /// updated instead — `persistVoiceRecordings` preserves the temp UUID.
+    private func markRecordingEnhanced(uuid: UUID) {
+        let current = voiceRecordingsRelay.value
+        if let match = current.first(where: { $0.uuid == uuid }) {
+            match.isEnhanced = true
+            voiceRecordingsRelay.accept(current)
+        } else {
+            DataManager.updateVoiceRecordingIsEnhanced(uuid: uuid, isEnhanced: true)
+        }
     }
 
     private func startMetering() {

@@ -4,6 +4,7 @@ import ZIPFoundation
 
 enum PilgrimPackageError: Error {
     case noWalksFound
+    case databaseError(Error)
     case encodingFailed
     case zipFailed(Error)
     case fileSystemError(Error)
@@ -42,6 +43,7 @@ enum PilgrimPackageBuilder {
     ///   with the photos that could be resolved.
     static func build(
         includePhotos: Bool = false,
+        dataStack: DataStack = DataManager.dataStack,
         completion: @escaping (Result<PilgrimPackageBuildResult, PilgrimPackageError>) -> Void
     ) {
         let completion = safeClosure(from: completion)
@@ -52,7 +54,7 @@ enum PilgrimPackageBuilder {
 
         let archivedRegistry = UserPreferences.archivedWalkRegistry.value
 
-        DataManager.dataStack.perform(asynchronous: { transaction -> ([Walk], [Event]) in
+        dataStack.perform(asynchronous: { transaction -> ([Walk], [Event]) in
             let walks = try transaction.fetchAll(
                 From<Walk>().orderBy(.ascending(\._startDate))
             )
@@ -61,8 +63,8 @@ enum PilgrimPackageBuilder {
         }) { result in
             switch result {
             case .success(let (transactionWalks, transactionEvents)):
-                let walks = DataManager.dataStack.fetchExisting(transactionWalks)
-                let events = DataManager.dataStack.fetchExisting(transactionEvents)
+                let walks = dataStack.fetchExisting(transactionWalks)
+                let events = dataStack.fetchExisting(transactionEvents)
                 guard !walks.isEmpty else {
                     completion(.failure(.noWalksFound))
                     return
@@ -105,8 +107,11 @@ enum PilgrimPackageBuilder {
                         completion(.failure(.fileSystemError(error)))
                     }
                 }
-            case .failure:
-                completion(.failure(.noWalksFound))
+            case .failure(let error):
+                // A fetch failure is NOT "no walks" — exports are the
+                // disaster-recovery path, and telling a user with hundreds
+                // of walks that none exist would be alarming and wrong.
+                completion(.failure(.databaseError(error)))
             }
         }
     }

@@ -96,6 +96,7 @@ final class TranscriptionService: ObservableObject {
         guard started else { return [:] }
 
         var results: [UUID: String] = [:]
+        var persistenceFailures = 0
         let total = recordings.count
 
         do {
@@ -127,10 +128,16 @@ final class TranscriptionService: ObservableObject {
                     transcriptionResults.map(\.text).joined(separator: " ")
                 )
                 if !text.isEmpty {
-                    results[uuid] = text
-                    DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text)
-                    if let wpm = computeWordsPerMinute(from: transcriptionResults) {
-                        DataManager.updateVoiceRecordingWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
+                    if await persistTranscription(uuid: uuid, text: text) {
+                        results[uuid] = text
+                        if let wpm = computeWordsPerMinute(from: transcriptionResults) {
+                            await persistWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
+                        }
+                    } else {
+                        // Leaving the recording untranscribed keeps it in the
+                        // next auto-transcribe pass's selection — the work is
+                        // re-attempted instead of silently lost.
+                        persistenceFailures += 1
                     }
                 }
             } catch {
@@ -138,7 +145,10 @@ final class TranscriptionService: ObservableObject {
             }
         }
 
-        await MainActor.run { state = .completed; isTranscribing = false }
+        let finalState: State = persistenceFailures == 0
+            ? .completed
+            : .failed("Couldn't save \(persistenceFailures) transcription\(persistenceFailures == 1 ? "" : "s")")
+        await MainActor.run { state = finalState; isTranscribing = false }
         return results
     }
 
@@ -179,20 +189,56 @@ final class TranscriptionService: ObservableObject {
             let text = cleanTranscription(
                 results.map(\.text).joined(separator: " ")
             )
-            await MainActor.run { state = .completed; isTranscribing = false }
-            if !text.isEmpty {
-                DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text)
-                if let wpm = computeWordsPerMinute(from: results) {
-                    DataManager.updateVoiceRecordingWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
-                }
-                return text
+            guard !text.isEmpty else {
+                await MainActor.run { state = .completed; isTranscribing = false }
+                return nil
             }
-            return nil
+            guard await persistTranscription(uuid: uuid, text: text) else {
+                await MainActor.run { state = .failed("Transcription couldn't be saved"); isTranscribing = false }
+                return nil
+            }
+            if let wpm = computeWordsPerMinute(from: results) {
+                await persistWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
+            }
+            await MainActor.run { state = .completed; isTranscribing = false }
+            return text
         } catch {
             print("[TranscriptionService] Failed to transcribe: \(error)")
             await MainActor.run { state = .failed("Transcription failed"); isTranscribing = false }
             return nil
         }
+    }
+
+    /// Persists a transcription with one retry. Returns `false` when the
+    /// write failed (or the recording row is gone) so callers can avoid
+    /// reporting unsaved work as done.
+    private func persistTranscription(uuid: UUID, text: String) async -> Bool {
+        if await persistTranscriptionOnce(uuid: uuid, text: text) { return true }
+        if await persistTranscriptionOnce(uuid: uuid, text: text) { return true }
+        print("[TranscriptionService] Transcription for \(uuid) not saved after retry")
+        return false
+    }
+
+    private func persistTranscriptionOnce(uuid: UUID, text: String) async -> Bool {
+        await withCheckedContinuation { continuation in
+            DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text) { success in
+                continuation.resume(returning: success)
+            }
+        }
+    }
+
+    /// WPM is a derived nicety — a final failure is logged but does not
+    /// fail the transcription, which is already persisted at this point.
+    private func persistWordsPerMinute(uuid: UUID, wordsPerMinute: Double) async {
+        for _ in 0..<2 {
+            let saved = await withCheckedContinuation { continuation in
+                DataManager.updateVoiceRecordingWordsPerMinute(uuid: uuid, wordsPerMinute: wordsPerMinute) { success in
+                    continuation.resume(returning: success)
+                }
+            }
+            if saved { return }
+        }
+        print("[TranscriptionService] WPM for \(uuid) not saved after retry")
     }
 
     private func computeWordsPerMinute(from results: [TranscriptionResult]) -> Double? {
