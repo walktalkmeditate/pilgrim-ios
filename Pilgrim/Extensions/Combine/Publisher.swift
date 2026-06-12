@@ -22,15 +22,27 @@
 import Foundation
 import Combine
 
-public extension Publisher {
-    
-    private static var sharedBackgroundQueue: DispatchQueue {
-        DispatchQueue.global(qos: .userInitiated)
-    }
+private let sharedBackgroundQueue = DispatchQueue(label: "BackgroundPublisher", qos: .userInitiated)
 
-    /// Creates a `Publisher` which will always be observed and susbcribed to on a background queue.
+public extension Publisher {
+
+    /// Delivers elements on a shared serial background queue.
+    ///
+    /// A serial queue (not the concurrent global pool) keeps element order
+    /// intact. Two deliberate choices guard CombineExt relay teardown, which
+    /// traps on `DemandBuffer.complete`'s double-completion precondition when
+    /// a relay deinits while its subscription has zero outstanding demand:
+    ///
+    /// - `buffer(prefetch: .keepFull)` requests its demand synchronously at
+    ///   subscription, where `receive(on:)` alone would schedule the request
+    ///   onto the queue and leave the relay demand-less until it lands.
+    /// - No `subscribe(on:)`: hopping cancellation to another queue lets an
+    ///   async cancel race the relay's deinit-time forceFinish.
     func asBackgroundPublisher() -> AnyPublisher<Output, Failure> {
-        return self.receive(on: Self.sharedBackgroundQueue).subscribe(on: Self.sharedBackgroundQueue).eraseToAnyPublisher()
+        return self
+            .buffer(size: .max, prefetch: .keepFull, whenFull: .dropOldest)
+            .receive(on: sharedBackgroundQueue)
+            .eraseToAnyPublisher()
     }
     
     /**

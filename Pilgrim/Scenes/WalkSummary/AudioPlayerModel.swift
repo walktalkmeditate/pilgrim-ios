@@ -13,6 +13,18 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var player: AVAudioPlayer?
     private var progressTimer: Timer?
 
+    /// Dismissing the owning view mid-playback deallocates the model without
+    /// stop() — without this, the 10Hz timer fires no-ops for the rest of
+    /// the session and the "audioPlayer" consumer wedges the coordinator
+    /// active forever. Avoids stopPlayer() so no @Published writes happen
+    /// during deinit.
+    deinit {
+        progressTimer?.invalidate()
+        player?.delegate = nil
+        player?.stop()
+        AudioSessionCoordinator.shared.deactivate(consumer: "audioPlayer")
+    }
+
     func toggle(relativePath: String) {
         if currentPath == relativePath {
             if isPlaying {

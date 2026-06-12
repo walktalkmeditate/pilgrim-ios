@@ -9,6 +9,7 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private let coordinator = AudioSessionCoordinator.shared
     private let cacheDir: URL
     private var previewTask: Task<Void, Never>?
+    private var previewGeneration = 0
     private var prefetchTasks: [WhisperCategory: Task<Void, Never>] = [:]
 
     @Published private(set) var isPlaying: Bool = false
@@ -153,21 +154,28 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         if isAvailable(whisper) {
             playLocal(localURL(for: whisper), volume: volume)
         } else {
+            let generation = previewGeneration
             previewTask = Task { [weak self] in
                 guard let self else { return }
                 do {
                     let (data, response) = try await URLSession.shared.data(from: remoteURL(for: whisper))
-                    guard !Task.isCancelled else { return }
-                    guard Self.isResponseComplete(data: data, response: response) else {
-                        await MainActor.run { self.coordinator.deactivate(consumer: "whisper-preview") }
-                        return
+                    await MainActor.run {
+                        // A stop()/preview() that superseded this task owns
+                        // the consumer now — a stale task must neither
+                        // deactivate it nor start ghost playback.
+                        guard self.previewGeneration == generation else { return }
+                        guard Self.isResponseComplete(data: data, response: response) else {
+                            self.coordinator.deactivate(consumer: "whisper-preview")
+                            return
+                        }
+                        self.playData(data, volume: volume)
                     }
-                    await MainActor.run { self.playData(data, volume: volume) }
                 } catch {
-                    if !Task.isCancelled {
+                    await MainActor.run {
+                        guard self.previewGeneration == generation else { return }
                         print("[WhisperPlayer] Preview download error: \(error)")
+                        self.coordinator.deactivate(consumer: "whisper-preview")
                     }
-                    await MainActor.run { self.coordinator.deactivate(consumer: "whisper-preview") }
                 }
             }
         }
@@ -203,10 +211,13 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
+    /// Always deactivates (the coordinator no-ops for an absent consumer):
+    /// relying on a cancelled download task to deactivate left a race where
+    /// cancellation after the data arrived leaked the consumer forever.
     func stop() {
+        previewGeneration += 1
         previewTask?.cancel()
         previewTask = nil
-        guard player != nil else { return }
         player?.stop()
         player = nil
         isPlaying = false

@@ -481,6 +481,10 @@
 		LR00000200000000LRTMPL01 /* LightReadingTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */; };
 		LR00000200000000LRTMPL02 /* LightReadingTemplatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */; };
 		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
+		LR00000200000000LRASCT01 /* AudioSessionCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRASCT01 /* AudioSessionCoordinatorTests.swift */; };
+		LR00000200000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift */; };
+		LR00000200000000LRACLT01 /* AudioConsumerLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRACLT01 /* AudioConsumerLifecycleTests.swift */; };
+		LR00000200000000LRTAFL01 /* TestAudioFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTAFL01 /* TestAudioFile.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
 		LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */; };
 		LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */; };
@@ -1021,6 +1025,10 @@
 		LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingTemplates.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingTemplatesTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRASCT01 /* AudioSessionCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinatorTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoundscapePlayerInterruptionTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRACLT01 /* AudioConsumerLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioConsumerLifecycleTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTAFL01 /* TestAudioFile.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TestAudioFile.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardRecoveryTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImportTransactionTests.swift; sourceTree = "<group>"; };
@@ -1712,6 +1720,9 @@
 				LR00000100000000LRHEMST1 /* HemisphereTests.swift */,
 				LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */,
 				LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */,
+				LR00000100000000LRASCT01 /* AudioSessionCoordinatorTests.swift */,
+				LR00000100000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift */,
+				LR00000100000000LRACLT01 /* AudioConsumerLifecycleTests.swift */,
 				LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */,
 				LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */,
 				LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */,
@@ -1836,6 +1847,7 @@
 			children = (
 				EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */,
 				4181215714A52E71449BC390 /* WalkDataFactory.swift */,
+				LR00000100000000LRTAFL01 /* TestAudioFile.swift */,
 				721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */,
 				F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */,
 			);
@@ -2901,6 +2913,10 @@
 				LR00000200000000LRHEMST1 /* HemisphereTests.swift in Sources */,
 				LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */,
 				LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */,
+				LR00000200000000LRASCT01 /* AudioSessionCoordinatorTests.swift in Sources */,
+				LR00000200000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift in Sources */,
+				LR00000200000000LRACLT01 /* AudioConsumerLifecycleTests.swift in Sources */,
+				LR00000200000000LRTAFL01 /* TestAudioFile.swift in Sources */,
 				LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */,
 				LR00000200000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift in Sources */,
 				LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */,

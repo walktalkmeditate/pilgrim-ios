@@ -137,6 +137,7 @@ struct WalkSummaryView: View {
             .onDisappear {
                 pollingTask?.cancel()
                 pollingTask = nil
+                audioPlayer.stop()
             }
             .onChange(of: transcriptionService.state) { _, newState in
                 if newState == .completed {

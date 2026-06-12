@@ -34,6 +34,10 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         }
 
         callObserver.setDelegate(self, queue: .main)
+
+        audioCoordinator.addInterruptionObserver(id: "voiceRecording") { [weak self] event in
+            self?.handleAudioInterruption(event)
+        }
     }
 
     public func bind(builder: WalkBuilder) {
@@ -61,9 +65,10 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     private let audioCoordinator = AudioSessionCoordinator.shared
 
     private func configureAudioSession() {
-        let needsPlayback = SoundscapePlayer.shared.isPlaying
-        let mode: AudioSessionCoordinator.Mode = needsPlayback ? .recordAndPlay : .recordingOnly
-        audioCoordinator.activate(for: mode, consumer: "voiceRecording")
+        // The coordinator arbitrates the actual session category: if any
+        // playback consumer (soundscape, whisper, bell) is live, this
+        // recordingOnly request resolves to recordAndPlay automatically.
+        audioCoordinator.activate(for: .recordingOnly, consumer: "voiceRecording")
     }
 
     private func deactivateAudioSession() {
@@ -86,9 +91,13 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         guard isWalkActive, !isRecording else { return }
 
         VoiceGuidePlayer.shared.stop()
-        configureAudioSession()
 
+        // Activate only once the directory exists — the early return must
+        // not leave the "voiceRecording" consumer holding a mic-active
+        // session it will never release.
         guard let dir = ensureRecordingsDirectory() else { return }
+
+        configureAudioSession()
 
         let recordingID = UUID()
         let filename = "\(recordingID.uuidString).m4a"
@@ -290,9 +299,24 @@ extension VoiceRecordingManagement: CXCallObserverDelegate {
         stopRecording()
     }
 
+    /// Non-call interruptions (declined call, Siri, alarm) pause the
+    /// AVAudioRecorder with no resume path — finalize immediately so the
+    /// captured audio is committed instead of silently truncating while the
+    /// UI keeps showing an active recording. Connected calls also arrive
+    /// here via CXCallObserver; the isRecording guard makes the overlap a
+    /// no-op for whichever fires second.
+    private func handleAudioInterruption(_ event: AudioSessionCoordinator.InterruptionEvent) {
+        guard case .began = event, isRecording else { return }
+        stopRecording()
+    }
+
     #if DEBUG
     func _test_simulateCallChanged(hasConnected: Bool, hasEnded: Bool) {
         handleCallStateChange(hasConnected: hasConnected, hasEnded: hasEnded)
+    }
+
+    func _test_simulateAudioInterruption(_ event: AudioSessionCoordinator.InterruptionEvent) {
+        handleAudioInterruption(event)
     }
     #endif
 }
