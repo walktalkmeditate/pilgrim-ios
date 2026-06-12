@@ -6,7 +6,8 @@ typealias MBMapView = MapboxMaps.MapView
 
 struct PilgrimMapView: UIViewRepresentable {
 
-    private static let renderFPS: Int = 30
+    private static let renderFrameRateRange = CAFrameRateRange(minimum: 10, maximum: 30, preferred: 30)
+    fileprivate static let renderingDisplayState: MBMapView.DisplayState = [.foregroundActive, .foregroundInactive]
 
     var isInteractive: Bool = true
     var showsUserLocation: Bool = true
@@ -97,7 +98,7 @@ struct PilgrimMapView: UIViewRepresentable {
             frame: .zero,
             mapInitOptions: MapInitOptions(cameraOptions: cameraOptions, styleURI: styleURI)
         )
-        mapView.preferredFramesPerSecond = Self.renderFPS
+        mapView.preferredFrameRateRange = Self.renderFrameRateRange
 
         if fadesInOnStyleLoad {
             mapView.alpha = 0
@@ -613,6 +614,18 @@ struct PilgrimMapView: UIViewRepresentable {
                 name: UIApplication.willEnterForegroundNotification,
                 object: nil
             )
+            // Mapbox 11.20.0's sceneDidActivate handler restarts the display
+            // link unconditionally, ignoring displayState — so a map paused
+            // for meditation would silently resume rendering after any
+            // background or app-switcher round-trip. didBecomeActive fires
+            // after the scene activates; re-asserting the render state here
+            // re-pauses the display link.
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleDidBecomeActive),
+                name: UIApplication.didBecomeActiveNotification,
+                object: nil
+            )
         }
 
         @objc private func handleDidEnterBackground() {
@@ -625,10 +638,29 @@ struct PilgrimMapView: UIViewRepresentable {
             refreshRenderState()
         }
 
+        @objc private func handleDidBecomeActive() {
+            refreshRenderState()
+        }
+
         private func refreshRenderState() {
             guard let mapView else { return }
-            let wasRendering = mapView.preferredFramesPerSecond > 0
-            mapView.preferredFramesPerSecond = shouldRender ? PilgrimMapView.renderFPS : 0
+            let wasRendering = !mapView.displayState.isEmpty
+
+            if shouldRender {
+                // Order matters: restore the display state before re-enabling
+                // touch, so a tap landing mid-transition can't hit Mapbox's
+                // touchesBegan while the display link is still paused.
+                mapView.displayState = PilgrimMapView.renderingDisplayState
+                mapView.preferredFrameRateRange = PilgrimMapView.renderFrameRateRange
+                mapView.isUserInteractionEnabled = true
+            } else {
+                // Disabling gesture handlers is not enough: Mapbox's
+                // touchesBegan is a UIResponder override that force-restarts
+                // the display link on any raw touch. Cut touch delivery off
+                // entirely before pausing.
+                mapView.isUserInteractionEnabled = false
+                mapView.displayState = []
+            }
 
             if shouldRender && !wasRendering && hasDeferredRouteUpdate {
                 PilgrimMapView.applyRouteSource(pendingSegments, walkingColor: walkingColor, on: mapView, coordinator: self)
