@@ -125,7 +125,14 @@ struct PilgrimMapView: UIViewRepresentable {
         context.coordinator.currentColorScheme = colorScheme
 
         let shouldFade = fadesInOnStyleLoad
-        mapView.mapboxMap.onStyleLoaded.observeNext { [coordinator = context.coordinator] _ in
+        // Weak captures (AF70): this AnyCancelable is stored in the
+        // coordinator's own cancellables, so strong captures of coordinator
+        // and mapView form a retain cycle. observeNext releases the closure
+        // once the style loads, but if it never loads (offline cold cache,
+        // style-server failure) a dismantled view would leak the coordinator
+        // and the Metal-backed map view for the rest of the session.
+        mapView.mapboxMap.onStyleLoaded.observeNext { [weak coordinator = context.coordinator, weak mapView] _ in
+            guard let coordinator, let mapView else { return }
             let mode: PilgrimMapStyle.Mode = coordinator.currentColorScheme == .dark ? .dark : .light
             PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap, mode: mode)
             if shouldFade, mapView.alpha < 1 {

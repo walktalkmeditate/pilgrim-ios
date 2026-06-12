@@ -26,11 +26,12 @@ struct PilgrimApp: App {
     
     @UIApplicationDelegateAdaptor var delegate: AppDelegate
     @StateObject private var appearanceManager = AppearanceManager()
+    @StateObject private var rootViewModel = RootCoordinatorViewModel()
 
     var body: some Scene {
         WindowGroup {
             ZStack {
-                RootCoordinatorView(viewModel: RootCoordinatorViewModel())
+                RootCoordinatorView(viewModel: rootViewModel)
                 if appearanceManager.isConstellation {
                     ConstellationOverlay()
                 }

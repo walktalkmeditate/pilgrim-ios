@@ -29,9 +29,11 @@ class RootCoordinatorViewModel: ObservableObject {
     
     init() {
         self.rootState = RootState(isAppSetUp: UserPreferences.isSetUp.value)
+        // sink + [weak self] instead of assign(to:on:), which retains self
+        // strongly inside its own cancellables — a retain cycle (AF61).
         UserPreferences.isSetUp.publisher
             .map { RootState(isAppSetUp: $0) }
-            .assign(to: \.rootState, on: self)
+            .sink { [weak self] in self?.rootState = $0 }
             .store(in: &cancellables)
     }
     

@@ -151,8 +151,11 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
         self.bind(builder: builder)
         prepare()
 
-        builder.registerPreSnapshotFlush { [weak self] in
-            guard let self else { return }
+        // [weak builder] breaks the self-retain cycle (AF8): the closure lives
+        // in builder.preSnapshotFlushActions, so a strong capture would keep
+        // the builder — and a cancelled walk's entire route — alive forever.
+        builder.registerPreSnapshotFlush { [weak self, weak builder] in
+            guard let self, let builder else { return }
             builder.flushLocations(self.locationsRelay.value, distance: self.distanceRelay.value)
         }
     }

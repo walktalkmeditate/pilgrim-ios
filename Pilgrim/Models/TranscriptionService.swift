@@ -2,6 +2,49 @@ import Foundation
 import WhisperKit
 import CoreStore
 
+/// Result of transcribing one audio file, expressed in domain terms so
+/// tests can fake the engine without importing WhisperKit.
+struct TranscriptionOutput {
+    let text: String
+    let wordsPerMinute: Double?
+}
+
+/// Seam over WhisperKit — the one surface through which the service
+/// touches the loaded model, so lifecycle behavior (load, batch, unload)
+/// is testable without a real CoreML model.
+protocol TranscriptionEngine: AnyObject {
+    func transcribeAudio(atPath path: String) async throws -> TranscriptionOutput
+    func unloadModels() async
+}
+
+extension WhisperKit: TranscriptionEngine {
+
+    func transcribeAudio(atPath path: String) async throws -> TranscriptionOutput {
+        let results = try await transcribe(audioPath: path)
+        return TranscriptionOutput(
+            text: results.map(\.text).joined(separator: " "),
+            wordsPerMinute: Self.wordsPerMinute(from: results)
+        )
+    }
+
+    private static func wordsPerMinute(from results: [TranscriptionResult]) -> Double? {
+        let segments = results.flatMap { $0.segments }
+        guard let first = segments.first, let last = segments.last,
+              last.end > first.start else { return nil }
+        let words = segments.compactMap { $0.words }.flatMap { $0 }
+        let wordCount: Int
+        if !words.isEmpty {
+            wordCount = words.count
+        } else {
+            wordCount = segments.flatMap { $0.text.split(separator: " ") }.count
+        }
+        guard wordCount > 0 else { return nil }
+        let durationMinutes = Double(last.end - first.start) / 60.0
+        guard durationMinutes > 0 else { return nil }
+        return Double(wordCount) / durationMinutes
+    }
+}
+
 final class TranscriptionService: ObservableObject {
 
     static let shared = TranscriptionService()
@@ -27,10 +70,12 @@ final class TranscriptionService: ObservableObject {
     @MainActor @Published var state: State = .idle
     @MainActor private var isTranscribing = false
 
-    private var whisperKit: WhisperKit?
+    private var whisperKit: TranscriptionEngine?
     private let modelVariant = "tiny"
 
-    private init() {}
+    /// Singleton in production; internal so tests can construct isolated
+    /// instances without touching `shared` state.
+    init() {}
 
     private var savedModelPath: URL? {
         get {
@@ -123,14 +168,12 @@ final class TranscriptionService: ObservableObject {
             guard FileManager.default.fileExists(atPath: audioURL.path) else { continue }
 
             do {
-                let transcriptionResults = try await pipe.transcribe(audioPath: audioURL.path)
-                let text = cleanTranscription(
-                    transcriptionResults.map(\.text).joined(separator: " ")
-                )
+                let output = try await pipe.transcribeAudio(atPath: audioURL.path)
+                let text = cleanTranscription(output.text)
                 if !text.isEmpty {
                     if await persistTranscription(uuid: uuid, text: text) {
                         results[uuid] = text
-                        if let wpm = computeWordsPerMinute(from: transcriptionResults) {
+                        if let wpm = output.wordsPerMinute {
                             await persistWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
                         }
                     } else {
@@ -148,7 +191,11 @@ final class TranscriptionService: ObservableObject {
         let finalState: State = persistenceFailures == 0
             ? .completed
             : .failed("Couldn't save \(persistenceFailures) transcription\(persistenceFailures == 1 ? "" : "s")")
-        await MainActor.run { state = finalState; isTranscribing = false }
+        await MainActor.run {
+            state = finalState
+            isTranscribing = false
+            unloadModel()
+        }
         return results
     }
 
@@ -185,10 +232,8 @@ final class TranscriptionService: ObservableObject {
         await MainActor.run { state = .transcribing(current: 1, total: 1) }
 
         do {
-            let results = try await pipe.transcribe(audioPath: audioURL.path)
-            let text = cleanTranscription(
-                results.map(\.text).joined(separator: " ")
-            )
+            let output = try await pipe.transcribeAudio(atPath: audioURL.path)
+            let text = cleanTranscription(output.text)
             guard !text.isEmpty else {
                 await MainActor.run { state = .completed; isTranscribing = false }
                 return nil
@@ -197,7 +242,7 @@ final class TranscriptionService: ObservableObject {
                 await MainActor.run { state = .failed("Transcription couldn't be saved"); isTranscribing = false }
                 return nil
             }
-            if let wpm = computeWordsPerMinute(from: results) {
+            if let wpm = output.wordsPerMinute {
                 await persistWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
             }
             await MainActor.run { state = .completed; isTranscribing = false }
@@ -241,23 +286,6 @@ final class TranscriptionService: ObservableObject {
         print("[TranscriptionService] WPM for \(uuid) not saved after retry")
     }
 
-    private func computeWordsPerMinute(from results: [TranscriptionResult]) -> Double? {
-        let segments = results.flatMap { $0.segments }
-        guard let first = segments.first, let last = segments.last,
-              last.end > first.start else { return nil }
-        let words = segments.compactMap { $0.words }.flatMap { $0 }
-        let wordCount: Int
-        if !words.isEmpty {
-            wordCount = words.count
-        } else {
-            wordCount = segments.flatMap { $0.text.split(separator: " ") }.count
-        }
-        guard wordCount > 0 else { return nil }
-        let durationMinutes = Double(last.end - first.start) / 60.0
-        guard durationMinutes > 0 else { return nil }
-        return Double(wordCount) / durationMinutes
-    }
-
     private static let whisperArtifacts = ["[BLANK_AUDIO]", "[NO_SPEECH]", "(blank_audio)", "(no_speech)"]
 
     private func cleanTranscription(_ text: String) -> String {
@@ -287,29 +315,31 @@ final class TranscriptionService: ObservableObject {
 
         guard let pipe = whisperKit,
               FileManager.default.fileExists(atPath: url.path) else {
-            await MainActor.run { isTranscribing = false }
+            await MainActor.run { isTranscribing = false; unloadModel() }
             return nil
         }
 
         do {
-            let results = try await pipe.transcribe(audioPath: url.path)
-            let text = cleanTranscription(
-                results.map(\.text).joined(separator: " ")
-            )
-            await MainActor.run { isTranscribing = false }
+            let output = try await pipe.transcribeAudio(atPath: url.path)
+            let text = cleanTranscription(output.text)
+            await MainActor.run { isTranscribing = false; unloadModel() }
             return text.isEmpty ? nil : text
         } catch {
-            await MainActor.run { isTranscribing = false }
+            await MainActor.run { isTranscribing = false; unloadModel() }
             return nil
         }
     }
 
+    /// Releases the WhisperKit pipeline once a transcription flow drains
+    /// (AF33) — tens of MB of CoreML state would otherwise stay resident
+    /// through multi-hour walks. No-op while a batch is active, and leaves
+    /// `state` untouched so completion/failure UI isn't reset.
     @MainActor
     func unloadModel() {
-        let kit = whisperKit
+        guard !isTranscribing else { return }
+        guard let kit = whisperKit else { return }
         whisperKit = nil
-        state = .idle
-        Task.detached { await kit?.unloadModels() }
+        Task.detached { await kit.unloadModels() }
     }
 
     enum AutoTranscriptionSkipReason {
@@ -317,5 +347,22 @@ final class TranscriptionService: ObservableObject {
     }
 
     @MainActor @Published var autoTranscriptionSkippedReason: AutoTranscriptionSkipReason?
+
+    // MARK: - Test Hooks
+
+    #if DEBUG
+    @MainActor
+    func _test_setEngine(_ engine: TranscriptionEngine?) {
+        whisperKit = engine
+    }
+
+    @MainActor
+    func _test_setTranscribing(_ value: Bool) {
+        isTranscribing = value
+    }
+
+    @MainActor
+    var _test_isModelLoaded: Bool { whisperKit != nil }
+    #endif
 
 }

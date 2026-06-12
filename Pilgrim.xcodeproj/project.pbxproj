@@ -489,6 +489,7 @@
 		LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */; };
 		LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */; };
 		LR00000200000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */; };
+		LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */; };
 		LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */; };
 		LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */; };
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
@@ -1033,6 +1034,7 @@
 		LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardRecoveryTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImportTransactionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeleteRuleVersionHashTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderLifecycleTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingPersistenceTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageBuilderErrorTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
@@ -1731,6 +1733,7 @@
 				60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */,
 				LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */,
 				LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */,
+				LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */,
 				LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */,
 				LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */,
 				5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */,
@@ -2926,6 +2929,7 @@
 				D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */,
 				LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */,
 				LR00000200000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift in Sources */,
+				LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */,
 				LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */,
 				LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */,
 				12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */,

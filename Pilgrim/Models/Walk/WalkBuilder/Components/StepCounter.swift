@@ -103,8 +103,11 @@ class StepCounter: WalkBuilderComponent {
     public required init(builder: WalkBuilder) {
         self.bind(builder: builder)
 
-        builder.registerPreSnapshotFlush { [weak self] in
-            guard let self else { return }
+        // [weak builder] breaks the self-retain cycle (AF8): the closure lives
+        // in builder.preSnapshotFlushActions, so a strong capture would keep
+        // the builder alive forever.
+        builder.registerPreSnapshotFlush { [weak self, weak builder] in
+            guard let self, let builder else { return }
             builder.flushSteps(self.stepsRelay.value)
         }
     }
