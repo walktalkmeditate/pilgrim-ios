@@ -143,7 +143,20 @@ class WalkSessionGuard {
 
     // MARK: - Checkpointing
 
+    /// Serializes all checkpoint file I/O. Encoding the full walk and
+    /// writing a multi-MB file every 10–30 s on the main thread was a
+    /// recurring stall that got worse precisely when the device was already
+    /// struggling (AF13). `deleteCheckpointFile` runs `sync` on this same
+    /// queue so a deletion ordered after a write can never be overtaken by
+    /// that write resurrecting a saved walk's checkpoint.
+    private static let checkpointIOQueue = DispatchQueue(label: "WalkSessionGuard.checkpointIO", qos: .utility)
+
     func checkpointNow() {
+        // The builder's locations relay no longer receives per-sample
+        // growth (AF9/AF46) — pull the canonical route in before
+        // snapshotting so the checkpoint stays complete.
+        locationManagement?.syncRouteToBuilder()
+
         guard let builder, let snapshot = builder.createCheckpointSnapshot() else {
             print("\(Self.tag) CHECKPOINT SKIPPED — no builder or no start date")
             return
@@ -164,20 +177,32 @@ class WalkSessionGuard {
 
         guard let resolvedUUID = walkUUID else { return }
         let checkpoint = WalkCheckpoint(walkUUID: resolvedUUID, walk: snapshot)
+        let tier = currentTier
 
-        do {
-            let data = try JSONEncoder().encode(checkpoint)
-            let url = Self.checkpointFileURL()
-            try FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            try data.write(to: url, options: .atomic)
-            checkpointCount += 1
-            let talkFlag = snapshot.voiceRecordings.contains(where: Self.isProvisional) ? " (inflight)" : ""
-            print("\(Self.tag) CHECKPOINT #\(checkpointCount) — tier: \(currentTier), routes: \(snapshot.routeData.count), pauses: \(snapshot.pauses.count), recordings: \(snapshot.voiceRecordings.count)\(talkFlag), intervals: \(snapshot.activityIntervals.count), size: \(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
-        } catch {
-            print("\(Self.tag) CHECKPOINT WRITE FAILED: \(error)")
+        // Snapshot capture stays on main (above); the encode + atomic write
+        // move to the utility queue. The snapshot is freshly built and never
+        // mutated after this point, so handing it off is safe.
+        Self.checkpointIOQueue.async { [weak self] in
+            do {
+                let data = try JSONEncoder().encode(checkpoint)
+                let url = Self.checkpointFileURL()
+                try FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try data.write(to: url, options: .atomic)
+                #if DEBUG
+                self?._test_onCheckpointPersisted?(Thread.isMainThread)
+                #endif
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    self.checkpointCount += 1
+                    let talkFlag = snapshot.voiceRecordings.contains(where: Self.isProvisional) ? " (inflight)" : ""
+                    print("\(Self.tag) CHECKPOINT #\(self.checkpointCount) — tier: \(tier), routes: \(snapshot.routeData.count), pauses: \(snapshot.pauses.count), recordings: \(snapshot.voiceRecordings.count)\(talkFlag), intervals: \(snapshot.activityIntervals.count), size: \(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
+                }
+            } catch {
+                print("\(Self.tag) CHECKPOINT WRITE FAILED: \(error)")
+            }
         }
     }
 
@@ -186,8 +211,10 @@ class WalkSessionGuard {
     private func recalculateTier() {
         #if DEBUG
         _test_onRecalculateTier?()
-        #endif
+        let batteryLevel = _test_batteryLevelOverride ?? UIDevice.current.batteryLevel
+        #else
         let batteryLevel = UIDevice.current.batteryLevel
+        #endif
         let thermalState = ProcessInfo.processInfo.thermalState
         let isMeditating = viewModel?.isMeditating ?? false
 
@@ -237,16 +264,23 @@ class WalkSessionGuard {
         return appSupport.appendingPathComponent("walk_checkpoint.json")
     }
 
+    /// Runs `sync` on the checkpoint I/O queue so the deletion is ordered
+    /// after any in-flight checkpoint write — otherwise a write dispatched
+    /// just before walk end could land after the post-save cleanup and
+    /// resurrect a checkpoint for an already-saved walk. The wait is bounded
+    /// by at most one pending encode+write and happens once per walk end.
     static func deleteCheckpointFile() {
-        let url = checkpointFileURL()
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        do {
-            try FileManager.default.removeItem(at: url)
-            print("\(tag) CLEANUP — checkpoint file deleted")
-        } catch {
-            print("\(tag) CLEANUP FAILED: \(error), retrying in 1s")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                try? FileManager.default.removeItem(at: url)
+        checkpointIOQueue.sync {
+            let url = checkpointFileURL()
+            guard FileManager.default.fileExists(atPath: url.path) else { return }
+            do {
+                try FileManager.default.removeItem(at: url)
+                print("\(tag) CLEANUP — checkpoint file deleted")
+            } catch {
+                print("\(tag) CLEANUP FAILED: \(error), retrying in 1s")
+                checkpointIOQueue.asyncAfter(deadline: .now() + 1) {
+                    try? FileManager.default.removeItem(at: url)
+                }
             }
         }
     }
@@ -261,6 +295,12 @@ class WalkSessionGuard {
     /// Observes each tier recalculation so dispatch tests can prove the
     /// battery/thermal sinks deliver on the main thread (AF12 regression).
     var _test_onRecalculateTier: (() -> Void)?
+    /// Stands in for `UIDevice.current.batteryLevel` so tier tests can
+    /// simulate low-battery walks (AF14).
+    var _test_batteryLevelOverride: Float?
+    /// Fires after each checkpoint file write with `Thread.isMainThread`,
+    /// proving the encode+write moved off the main thread (AF13).
+    var _test_onCheckpointPersisted: ((Bool) -> Void)?
     #endif
 
     // MARK: - Formatting Helpers

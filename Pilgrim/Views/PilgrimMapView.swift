@@ -141,8 +141,9 @@ struct PilgrimMapView: UIViewRepresentable {
                     mapView.alpha = 1
                 }
             }
-            coordinator.lastSegments = []
+            coordinator.routePlanner.reset()
             coordinator.lastAppliedWalkingColor = nil
+            coordinator.lastAppliedAnnotations = nil
             if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
             coordinator.circleManager = nil
@@ -179,7 +180,7 @@ struct PilgrimMapView: UIViewRepresentable {
 
         if colorScheme != context.coordinator.currentColorScheme {
             context.coordinator.currentColorScheme = colorScheme
-            context.coordinator.lastSegments = []
+            context.coordinator.routePlanner.reset()
             let newStyle: StyleURI = colorScheme == .dark ? .dark : .light
             mapView.mapboxMap.loadStyle(newStyle)
             return
@@ -258,98 +259,9 @@ struct PilgrimMapView: UIViewRepresentable {
         mapView.location.options.puckType = .puck2D(config)
     }
 
-    // MARK: - Route Lines
-
-    private static let sourceId = "pilgrim-route"
-
-    private static func applyRouteSource(_ routeSegments: [RouteSegment], walkingColor: UIColor = .moss, on mapView: MBMapView, coordinator: Coordinator) {
-        guard mapView.mapboxMap.isStyleLoaded else { return }
-
-        // If walkingColor changed since the layer was last applied (e.g., a
-        // walk crossed midnight into a turning day, or the user's hemisphere
-        // preference flipped), tear down the existing layers + source so the
-        // creation path below re-runs with the new color baked into the
-        // match expression. Without this, the layer's lineColor would stay
-        // frozen at whatever color was current when it was first created.
-        let colorChanged = coordinator.lastAppliedWalkingColor != walkingColor
-        if colorChanged {
-            do {
-                if mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer") {
-                    try mapView.mapboxMap.removeLayer(withId: "pilgrim-route-layer")
-                }
-                if mapView.mapboxMap.layerExists(withId: "pilgrim-route-casing") {
-                    try mapView.mapboxMap.removeLayer(withId: "pilgrim-route-casing")
-                }
-                if mapView.mapboxMap.sourceExists(withId: Self.sourceId) {
-                    try mapView.mapboxMap.removeSource(withId: Self.sourceId)
-                }
-            } catch {
-                print("[PilgrimMapView] Failed to remove route layer for color update: \(error)")
-            }
-            // Force the segment-equality early-return below to fall through.
-            coordinator.lastSegments = []
-        }
-
-        guard routeSegments != coordinator.lastSegments else { return }
-        coordinator.lastSegments = routeSegments
-
-        var features: [Feature] = []
-        for segment in routeSegments where segment.coordinates.count > 1 {
-            var feature = Feature(geometry: .lineString(LineString(segment.coordinates)))
-            feature.properties = ["activityType": .string(segment.activityType)]
-            features.append(feature)
-        }
-
-        let collection = FeatureCollection(features: features)
-
-        if mapView.mapboxMap.sourceExists(withId: Self.sourceId) {
-            mapView.mapboxMap.updateGeoJSONSource(
-                withId: Self.sourceId,
-                geoJSON: .featureCollection(collection)
-            )
-        } else {
-            do {
-                var source = GeoJSONSource(id: Self.sourceId)
-                source.data = .featureCollection(collection)
-                try mapView.mapboxMap.addSource(source)
-
-                var casing = LineLayer(id: "pilgrim-route-casing", source: Self.sourceId)
-                casing.lineWidth = .constant(10)
-                casing.lineCap = .constant(.round)
-                casing.lineJoin = .constant(.round)
-                casing.lineOpacity = .constant(0.3)
-                casing.lineColor = .constant(StyleColor(.white))
-                try mapView.mapboxMap.addLayer(casing)
-
-                var layer = LineLayer(id: "pilgrim-route-layer", source: Self.sourceId)
-                layer.lineWidth = .constant(6)
-                layer.lineCap = .constant(.round)
-                layer.lineJoin = .constant(.round)
-                layer.lineOpacity = .constant(1.0)
-                layer.lineColor = .expression(
-                    Exp(.match) {
-                        Exp(.get) { "activityType" }
-                        "meditating"
-                        UIColor.dawn
-                        "talking"
-                        UIColor.rust
-                        walkingColor
-                    }
-                )
-                try mapView.mapboxMap.addLayer(layer)
-                coordinator.lastAppliedWalkingColor = walkingColor
-
-                if let old = coordinator.circleManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
-                if let old = coordinator.pointManager { mapView.annotations.removeAnnotationManager(withId: old.id) }
-                coordinator.circleManager = nil
-                coordinator.pointManager = nil
-            } catch {
-                print("[PilgrimMapView] Failed to add route layer: \(error)")
-            }
-        }
-    }
-
     // MARK: - Annotations
+    //
+    // Route-line rendering lives in PilgrimMapView+RouteSource.swift.
 
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], activePhotoID: String?, on mapView: MBMapView, coordinator: Coordinator) {
         guard mapView.mapboxMap.isStyleLoaded else { return }
@@ -363,12 +275,28 @@ struct PilgrimMapView: UIViewRepresentable {
         // view has been torn down.
         coordinator.photoMarkerLoader.onImageLoaded = { [weak mapView, weak coordinator] in
             guard let mapView = mapView, let coordinator = coordinator else { return }
+            // The annotation list is unchanged but a thumbnail image
+            // finished loading — invalidate the diff cache so the
+            // rebuild below isn't skipped.
+            coordinator.lastAppliedAnnotations = nil
             Self.applyAnnotations(
                 coordinator.currentPinAnnotations,
                 activePhotoID: coordinator.pendingActivePhotoID,
                 on: mapView,
                 coordinator: coordinator
             )
+        }
+
+        // Change detection (AF20): updateUIView runs on every SwiftUI body
+        // evaluation (1 Hz duration ticks, 10–20 Hz during audio playback /
+        // recording), but the pin set rarely changes. Skip the manager
+        // reload — and every SF-symbol rasterization behind it — when
+        // nothing did.
+        if coordinator.circleManager != nil,
+           coordinator.pointManager != nil,
+           coordinator.lastAppliedAnnotations == pinAnnotations,
+           coordinator.lastAppliedActivePhotoID == activePhotoID {
+            return
         }
 
         let routeLayerExists = mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer")
@@ -396,6 +324,9 @@ struct PilgrimMapView: UIViewRepresentable {
             pointManager.annotations = buildPoints(from: pinAnnotations, coordinator: coordinator)
             pointManager.iconAllowOverlap = true
         }
+
+        coordinator.lastAppliedAnnotations = pinAnnotations
+        coordinator.lastAppliedActivePhotoID = activePhotoID
     }
 
     private static func buildCircles(from pinAnnotations: [PilgrimAnnotation], activePhotoID: String? = nil) -> [CircleAnnotation] {
@@ -485,7 +416,7 @@ struct PilgrimMapView: UIViewRepresentable {
             switch pin.kind {
             case .waypoint(_, let icon):
                 var point = PointAnnotation(coordinate: pin.coordinate)
-                if let image = renderSFSymbol(icon, size: 18, color: .stone) {
+                if let image = cachedSymbolImage(icon, size: 18, color: .stone, cacheKey: icon) {
                     point.image = .init(image: image, name: icon)
                 }
                 point.iconSize = 1.0
@@ -496,7 +427,7 @@ struct PilgrimMapView: UIViewRepresentable {
                     Int((categoryColor.cgColor.components?[0] ?? 0) * 255),
                     Int((categoryColor.cgColor.components?[1] ?? 0) * 255),
                     Int((categoryColor.cgColor.components?[2] ?? 0) * 255))
-                if let image = renderSFSymbol("wind", size: 14, color: categoryColor) {
+                if let image = cachedSymbolImage("wind", size: 14, color: categoryColor, cacheKey: colorKey) {
                     point.image = .init(image: image, name: colorKey)
                 }
                 point.iconSize = 1.0
@@ -504,7 +435,7 @@ struct PilgrimMapView: UIViewRepresentable {
             case .cairn(_, let tier):
                 var point = PointAnnotation(coordinate: pin.coordinate)
                 let iconSize: CGFloat = 12 + CGFloat(tier.rawValue)
-                if let image = renderSFSymbol("mountain.2", size: iconSize, color: .moss) {
+                if let image = cachedSymbolImage("mountain.2", size: iconSize, color: .moss, cacheKey: "cairn-\(tier.rawValue)") {
                     point.image = .init(image: image, name: "cairn-\(tier.rawValue)")
                 }
                 point.iconSize = 1.0
@@ -547,6 +478,19 @@ struct PilgrimMapView: UIViewRepresentable {
         return image
     }
 
+    /// Rasterized SF-symbol pin images keyed by the same symbol+color+size
+    /// strings used as Mapbox image names (AF20). The key space is small and
+    /// fixed — waypoint icons, 8 whisper category colors, 5 cairn tiers — so
+    /// the cache never needs eviction. Main-thread only, like all callers.
+    private static var symbolImageCache: [String: UIImage] = [:]
+
+    private static func cachedSymbolImage(_ name: String, size: CGFloat, color: UIColor, cacheKey: String) -> UIImage? {
+        if let cached = symbolImageCache[cacheKey] { return cached }
+        guard let image = renderSFSymbol(name, size: size, color: color) else { return nil }
+        symbolImageCache[cacheKey] = image
+        return image
+    }
+
     private static func renderSFSymbol(_ name: String, size: CGFloat, color: UIColor) -> UIImage? {
         let config = UIImage.SymbolConfiguration(pointSize: size, weight: .medium)
         guard let symbol = UIImage(systemName: name, withConfiguration: config)?
@@ -565,7 +509,10 @@ struct PilgrimMapView: UIViewRepresentable {
         var pointManager: PointAnnotationManager?
         var isFollowing = false
         var lastBottomInset: CGFloat = 0
-        var lastSegments: [RouteSegment] = []
+        /// Diffs incoming route segments into bounded partial source
+        /// updates (AF9/AF46). Reset whenever the source is torn down
+        /// (style reload, color change) so the next apply rebuilds fully.
+        var routePlanner = RouteSourcePlanner()
         var pendingSegments: [RouteSegment] = []
         /// True when we deferred at least one `applyRouteSource` call while paused.
         fileprivate var hasDeferredRouteUpdate: Bool = false
@@ -576,6 +523,10 @@ struct PilgrimMapView: UIViewRepresentable {
         var onAnnotationTap: ((PilgrimAnnotation) -> Void)?
         var currentPinAnnotations: [PilgrimAnnotation] = []
         var tapGestureAdded = false
+        /// Last pin set actually applied to the annotation managers, for
+        /// AF20 change detection. `nil` forces the next apply through.
+        var lastAppliedAnnotations: [PilgrimAnnotation]?
+        var lastAppliedActivePhotoID: String?
 
         /// Loads circular photo-marker images for photo pin
         /// annotations. Encapsulated in its own class so the
@@ -591,7 +542,7 @@ struct PilgrimMapView: UIViewRepresentable {
         /// match expression. When `walkingColor` changes (e.g., walk crosses
         /// midnight into a turning day), comparing against this value lets
         /// `applyRouteSource` know to recreate the layer with the new color.
-        fileprivate var lastAppliedWalkingColor: UIColor?
+        var lastAppliedWalkingColor: UIColor?
 
         fileprivate var isMeditating: Bool = false {
             didSet { refreshRenderState() }

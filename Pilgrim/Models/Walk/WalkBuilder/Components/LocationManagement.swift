@@ -30,13 +30,22 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
     /// An instance of `CLLocationManager` used as the data source for locations.
     private var locationManager: CLLocationManager = CLLocationManager()
     /// The minimum horizontal accuracy a location is supposed to have to be recorded; if `nil` the user does not want locations to be checked for accuracy.
-    private var desiredAccuracy: Double? = nil
+    private var desiredAccuracy: Double?
     /// The average horizontal accuracy of incoming locations while recording.
     private var averageAccuracy: Double = 0
     /// An array of altitude samples provided by the `WalkBuilder`.
     private var altitudeData: [AltitudeManagement.AltitudeSample] = []
     /// Weak reference to the builder for pre-snapshot flush.
     private weak var builder: WalkBuilder?
+
+    /// Canonical recorded route, appended in place so per-sample cost stays
+    /// amortized O(1) (AF9/AF46). The relay-based `locationsRelay` channel
+    /// now only carries full-array events (reset/recovery seeding and
+    /// explicit syncs); per-sample growth is published through
+    /// `sampleAppendedPublisher`. Main-confined: CLLocationManager delivers
+    /// on the run loop it was created on (main), and all sync points
+    /// (checkpoint timer, pre-snapshot flush, reset binder) run on main.
+    private(set) var recordedSamples: [TempRouteDataSample] = []
     
     /**
      Checks a `CLLocation` for appropriate horizontal accuracy based on user preferences and gathered data
@@ -53,16 +62,16 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
      - parameter locations: the new locations to retrieve accuracy values from
      */
     private func updateDesiredAccuracy(from locations: [CLLocation]) {
-        
+
         guard UserPreferences.gpsAccuracy.value == nil, !locations.isEmpty else { return }
-        
+
         var averageAccuracy: Double = 0
         for (index, location) in locations.enumerated() {
             let index = Double(index)
             averageAccuracy = ( averageAccuracy * index + location.horizontalAccuracy ) / ( index + 1 )
         }
-        
-        let globalCount = Double(min(self.locationsRelay.value.count, 9))
+
+        let globalCount = Double(min(self.recordedSamples.count, 9))
         let localCount = Double(locations.count)
         
         self.averageAccuracy = (self.averageAccuracy * globalCount + averageAccuracy * localCount) / (globalCount + localCount)
@@ -75,7 +84,7 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
      - returns: the refined location
      */
     private func refineLocation(_ location: CLLocation) -> CLLocation {
-        guard let firstAltitude = locationsRelay.value.first?.altitude,let relativeAltitude = altitudeData.last(where: { $0.timestamp < location.timestamp })?.altitude else { return location }
+        guard let firstAltitude = recordedSamples.first?.altitude, let relativeAltitude = altitudeData.last(where: { $0.timestamp < location.timestamp })?.altitude else { return location }
         return location.replacing(altitude: firstAltitude + relativeAltitude)
     }
     
@@ -93,7 +102,19 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
     /// The relay to publish the current location to the walk builder.
     private let currentLocationRelay = CurrentValueRelay<TempRouteDataSample?>(nil)
     /// The relay to publish all recorded locations to the walk builder.
+    /// Carries full-array events only (reset/recovery seeding) — per-sample
+    /// growth flows through `sampleAppendedRelay` instead (AF9/AF46).
     private let locationsRelay = CurrentValueRelay<[TempRouteDataSample]>([])
+    /// Publishes each sample appended to the route together with the route's
+    /// total count after the append, so consumers can detect (and recover
+    /// from) any interleaving with full-array events.
+    private let sampleAppendedRelay = PassthroughRelay<(sample: TempRouteDataSample, totalCount: Int)>()
+
+    /// Per-sample route growth. Delivered synchronously on the main thread
+    /// from the CLLocationManager delegate.
+    var sampleAppendedPublisher: AnyPublisher<(sample: TempRouteDataSample, totalCount: Int), Never> {
+        sampleAppendedRelay.eraseToAnyPublisher()
+    }
     
     // MARK: Binders
 
@@ -121,7 +142,8 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
     private var onResetBinder: (WalkInterface?) -> Void {
         return { [weak self] snapshot in
             guard let self else { return }
-            self.locationsRelay.accept(snapshot?.routeData.map { .init(from: $0) } ?? [])
+            self.recordedSamples = snapshot?.routeData.map { .init(from: $0) } ?? []
+            self.locationsRelay.accept(self.recordedSamples)
             self.distanceRelay.accept(snapshot?.distance ?? 0)
             self.locationManager.startUpdatingLocation()
         }
@@ -143,6 +165,12 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
         locationManager.distanceFilter = baseDistanceFilter
     }
 
+    #if DEBUG
+    /// Lets tests observe the accuracy actually applied to the location
+    /// manager, proving the battery tier survives meditation (AF14).
+    var _test_appliedAccuracy: CLLocationAccuracy { locationManager.desiredAccuracy }
+    #endif
+
     // MARK: WalkBuilderComponent
 
     public required init(builder: WalkBuilder) {
@@ -154,10 +182,18 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
         // [weak builder] breaks the self-retain cycle (AF8): the closure lives
         // in builder.preSnapshotFlushActions, so a strong capture would keep
         // the builder — and a cancelled walk's entire route — alive forever.
-        builder.registerPreSnapshotFlush { [weak self, weak builder] in
-            guard let self, let builder else { return }
-            builder.flushLocations(self.locationsRelay.value, distance: self.distanceRelay.value)
+        builder.registerPreSnapshotFlush { [weak self] in
+            self?.syncRouteToBuilder()
         }
+    }
+
+    /// Writes the canonical route and distance into the builder's relays.
+    /// The relay channel no longer carries per-sample growth (AF9/AF46), so
+    /// snapshot consumers must sync explicitly: the pre-snapshot flush does
+    /// it at walk end, and `WalkSessionGuard.checkpointNow` does it before
+    /// each checkpoint snapshot.
+    func syncRouteToBuilder() {
+        builder?.flushLocations(recordedSamples, distance: distanceRelay.value)
     }
     
     public func bind(builder: WalkBuilder) {
@@ -189,11 +225,16 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
             .sink { [weak self] status in
                 guard let self, status.isActiveStatus else { return }
                 self.locationManager.startUpdatingLocation()
-                if self.locationsRelay.value.isEmpty, let current = self.currentLocationRelay.value {
-                    self.locationsRelay.accept([current])
+                if self.recordedSamples.isEmpty, let current = self.currentLocationRelay.value {
+                    self.appendRouteSample(current)
                 }
             }
             .store(in: &cancellables)
+    }
+
+    private func appendRouteSample(_ sample: TempRouteDataSample) {
+        recordedSamples.append(sample)
+        sampleAppendedRelay.accept((sample: sample, totalCount: recordedSamples.count))
     }
     
     public func prepare() {
@@ -237,16 +278,16 @@ public class LocationManagement: NSObject, WalkBuilderComponent, CLLocationManag
         let shouldUpdateDistance = !status.isPausedStatus
 
         for location in locations {
-            let isFirst = locationsRelay.value.isEmpty
+            let isFirst = recordedSamples.isEmpty
             guard isFirst || checkForAppropriateAccuracy(location) else { continue }
 
             let location = refineLocation(location)
             let sample = location.asTemp
-            locationsRelay.accept(locationsRelay.value + [sample])
+            let previousSample = recordedSamples.last
+            appendRouteSample(sample)
             currentLocationRelay.accept(sample)
 
-            let lastIndex = self.locationsRelay.value.count - 2
-            guard shouldUpdateDistance, let lastLocation = locationsRelay.value.safeValue(for: lastIndex) else { continue }
+            guard shouldUpdateDistance, let lastLocation = previousSample else { continue }
             let newDistance = location.distance(from: lastLocation.clLocation) + distanceRelay.value
             distanceRelay.accept(newDistance)
         }

@@ -57,4 +57,54 @@ final class WalkSessionGuardDispatchTests: XCTestCase {
     func testBatteryNotificationFromBackgroundThread_recalculatesTierOnMain() {
         assertRecalculatesOnMain(whenPosting: UIDevice.batteryLevelDidChangeNotification)
     }
+
+    // MARK: - Checkpoint I/O (AF13)
+
+    /// The encode + write of the full walk (multi-MB on long walks) must run
+    /// off the main thread — it used to stall the UI every 10–30 s, getting
+    /// worse exactly when the device was low on battery or hot.
+    func testCheckpointNow_persistsOffMainThread() throws {
+        defer { try? FileManager.default.removeItem(at: WalkSessionGuard.checkpointFileURL()) }
+
+        let builder = WalkBuilder()
+        builder._test_setStartDate(Date(timeIntervalSinceNow: -60))
+        let guard_ = WalkSessionGuard()
+        guard_.builder = builder
+
+        var persistedOnMain: Bool?
+        let persisted = expectation(description: "checkpoint persisted")
+        guard_._test_onCheckpointPersisted = { isMainThread in
+            persistedOnMain = isMainThread
+            persisted.fulfill()
+        }
+
+        guard_.checkpointNow()
+        wait(for: [persisted], timeout: 5.0)
+
+        XCTAssertEqual(persistedOnMain, false, "checkpoint encode+write must run on the utility queue")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: WalkSessionGuard.checkpointFileURL().path),
+            "checkpoint file must exist after the async write lands"
+        )
+    }
+
+    /// `deleteCheckpointFile` is serialized behind in-flight writes: a write
+    /// dispatched just before walk end must not land after the post-save
+    /// cleanup and resurrect a checkpoint for an already-saved walk.
+    func testDeleteCheckpointFile_ordersAfterInFlightWrite() throws {
+        defer { try? FileManager.default.removeItem(at: WalkSessionGuard.checkpointFileURL()) }
+
+        let builder = WalkBuilder()
+        builder._test_setStartDate(Date(timeIntervalSinceNow: -60))
+        let guard_ = WalkSessionGuard()
+        guard_.builder = builder
+
+        guard_.checkpointNow()
+        WalkSessionGuard.deleteCheckpointFile()
+
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: WalkSessionGuard.checkpointFileURL().path),
+            "deletion must be ordered after the pending checkpoint write"
+        )
+    }
 }

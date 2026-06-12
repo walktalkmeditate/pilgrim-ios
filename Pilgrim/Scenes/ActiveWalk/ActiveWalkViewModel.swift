@@ -54,6 +54,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var encounteredCairnIDs: Set<String> = []
     @Published private(set) var activeDurationSeconds: TimeInterval = 0
 
+    /// Visible whisper/cairn pins near the user, memoized on its inputs
+    /// (AF43): recomputed only when the user moves more than
+    /// `pinRefreshDistance` or the geo cache changes — not on every
+    /// `ActiveWalkView` body evaluation.
+    @Published private(set) var proximityPins: [PilgrimAnnotation] = []
+    private var proximityPinsOrigin: CLLocation?
+
     var isWhisperUnlocked: Bool { activeDurationSeconds >= 7 * 60 }
     var isStoneUnlocked: Bool { activeDurationSeconds >= 12 * 60 }
     var canPlaceWhisper: Bool { isWhisperUnlocked && whispersPlacedThisWalk < 7 }
@@ -191,24 +198,32 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .sink { [weak self] in self?.currentLocation = $0 }
             .store(in: &cancellables)
 
+        // Full-array route events only: builder reset and recovery/continue
+        // seeding. Per-sample growth arrives through sampleAppendedPublisher
+        // below; when the counts already match, this is an echo of a
+        // checkpoint sync (`syncRouteToBuilder`) — skip the O(n) rebuild
+        // (AF9/AF46).
         liveStats.locations
             .receive(on: DispatchQueue.main)
             .sink { [weak self] samples in
+                guard let self, samples.count != self.routeCoordinates.count else { return }
+                self.rebuildRoute(from: samples)
+            }
+            .store(in: &cancellables)
+
+        locationManagement.sampleAppendedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] sample, totalCount in
                 guard let self else { return }
-                let coords = samples.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
-                let countChanged = coords.count != self.routeCoordinates.count
-                self.routeCoordinates = coords
-                if countChanged && coords.count > 1 {
-                    self.routeSegments = self.buildActivitySegments(from: samples)
+                if totalCount == self.routeCoordinates.count + 1 {
+                    self.appendRouteSample(sample)
+                } else if totalCount > self.routeCoordinates.count {
+                    // A full-array event and this append interleaved out of
+                    // order — resync from the canonical route once.
+                    self.rebuildRoute(from: self.locationManagement.recordedSamples)
                 }
-                if countChanged, let last = samples.last {
-                    let speedMps = max(0, last.speed)
-                    let paceMinKm = speedMps > 0.3 ? (1000.0 / speedMps) / 60.0 : 0
-                    self.paceHistory.append(paceMinKm)
-                    if self.paceHistory.count > 60 {
-                        self.paceHistory.removeFirst(self.paceHistory.count - 60)
-                    }
-                }
+                // totalCount <= count: stale echo, already covered by a
+                // full-array rebuild.
             }
             .store(in: &cancellables)
     }
@@ -287,6 +302,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     // MARK: - Meditation
 
+    // GPS power is owned exclusively by WalkSessionGuard's tier system,
+    // which reacts to `$isMeditating` (AF14). Driving the location manager
+    // directly from here used to restore full-power GPS at meditation end
+    // even on low battery — and the guard's tier never re-applied because
+    // the tier value itself hadn't changed.
     func startMeditation() {
         guard !isMeditating else { return }
         if isRecordingVoice {
@@ -295,16 +315,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         meditationStartDate = Date()
         isMeditating = true
         soundManagement.onMeditationStart()
-        locationManagement.adjustPower(
-            accuracy: kCLLocationAccuracyHundredMeters,
-            distanceFilter: 50
-        )
     }
 
     func endMeditationSilently(endDate: Date = Date()) {
         finalizeMeditation(endDate: endDate)
         isMeditating = false
-        locationManagement.restoreDefaultPower()
     }
 
     func checkpointActivityIntervals() -> [TempActivityInterval] {
@@ -443,7 +458,25 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .combineLatest(GeoCacheService.shared.$cachedCairns)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _, _ in
-                self?.proximityService.updateTargets(GeoCacheService.shared.proximityTargets())
+                guard let self else { return }
+                self.proximityService.updateTargets(GeoCacheService.shared.proximityTargets())
+                if let origin = self.proximityPinsOrigin {
+                    self.refreshProximityPins(around: origin)
+                }
+            }
+            .store(in: &cancellables)
+
+        liveStats.currentLocation
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] sample in
+                guard let self else { return }
+                let location = CLLocation(latitude: sample.latitude, longitude: sample.longitude)
+                if let origin = self.proximityPinsOrigin,
+                   location.distance(from: origin) < Self.pinRefreshDistance {
+                    return
+                }
+                self.refreshProximityPins(around: location)
             }
             .store(in: &cancellables)
     }
@@ -532,6 +565,22 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         }
     }
 
+    // MARK: - Test Hooks
+
+    #if DEBUG
+    /// Fires whenever the O(n) full-route rebuild runs, so the route
+    /// pipeline tests can prove per-sample work stays incremental (AF9/AF46).
+    var _test_onFullRouteRebuild: (() -> Void)?
+    /// Exposes the session guard so tests can drive battery-tier
+    /// recalculation (AF14).
+    var _test_sessionGuard: WalkSessionGuard? { sessionGuard }
+    /// Opens a meditation interval without the audio side effects of
+    /// `startMeditation()`, for segment-boundary tests.
+    func _test_setMeditationStart(_ date: Date?) {
+        meditationStartDate = date
+    }
+    #endif
+
     private func formatTime(_ seconds: Double) -> String {
         let total = Int(max(0, seconds))
         let h = total / 3600
@@ -539,5 +588,155 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         let s = total % 60
         if h > 0 { return String(format: "%d:%02d:%02d", h, m, s) }
         return String(format: "%d:%02d", m, s)
+    }
+}
+
+// MARK: - Route Building (AF9/AF46)
+
+extension ActiveWalkViewModel {
+
+    /// O(n) rebuild from a full sample array. Reserved for rare full-array
+    /// events (reset, recovery seed, resync) — steady-state growth goes
+    /// through `appendRouteSample`.
+    fileprivate func rebuildRoute(from samples: [TempRouteDataSample]) {
+        #if DEBUG
+        _test_onFullRouteRebuild?()
+        #endif
+        routeCoordinates = samples.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+        routeSegments = samples.count > 1 ? buildActivitySegments(from: samples) : []
+        appendPace(from: samples.last)
+    }
+
+    /// Amortized O(1) per-sample route growth: appends the coordinate and
+    /// extends (or opens) the last activity segment instead of remapping the
+    /// whole array per GPS fix.
+    fileprivate func appendRouteSample(_ sample: TempRouteDataSample) {
+        let coord = CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude)
+        routeCoordinates.append(coord)
+
+        if routeSegments.isEmpty {
+            // First segment needs the initial sample's timestamp to classify
+            // its activity — build from the canonical route (tiny n: this
+            // only happens within the first samples of a walk). Prefixed to
+            // the coordinates we track so a batched delegate delivery can't
+            // double-count samples still in flight.
+            if routeCoordinates.count > 1 {
+                let samples = Array(locationManagement.recordedSamples.prefix(routeCoordinates.count))
+                routeSegments = buildActivitySegments(from: samples)
+            }
+        } else {
+            let type = activityType(at: sample.timestamp)
+            let lastIndex = routeSegments.count - 1
+            // Mirrors buildActivitySegments: an activity boundary sample
+            // belongs to both the closing and the opening segment so the
+            // rendered line stays continuous.
+            routeSegments[lastIndex].coordinates.append(coord)
+            if routeSegments[lastIndex].activityType != type {
+                routeSegments.append(RouteSegment(coordinates: [coord], activityType: type))
+            }
+        }
+
+        appendPace(from: sample)
+    }
+
+    private func appendPace(from sample: TempRouteDataSample?) {
+        guard let sample else { return }
+        let speedMps = max(0, sample.speed)
+        let paceMinKm = speedMps > 0.3 ? (1000.0 / speedMps) / 60.0 : 0
+        paceHistory.append(paceMinKm)
+        if paceHistory.count > 60 {
+            paceHistory.removeFirst(paceHistory.count - 60)
+        }
+    }
+}
+
+// MARK: - Proximity Pins (AF43)
+
+extension ActiveWalkViewModel {
+
+    private static let pinVisibilityRadius: CLLocationDistance = 2000
+    private static let maxVisiblePins = 30
+    private static let minPinSeparation: CLLocationDistance = 15
+    /// How far the user must move before the visible-pin set is recomputed.
+    static let pinRefreshDistance: CLLocationDistance = 15
+
+    fileprivate func refreshProximityPins(around location: CLLocation) {
+        proximityPinsOrigin = location
+        let pins = Self.computeProximityPins(
+            around: location,
+            whispers: GeoCacheService.shared.cachedWhispers,
+            cairns: GeoCacheService.shared.cachedCairns
+        )
+        if pins != proximityPins {
+            proximityPins = pins
+        }
+    }
+
+    /// Pure visible-pin computation: whispers and cairns within
+    /// `pinVisibilityRadius`, nearest first, capped at `maxVisiblePins`,
+    /// with a same-kind minimum separation so dense clusters don't smear.
+    static func computeProximityPins(
+        around userLoc: CLLocation,
+        whispers: [CachedWhisper],
+        cairns: [CachedCairn]
+    ) -> [PilgrimAnnotation] {
+        var candidates: [PinCandidate] = []
+
+        for whisper in whispers {
+            let dist = userLoc.distance(from: CLLocation(latitude: whisper.latitude, longitude: whisper.longitude))
+            guard dist <= Self.pinVisibilityRadius else { continue }
+            guard let cat = whisper.resolvedCategory else { continue }
+            let isNearby = dist <= ProximityDetectionService.whisperRadius
+            let annotation = PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: whisper.latitude, longitude: whisper.longitude),
+                kind: .whisper(categoryColor: cat.borderColor, isNearby: isNearby)
+            )
+            candidates.append(PinCandidate(annotation: annotation, distance: dist))
+        }
+
+        for cairn in cairns {
+            let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))
+            guard dist <= Self.pinVisibilityRadius else { continue }
+            let annotation = PilgrimAnnotation(
+                coordinate: CLLocationCoordinate2D(latitude: cairn.latitude, longitude: cairn.longitude),
+                kind: .cairn(stoneCount: cairn.stoneCount, tier: cairn.tier)
+            )
+            candidates.append(PinCandidate(annotation: annotation, distance: dist))
+        }
+
+        candidates.sort { $0.distance < $1.distance }
+        return filterBySeparation(candidates)
+    }
+
+    private struct PinCandidate {
+        let annotation: PilgrimAnnotation
+        let distance: CLLocationDistance
+    }
+
+    private static func filterBySeparation(_ candidates: [PinCandidate]) -> [PilgrimAnnotation] {
+        let isSameType: (PilgrimAnnotation.Kind, PilgrimAnnotation.Kind) -> Bool = { a, b in
+            switch (a, b) {
+            case (.whisper, .whisper), (.cairn, .cairn): return true
+            default: return false
+            }
+        }
+
+        var accepted: [(annotation: PilgrimAnnotation, lat: Double, lon: Double)] = []
+        for candidate in candidates {
+            guard accepted.count < Self.maxVisiblePins else { break }
+            let cLat = candidate.annotation.coordinate.latitude
+            let cLon = candidate.annotation.coordinate.longitude
+            let tooClose = accepted.contains { a in
+                guard isSameType(a.annotation.kind, candidate.annotation.kind) else { return false }
+                let dLat = (a.lat - cLat) * 111_000
+                let dLon = (a.lon - cLon) * 111_000 * cos(cLat * .pi / 180)
+                return (dLat * dLat + dLon * dLon) < Self.minPinSeparation * Self.minPinSeparation
+            }
+            if !tooClose {
+                accepted.append((candidate.annotation, cLat, cLon))
+            }
+        }
+
+        return accepted.map(\.annotation)
     }
 }

@@ -6,7 +6,7 @@ struct PilgrimAnnotation: Identifiable {
     let coordinate: CLLocationCoordinate2D
     let kind: Kind
 
-    enum Kind {
+    enum Kind: Equatable {
         case meditation(duration: TimeInterval)
         case voiceRecording(label: String)
         case waypoint(label: String, icon: String)
@@ -15,6 +15,18 @@ struct PilgrimAnnotation: Identifiable {
         case whisper(categoryColor: UIColor, isNearby: Bool)
         case cairn(stoneCount: Int, tier: CairnTier)
         case photo(localIdentifier: String)
+    }
+}
+
+/// Equality ignores `id` (a fresh UUID per instance) so that two annotation
+/// lists computed from the same map content compare equal. This is what lets
+/// `PilgrimMapView.applyAnnotations` skip the rebuild when nothing changed
+/// (AF20) and the view model avoid republishing identical pin sets (AF43).
+extension PilgrimAnnotation: Equatable {
+    static func == (lhs: PilgrimAnnotation, rhs: PilgrimAnnotation) -> Bool {
+        lhs.coordinate.latitude == rhs.coordinate.latitude
+            && lhs.coordinate.longitude == rhs.coordinate.longitude
+            && lhs.kind == rhs.kind
     }
 }
 

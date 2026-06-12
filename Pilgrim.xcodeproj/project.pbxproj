@@ -493,6 +493,9 @@
 		LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */; };
 		LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */; };
 		LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */; };
+		LR00000200000000LRRSPL01 /* RouteSourcePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */; };
+		LR00000200000000LRPMRS01 /* PilgrimMapView+RouteSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */; };
+		LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */; };
 		LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */; };
 		LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */; };
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
@@ -1041,6 +1044,9 @@
 		LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderLifecycleTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelLoadTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardDispatchTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSourcePlanner.swift; sourceTree = "<group>"; };
+		LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+RouteSource.swift"; sourceTree = "<group>"; };
+		LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RoutePipelineTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingPersistenceTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageBuilderErrorTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
@@ -1549,6 +1555,7 @@
 				22BC992F2941D9A800D9B1A5 /* FeatureView.swift */,
 				22BC99372941D9A800D9B1A5 /* FeatureViewModel.swift */,
 				AAAA00000000000000000MF8 /* PilgrimMapView.swift */,
+				LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */,
 				BBBB000000000000000036 /* PhotoMarkerImageBuilder.swift */,
 				BBBB00000000000000003A /* PhotoMarkerImageLoader.swift */,
 				22BC99342941D9A800D9B1A5 /* MetricView.swift */,
@@ -1599,6 +1606,7 @@
 			isa = PBXGroup;
 			children = (
 				AAAA00000000000000000MF2 /* RouteSegment.swift */,
+				LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */,
 				AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */,
 				AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */,
 				AAAA00000000000000000MC2 /* MapCameraSeed.swift */,
@@ -1743,6 +1751,7 @@
 				LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */,
 				LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */,
 				LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */,
+				LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */,
 				LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */,
 				LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */,
 				5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */,
@@ -2574,9 +2583,11 @@
 				2221997F2439F6FF00ADAE24 /* CustomNumberFormatting.swift in Sources */,
 				22D299372402BDE400F3F6B8 /* TimeIntervalPickerSetting.swift in Sources */,
 				AAAA00000000000000000MF1 /* RouteSegment.swift in Sources */,
+				LR00000200000000LRRSPL01 /* RouteSourcePlanner.swift in Sources */,
 				AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */,
 				AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */,
 				AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */,
+				LR00000200000000LRPMRS01 /* PilgrimMapView+RouteSource.swift in Sources */,
 				AAAA00000000000000000MC1 /* MapCameraSeed.swift in Sources */,
 				BBBB000000000000000037 /* PhotoMarkerImageBuilder.swift in Sources */,
 				BBBB00000000000000003B /* PhotoMarkerImageLoader.swift in Sources */,
@@ -2942,6 +2953,7 @@
 				LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */,
 				LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */,
 				LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */,
+				LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */,
 				LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */,
 				LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */,
 				12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */,

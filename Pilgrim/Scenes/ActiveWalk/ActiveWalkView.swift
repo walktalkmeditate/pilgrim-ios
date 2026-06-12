@@ -572,9 +572,6 @@ struct ActiveWalkView: View {
         f.formatOptions = [.withInternetDateTime]
         return f
     }()
-    private static let mapVisibilityRadius: CLLocationDistance = 2000
-    private static let maxVisiblePins = 30
-    private static let minPinSeparation: CLLocationDistance = 15
 
     private func mapSection() -> some View {
         let waypointPins = viewModel.waypoints.map { wp in
@@ -583,11 +580,13 @@ struct ActiveWalkView: View {
                 kind: .waypoint(label: wp.label, icon: wp.icon)
             )
         }
+        // Proximity pins are memoized in the view model (AF43) — reading a
+        // stored property here keeps body evaluations free of distance math.
         return PilgrimMapView(
             showsUserLocation: true,
             followsUserLocation: true,
             routeSegments: viewModel.routeSegments,
-            pinAnnotations: waypointPins + proximityAnnotations(),
+            pinAnnotations: waypointPins + viewModel.proximityPins,
             onAnnotationTap: { annotation in
                 handleAnnotationTap(annotation)
             },
@@ -597,66 +596,6 @@ struct ActiveWalkView: View {
             walkingColor: activeTurning?.uiColor ?? .moss,
             isMeditating: $viewModel.isMeditating
         )
-    }
-
-    private func proximityAnnotations() -> [PilgrimAnnotation] {
-        guard let loc = viewModel.currentLocation else { return [] }
-        let userLoc = CLLocation(latitude: loc.latitude, longitude: loc.longitude)
-
-        struct Candidate {
-            let annotation: PilgrimAnnotation
-            let distance: CLLocationDistance
-        }
-
-        var candidates: [Candidate] = []
-
-        for whisper in GeoCacheService.shared.cachedWhispers {
-            let dist = userLoc.distance(from: CLLocation(latitude: whisper.latitude, longitude: whisper.longitude))
-            guard dist <= Self.mapVisibilityRadius else { continue }
-            guard let cat = whisper.resolvedCategory else { continue }
-            let isNearby = dist <= ProximityDetectionService.whisperRadius
-            let annotation = PilgrimAnnotation(
-                coordinate: CLLocationCoordinate2D(latitude: whisper.latitude, longitude: whisper.longitude),
-                kind: .whisper(categoryColor: cat.borderColor, isNearby: isNearby)
-            )
-            candidates.append(Candidate(annotation: annotation, distance: dist))
-        }
-
-        for cairn in GeoCacheService.shared.cachedCairns {
-            let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))
-            guard dist <= Self.mapVisibilityRadius else { continue }
-            let annotation = PilgrimAnnotation(
-                coordinate: CLLocationCoordinate2D(latitude: cairn.latitude, longitude: cairn.longitude),
-                kind: .cairn(stoneCount: cairn.stoneCount, tier: cairn.tier)
-            )
-            candidates.append(Candidate(annotation: annotation, distance: dist))
-        }
-
-        candidates.sort { $0.distance < $1.distance }
-
-        var accepted: [(annotation: PilgrimAnnotation, lat: Double, lon: Double)] = []
-        for candidate in candidates {
-            guard accepted.count < Self.maxVisiblePins else { break }
-            let cLat = candidate.annotation.coordinate.latitude
-            let cLon = candidate.annotation.coordinate.longitude
-            let isSameType: (PilgrimAnnotation.Kind, PilgrimAnnotation.Kind) -> Bool = { a, b in
-                switch (a, b) {
-                case (.whisper, .whisper), (.cairn, .cairn): return true
-                default: return false
-                }
-            }
-            let tooClose = accepted.contains { a in
-                guard isSameType(a.annotation.kind, candidate.annotation.kind) else { return false }
-                let dLat = (a.lat - cLat) * 111_000
-                let dLon = (a.lon - cLon) * 111_000 * cos(cLat * .pi / 180)
-                return (dLat * dLat + dLon * dLon) < Self.minPinSeparation * Self.minPinSeparation
-            }
-            if !tooClose {
-                accepted.append((candidate.annotation, cLat, cLon))
-            }
-        }
-
-        return accepted.map(\.annotation)
     }
 
     // MARK: - Status Change Handlers

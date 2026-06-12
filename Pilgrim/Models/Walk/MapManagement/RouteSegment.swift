@@ -1,7 +1,7 @@
 import CoreLocation
 
 struct RouteSegment: Equatable {
-    let coordinates: [CLLocationCoordinate2D]
+    var coordinates: [CLLocationCoordinate2D]
     let activityType: String
 
     static func == (lhs: RouteSegment, rhs: RouteSegment) -> Bool {
