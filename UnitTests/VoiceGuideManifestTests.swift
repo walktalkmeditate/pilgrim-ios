@@ -178,3 +178,100 @@ final class VoiceGuideManifestTests: XCTestCase {
         XCTAssertTrue(manifest.packs.isEmpty)
     }
 }
+
+final class VoiceGuideManifestServiceAsyncInitTests: XCTestCase {
+
+    private var tempDir: URL!
+
+    override func setUpWithError() throws {
+        tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: tempDir)
+    }
+
+    private func writeLocalManifestFixture() throws {
+        let json = """
+        {
+          "version": "2026-03-17T00:00:00Z",
+          "packs": [
+            {
+              "id": "breeze",
+              "version": "1",
+              "name": "Breeze",
+              "tagline": "A gentle questioner",
+              "description": "Soft open-ended questions",
+              "theme": "presence",
+              "iconName": "wind",
+              "type": "voiceGuide",
+              "walkTypes": ["wander"],
+              "scheduling": {
+                "densityMinSec": 720,
+                "densityMaxSec": 1080,
+                "minSpacingSec": 600,
+                "initialDelaySec": 300,
+                "walkEndBufferSec": 300
+              },
+              "totalDurationSec": 120.5,
+              "totalSizeBytes": 50000,
+              "prompts": [
+                {
+                  "id": "breeze_01",
+                  "seq": 1,
+                  "durationSec": 10.5,
+                  "fileSizeBytes": 5000,
+                  "r2Key": "voiceguide/breeze/breeze_01.aac"
+                }
+              ]
+            }
+          ]
+        }
+        """
+        try Data(json.utf8).write(to: tempDir.appendingPathComponent("manifest.json"))
+    }
+
+    // The initial load publishes via the main actor, which this test holds
+    // until it returns — so the pre-load state is deterministic.
+    @MainActor
+    func testLookupsBeforeInitialLoadCompletes_returnEmptyWithoutBlocking() throws {
+        try writeLocalManifestFixture()
+        let service = VoiceGuideManifestService(manifestDirectory: tempDir)
+
+        XCTAssertTrue(service.packs.isEmpty)
+        XCTAssertNil(service.pack(byId: "breeze"))
+    }
+
+    @MainActor
+    func testAfterInitialLoad_packsArePopulatedFromLocalManifest() async throws {
+        try writeLocalManifestFixture()
+        let service = VoiceGuideManifestService(manifestDirectory: tempDir)
+
+        await service.initialLoad?.value
+
+        XCTAssertEqual(service.packs.count, 1)
+        XCTAssertEqual(service.pack(byId: "breeze")?.name, "Breeze")
+    }
+
+    @MainActor
+    func testAfterInitialLoad_missingLocalManifest_leavesPacksEmpty() async {
+        let service = VoiceGuideManifestService(manifestDirectory: tempDir)
+
+        await service.initialLoad?.value
+
+        XCTAssertTrue(service.packs.isEmpty)
+        XCTAssertNil(service.pack(byId: "breeze"))
+    }
+
+    @MainActor
+    func testAfterInitialLoad_corruptLocalManifest_leavesPacksEmpty() async throws {
+        try Data("not json".utf8).write(to: tempDir.appendingPathComponent("manifest.json"))
+        let service = VoiceGuideManifestService(manifestDirectory: tempDir)
+
+        await service.initialLoad?.value
+
+        XCTAssertTrue(service.packs.isEmpty)
+    }
+}

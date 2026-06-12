@@ -125,6 +125,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                     OrphanSweepGate.shared.noteWalkRecoveryResolved()
                 }
 
+                // Manifest-service init is intentionally cheap (issue #42):
+                // the first `.shared` touch used to burn ~880ms of
+                // main-thread disk I/O + JSON decode here, mid welcome
+                // entrance. The local-manifest/bootstrap loads now run in
+                // each service's detached initial-load task; syncIfNeeded
+                // awaits that load before comparing against the remote.
+                // Each service prints a "[LaunchProfile] … manifest ready"
+                // mark when its catalog lands.
                 AudioManifestService.shared.syncIfNeeded()
                 VoiceGuideManifestService.shared.syncIfNeeded()
                 WhisperManifestService.shared.syncIfNeeded()

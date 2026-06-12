@@ -8,17 +8,41 @@ final class VoiceGuideManifestService: ObservableObject {
     @Published private(set) var packs: [VoiceGuidePack] = []
     @Published private(set) var isSyncing = false
 
-    private let fileManager = FileManager.default
+    private let manifestDirectory: URL
+    private var localManifestVersion: String?
+    private(set) var initialLoad: Task<Void, Never>?
 
     private var localManifestURL: URL {
-        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("Audio/voiceguide", isDirectory: true)
-        try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("manifest.json")
+        manifestDirectory.appendingPathComponent("manifest.json")
     }
 
-    private init() {
-        loadLocalManifest()
+    private convenience init() {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        self.init(manifestDirectory: appSupport.appendingPathComponent("Audio/voiceguide", isDirectory: true))
+    }
+
+    /// Init must stay cheap: the first `.shared` touch happens on the main
+    /// thread during the welcome entrance (issue #42), so the local-manifest
+    /// disk read and JSON decode run in a detached task and only the publish
+    /// hops back to main. `manifestDirectory` is injectable for tests.
+    init(manifestDirectory: URL) {
+        self.manifestDirectory = manifestDirectory
+        let localURL = manifestDirectory.appendingPathComponent("manifest.json")
+        #if DEBUG
+        let initStart = CFAbsoluteTimeGetCurrent()
+        #endif
+        initialLoad = Task.detached(priority: .utility) { [weak self] in
+            guard let loaded = Self.readLocalManifest(at: localURL) else { return }
+            await MainActor.run {
+                guard let self, self.packs.isEmpty else { return }
+                self.packs = loaded.packs
+                self.localManifestVersion = loaded.version
+                #if DEBUG
+                let dt = (CFAbsoluteTimeGetCurrent() - initStart) * 1000
+                print(String(format: "[LaunchProfile] VoiceGuideManifestService manifest ready +%.0fms after first access (loaded off main)", dt))
+                #endif
+            }
+        }
     }
 
     func syncIfNeeded() {
@@ -26,14 +50,12 @@ final class VoiceGuideManifestService: ObservableObject {
             guard !isSyncing else { return }
             isSyncing = true
 
+            await initialLoad?.value
+
             let remote = await fetchRemoteManifest()
 
             if let remote {
-                let localVersion = (try? Data(contentsOf: localManifestURL))
-                    .flatMap { try? JSONDecoder().decode(VoiceGuideManifest.self, from: $0) }?
-                    .version
-
-                if localVersion != remote.version {
+                if localManifestVersion != remote.version {
                     saveLocalManifest(remote)
                 }
                 packs = remote.packs
@@ -60,17 +82,28 @@ final class VoiceGuideManifestService: ObservableObject {
         }
     }
 
-    private func loadLocalManifest() {
-        guard fileManager.fileExists(atPath: localManifestURL.path),
-              let data = try? Data(contentsOf: localManifestURL),
-              let saved = try? JSONDecoder().decode(VoiceGuideManifest.self, from: data) else {
-            return
+    private static func readLocalManifest(at url: URL) -> VoiceGuideManifest? {
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url) else {
+            return nil
         }
-        packs = saved.packs
+        return try? JSONDecoder().decode(VoiceGuideManifest.self, from: data)
     }
 
     private func saveLocalManifest(_ manifest: VoiceGuideManifest) {
-        guard let data = try? JSONEncoder().encode(manifest) else { return }
-        try? data.write(to: localManifestURL)
+        let url = localManifestURL
+        Task.detached(priority: .utility) { [weak self] in
+            guard let data = try? JSONEncoder().encode(manifest) else { return }
+            do {
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try data.write(to: url, options: .atomic)
+            } catch {
+                print("[VoiceGuideManifestService] Failed to save manifest: \(error)")
+                return
+            }
+            await MainActor.run {
+                self?.localManifestVersion = manifest.version
+            }
+        }
     }
 }

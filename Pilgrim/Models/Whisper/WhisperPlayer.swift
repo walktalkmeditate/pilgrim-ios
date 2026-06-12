@@ -20,7 +20,7 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         cacheDir = appSupport.appendingPathComponent("Whispers", isDirectory: true)
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
         super.init()
-        seedMissingBundledFiles()
+        seedBundledFilesWhenManifestReady()
     }
 
     // MARK: - Bundled seed
@@ -37,11 +37,25 @@ final class WhisperPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     ///  - Partially-seeded cache (rare, e.g., prior launch crashed mid-copy):
     ///    the remaining files finish on the next launch.
     ///
-    /// The check is cheap: one stat(2) per whisper per launch, called once
-    /// from init. Missing bundled files fall through to the network path in
-    /// `play()` and `preview()`.
-    private func seedMissingBundledFiles() {
-        let whispers = WhisperManifestService.shared.manifest?.whispers ?? []
+    /// Triggered once from init, but it must wait for the manifest's
+    /// off-main initial load (issue #42) — seeding against a not-yet-loaded
+    /// catalog would silently skip the launch. The whisper list is
+    /// snapshotted on main (where @Published state is confined) and the
+    /// stat-and-copy pass runs off the main thread. Missing bundled files
+    /// fall through to the network path in `play()` and `preview()`.
+    private func seedBundledFilesWhenManifestReady() {
+        let cacheDir = self.cacheDir
+        Task { @MainActor in
+            await WhisperManifestService.shared.initialLoad?.value
+            let whispers = WhisperManifestService.shared.manifest?.whispers ?? []
+            guard !whispers.isEmpty else { return }
+            Task.detached(priority: .utility) {
+                Self.seedMissingBundledFiles(whispers: whispers, cacheDir: cacheDir)
+            }
+        }
+    }
+
+    private static func seedMissingBundledFiles(whispers: [WhisperDefinition], cacheDir: URL) {
         for whisper in whispers {
             let destination = cacheDir.appendingPathComponent("\(whisper.audioFileName).aac")
             guard !FileManager.default.fileExists(atPath: destination.path) else { continue }
