@@ -5,7 +5,13 @@ struct ActiveWalkView: View {
 
     @ObservedObject var viewModel: ActiveWalkViewModel
     var onCancel: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var intentionHistory = IntentionHistoryStore()
+    /// The options-button halo pulses only for the first few cycles after
+    /// the walk screen appears, then retires (AF42). An unconditional
+    /// phaseAnimator would otherwise animate for the entire multi-hour
+    /// walk, against the resource-safety policy preferring static views.
+    @State private var optionsPulseActive = true
     @State private var showStopConfirmation = false
     @State private var showMeditation = false
     @State private var showOptions = false
@@ -372,6 +378,12 @@ struct ActiveWalkView: View {
 
             guard !hasCheckedAutoIntention else { return }
             hasCheckedAutoIntention = true
+            // Retire the options-button pulse after ~3 cycles (AF42). The
+            // one-shot only ever flips true→false, so no generation guard
+            // is needed; if the view is gone the write is a no-op.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) {
+                optionsPulseActive = false
+            }
             if UserPreferences.beginWithIntention.value && viewModel.intention == nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showIntention = true
@@ -532,16 +544,21 @@ struct ActiveWalkView: View {
 
     private var mapOverlayButtons: some View {
         HStack {
-            Button { showOptions = true } label: {
+            Button {
+                optionsPulseActive = false
+                showOptions = true
+            } label: {
                 ZStack {
-                    Circle()
-                        .fill(Color.stone.opacity(0.15))
-                        .frame(width: 36, height: 36)
-                        .phaseAnimator([false, true]) { content, phase in
-                            content
-                                .scaleEffect(phase ? 1.8 : 1.0)
-                                .opacity(phase ? 0 : 0.5)
-                        } animation: { _ in .easeInOut(duration: 2.0) }
+                    if optionsPulseActive && !reduceMotion {
+                        Circle()
+                            .fill(Color.stone.opacity(0.15))
+                            .frame(width: 36, height: 36)
+                            .phaseAnimator([false, true]) { content, phase in
+                                content
+                                    .scaleEffect(phase ? 1.8 : 1.0)
+                                    .opacity(phase ? 0 : 0.5)
+                            } animation: { _ in .easeInOut(duration: 2.0) }
+                    }
 
                     Image(systemName: "ellipsis")
                         .font(.body.weight(.medium))

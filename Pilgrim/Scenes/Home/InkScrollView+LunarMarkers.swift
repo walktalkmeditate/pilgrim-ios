@@ -2,9 +2,8 @@ import SwiftUI
 
 extension InkScrollView {
 
-    func lunarMarkers(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat) -> some View {
-        let markers = computeLunarMarkers(positions: positions, viewportWidth: viewportWidth)
-        return ForEach(markers, id: \.id) { marker in
+    func lunarMarkers(_ markers: [LunarMarker]) -> some View {
+        ForEach(markers, id: \.id) { marker in
             LunarMarkerDot(isFullMoon: marker.illumination > 0.5)
                 .frame(width: 10, height: 10)
                 .position(x: marker.x, y: marker.y)
@@ -37,12 +36,15 @@ extension InkScrollView {
         let isWaxing: Bool
     }
 
+    /// Expensive (one `LunarPhase` Julian-day computation per history day,
+    /// plus 13 more per peak refinement) — call only from the layout cache,
+    /// never per body evaluation (AF51).
     func computeLunarMarkers(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat) -> [LunarMarker] {
         guard snapshots.count >= 2 else { return [] }
 
         let earliestDate = snapshots.map(\.startDate).min()!
         let latestDate = snapshots.map(\.startDate).max()!
-        let lunarEvents = findLunarEvents(from: earliestDate, to: latestDate)
+        let lunarEvents = Self.findLunarEvents(from: earliestDate, to: latestDate)
 
         var markers: [LunarMarker] = []
 
@@ -64,13 +66,15 @@ extension InkScrollView {
         return markers
     }
 
-    private struct LunarEvent {
+    struct LunarEvent {
         let date: Date
         let illumination: Double
         let isWaxing: Bool
     }
 
-    private func findLunarEvents(from start: Date, to end: Date) -> [LunarEvent] {
+    /// Pure day-scan for new/full moons across a date span. Static so the
+    /// astro logic is unit-testable independent of view state.
+    static func findLunarEvents(from start: Date, to end: Date) -> [LunarEvent] {
         let calendar = Calendar.current
         let halfCycle = 14.76
         var events: [LunarEvent] = []
@@ -94,7 +98,7 @@ extension InkScrollView {
         return events
     }
 
-    private func refinePeak(near date: Date, isFullMoon: Bool) -> Date {
+    private static func refinePeak(near date: Date, isFullMoon: Bool) -> Date {
         var bestDate = date
         var bestScore = isFullMoon
             ? LunarPhase.current(date: date).illumination

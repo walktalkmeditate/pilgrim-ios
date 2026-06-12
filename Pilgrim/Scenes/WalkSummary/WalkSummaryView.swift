@@ -6,22 +6,27 @@ import CoreLocation
 struct WalkSummaryView: View {
 
     let walk: WalkInterface
+    /// Computed once per walk identity — `TurningDayService` runs Julian-day
+    /// astro math, which must not re-run on every body evaluation.
+    let walkTurning: SeasonalMarker?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @StateObject private var audioPlayer = AudioPlayerModel()
     @ObservedObject private var transcriptionService = TranscriptionService.shared
     @State private var transcriptions: [UUID: String] = [:]
     @State private var selectedFavicon: WalkFavicon?
     @State private var showPrompts = false
-    @State private var deletedPaths: Set<String> = []
-    @State private var pathToDelete: String?
-    @State private var showDeleteConfirmation = false
-    @State private var waveforms: [UUID: [Float]] = [:]
     init(walk: WalkInterface) {
         self.walk = walk
+        self.walkTurning = TurningDayService.turning(for: walk.startDate, hemisphere: .current)
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
+        // Route-derived caches (AF17): the CoreStore `routeData` relationship
+        // is traversed once here, never per body evaluation — the body
+        // re-evaluates at 10 Hz during recording playback and ~30× during
+        // the distance count-up.
         _cachedSegments = State(initialValue: Self.computeSegments(for: walk))
         _cachedAnnotations = State(initialValue: Self.computeAnnotations(for: walk))
+        _cachedRouteCoordinates = State(initialValue: Self.computeRouteCoordinates(for: walk))
+        _cachedElevation = State(initialValue: Self.computeElevationData(for: walk))
     }
     // The camera, route, annotation, and reveal-phase state below intentionally drops
     // `private` so the `WalkSummaryView+Map.swift` extension can read it. Kept internal-
@@ -33,6 +38,8 @@ struct WalkSummaryView: View {
     @State var cameraDuration: TimeInterval = 0.4
     @State var cachedSegments: [RouteSegment] = []
     @State var cachedAnnotations: [PilgrimAnnotation] = []
+    @State var cachedRouteCoordinates: [CLLocationCoordinate2D] = []
+    @State private var cachedElevation: ElevationData?
     @State var photoCandidates: [PhotoCandidate] = []
     @State var activePhotoID: String?
     @State private var recentWalkSnippets: [WalkSnippet] = []
@@ -79,7 +86,7 @@ struct WalkSummaryView: View {
                     activityInsights
                     activityList
                     if !walk.voiceRecordings.isEmpty {
-                        recordingsSection
+                        WalkSummaryRecordingsSection(walk: walk, transcriptions: $transcriptions)
                     }
                     promptsButton
                     detailsSection
@@ -137,7 +144,6 @@ struct WalkSummaryView: View {
             .onDisappear {
                 pollingTask?.cancel()
                 pollingTask = nil
-                audioPlayer.stop()
             }
             .onChange(of: transcriptionService.state) { _, newState in
                 if newState == .completed {
@@ -164,10 +170,6 @@ struct WalkSummaryView: View {
             return "\(base) · \(kanji)"
         }
         return base
-    }
-
-    var walkTurning: SeasonalMarker? {
-        TurningDayService.turning(for: walk.startDate, hemisphere: .current)
     }
 
     private var promptsButton: some View {
@@ -284,10 +286,8 @@ struct WalkSummaryView: View {
 
     @ViewBuilder
     private var elevationProfile: some View {
-        let samples = walk.routeData
-        let altitudes = samples.map { $0.altitude }
-        if altitudes.count > 5, let minAlt = altitudes.min(), let maxAlt = altitudes.max(), maxAlt - minAlt > 1 {
-            ElevationProfileView(altitudes: altitudes, minAlt: minAlt, maxAlt: maxAlt)
+        if let elevation = cachedElevation {
+            ElevationProfileView(altitudes: elevation.altitudes, minAlt: elevation.minAlt, maxAlt: elevation.maxAlt)
                 .frame(height: 48)
                 .padding(.horizontal, Constants.UI.Padding.small)
         }
@@ -351,7 +351,7 @@ struct WalkSummaryView: View {
     // MARK: - Reveal Sequence
 
     private func startRevealSequence() {
-        let coords = routeCoordinates
+        let coords = cachedRouteCoordinates
         guard !coords.isEmpty else {
             revealPhase = .revealed
             animatedDistance = walk.distance
@@ -561,8 +561,8 @@ struct WalkSummaryView: View {
                 }
             },
             onSegmentDeselected: {
-                if routeCoordinates.count > 1 {
-                    withAnimation { cameraBounds = boundsForRoute(routeCoordinates) }
+                if cachedRouteCoordinates.count > 1 {
+                    withAnimation { cameraBounds = boundsForRoute(cachedRouteCoordinates) }
                 }
             }
         )
@@ -588,208 +588,6 @@ struct WalkSummaryView: View {
                 voiceRecordings: walk.voiceRecordings,
                 activityIntervals: walk.activityIntervals
             )
-        }
-    }
-
-    private var recordingsSection: some View {
-        VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-            recordingsHeader
-            transcriptionStatusBanner
-            autoTranscriptionBanner
-
-            ForEach(Array(walk.voiceRecordings.enumerated()), id: \.element.uuid) { index, recording in
-                let isActive = audioPlayer.currentPath == recording.fileRelativePath
-                let fileAvailable = isFileAvailable(recording.fileRelativePath)
-                VoiceRecordingRow(
-                    index: index + 1,
-                    recording: recording,
-                    transcription: recording.uuid.flatMap { transcriptions[$0] },
-                    fileAvailable: fileAvailable,
-                    isActive: isActive && fileAvailable,
-                    isPlaying: isActive && audioPlayer.isPlaying,
-                    progress: isActive ? audioPlayer.progress : 0,
-                    currentTime: isActive ? audioPlayer.currentTime : 0,
-                    audioDuration: isActive ? audioPlayer.totalDuration : recording.duration,
-                    playbackSpeed: audioPlayer.playbackSpeed,
-                    onTogglePlay: {
-                        audioPlayer.toggle(relativePath: recording.fileRelativePath)
-                    },
-                    onSeek: { fraction in
-                        audioPlayer.seek(to: fraction)
-                    },
-                    onCycleSpeed: {
-                        audioPlayer.cycleSpeed()
-                    },
-                    onRetranscribe: {
-                        Task { await retranscribeSingle(recording) }
-                    },
-                    onDelete: {
-                        pathToDelete = recording.fileRelativePath
-                        showDeleteConfirmation = true
-                    },
-                    onTranscriptionSave: { newText in
-                        guard let uuid = recording.uuid else { return }
-                        transcriptions[uuid] = newText
-                        DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: newText)
-                    },
-                    waveformSamples: recording.uuid.flatMap { waveforms[$0] }
-                )
-                .task {
-                    guard let uuid = recording.uuid,
-                          waveforms[uuid] == nil,
-                          isFileAvailable(recording.fileRelativePath)
-                    else { return }
-                    guard await WaveformCache.shared.markInFlight(uuid) else {
-                        if let cached = await WaveformCache.shared.samples(for: uuid) {
-                            waveforms[uuid] = cached
-                        }
-                        return
-                    }
-                    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-                    let url = docs.appendingPathComponent(recording.fileRelativePath)
-                    if let samples = await Task.detached(priority: .utility, operation: {
-                        WaveformGenerator.generateSamples(from: url)
-                    }).value {
-                        await WaveformCache.shared.store(samples, for: uuid)
-                        waveforms[uuid] = samples
-                    } else {
-                        await WaveformCache.shared.clearInFlight(uuid)
-                    }
-                }
-            }
-        }
-        .padding(Constants.UI.Padding.normal)
-        .background(Color.parchmentSecondary)
-        .cornerRadius(Constants.UI.CornerRadius.normal)
-        .alert(
-            "Delete this recording file? The transcription will be kept.",
-            isPresented: $showDeleteConfirmation
-        ) {
-            Button("Delete", role: .destructive) {
-                guard let path = pathToDelete else { return }
-                if audioPlayer.currentPath == path {
-                    audioPlayer.stop()
-                }
-                DataManager.deleteRecordingFile(relativePath: path)
-                deletedPaths.insert(path)
-            }
-            Button("Cancel", role: .cancel) {}
-        }
-    }
-
-    private var recordingsHeader: some View {
-        HStack {
-            Image(systemName: "waveform")
-                .foregroundColor(.stone)
-            Text("Voice Recordings")
-                .font(Constants.Typography.heading)
-                .foregroundColor(.ink)
-                .minimumScaleFactor(0.7)
-            Spacer()
-
-            if hasUntranscribedRecordings && !isTranscribing {
-                Button(action: { Task { await transcribeAll() } }) {
-                    Label("Transcribe", systemImage: "text.badge.plus")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.stone)
-                        .minimumScaleFactor(0.7)
-                }
-            }
-
-            Text("\(walk.voiceRecordings.count)")
-                .foregroundColor(.fog)
-        }
-    }
-
-    @ViewBuilder
-    private var transcriptionStatusBanner: some View {
-        switch transcriptionService.state {
-        case .downloadingModel(let progress):
-            HStack(spacing: 8) {
-                SwiftUI.ProgressView(value: progress)
-                    .progressViewStyle(.linear)
-                    .tint(.stone)
-                Text("Downloading model \(Int(progress * 100))%")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
-            .padding(.vertical, 4)
-        case .transcribing(let current, let total):
-            HStack(spacing: 8) {
-                SwiftUI.ProgressView()
-                    .tint(.stone)
-                Text("Transcribing \(current)/\(total)")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
-            .padding(.vertical, 4)
-        case .failed(let message):
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(.dawn)
-                Text(message)
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
-            .padding(.vertical, 4)
-        default:
-            EmptyView()
-        }
-    }
-
-    private var isTranscribing: Bool {
-        switch transcriptionService.state {
-        case .downloadingModel, .transcribing: return true
-        default: return false
-        }
-    }
-
-    private var hasUntranscribedRecordings: Bool {
-        walk.voiceRecordings.contains { recording in
-            guard let uuid = recording.uuid else { return false }
-            return transcriptions[uuid] == nil && isFileAvailable(recording.fileRelativePath)
-        }
-    }
-
-    private func transcribeAll() async {
-        let untranscribed = walk.voiceRecordings.filter { recording in
-            guard let uuid = recording.uuid else { return false }
-            return transcriptions[uuid] == nil && isFileAvailable(recording.fileRelativePath)
-        }
-        let results = await transcriptionService.transcribeRecordings(untranscribed)
-        for (uuid, text) in results {
-            transcriptions[uuid] = text
-        }
-        if !results.isEmpty {
-            transcriptionService.autoTranscriptionSkippedReason = nil
-        }
-    }
-
-    private func retranscribeSingle(_ recording: VoiceRecordingInterface) async {
-        if let text = await transcriptionService.transcribeSingle(recording),
-           let uuid = recording.uuid {
-            transcriptions[uuid] = text
-        }
-    }
-
-    private func isFileAvailable(_ relativePath: String) -> Bool {
-        guard !relativePath.isEmpty else { return false }
-        guard !deletedPaths.contains(relativePath) else { return false }
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return FileManager.default.fileExists(atPath: docs.appendingPathComponent(relativePath).path)
-    }
-
-    @ViewBuilder
-    private var autoTranscriptionBanner: some View {
-        if transcriptionService.autoTranscriptionSkippedReason == .lowBattery {
-            HStack(spacing: 8) {
-                Image(systemName: "battery.25")
-                    .foregroundColor(.dawn)
-                Text("Auto-transcription skipped — battery below 20%")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
-            .padding(.vertical, 4)
         }
     }
 
@@ -903,10 +701,28 @@ extension WalkSummaryView {
     }
 
 
-    var routeCoordinates: [CLLocationCoordinate2D] {
+    static func computeRouteCoordinates(for walk: WalkInterface) -> [CLLocationCoordinate2D] {
         walk.routeData.map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
         }
+    }
+
+    struct ElevationData {
+        let altitudes: [Double]
+        let minAlt: Double
+        let maxAlt: Double
+    }
+
+    /// Nil when the route is too short or too flat to draw a profile —
+    /// mirrors the render condition the elevation section previously
+    /// re-evaluated against a fresh CoreStore traversal on every body.
+    static func computeElevationData(for walk: WalkInterface) -> ElevationData? {
+        let altitudes = walk.routeData.map { $0.altitude }
+        guard altitudes.count > 5,
+              let minAlt = altitudes.min(),
+              let maxAlt = altitudes.max(),
+              maxAlt - minAlt > 1 else { return nil }
+        return ElevationData(altitudes: altitudes, minAlt: minAlt, maxAlt: maxAlt)
     }
 
     func boundsForTimeRange(start: Date, end: Date) -> MapCameraBounds? {

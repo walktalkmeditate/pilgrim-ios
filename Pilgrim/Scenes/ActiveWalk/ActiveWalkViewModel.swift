@@ -33,7 +33,12 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var routeCoordinates: [CLLocationCoordinate2D] = []
     @Published private(set) var routeSegments: [RouteSegment] = []
     @Published var isRecordingVoice = false
-    @Published var audioLevel: Float = 0
+    // The 20 Hz metering level deliberately has NO mirror here (AF10):
+    // republishing it through this view model made objectWillChange fire
+    // 20×/s for every view observing it — including the Mapbox
+    // representable — for the duration of every voice recording. The
+    // waveform leaf observes `voiceRecordingManagement.$audioLevel`
+    // directly via `RecordingLevelMeter`.
     @Published var showMicrophonePermissionNeeded = false
     @Published var isMeditating = false
     private var rawDistanceMeters: Double = 0
@@ -362,11 +367,6 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         voiceRecordingManagement.$isRecording
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.isRecordingVoice = $0 }
-            .store(in: &cancellables)
-
-        voiceRecordingManagement.$audioLevel
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.audioLevel = $0 }
             .store(in: &cancellables)
 
         let voiceRecordings = builder.voiceRecordingsPublisher
