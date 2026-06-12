@@ -70,12 +70,25 @@ final class TranscriptionService: ObservableObject {
     @MainActor @Published var state: State = .idle
     @MainActor private var isTranscribing = false
 
-    private var whisperKit: TranscriptionEngine?
+    /// MainActor-confined alongside `modelLoadTask` (AF31): every write —
+    /// load completion, `unloadModel()`'s nil-out, test injection — goes
+    /// through the main actor, so the engine reference can't tear between
+    /// the auto-transcription batch and VoiceCard's settings toggle.
+    @MainActor private var whisperKit: TranscriptionEngine?
+    /// In-flight model load; concurrent `ensureModelReady` callers await
+    /// this one task instead of racing to load twice.
+    @MainActor private var modelLoadTask: Task<Void, Error>?
     private let modelVariant = "tiny"
+
+    /// Production loads WhisperKit from disk/download; tests inject a loader
+    /// so model lifecycle behavior is provable without a real CoreML model.
+    private let engineLoader: (@Sendable () async throws -> TranscriptionEngine)?
 
     /// Singleton in production; internal so tests can construct isolated
     /// instances without touching `shared` state.
-    init() {}
+    init(engineLoader: (@Sendable () async throws -> TranscriptionEngine)? = nil) {
+        self.engineLoader = engineLoader
+    }
 
     private var savedModelPath: URL? {
         get {
@@ -95,10 +108,41 @@ final class TranscriptionService: ObservableObject {
         return !files.isEmpty
     }
 
+    /// Single-flight model load (AF31): the post-walk auto-transcription
+    /// batch and VoiceCard's settings toggle can call this concurrently —
+    /// the first caller starts the load, every other caller awaits the same
+    /// task. A failed load clears the gate so the next call retries.
     func ensureModelReady() async throws {
-        if whisperKit != nil { return }
+        let task = await MainActor.run { () -> Task<Void, Error>? in
+            if whisperKit != nil { return nil }
+            if let inFlight = modelLoadTask { return inFlight }
+            let load = Task { try await self.loadModel() }
+            modelLoadTask = load
+            return load
+        }
+        guard let task else { return }
+        try await task.value
+    }
 
-        await MainActor.run { state = .downloadingModel(progress: 0) }
+    private func loadModel() async throws {
+        do {
+            await MainActor.run { state = .downloadingModel(progress: 0) }
+            let engine = try await makeEngine()
+            await MainActor.run {
+                whisperKit = engine
+                modelLoadTask = nil
+                state = .idle
+            }
+        } catch {
+            await MainActor.run { modelLoadTask = nil }
+            throw error
+        }
+    }
+
+    private func makeEngine() async throws -> TranscriptionEngine {
+        if let engineLoader {
+            return try await engineLoader()
+        }
 
         let modelURL: URL
         if let existing = savedModelPath {
@@ -113,10 +157,11 @@ final class TranscriptionService: ObservableObject {
             load: true,
             download: false
         )
-        whisperKit = try await WhisperKit(config)
-
-        await MainActor.run { state = .idle }
+        return try await WhisperKit(config)
     }
+
+    @MainActor
+    private func currentEngine() -> TranscriptionEngine? { whisperKit }
 
     private func downloadModel() async throws -> URL {
         try await WhisperKit.download(
@@ -151,7 +196,7 @@ final class TranscriptionService: ObservableObject {
             return [:]
         }
 
-        guard let pipe = whisperKit else {
+        guard let pipe = await currentEngine() else {
             await MainActor.run { state = .failed("WhisperKit not initialized"); isTranscribing = false }
             return [:]
         }
@@ -217,7 +262,7 @@ final class TranscriptionService: ObservableObject {
             return nil
         }
 
-        guard let pipe = whisperKit else {
+        guard let pipe = await currentEngine() else {
             await MainActor.run { isTranscribing = false }
             return nil
         }
@@ -313,7 +358,7 @@ final class TranscriptionService: ObservableObject {
             return nil
         }
 
-        guard let pipe = whisperKit,
+        guard let pipe = await currentEngine(),
               FileManager.default.fileExists(atPath: url.path) else {
             await MainActor.run { isTranscribing = false; unloadModel() }
             return nil
@@ -339,6 +384,10 @@ final class TranscriptionService: ObservableObject {
         guard !isTranscribing else { return }
         guard let kit = whisperKit else { return }
         whisperKit = nil
+        // Clearing the gate keeps it coherent with the nil-out (AF31): a
+        // stale completed load task would otherwise satisfy the next
+        // ensureModelReady without actually reloading the engine.
+        modelLoadTask = nil
         Task.detached { await kit.unloadModels() }
     }
 

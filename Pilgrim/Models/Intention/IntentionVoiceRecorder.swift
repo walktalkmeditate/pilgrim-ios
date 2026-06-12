@@ -65,12 +65,20 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
         AudioSessionCoordinator.shared.deactivate(consumer: "intentionRecorder")
     }
 
+    /// All `recordingURL` access happens on the main actor (AF77): the URL is
+    /// captured at entry and only that file is deleted afterwards, so a new
+    /// recording started while transcription is still finishing keeps its
+    /// in-progress file and URL.
     func transcribe() async -> String? {
-        guard let url = recordingURL else { return nil }
-        await MainActor.run { isTranscribing = true }
+        let url = await MainActor.run { () -> URL? in
+            guard let url = recordingURL else { return nil }
+            isTranscribing = true
+            return url
+        }
+        guard let url else { return nil }
         let result = await TranscriptionService.shared.transcribeAudioFile(at: url)
-        deleteTempFile()
         await MainActor.run {
+            deleteTempFile(matching: url)
             isTranscribing = false
             transcribedText = result
         }
@@ -120,8 +128,16 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
 
     private func deleteTempFile() {
         guard let url = recordingURL else { return }
+        deleteTempFile(matching: url)
+    }
+
+    /// Removes the given file and clears `recordingURL` only when it still
+    /// points at that file — never at a newer recording's.
+    private func deleteTempFile(matching url: URL) {
         try? FileManager.default.removeItem(at: url)
-        recordingURL = nil
+        if recordingURL == url {
+            recordingURL = nil
+        }
     }
 
     private func cleanup() {

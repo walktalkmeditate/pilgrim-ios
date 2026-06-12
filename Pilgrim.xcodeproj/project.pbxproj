@@ -418,6 +418,7 @@
 		D9B0FCF6475717C81CEAC35D /* AudioPriorityQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */; };
 		DA6DDA89F11F4728B6B553A1 /* WhisperManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305468F7FF377BC0DFF74897 /* WhisperManifest.swift */; };
 		DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */; };
+		LR00000200000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift */; };
 		DBC54AC76144B10493D3E481 /* WalkShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE9557700152F043C359DC /* WalkShareView.swift */; };
 		DC700725D862A43F6F4791F7 /* WhisperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8585A815173A295C2F468057 /* WhisperService.swift */; };
 		DD00CC0100000000000002 /* MeditateDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00CC0100000000000001 /* MeditateDetection.swift */; };
@@ -490,6 +491,8 @@
 		LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */; };
 		LR00000200000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */; };
 		LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */; };
+		LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */; };
+		LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */; };
 		LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */; };
 		LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */; };
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
@@ -964,6 +967,7 @@
 		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
 		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalkSessionGuard+Recovery.swift"; sourceTree = "<group>"; };
 		DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecordingPathRecovery.swift; sourceTree = "<group>"; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
@@ -1035,6 +1039,8 @@
 		LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImportTransactionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeleteRuleVersionHashTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderLifecycleTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelLoadTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardDispatchTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingPersistenceTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageBuilderErrorTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
@@ -1648,6 +1654,7 @@
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */,
 				A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */,
 				D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */,
+				LR00000100000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift */,
 				BBBB000000000000000019 /* WalkPhotoMatcher.swift */,
 				BBBB00000000000000003C /* PhotoContextAnalyzer.swift */,
 				BBBB000000000000000040 /* PhotoNarrativeArc.swift */,
@@ -1734,6 +1741,8 @@
 				LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */,
 				LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */,
 				LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */,
+				LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */,
+				LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */,
 				LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */,
 				LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */,
 				5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */,
@@ -2499,6 +2508,7 @@
 				CC02000100000000PODVWB01 /* PodcastSubmissionView.swift in Sources */,
 				567B99F82F701B8D0006A58E /* PilgrimageProgress.swift in Sources */,
 				DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */,
+				LR00000200000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift in Sources */,
 				22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */,
 				227C690725423294000458BC /* EventInterface.swift in Sources */,
 				22BF623D26E6B1D2008C904C /* WalkBuilderComponentStatus.swift in Sources */,
@@ -2930,6 +2940,8 @@
 				LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */,
 				LR00000200000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift in Sources */,
 				LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */,
+				LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */,
+				LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */,
 				LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */,
 				LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */,
 				12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */,
