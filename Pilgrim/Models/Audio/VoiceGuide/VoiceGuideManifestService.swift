@@ -28,15 +28,22 @@ final class VoiceGuideManifestService: ObservableObject {
     init(manifestDirectory: URL) {
         self.manifestDirectory = manifestDirectory
         let localURL = manifestDirectory.appendingPathComponent("manifest.json")
+        initialLoad = Self.makeInitialLoad(service: self, localURL: localURL)
+    }
+
+    /// Loads off main (disk read + JSON decode) and publishes on main. Taking
+    /// `service` as a parameter keeps the publishing closure from capturing the
+    /// still-mutable `self` binding inside `init` (Swift 6 concurrency rule).
+    private static func makeInitialLoad(service: VoiceGuideManifestService, localURL: URL) -> Task<Void, Never> {
         #if DEBUG
         let initStart = CFAbsoluteTimeGetCurrent()
         #endif
-        initialLoad = Task.detached(priority: .utility) { [weak self] in
-            guard let loaded = Self.readLocalManifest(at: localURL) else { return }
-            await MainActor.run {
-                guard let self, self.packs.isEmpty else { return }
-                self.packs = loaded.packs
-                self.localManifestVersion = loaded.version
+        return Task.detached(priority: .utility) { [weak service] in
+            guard let loaded = readLocalManifest(at: localURL) else { return }
+            await MainActor.run { [service] in
+                guard let service, service.packs.isEmpty else { return }
+                service.packs = loaded.packs
+                service.localManifestVersion = loaded.version
                 #if DEBUG
                 let dt = (CFAbsoluteTimeGetCurrent() - initStart) * 1000
                 print(String(format: "[LaunchProfile] VoiceGuideManifestService manifest ready +%.0fms after first access (loaded off main)", dt))
@@ -92,7 +99,8 @@ final class VoiceGuideManifestService: ObservableObject {
 
     private func saveLocalManifest(_ manifest: VoiceGuideManifest) {
         let url = localManifestURL
-        Task.detached(priority: .utility) { [weak self] in
+        let service = self
+        Task.detached(priority: .utility) { [weak service] in
             guard let data = try? JSONEncoder().encode(manifest) else { return }
             do {
                 try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -101,8 +109,8 @@ final class VoiceGuideManifestService: ObservableObject {
                 print("[VoiceGuideManifestService] Failed to save manifest: \(error)")
                 return
             }
-            await MainActor.run {
-                self?.localManifestVersion = manifest.version
+            await MainActor.run { [service] in
+                service?.localManifestVersion = manifest.version
             }
         }
     }

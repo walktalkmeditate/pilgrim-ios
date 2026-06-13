@@ -28,14 +28,21 @@ final class AudioManifestService: ObservableObject {
     init(manifestDirectory: URL) {
         self.manifestDirectory = manifestDirectory
         let localURL = manifestDirectory.appendingPathComponent("manifest.json")
+        initialLoad = Self.makeInitialLoad(service: self, localURL: localURL)
+    }
+
+    /// Loads off main (disk read + JSON decode) and publishes on main. Taking
+    /// `service` as a parameter keeps the publishing closure from capturing the
+    /// still-mutable `self` binding inside `init` (Swift 6 concurrency rule).
+    private static func makeInitialLoad(service: AudioManifestService, localURL: URL) -> Task<Void, Never> {
         #if DEBUG
         let initStart = CFAbsoluteTimeGetCurrent()
         #endif
-        initialLoad = Task.detached(priority: .utility) { [weak self] in
-            guard let loaded = Self.readLocalManifest(at: localURL) else { return }
-            await MainActor.run {
-                guard let self, self.manifest == nil else { return }
-                self.manifest = loaded
+        return Task.detached(priority: .utility) { [weak service] in
+            guard let loaded = readLocalManifest(at: localURL) else { return }
+            await MainActor.run { [service] in
+                guard let service, service.manifest == nil else { return }
+                service.manifest = loaded
                 #if DEBUG
                 let dt = (CFAbsoluteTimeGetCurrent() - initStart) * 1000
                 print(String(format: "[LaunchProfile] AudioManifestService manifest ready +%.0fms after first access (loaded off main)", dt))

@@ -31,14 +31,26 @@ final class WhisperManifestService: ObservableObject {
     init(manifestDirectory: URL, bootstrapManifestURL: @escaping () -> URL?) {
         self.manifestDirectory = manifestDirectory
         let localURL = manifestDirectory.appendingPathComponent("manifest.json")
+        initialLoad = Self.makeInitialLoad(service: self, localURL: localURL, bootstrapManifestURL: bootstrapManifestURL)
+    }
+
+    /// Loads off main (disk reads + JSON decodes, including bootstrap fallback)
+    /// and publishes on main. Taking `service` as a parameter keeps the
+    /// publishing closure from capturing the still-mutable `self` binding inside
+    /// `init` (Swift 6 concurrency rule).
+    private static func makeInitialLoad(
+        service: WhisperManifestService,
+        localURL: URL,
+        bootstrapManifestURL: @escaping () -> URL?
+    ) -> Task<Void, Never> {
         #if DEBUG
         let initStart = CFAbsoluteTimeGetCurrent()
         #endif
-        initialLoad = Task.detached(priority: .utility) { [weak self] in
-            let loaded = Self.loadInitialManifest(localURL: localURL, bootstrapURL: bootstrapManifestURL())
-            await MainActor.run {
-                guard let self, self.manifest == nil else { return }
-                self.manifest = loaded
+        return Task.detached(priority: .utility) { [weak service] in
+            let loaded = loadInitialManifest(localURL: localURL, bootstrapURL: bootstrapManifestURL())
+            await MainActor.run { [service] in
+                guard let service, service.manifest == nil else { return }
+                service.manifest = loaded
                 #if DEBUG
                 let dt = (CFAbsoluteTimeGetCurrent() - initStart) * 1000
                 print(String(format: "[LaunchProfile] WhisperManifestService manifest ready +%.0fms after first access (loaded off main)", dt))
