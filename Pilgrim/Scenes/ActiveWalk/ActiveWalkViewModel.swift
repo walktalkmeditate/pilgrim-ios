@@ -390,7 +390,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         let startDate = builder.startDatePublisher
         let pauses = builder.pausesPublisher
 
-        Timer.TimerPublisher(interval: 1, runLoop: .main, mode: .default)
+        Timer.TimerPublisher(interval: 1, runLoop: .main, mode: .common)
             .autoconnect()
             .combineLatest(startDate, pauses)
             .combineLatest(voiceRecordings)

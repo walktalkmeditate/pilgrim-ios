@@ -445,18 +445,18 @@ struct InkScrollView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                         .fill(.ultraThinMaterial)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                                 .fill(seasonColor.opacity(0.10))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                                 .fill(Color.parchmentSecondary.opacity(isExpandedArchived ? 0.5 : 0))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                                 .strokeBorder(
                                     Color.fog.opacity(0.4),
                                     style: StrokeStyle(lineWidth: 1, dash: isExpandedArchived ? [4, 3] : [])

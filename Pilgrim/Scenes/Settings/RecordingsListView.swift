@@ -223,6 +223,7 @@ struct RecordingsListView: View {
                     }
                     if recording.isEnhanced {
                         Text("·")
+                            .font(Constants.Typography.caption)
                             .foregroundColor(.fog)
                         Text("Enhanced")
                             .font(Constants.Typography.caption)

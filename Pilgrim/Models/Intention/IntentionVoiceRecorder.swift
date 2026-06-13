@@ -52,6 +52,7 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
             startMetering()
             startCountdown()
         } catch {
+            print("[IntentionVoiceRecorder] Failed to start recording: \(error)")
             AudioSessionCoordinator.shared.deactivate(consumer: "intentionRecorder")
         }
     }

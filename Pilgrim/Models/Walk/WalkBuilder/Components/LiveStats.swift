@@ -67,20 +67,6 @@ class LiveStats: WalkBuilderComponent {
         return StatsHelper.string(for: Double(steps), unit: UnitCount.count)
     }
     
-    /// Maps to duration output.
-    private var durationMapper: (Date, Date?, [TempWalkPause], Date?) -> String? = { _, startDate, pauses, endDate in
-        guard let startDate = startDate else { return nil }
-        let duration = startDate.distance(to: endDate ?? Date()) - pauses.map { $0.duration }.reduce(0, +)
-        return StatsHelper.string(for: duration, unit: UnitDuration.seconds, type: .clock)
-    }
-    
-    /// Maps to burned energy output.
-    private var burnedEnergyMapper: (Date, Walk.WalkType, Double) -> String? = { _, workoutType, distance in
-        guard let weight = UserPreferences.weight.value else { return nil }
-        let burnedEnergy = Computation.calculateBurnedEnergy(for: workoutType, distance: distance, weight: weight)
-        return StatsHelper.string(for: burnedEnergy, unit: UnitEnergy.standardUnit)
-    }
-    
     private var ascentMapper: ([AltitudeManagement.AltitudeSample]) -> String = { samples in
         guard samples.count > 1 else {
             return StatsHelper.string(for: 0, unit: UnitLength.meters, type: .altitude)
@@ -135,19 +121,13 @@ class LiveStats: WalkBuilderComponent {
             .map(ascentMapper)
             .sink(receiveValue: ascentRelay.accept)
             .store(in: &cancellables)
-        
-        let periodicUpdates = Timer.TimerPublisher(interval: 1, runLoop: .main, mode: .default).autoconnect()
-        
-        periodicUpdates
-            .combineLatest(output.startDate, output.pauses, output.endDate)
-            .compactMap(durationMapper)
-            .sink(receiveValue: durationRelay.accept)
-            .store(in: &cancellables)
-        
-        periodicUpdates
-            .combineLatest(output.workoutType, output.distance)
-            .compactMap(burnedEnergyMapper)
-            .sink(receiveValue: burnedEnergyRelay.accept)
-            .store(in: &cancellables)
+
+        // The `duration` and `burnedEnergy` publishers below have no
+        // subscribers during a walk: ActiveWalkViewModel computes duration
+        // with its own 1 Hz timer, and burned energy is computed once at
+        // save time in NewWalk. Running their 1 Hz combineLatest pipelines
+        // here was pure dead cost on the most battery-sensitive screen (P5),
+        // so they are not wired up. The relays keep their default values for
+        // any future consumer; nothing recomputes them on a timer.
     }
 }

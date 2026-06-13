@@ -65,7 +65,7 @@ final class WalkActivityManager {
         isRecordingVoice: Bool
     ) {
         dispatchPrecondition(condition: .onQueue(.main))
-        guard currentActivity != nil else { return }
+        guard let activity = currentActivity else { return }
 
         let distanceDelta = abs(distanceMeters - lastDistanceUpdate)
         let stateChanged = isPaused != lastIsPaused
@@ -95,7 +95,7 @@ final class WalkActivityManager {
         let staleDate = Date().addingTimeInterval(timeThreshold * 3)
 
         Task {
-            await currentActivity?.update(
+            await activity.update(
                 ActivityContent(state: state, staleDate: staleDate)
             )
         }

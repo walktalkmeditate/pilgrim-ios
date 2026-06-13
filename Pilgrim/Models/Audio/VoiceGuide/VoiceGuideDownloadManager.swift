@@ -38,6 +38,7 @@ final class VoiceGuideDownloadManager: ObservableObject {
                 await MainActor.run {
                     self.downloadProgress[pack.id] = 1.0
                     self.activeDownloads.remove(pack.id)
+                    self.downloadTasks[pack.id] = nil
                 }
                 return
             }
@@ -61,6 +62,7 @@ final class VoiceGuideDownloadManager: ObservableObject {
             let didFail = failures > 0 && !Task.isCancelled
             await MainActor.run {
                 _ = self.activeDownloads.remove(pack.id)
+                self.downloadTasks[pack.id] = nil
                 if didFail {
                     self.downloadErrors.insert(pack.id)
                 }

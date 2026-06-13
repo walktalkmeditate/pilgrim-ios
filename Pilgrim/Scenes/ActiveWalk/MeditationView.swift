@@ -537,7 +537,7 @@ struct MeditationView: View {
                             ? Color.moss.opacity(0.08)
                             : Color.clear
                     )
-                    .cornerRadius(10)
+                    .cornerRadius(Constants.UI.CornerRadius.small)
                 }
             }
         }
@@ -563,7 +563,7 @@ struct MeditationView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(isSelected ? Color.moss.opacity(0.08) : Color.clear)
-        .cornerRadius(10)
+        .cornerRadius(Constants.UI.CornerRadius.small)
     }
 
     private func autoStartGuideIfEnabled() {
@@ -646,7 +646,7 @@ struct MeditationView: View {
                             ? Color.moss.opacity(0.08)
                             : Color.clear
                     )
-                    .cornerRadius(10)
+                    .cornerRadius(Constants.UI.CornerRadius.small)
                 }
             }
         }

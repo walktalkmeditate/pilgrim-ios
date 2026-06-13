@@ -38,6 +38,10 @@ struct SceneryItemView: View {
         let isWinter = month == 12 || month <= 2
         let isAutumn = (9...11).contains(month)
         let isSpring = (3...5).contains(month)
+        // Constant per walkDate — hoisted out of the 30 fps closure so the
+        // dynamic-provider UIColor / UserDefaults read happens once, not per
+        // frame (P4). The spring tint is a fixed literal, no hoist needed.
+        let autumnLeafColor = Color(uiColor: SeasonalColorEngine.seasonalColor(named: "rust", intensity: .full, on: walkDate))
 
         return TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
@@ -54,7 +58,7 @@ struct SceneryItemView: View {
                 }
 
                 if isAutumn {
-                    fallingLeaves(time: time, color: Color(uiColor: SeasonalColorEngine.seasonalColor(named: "rust", intensity: .full, on: walkDate)))
+                    fallingLeaves(time: time, color: autumnLeafColor)
                 }
 
                 if isSpring {
@@ -387,6 +391,8 @@ struct SceneryItemView: View {
         let hasSnow = month <= 3 || month >= 11
         let hour = Calendar.current.component(.hour, from: walkDate)
         let isMorning = hour >= 5 && hour < 10
+        // Hoisted out of the 15 fps closure (P4) — constant per walkDate.
+        let dawnGlowColor = Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: walkDate))
 
         return TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
@@ -399,7 +405,7 @@ struct SceneryItemView: View {
                         .fill(
                             RadialGradient(
                                 colors: [
-                                    Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: walkDate)).opacity(0.15),
+                                    dawnGlowColor.opacity(0.15),
                                     .clear
                                 ],
                                 center: .center,
@@ -459,7 +465,10 @@ struct SceneryItemView: View {
     // MARK: - Torii — gateway glow, shimenawa rope, fluttering shide
 
     private var toriiView: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { timeline in
+        // Hoisted out of the 20 fps closure (P4) — constant per walkDate.
+        let dawnGlowColor = Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: walkDate))
+
+        return TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
 
             ZStack {
@@ -467,7 +476,7 @@ struct SceneryItemView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: walkDate)).opacity(0.08),
+                                dawnGlowColor.opacity(0.08),
                                 .clear
                             ],
                             center: .center,

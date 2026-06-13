@@ -77,6 +77,7 @@ struct WalkStartView: View {
             footprintBreathScale = 1.0
             togetherDriftOffset = .zero
             togetherCompanionsVisible = false
+            collectivePulse = false
         }
     }
 
@@ -151,7 +152,11 @@ struct WalkStartView: View {
 
                     PilgrimLogoView(size: isHomeLargeText ? 60 : 100, breathing: $breathing)
                         .scaleEffect(collectivePulse ? 1.03 : 1.0)
-                        .shadow(color: .stone.opacity(collectivePulse ? 0.3 : 0), radius: collectivePulse ? 12 : 0)
+                        // Transform-only pulse (P6): a fixed, non-animating
+                        // shadow marks "a walker is out there now" while only
+                        // the cheap scale composite repeats. Animating the
+                        // shadow radius forced a per-frame shadow re-render.
+                        .shadow(color: .stone.opacity(collectivePulse ? 0.18 : 0), radius: 8)
                         .animation(
                             collectivePulse
                                 ? .easeInOut(duration: 1.2).repeatForever(autoreverses: true)
