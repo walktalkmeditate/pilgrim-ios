@@ -32,6 +32,12 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
         let url = tempDir.appendingPathComponent("intention_\(UUID().uuidString).m4a")
 
         AudioSessionCoordinator.shared.activate(for: .recordingOnly, consumer: "intentionRecorder")
+        AudioSessionCoordinator.shared.addInterruptionObserver(id: "intentionRecorder") { [weak self] event in
+            // Finalize the in-progress recording on interruption so the mic and
+            // session are released immediately, rather than staying armed until
+            // the countdown self-heals. Mirrors VoiceRecordingManagement.
+            if case .began = event { self?.stopRecording() }
+        }
 
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -63,6 +69,7 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
         audioRecorder?.stop()
         audioRecorder = nil
         isRecording = false
+        AudioSessionCoordinator.shared.removeInterruptionObserver(id: "intentionRecorder")
         AudioSessionCoordinator.shared.deactivate(consumer: "intentionRecorder")
     }
 
@@ -93,6 +100,7 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
         isRecording = false
         isTranscribing = false
         transcribedText = nil
+        AudioSessionCoordinator.shared.removeInterruptionObserver(id: "intentionRecorder")
         AudioSessionCoordinator.shared.deactivate(consumer: "intentionRecorder")
         deleteTempFile()
     }
@@ -145,6 +153,7 @@ final class IntentionVoiceRecorder: NSObject, ObservableObject {
         stopTimers()
         audioRecorder?.stop()
         audioRecorder = nil
+        AudioSessionCoordinator.shared.removeInterruptionObserver(id: "intentionRecorder")
         AudioSessionCoordinator.shared.deactivate(consumer: "intentionRecorder")
         deleteTempFile()
     }
