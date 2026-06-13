@@ -1,10 +1,9 @@
 import Foundation
-import Security
 
 enum ShareService {
 
     private static let baseURL = "https://walk.pilgrimapp.org"
-    private static let keychainKey = "pilgrim.share.device-token"
+    private static let deviceTokenKey = "pilgrim.share.device-token"
 
     enum ShareError: LocalizedError {
         case encodingFailed
@@ -84,37 +83,12 @@ enum ShareService {
     }
 
     private static func deviceToken() -> String {
-        if let existing = readKeychainToken() {
+        if let existing = UserDefaults.standard.string(forKey: deviceTokenKey) {
             return existing
         }
         let token = UUID().uuidString
-        saveKeychainToken(token)
+        UserDefaults.standard.set(token, forKey: deviceTokenKey)
         return token
-    }
-
-    private static func readKeychainToken() -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: keychainKey,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess, let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
-    }
-
-    private static func saveKeychainToken(_ token: String) {
-        let data = Data(token.utf8)
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: keychainKey,
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        ]
-        SecItemDelete(query as CFDictionary)
-        SecItemAdd(query as CFDictionary, nil)
     }
 
     private static let isoFormatter = ISO8601DateFormatter()

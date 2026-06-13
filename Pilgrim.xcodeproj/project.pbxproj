@@ -196,7 +196,6 @@
 		567070AF2F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */; };
 		567070B02F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */; };
 		567070B22F7426A500FD1910 /* WalkActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070B12F7426A500FD1910 /* WalkActivityManager.swift */; };
-		567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99D82F6F41030006A58E /* WeatherKitREST.swift */; };
 		567B99F72F701B8D0006A58E /* CollectiveCounterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */; };
 		567B99F82F701B8D0006A58E /* PilgrimageProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */; };
 		56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */; };
@@ -747,7 +746,6 @@
 		567070962F74218400FD1910 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkActivityAttributes.swift; sourceTree = "<group>"; };
 		567070B12F7426A500FD1910 /* WalkActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkActivityManager.swift; sourceTree = "<group>"; };
-		567B99D82F6F41030006A58E /* WeatherKitREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitREST.swift; sourceTree = "<group>"; };
 		567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectiveCounterService.swift; sourceTree = "<group>"; };
 		567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimageProgress.swift; sourceTree = "<group>"; };
 		56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Pilgrim/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -2207,7 +2205,6 @@
 		WTHRSVC0000000000000003 /* Weather */ = {
 			isa = PBXGroup;
 			children = (
-				567B99D82F6F41030006A58E /* WeatherKitREST.swift */,
 				WTHRSVC0000000000000002 /* WeatherService.swift */,
 				WTHOVR0000000000000002 /* WeatherOverlayView.swift */,
 				WTHVIG0000000000000002 /* WeatherVignetteView.swift */,
@@ -2728,7 +2725,6 @@
 				CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */,
 				EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */,
 				DD00CC0100000000000002 /* MeditateDetection.swift in Sources */,
-				567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */,
 				AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */,
 				AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */,
 				AAAA000000000000000000F1 /* IntentionHistoryStore.swift in Sources */,
