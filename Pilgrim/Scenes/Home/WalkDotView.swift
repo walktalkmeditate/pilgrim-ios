@@ -43,6 +43,8 @@ struct WalkDotView: View {
                 .position(position)
                 .onTapGesture { onTap(snapshot.id) }
                 .accessibilityLabel(accessibilityText)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint("Opens the walk detail card")
         } else {
 
         ZStack {
@@ -103,9 +105,13 @@ struct WalkDotView: View {
             }
 
         }
+        .frame(width: max(44, size * 3.5), height: max(44, size * 3.5))
+        .contentShape(Circle())
         .position(position)
         .onTapGesture { onTap(snapshot.id) }
         .accessibilityLabel(accessibilityText)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens the walk detail card")
         }
     }
 

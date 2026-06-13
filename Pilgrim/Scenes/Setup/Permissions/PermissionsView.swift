@@ -126,6 +126,13 @@ struct PermissionsView: View {
         }
     }
 
+    private func accessibilityState(for config: PermissionCardConfig) -> String {
+        if config.granted { return "Granted" }
+        if config.denied { return "Denied. Double tap to open Settings" }
+        if !config.required && config.decided { return "Skipped" }
+        return "Not granted. Double tap to grant"
+    }
+
     private var warmParchment: some View {
         ZStack {
             Color.parchment
@@ -178,6 +185,13 @@ struct PermissionsView: View {
                     : .default,
                 value: config.shake
             )
+            .accessibilityElement(children: .combine)
+            .accessibilityValue(accessibilityState(for: config))
+            .accessibilityAddTraits(config.granted ? [] : .isButton)
+            .accessibilityAction {
+                if config.granted { return }
+                if config.denied, let retry = config.retryAction { retry() } else { config.action() }
+            }
 
             if config.denied && config.required {
                 Text(LS["Permissions.Required.Hint"])
@@ -200,10 +214,13 @@ struct PermissionsView: View {
             Image(systemName: "checkmark")
                 .foregroundColor(.moss)
                 .font(.subheadline.bold())
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityHidden(true)
         } else if !required && decided {
             Text(LS["Permissions.Skipped"])
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
+                .frame(minHeight: 44)
         } else {
             Button(action: action) {
                 Text(denied ? LS["Permissions.Settings"] : LS["Permissions.Grant"])
@@ -211,6 +228,8 @@ struct PermissionsView: View {
                     .foregroundColor(.stone)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 14)
+                    .frame(minHeight: 44)
+                    .contentShape(Capsule())
                     .overlay(
                         Capsule()
                             .stroke(Color.stone, lineWidth: 1.5)

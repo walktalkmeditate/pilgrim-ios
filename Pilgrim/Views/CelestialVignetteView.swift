@@ -52,7 +52,7 @@ struct CelestialVignetteView: View {
 
     private func symbolText(_ string: String) -> some View {
         Text(string)
-            .font(.system(size: 12))
+            .font(.system(.caption, design: .default))
     }
 
     private var moonSignGlyph: String {

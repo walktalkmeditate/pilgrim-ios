@@ -33,6 +33,7 @@ struct StreakFlameView: View {
                 .foregroundColor(.stone)
         }
         .onAppear {
+            guard !UIAccessibility.isReduceMotionEnabled else { return }
             withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
                 flicker1 = true
             }

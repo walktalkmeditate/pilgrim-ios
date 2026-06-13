@@ -162,45 +162,48 @@ struct InkScrollView: View {
         let talkers = snapshots.filter { $0.hasTalk }.count
         let meditators = snapshots.filter { $0.hasMeditate }.count
 
-        return VStack(spacing: 2) {
-            Group {
-                switch statMode {
-                case .walks:
-                    Text(Self.formatTotalDistance(totalDistance))
-                case .talks:
-                    Text(WalkDotView.formatDuration(totalTalk) + " talked")
-                case .meditations:
-                    Text(WalkDotView.formatDuration(totalMeditate) + " meditated")
-                }
-            }
-            .font(Constants.Typography.body)
-            .foregroundColor(.stone)
-            .contentTransition(.numericText())
-
-            Group {
-                switch statMode {
-                case .walks:
-                    Text("\(totalWalks) walks · \(months) months")
-                case .talks:
-                    Text("\(talkers) walks with talk")
-                case .meditations:
-                    Text("\(meditators) walks with meditation")
-                }
-            }
-            .font(Constants.Typography.caption)
-            .foregroundColor(.fog.opacity(0.7))
-            .contentTransition(.numericText())
-        }
-        .position(x: width / 2, y: 16 + topOffset)
-        .opacity(hasAppeared ? 1 : 0)
-        .animation(.easeOut(duration: 0.8).delay(0.5), value: hasAppeared)
-        .onTapGesture {
+        return Button {
             withAnimation(.easeInOut(duration: 0.3)) {
                 let modes = StatMode.allCases
                 let idx = modes.firstIndex(of: statMode) ?? 0
                 statMode = modes[(idx + 1) % modes.count]
             }
+        } label: {
+            VStack(spacing: 2) {
+                Group {
+                    switch statMode {
+                    case .walks:
+                        Text(Self.formatTotalDistance(totalDistance))
+                    case .talks:
+                        Text(WalkDotView.formatDuration(totalTalk) + " talked")
+                    case .meditations:
+                        Text(WalkDotView.formatDuration(totalMeditate) + " meditated")
+                    }
+                }
+                .font(Constants.Typography.body)
+                .foregroundColor(.stone)
+                .contentTransition(.numericText())
+
+                Group {
+                    switch statMode {
+                    case .walks:
+                        Text("\(totalWalks) walks · \(months) months")
+                    case .talks:
+                        Text("\(talkers) walks with talk")
+                    case .meditations:
+                        Text("\(meditators) walks with meditation")
+                    }
+                }
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog.opacity(0.7))
+                .contentTransition(.numericText())
+            }
         }
+        .buttonStyle(.plain)
+        .accessibilityHint("Double tap to cycle through walk, talk, and meditation totals")
+        .position(x: width / 2, y: 16 + topOffset)
+        .opacity(hasAppeared ? 1 : 0)
+        .animation(.easeOut(duration: 0.8).delay(0.5), value: hasAppeared)
     }
 
     private static func formatTotalDistance(_ meters: Double) -> String {
@@ -365,7 +368,7 @@ struct InkScrollView: View {
                         if !isExpandedArchived {
                             if snapshot.isShared {
                                 Image(systemName: "link")
-                                    .font(.system(size: 10))
+                                    .font(.caption2)
                                     .foregroundColor(.stone)
                                     .opacity(0.5)
                             }
@@ -376,7 +379,7 @@ struct InkScrollView: View {
                                     : celestial.position(for: .moon)?.sidereal.sign
                                 if let moonSign {
                                     Text("\(celestial.planetaryHour.planet.symbol)\(moonSign.symbol)")
-                                        .font(.system(size: 10))
+                                        .font(.caption2)
                                         .foregroundColor(.fog)
                                 }
                             }
@@ -391,7 +394,7 @@ struct InkScrollView: View {
 
                         if isExpandedArchived {
                             HStack(spacing: 4) {
-                                Image(systemName: "circle.dotted").font(.system(size: 10))
+                                Image(systemName: "circle.dotted").font(.caption2)
                                 Text("Released").font(Constants.Typography.caption)
                             }
                             .foregroundColor(.fog)

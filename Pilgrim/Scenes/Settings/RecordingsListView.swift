@@ -206,6 +206,7 @@ struct RecordingsListView: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(isActive && audioPlayer.isPlaying ? "Pause recording" : "Play recording")
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Recording \(index)")
@@ -238,8 +239,12 @@ struct RecordingsListView: View {
                     .padding(.vertical, 3)
                     .background(speed > 1.0 ? Color.stone : Color.stone.opacity(0.12))
                     .cornerRadius(4)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Playback speed, \(speedLabel)")
+            .accessibilityHint("Double tap to cycle speed")
         }
     }
 
@@ -325,7 +330,7 @@ struct RecordingsListView: View {
                 .padding(Constants.UI.Padding.small)
                 .background(Color.parchmentTertiary)
                 .cornerRadius(Constants.UI.CornerRadius.small)
-                VStack(spacing: 12) {
+                VStack(spacing: 4) {
                     if let uuid {
                         Button {
                             editingTranscriptionText = text
@@ -335,8 +340,10 @@ struct RecordingsListView: View {
                             Image(systemName: "pencil")
                                 .font(.caption)
                                 .foregroundColor(.fog)
-                                .frame(minWidth: 32, minHeight: 32)
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(Rectangle())
                         }
+                        .accessibilityLabel("Edit transcription")
                     }
                     Button {
                         UIPasteboard.general.string = text
@@ -344,8 +351,10 @@ struct RecordingsListView: View {
                         Image(systemName: "doc.on.doc")
                             .font(.caption)
                             .foregroundColor(.fog)
-                            .frame(minWidth: 32, minHeight: 32)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
+                    .accessibilityLabel("Copy transcription")
                 }
             }
         }
@@ -555,5 +564,30 @@ struct WaveformBarView: View {
             )
         }
         .frame(height: 32)
+        .accessibilityElement()
+        .accessibilityLabel("Playback position")
+        .accessibilityValue("\(Int((progress * 100).rounded())) percent")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                onSeek?(Self.steppedProgress(from: progress, direction: .increment))
+            case .decrement:
+                onSeek?(Self.steppedProgress(from: progress, direction: .decrement))
+            @unknown default:
+                break
+            }
+        }
+    }
+
+    /// Steps the playback fraction by ±10%, clamped to [0, 1]. Pure so the
+    /// VoiceOver adjustable action's arithmetic is unit-testable independent
+    /// of the seek side effect.
+    static func steppedProgress(
+        from progress: Double,
+        direction: AccessibilityAdjustmentDirection,
+        step: Double = 0.1
+    ) -> Double {
+        let delta = direction == .increment ? step : -step
+        return min(1, max(0, progress + delta))
     }
 }

@@ -21,13 +21,17 @@ struct GoshuinFAB: View {
                         .resizable()
                         .frame(width: 44, height: 44)
                         .clipShape(Circle())
+                        .accessibilityHidden(true)
                 } else {
                     Image(systemName: "seal")
                         .font(Constants.Typography.statValue)
                         .foregroundStyle(Color.stone)
+                        .accessibilityHidden(true)
                 }
             }
         }
+        .accessibilityLabel("Goshuin seal book")
+        .accessibilityHint("Opens your collection of walk seals")
         .accessibilityIdentifier("goshuin_fab")
         .task { await loadThumbnail() }
     }

@@ -45,6 +45,7 @@ struct VoiceRecordingRow: View {
                             .foregroundColor(.stone)
                             .contentTransition(.symbolEffect(.replace))
                     }
+                    .accessibilityLabel(isActive && isPlaying ? "Pause recording" : "Play recording")
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Recording \(index)")
                             .font(Constants.Typography.body)
@@ -74,7 +75,11 @@ struct VoiceRecordingRow: View {
                             .padding(.vertical, 3)
                             .background(playbackSpeed > 1.0 ? Color.stone : Color.stone.opacity(0.12))
                             .cornerRadius(4)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
+                    .accessibilityLabel("Playback speed, \(speedLabel)")
+                    .accessibilityHint("Double tap to cycle speed")
                 }
 
                 if let samples = waveformSamples {
@@ -176,7 +181,7 @@ struct VoiceRecordingRow: View {
                     }
 
                     if !isEditing {
-                        VStack(spacing: 12) {
+                        VStack(spacing: 4) {
                             Button {
                                 editText = transcription
                                 isEditing = true
@@ -185,23 +190,29 @@ struct VoiceRecordingRow: View {
                                 Image(systemName: "pencil")
                                     .font(.caption)
                                     .foregroundColor(.fog)
-                                    .frame(minWidth: 32, minHeight: 32)
+                                    .frame(minWidth: 44, minHeight: 44)
+                                    .contentShape(Rectangle())
                             }
+                            .accessibilityLabel("Edit transcription")
                             Button {
                                 UIPasteboard.general.string = transcription
                             } label: {
                                 Image(systemName: "doc.on.doc")
                                     .font(.caption)
                                     .foregroundColor(.fog)
-                                    .frame(minWidth: 32, minHeight: 32)
+                                    .frame(minWidth: 44, minHeight: 44)
+                                    .contentShape(Rectangle())
                             }
+                            .accessibilityLabel("Copy transcription")
                             if fileAvailable {
                                 Button(action: onRetranscribe) {
                                     Image(systemName: "arrow.clockwise")
                                         .font(.caption)
                                         .foregroundColor(.fog)
-                                        .frame(minWidth: 32, minHeight: 32)
+                                        .frame(minWidth: 44, minHeight: 44)
+                                        .contentShape(Rectangle())
                                 }
+                                .accessibilityLabel("Re-transcribe recording")
                             }
                         }
                     }

@@ -7,6 +7,17 @@ struct SceneryItemView: View {
     let size: CGFloat
     let walkDate: Date
 
+    /// When Reduce Motion is on, every animated decoration freezes at a
+    /// single representative frame: the TimelineView schedule is paused
+    /// (so the `sin(time…)` sway/flicker math evaluates at a fixed
+    /// instant) and phaseAnimators collapse to a single phase. Mirrors
+    /// RippleEffectView in WalkDotView.
+    private var reduceMotion: Bool { UIAccessibility.isReduceMotionEnabled }
+
+    /// Single-phase array under Reduce Motion so phaseAnimator stops
+    /// looping; two phases otherwise to keep the pulse.
+    private var animationPhases: [Bool] { reduceMotion ? [false] : [false, true] }
+
     var body: some View {
         switch type {
         case .tree: treeView
@@ -28,7 +39,7 @@ struct SceneryItemView: View {
         let isAutumn = (9...11).contains(month)
         let isSpring = (3...5).contains(month)
 
-        return TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             let sway1 = sin(time * 0.6) * 1.5
             let sway2 = sin(time * 1.3) * 0.8
@@ -140,7 +151,7 @@ struct SceneryItemView: View {
             (0.62, 0.9, true), (0.78, 0.65, true)
         ]
 
-        return TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
 
             ZStack {
@@ -176,7 +187,7 @@ struct SceneryItemView: View {
                                 x: baseX + sin(.init(totalSway * .pi / 180)) * bladeH * 0.35,
                                 y: size * 0.2 - bladeH * 0.65
                             )
-                            .phaseAnimator([false, true]) { content, phase in
+                            .phaseAnimator(animationPhases) { content, phase in
                                 content.opacity(phase ? 0.6 : 0.2)
                             } animation: { _ in .easeInOut(duration: 1.5) }
                     }
@@ -195,7 +206,7 @@ struct SceneryItemView: View {
             ? Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: walkDate))
             : Color(uiColor: SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full, on: walkDate))
 
-        return TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             let flicker1 = sin(time * 3.7) * 0.15
             let flicker2 = sin(time * 5.3) * 0.08
@@ -232,7 +243,7 @@ struct SceneryItemView: View {
     private var butterflyView: some View {
         let wingColor = butterflySeasonalColor
 
-        return TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             let wingFlap = (sin(time * 3.8) + 1) / 2
             let drift = sin(time * 0.4) * 3
@@ -288,7 +299,7 @@ struct SceneryItemView: View {
         let daysSinceEpoch = Int(walkDate.timeIntervalSinceReferenceDate / 86400)
         let phaseScale = 0.85 + CGFloat(abs(daysSinceEpoch % 30)) / 100.0
 
-        return TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
 
             ZStack {
@@ -298,7 +309,7 @@ struct SceneryItemView: View {
                     .fill(tintColor.opacity(0.05))
                     .frame(width: size * 1.8, height: size * 1.8)
                     .blur(radius: 8)
-                    .phaseAnimator([false, true]) { content, phase in
+                    .phaseAnimator(animationPhases) { content, phase in
                         content.opacity(phase ? 0.8 : 0.4)
                     } animation: { _ in .easeInOut(duration: 3.0) }
 
@@ -377,7 +388,7 @@ struct SceneryItemView: View {
         let hour = Calendar.current.component(.hour, from: walkDate)
         let isMorning = hour >= 5 && hour < 10
 
-        return TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             let mistDrift = sin(time * 0.3) * size * 0.15
             let mistOpacity = (sin(time * 0.2) + 1) / 2 * 0.12 + 0.04
@@ -428,7 +439,7 @@ struct SceneryItemView: View {
                         .frame(width: size * 0.22, height: size * 0.13)
                         .offset(x: size * 0.1, y: -size * 0.38)
                         .blur(radius: 0.5)
-                        .phaseAnimator([false, true]) { content, phase in
+                        .phaseAnimator(animationPhases) { content, phase in
                             content.opacity(phase ? 0.3 : 0.15)
                         } animation: { _ in .easeInOut(duration: 2.0) }
 
@@ -437,7 +448,7 @@ struct SceneryItemView: View {
                         .frame(width: size * 0.14, height: size * 0.09)
                         .offset(x: -size * 0.08, y: -size * 0.28)
                         .blur(radius: 0.3)
-                        .phaseAnimator([false, true]) { content, phase in
+                        .phaseAnimator(animationPhases) { content, phase in
                             content.opacity(phase ? 0.2 : 0.08)
                         } animation: { _ in .easeInOut(duration: 2.5) }
                 }
@@ -448,7 +459,7 @@ struct SceneryItemView: View {
     // MARK: - Torii — gateway glow, shimenawa rope, fluttering shide
 
     private var toriiView: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
 
             ZStack {
@@ -466,7 +477,7 @@ struct SceneryItemView: View {
                     )
                     .frame(width: size * 0.6, height: size * 0.8)
                     .offset(y: -size * 0.05)
-                    .phaseAnimator([false, true]) { content, phase in
+                    .phaseAnimator(animationPhases) { content, phase in
                         content.opacity(phase ? 1.0 : 0.5)
                     } animation: { _ in .easeInOut(duration: 3.5) }
 

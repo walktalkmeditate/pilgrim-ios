@@ -162,7 +162,8 @@ struct WalkStartView: View {
                         .scaleEffect(showLogo ? 1.0 : 0.95)
                         .padding(.bottom, Constants.UI.Padding.big)
                         .onReceive(counterService.$stats) { stats in
-                            if let stats, stats.walkedInLastHour, !collectivePulse {
+                            if let stats, stats.walkedInLastHour, !collectivePulse,
+                               !UIAccessibility.isReduceMotionEnabled {
                                 collectivePulse = true
                             }
                         }
@@ -376,7 +377,7 @@ struct WalkStartView: View {
                             VStack(spacing: Constants.UI.Padding.xs) {
                                 Text(mode.rawValue.uppercased())
                                     .font(Constants.Typography.button)
-                                    .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.3))
+                                    .foregroundColor(mode == selectedMode ? .stone : .fog.opacity(0.55))
                                     .lineLimit(1)
                                 trailUnderline(for: mode)
                                     .frame(height: 2)
@@ -385,6 +386,8 @@ struct WalkStartView: View {
                         .frame(maxWidth: .infinity)
                     }
                     .frame(maxWidth: .infinity)
+                    .accessibilityLabel(mode.rawValue)
+                    .accessibilityAddTraits(mode == selectedMode ? .isSelected : [])
                 }
             }
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
@@ -434,7 +437,7 @@ struct WalkStartView: View {
             showLogo = true
             showQuote = true
             showMoon = true
-            breathing = true
+            breathing = false
             return
         }
 

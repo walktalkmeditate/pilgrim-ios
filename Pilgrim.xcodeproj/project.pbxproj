@@ -270,6 +270,7 @@
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
 		AA00020100000000000004 /* VoiceRecordingManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000003 /* VoiceRecordingManagement.swift */; };
 		AA00030100000000000002 /* MeditationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00030100000000000001 /* MeditationView.swift */; };
+		BB00031300000000000002 /* SoundscapePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031300000000000001 /* SoundscapePickerSheet.swift */; };
 		AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000001 /* VoiceRecordingRow.swift */; };
 		AA00040100000000000004 /* AudioPlayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000003 /* AudioPlayerModel.swift */; };
 		AA33BB44CC55DD66EE77FF88 /* EtegamiTextGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */; };
@@ -494,6 +495,7 @@
 		LR00000200000000LRRSPL01 /* RouteSourcePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */; };
 		LR00000200000000LRPMRS01 /* PilgrimMapView+RouteSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */; };
 		LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */; };
+		LR00000200000000LRWSST01 /* WaveformScrubberStepTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */; };
 		LR00000200000000LRWSRS01 /* WalkSummaryRecordingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSRS01 /* WalkSummaryRecordingsSection.swift */; };
 		LR00000200000000LRISLT01 /* InkScrollLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRISLT01 /* InkScrollLayoutTests.swift */; };
 		LR00000200000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift */; };
@@ -826,6 +828,7 @@
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
 		AA00020100000000000003 /* VoiceRecordingManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingManagement.swift; sourceTree = "<group>"; };
 		AA00030100000000000001 /* MeditationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationView.swift; sourceTree = "<group>"; };
+		BB00031300000000000001 /* SoundscapePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePickerSheet.swift; sourceTree = "<group>"; };
 		AA00040100000000000001 /* VoiceRecordingRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingRow.swift; sourceTree = "<group>"; };
 		AA00040100000000000003 /* AudioPlayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerModel.swift; sourceTree = "<group>"; };
 		AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiTextGenerator.swift; sourceTree = "<group>"; };
@@ -1046,6 +1049,7 @@
 		LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSourcePlanner.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+RouteSource.swift"; sourceTree = "<group>"; };
 		LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RoutePipelineTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WaveformScrubberStepTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSRS01 /* WalkSummaryRecordingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryRecordingsSection.swift; sourceTree = "<group>"; };
 		LR00000100000000LRISLT01 /* InkScrollLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InkScrollLayoutTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSummaryRouteCacheTests.swift; sourceTree = "<group>"; };
@@ -1753,6 +1757,7 @@
 				LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */,
 				LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */,
 				LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */,
+				LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */,
 				LR00000100000000LRISLT01 /* InkScrollLayoutTests.swift */,
 				LR00000100000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift */,
 				LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */,
@@ -1994,6 +1999,7 @@
 				BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */,
 				BB00031100000000000001 /* TurningRitualCard.swift */,
 				BB00031200000000000001 /* ActiveWalkSubviews.swift */,
+				BB00031300000000000001 /* SoundscapePickerSheet.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -2707,6 +2713,7 @@
 				AA00030100000000000002 /* MeditationView.swift in Sources */,
 				BB00031100000000000002 /* TurningRitualCard.swift in Sources */,
 				BB00031200000000000002 /* ActiveWalkSubviews.swift in Sources */,
+				BB00031300000000000002 /* SoundscapePickerSheet.swift in Sources */,
 				AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */,
 				AA0001010000000000000016 /* WalkSummaryView.swift in Sources */,
 				AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */,
@@ -2956,6 +2963,7 @@
 				LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */,
 				LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */,
 				LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */,
+				LR00000200000000LRWSST01 /* WaveformScrubberStepTests.swift in Sources */,
 				LR00000200000000LRISLT01 /* InkScrollLayoutTests.swift in Sources */,
 				LR00000200000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift in Sources */,
 				LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */,

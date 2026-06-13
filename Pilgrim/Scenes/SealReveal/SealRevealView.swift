@@ -24,6 +24,7 @@ struct SealRevealView: View {
                 .opacity(0.95)
                 .ignoresSafeArea()
                 .onTapGesture { dismiss() }
+                .accessibilityHidden(true)
 
             sealImageView
                 .scaleEffect(scale)
@@ -33,10 +34,28 @@ struct SealRevealView: View {
                     radius: 12, x: 0, y: 6
                 )
                 .onTapGesture { shareSeal() }
+                .accessibilityElement()
+                .accessibilityLabel(sealAccessibilityLabel)
+                .accessibilityAddTraits(.isImage)
+                .accessibilityAction(named: "Share seal") { shareSeal() }
+                .accessibilityAction(named: "Dismiss") { dismiss() }
         }
+        .accessibilityAddTraits(.isModal)
         .onAppear { startAnimation() }
         .onDisappear { autoDismissTask?.cancel() }
     }
+
+    private var sealAccessibilityLabel: String {
+        let date = Self.dateFormatter.string(from: walk.startDate)
+        return "Walk seal awarded for \(date)"
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
 
     @ViewBuilder
     private var sealImageView: some View {
@@ -89,7 +108,13 @@ struct SealRevealView: View {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                 phase = .revealed
             }
+            UIAccessibility.post(notification: .announcement, argument: sealAccessibilityLabel)
         }
+
+        // VoiceOver users need the seal to stay on screen long enough to reach
+        // the share/dismiss actions; 2.5s is not enough to navigate to them.
+        // Mirror the isReduceMotionEnabled gating pattern used elsewhere.
+        guard !UIAccessibility.isVoiceOverRunning else { return }
 
         autoDismissTask = Task {
             try? await Task.sleep(for: .seconds(2.5))
