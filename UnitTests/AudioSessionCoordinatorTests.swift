@@ -254,6 +254,25 @@ final class AudioSessionCoordinatorTests: XCTestCase {
         XCTAssertTrue(spy.isActive)
     }
 
+    func testDidBecomeActiveThenRealEndedArrives_resumesInsteadOfBeingSuppressed() {
+        var received: [AudioSessionCoordinator.InterruptionEvent] = []
+        coordinator.activate(for: .playbackOnly, consumer: "soundscape")
+        coordinator.addInterruptionObserver(id: "test") { received.append($0) }
+
+        coordinator._test_simulateInterruptionBegan()
+        // didBecomeActive fires and captures the generation, but its fallback is
+        // deferred. The real .ended(shouldResume: true) lands first (quick return).
+        let pendingGeneration = coordinator._test_captureDidBecomeActiveGeneration()
+        coordinator._test_simulateInterruptionEnded(shouldResume: true)
+        // The now-stale fallback timer fires — must be a no-op, not a suppressing
+        // .ended(shouldResume: false).
+        if let pendingGeneration { coordinator._test_fireInterruptionFallback(generation: pendingGeneration) }
+        pumpMainQueue()
+
+        XCTAssertEqual(received, [.began, .ended(shouldResume: true)],
+                       "the real .ended(shouldResume: true) must win; the deferred fallback must not append a suppressing .ended(false)")
+    }
+
     func testDidBecomeActiveWithoutInterruption_doesNothing() {
         coordinator.activate(for: .playbackOnly, consumer: "soundscape")
         let callsBefore = spy.calls.count

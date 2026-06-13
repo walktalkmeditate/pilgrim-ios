@@ -28,8 +28,15 @@ final class AudioSessionCoordinator {
     private var consumerModes: [String: Mode] = [:]
     private var interruptionObservers: [String: (InterruptionEvent) -> Void] = [:]
     private var isInterrupted = false
+    private var interruptionGeneration = 0
     private let session: AudioSessionApplying
     private let queue = DispatchQueue(label: "AudioSessionCoordinator")
+
+    /// How long `didBecomeActive` waits for a real `.ended` before falling back
+    /// to a no-resume recovery. On a quick return (decline a call) iOS delivers
+    /// both notifications within the same run-loop tick; the real `.ended`
+    /// (which may carry `shouldResume: true`) must win.
+    private let didBecomeActiveFallbackDelay: DispatchTimeInterval = .milliseconds(400)
 
     init(session: AudioSessionApplying = AVAudioSession.sharedInstance()) {
         self.session = session
@@ -97,6 +104,7 @@ final class AudioSessionCoordinator {
     private func interruptionDidBegin() {
         broadcast(.began) {
             self.isInterrupted = true
+            self.interruptionGeneration += 1
         }
     }
 
@@ -109,13 +117,29 @@ final class AudioSessionCoordinator {
     }
 
     /// Apple documents that `.ended` is not always delivered (e.g. the user
-    /// leaves for the interrupting app and returns much later). If the app
-    /// becomes active while still marked interrupted, recover: apply the
-    /// desired mode and close the interruption out without auto-resume.
+    /// leaves for the interrupting app and returns much later). When the app
+    /// becomes active while still interrupted, recover — but defer briefly so a
+    /// near-simultaneous real `.ended` (the quick-return case, which may carry
+    /// `shouldResume: true`) wins. Without the deferral, the fallback's
+    /// `shouldResume: false` broadcast suppresses the legitimate resume and a
+    /// consumer like the soundscape stays silent for the rest of the session.
     @objc private func handleDidBecomeActive() {
+        let generation: Int? = queue.sync {
+            isInterrupted ? interruptionGeneration : nil
+        }
+        guard let generation else { return }
+        queue.asyncAfter(deadline: .now() + didBecomeActiveFallbackDelay) { [weak self] in
+            self?.applyInterruptionFallback(generation: generation)
+        }
+    }
+
+    /// Fires only if the captured interruption is still unresolved — a real
+    /// `.ended` that arrived in the meantime cleared `isInterrupted` (and a new
+    /// interruption bumped the generation), making this a no-op.
+    private func applyInterruptionFallback(generation: Int) {
         var didRecover = false
         let observers: [(InterruptionEvent) -> Void] = queue.sync {
-            guard isInterrupted else { return [] }
+            guard isInterrupted, interruptionGeneration == generation else { return [] }
             isInterrupted = false
             didRecover = true
             apply(resolvedMode(), force: true)
@@ -217,8 +241,23 @@ extension AudioSessionCoordinator {
         interruptionDidEnd(shouldResume: shouldResume)
     }
 
+    /// Synchronous equivalent of `didBecomeActive` firing AND its fallback timer
+    /// elapsing with no intervening real `.ended` — captures the generation the
+    /// way the real handler does, then recovers immediately.
     func _test_simulateDidBecomeActive() {
-        handleDidBecomeActive()
+        guard let generation = _test_captureDidBecomeActiveGeneration() else { return }
+        applyInterruptionFallback(generation: generation)
+    }
+
+    /// Captures the interruption generation as `didBecomeActive` would, without
+    /// scheduling the deferred fallback — lets a test interleave a real `.ended`
+    /// before firing the stale fallback via `_test_fireInterruptionFallback`.
+    func _test_captureDidBecomeActiveGeneration() -> Int? {
+        queue.sync { isInterrupted ? interruptionGeneration : nil }
+    }
+
+    func _test_fireInterruptionFallback(generation: Int) {
+        applyInterruptionFallback(generation: generation)
     }
 }
 #endif
