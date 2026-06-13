@@ -158,7 +158,14 @@ final class WalkBuilderLifecycleTests: XCTestCase {
 
         XCTAssertEqual(engine.transcribeCallCount, 1, "batch must have reached the engine")
         XCTAssertFalse(service._test_isModelLoaded, "model must be released when the batch drains")
-        XCTAssertEqual(service.state, .completed, "unload must not clobber the terminal state")
+        // The fake engine throws on every file, so the only recording's
+        // transcription fails — an all-failed batch now reports `.failed`
+        // (AF32). AF33's concern is that `unloadModel()` preserves whatever
+        // terminal state the batch reached; assert the terminal state
+        // survives the unload, which it does whether `.completed` or `.failed`.
+        if case .failed = service.state {} else {
+            XCTFail("all-failed batch must reach .failed, and unload must not clobber it")
+        }
         await fulfillment(of: [unloaded], timeout: 2.0)
     }
 

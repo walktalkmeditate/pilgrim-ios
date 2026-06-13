@@ -40,6 +40,16 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     // waveform leaf observes `voiceRecordingManagement.$audioLevel`
     // directly via `RecordingLevelMeter`.
     @Published var showMicrophonePermissionNeeded = false
+    /// AF45: LocationManagement/StepCounter publish a localized permission
+    /// error into the builder's insufficientPermission relay, but nothing
+    /// consumed it — a declined location prompt left the walk screen spinning
+    /// with no explanation. Surfaced here and rendered as a Settings-linked
+    /// alert in `ActiveWalkView`, mirroring the Microphone-Required alert.
+    @Published var permissionErrorMessage: String?
+    var showPermissionError: Bool {
+        get { permissionErrorMessage != nil }
+        set { if !newValue { permissionErrorMessage = nil } }
+    }
     @Published var isMeditating = false
     private var rawDistanceMeters: Double = 0
     @Published var walkTime: String = "0:00"
@@ -196,6 +206,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         liveStats.ascent
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.ascent = $0 }
+            .store(in: &cancellables)
+
+        // AF45: a declined location/motion prompt during setup must explain
+        // itself instead of dead-ending into a permanent spinner.
+        liveStats.insufficientPermission
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in self?.permissionErrorMessage = message }
             .store(in: &cancellables)
 
         liveStats.currentLocation

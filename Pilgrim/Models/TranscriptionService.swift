@@ -187,6 +187,8 @@ final class TranscriptionService: ObservableObject {
 
         var results: [UUID: String] = [:]
         var persistenceFailures = 0
+        var transcriptionFailures = 0
+        var attempted = 0
         let total = recordings.count
 
         do {
@@ -212,6 +214,7 @@ final class TranscriptionService: ObservableObject {
             let audioURL = docs.appendingPathComponent(recording.fileRelativePath)
             guard FileManager.default.fileExists(atPath: audioURL.path) else { continue }
 
+            attempted += 1
             do {
                 let output = try await pipe.transcribeAudio(atPath: audioURL.path)
                 let text = cleanTranscription(output.text)
@@ -229,19 +232,43 @@ final class TranscriptionService: ObservableObject {
                     }
                 }
             } catch {
+                // A WhisperKit failure (corrupt audio, OOM on older devices)
+                // must not masquerade as success (AF32): count it so an
+                // all-failed batch reaches `.failed`, not `.completed`.
+                transcriptionFailures += 1
                 print("[TranscriptionService] Failed to transcribe recording \(uuid): \(error)")
             }
         }
 
-        let finalState: State = persistenceFailures == 0
-            ? .completed
-            : .failed("Couldn't save \(persistenceFailures) transcription\(persistenceFailures == 1 ? "" : "s")")
+        let finalState = Self.batchState(
+            attempted: attempted,
+            transcriptionFailures: transcriptionFailures,
+            persistenceFailures: persistenceFailures
+        )
         await MainActor.run {
             state = finalState
             isTranscribing = false
             unloadModel()
         }
         return results
+    }
+
+    /// Terminal state for a finished batch. An all-failed batch reports
+    /// `.failed` so the UI never claims success with no transcriptions
+    /// (AF32); a partial persistence failure also surfaces, while an empty
+    /// or fully-successful batch is `.completed`.
+    private static func batchState(
+        attempted: Int,
+        transcriptionFailures: Int,
+        persistenceFailures: Int
+    ) -> State {
+        if attempted > 0 && transcriptionFailures == attempted {
+            return .failed("Transcription failed — tap to retry")
+        }
+        if persistenceFailures > 0 {
+            return .failed("Couldn't save \(persistenceFailures) transcription\(persistenceFailures == 1 ? "" : "s")")
+        }
+        return .completed
     }
 
     func transcribeSingle(_ recording: VoiceRecordingInterface) async -> String? {

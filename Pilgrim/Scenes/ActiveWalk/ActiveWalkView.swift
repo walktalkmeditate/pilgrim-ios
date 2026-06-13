@@ -350,21 +350,10 @@ struct ActiveWalkView: View {
         .onReceive(viewModel.proximityService.proximityEvents) { event in
             handleProximityEvent(event)
         }
-        .alert("Location Unavailable", isPresented: $showWaypointFailed) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Waiting for a GPS fix. Try again in a moment.")
-        }
-        .alert("Microphone Required", isPresented: $viewModel.showMicrophonePermissionNeeded) {
-            Button("Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
-        }
+        .modifier(PermissionAlertsModifier(
+            viewModel: viewModel,
+            showWaypointFailed: $showWaypointFailed
+        ))
         .onAppear {
             // Seed sheet state from current walk status on FIRST mount only.
             // Guarded so that navigating away (meditation, walk summary) and
@@ -920,5 +909,42 @@ extension ActiveWalkView {
             }
             HapticPattern.cairnProximity.fire()
         }
+    }
+}
+
+/// Groups the walk screen's three Settings-linked alerts (GPS, microphone,
+/// and the AF45 location/motion permission error) into one modifier — both
+/// to keep `ActiveWalkView.body` under the Swift type-checker's timeout and
+/// to share the identical "open Settings" affordance.
+private struct PermissionAlertsModifier: ViewModifier {
+
+    @ObservedObject var viewModel: ActiveWalkViewModel
+    @Binding var showWaypointFailed: Bool
+
+    private func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .alert("Location Unavailable", isPresented: $showWaypointFailed) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Waiting for a GPS fix. Try again in a moment.")
+            }
+            .alert("Microphone Required", isPresented: $viewModel.showMicrophonePermissionNeeded) {
+                Button("Settings", action: openSettings)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
+            }
+            .alert("Permission Needed", isPresented: $viewModel.showPermissionError) {
+                Button("Settings", action: openSettings)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(viewModel.permissionErrorMessage ?? "")
+            }
     }
 }

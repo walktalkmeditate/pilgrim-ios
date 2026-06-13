@@ -156,7 +156,6 @@
 		22F0000B234A1DF8008CFAD2 /* SwitchSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0000A234A1DF8008CFAD2 /* SwitchSetting.swift */; };
 		22F0000D234A2055008CFAD2 /* Setting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0000C234A2055008CFAD2 /* Setting.swift */; };
 		22F0000F234A2821008CFAD2 /* TitleSubTitleSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0000E234A2821008CFAD2 /* TitleSubTitleSetting.swift */; };
-		22FAB3B4253BAC450040CBB1 /* Changelog.strings in Resources */ = {isa = PBXBuildFile; fileRef = 22FAB3B6253BAC450040CBB1 /* Changelog.strings */; };
 		22FD3253255F319E007719C9 /* Primitive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FD3252255F319E007719C9 /* Primitive.swift */; };
 		22FEA0A724CDA3FF0007CA9C /* ClosedRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0A624CDA3FF0007CA9C /* ClosedRange.swift */; };
 		22FEA0AB24CDD39C0007CA9C /* URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0AA24CDD39C0007CA9C /* URL.swift */; };
@@ -491,6 +490,7 @@
 		LR00000200000000LRMDLRES1 /* ModelResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */; };
 		LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */; };
 		LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */; };
+		LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */; };
 		LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */; };
 		LR00000200000000LRRSPL01 /* RouteSourcePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */; };
 		LR00000200000000LRPMRS01 /* PilgrimMapView+RouteSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */; };
@@ -707,7 +707,6 @@
 		22F0000E234A2821008CFAD2 /* TitleSubTitleSetting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleSubTitleSetting.swift; sourceTree = "<group>"; };
 		22F5B51BC494516AF77C1861 /* whisper-play-5.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-5.aac"; sourceTree = "<group>"; };
 		22FAB3A625336B600040CBB1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		22FAB3B5253BAC450040CBB1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Changelog.strings; sourceTree = "<group>"; };
 		22FD3252255F319E007719C9 /* Primitive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Primitive.swift; sourceTree = "<group>"; };
 		22FEA0A624CDA3FF0007CA9C /* ClosedRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedRange.swift; sourceTree = "<group>"; };
 		22FEA0AA24CDD39C0007CA9C /* URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URL.swift; sourceTree = "<group>"; };
@@ -1045,6 +1044,7 @@
 		LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModelResolutionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderLifecycleTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelLoadTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceBatchStateTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardDispatchTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSourcePlanner.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+RouteSource.swift"; sourceTree = "<group>"; };
@@ -1364,7 +1364,6 @@
 				56F5586A2F7F4BA500805DD0 /* stone-tier-5.m4a */,
 				56F5586B2F7F4BA500805DD0 /* stone-tier-6.m4a */,
 				56F5586C2F7F4BA500805DD0 /* stone-tier-7.m4a */,
-				22FAB3B6253BAC450040CBB1 /* Changelog.strings */,
 				22718E3725925E2D00708D3B /* contribution.json */,
 				F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */,
 				F5DBDBA14D74B3061F349DA5 /* whisper-stillness-3.aac */,
@@ -1755,6 +1754,7 @@
 				LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */,
 				LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */,
 				LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */,
+				LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */,
 				LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */,
 				LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */,
 				LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */,
@@ -2385,7 +2385,6 @@
 				22B1F13F22D61CF400C02973 /* LaunchScreen.storyboard in Resources */,
 				56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */,
 				2291863A23679AA300929885 /* InfoPlist.strings in Resources */,
-				22FAB3B4253BAC450040CBB1 /* Changelog.strings in Resources */,
 				22B1F14922D6246800C02973 /* Localizable.strings in Resources */,
 				22B6CF6122CA0815002D2FB0 /* Assets.xcassets in Resources */,
 				22718E3825925E2D00708D3B /* contribution.json in Resources */,
@@ -2961,6 +2960,7 @@
 				LR00000200000000LRMDLRES1 /* ModelResolutionTests.swift in Sources */,
 				LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */,
 				LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */,
+				LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */,
 				LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */,
 				LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */,
 				LR00000200000000LRWSST01 /* WaveformScrubberStepTests.swift in Sources */,
@@ -3031,14 +3031,6 @@
 				222A775F2527401E00317E5A /* Base */,
 			);
 			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
-		22FAB3B6253BAC450040CBB1 /* Changelog.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				22FAB3B5253BAC450040CBB1 /* en */,
-			);
-			name = Changelog.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

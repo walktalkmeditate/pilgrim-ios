@@ -8,6 +8,10 @@ final class VoiceGuideDownloadManager: ObservableObject {
 
     @Published var downloadProgress: [String: Double] = [:]
     @Published private(set) var activeDownloads: Set<String> = []
+    /// Packs whose download finished with at least one file still missing
+    /// (AF23). The settings row reads this to replace the silent revert-to-
+    /// arrow with a visible "tap to retry" affordance.
+    @Published private(set) var downloadErrors: Set<String> = []
 
     private let fileStore = VoiceGuideFileStore.shared
     private let session: URLSession
@@ -23,6 +27,7 @@ final class VoiceGuideDownloadManager: ObservableObject {
         guard !activeDownloads.contains(pack.id) else { return }
 
         activeDownloads.insert(pack.id)
+        downloadErrors.remove(pack.id)
         downloadProgress[pack.id] = 0
 
         let task = Task {
@@ -38,12 +43,14 @@ final class VoiceGuideDownloadManager: ObservableObject {
             }
 
             var completed = 0
+            var failures = 0
             for prompt in missing {
                 guard !Task.isCancelled else { break }
-                let success = await download(prompt: prompt, packId: pack.id)
+                var success = await download(prompt: prompt, packId: pack.id)
                 if !success {
-                    _ = await download(prompt: prompt, packId: pack.id)
+                    success = await download(prompt: prompt, packId: pack.id)
                 }
+                if !success { failures += 1 }
                 completed += 1
                 let progressSnapshot = Double(completed) / Double(total)
                 await MainActor.run {
@@ -51,8 +58,12 @@ final class VoiceGuideDownloadManager: ObservableObject {
                 }
             }
 
+            let didFail = failures > 0 && !Task.isCancelled
             await MainActor.run {
                 _ = self.activeDownloads.remove(pack.id)
+                if didFail {
+                    self.downloadErrors.insert(pack.id)
+                }
             }
         }
         downloadTasks[pack.id] = task
@@ -63,6 +74,7 @@ final class VoiceGuideDownloadManager: ObservableObject {
         downloadTasks[packId] = nil
         activeDownloads.remove(packId)
         downloadProgress[packId] = nil
+        downloadErrors.remove(packId)
     }
 
     private func download(prompt: VoiceGuidePrompt, packId: String) async -> Bool {

@@ -112,6 +112,26 @@ class MainCoordinator: ObservableObject {
         }
     }
 
+    /// AF60: the share path must NOT set `completedSnapshot` and the share
+    /// URL in the same update — two sibling `.sheet(item:)` presentations
+    /// requested simultaneously race, and one is dropped. Dismiss the seal,
+    /// hold the snapshot, and let the share sheet present alone; the summary
+    /// is promoted from `handleSealShareDismiss` once the share sheet closes.
+    func handleSealShare() {
+        showSealReveal = false
+        if let walk = sealRevealWalk {
+            pendingSnapshot = walk
+            sealRevealWalk = nil
+        }
+    }
+
+    func handleSealShareDismiss() {
+        if let snapshot = pendingSnapshot {
+            pendingSnapshot = nil
+            completedSnapshot = snapshot
+        }
+    }
+
     func handleSummaryDismiss() {
         Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
         homeViewModel.loadWalks()

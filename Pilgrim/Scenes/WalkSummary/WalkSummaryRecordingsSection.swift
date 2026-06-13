@@ -175,6 +175,14 @@ struct WalkSummaryRecordingsSection: View {
                 Text(message)
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
+                Spacer()
+                if hasUntranscribedRecordings {
+                    Button(action: { Task { await transcribeAll() } }) {
+                        Text("Retry")
+                            .font(Constants.Typography.button)
+                            .foregroundColor(.stone)
+                    }
+                }
             }
             .padding(.vertical, 4)
         default:
