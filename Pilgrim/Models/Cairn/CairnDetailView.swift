@@ -131,7 +131,10 @@ struct CairnDetailView: View {
 
     private var eternalBadge: some View {
         Text("108")
-            .font(.system(size: 14, weight: .light, design: .serif))
+            // Plain ASCII digits, fully covered by the brand serif — no
+            // glyph-coverage excuse for .system. Cormorant Garamond Light
+            // matches the displayLarge/Medium/caption token family.
+            .font(.custom("CormorantGaramond-Light", size: 14))
             .foregroundColor(.dawn.opacity(breathing ? 0.8 : 0.5))
             .tracking(4)
             .padding(.top, Constants.UI.Padding.normal)

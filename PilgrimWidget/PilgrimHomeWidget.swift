@@ -44,27 +44,29 @@ struct PilgrimHomeWidget: Widget {
     // MARK: - Adaptive colors
     //
     // The widget can appear on any wallpaper / in any color scheme, so
-    // these need to adapt between light and dark mode. Values match
-    // the main app's parchment / ink / fog asset catalog entries; kept
-    // inline because the widget extension doesn't share an asset catalog
-    // with the iOS target.
+    // these need to adapt between light and dark mode. Values are copied
+    // verbatim from the main app's parchment / ink / fog asset catalog
+    // entries (Assets.xcassets/{parchment,ink,fog}.colorset/Contents.json);
+    // kept inline because the widget extension doesn't share an asset
+    // catalog with the iOS target. Keep these in sync if the catalog
+    // values change.
 
     static let parchment = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 0.110, green: 0.098, blue: 0.078, alpha: 1.0)
-            : UIColor(red: 0.961, green: 0.945, blue: 0.914, alpha: 1.0)
+            : UIColor(red: 0.961, green: 0.941, blue: 0.910, alpha: 1.0)
     })
 
     static let ink = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 0.941, green: 0.922, blue: 0.882, alpha: 1.0)
-            : UIColor(red: 0.110, green: 0.098, blue: 0.078, alpha: 1.0)
+            : UIColor(red: 0.173, green: 0.141, blue: 0.086, alpha: 1.0)
     })
 
     static let fog = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 0.580, green: 0.557, blue: 0.533, alpha: 1.0)
-            : UIColor(red: 0.420, green: 0.388, blue: 0.349, alpha: 1.0)
+            : UIColor(red: 0.541, green: 0.506, blue: 0.459, alpha: 1.0)
     })
 }
 
@@ -142,6 +144,11 @@ struct PilgrimHomeWidgetView: View {
                 .foregroundColor(PilgrimHomeWidget.ink)
 
             Text(entry.phrase)
+                // Cormorant Garamond (display/body) role. The widget target
+                // doesn't bundle the brand font files, so per the AF74
+                // accepted-with-reason fallback we approximate the serif with
+                // .system(design: .serif). See PilgrimWidgetLiveActivity.swift
+                // for the full rationale.
                 .font(.system(family == .systemMedium ? .callout : .caption, design: .serif))
                 .italic()
                 .foregroundColor(PilgrimHomeWidget.fog)

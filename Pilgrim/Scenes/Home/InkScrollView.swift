@@ -463,7 +463,10 @@ struct InkScrollView: View {
                                 )
                                 .opacity(isExpandedArchived ? 1 : 0)
                         )
-                        .shadow(color: .ink.opacity(0.1), radius: 12, y: -4)
+                        // Fixed .black, not adaptive .ink: .ink inverts to
+                        // near-white in dark mode and renders as a faint white
+                        // glow across the card instead of a shadow.
+                        .shadow(color: .black.opacity(0.1), radius: 12, y: -4)
                 )
                 .padding(.horizontal, Constants.UI.Padding.normal)
                 .padding(.bottom, 8)

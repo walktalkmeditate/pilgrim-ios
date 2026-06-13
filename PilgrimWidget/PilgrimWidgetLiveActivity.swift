@@ -2,8 +2,25 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
+// Typography note (accepted-with-reason — AF74):
+//
+// The app's brand fonts are Cormorant Garamond (serif display/body) and
+// Lato (timer/stat/caption), registered in the main app via UIAppFonts.
+// The PilgrimWidget extension does NOT bundle these font files and adding
+// them would require hand-editing the .pbxproj to give the extension its
+// own copy of the resources plus a UIAppFonts entry — project-file surgery
+// with real risk of breaking the build, on a memory-constrained extension.
+//
+// Committed fallback (per the v1.7.0 plan): approximate the brand roles
+// with system fonts — `.system(design: .serif)` for Cormorant Garamond
+// roles (the mantra / intention text) and plain `.system` for Lato roles
+// (timers, distance/duration numbers and their labels). This keeps the
+// widget legible and close to brand while avoiding the embedding risk.
 struct PilgrimWidgetLiveActivity: Widget {
 
+    // Lock-screen Live Activity is composited on the system's own
+    // (typically dark) chrome, so these are fixed brand values rather than
+    // adaptive — parchment-dark surface, ink-dark text, fog-light label.
     private static let parchment = Color(red: 0.110, green: 0.098, blue: 0.078)
     private static let ink = Color(red: 0.941, green: 0.922, blue: 0.882)
     private static let fog = Color(red: 0.420, green: 0.388, blue: 0.349)
@@ -138,7 +155,7 @@ struct PilgrimWidgetLiveActivity: Widget {
                             .foregroundColor(Self.ink)
                     }
                     Text("Duration")
-                        .font(.system(.caption2, design: .serif))
+                        .font(.system(.caption2))
                         .foregroundColor(Self.fog)
                 }
 
@@ -149,7 +166,7 @@ struct PilgrimWidgetLiveActivity: Widget {
                         .font(.system(.title2, design: .rounded).monospacedDigit())
                         .foregroundColor(Self.ink)
                     Text("Distance")
-                        .font(.system(.caption2, design: .serif))
+                        .font(.system(.caption2))
                         .foregroundColor(Self.fog)
                 }
 

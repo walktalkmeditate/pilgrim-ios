@@ -31,7 +31,9 @@ struct CelestialVignetteView: View {
         .background(
             Capsule()
                 .fill(Color.parchmentSecondary)
-                .shadow(color: .ink.opacity(0.08), radius: 4, y: 2)
+                // Fixed .black, not adaptive .ink: .ink inverts to near-white
+                // in dark mode and renders as a bright halo around the capsule.
+                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
         )
         .overlay(turningHalo)
     }

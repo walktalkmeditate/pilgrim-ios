@@ -141,6 +141,7 @@ struct WalkSummaryRecordingsSection: View {
             }
 
             Text("\(walk.voiceRecordings.count)")
+                .font(Constants.Typography.statLabel)
                 .foregroundColor(.fog)
         }
     }

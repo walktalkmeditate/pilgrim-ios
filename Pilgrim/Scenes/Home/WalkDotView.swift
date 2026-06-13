@@ -78,7 +78,9 @@ struct WalkDotView: View {
                 )
                 .frame(width: size, height: size)
                 .opacity(opacity)
-                .shadow(color: .ink.opacity(0.15), radius: 2, x: 1, y: 2)
+                // Fixed .black, not adaptive .ink: .ink inverts to near-white
+                // in dark mode and renders as a light halo around every dot.
+                .shadow(color: .black.opacity(0.15), radius: 2, x: 1, y: 2)
 
             faviconOverlay(size: size)
 
@@ -124,7 +126,10 @@ struct WalkDotView: View {
                 .font(.system(size: size * 0.4))
                 .bold()
                 .foregroundColor(.parchment)
-                .shadow(color: .ink.opacity(0.4), radius: 0.5, x: 0, y: 0.5)
+                // Fixed .black, not adaptive .ink: the favicon glyph sits on
+                // the dot, and an adaptive ink shadow would flip to a white
+                // halo in dark mode.
+                .shadow(color: .black.opacity(0.4), radius: 0.5, x: 0, y: 0.5)
                 .frame(width: size, height: size)
                 .opacity(opacity)
         }

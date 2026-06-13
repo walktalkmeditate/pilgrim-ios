@@ -728,8 +728,12 @@ struct ActiveWalkView: View {
                 .frame(width: 28, height: 28)
                 .background(
                     Circle()
+                        // Fixed .black, not adaptive .ink: .ink inverts to
+                        // near-white in dark mode and renders as a light halo
+                        // under each button on the dark map. Matches the fixed
+                        // shadow on the stats sheet background above.
                         .fill(Color.parchmentSecondary)
-                        .shadow(color: .ink.opacity(0.08), radius: 4, y: 2)
+                        .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                 )
         }
     }
