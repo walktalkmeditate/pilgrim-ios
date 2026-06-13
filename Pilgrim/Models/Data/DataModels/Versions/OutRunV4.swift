@@ -34,14 +34,7 @@ public enum OutRunV4: DataModelProtocol {
             Entity<OutRunV4.WorkoutHeartRateDataSample>(OutRunV4.WorkoutHeartRateDataSample.identifier),
             Entity<OutRunV4.Event>(OutRunV4.Event.identifier)
         ],
-        versionLock: OutRunV4.versionLock
-    )
-    /// Dev-time edit protection only. `nil` in release so `CoreStoreSchema.init` skips the eager
-    /// `rawModel()` build its hash assertion would otherwise force unconditionally (#42 launch cost).
-    /// The lock hashes are preserved, not removed — they still guard schema edits in DEBUG/CI.
-    static let versionLock: VersionLock? = {
-        #if DEBUG
-        return [
+        versionLock: [
             OutRunV4.Workout.identifier: [0x444d1aab795ccbda, 0xa658e0bda7a25532, 0x64717ba1bab265ff, 0x4c16c8b02b5443e2],
             OutRunV4.WorkoutPause.identifier: [0x89c52b63c97fb5c1, 0xa652377da0a883b8, 0x43cfd39627f2cc09, 0x33ce6792256451a7],
             OutRunV4.WorkoutEvent.identifier: [0xab96203b4ad8735, 0x83a3706df06897f9, 0x499ccfb06aa82a1f, 0xb3653fd2be428391],
@@ -49,10 +42,7 @@ public enum OutRunV4: DataModelProtocol {
             OutRunV4.WorkoutHeartRateDataSample.identifier: [0xe8260e997046484b, 0x9d918b9c9db17754, 0x8aebb7846be2bf3d, 0x5e25afd102fd1221],
             OutRunV4.Event.identifier: [0xa36fbda0ab520d10, 0x9ce68b9574d00cac, 0x8ebf7e6d9b4cf7d6, 0x3453773d7b64366]
         ]
-        #else
-        return nil
-        #endif
-    }()
+    )
     static let mappingProvider: CustomSchemaMappingProvider? = CustomSchemaMappingProvider(
         from: OutRunV3to4.identifier,
         to: OutRunV4.identifier,
