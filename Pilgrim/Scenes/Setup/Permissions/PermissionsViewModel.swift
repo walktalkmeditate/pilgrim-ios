@@ -30,6 +30,9 @@ class PermissionsViewModel: ObservableObject {
     @Published var microphoneDecided = false
     @Published var motionDecided = false
     @Published var shakeLocationCard = false
+    @Published var locationPulse = false
+    @Published var microphonePulse = false
+    @Published var motionPulse = false
 
     var canTransition: Bool { locationGranted }
 
@@ -37,10 +40,20 @@ class PermissionsViewModel: ObservableObject {
     private let onComplete: () -> Void
     private let skipInitialCheck: Bool
 
-    init(permissionManager: PermissionManager?, onComplete: @escaping () -> Void, skipInitialCheck: Bool = false) {
+    /// Injectable so unit tests can assert "bell fired / did not fire"
+    /// without touching audio. Production wires the real BellPlayer path.
+    private let playBell: () -> Void
+
+    init(
+        permissionManager: PermissionManager?,
+        onComplete: @escaping () -> Void,
+        skipInitialCheck: Bool = false,
+        playBell: (() -> Void)? = nil
+    ) {
         self.permissionManager = permissionManager
         self.onComplete = onComplete
         self.skipInitialCheck = skipInitialCheck
+        self.playBell = playBell ?? PermissionsViewModel.playGrantBell
     }
 
     func checkExistingPermissions() {
@@ -57,6 +70,7 @@ class PermissionsViewModel: ObservableObject {
             if status == .granted {
                 self.locationGranted = true
                 self.locationDenied = false
+                self.celebrateGrant(.location)
             } else {
                 self.handleLocationDenied()
             }
@@ -70,6 +84,7 @@ class PermissionsViewModel: ObservableObject {
             if granted {
                 self.microphoneGranted = true
                 self.microphoneDenied = false
+                self.celebrateGrant(.microphone)
             } else {
                 self.microphoneDenied = true
             }
@@ -79,7 +94,9 @@ class PermissionsViewModel: ObservableObject {
     func requestMotion() {
         motionDecided = true
         permissionManager?.checkMotionPermission { [weak self] granted in
-            self?.motionGranted = granted
+            guard let self else { return }
+            self.motionGranted = granted
+            if granted { self.celebrateGrant(.motion) }
         }
     }
 
@@ -89,6 +106,53 @@ class PermissionsViewModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.shakeLocationCard = false
         }
+    }
+
+    /// The grant ritual: a one-shot bell (once per permission, persisted) and
+    /// checkmark pulse when a permission is granted. The bell honors
+    /// `soundsEnabled`; Reduce Motion keeps the (meaningful) bell but skips the
+    /// pulse. A subtle success haptic mirrors the welcome flow's footprint
+    /// haptics for tactile coherence.
+    func celebrateGrant(_ permission: PermissionRitual.Permission) {
+        let shouldBell = PermissionRitual.consumeBellGrant(
+            for: permission,
+            granted: true,
+            soundsEnabled: UserPreferences.soundsEnabled.value
+        )
+
+        if shouldBell {
+            playBell()
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        }
+
+        guard !UIAccessibility.isReduceMotionEnabled else { return }
+        pulse(permission)
+    }
+
+    /// One-shot pulse: flip the flag on (the view springs the checkmark to
+    /// 1.15), then off after the grow settles so it springs back to 1.0.
+    /// A single bool drives a `.animation(value:)` scale — no @State array
+    /// mutated inside a repeating animation (CLAUDE.md resource-safety rule).
+    private func pulse(_ permission: PermissionRitual.Permission) {
+        setPulse(permission, true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            self?.setPulse(permission, false)
+        }
+    }
+
+    private func setPulse(_ permission: PermissionRitual.Permission, _ value: Bool) {
+        switch permission {
+        case .location: locationPulse = value
+        case .microphone: microphonePulse = value
+        case .motion: motionPulse = value
+        }
+    }
+
+    private static func playGrantBell() {
+        guard let bellId = UserPreferences.meditationEndBellId.value,
+              let asset = AudioManifestService.shared.asset(byId: bellId),
+              AudioFileStore.shared.isAvailable(asset) else { return }
+        BellPlayer.shared.play(asset, volume: 0.5, withHaptic: false)
     }
 
     func openSettings() {

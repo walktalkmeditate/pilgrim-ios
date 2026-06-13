@@ -508,6 +508,8 @@
 		PERM000100000003 /* PermissionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000002 /* PermissionsViewModel.swift */; };
 		PERM000100000005 /* PermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000004 /* PermissionsViewModelTests.swift */; };
 		PERM000100000007 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000006 /* PermissionsView.swift */; };
+		PERMRTL00000000000003 /* PermissionRitual.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERMRTL00000000000002 /* PermissionRitual.swift */; };
+		PERMRTL00000000000005 /* PermissionRitualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERMRTL00000000000004 /* PermissionRitualTests.swift */; };
 		SEALRVL000000000000001 /* SealRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SEALRVL000000000000002 /* SealRevealView.swift */; };
 		WLKSHRBTN00000000000001 /* WalkSharingButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */; };
 		WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHOVR0000000000000002 /* WeatherOverlayView.swift */; };
@@ -1062,6 +1064,8 @@
 		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
 		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
 		PERM000100000006 /* PermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
+		PERMRTL00000000000002 /* PermissionRitual.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionRitual.swift; sourceTree = "<group>"; };
+		PERMRTL00000000000004 /* PermissionRitualTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionRitualTests.swift; sourceTree = "<group>"; };
 		SEALRVL000000000000002 /* SealRevealView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SealRevealView.swift; sourceTree = "<group>"; };
 		WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSharingButtons.swift; sourceTree = "<group>"; };
 		WTHOVR0000000000000002 /* WeatherOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayView.swift; sourceTree = "<group>"; };
@@ -1706,6 +1710,7 @@
 				BBBB000000000000000042 /* PhotoNarrativeArcTests.swift */,
 				BB00CC010000000000000002 /* WelcomeViewModelTests.swift */,
 				PERM000100000004 /* PermissionsViewModelTests.swift */,
+				PERMRTL00000000000004 /* PermissionRitualTests.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */,
 				90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */,
 				0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */,
@@ -2196,6 +2201,7 @@
 			children = (
 				PERM000100000002 /* PermissionsViewModel.swift */,
 				PERM000100000006 /* PermissionsView.swift */,
+				PERMRTL00000000000002 /* PermissionRitual.swift */,
 			);
 			path = Permissions;
 			sourceTree = "<group>";
@@ -2547,6 +2553,7 @@
 				BREATH000000000000000002 /* BreathTransitionView.swift in Sources */,
 				PERM000100000003 /* PermissionsViewModel.swift in Sources */,
 				PERM000100000007 /* PermissionsView.swift in Sources */,
+				PERMRTL00000000000003 /* PermissionRitual.swift in Sources */,
 				2230925F24D6F6A700A3F636 /* WalkBuilder+Status.swift in Sources */,
 				22623C0122DFBB71004065C6 /* Sequence.swift in Sources */,
 				226E9A4B23F01E6E00992815 /* Date.swift in Sources */,
@@ -2909,6 +2916,7 @@
 				BBBB000000000000000043 /* PhotoNarrativeArcTests.swift in Sources */,
 				BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */,
 				PERM000100000005 /* PermissionsViewModelTests.swift in Sources */,
+				PERMRTL00000000000005 /* PermissionRitualTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */,
 				0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */,
 				3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */,
