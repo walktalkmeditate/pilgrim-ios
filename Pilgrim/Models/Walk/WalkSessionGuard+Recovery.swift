@@ -22,7 +22,7 @@ extension WalkSessionGuard {
     /// - fileURL: absolute URL of the on-disk file. Pass `nil` to skip the
     ///   disk check entirely (used in tests with the `durationProbe` param).
     /// - durationProbe: returns the playable duration for a file. In
-    ///   production, defaults to `AVURLAsset(url:).duration` seconds.
+    ///   production, defaults to `AVAudioFile` frame-count seconds.
     ///   Override in tests to avoid AVFoundation dependencies.
     static func sanitizeRecording(
         _ recording: TempVoiceRecording,
@@ -50,10 +50,15 @@ extension WalkSessionGuard {
         )
     }
 
-    private static func defaultDurationProbe(_ url: URL) -> Double {
-        let asset = AVURLAsset(url: url)
-        let seconds = CMTimeGetSeconds(asset.duration)
-        return seconds.isFinite ? seconds : 0
+    /// Playable duration in seconds from the decoded audio frames. A file an
+    /// AVAudioRecorder was SIGKILL'd before closing has no readable moov atom,
+    /// so `AVAudioFile(forReading:)` throws and we return 0 — the signal
+    /// `sanitizeRecording` and the orphan scan both treat as "unplayable".
+    static func defaultDurationProbe(_ url: URL) -> Double {
+        guard let file = try? AVAudioFile(forReading: url) else { return 0 }
+        let sampleRate = file.processingFormat.sampleRate
+        guard sampleRate > 0 else { return 0 }
+        return Double(file.length) / sampleRate
     }
 
     /// `sweepGate` is resolved on every path that leaves no checkpoint
@@ -209,8 +214,7 @@ extension WalkSessionGuard {
             let relativePath = "Recordings/\(walkUUID.uuidString)/\(file.lastPathComponent)"
             guard !existingPaths.contains(relativePath) else { continue }
 
-            let asset = AVURLAsset(url: file)
-            let duration = CMTimeGetSeconds(asset.duration)
+            let duration = defaultDurationProbe(file)
             guard duration > 0 else { continue }
 
             let modDate = (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date()

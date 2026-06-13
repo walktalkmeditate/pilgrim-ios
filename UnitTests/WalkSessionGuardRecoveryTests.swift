@@ -337,4 +337,27 @@ final class WalkSessionGuardRecoveryTests: XCTestCase {
 
         XCTAssertEqual(sanitized.fileRelativePath, "Recordings/ABC/rec.m4a")
     }
+
+    func test_defaultDurationProbe_readsDuration_fromPlayableFile() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("probe-\(UUID().uuidString).wav")
+        try TestAudioFile.writeSilentAudioFile(to: url, duration: 3.0)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let seconds = WalkSessionGuard.defaultDurationProbe(url)
+
+        XCTAssertEqual(seconds, 3.0, accuracy: 0.1)
+    }
+
+    func test_defaultDurationProbe_returnsZero_forMissingOrCorruptFile() throws {
+        let missing = URL(fileURLWithPath: "/does/not/exist.m4a")
+        XCTAssertEqual(WalkSessionGuard.defaultDurationProbe(missing), 0)
+
+        let corrupt = FileManager.default.temporaryDirectory
+            .appendingPathComponent("corrupt-\(UUID().uuidString).m4a")
+        try Data([0x00, 0x01, 0x02, 0x03]).write(to: corrupt)
+        defer { try? FileManager.default.removeItem(at: corrupt) }
+
+        XCTAssertEqual(WalkSessionGuard.defaultDurationProbe(corrupt), 0)
+    }
 }
