@@ -510,6 +510,7 @@
 		WLKSHRBTN00000000000001 /* WalkSharingButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */; };
 		WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHOVR0000000000000002 /* WeatherOverlayView.swift */; };
 		WTHRSVC0000000000000001 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000002 /* WeatherService.swift */; };
+		567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99D82F6F41030006A58E /* WeatherKitREST.swift */; };
 		WTHRSVC0000000000000005 /* WeatherKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000004 /* WeatherKit.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHVIG0000000000000002 /* WeatherVignetteView.swift */; };
 /* End PBXBuildFile section */
@@ -1062,6 +1063,7 @@
 		WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSharingButtons.swift; sourceTree = "<group>"; };
 		WTHOVR0000000000000002 /* WeatherOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayView.swift; sourceTree = "<group>"; };
 		WTHRSVC0000000000000002 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		567B99D82F6F41030006A58E /* WeatherKitREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitREST.swift; sourceTree = "<group>"; };
 		WTHRSVC0000000000000004 /* WeatherKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WeatherKit.framework; path = System/Library/Frameworks/WeatherKit.framework; sourceTree = SDKROOT; };
 		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -2206,6 +2208,7 @@
 			isa = PBXGroup;
 			children = (
 				WTHRSVC0000000000000002 /* WeatherService.swift */,
+				567B99D82F6F41030006A58E /* WeatherKitREST.swift */,
 				WTHOVR0000000000000002 /* WeatherOverlayView.swift */,
 				WTHVIG0000000000000002 /* WeatherVignetteView.swift */,
 			);
@@ -2796,6 +2799,7 @@
 				E45CCFD6C6A29B3BC03CF2AC /* MeditationGuideManagement.swift in Sources */,
 				3DF4B121DEE87CA7EBB26207 /* VoiceGuideSettingsView.swift in Sources */,
 				WTHRSVC0000000000000001 /* WeatherService.swift in Sources */,
+				567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */,
 				WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */,
 				WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */,
 				73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */,

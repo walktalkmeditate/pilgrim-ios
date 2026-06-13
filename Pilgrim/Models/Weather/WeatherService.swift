@@ -95,9 +95,21 @@ final class WeatherService {
             )
             return snapshot
         } catch {
-            print("[WeatherService] native WeatherKit fetch failed: \(error)")
+            print("[WeatherService] native WeatherKit fetch failed (\(error)); trying REST fallback")
+            return await fetchViaREST(location: location)
+        }
+    }
+
+    private func fetchViaREST(location: CLLocation) async -> WeatherSnapshot? {
+        guard WeatherKitREST.shared.isConfigured else {
+            print("[WeatherService] REST fallback not configured")
             return nil
         }
+        let snapshot = await WeatherKitREST.shared.fetchCurrent(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude
+        )
+        return snapshot
     }
 
     private func mapCondition(_ condition: WeatherKit.WeatherCondition, windSpeed: Double) -> WeatherCondition {
