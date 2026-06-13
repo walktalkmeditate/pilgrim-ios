@@ -112,18 +112,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 self.appLaunchState = .done
                 mark("appLaunchState = .done (WelcomeView can render)")
 
-                // Launch cleanup ordering (AF2): the orphan sweep runs only
-                // once BOTH path recovery has finished AND any crashed-walk
-                // checkpoint has been recovered (WalkSessionGuard resolves
-                // the gate from MainCoordinator). The no-checkpoint fast
-                // path below keeps the sweep alive for onboarding/migration
-                // sessions where MainCoordinator never constructs.
-                RecordingPathRecovery.run {
-                    OrphanSweepGate.shared.notePathRecoveryComplete()
-                }
-                if !FileManager.default.fileExists(atPath: WalkSessionGuard.checkpointFileURL().path) {
-                    OrphanSweepGate.shared.noteWalkRecoveryResolved()
-                }
+                self.startLaunchRecordingCleanup()
 
                 // Manifest-service init is intentionally cheap (issue #42):
                 // the first `.shared` touch used to burn ~880ms of
@@ -149,6 +138,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         )
         
         return true
+    }
+
+    /// Launch cleanup ordering (AF2): the orphan sweep runs only once BOTH
+    /// path recovery has finished AND any crashed-walk checkpoint has been
+    /// recovered (WalkSessionGuard resolves the gate from MainCoordinator).
+    /// The no-checkpoint fast path keeps the sweep alive for
+    /// onboarding/migration sessions where MainCoordinator never constructs.
+    ///
+    /// Skipped under XCTest: the shared-singleton sweep enumerates the real
+    /// Documents/Recordings tree on the production stack, which races recovery
+    /// unit tests that write fixture audio into that same process-global
+    /// directory (same reasoning as parseTurningStubLaunchArg). The shipping
+    /// app never loads XCTestCase, so this guard is inert in production.
+    private func startLaunchRecordingCleanup() {
+        guard NSClassFromString("XCTestCase") == nil else { return }
+
+        RecordingPathRecovery.run {
+            OrphanSweepGate.shared.notePathRecoveryComplete()
+        }
+        if !FileManager.default.fileExists(atPath: WalkSessionGuard.checkpointFileURL().path) {
+            OrphanSweepGate.shared.noteWalkRecoveryResolved()
+        }
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
