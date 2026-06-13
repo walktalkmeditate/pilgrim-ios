@@ -30,11 +30,21 @@ enum OutRunV2: DataModelProtocol {
             Entity<OutRunV2.Workout>(OutRunV2.Workout.identifier),
             Entity<OutRunV2.RouteDataSample>(OutRunV2.RouteDataSample.identifier)
         ],
-        versionLock: [
+        versionLock: OutRunV2.versionLock
+    )
+    /// Dev-time edit protection only. `nil` in release so `CoreStoreSchema.init` skips the eager
+    /// `rawModel()` build its hash assertion would otherwise force unconditionally (#42 launch cost).
+    /// The lock hashes are preserved, not removed — they still guard schema edits in DEBUG/CI.
+    static let versionLock: VersionLock? = {
+        #if DEBUG
+        return [
             OutRunV2.RouteDataSample.identifier: [0x865fb73f2cdbf5f7, 0x322dae8d9552dfd8, 0x8c36786459eb5f29, 0xad1726d869fe374d],
             OutRunV2.Workout.identifier: [0x90b4ea34c3fa02ba, 0xd0fc71464bbbc8bf, 0xe102925a95892881, 0x203a9cb9289fd3a7]
         ]
-    )
+        #else
+        return nil
+        #endif
+    }()
     static let mappingProvider: CustomSchemaMappingProvider? = CustomSchemaMappingProvider(
         from: OutRunV1.identifier,
         to: OutRunV2.identifier,

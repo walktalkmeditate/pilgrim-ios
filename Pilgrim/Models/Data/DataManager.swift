@@ -78,7 +78,7 @@ struct DataManager {
         self.storage = storage
         dmMark("SQLiteStore + mappingProviders built")
 
-        // select relevant versions
+        // select relevant versions (newest-first probe: an up-to-date store resolves on the first probe)
         let currentVersion = storage.currentORModel(from: dataModel.migrationChain)
         dmMark("currentORModel resolved (current=\(currentVersion.map { String(describing: $0) } ?? "nil"))")
 
