@@ -484,6 +484,7 @@
 		LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */; };
 		LR00000200000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */; };
 		LR00000200000000LRMDLRES1 /* ModelResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */; };
+		LR00000200000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift */; };
 		LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */; };
 		LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */; };
 		LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */; };
@@ -1037,6 +1038,7 @@
 		LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImportTransactionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeleteRuleVersionHashTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModelResolutionTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoshuinMilestonesPerfTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderLifecycleTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelLoadTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceBatchStateTests.swift; sourceTree = "<group>"; };
@@ -1747,6 +1749,7 @@
 				LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */,
 				LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */,
 				LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */,
+				LR00000100000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift */,
 				LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */,
 				LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */,
 				LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */,
@@ -2954,6 +2957,7 @@
 				LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */,
 				LR00000200000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift in Sources */,
 				LR00000200000000LRMDLRES1 /* ModelResolutionTests.swift in Sources */,
+				LR00000200000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift in Sources */,
 				LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */,
 				LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */,
 				LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */,
