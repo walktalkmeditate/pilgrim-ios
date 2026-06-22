@@ -187,11 +187,11 @@ struct InkScrollView: View {
                 Group {
                     switch statMode {
                     case .walks:
-                        Text("\(totalWalks) walks · \(months) months")
+                        Text("\(totalWalks) walk\(totalWalks == 1 ? "" : "s") · \(months) month\(months == 1 ? "" : "s")")
                     case .talks:
-                        Text("\(talkers) walks with talk")
+                        Text("\(talkers) walk\(talkers == 1 ? "" : "s") with talk")
                     case .meditations:
-                        Text("\(meditators) walks with meditation")
+                        Text("\(meditators) walk\(meditators == 1 ? "" : "s") with meditation")
                     }
                 }
                 .font(Constants.Typography.caption)
