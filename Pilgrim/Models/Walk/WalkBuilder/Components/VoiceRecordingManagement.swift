@@ -143,18 +143,26 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     }
 
     private func flushCurrentRecording() {
-        guard isRecording, let recorder = audioRecorder else {
+        guard isRecording, audioRecorder != nil else {
             builder?.flushVoiceRecordings(voiceRecordingsRelay.value)
             return
         }
+        commitActiveRecordingAndReset()
+        builder?.flushVoiceRecordings(voiceRecordingsRelay.value)
+    }
+
+    /// Stop the recorder, commit the audio captured so far, and clear all
+    /// recording state. The delegate is detached before stopping so the commit
+    /// runs exactly once here, not again via `audioRecorderDidFinishRecording`.
+    /// Tolerates a nil `audioRecorder` for the test-injected recording path.
+    private func commitActiveRecordingAndReset() {
         stopMetering()
         isRecording = false
         recordingStartDate = nil
+        audioRecorder?.delegate = nil
+        audioRecorder?.stop()
         audioRecorder = nil
-        recorder.delegate = nil
-        recorder.stop()
         commitRecording(successfully: true)
-        builder?.flushVoiceRecordings(voiceRecordingsRelay.value)
     }
 
     private func commitRecording(successfully flag: Bool) {
@@ -270,6 +278,10 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     }
 
     #if DEBUG
+    /// Overrides `recorderStillCapturing` in tests, where no real AVAudioRecorder
+    /// exists to report its state.
+    private var testRecorderCapturingOverride: Bool?
+
     /// Test-only hook. Sets the internal state that `startRecording()` would set
     /// without requiring AVAudioSession permission in the unit-test environment.
     func _test_setActiveRecording(start: Date, relativePath: String) {
@@ -278,12 +290,28 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         recordingStartDate = start
         isRecording = true
     }
+
+    /// Test-only hook. Simulates whether the underlying recorder survived an
+    /// interruption (true) or was stopped by it (false).
+    func _test_setRecorderCapturing(_ capturing: Bool) {
+        testRecorderCapturingOverride = capturing
+    }
     #endif
 }
 
 extension VoiceRecordingManagement: AVAudioRecorderDelegate {
 
     public func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        // An OS-driven finish (encoder failure, hardware/route loss) can fire
+        // while our flags still say "recording". Reset them so the UI doesn't
+        // show a live talk backed by a dead recorder, and the walk-end flush
+        // can't silently drop an already-finalized file.
+        if isRecording {
+            stopMetering()
+            isRecording = false
+            recordingStartDate = nil
+            audioRecorder = nil
+        }
         commitRecording(successfully: flag)
     }
 }
@@ -291,39 +319,57 @@ extension VoiceRecordingManagement: AVAudioRecorderDelegate {
 extension VoiceRecordingManagement: CXCallObserverDelegate {
 
     public func callObserver(_ observer: CXCallObserver, callChanged call: CXCall) {
-        handleCallStateChange(hasConnected: call.hasConnected, hasEnded: call.hasEnded)
+        handleCallStateChange(hasEnded: call.hasEnded)
     }
 
     /// A phone call — incoming-ringing, connected, or outgoing — takes the mic,
     /// so the talk must stop. CXCallObserver reports any active call here
     /// (`!hasEnded`), which is the reliable signal; an *unanswered* incoming
-    /// call (rings, never connects) is caught this way too. Only an actual call
-    /// ends the talk — see `handleAudioInterruption` for why transient
-    /// (non-call) interruptions deliberately do not.
-    private func handleCallStateChange(hasConnected: Bool, hasEnded: Bool) {
+    /// call (rings, never connects) is caught this way too. There is deliberately
+    /// no `hasConnected` gate — we do not wait for the call to connect. Only an
+    /// actual call ends the talk — see `handleAudioInterruption` for why
+    /// transient (non-call) interruptions deliberately do not.
+    private func handleCallStateChange(hasEnded: Bool) {
         guard !hasEnded, isRecording else { return }
         stopRecording()
     }
 
-    /// Transient audio interruptions (notifications, Siri, an alarm) must NOT
-    /// end the talk — a momentary sound shouldn't cut a long recording. Real
-    /// phone calls are handled by CXCallObserver above, not here. We log the
-    /// interruption (rather than ignore it silently) so a field report can tell
-    /// what interrupted; the recording is left as-is.
-    ///
-    /// Trade-off: AVAudioRecorder cannot resume into the same file after the
-    /// system deactivates the session (Apple-confirmed), so if a non-call
-    /// interruption genuinely breaks capture, the tail of this recording may be
-    /// lost. We accept that over the prior behavior, which finalized the talk on
-    /// every notification.
+    /// A transient interruption (a notification sound, Siri, an alarm) must not
+    /// end a talk the recorder lives through, so we never finalize on `.began`.
+    /// But an `AVAudioRecorder` the system actually paused cannot resume into the
+    /// same file (Apple-confirmed), so when the interruption ends we check
+    /// whether the recorder kept capturing: if it did, the talk continues
+    /// untouched; if it was stopped, we finalize the audio captured so far and
+    /// release the mic — rather than holding a live session that records nothing
+    /// for the rest of the walk and stamps an inflated duration at walk end.
+    /// Real phone calls are handled by CXCallObserver above, not here. No new
+    /// recording is started: the talk stays a single file instead of splitting.
     private func handleAudioInterruption(_ event: AudioSessionCoordinator.InterruptionEvent) {
-        guard case .began = event, isRecording else { return }
-        print("[VoiceRecordingManagement] audio interruption during recording — not finalizing (calls handled via CallKit)")
+        guard isRecording else { return }
+        switch event {
+        case .began:
+            return
+        case .ended:
+            guard !recorderStillCapturing else { return }
+            print("[VoiceRecordingManagement] interruption ended with a stopped recorder — finalizing captured audio")
+            commitActiveRecordingAndReset()
+        }
+    }
+
+    /// Whether the underlying recorder is still actively capturing. After a
+    /// system interruption that paused it, this reads false and the file can no
+    /// longer be resumed. Overridable under test, where no real AVAudioRecorder
+    /// is created.
+    private var recorderStillCapturing: Bool {
+        #if DEBUG
+        if let override = testRecorderCapturingOverride { return override }
+        #endif
+        return audioRecorder?.isRecording ?? false
     }
 
     #if DEBUG
-    func _test_simulateCallChanged(hasConnected: Bool, hasEnded: Bool) {
-        handleCallStateChange(hasConnected: hasConnected, hasEnded: hasEnded)
+    func _test_simulateCallChanged(hasEnded: Bool) {
+        handleCallStateChange(hasEnded: hasEnded)
     }
 
     func _test_simulateAudioInterruption(_ event: AudioSessionCoordinator.InterruptionEvent) {

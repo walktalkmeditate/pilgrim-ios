@@ -25,14 +25,20 @@ single non-obvious framework fact that is worth not rediscovering.
 after `AVAudioSession.interruptionNotification` `.began` does not append — it
 discards the pre-interruption audio. There is no "pause and continue in place."
 
-Your only real choices when an interruption begins are therefore:
+Your real choices when an interruption begins are therefore:
 
 1. **Finalize** the current file and treat the interruption as a hard stop, or
 2. **Segment-and-merge** — finalize the current file, start a new one when the
-   interruption ends, and stitch the segments together afterward.
+   interruption ends, and stitch the segments together afterward, or
+3. **Probe and finalize only if the recorder died** — don't act on `.began`; on
+   `.ended`, read `audioRecorder.isRecording`. If it survived the interruption,
+   let it keep going (seamless); if it was stopped, finalize the audio captured
+   so far *then* (correct duration, mic released) instead of leaving it nominally
+   "recording" with a dead recorder.
 
-"Keep the recorder running and let it pick back up" is not an option, no matter
-how brief the interruption.
+"Keep the recorder running and let it pick back up after the system stopped it"
+is not an option, no matter how brief the interruption — once stopped, the file
+is sealed.
 
 ## Why This Matters
 Conflating these two facts causes both failure modes we hit:
@@ -44,10 +50,15 @@ Conflating these two facts causes both failure modes we hit:
 The right split is by **interruption source**, not by the `.began` event alone:
 detect real phone calls via `CXCallObserver` (which fires for any active call,
 `!hasEnded` — including unanswered rings) and stop the talk only for those.
-Leave the recorder running on transient non-call interruptions; accept the
-documented tail-loss risk rather than finalizing on every system sound. If
-that tail-loss ever proves common in the field, the principled upgrade is
-segment-and-merge — not "resume in place," which does not exist.
+For transient non-call interruptions, don't finalize on `.began`; instead probe
+the recorder on `.ended` (option 3 above). That keeps a survivable interruption
+seamless (one continuous file) while still finalizing cleanly — correct
+duration, mic released, no zombie capture — when the system actually stopped the
+recorder. Watch two related lifecycle traps the no-finalize path exposes:
+`AVAudioRecorder`'s finish delegate firing `successfully: false` can delete the
+whole file and leave stale `isRecording` state (reset it), and a coordinator
+that re-activates the session on `.ended` will hold a live mic recording nothing
+unless the dead-recorder case releases it.
 
 ## When to Apply
 - Any time you add or change `AVAudioSession` interruption handling around an
