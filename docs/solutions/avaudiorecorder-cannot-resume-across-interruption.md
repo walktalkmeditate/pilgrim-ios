@@ -54,7 +54,11 @@ For transient non-call interruptions, don't finalize on `.began`; instead probe
 the recorder on `.ended` (option 3 above). That keeps a survivable interruption
 seamless (one continuous file) while still finalizing cleanly — correct
 duration, mic released, no zombie capture — when the system actually stopped the
-recorder. Watch two related lifecycle traps the no-finalize path exposes:
+recorder. **Confirmed on device** (iPhone SE3): an alarm interruption stops the
+recorder, `audioRecorder.isRecording` reads `false` on `.ended`, the probe
+fires, and the talk finalizes as one file with the captured audio intact and the
+mic released — so the `false`-reading assumption the probe depends on holds on
+real hardware (unit tests inject this state and cannot prove it). Watch two related lifecycle traps the no-finalize path exposes:
 `AVAudioRecorder`'s finish delegate firing `successfully: false` can delete the
 whole file and leave stale `isRecording` state (reset it), and a coordinator
 that re-activates the session on `.ended` will hold a live mic recording nothing
