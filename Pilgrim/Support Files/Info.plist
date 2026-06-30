@@ -43,7 +43,7 @@
 	<key>NSMotionUsageDescription</key>
 	<string>Pilgrim uses motion tracking to count your steps during walks</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Pilgrim shows photos you took along your walking routes, gathered into a reliquary for each walk. Photos are never uploaded or copied — they stay in Apple Photos, viewed only on your device.</string>
+	<string>Pilgrim shows photos you took along your walking routes, gathered into a reliquary for each walk. Photos stay in Apple Photos and are only copied or shared when you explicitly include them in a shared walk or an exported data file.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

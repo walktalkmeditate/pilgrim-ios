@@ -70,7 +70,10 @@ struct MainTabView: View {
                     },
                     onShareSeal: { image in
                         let url = WalkSharingButtons.writeToTemp(image: image, name: "pilgrim-seal-\(walk.uuid?.uuidString.prefix(8) ?? "share")")
-                        coordinator.handleSealRevealDismiss()
+                        // AF60: dismiss the seal and hold the snapshot; the
+                        // summary is presented only after the share sheet
+                        // closes, so the two sheets never race.
+                        coordinator.handleSealShare()
                         sealShareURL = url
                     }
                 )
@@ -79,7 +82,9 @@ struct MainTabView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: coordinator.showSealReveal)
-        .sheet(item: $sealShareURL) { url in
+        .sheet(item: $sealShareURL, onDismiss: {
+            coordinator.handleSealShareDismiss()
+        }) { url in
             ShareSheet(items: [url])
         }
         .overlay(alignment: .top) {

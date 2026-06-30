@@ -279,7 +279,7 @@ struct DataSettingsView: View {
             isImporting = false
             switch result {
             case .success(let summary):
-                alertTitle = "Import Complete"
+                alertTitle = summary.hasFailures ? "Import Finished with Issues" : "Import Complete"
                 alertMessage = describeImportSummary(summary)
                 showAlert = true
             case .failure(let error):
@@ -295,7 +295,7 @@ struct DataSettingsView: View {
     /// so the user understands edits and archives landed even when no
     /// new walks were added; fresh-export merges keep the simple count.
     private func describeImportSummary(_ summary: ImportSummary) -> String {
-        if summary.totalChanges == 0 {
+        if summary.totalChanges == 0 && !summary.hasFailures {
             return "No changes — every walk in this file is already on this device."
         }
 
@@ -308,6 +308,12 @@ struct DataSettingsView: View {
         }
         if summary.archived > 0 {
             parts.append("\(summary.archived) walk\(summary.archived == 1 ? "" : "s") archived")
+        }
+        if summary.skipped > 0 {
+            parts.append("\(summary.skipped) walk\(summary.skipped == 1 ? "" : "s") couldn't be read and \(summary.skipped == 1 ? "was" : "were") skipped")
+        }
+        if summary.failedEvents > 0 {
+            parts.append("\(summary.failedEvents) journey\(summary.failedEvents == 1 ? "" : "s") couldn't be saved")
         }
         return parts.joined(separator: ", ") + "."
     }
@@ -377,6 +383,8 @@ struct DataSettingsView: View {
         switch error {
         case .noWalksFound:
             return "No walks found to export."
+        case .databaseError:
+            return "Your walks couldn't be read from the database. Please try again."
         case .encodingFailed:
             return "Failed to encode walk data."
         case .zipFailed:

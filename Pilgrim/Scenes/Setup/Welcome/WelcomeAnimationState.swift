@@ -9,6 +9,7 @@ class WelcomeAnimationState: ObservableObject {
     @Published var showButton = false
     @Published var showAmbient = false
     @Published var isExiting = false
+    @Published var logoZoom: CGFloat = 1.0
 
     private let reduceMotion = UIAccessibility.isReduceMotionEnabled
 
@@ -78,6 +79,40 @@ class WelcomeAnimationState: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + buttonTime + 0.5) { [weak self] in
             guard let self, !self.isExiting else { return }
             withAnimation(.easeIn(duration: 2.0)) { self.showAmbient = true }
+        }
+    }
+
+    /// "Wander Zoom" on Begin tap: the logo pushes forward (1.0→1.4) as the
+    /// surrounding text and footprints recede, then `runExit` takes over to
+    /// fade the logo and hand off to the next screen. The two stages are
+    /// sequential, not simultaneous — the zoom completes (`runExit` fires
+    /// from `zoomDuration`'s completion) so the scale-up never fights
+    /// `runExit`'s own `showLogo = false` logo fade. Reduce Motion skips the
+    /// zoom and uses `runExit`'s existing jump-cut unchanged.
+    func beginWanderZoom(completion: @escaping () -> Void) {
+        guard !isExiting else { return }
+
+        if reduceMotion {
+            runExit(completion: completion)
+            return
+        }
+
+        isExiting = true
+        isBreathing = false
+
+        let zoomDuration = 0.4
+
+        withAnimation(.easeOut(duration: zoomDuration)) {
+            logoZoom = 1.4
+        }
+        withAnimation(.easeIn(duration: 0.3)) {
+            showQuote = false
+            showButton = false
+            footprintOpacities = Array(repeating: 0, count: 7)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + zoomDuration) { [weak self] in
+            self?.runExit(completion: completion)
         }
     }
 

@@ -137,15 +137,19 @@ public enum PilgrimV7: DataModelProtocol {
 
         let _favicon = Value.Optional<String>("favicon")
 
-        let _heartRates = Relationship.ToManyOrdered<PilgrimV7.HeartRateDataSample>("heartRates", inverse: { $0._workout })
-        let _routeData = Relationship.ToManyOrdered<PilgrimV7.RouteDataSample>("routeData", inverse: { $0._workout })
-        let _pauses = Relationship.ToManyOrdered<PilgrimV7.WalkPause>("pauses", inverse: { $0._workout })
-        let _workoutEvents = Relationship.ToManyOrdered<PilgrimV7.WalkEvent>("workoutEvents", inverse: { $0._workout })
+        // Delete rules are NOT part of CoreData's entity version hash
+        // (proven by DeleteRuleVersionHashTests), so adding .cascade here
+        // requires no migration. Deleting a Walk now removes its child
+        // rows; _events stays .nullify — journeys outlive their walks.
+        let _heartRates = Relationship.ToManyOrdered<PilgrimV7.HeartRateDataSample>("heartRates", inverse: { $0._workout }, deleteRule: .cascade)
+        let _routeData = Relationship.ToManyOrdered<PilgrimV7.RouteDataSample>("routeData", inverse: { $0._workout }, deleteRule: .cascade)
+        let _pauses = Relationship.ToManyOrdered<PilgrimV7.WalkPause>("pauses", inverse: { $0._workout }, deleteRule: .cascade)
+        let _workoutEvents = Relationship.ToManyOrdered<PilgrimV7.WalkEvent>("workoutEvents", inverse: { $0._workout }, deleteRule: .cascade)
         let _events = Relationship.ToManyUnordered<PilgrimV7.Event>("events", inverse: { $0._workouts })
-        let _voiceRecordings = Relationship.ToManyOrdered<PilgrimV7.VoiceRecording>("voiceRecordings", inverse: { $0._workout })
-        let _activityIntervals = Relationship.ToManyOrdered<PilgrimV7.ActivityInterval>("activityIntervals", inverse: { $0._workout })
-        let _waypoints = Relationship.ToManyOrdered<PilgrimV7.Waypoint>("waypoints", inverse: { $0._workout })
-        let _walkPhotos = Relationship.ToManyOrdered<PilgrimV7.WalkPhoto>("walkPhotos", inverse: { $0._workout })
+        let _voiceRecordings = Relationship.ToManyOrdered<PilgrimV7.VoiceRecording>("voiceRecordings", inverse: { $0._workout }, deleteRule: .cascade)
+        let _activityIntervals = Relationship.ToManyOrdered<PilgrimV7.ActivityInterval>("activityIntervals", inverse: { $0._workout }, deleteRule: .cascade)
+        let _waypoints = Relationship.ToManyOrdered<PilgrimV7.Waypoint>("waypoints", inverse: { $0._workout }, deleteRule: .cascade)
+        let _walkPhotos = Relationship.ToManyOrdered<PilgrimV7.WalkPhoto>("walkPhotos", inverse: { $0._workout }, deleteRule: .cascade)
 
     }
 

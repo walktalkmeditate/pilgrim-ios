@@ -3,6 +3,21 @@ import Combine
 
 extension XCTestCase {
 
+    /// Spins the main run loop once so scheduled Combine bookkeeping lands.
+    ///
+    /// Subscriptions built over `receive(on: DispatchQueue.main)` enqueue
+    /// their upstream demand requests asynchronously. A test that constructs
+    /// and tears down a WalkBuilder pipeline without ever yielding leaves
+    /// those subscriptions demand-less, and CombineExt's CurrentValueRelay
+    /// deinit then traps on DemandBuffer's double-completion precondition
+    /// (a pending completion that can never flush). Call this after building
+    /// the object graph in any fast test that owns builder components.
+    func settleCombineSchedulers() {
+        let exp = expectation(description: "combine schedulers settled")
+        DispatchQueue.main.async { exp.fulfill() }
+        wait(for: [exp], timeout: 1.0)
+    }
+
     func awaitPublisher<P: Publisher>(
         _ publisher: P,
         timeout: TimeInterval = 1.0,

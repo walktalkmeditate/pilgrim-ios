@@ -6,6 +6,7 @@ final class VoiceRecordingCheckpointTests: XCTestCase {
     func test_checkpointVoiceRecording_returnsNil_whenNotRecording() {
         let builder = WalkBuilder()
         let mgmt = VoiceRecordingManagement(builder: builder)
+        settleCombineSchedulers()
 
         XCTAssertNil(mgmt.checkpointVoiceRecording())
     }
@@ -13,6 +14,7 @@ final class VoiceRecordingCheckpointTests: XCTestCase {
     func test_checkpointVoiceRecording_returnsSnapshot_whenRecording() {
         let builder = WalkBuilder()
         let mgmt = VoiceRecordingManagement(builder: builder)
+        settleCombineSchedulers()
 
         mgmt._test_setActiveRecording(
             start: Date(timeIntervalSinceNow: -30),

@@ -48,7 +48,7 @@ extension WalkSummaryView {
     @ViewBuilder
     var mapSection: some View {
         Group {
-            if !routeCoordinates.isEmpty {
+            if !cachedRouteCoordinates.isEmpty {
                 PilgrimMapView(
                     isInteractive: revealPhase == .revealed,
                     showsUserLocation: false,

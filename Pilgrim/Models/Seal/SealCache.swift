@@ -32,12 +32,16 @@ final class SealCache {
         let diskConfig = DiskConfig(
             name: "SealCache",
             expiry: .never,
-            maxSize: 10_000_000
+            maxSize: 50_000_000
         )
 
+        // Holds a large goshuin book's thumbnails (and seals) resident so
+        // paging through it doesn't evict + re-decode/regenerate on every
+        // revisit. 256 covers ~40 pages of 6 thumbnails. No expiry while the
+        // book is open — eviction is what caused the scroll churn.
         let memoryConfig = MemoryConfig(
-            expiry: .seconds(900),
-            countLimit: 50,
+            expiry: .never,
+            countLimit: 256,
             totalCostLimit: 0
         )
 
@@ -62,6 +66,16 @@ final class SealCache {
         queue.sync {
             guard let storage = hybridStorage else { return nil }
             return try? storage.object(forKey: thumbnailKey(walkUUID))
+        }
+    }
+
+    /// Memory-only, no disk I/O — safe to call synchronously on the main thread
+    /// during view construction. Returns nil on a memory miss; callers fall
+    /// back to the async `thumbnail(for:)` (which may hit disk or regenerate).
+    func memoryThumbnail(for walkUUID: String) -> UIImage? {
+        queue.sync {
+            guard let storage = hybridStorage else { return nil }
+            return try? storage.memoryStorage.entry(forKey: thumbnailKey(walkUUID)).object
         }
     }
 

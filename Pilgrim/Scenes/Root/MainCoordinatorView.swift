@@ -60,6 +60,13 @@ class MainCoordinator: ObservableObject {
         vm.onWalkCompleted = { [weak self, weak vm] snapshot in
             snapshot.comment = vm?.intention
             DataManager.saveWalk(object: snapshot) { success, _, walk in
+                if success {
+                    // The save transaction is confirmed — only now is the
+                    // crash-recovery checkpoint safe to discard (AF1). On
+                    // failure it stays on disk and recoverIfNeeded re-saves
+                    // the walk at next launch.
+                    WalkSessionGuard.deleteCheckpointFile()
+                }
                 guard let self else { return }
                 if success {
                     snapshot.uuid = walk?.uuid
@@ -102,6 +109,26 @@ class MainCoordinator: ObservableObject {
         if let walk = sealRevealWalk {
             completedSnapshot = walk
             sealRevealWalk = nil
+        }
+    }
+
+    /// AF60: the share path must NOT set `completedSnapshot` and the share
+    /// URL in the same update — two sibling `.sheet(item:)` presentations
+    /// requested simultaneously race, and one is dropped. Dismiss the seal,
+    /// hold the snapshot, and let the share sheet present alone; the summary
+    /// is promoted from `handleSealShareDismiss` once the share sheet closes.
+    func handleSealShare() {
+        showSealReveal = false
+        if let walk = sealRevealWalk {
+            pendingSnapshot = walk
+            sealRevealWalk = nil
+        }
+    }
+
+    func handleSealShareDismiss() {
+        if let snapshot = pendingSnapshot {
+            pendingSnapshot = nil
+            completedSnapshot = snapshot
         }
     }
 

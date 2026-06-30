@@ -40,6 +40,9 @@ struct ActivityTimelineBar: View {
                 )
             }
             .frame(height: 16)
+            .accessibilityElement()
+            .accessibilityLabel("Activity timeline")
+            .accessibilityValue(timelineSummary)
 
             if let selected = selectedSegment {
                 selectedTooltip(selected)
@@ -57,11 +60,15 @@ struct ActivityTimelineBar: View {
                     .foregroundColor(.fog)
                     .contentTransition(.numericText())
             }
+            .contentShape(Rectangle())
             .onTapGesture {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     showRelativeTime.toggle()
                 }
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint("Double tap to switch between relative and clock time")
 
             if routeData.count >= 3 {
                 PaceSparklineView(routeData: routeData, startDate: startDate, endDate: endDate)
@@ -230,6 +237,20 @@ struct ActivityTimelineBar: View {
     private var selectedSegment: Segment? {
         guard let id = selectedSegmentId else { return nil }
         return segments.first { $0.id == id }
+    }
+
+    private var timelineSummary: String {
+        let meditations = segments.filter { $0.type == .meditating }.count
+        let talks = segments.filter { $0.type == .talking }.count
+        var parts: [String] = []
+        if meditations > 0 {
+            parts.append("\(meditations) meditation\(meditations == 1 ? "" : "s")")
+        }
+        if talks > 0 {
+            parts.append("\(talks) recording\(talks == 1 ? "" : "s")")
+        }
+        if parts.isEmpty { return "Walking only" }
+        return parts.joined(separator: ", ")
     }
 
     private var segments: [Segment] {

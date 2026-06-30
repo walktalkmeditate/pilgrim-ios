@@ -2,6 +2,49 @@ import Foundation
 import WhisperKit
 import CoreStore
 
+/// Result of transcribing one audio file, expressed in domain terms so
+/// tests can fake the engine without importing WhisperKit.
+struct TranscriptionOutput {
+    let text: String
+    let wordsPerMinute: Double?
+}
+
+/// Seam over WhisperKit — the one surface through which the service
+/// touches the loaded model, so lifecycle behavior (load, batch, unload)
+/// is testable without a real CoreML model.
+protocol TranscriptionEngine: AnyObject {
+    func transcribeAudio(atPath path: String) async throws -> TranscriptionOutput
+    func unloadModels() async
+}
+
+extension WhisperKit: TranscriptionEngine {
+
+    func transcribeAudio(atPath path: String) async throws -> TranscriptionOutput {
+        let results = try await transcribe(audioPath: path)
+        return TranscriptionOutput(
+            text: results.map(\.text).joined(separator: " "),
+            wordsPerMinute: Self.wordsPerMinute(from: results)
+        )
+    }
+
+    private static func wordsPerMinute(from results: [TranscriptionResult]) -> Double? {
+        let segments = results.flatMap { $0.segments }
+        guard let first = segments.first, let last = segments.last,
+              last.end > first.start else { return nil }
+        let words = segments.compactMap { $0.words }.flatMap { $0 }
+        let wordCount: Int
+        if !words.isEmpty {
+            wordCount = words.count
+        } else {
+            wordCount = segments.flatMap { $0.text.split(separator: " ") }.count
+        }
+        guard wordCount > 0 else { return nil }
+        let durationMinutes = Double(last.end - first.start) / 60.0
+        guard durationMinutes > 0 else { return nil }
+        return Double(wordCount) / durationMinutes
+    }
+}
+
 final class TranscriptionService: ObservableObject {
 
     static let shared = TranscriptionService()
@@ -27,10 +70,25 @@ final class TranscriptionService: ObservableObject {
     @MainActor @Published var state: State = .idle
     @MainActor private var isTranscribing = false
 
-    private var whisperKit: WhisperKit?
+    /// MainActor-confined alongside `modelLoadTask` (AF31): every write —
+    /// load completion, `unloadModel()`'s nil-out, test injection — goes
+    /// through the main actor, so the engine reference can't tear between
+    /// the auto-transcription batch and VoiceCard's settings toggle.
+    @MainActor private var whisperKit: TranscriptionEngine?
+    /// In-flight model load; concurrent `ensureModelReady` callers await
+    /// this one task instead of racing to load twice.
+    @MainActor private var modelLoadTask: Task<Void, Error>?
     private let modelVariant = "tiny"
 
-    private init() {}
+    /// Production loads WhisperKit from disk/download; tests inject a loader
+    /// so model lifecycle behavior is provable without a real CoreML model.
+    private let engineLoader: (@Sendable () async throws -> TranscriptionEngine)?
+
+    /// Singleton in production; internal so tests can construct isolated
+    /// instances without touching `shared` state.
+    init(engineLoader: (@Sendable () async throws -> TranscriptionEngine)? = nil) {
+        self.engineLoader = engineLoader
+    }
 
     private var savedModelPath: URL? {
         get {
@@ -50,10 +108,41 @@ final class TranscriptionService: ObservableObject {
         return !files.isEmpty
     }
 
+    /// Single-flight model load (AF31): the post-walk auto-transcription
+    /// batch and VoiceCard's settings toggle can call this concurrently —
+    /// the first caller starts the load, every other caller awaits the same
+    /// task. A failed load clears the gate so the next call retries.
     func ensureModelReady() async throws {
-        if whisperKit != nil { return }
+        let task = await MainActor.run { () -> Task<Void, Error>? in
+            if whisperKit != nil { return nil }
+            if let inFlight = modelLoadTask { return inFlight }
+            let load = Task { try await self.loadModel() }
+            modelLoadTask = load
+            return load
+        }
+        guard let task else { return }
+        try await task.value
+    }
 
-        await MainActor.run { state = .downloadingModel(progress: 0) }
+    private func loadModel() async throws {
+        do {
+            await MainActor.run { state = .downloadingModel(progress: 0) }
+            let engine = try await makeEngine()
+            await MainActor.run {
+                whisperKit = engine
+                modelLoadTask = nil
+                state = .idle
+            }
+        } catch {
+            await MainActor.run { modelLoadTask = nil }
+            throw error
+        }
+    }
+
+    private func makeEngine() async throws -> TranscriptionEngine {
+        if let engineLoader {
+            return try await engineLoader()
+        }
 
         let modelURL: URL
         if let existing = savedModelPath {
@@ -68,10 +157,11 @@ final class TranscriptionService: ObservableObject {
             load: true,
             download: false
         )
-        whisperKit = try await WhisperKit(config)
-
-        await MainActor.run { state = .idle }
+        return try await WhisperKit(config)
     }
+
+    @MainActor
+    private func currentEngine() -> TranscriptionEngine? { whisperKit }
 
     private func downloadModel() async throws -> URL {
         try await WhisperKit.download(
@@ -96,6 +186,9 @@ final class TranscriptionService: ObservableObject {
         guard started else { return [:] }
 
         var results: [UUID: String] = [:]
+        var persistenceFailures = 0
+        var transcriptionFailures = 0
+        var attempted = 0
         let total = recordings.count
 
         do {
@@ -105,7 +198,7 @@ final class TranscriptionService: ObservableObject {
             return [:]
         }
 
-        guard let pipe = whisperKit else {
+        guard let pipe = await currentEngine() else {
             await MainActor.run { state = .failed("WhisperKit not initialized"); isTranscribing = false }
             return [:]
         }
@@ -121,25 +214,61 @@ final class TranscriptionService: ObservableObject {
             let audioURL = docs.appendingPathComponent(recording.fileRelativePath)
             guard FileManager.default.fileExists(atPath: audioURL.path) else { continue }
 
+            attempted += 1
             do {
-                let transcriptionResults = try await pipe.transcribe(audioPath: audioURL.path)
-                let text = cleanTranscription(
-                    transcriptionResults.map(\.text).joined(separator: " ")
-                )
+                let output = try await pipe.transcribeAudio(atPath: audioURL.path)
+                let text = cleanTranscription(output.text)
                 if !text.isEmpty {
-                    results[uuid] = text
-                    DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text)
-                    if let wpm = computeWordsPerMinute(from: transcriptionResults) {
-                        DataManager.updateVoiceRecordingWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
+                    if await persistTranscription(uuid: uuid, text: text) {
+                        results[uuid] = text
+                        if let wpm = output.wordsPerMinute {
+                            await persistWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
+                        }
+                    } else {
+                        // Leaving the recording untranscribed keeps it in the
+                        // next auto-transcribe pass's selection — the work is
+                        // re-attempted instead of silently lost.
+                        persistenceFailures += 1
                     }
                 }
             } catch {
+                // A WhisperKit failure (corrupt audio, OOM on older devices)
+                // must not masquerade as success (AF32): count it so an
+                // all-failed batch reaches `.failed`, not `.completed`.
+                transcriptionFailures += 1
                 print("[TranscriptionService] Failed to transcribe recording \(uuid): \(error)")
             }
         }
 
-        await MainActor.run { state = .completed; isTranscribing = false }
+        let finalState = Self.batchState(
+            attempted: attempted,
+            transcriptionFailures: transcriptionFailures,
+            persistenceFailures: persistenceFailures
+        )
+        await MainActor.run {
+            state = finalState
+            isTranscribing = false
+            unloadModel()
+        }
         return results
+    }
+
+    /// Terminal state for a finished batch. An all-failed batch reports
+    /// `.failed` so the UI never claims success with no transcriptions
+    /// (AF32); a partial persistence failure also surfaces, while an empty
+    /// or fully-successful batch is `.completed`.
+    private static func batchState(
+        attempted: Int,
+        transcriptionFailures: Int,
+        persistenceFailures: Int
+    ) -> State {
+        if attempted > 0 && transcriptionFailures == attempted {
+            return .failed("Transcription failed — tap to retry")
+        }
+        if persistenceFailures > 0 {
+            return .failed("Couldn't save \(persistenceFailures) transcription\(persistenceFailures == 1 ? "" : "s")")
+        }
+        return .completed
     }
 
     func transcribeSingle(_ recording: VoiceRecordingInterface) async -> String? {
@@ -160,7 +289,7 @@ final class TranscriptionService: ObservableObject {
             return nil
         }
 
-        guard let pipe = whisperKit else {
+        guard let pipe = await currentEngine() else {
             await MainActor.run { isTranscribing = false }
             return nil
         }
@@ -175,19 +304,21 @@ final class TranscriptionService: ObservableObject {
         await MainActor.run { state = .transcribing(current: 1, total: 1) }
 
         do {
-            let results = try await pipe.transcribe(audioPath: audioURL.path)
-            let text = cleanTranscription(
-                results.map(\.text).joined(separator: " ")
-            )
-            await MainActor.run { state = .completed; isTranscribing = false }
-            if !text.isEmpty {
-                DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text)
-                if let wpm = computeWordsPerMinute(from: results) {
-                    DataManager.updateVoiceRecordingWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
-                }
-                return text
+            let output = try await pipe.transcribeAudio(atPath: audioURL.path)
+            let text = cleanTranscription(output.text)
+            guard !text.isEmpty else {
+                await MainActor.run { state = .completed; isTranscribing = false }
+                return nil
             }
-            return nil
+            guard await persistTranscription(uuid: uuid, text: text) else {
+                await MainActor.run { state = .failed("Transcription couldn't be saved"); isTranscribing = false }
+                return nil
+            }
+            if let wpm = output.wordsPerMinute {
+                await persistWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
+            }
+            await MainActor.run { state = .completed; isTranscribing = false }
+            return text
         } catch {
             print("[TranscriptionService] Failed to transcribe: \(error)")
             await MainActor.run { state = .failed("Transcription failed"); isTranscribing = false }
@@ -195,21 +326,36 @@ final class TranscriptionService: ObservableObject {
         }
     }
 
-    private func computeWordsPerMinute(from results: [TranscriptionResult]) -> Double? {
-        let segments = results.flatMap { $0.segments }
-        guard let first = segments.first, let last = segments.last,
-              last.end > first.start else { return nil }
-        let words = segments.compactMap { $0.words }.flatMap { $0 }
-        let wordCount: Int
-        if !words.isEmpty {
-            wordCount = words.count
-        } else {
-            wordCount = segments.flatMap { $0.text.split(separator: " ") }.count
+    /// Persists a transcription with one retry. Returns `false` when the
+    /// write failed (or the recording row is gone) so callers can avoid
+    /// reporting unsaved work as done.
+    private func persistTranscription(uuid: UUID, text: String) async -> Bool {
+        if await persistTranscriptionOnce(uuid: uuid, text: text) { return true }
+        if await persistTranscriptionOnce(uuid: uuid, text: text) { return true }
+        print("[TranscriptionService] Transcription for \(uuid) not saved after retry")
+        return false
+    }
+
+    private func persistTranscriptionOnce(uuid: UUID, text: String) async -> Bool {
+        await withCheckedContinuation { continuation in
+            DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text) { success in
+                continuation.resume(returning: success)
+            }
         }
-        guard wordCount > 0 else { return nil }
-        let durationMinutes = Double(last.end - first.start) / 60.0
-        guard durationMinutes > 0 else { return nil }
-        return Double(wordCount) / durationMinutes
+    }
+
+    /// WPM is a derived nicety — a final failure is logged but does not
+    /// fail the transcription, which is already persisted at this point.
+    private func persistWordsPerMinute(uuid: UUID, wordsPerMinute: Double) async {
+        for _ in 0..<2 {
+            let saved = await withCheckedContinuation { continuation in
+                DataManager.updateVoiceRecordingWordsPerMinute(uuid: uuid, wordsPerMinute: wordsPerMinute) { success in
+                    continuation.resume(returning: success)
+                }
+            }
+            if saved { return }
+        }
+        print("[TranscriptionService] WPM for \(uuid) not saved after retry")
     }
 
     private static let whisperArtifacts = ["[BLANK_AUDIO]", "[NO_SPEECH]", "(blank_audio)", "(no_speech)"]
@@ -239,31 +385,37 @@ final class TranscriptionService: ObservableObject {
             return nil
         }
 
-        guard let pipe = whisperKit,
+        guard let pipe = await currentEngine(),
               FileManager.default.fileExists(atPath: url.path) else {
-            await MainActor.run { isTranscribing = false }
+            await MainActor.run { isTranscribing = false; unloadModel() }
             return nil
         }
 
         do {
-            let results = try await pipe.transcribe(audioPath: url.path)
-            let text = cleanTranscription(
-                results.map(\.text).joined(separator: " ")
-            )
-            await MainActor.run { isTranscribing = false }
+            let output = try await pipe.transcribeAudio(atPath: url.path)
+            let text = cleanTranscription(output.text)
+            await MainActor.run { isTranscribing = false; unloadModel() }
             return text.isEmpty ? nil : text
         } catch {
-            await MainActor.run { isTranscribing = false }
+            await MainActor.run { isTranscribing = false; unloadModel() }
             return nil
         }
     }
 
+    /// Releases the WhisperKit pipeline once a transcription flow drains
+    /// (AF33) — tens of MB of CoreML state would otherwise stay resident
+    /// through multi-hour walks. No-op while a batch is active, and leaves
+    /// `state` untouched so completion/failure UI isn't reset.
     @MainActor
     func unloadModel() {
-        let kit = whisperKit
+        guard !isTranscribing else { return }
+        guard let kit = whisperKit else { return }
         whisperKit = nil
-        state = .idle
-        Task.detached { await kit?.unloadModels() }
+        // Clearing the gate keeps it coherent with the nil-out (AF31): a
+        // stale completed load task would otherwise satisfy the next
+        // ensureModelReady without actually reloading the engine.
+        modelLoadTask = nil
+        Task.detached { await kit.unloadModels() }
     }
 
     enum AutoTranscriptionSkipReason {
@@ -271,5 +423,22 @@ final class TranscriptionService: ObservableObject {
     }
 
     @MainActor @Published var autoTranscriptionSkippedReason: AutoTranscriptionSkipReason?
+
+    // MARK: - Test Hooks
+
+    #if DEBUG
+    @MainActor
+    func _test_setEngine(_ engine: TranscriptionEngine?) {
+        whisperKit = engine
+    }
+
+    @MainActor
+    func _test_setTranscribing(_ value: Bool) {
+        isTranscribing = value
+    }
+
+    @MainActor
+    var _test_isModelLoaded: Bool { whisperKit != nil }
+    #endif
 
 }

@@ -489,7 +489,7 @@ struct WalkStatsSheet: View {
         return Button(action: { viewModel.toggleVoiceRecording() }) {
             VStack(spacing: isLargeText ? 2 : 6) {
                 if isActive {
-                    AudioWaveformView(level: viewModel.audioLevel)
+                    RecordingLevelMeter(levelPublisher: viewModel.voiceRecordingManagement.$audioLevel)
                         .frame(width: 36, height: 24)
                 } else {
                     Image(systemName: "mic")

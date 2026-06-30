@@ -34,14 +34,13 @@
 		1D99785282035E297C602465 /* OrphanRecordingSweep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */; };
 		1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */; };
 		202AAC44744BC3E55F46A01A /* ProximityTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089F9DF63AFA0F902D41D768 /* ProximityTarget.swift */; };
-		2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCA829423DF100F54277 /* View+Navigation.swift */; };
-		2201BCAB29423E1600F54277 /* NavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2201BCAA29423E1600F54277 /* NavigationLink.swift */; };
 		2204A1DD255ACB1100906CFE /* DataTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2204A1DC255ACB1100906CFE /* DataTypeProtocol.swift */; };
 		2204E428295DF28C00243FC3 /* SetupCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2204E427295DF28C00243FC3 /* SetupCoordinatorView.swift */; };
 		2207B75623128F8A00BA71B5 /* CLLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2207B75523128F8A00BA71B5 /* CLLocation.swift */; };
 		2209E53924DD4A8F00BBFC2F /* AltitudeManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */; };
 		2213137D23B4110700881806 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2213137C23B4110700881806 /* PermissionManager.swift */; };
 		221436B924432B390010D82B /* DataManager+Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436B824432B390010D82B /* DataManager+Query.swift */; };
+		LR00000200000000LRDMRP01 /* DataManager+Replace.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRDMRP01 /* DataManager+Replace.swift */; };
 		221436BB244356A90010D82B /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436BA244356A90010D82B /* Array.swift */; };
 		221436BF2443746B0010D82B /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436BE2443746B0010D82B /* Event.swift */; };
 		221436C12443960A0010D82B /* UnitCount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436C02443960A0010D82B /* UnitCount.swift */; };
@@ -92,7 +91,6 @@
 		229FF49A235C228100EA220E /* SettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229FF499235C228100EA220E /* SettingsModel.swift */; };
 		229FF49E235C32D000EA220E /* SelectionSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229FF49D235C32D000EA220E /* SelectionSetting.swift */; };
 		229FF4A1235C7F6300EA220E /* CustomMeasurementFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229FF4A0235C7F6300EA220E /* CustomMeasurementFormatting.swift */; };
-		22A0B72C245B078100E1AB68 /* WalkStatsSeries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A0B72B245B078100E1AB68 /* WalkStatsSeries.swift */; };
 		22A0FAF324D8D4B7000292DF /* WalkCompletionActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A0FAF224D8D4B7000292DF /* WalkCompletionActionHandler.swift */; };
 		22A5459C26E7F8DE00E19B0B /* UnitConverterInverse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A5459B26E7F8DE00E19B0B /* UnitConverterInverse.swift */; };
 		22A5D02625C1A45100C30786 /* TempValueConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A5D02525C1A45100C30786 /* TempValueConvertible.swift */; };
@@ -112,14 +110,12 @@
 		22B1DDA4253F9D650093822B /* WalkPause.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B1DDA3253F9D650093822B /* WalkPause.swift */; };
 		22B1F13F22D61CF400C02973 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 22B1F14122D61CF400C02973 /* LaunchScreen.storyboard */; };
 		22B1F14922D6246800C02973 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 22B1F14222D61D0F00C02973 /* Localizable.strings */; };
-		22B2A8A1230D331000EF8558 /* WalkStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2A8A0230D331000EF8558 /* WalkStats.swift */; };
 		22B6CF5722CA0814002D2FB0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B6CF5622CA0814002D2FB0 /* AppDelegate.swift */; };
 		22B6CF6122CA0815002D2FB0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 22B6CF6022CA0815002D2FB0 /* Assets.xcassets */; };
 		22B6CF7022CA08C9002D2FB0 /* WalkBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B6CF6F22CA08C9002D2FB0 /* WalkBuilder.swift */; };
 		22BBDD3224D77C2B00225AE4 /* StepCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BBDD3124D77C2B00225AE4 /* StepCounter.swift */; };
 		22BC99162941D97600D9B1A5 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99142941D97600D9B1A5 /* WelcomeViewModel.swift */; };
 		22BC99172941D97600D9B1A5 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99152941D97600D9B1A5 /* WelcomeView.swift */; };
-		22BC99392941D9A800D9B1A5 /* MetricViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */; };
 		22BC993A2941D9A800D9B1A5 /* CloseButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99292941D9A800D9B1A5 /* CloseButton.swift */; };
 		22BC993B2941D9A800D9B1A5 /* ActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992A2941D9A800D9B1A5 /* ActionButton.swift */; };
 		22BC993C2941D9A800D9B1A5 /* RoundedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992B2941D9A800D9B1A5 /* RoundedButton.swift */; };
@@ -128,11 +124,8 @@
 		22BC993F2941D9A800D9B1A5 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992E2941D9A800D9B1A5 /* ProgressView.swift */; };
 		22BC99402941D9A800D9B1A5 /* FeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC992F2941D9A800D9B1A5 /* FeatureView.swift */; };
 		22BC99432941D9A800D9B1A5 /* CornerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99322941D9A800D9B1A5 /* CornerView.swift */; };
-		22BC99452941D9A800D9B1A5 /* MetricView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99342941D9A800D9B1A5 /* MetricView.swift */; };
 		22BC99462941D9A800D9B1A5 /* AxisGeometryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99352941D9A800D9B1A5 /* AxisGeometryReader.swift */; };
-		22BC99472941D9A800D9B1A5 /* WalkCardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */; };
 		22BC99482941D9A800D9B1A5 /* FeatureViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99372941D9A800D9B1A5 /* FeatureViewModel.swift */; };
-		22BC99492941D9A800D9B1A5 /* WalkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99382941D9A800D9B1A5 /* WalkCard.swift */; };
 		22BC994B2941DA3400D9B1A5 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC994A2941DA3400D9B1A5 /* Constants.swift */; };
 		22BC994D2941DA6200D9B1A5 /* Binding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC994C2941DA6200D9B1A5 /* Binding.swift */; };
 		22BC99522941DC9900D9B1A5 /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BC99512941DC9900D9B1A5 /* Color.swift */; };
@@ -159,7 +152,6 @@
 		22F0000B234A1DF8008CFAD2 /* SwitchSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0000A234A1DF8008CFAD2 /* SwitchSetting.swift */; };
 		22F0000D234A2055008CFAD2 /* Setting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0000C234A2055008CFAD2 /* Setting.swift */; };
 		22F0000F234A2821008CFAD2 /* TitleSubTitleSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0000E234A2821008CFAD2 /* TitleSubTitleSetting.swift */; };
-		22FAB3B4253BAC450040CBB1 /* Changelog.strings in Resources */ = {isa = PBXBuildFile; fileRef = 22FAB3B6253BAC450040CBB1 /* Changelog.strings */; };
 		22FD3253255F319E007719C9 /* Primitive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FD3252255F319E007719C9 /* Primitive.swift */; };
 		22FEA0A724CDA3FF0007CA9C /* ClosedRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0A624CDA3FF0007CA9C /* ClosedRange.swift */; };
 		22FEA0AB24CDD39C0007CA9C /* URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0AA24CDD39C0007CA9C /* URL.swift */; };
@@ -199,7 +191,6 @@
 		567070AF2F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */; };
 		567070B02F74268E00FD1910 /* WalkActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */; };
 		567070B22F7426A500FD1910 /* WalkActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070B12F7426A500FD1910 /* WalkActivityManager.swift */; };
-		567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99D82F6F41030006A58E /* WeatherKitREST.swift */; };
 		567B99F72F701B8D0006A58E /* CollectiveCounterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */; };
 		567B99F82F701B8D0006A58E /* PilgrimageProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */; };
 		56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */; };
@@ -274,6 +265,7 @@
 		AA00020100000000000002 /* VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000001 /* VoiceRecording.swift */; };
 		AA00020100000000000004 /* VoiceRecordingManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00020100000000000003 /* VoiceRecordingManagement.swift */; };
 		AA00030100000000000002 /* MeditationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00030100000000000001 /* MeditationView.swift */; };
+		BB00031300000000000002 /* SoundscapePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00031300000000000001 /* SoundscapePickerSheet.swift */; };
 		AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000001 /* VoiceRecordingRow.swift */; };
 		AA00040100000000000004 /* AudioPlayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00040100000000000003 /* AudioPlayerModel.swift */; };
 		AA33BB44CC55DD66EE77FF88 /* EtegamiTextGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */; };
@@ -419,6 +411,7 @@
 		D9B0FCF6475717C81CEAC35D /* AudioPriorityQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */; };
 		DA6DDA89F11F4728B6B553A1 /* WhisperManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305468F7FF377BC0DFF74897 /* WhisperManifest.swift */; };
 		DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */; };
+		LR00000200000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift */; };
 		DBC54AC76144B10493D3E481 /* WalkShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE9557700152F043C359DC /* WalkShareView.swift */; };
 		DC700725D862A43F6F4791F7 /* WhisperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8585A815173A295C2F468057 /* WhisperService.swift */; };
 		DD00CC0100000000000002 /* MeditateDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00CC0100000000000001 /* MeditateDetection.swift */; };
@@ -482,8 +475,29 @@
 		LR00000200000000LRTMPL01 /* LightReadingTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */; };
 		LR00000200000000LRTMPL02 /* LightReadingTemplatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */; };
 		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
+		LR00000200000000LRASCT01 /* AudioSessionCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRASCT01 /* AudioSessionCoordinatorTests.swift */; };
+		LR00000200000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift */; };
+		LR00000200000000LRACLT01 /* AudioConsumerLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRACLT01 /* AudioConsumerLifecycleTests.swift */; };
+		LR00000200000000LRTAFL01 /* TestAudioFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTAFL01 /* TestAudioFile.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
 		LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */; };
+		LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */; };
+		LR00000200000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */; };
+		LR00000200000000LRMDLRES1 /* ModelResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */; };
+		LR00000200000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift */; };
+		LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */; };
+		LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */; };
+		LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */; };
+		LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */; };
+		LR00000200000000LRRSPL01 /* RouteSourcePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */; };
+		LR00000200000000LRPMRS01 /* PilgrimMapView+RouteSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */; };
+		LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */; };
+		LR00000200000000LRWSST01 /* WaveformScrubberStepTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */; };
+		LR00000200000000LRWSRS01 /* WalkSummaryRecordingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSRS01 /* WalkSummaryRecordingsSection.swift */; };
+		LR00000200000000LRISLT01 /* InkScrollLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRISLT01 /* InkScrollLayoutTests.swift */; };
+		LR00000200000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift */; };
+		LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */; };
+		LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */; };
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
 		LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */; };
 		LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */; };
@@ -491,10 +505,13 @@
 		PERM000100000003 /* PermissionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000002 /* PermissionsViewModel.swift */; };
 		PERM000100000005 /* PermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000004 /* PermissionsViewModelTests.swift */; };
 		PERM000100000007 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000006 /* PermissionsView.swift */; };
+		PERMRTL00000000000003 /* PermissionRitual.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERMRTL00000000000002 /* PermissionRitual.swift */; };
+		PERMRTL00000000000005 /* PermissionRitualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERMRTL00000000000004 /* PermissionRitualTests.swift */; };
 		SEALRVL000000000000001 /* SealRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SEALRVL000000000000002 /* SealRevealView.swift */; };
 		WLKSHRBTN00000000000001 /* WalkSharingButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */; };
 		WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHOVR0000000000000002 /* WeatherOverlayView.swift */; };
 		WTHRSVC0000000000000001 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000002 /* WeatherService.swift */; };
+		567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567B99D82F6F41030006A58E /* WeatherKitREST.swift */; };
 		WTHRSVC0000000000000005 /* WeatherKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = WTHRSVC0000000000000004 /* WeatherKit.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WTHVIG0000000000000002 /* WeatherVignetteView.swift */; };
 /* End PBXBuildFile section */
@@ -563,14 +580,13 @@
 		1D3271A2D5ABEDAEBF7A3BDD /* KanjiExpiryPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KanjiExpiryPicker.swift; sourceTree = "<group>"; };
 		1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioPriorityQueue.swift; sourceTree = "<group>"; };
 		1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CanvasBackground.swift; sourceTree = "<group>"; };
-		2201BCA829423DF100F54277 /* View+Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Navigation.swift"; sourceTree = "<group>"; };
-		2201BCAA29423E1600F54277 /* NavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLink.swift; sourceTree = "<group>"; };
 		2204A1DC255ACB1100906CFE /* DataTypeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTypeProtocol.swift; sourceTree = "<group>"; };
 		2204E427295DF28C00243FC3 /* SetupCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupCoordinatorView.swift; sourceTree = "<group>"; };
 		2207B75523128F8A00BA71B5 /* CLLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLLocation.swift; sourceTree = "<group>"; };
 		2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AltitudeManagement.swift; sourceTree = "<group>"; };
 		2213137C23B4110700881806 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
 		221436B824432B390010D82B /* DataManager+Query.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataManager+Query.swift"; sourceTree = "<group>"; };
+		LR00000100000000LRDMRP01 /* DataManager+Replace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataManager+Replace.swift"; sourceTree = "<group>"; };
 		221436BA244356A90010D82B /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
 		221436BE2443746B0010D82B /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
 		221436C02443960A0010D82B /* UnitCount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitCount.swift; sourceTree = "<group>"; };
@@ -623,7 +639,6 @@
 		229FF499235C228100EA220E /* SettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsModel.swift; sourceTree = "<group>"; };
 		229FF49D235C32D000EA220E /* SelectionSetting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionSetting.swift; sourceTree = "<group>"; };
 		229FF4A0235C7F6300EA220E /* CustomMeasurementFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomMeasurementFormatting.swift; sourceTree = "<group>"; };
-		22A0B72B245B078100E1AB68 /* WalkStatsSeries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStatsSeries.swift; sourceTree = "<group>"; };
 		22A0FAF224D8D4B7000292DF /* WalkCompletionActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkCompletionActionHandler.swift; sourceTree = "<group>"; };
 		22A5459B26E7F8DE00E19B0B /* UnitConverterInverse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitConverterInverse.swift; sourceTree = "<group>"; };
 		22A5D02525C1A45100C30786 /* TempValueConvertible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempValueConvertible.swift; sourceTree = "<group>"; };
@@ -641,7 +656,6 @@
 		22B1DD97253F91F20093822B /* OutRunV2.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutRunV2.swift; sourceTree = "<group>"; };
 		22B1DD98253F91F20093822B /* OutRunV3.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutRunV3.swift; sourceTree = "<group>"; };
 		22B1DDA3253F9D650093822B /* WalkPause.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkPause.swift; sourceTree = "<group>"; };
-		22B2A8A0230D331000EF8558 /* WalkStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkStats.swift; sourceTree = "<group>"; };
 		22B6CF5322CA0814002D2FB0 /* Pilgrim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pilgrim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		22B6CF5622CA0814002D2FB0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		22B6CF6022CA0815002D2FB0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -650,7 +664,6 @@
 		22BBDD3124D77C2B00225AE4 /* StepCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounter.swift; sourceTree = "<group>"; };
 		22BC99142941D97600D9B1A5 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
 		22BC99152941D97600D9B1A5 /* WelcomeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
-		22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetricViewModel.swift; sourceTree = "<group>"; };
 		22BC99292941D9A800D9B1A5 /* CloseButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloseButton.swift; sourceTree = "<group>"; };
 		22BC992A2941D9A800D9B1A5 /* ActionButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionButton.swift; sourceTree = "<group>"; };
 		22BC992B2941D9A800D9B1A5 /* RoundedButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RoundedButton.swift; sourceTree = "<group>"; };
@@ -659,11 +672,8 @@
 		22BC992E2941D9A800D9B1A5 /* ProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		22BC992F2941D9A800D9B1A5 /* FeatureView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeatureView.swift; sourceTree = "<group>"; };
 		22BC99322941D9A800D9B1A5 /* CornerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CornerView.swift; sourceTree = "<group>"; };
-		22BC99342941D9A800D9B1A5 /* MetricView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetricView.swift; sourceTree = "<group>"; };
 		22BC99352941D9A800D9B1A5 /* AxisGeometryReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AxisGeometryReader.swift; sourceTree = "<group>"; };
-		22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalkCardModel.swift; sourceTree = "<group>"; };
 		22BC99372941D9A800D9B1A5 /* FeatureViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeatureViewModel.swift; sourceTree = "<group>"; };
-		22BC99382941D9A800D9B1A5 /* WalkCard.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalkCard.swift; sourceTree = "<group>"; };
 		22BC994A2941DA3400D9B1A5 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		22BC994C2941DA6200D9B1A5 /* Binding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Binding.swift; sourceTree = "<group>"; };
 		22BC99512941DC9900D9B1A5 /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
@@ -693,7 +703,6 @@
 		22F0000E234A2821008CFAD2 /* TitleSubTitleSetting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleSubTitleSetting.swift; sourceTree = "<group>"; };
 		22F5B51BC494516AF77C1861 /* whisper-play-5.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-5.aac"; sourceTree = "<group>"; };
 		22FAB3A625336B600040CBB1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		22FAB3B5253BAC450040CBB1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Changelog.strings; sourceTree = "<group>"; };
 		22FD3252255F319E007719C9 /* Primitive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Primitive.swift; sourceTree = "<group>"; };
 		22FEA0A624CDA3FF0007CA9C /* ClosedRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedRange.swift; sourceTree = "<group>"; };
 		22FEA0AA24CDD39C0007CA9C /* URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URL.swift; sourceTree = "<group>"; };
@@ -734,7 +743,6 @@
 		567070962F74218400FD1910 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		567070AE2F74268E00FD1910 /* WalkActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkActivityAttributes.swift; sourceTree = "<group>"; };
 		567070B12F7426A500FD1910 /* WalkActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkActivityManager.swift; sourceTree = "<group>"; };
-		567B99D82F6F41030006A58E /* WeatherKitREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitREST.swift; sourceTree = "<group>"; };
 		567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectiveCounterService.swift; sourceTree = "<group>"; };
 		567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimageProgress.swift; sourceTree = "<group>"; };
 		56E07B102F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Pilgrim/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -815,6 +823,7 @@
 		AA00020100000000000001 /* VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecording.swift; sourceTree = "<group>"; };
 		AA00020100000000000003 /* VoiceRecordingManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingManagement.swift; sourceTree = "<group>"; };
 		AA00030100000000000001 /* MeditationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationView.swift; sourceTree = "<group>"; };
+		BB00031300000000000001 /* SoundscapePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePickerSheet.swift; sourceTree = "<group>"; };
 		AA00040100000000000001 /* VoiceRecordingRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingRow.swift; sourceTree = "<group>"; };
 		AA00040100000000000003 /* AudioPlayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerModel.swift; sourceTree = "<group>"; };
 		AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiTextGenerator.swift; sourceTree = "<group>"; };
@@ -957,6 +966,7 @@
 		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
 		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalkSessionGuard+Recovery.swift"; sourceTree = "<group>"; };
 		DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecordingPathRecovery.swift; sourceTree = "<group>"; };
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
@@ -1019,8 +1029,29 @@
 		LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingTemplates.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingTemplatesTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRASCT01 /* AudioSessionCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinatorTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoundscapePlayerInterruptionTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRACLT01 /* AudioConsumerLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioConsumerLifecycleTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTAFL01 /* TestAudioFile.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TestAudioFile.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardRecoveryTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImportTransactionTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeleteRuleVersionHashTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModelResolutionTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoshuinMilestonesPerfTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderLifecycleTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelLoadTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceBatchStateTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSessionGuardDispatchTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSourcePlanner.swift; sourceTree = "<group>"; };
+		LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+RouteSource.swift"; sourceTree = "<group>"; };
+		LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RoutePipelineTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WaveformScrubberStepTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWSRS01 /* WalkSummaryRecordingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSummaryRecordingsSection.swift; sourceTree = "<group>"; };
+		LR00000100000000LRISLT01 /* InkScrollLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InkScrollLayoutTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSummaryRouteCacheTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingPersistenceTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageBuilderErrorTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoaderTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSharePreviewView.swift; sourceTree = "<group>"; };
@@ -1028,10 +1059,13 @@
 		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
 		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
 		PERM000100000006 /* PermissionsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
+		PERMRTL00000000000002 /* PermissionRitual.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionRitual.swift; sourceTree = "<group>"; };
+		PERMRTL00000000000004 /* PermissionRitualTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionRitualTests.swift; sourceTree = "<group>"; };
 		SEALRVL000000000000002 /* SealRevealView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SealRevealView.swift; sourceTree = "<group>"; };
 		WLKSHRBTN00000000000002 /* WalkSharingButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSharingButtons.swift; sourceTree = "<group>"; };
 		WTHOVR0000000000000002 /* WeatherOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayView.swift; sourceTree = "<group>"; };
 		WTHRSVC0000000000000002 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		567B99D82F6F41030006A58E /* WeatherKitREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitREST.swift; sourceTree = "<group>"; };
 		WTHRSVC0000000000000004 /* WeatherKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WeatherKit.framework; path = System/Library/Frameworks/WeatherKit.framework; sourceTree = SDKROOT; };
 		WTHVIG0000000000000002 /* WeatherVignetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherVignetteView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1254,15 +1288,6 @@
 			path = "Setting Models";
 			sourceTree = "<group>";
 		};
-		22A0B72A245B075700E1AB68 /* Stats */ = {
-			isa = PBXGroup;
-			children = (
-				22B2A8A0230D331000EF8558 /* WalkStats.swift */,
-				22A0B72B245B078100E1AB68 /* WalkStatsSeries.swift */,
-			);
-			path = Stats;
-			sourceTree = "<group>";
-		};
 		22A2D43423E313A3003580EC /* Formatting */ = {
 			isa = PBXGroup;
 			children = (
@@ -1339,7 +1364,6 @@
 				56F5586A2F7F4BA500805DD0 /* stone-tier-5.m4a */,
 				56F5586B2F7F4BA500805DD0 /* stone-tier-6.m4a */,
 				56F5586C2F7F4BA500805DD0 /* stone-tier-7.m4a */,
-				22FAB3B6253BAC450040CBB1 /* Changelog.strings */,
 				22718E3725925E2D00708D3B /* contribution.json */,
 				F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */,
 				F5DBDBA14D74B3061F349DA5 /* whisper-stillness-3.aac */,
@@ -1536,18 +1560,15 @@
 				22BC992F2941D9A800D9B1A5 /* FeatureView.swift */,
 				22BC99372941D9A800D9B1A5 /* FeatureViewModel.swift */,
 				AAAA00000000000000000MF8 /* PilgrimMapView.swift */,
+				LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */,
 				BBBB000000000000000036 /* PhotoMarkerImageBuilder.swift */,
 				BBBB00000000000000003A /* PhotoMarkerImageLoader.swift */,
-				22BC99342941D9A800D9B1A5 /* MetricView.swift */,
 				56EEE45B2F70788E003F4391 /* StreakFlameView.swift */,
-				22BC99272941D9A800D9B1A5 /* MetricViewModel.swift */,
 				22BC992C2941D9A800D9B1A5 /* PillView.swift */,
 				AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */,
 				AA000001WALKLIGHTREADING /* WalkLightReadingCard.swift */,
 				AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */,
 				22BC992E2941D9A800D9B1A5 /* ProgressView.swift */,
-				22BC99382941D9A800D9B1A5 /* WalkCard.swift */,
-				22BC99362941D9A800D9B1A5 /* WalkCardModel.swift */,
 				CC00000100000000MOONPV01 /* MoonPhaseView.swift */,
 				CC00000100000000SAFARV01 /* SafariView.swift */,
 				14EB751A7F6E7634C371C33E /* CelestialVignetteView.swift */,
@@ -1575,8 +1596,6 @@
 			isa = PBXGroup;
 			children = (
 				22BC99512941DC9900D9B1A5 /* Color.swift */,
-				2201BCAA29423E1600F54277 /* NavigationLink.swift */,
-				2201BCA829423DF100F54277 /* View+Navigation.swift */,
 				86222C880AE25FA86DCC6C66 /* View+ListRow.swift */,
 			);
 			path = SwiftUI;
@@ -1586,6 +1605,7 @@
 			isa = PBXGroup;
 			children = (
 				AAAA00000000000000000MF2 /* RouteSegment.swift */,
+				LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */,
 				AAAA00000000000000000MF4 /* PilgrimAnnotation.swift */,
 				AAAA00000000000000000MF6 /* PilgrimMapStyle.swift */,
 				AAAA00000000000000000MC2 /* MapCameraSeed.swift */,
@@ -1615,6 +1635,7 @@
 				22D043B122DCCE2700154EB8 /* DataManager.swift */,
 				229D4C1E2544CBBA00427913 /* DataManager+Error.swift */,
 				221436B824432B390010D82B /* DataManager+Query.swift */,
+				LR00000100000000LRDMRP01 /* DataManager+Replace.swift */,
 				222632AB24B24FF80017517E /* ExportManager.swift */,
 				222199802439F93C00ADAE24 /* UnitConversion.swift */,
 				22FD3252255F319E007719C9 /* Primitive.swift */,
@@ -1631,7 +1652,6 @@
 			isa = PBXGroup;
 			children = (
 				22C1107A24532A79009ACE81 /* MapManagement */,
-				22A0B72A245B075700E1AB68 /* Stats */,
 				22FEA08E24CD37200007CA9C /* WalkBuilder */,
 				CC00000100000000WKMODE01 /* WalkMode.swift */,
 				22A0FAF224D8D4B7000292DF /* WalkCompletionActionHandler.swift */,
@@ -1641,6 +1661,7 @@
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* WalkFavicon.swift */,
 				A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */,
 				D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */,
+				LR00000100000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift */,
 				BBBB000000000000000019 /* WalkPhotoMatcher.swift */,
 				BBBB00000000000000003C /* PhotoContextAnalyzer.swift */,
 				BBBB000000000000000040 /* PhotoNarrativeArc.swift */,
@@ -1681,6 +1702,7 @@
 				BBBB000000000000000042 /* PhotoNarrativeArcTests.swift */,
 				BB00CC010000000000000002 /* WelcomeViewModelTests.swift */,
 				PERM000100000004 /* PermissionsViewModelTests.swift */,
+				PERMRTL00000000000004 /* PermissionRitualTests.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */,
 				90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */,
 				0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */,
@@ -1715,12 +1737,29 @@
 				LR00000100000000LRHEMST1 /* HemisphereTests.swift */,
 				LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */,
 				LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */,
+				LR00000100000000LRASCT01 /* AudioSessionCoordinatorTests.swift */,
+				LR00000100000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift */,
+				LR00000100000000LRACLT01 /* AudioConsumerLifecycleTests.swift */,
 				LR00000100000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift */,
 				LR00000100000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift */,
 				LR00000100000000LRTDYST1 /* TurningDayServiceTests.swift */,
 				6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */,
 				62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */,
 				60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */,
+				LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */,
+				LR00000100000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift */,
+				LR00000100000000LRMDLRES1 /* ModelResolutionTests.swift */,
+				LR00000100000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift */,
+				LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */,
+				LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */,
+				LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */,
+				LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */,
+				LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */,
+				LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */,
+				LR00000100000000LRISLT01 /* InkScrollLayoutTests.swift */,
+				LR00000100000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift */,
+				LR00000100000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift */,
+				LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */,
 				5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */,
 				D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */,
 			);
@@ -1835,6 +1874,7 @@
 			children = (
 				EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */,
 				4181215714A52E71449BC390 /* WalkDataFactory.swift */,
+				LR00000100000000LRTAFL01 /* TestAudioFile.swift */,
 				721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */,
 				F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */,
 			);
@@ -1957,6 +1997,7 @@
 				BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */,
 				BB00031100000000000001 /* TurningRitualCard.swift */,
 				BB00031200000000000001 /* ActiveWalkSubviews.swift */,
+				BB00031300000000000001 /* SoundscapePickerSheet.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -1966,6 +2007,7 @@
 			children = (
 				AA0001010000000000000006 /* WalkSummaryView.swift */,
 				BBBB000000000000000022 /* WalkSummaryView+Map.swift */,
+				LR00000100000000LRWSRS01 /* WalkSummaryRecordingsSection.swift */,
 				AA00040100000000000001 /* VoiceRecordingRow.swift */,
 				AA00040100000000000003 /* AudioPlayerModel.swift */,
 				AAAA00000000000000000EL2 /* ElevationProfileView.swift */,
@@ -2152,6 +2194,7 @@
 			children = (
 				PERM000100000002 /* PermissionsViewModel.swift */,
 				PERM000100000006 /* PermissionsView.swift */,
+				PERMRTL00000000000002 /* PermissionRitual.swift */,
 			);
 			path = Permissions;
 			sourceTree = "<group>";
@@ -2167,8 +2210,8 @@
 		WTHRSVC0000000000000003 /* Weather */ = {
 			isa = PBXGroup;
 			children = (
-				567B99D82F6F41030006A58E /* WeatherKitREST.swift */,
 				WTHRSVC0000000000000002 /* WeatherService.swift */,
+				567B99D82F6F41030006A58E /* WeatherKitREST.swift */,
 				WTHOVR0000000000000002 /* WeatherOverlayView.swift */,
 				WTHVIG0000000000000002 /* WeatherVignetteView.swift */,
 			);
@@ -2342,7 +2385,6 @@
 				22B1F13F22D61CF400C02973 /* LaunchScreen.storyboard in Resources */,
 				56E07B112F6DD1D8004EBC44 /* PrivacyInfo.xcprivacy in Resources */,
 				2291863A23679AA300929885 /* InfoPlist.strings in Resources */,
-				22FAB3B4253BAC450040CBB1 /* Changelog.strings in Resources */,
 				22B1F14922D6246800C02973 /* Localizable.strings in Resources */,
 				22B6CF6122CA0815002D2FB0 /* Assets.xcassets in Resources */,
 				22718E3825925E2D00708D3B /* contribution.json in Resources */,
@@ -2483,6 +2525,7 @@
 				CC02000100000000PODVWB01 /* PodcastSubmissionView.swift in Sources */,
 				567B99F82F701B8D0006A58E /* PilgrimageProgress.swift in Sources */,
 				DAEA43ECD49D4467B169B413 /* WalkSessionGuard.swift in Sources */,
+				LR00000200000000LRWSGRC1 /* WalkSessionGuard+Recovery.swift in Sources */,
 				22C09B9426514BD8004AF34F /* DataInterface.swift in Sources */,
 				227C690725423294000458BC /* EventInterface.swift in Sources */,
 				22BF623D26E6B1D2008C904C /* WalkBuilderComponentStatus.swift in Sources */,
@@ -2494,7 +2537,6 @@
 				2213137D23B4110700881806 /* PermissionManager.swift in Sources */,
 				AAAA000000000000000000B1 /* TranscriptionService.swift in Sources */,
 				2227C644234B6EF400CFE31A /* Config.swift in Sources */,
-				22B2A8A1230D331000EF8558 /* WalkStats.swift in Sources */,
 				229D4C1F2544CBBA00427913 /* DataManager+Error.swift in Sources */,
 				22B1DD99253F91F20093822B /* OutRunV1.swift in Sources */,
 				22BC99432941D9A800D9B1A5 /* CornerView.swift in Sources */,
@@ -2505,9 +2547,8 @@
 				BREATH000000000000000002 /* BreathTransitionView.swift in Sources */,
 				PERM000100000003 /* PermissionsViewModel.swift in Sources */,
 				PERM000100000007 /* PermissionsView.swift in Sources */,
+				PERMRTL00000000000003 /* PermissionRitual.swift in Sources */,
 				2230925F24D6F6A700A3F636 /* WalkBuilder+Status.swift in Sources */,
-				2201BCA929423DF100F54277 /* View+Navigation.swift in Sources */,
-				2201BCAB29423E1600F54277 /* NavigationLink.swift in Sources */,
 				22623C0122DFBB71004065C6 /* Sequence.swift in Sources */,
 				226E9A4B23F01E6E00992815 /* Date.swift in Sources */,
 				229FF4A1235C7F6300EA220E /* CustomMeasurementFormatting.swift in Sources */,
@@ -2515,9 +2556,9 @@
 				22834F772542236000057FEB /* WalkEventInterface.swift in Sources */,
 				22F0000B234A1DF8008CFAD2 /* SwitchSetting.swift in Sources */,
 				221436B924432B390010D82B /* DataManager+Query.swift in Sources */,
+				LR00000200000000LRDMRP01 /* DataManager+Replace.swift in Sources */,
 				224AF62A237624E80047CBDE /* CustomDateFormatting.swift in Sources */,
 				22C1108024532C69009ACE81 /* WalkMapImageRequest.swift in Sources */,
-				22BC99452941D9A800D9B1A5 /* MetricView.swift in Sources */,
 				2288F6B422E0FB5C0014471C /* UIColor.swift in Sources */,
 				221436C12443960A0010D82B /* UnitCount.swift in Sources */,
 				22BC993C2941D9A800D9B1A5 /* RoundedButton.swift in Sources */,
@@ -2548,22 +2589,22 @@
 				2221997F2439F6FF00ADAE24 /* CustomNumberFormatting.swift in Sources */,
 				22D299372402BDE400F3F6B8 /* TimeIntervalPickerSetting.swift in Sources */,
 				AAAA00000000000000000MF1 /* RouteSegment.swift in Sources */,
+				LR00000200000000LRRSPL01 /* RouteSourcePlanner.swift in Sources */,
 				AAAA00000000000000000MF3 /* PilgrimAnnotation.swift in Sources */,
 				AAAA00000000000000000MF5 /* PilgrimMapStyle.swift in Sources */,
 				AAAA00000000000000000MF7 /* PilgrimMapView.swift in Sources */,
+				LR00000200000000LRPMRS01 /* PilgrimMapView+RouteSource.swift in Sources */,
 				AAAA00000000000000000MC1 /* MapCameraSeed.swift in Sources */,
 				BBBB000000000000000037 /* PhotoMarkerImageBuilder.swift in Sources */,
 				BBBB00000000000000003B /* PhotoMarkerImageLoader.swift in Sources */,
 				22834F73254220FC00057FEB /* WalkPauseInterface.swift in Sources */,
 				22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */,
 				221436BF2443746B0010D82B /* Event.swift in Sources */,
-				22BC99392941D9A800D9B1A5 /* MetricViewModel.swift in Sources */,
 				229FF49A235C228100EA220E /* SettingsModel.swift in Sources */,
 				22834F7A2542239800057FEB /* HelperMethods.swift in Sources */,
 				22D070BA23FC3079007B1744 /* DatePickerSetting.swift in Sources */,
 				22A0FAF324D8D4B7000292DF /* WalkCompletionActionHandler.swift in Sources */,
 				22834F6A25421D0F00057FEB /* WalkInterface.swift in Sources */,
-				22A0B72C245B078100E1AB68 /* WalkStatsSeries.swift in Sources */,
 				22834F8625422E6900057FEB /* RouteDataSampleInterface.swift in Sources */,
 				2209E53924DD4A8F00BBFC2F /* AltitudeManagement.swift in Sources */,
 				22BC993D2941D9A800D9B1A5 /* PillView.swift in Sources */,
@@ -2582,9 +2623,7 @@
 				22BC994D2941DA6200D9B1A5 /* Binding.swift in Sources */,
 				22B6CF7022CA08C9002D2FB0 /* WalkBuilder.swift in Sources */,
 				221436BB244356A90010D82B /* Array.swift in Sources */,
-				22BC99472941D9A800D9B1A5 /* WalkCardModel.swift in Sources */,
 				22D299352402B37E00F3F6B8 /* PickerSetting.swift in Sources */,
-				22BC99492941D9A800D9B1A5 /* WalkCard.swift in Sources */,
 				22BD1F42247463DF00415A06 /* ApplicationState.swift in Sources */,
 				22558387242E80FA0043432F /* PolicyManager.swift in Sources */,
 				225AC6A2243F2700008D493D /* WalkEvent.swift in Sources */,
@@ -2670,6 +2709,7 @@
 				AA00030100000000000002 /* MeditationView.swift in Sources */,
 				BB00031100000000000002 /* TurningRitualCard.swift in Sources */,
 				BB00031200000000000002 /* ActiveWalkSubviews.swift in Sources */,
+				BB00031300000000000002 /* SoundscapePickerSheet.swift in Sources */,
 				AAAA0000000000000000FB /* WalkOptionsSheet.swift in Sources */,
 				AA0001010000000000000016 /* WalkSummaryView.swift in Sources */,
 				AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */,
@@ -2688,7 +2728,6 @@
 				CC00BB010000000000000002 /* VoiceRecordingInterface.swift in Sources */,
 				EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */,
 				DD00CC0100000000000002 /* MeditateDetection.swift in Sources */,
-				567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */,
 				AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */,
 				AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */,
 				AAAA000000000000000000F1 /* IntentionHistoryStore.swift in Sources */,
@@ -2751,6 +2790,7 @@
 				BBBB00000000000000001F /* PhotoCarouselView.swift in Sources */,
 				BBBB000000000000000021 /* PhotoPreviewSheet.swift in Sources */,
 				BBBB000000000000000023 /* WalkSummaryView+Map.swift in Sources */,
+				LR00000200000000LRWSRS01 /* WalkSummaryRecordingsSection.swift in Sources */,
 				BBBB00000000000000000A /* WaypointMarkingSheet.swift in Sources */,
 				86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */,
 				52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */,
@@ -2762,6 +2802,7 @@
 				E45CCFD6C6A29B3BC03CF2AC /* MeditationGuideManagement.swift in Sources */,
 				3DF4B121DEE87CA7EBB26207 /* VoiceGuideSettingsView.swift in Sources */,
 				WTHRSVC0000000000000001 /* WeatherService.swift in Sources */,
+				567B99D92F6F41030006A58E /* WeatherKitREST.swift in Sources */,
 				WTHOVR0000000000000001 /* WeatherOverlayView.swift in Sources */,
 				WTHVIG0000000000000001 /* WeatherVignetteView.swift in Sources */,
 				73E33F8FCA5B429A65D78EE0 /* PromptContextTypes.swift in Sources */,
@@ -2866,6 +2907,7 @@
 				BBBB000000000000000043 /* PhotoNarrativeArcTests.swift in Sources */,
 				BB00CC010000000000000001 /* WelcomeViewModelTests.swift in Sources */,
 				PERM000100000005 /* PermissionsViewModelTests.swift in Sources */,
+				PERMRTL00000000000005 /* PermissionRitualTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */,
 				0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */,
 				3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */,
@@ -2901,6 +2943,10 @@
 				LR00000200000000LRHEMST1 /* HemisphereTests.swift in Sources */,
 				LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */,
 				LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */,
+				LR00000200000000LRASCT01 /* AudioSessionCoordinatorTests.swift in Sources */,
+				LR00000200000000LRSPIT01 /* SoundscapePlayerInterruptionTests.swift in Sources */,
+				LR00000200000000LRACLT01 /* AudioConsumerLifecycleTests.swift in Sources */,
+				LR00000200000000LRTAFL01 /* TestAudioFile.swift in Sources */,
 				LR00000200000000LRWSGRT1 /* WalkSessionGuardRecoveryTests.swift in Sources */,
 				LR00000200000000LRSMTRT1 /* SeasonalMarkerTurningTests.swift in Sources */,
 				LR00000200000000LRTDYST1 /* TurningDayServiceTests.swift in Sources */,
@@ -2908,6 +2954,20 @@
 				CB7ADD4EA290BD08EFFF402B /* UserPreferencesArchivedTests.swift in Sources */,
 				847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */,
 				D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */,
+				LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */,
+				LR00000200000000LRDRVHT1 /* DeleteRuleVersionHashTests.swift in Sources */,
+				LR00000200000000LRMDLRES1 /* ModelResolutionTests.swift in Sources */,
+				LR00000200000000LRGOSHPF1 /* GoshuinMilestonesPerfTests.swift in Sources */,
+				LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */,
+				LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */,
+				LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */,
+				LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */,
+				LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */,
+				LR00000200000000LRWSST01 /* WaveformScrubberStepTests.swift in Sources */,
+				LR00000200000000LRISLT01 /* InkScrollLayoutTests.swift in Sources */,
+				LR00000200000000LRWSRC01 /* WalkSummaryRouteCacheTests.swift in Sources */,
+				LR00000200000000LRVRPST1 /* VoiceRecordingPersistenceTests.swift in Sources */,
+				LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */,
 				12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */,
 				C950A11E1333A7241A632EAD /* PilgrimPackageExporterArchivedTests.swift in Sources */,
 			);
@@ -2971,14 +3031,6 @@
 				222A775F2527401E00317E5A /* Base */,
 			);
 			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
-		22FAB3B6253BAC450040CBB1 /* Changelog.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				22FAB3B5253BAC450040CBB1 /* en */,
-			);
-			name = Changelog.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -3114,14 +3166,14 @@
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 85;
+				CURRENT_PROJECT_VERSION = 89;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				INFOPLIST_FILE = "$(SRCROOT)/Pilgrim/Support Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3140,14 +3192,14 @@
 				CODE_SIGN_ENTITLEMENTS = Pilgrim/Pilgrim.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 85;
+				CURRENT_PROJECT_VERSION = 89;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				INFOPLIST_FILE = "$(SRCROOT)/Pilgrim/Support Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3163,11 +3215,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 85;
+				CURRENT_PROJECT_VERSION = 89;
 				DEVELOPMENT_TEAM = QT27QDFZ7N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -3184,11 +3236,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 85;
+				CURRENT_PROJECT_VERSION = 89;
 				DEVELOPMENT_TEAM = QT27QDFZ7N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -3207,7 +3259,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 85;
+				CURRENT_PROJECT_VERSION = 89;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -3222,7 +3274,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.PilgrimWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3245,7 +3297,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 85;
+				CURRENT_PROJECT_VERSION = 89;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -3260,7 +3312,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.pilgrim.PilgrimWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3279,14 +3331,14 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 85;
+				CURRENT_PROJECT_VERSION = 89;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.ScreenshotTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -3306,14 +3358,14 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 85;
+				CURRENT_PROJECT_VERSION = 89;
 				DEVELOPMENT_TEAM = YCF2TGZAX8;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.walktalkmeditate.ScreenshotTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;

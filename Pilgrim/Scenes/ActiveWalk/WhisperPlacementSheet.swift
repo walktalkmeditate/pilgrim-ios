@@ -99,6 +99,9 @@ struct WhisperPlacementSheet: View {
                         .font(.title3)
                         .foregroundColor(Color(category.borderColor))
                 }
+                .accessibilityLabel(isPreviewing
+                    ? "Stop preview"
+                    : "Preview a \(category.rawValue.capitalized) whisper")
 
                 Text(category.rawValue.capitalized)
                     .font(Constants.Typography.body)
@@ -124,6 +127,8 @@ struct WhisperPlacementSheet: View {
                     .opacity(isSelected ? 1.0 : 0.4)
             )
         }
+        .accessibilityLabel(category.rawValue.capitalized)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var privacyNotice: some View {

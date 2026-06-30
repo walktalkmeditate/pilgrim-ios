@@ -38,6 +38,7 @@ struct MeditationView: View {
     @ObservedObject private var soundscapePlayer = SoundscapePlayer.shared
     @ObservedObject private var manifestService = VoiceGuideManifestService.shared
     @ObservedObject private var downloadManager = VoiceGuideDownloadManager.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var rhythm: BreathRhythm {
         guard selectedRhythmId >= 0 && selectedRhythmId < BreathRhythm.all.count else { return BreathRhythm.all[0] }
@@ -57,10 +58,15 @@ struct MeditationView: View {
                 breathingCircle
                     .opacity(closingPhase == .dissolving || closingPhase == .summary || closingPhase == .fadeOut ? 0 : 1)
                     .scaleEffect(closingPhase == .dissolving ? 0.1 : 1)
+                    .overlay(alignment: .bottom) { meditationOptionsAffordance }
                     .onLongPressGesture(minimumDuration: 1.0) {
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                         showMeditationOptions = true
                     }
+                    .accessibilityElement()
+                    .accessibilityLabel("Breathing circle")
+                    .accessibilityHint("Follows your breath pacing")
+                    .accessibilityAction(named: "Meditation options") { showMeditationOptions = true }
 
                 if closingPhase == .summary {
                     closingSummary
@@ -156,7 +162,10 @@ struct MeditationView: View {
             }
         }
         .allowsHitTesting(false)
-        .animation(.easeInOut(duration: 6).repeatForever(autoreverses: true), value: particleGlow)
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 6).repeatForever(autoreverses: true),
+            value: particleGlow
+        )
     }
 
     private func spawnParticles() {
@@ -208,7 +217,10 @@ struct MeditationView: View {
             }
         }
         .allowsHitTesting(false)
-        .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: voiceRingPulse)
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 2.5).repeatForever(autoreverses: true),
+            value: voiceRingPulse
+        )
     }
 
     private func emitRipple() {
@@ -266,7 +278,10 @@ struct MeditationView: View {
                 )
                 .frame(width: 160, height: 160)
                 .scaleEffect(circleScale)
-                .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isHolding)
+                .animation(
+                    reduceMotion ? nil : .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
+                    value: isHolding
+                )
 
             Circle()
                 .stroke(Color.moss.opacity(0.25 + glowAmount * 0.15 + milestoneFlash * 0.4), lineWidth: 1 + glowAmount * 0.5 + milestoneFlash * 1.5)
@@ -276,6 +291,29 @@ struct MeditationView: View {
         }
     }
 
+    // MARK: - Options Affordance
+
+    /// A small, always-visible ellipsis at the foot of the breathing circle.
+    /// The 1s long-press on the circle is undiscoverable and unusable for
+    /// Switch Access / motor-impaired users who can't sustain it; this real
+    /// Button opens the same options sheet on a single tap. Hidden from
+    /// VoiceOver because the circle's accessibilityAction already exposes it.
+    private var meditationOptionsAffordance: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+            showMeditationOptions = true
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(Constants.Typography.caption)
+                .foregroundColor(Color.fog.opacity(0.4))
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+        }
+        .offset(y: 30)
+        .opacity(closingPhase == .none ? 1 : 0)
+        .accessibilityHidden(true)
+    }
+
     // MARK: - Labels
 
     private var breathCountLabel: some View {
@@ -283,6 +321,7 @@ struct MeditationView: View {
             .font(Constants.Typography.caption)
             .foregroundColor(Color.fog.opacity(0.4))
             .monospacedDigit()
+            .accessibilityLabel("\(breathCount) breaths")
     }
 
     /// Always-visible soundscape affordance. When a soundscape is
@@ -328,8 +367,16 @@ struct MeditationView: View {
                 showSoundscapePicker = true
             }
         )
+        .accessibilityLabel(soundscapeAccessibilityLabel)
+        .accessibilityHint(name != nil ? "Double tap to mute or unmute" : "Double tap to choose a soundscape")
+        .accessibilityAction(named: "Choose soundscape") { showSoundscapePicker = true }
         .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.isMuted)
         .animation(.easeInOut(duration: 0.3), value: soundscapePlayer.currentAsset?.id)
+    }
+
+    private var soundscapeAccessibilityLabel: String {
+        guard let name = selectedSoundscapeName else { return "Soundscape: silence" }
+        return soundscapePlayer.isMuted ? "Soundscape \(name), paused" : "Soundscape \(name), playing"
     }
 
     private var selectedSoundscapeName: String? {
@@ -347,6 +394,7 @@ struct MeditationView: View {
             .font(Constants.Typography.statValue)
             .foregroundColor(Color.fog)
             .monospacedDigit()
+            .accessibilityLabel("Session time \(formatTime(clock.elapsed))")
     }
 
     // MARK: - Closing Summary
@@ -489,7 +537,7 @@ struct MeditationView: View {
                             ? Color.moss.opacity(0.08)
                             : Color.clear
                     )
-                    .cornerRadius(10)
+                    .cornerRadius(Constants.UI.CornerRadius.small)
                 }
             }
         }
@@ -515,7 +563,7 @@ struct MeditationView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(isSelected ? Color.moss.opacity(0.08) : Color.clear)
-        .cornerRadius(10)
+        .cornerRadius(Constants.UI.CornerRadius.small)
     }
 
     private func autoStartGuideIfEnabled() {
@@ -598,7 +646,7 @@ struct MeditationView: View {
                             ? Color.moss.opacity(0.08)
                             : Color.clear
                     )
-                    .cornerRadius(10)
+                    .cornerRadius(Constants.UI.CornerRadius.small)
                 }
             }
         }
@@ -875,87 +923,4 @@ struct VoiceRing: Identifiable {
     var size: CGFloat
     var opacity: Double
     var irregularity: CGFloat
-}
-
-/// Modal picker for choosing a soundscape during meditation. Extracted
-/// from MeditationView so the main struct body stays within SwiftLint's
-/// type_body_length limit. Reads live state from `SoundscapePlayer.shared`
-/// via @ObservedObject so the current selection's checkmark updates
-/// live as the player's state changes.
-struct SoundscapePickerSheet: View {
-
-    @Binding var isPresented: Bool
-    @ObservedObject private var soundscapePlayer = SoundscapePlayer.shared
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Soundscape")
-                .font(Constants.Typography.heading)
-                .foregroundColor(Color.ink.opacity(0.8))
-                .padding(.top, 12)
-
-            ScrollView {
-                VStack(spacing: 6) {
-                    ForEach(AudioManifestService.shared.soundscapes) { scape in
-                        soundscapeRow(scape)
-                    }
-                    noneRow
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, Constants.UI.Padding.big)
-            }
-        }
-    }
-
-    private func soundscapeRow(_ scape: AudioAsset) -> some View {
-        let isSelected = soundscapePlayer.currentAsset?.id == scape.id
-            || (soundscapePlayer.currentAsset == nil && UserPreferences.selectedSoundscapeId.value == scape.id)
-        return Button {
-            UserPreferences.selectedSoundscapeId.value = scape.id
-            if AudioFileStore.shared.isAvailable(scape) {
-                soundscapePlayer.play(scape, volume: Float(UserPreferences.soundscapeVolume.value))
-            }
-            isPresented = false
-        } label: {
-            pickerRowLabel(
-                title: scape.displayName,
-                titleOpacity: 0.9,
-                isSelected: isSelected
-            )
-        }
-    }
-
-    private var noneRow: some View {
-        Button {
-            soundscapePlayer.stop()
-            UserPreferences.selectedSoundscapeId.value = nil
-            isPresented = false
-        } label: {
-            let noneSelected = soundscapePlayer.currentAsset == nil
-                && UserPreferences.selectedSoundscapeId.value == nil
-            pickerRowLabel(
-                title: "None",
-                titleOpacity: 0.5,
-                isSelected: noneSelected
-            )
-        }
-    }
-
-    private func pickerRowLabel(title: String, titleOpacity: Double, isSelected: Bool) -> some View {
-        HStack {
-            Text(title)
-                .font(Constants.Typography.body)
-                .foregroundColor(Color.ink.opacity(titleOpacity))
-            Spacer()
-            if isSelected {
-                Image(systemName: "checkmark")
-                    .font(.caption)
-                    .foregroundColor(.moss)
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(isSelected ? Color.moss.opacity(0.08) : Color.clear)
-        .cornerRadius(10)
-    }
 }

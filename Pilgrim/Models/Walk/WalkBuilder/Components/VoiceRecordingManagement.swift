@@ -34,6 +34,10 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         }
 
         callObserver.setDelegate(self, queue: .main)
+
+        audioCoordinator.addInterruptionObserver(id: "voiceRecording") { [weak self] event in
+            self?.handleAudioInterruption(event)
+        }
     }
 
     public func bind(builder: WalkBuilder) {
@@ -61,9 +65,10 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
     private let audioCoordinator = AudioSessionCoordinator.shared
 
     private func configureAudioSession() {
-        let needsPlayback = SoundscapePlayer.shared.isPlaying
-        let mode: AudioSessionCoordinator.Mode = needsPlayback ? .recordAndPlay : .recordingOnly
-        audioCoordinator.activate(for: mode, consumer: "voiceRecording")
+        // The coordinator arbitrates the actual session category: if any
+        // playback consumer (soundscape, whisper, bell) is live, this
+        // recordingOnly request resolves to recordAndPlay automatically.
+        audioCoordinator.activate(for: .recordingOnly, consumer: "voiceRecording")
     }
 
     private func deactivateAudioSession() {
@@ -86,9 +91,13 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         guard isWalkActive, !isRecording else { return }
 
         VoiceGuidePlayer.shared.stop()
-        configureAudioSession()
 
+        // Activate only once the directory exists — the early return must
+        // not leave the "voiceRecording" consumer holding a mic-active
+        // session it will never release.
         guard let dir = ensureRecordingsDirectory() else { return }
+
+        configureAudioSession()
 
         let recordingID = UUID()
         let filename = "\(recordingID.uuidString).m4a"
@@ -167,26 +176,50 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         }
 
         let end = Date()
-        let enhanced = UserPreferences.dynamicVoiceEnabled.value
-        finalizeRecording(start: start, end: end, relativePath: relativePath, isEnhanced: enhanced)
+        let recordingUUID = UUID()
+        // isEnhanced is finalized as false and flipped only after
+        // VoiceEnhancer reports success — the flag must never claim an
+        // enhancement that failed (it round-trips through checkpoints
+        // and exports).
+        finalizeRecording(uuid: recordingUUID, start: start, end: end, relativePath: relativePath)
 
-        if enhanced {
+        if UserPreferences.dynamicVoiceEnabled.value {
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             let fileURL = docs.appendingPathComponent(relativePath)
-            VoiceEnhancer.shared.enhance(fileURL) { _ in }
+            VoiceEnhancer.shared.enhance(fileURL) { [weak self] success in
+                guard success else {
+                    print("[VoiceRecordingManagement] Enhancement failed — recording \(recordingUUID) stays raw")
+                    return
+                }
+                self?.markRecordingEnhanced(uuid: recordingUUID)
+            }
         }
     }
 
-    private func finalizeRecording(start: Date, end: Date, relativePath: String, isEnhanced: Bool = false) {
+    private func finalizeRecording(uuid: UUID, start: Date, end: Date, relativePath: String) {
         let recording = TempVoiceRecording(
-            uuid: UUID(),
+            uuid: uuid,
             startDate: start,
             endDate: end,
             duration: end.timeIntervalSince(start),
             fileRelativePath: relativePath,
-            isEnhanced: isEnhanced
+            isEnhanced: false
         )
         voiceRecordingsRelay.accept(voiceRecordingsRelay.value + [recording])
+    }
+
+    /// Runs on the main queue (VoiceEnhancer completes there). If the walk
+    /// is still in progress the relay entry is updated in place; if it was
+    /// already saved (relay reset on walk completion), the persisted row is
+    /// updated instead — `persistVoiceRecordings` preserves the temp UUID.
+    private func markRecordingEnhanced(uuid: UUID) {
+        let current = voiceRecordingsRelay.value
+        if let match = current.first(where: { $0.uuid == uuid }) {
+            match.isEnhanced = true
+            voiceRecordingsRelay.accept(current)
+        } else {
+            DataManager.updateVoiceRecordingIsEnhanced(uuid: uuid, isEnhanced: true)
+        }
     }
 
     private func startMetering() {
@@ -266,9 +299,24 @@ extension VoiceRecordingManagement: CXCallObserverDelegate {
         stopRecording()
     }
 
+    /// Non-call interruptions (declined call, Siri, alarm) pause the
+    /// AVAudioRecorder with no resume path — finalize immediately so the
+    /// captured audio is committed instead of silently truncating while the
+    /// UI keeps showing an active recording. Connected calls also arrive
+    /// here via CXCallObserver; the isRecording guard makes the overlap a
+    /// no-op for whichever fires second.
+    private func handleAudioInterruption(_ event: AudioSessionCoordinator.InterruptionEvent) {
+        guard case .began = event, isRecording else { return }
+        stopRecording()
+    }
+
     #if DEBUG
     func _test_simulateCallChanged(hasConnected: Bool, hasEnded: Bool) {
         handleCallStateChange(hasConnected: hasConnected, hasEnded: hasEnded)
+    }
+
+    func _test_simulateAudioInterruption(_ event: AudioSessionCoordinator.InterruptionEvent) {
+        handleAudioInterruption(event)
     }
     #endif
 }

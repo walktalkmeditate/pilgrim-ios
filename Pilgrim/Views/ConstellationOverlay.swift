@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 struct ConstellationOverlay: View {
@@ -12,6 +13,14 @@ struct ConstellationOverlay: View {
     @State private var stars: [Star]
     @State private var nebulae: [Nebula]
     @State private var shooting: ShootingState = .idle
+    /// Low Power Mode drops the timeline cadence to 10 fps. Normal mode
+    /// stays at the 60 fps documented in PR #40's architecture notes —
+    /// the gate exists so a multi-hour walk on a dying battery isn't
+    /// spending it on star twinkle. `isLowPowerModeEnabled` is not
+    /// KVO/Combine-observable directly, so we track it via the
+    /// processInfoPowerStateDidChange notification (which can arrive
+    /// off-main).
+    @State private var isLowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
 
     init(includesNebulae: Bool = true) {
         // Populate at view-init time. Star positions are normalized 0..1
@@ -35,6 +44,13 @@ struct ConstellationOverlay: View {
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: Notification.Name.NSProcessInfoPowerStateDidChange)
+                .receive(on: DispatchQueue.main)
+        ) { _ in
+            isLowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
     }
 
     @ViewBuilder
@@ -62,7 +78,7 @@ struct ConstellationOverlay: View {
     }
 
     private func animatedView(canvasSize: CGSize) -> some View {
-        TimelineView(.periodic(from: .now, by: 1.0 / 60.0)) { ctx in
+        TimelineView(.periodic(from: .now, by: isLowPower ? 1.0 / 10.0 : 1.0 / 60.0)) { ctx in
             Canvas { gc, size in
                 let now = ctx.date
                 let t = now.timeIntervalSinceReferenceDate
@@ -372,7 +388,7 @@ extension ConstellationOverlay {
         let candidates: [Nebula] = [
             Nebula(basePosition: CGPoint(x: 0.25, y: 0.20), radius: 280, tint: .violet, driftSpeed: 0.6),
             Nebula(basePosition: CGPoint(x: 0.75, y: 0.55), radius: 340, tint: .indigo, driftSpeed: 0.4),
-            Nebula(basePosition: CGPoint(x: 0.45, y: 0.85), radius: 260, tint: .plum,   driftSpeed: 0.8)
+            Nebula(basePosition: CGPoint(x: 0.45, y: 0.85), radius: 260, tint: .plum, driftSpeed: 0.8)
         ]
         return Array(candidates.shuffled().prefix(Int.random(in: 2...3)))
     }

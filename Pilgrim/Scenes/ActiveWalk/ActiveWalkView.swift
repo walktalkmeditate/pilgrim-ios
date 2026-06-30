@@ -5,7 +5,13 @@ struct ActiveWalkView: View {
 
     @ObservedObject var viewModel: ActiveWalkViewModel
     var onCancel: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var intentionHistory = IntentionHistoryStore()
+    /// The options-button halo pulses only for the first few cycles after
+    /// the walk screen appears, then retires (AF42). An unconditional
+    /// phaseAnimator would otherwise animate for the entire multi-hour
+    /// walk, against the resource-safety policy preferring static views.
+    @State private var optionsPulseActive = true
     @State private var showStopConfirmation = false
     @State private var showMeditation = false
     @State private var showOptions = false
@@ -344,21 +350,10 @@ struct ActiveWalkView: View {
         .onReceive(viewModel.proximityService.proximityEvents) { event in
             handleProximityEvent(event)
         }
-        .alert("Location Unavailable", isPresented: $showWaypointFailed) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Waiting for a GPS fix. Try again in a moment.")
-        }
-        .alert("Microphone Required", isPresented: $viewModel.showMicrophonePermissionNeeded) {
-            Button("Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
-        }
+        .modifier(PermissionAlertsModifier(
+            viewModel: viewModel,
+            showWaypointFailed: $showWaypointFailed
+        ))
         .onAppear {
             // Seed sheet state from current walk status on FIRST mount only.
             // Guarded so that navigating away (meditation, walk summary) and
@@ -372,6 +367,12 @@ struct ActiveWalkView: View {
 
             guard !hasCheckedAutoIntention else { return }
             hasCheckedAutoIntention = true
+            // Retire the options-button pulse after ~3 cycles (AF42). The
+            // one-shot only ever flips true→false, so no generation guard
+            // is needed; if the view is gone the write is a no-op.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) {
+                optionsPulseActive = false
+            }
             if UserPreferences.beginWithIntention.value && viewModel.intention == nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showIntention = true
@@ -532,16 +533,21 @@ struct ActiveWalkView: View {
 
     private var mapOverlayButtons: some View {
         HStack {
-            Button { showOptions = true } label: {
+            Button {
+                optionsPulseActive = false
+                showOptions = true
+            } label: {
                 ZStack {
-                    Circle()
-                        .fill(Color.stone.opacity(0.15))
-                        .frame(width: 36, height: 36)
-                        .phaseAnimator([false, true]) { content, phase in
-                            content
-                                .scaleEffect(phase ? 1.8 : 1.0)
-                                .opacity(phase ? 0 : 0.5)
-                        } animation: { _ in .easeInOut(duration: 2.0) }
+                    if optionsPulseActive && !reduceMotion {
+                        Circle()
+                            .fill(Color.stone.opacity(0.15))
+                            .frame(width: 36, height: 36)
+                            .phaseAnimator([false, true]) { content, phase in
+                                content
+                                    .scaleEffect(phase ? 1.8 : 1.0)
+                                    .opacity(phase ? 0 : 0.5)
+                            } animation: { _ in .easeInOut(duration: 2.0) }
+                    }
 
                     Image(systemName: "ellipsis")
                         .font(.body.weight(.medium))
@@ -572,9 +578,6 @@ struct ActiveWalkView: View {
         f.formatOptions = [.withInternetDateTime]
         return f
     }()
-    private static let mapVisibilityRadius: CLLocationDistance = 2000
-    private static let maxVisiblePins = 30
-    private static let minPinSeparation: CLLocationDistance = 15
 
     private func mapSection() -> some View {
         let waypointPins = viewModel.waypoints.map { wp in
@@ -583,11 +586,13 @@ struct ActiveWalkView: View {
                 kind: .waypoint(label: wp.label, icon: wp.icon)
             )
         }
+        // Proximity pins are memoized in the view model (AF43) — reading a
+        // stored property here keeps body evaluations free of distance math.
         return PilgrimMapView(
             showsUserLocation: true,
             followsUserLocation: true,
             routeSegments: viewModel.routeSegments,
-            pinAnnotations: waypointPins + proximityAnnotations(),
+            pinAnnotations: waypointPins + viewModel.proximityPins,
             onAnnotationTap: { annotation in
                 handleAnnotationTap(annotation)
             },
@@ -597,66 +602,6 @@ struct ActiveWalkView: View {
             walkingColor: activeTurning?.uiColor ?? .moss,
             isMeditating: $viewModel.isMeditating
         )
-    }
-
-    private func proximityAnnotations() -> [PilgrimAnnotation] {
-        guard let loc = viewModel.currentLocation else { return [] }
-        let userLoc = CLLocation(latitude: loc.latitude, longitude: loc.longitude)
-
-        struct Candidate {
-            let annotation: PilgrimAnnotation
-            let distance: CLLocationDistance
-        }
-
-        var candidates: [Candidate] = []
-
-        for whisper in GeoCacheService.shared.cachedWhispers {
-            let dist = userLoc.distance(from: CLLocation(latitude: whisper.latitude, longitude: whisper.longitude))
-            guard dist <= Self.mapVisibilityRadius else { continue }
-            guard let cat = whisper.resolvedCategory else { continue }
-            let isNearby = dist <= ProximityDetectionService.whisperRadius
-            let annotation = PilgrimAnnotation(
-                coordinate: CLLocationCoordinate2D(latitude: whisper.latitude, longitude: whisper.longitude),
-                kind: .whisper(categoryColor: cat.borderColor, isNearby: isNearby)
-            )
-            candidates.append(Candidate(annotation: annotation, distance: dist))
-        }
-
-        for cairn in GeoCacheService.shared.cachedCairns {
-            let dist = userLoc.distance(from: CLLocation(latitude: cairn.latitude, longitude: cairn.longitude))
-            guard dist <= Self.mapVisibilityRadius else { continue }
-            let annotation = PilgrimAnnotation(
-                coordinate: CLLocationCoordinate2D(latitude: cairn.latitude, longitude: cairn.longitude),
-                kind: .cairn(stoneCount: cairn.stoneCount, tier: cairn.tier)
-            )
-            candidates.append(Candidate(annotation: annotation, distance: dist))
-        }
-
-        candidates.sort { $0.distance < $1.distance }
-
-        var accepted: [(annotation: PilgrimAnnotation, lat: Double, lon: Double)] = []
-        for candidate in candidates {
-            guard accepted.count < Self.maxVisiblePins else { break }
-            let cLat = candidate.annotation.coordinate.latitude
-            let cLon = candidate.annotation.coordinate.longitude
-            let isSameType: (PilgrimAnnotation.Kind, PilgrimAnnotation.Kind) -> Bool = { a, b in
-                switch (a, b) {
-                case (.whisper, .whisper), (.cairn, .cairn): return true
-                default: return false
-                }
-            }
-            let tooClose = accepted.contains { a in
-                guard isSameType(a.annotation.kind, candidate.annotation.kind) else { return false }
-                let dLat = (a.lat - cLat) * 111_000
-                let dLon = (a.lon - cLon) * 111_000 * cos(cLat * .pi / 180)
-                return (dLat * dLat + dLon * dLon) < Self.minPinSeparation * Self.minPinSeparation
-            }
-            if !tooClose {
-                accepted.append((candidate.annotation, cLat, cLon))
-            }
-        }
-
-        return accepted.map(\.annotation)
     }
 
     // MARK: - Status Change Handlers
@@ -772,8 +717,12 @@ struct ActiveWalkView: View {
                 .frame(width: 28, height: 28)
                 .background(
                     Circle()
+                        // Fixed .black, not adaptive .ink: .ink inverts to
+                        // near-white in dark mode and renders as a light halo
+                        // under each button on the dark map. Matches the fixed
+                        // shadow on the stats sheet background above.
                         .fill(Color.parchmentSecondary)
-                        .shadow(color: .ink.opacity(0.08), radius: 4, y: 2)
+                        .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                 )
         }
     }
@@ -960,5 +909,42 @@ extension ActiveWalkView {
             }
             HapticPattern.cairnProximity.fire()
         }
+    }
+}
+
+/// Groups the walk screen's three Settings-linked alerts (GPS, microphone,
+/// and the AF45 location/motion permission error) into one modifier — both
+/// to keep `ActiveWalkView.body` under the Swift type-checker's timeout and
+/// to share the identical "open Settings" affordance.
+private struct PermissionAlertsModifier: ViewModifier {
+
+    @ObservedObject var viewModel: ActiveWalkViewModel
+    @Binding var showWaypointFailed: Bool
+
+    private func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .alert("Location Unavailable", isPresented: $showWaypointFailed) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Waiting for a GPS fix. Try again in a moment.")
+            }
+            .alert("Microphone Required", isPresented: $viewModel.showMicrophonePermissionNeeded) {
+                Button("Settings", action: openSettings)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Pilgrim needs microphone access to record reflections. Please enable it in Settings.")
+            }
+            .alert("Permission Needed", isPresented: $viewModel.showPermissionError) {
+                Button("Settings", action: openSettings)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(viewModel.permissionErrorMessage ?? "")
+            }
     }
 }

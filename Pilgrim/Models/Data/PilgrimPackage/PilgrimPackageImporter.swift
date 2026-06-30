@@ -33,14 +33,30 @@ import ZIPFoundation
 /// with the tended version (only happens for tended files —
 /// `manifest.modifications[]` non-empty or `manifest.archived[]`
 /// non-empty). `archived` walks transitioned to the archived state.
+/// `skipped` counts walk files that could not be decoded (corrupt or
+/// truncated JSON) and `failedEvents` counts journeys whose save
+/// transaction failed — both are surfaced so a partial import is never
+/// reported as unqualified success.
 struct ImportSummary: Equatable {
     let added: Int
     let replaced: Int
     let archived: Int
+    let skipped: Int
+    let failedEvents: Int
 
-    static let empty = ImportSummary(added: 0, replaced: 0, archived: 0)
+    static let empty = ImportSummary(added: 0, replaced: 0, archived: 0, skipped: 0, failedEvents: 0)
 
     var totalChanges: Int { added + replaced + archived }
+    var hasFailures: Bool { skipped > 0 || failedEvents > 0 }
+}
+
+/// Decoded contents of a `.pilgrim` archive, pre-database.
+struct DecodedPackage {
+    let walks: [TempWalk]
+    let events: [TempEvent]
+    let archived: [PilgrimArchivedWalk]
+    let isTended: Bool
+    let skippedWalks: Int
 }
 
 enum PilgrimPackageImporter {
@@ -53,15 +69,9 @@ enum PilgrimPackageImporter {
 
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                let (walks, events, archived, isTended) = try unpackAndDecode(from: url)
+                let package = try unpackAndDecode(from: url)
                 DispatchQueue.main.async {
-                    saveData(
-                        walks: walks,
-                        events: events,
-                        archived: archived,
-                        isTended: isTended,
-                        completion: completion
-                    )
+                    saveData(package: package, completion: completion)
                 }
             } catch let error as PilgrimPackageError {
                 completion(.failure(error))
@@ -75,7 +85,7 @@ enum PilgrimPackageImporter {
     /// entries from its JSON payload. Internal (not private) so unit tests can
     /// exercise the parse pipeline against a fixture archive without going
     /// through `DataManager.saveWalks` (which requires a live CoreStore stack).
-    static func unpackAndDecode(from url: URL) throws -> ([TempWalk], [TempEvent], [PilgrimArchivedWalk], Bool) {
+    static func unpackAndDecode(from url: URL) throws -> DecodedPackage {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory
             .appendingPathComponent("pilgrim-import-\(UUID().uuidString)")
@@ -113,12 +123,34 @@ enum PilgrimPackageImporter {
             throw PilgrimPackageError.invalidPackage
         }
 
-        let walkFiles = try fm.contentsOfDirectory(
+        let (tempWalks, skippedWalks) = try decodeWalks(in: walksDir, decoder: decoder)
+
+        let tempEvents = PilgrimPackageConverter.convertEvents(manifest.events)
+
+        return DecodedPackage(
+            walks: tempWalks,
+            events: tempEvents,
+            archived: manifest.archivedOrEmpty,
+            isTended: manifest.isTended,
+            skippedWalks: skippedWalks
+        )
+    }
+
+    /// Decodes every `walks/*.json` file, counting undecodable files as
+    /// skipped (AF28) instead of dropping them silently. Throws only when
+    /// walk files exist but none decode — that's a broken archive, not a
+    /// partial one.
+    private static func decodeWalks(
+        in walksDir: URL,
+        decoder: JSONDecoder
+    ) throws -> (walks: [TempWalk], skipped: Int) {
+        let walkFiles = try FileManager.default.contentsOfDirectory(
             at: walksDir,
             includingPropertiesForKeys: nil
         ).filter { $0.pathExtension == "json" }
 
         var tempWalks: [TempWalk] = []
+        var skippedWalks = 0
         for fileURL in walkFiles {
             let data = try Data(contentsOf: fileURL)
             let pilgrimWalk: PilgrimWalk
@@ -126,6 +158,7 @@ enum PilgrimPackageImporter {
                 pilgrimWalk = try decoder.decode(PilgrimWalk.self, from: data)
             } catch {
                 print("[PilgrimPackageImporter] Skipping \(fileURL.lastPathComponent): \(error)")
+                skippedWalks += 1
                 continue
             }
             tempWalks.append(PilgrimPackageConverter.convertToTemp(walk: pilgrimWalk))
@@ -138,21 +171,95 @@ enum PilgrimPackageImporter {
             )
         }
 
-        let tempEvents = PilgrimPackageConverter.convertEvents(manifest.events)
-
-        return (tempWalks, tempEvents, manifest.archivedOrEmpty, manifest.isTended)
+        return (tempWalks, skippedWalks)
     }
 
     private static func saveData(
-        walks: [TempWalk],
-        events: [TempEvent],
-        archived: [PilgrimArchivedWalk],
-        isTended: Bool,
+        package: DecodedPackage,
         completion: @escaping (Result<ImportSummary, PilgrimPackageError>) -> Void
     ) {
-        let localRegistry = UserPreferences.archivedWalkRegistry.value
+        let events = package.events
+        let archived = package.archived
+        let skippedWalks = package.skippedWalks
 
-        let filteredWalks = walks.filter { walk in
+        let filteredWalks = filterLocallyArchived(package.walks)
+
+        if filteredWalks.isEmpty && archived.isEmpty {
+            completion(.success(ImportSummary(
+                added: 0, replaced: 0, archived: 0,
+                skipped: skippedWalks, failedEvents: 0
+            )))
+            return
+        }
+
+        let archivedCount = archived.count
+
+        if filteredWalks.isEmpty {
+            applyArchivedOnly(archived, skippedWalks: skippedWalks, completion: completion)
+            return
+        }
+
+        // Tended files (manifest.modifications[] or manifest.archived[]
+        // non-empty) carry the user's edits applied via the web editor.
+        // The per-walk JSON payloads ALREADY reflect the post-edit state,
+        // so we overwrite by UUID — DataManager.replaceWalks deletes the
+        // existing CoreStore row and inserts the tended version in ONE
+        // transaction, so a failure mid-import rolls back and the user's
+        // originals survive untouched. Fresh exports stay
+        // append-only-by-UUID so the cross-device merge use case (drop two
+        // .pilgrim files in succession) keeps working.
+        let handleSaveResult: (Bool, DataManager.SaveMultipleError?, [Walk], Int, [UUID: [String]]) -> Void = { success, error, savedWalks, replacedCount, capturedPaths in
+            if success {
+                let addedCount = max(0, savedWalks.count - replacedCount)
+                saveImportedEvents(events) { failedEvents in
+                    restoreCapturedRecordingPaths(capturedPaths) {
+                        applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
+                            if case .failure(let err) = result {
+                                print("[PilgrimPackageImporter] Archive apply failed: \(err)")
+                            }
+                            completion(.success(ImportSummary(
+                                added: addedCount,
+                                replaced: replacedCount,
+                                archived: archivedCount,
+                                skipped: skippedWalks,
+                                failedEvents: failedEvents
+                            )))
+                        }
+                    }
+                }
+            } else if let error = error {
+                completion(.failure(.fileSystemError(
+                    NSError(domain: "PilgrimPackageImporter",
+                            code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: "\(error)"])
+                )))
+            } else {
+                completion(.success(ImportSummary(
+                    added: savedWalks.count,
+                    replaced: replacedCount,
+                    archived: archivedCount,
+                    skipped: skippedWalks,
+                    failedEvents: 0
+                )))
+            }
+        }
+
+        if package.isTended {
+            DataManager.replaceWalks(objects: filteredWalks, dataStack: DataManager.dataStack) { success, error, savedWalks, replacedCount, capturedPaths in
+                handleSaveResult(success, error, savedWalks, replacedCount, capturedPaths)
+            }
+        } else {
+            DataManager.saveWalks(objects: filteredWalks) { success, error, savedWalks in
+                handleSaveResult(success, error, savedWalks, 0, [:])
+            }
+        }
+    }
+
+    /// Walks already archived on this device are deliberately not
+    /// re-imported — the archive registry is the local source of truth.
+    private static func filterLocallyArchived(_ walks: [TempWalk]) -> [TempWalk] {
+        let localRegistry = UserPreferences.archivedWalkRegistry.value
+        return walks.filter { walk in
             guard let uuid = walk.uuid else { return true }
             if localRegistry[uuid.uuidString] != nil {
                 print("[PilgrimPackageImporter] Skipping walk \(uuid) — already archived locally")
@@ -160,134 +267,42 @@ enum PilgrimPackageImporter {
             }
             return true
         }
+    }
 
-        if filteredWalks.isEmpty && archived.isEmpty {
-            completion(.success(.empty))
-            return
-        }
-
-        let archivedCount = archived.count
-
-        if filteredWalks.isEmpty {
-            applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
-                switch result {
-                case .success:
-                    completion(.success(ImportSummary(added: 0, replaced: 0, archived: archivedCount)))
-                case .failure(let error):
-                    completion(.failure(.fileSystemError(error)))
-                }
-            }
-            return
-        }
-
-        // Tended files (manifest.modifications[] or manifest.archived[]
-        // non-empty) carry the user's edits applied via the web editor.
-        // The per-walk JSON payloads ALREADY reflect the post-edit state,
-        // so we overwrite by UUID — delete the existing CoreStore row
-        // and let saveWalks insert the tended version. Fresh exports
-        // stay append-only-by-UUID so the cross-device merge use case
-        // (drop two .pilgrim files in succession) keeps working.
-        let preflight: (@escaping (Int, [UUID: [String]]) -> Void) -> Void = { next in
-            guard isTended else {
-                next(0, [:])
-                return
-            }
-            deleteExistingWalksMatching(filteredWalks) { replacedCount, capturedPaths in
-                next(replacedCount, capturedPaths)
-            }
-        }
-
-        preflight { replacedCount, capturedPaths in
-            DataManager.saveWalks(objects: filteredWalks) { success, error, savedWalks in
-                if success {
-                    let totalSaved = savedWalks.count
-                    let addedCount = max(0, totalSaved - replacedCount)
-
-                    let saveEventsAndApplyArchived = {
-                        restoreCapturedRecordingPaths(capturedPaths) {
-                            applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
-                                if case .failure(let err) = result {
-                                    print("[PilgrimPackageImporter] Archive apply failed: \(err)")
-                                }
-                                completion(.success(ImportSummary(
-                                    added: addedCount,
-                                    replaced: replacedCount,
-                                    archived: archivedCount
-                                )))
-                            }
-                        }
-                    }
-
-                    if !events.isEmpty {
-                        DataManager.saveEvents(objects: events) { _, _, _ in
-                            saveEventsAndApplyArchived()
-                        }
-                    } else {
-                        saveEventsAndApplyArchived()
-                    }
-                } else if let error = error {
-                    completion(.failure(.fileSystemError(
-                        NSError(domain: "PilgrimPackageImporter",
-                                code: -1,
-                                userInfo: [NSLocalizedDescriptionKey: "\(error)"])
-                    )))
-                } else {
-                    completion(.success(ImportSummary(
-                        added: savedWalks.count,
-                        replaced: replacedCount,
-                        archived: archivedCount
-                    )))
-                }
+    private static func applyArchivedOnly(
+        _ archived: [PilgrimArchivedWalk],
+        skippedWalks: Int,
+        completion: @escaping (Result<ImportSummary, PilgrimPackageError>) -> Void
+    ) {
+        applyArchivedEntries(archived, dataStack: DataManager.dataStack) { result in
+            switch result {
+            case .success:
+                completion(.success(ImportSummary(
+                    added: 0, replaced: 0, archived: archived.count,
+                    skipped: skippedWalks, failedEvents: 0
+                )))
+            case .failure(let error):
+                completion(.failure(.fileSystemError(error)))
             }
         }
     }
 
-    /// For each walk in `incoming` whose UUID matches an existing
-    /// CoreStore Walk, deletes the existing row in a single transaction.
-    /// Captures each walk's voice-recording fileRelativePaths (in startDate
-    /// order) before deletion so they can be restored after `saveWalks`
-    /// re-inserts the walk — the `.pilgrim` format does not carry per-
-    /// recording paths, and without this round-trip the re-inserted
-    /// recordings end up with empty paths (= "unavailable" in UI, audio
-    /// files become orphans on next sweep). Calls back on the main queue
-    /// with `(deletedCount, [walkUUID: [recordingPath]])`.
-    private static func deleteExistingWalksMatching(
-        _ incoming: [TempWalk],
-        completion: @escaping (Int, [UUID: [String]]) -> Void
+    /// Saves the manifest's events (journeys), reporting how many failed
+    /// (AF76) — the walks are already committed at this point, so an event
+    /// failure degrades the summary instead of failing the import.
+    private static func saveImportedEvents(
+        _ events: [TempEvent],
+        completion: @escaping (_ failedEvents: Int) -> Void
     ) {
-        let incomingUUIDs = Set(incoming.compactMap { $0.uuid })
-        guard !incomingUUIDs.isEmpty else {
-            completion(0, [:])
+        guard !events.isEmpty else {
+            completion(0)
             return
         }
-
-        DataManager.dataStack.perform(asynchronous: { transaction -> (Int, [UUID: [String]]) in
-            var deleted = 0
-            var capturedPaths: [UUID: [String]] = [:]
-            for uuid in incomingUUIDs {
-                let existing = try transaction.fetchAll(
-                    From<Walk>().where(\Walk._uuid == uuid)
-                )
-                for walk in existing {
-                    let paths = walk._voiceRecordings.value
-                        .sorted { $0._startDate.value < $1._startDate.value }
-                        .map { $0._fileRelativePath.value }
-                    if !paths.isEmpty {
-                        capturedPaths[uuid] = paths
-                    }
-                    transaction.delete(walk)
-                    deleted += 1
-                }
+        DataManager.saveEvents(objects: events) { saved, error, _ in
+            if !saved {
+                print("[PilgrimPackageImporter] Event save failed: \(String(describing: error))")
             }
-            return (deleted, capturedPaths)
-        }) { result in
-            switch result {
-            case .success(let (count, paths)):
-                completion(count, paths)
-            case .failure(let error):
-                print("[PilgrimPackageImporter] Tended-overwrite delete failed: \(error)")
-                completion(0, [:])
-            }
+            completion(saved ? 0 : events.count)
         }
     }
 

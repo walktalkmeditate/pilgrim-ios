@@ -88,6 +88,15 @@ private struct SealThumbnailView: View {
     let walk: WalkInterface
     @State private var thumbnail: UIImage?
 
+    init(walk: WalkInterface) {
+        self.walk = walk
+        // Render an already-cached thumbnail on the first frame — no
+        // placeholder flash, and no work when the pager recreates the page.
+        // Memory-only, so no disk I/O on the main thread during construction.
+        let uuid = walk.uuid?.uuidString
+        _thumbnail = State(initialValue: uuid.flatMap { SealCache.shared.memoryThumbnail(for: $0) })
+    }
+
     var body: some View {
         Group {
             if let thumbnail {
@@ -105,7 +114,17 @@ private struct SealThumbnailView: View {
     }
 
     private func loadIfNeeded() async {
-        guard thumbnail == nil else { return }
+        guard thumbnail == nil, let uuid = walk.uuid?.uuidString else { return }
+        // Look the thumbnail up by id first (off the main thread). Only on a
+        // genuine cache miss do we build `SealInput`, which faults and maps the
+        // entire route — so a cached thumbnail never pays that main-thread cost,
+        // even when the pager recreates the page and resets `@State`.
+        if let cached = await Task.detached(priority: .utility, operation: {
+            SealCache.shared.thumbnail(for: uuid)
+        }).value {
+            thumbnail = cached
+            return
+        }
         let input = SealInput(walk: walk)
         let thumb = await Task.detached(priority: .utility) {
             SealGenerator.thumbnail(from: input)

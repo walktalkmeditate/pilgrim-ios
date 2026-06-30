@@ -19,14 +19,20 @@ final class AudioDownloadManager: ObservableObject {
     }
 
     func downloadMissing(assets: [AudioAsset]) {
-        let missing = assets.filter { !fileStore.isAvailable($0) }
-        guard !missing.isEmpty else { return }
-        guard !isDownloading else { return }
+        Task { @MainActor in
+            guard !isDownloading else { return }
 
-        isDownloading = true
-        downloadProgress = 0
+            // The availability check stats one file per asset — keep that
+            // disk I/O off the main thread (issue #42).
+            let store = fileStore
+            let missing = await Task.detached(priority: .utility) {
+                assets.filter { !store.isAvailable($0) }
+            }.value
+            guard !missing.isEmpty, !isDownloading else { return }
 
-        Task {
+            isDownloading = true
+            downloadProgress = 0
+
             var completed = 0
             let total = missing.count
 
@@ -39,16 +45,11 @@ final class AudioDownloadManager: ObservableObject {
                     }
                 }
                 completed += 1
-                let progressSnapshot = Double(completed) / Double(total)
-                await MainActor.run {
-                    self.downloadProgress = progressSnapshot
-                }
+                downloadProgress = Double(completed) / Double(total)
             }
 
-            await MainActor.run {
-                self.isDownloading = false
-                self.downloadProgress = 1.0
-            }
+            isDownloading = false
+            downloadProgress = 1.0
         }
     }
 

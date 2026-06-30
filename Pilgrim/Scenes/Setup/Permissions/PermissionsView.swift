@@ -29,6 +29,7 @@ struct PermissionCardConfig {
     let shake: Bool
     let required: Bool
     let decided: Bool
+    let pulse: Bool
     let action: () -> Void
     let retryAction: (() -> Void)?
 }
@@ -64,6 +65,7 @@ struct PermissionsView: View {
                     shake: viewModel.shakeLocationCard,
                     required: true,
                     decided: true,
+                    pulse: viewModel.locationPulse,
                     action: viewModel.requestLocation,
                     retryAction: viewModel.openSettings
                 ))
@@ -77,6 +79,7 @@ struct PermissionsView: View {
                     shake: false,
                     required: false,
                     decided: viewModel.microphoneDecided,
+                    pulse: viewModel.microphonePulse,
                     action: viewModel.requestMicrophone,
                     retryAction: viewModel.openSettings
                 ))
@@ -90,6 +93,7 @@ struct PermissionsView: View {
                     shake: false,
                     required: false,
                     decided: viewModel.motionDecided,
+                    pulse: viewModel.motionPulse,
                     action: viewModel.requestMotion,
                     retryAction: nil
                 ))
@@ -124,6 +128,13 @@ struct PermissionsView: View {
                 appeared = true
             }
         }
+    }
+
+    private func accessibilityState(for config: PermissionCardConfig) -> String {
+        if config.granted { return "Granted" }
+        if config.denied { return "Denied. Double tap to open Settings" }
+        if !config.required && config.decided { return "Skipped" }
+        return "Not granted. Double tap to grant"
     }
 
     private var warmParchment: some View {
@@ -161,10 +172,7 @@ struct PermissionsView: View {
                 Spacer()
 
                 grantButton(
-                    granted: config.granted,
-                    denied: config.denied,
-                    required: config.required,
-                    decided: !config.required && config.decided,
+                    config,
                     action: config.denied && config.retryAction != nil ? config.retryAction! : config.action
                 )
             }
@@ -178,6 +186,13 @@ struct PermissionsView: View {
                     : .default,
                 value: config.shake
             )
+            .accessibilityElement(children: .combine)
+            .accessibilityValue(accessibilityState(for: config))
+            .accessibilityAddTraits(config.granted ? [] : .isButton)
+            .accessibilityAction {
+                if config.granted { return }
+                if config.denied, let retry = config.retryAction { retry() } else { config.action() }
+            }
 
             if config.denied && config.required {
                 Text(LS["Permissions.Required.Hint"])
@@ -190,27 +205,31 @@ struct PermissionsView: View {
 
     @ViewBuilder
     private func grantButton(
-        granted: Bool,
-        denied: Bool,
-        required: Bool,
-        decided: Bool,
+        _ config: PermissionCardConfig,
         action: @escaping () -> Void
     ) -> some View {
-        if granted {
+        if config.granted {
             Image(systemName: "checkmark")
                 .foregroundColor(.moss)
                 .font(.subheadline.bold())
-        } else if !required && decided {
+                .scaleEffect(config.pulse ? 1.15 : 1.0)
+                .animation(.spring(response: 0.4, dampingFraction: 0.6), value: config.pulse)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityHidden(true)
+        } else if !config.required && config.decided {
             Text(LS["Permissions.Skipped"])
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
+                .frame(minHeight: 44)
         } else {
             Button(action: action) {
-                Text(denied ? LS["Permissions.Settings"] : LS["Permissions.Grant"])
+                Text(config.denied ? LS["Permissions.Settings"] : LS["Permissions.Grant"])
                     .font(Constants.Typography.button)
                     .foregroundColor(.stone)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 14)
+                    .frame(minHeight: 44)
+                    .contentShape(Capsule())
                     .overlay(
                         Capsule()
                             .stroke(Color.stone, lineWidth: 1.5)

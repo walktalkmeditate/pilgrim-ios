@@ -14,6 +14,14 @@ struct InkScrollView: View {
     @State private var hapticState = ScrollHapticState()
     @State private var hasAppeared = false
     @State private var statMode: StatMode = .walks
+    /// Memo pad for the derived layout (AF51) — see the layout-cache
+    /// extension below. A reference type on purpose: refreshing it during
+    /// body evaluation must not schedule another render.
+    @State private var layoutCacheBox = LayoutCacheBox()
+    /// Scroll offset quantized to `scrollBucketSize` steps (AF52). Drives
+    /// the dot render window; quantizing means the body re-evaluates once
+    /// per bucket crossed, not once per scrolled frame.
+    @State private var scrollBucket: CGFloat = 0
 
     private enum StatMode: CaseIterable {
         case walks, talks, meditations
@@ -29,6 +37,7 @@ struct InkScrollView: View {
                 geo.contentOffset.y
             } action: { _, newOffset in
                 hapticState.handleScrollOffset(-newOffset, viewportHeight: outerGeo.size.height)
+                updateScrollBucket(offset: newOffset)
             }
             .sensoryFeedback(.impact(weight: .light), trigger: hapticState.currentEvent) { _, new in
                 if case .lightDot = new { return true }
@@ -57,9 +66,10 @@ struct InkScrollView: View {
     }
 
     private func scrollContent(width: CGFloat, height: CGFloat) -> some View {
-        let renderer = CalligraphyPathRenderer(snapshots: snapshots, width: width)
-        let positions = renderer.dotPositions()
-        let segments = renderer.segmentPaths()
+        // Geometry + astronomy memoized on (snapshots, width) — see the
+        // layout-cache extension (AF51). The body re-evaluates on every
+        // haptic dot-crossing during scroll and must not redo astro math.
+        let layout = cachedLayout(width: width)
         // Vertical offset applied to the calligraphy path (segments + dots +
         // date/lunar/milestone markers) so the dots don't crowd the journey
         // summary text when the turning banner adds height at the top.
@@ -73,11 +83,10 @@ struct InkScrollView: View {
                     journeySummaryHeader(width: width, topOffset: turningOffset)
                 }
 
-                ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
-                    let segmentOpacity = pathSegmentOpacity(index: segment.index, total: snapshots.count)
-                    let segmentColor = pathSegmentColor(index: segment.index)
+                ForEach(Array(layout.segments.enumerated()), id: \.offset) { index, segment in
+                    let style = layout.segmentStyles[index]
                     segment.path
-                        .fill(segmentColor.opacity(segmentOpacity))
+                        .fill(style.color.opacity(style.opacity))
                         .blur(radius: 0.6)
                         .opacity(hasAppeared ? 1 : 0)
                         .animation(.easeOut(duration: 1.2).delay(0.2), value: hasAppeared)
@@ -86,13 +95,13 @@ struct InkScrollView: View {
 
             }
 
-            dotsLayer(positions: positions, viewportWidth: width, viewportHeight: height)
+            dotsLayer(positions: layout.positions, viewportWidth: width, viewportHeight: height)
                 .offset(y: turningOffset)
 
             Group {
-                dateLabels(positions: positions, viewportWidth: width)
-                lunarMarkers(positions: positions, viewportWidth: width)
-                milestoneMarkers(width: width, positions: positions)
+                dateLabels(layout.dateLabels)
+                lunarMarkers(layout.lunarMarkers)
+                milestoneMarkers(width: width, milestones: layout.milestones)
 
                 if snapshots.isEmpty {
                     emptyState(width: width)
@@ -101,17 +110,23 @@ struct InkScrollView: View {
             .offset(y: turningOffset)
             .transaction { $0.animation = nil }
         }
-        .frame(width: width, height: renderer.totalHeight + turningOffset)
+        .frame(width: width, height: layout.totalHeight + turningOffset)
         .onAppear {
-            configureHaptics(positions: positions, renderer: renderer)
+            configureHaptics(layout: layout)
         }
     }
 
     // MARK: - Dots layer
 
     private func dotsLayer(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat, viewportHeight: CGFloat) -> some View {
-        ForEach(Array(zip(snapshots.indices, snapshots)), id: \.1.id) { index, snapshot in
-            if index < positions.count {
+        // Visible-window instantiation (AF52): WalkDotView carries layered
+        // gradients and ~35% of dots mount a 15-30 fps scenery TimelineView,
+        // so building the whole history at once keeps the display pipeline
+        // permanently busy and scales with walk count. Positions are known
+        // up front; only dots within one viewport of the visible rect exist.
+        let window = renderWindow(viewportHeight: viewportHeight)
+        return ForEach(Array(zip(snapshots.indices, snapshots)), id: \.1.id) { index, snapshot in
+            if index < positions.count, window.contains(positions[index].yOffset) {
                 let position = positions[index]
                 let opacity = self.dotOpacity(index: index, total: snapshots.count)
                 let isNewest = index == 0
@@ -147,45 +162,48 @@ struct InkScrollView: View {
         let talkers = snapshots.filter { $0.hasTalk }.count
         let meditators = snapshots.filter { $0.hasMeditate }.count
 
-        return VStack(spacing: 2) {
-            Group {
-                switch statMode {
-                case .walks:
-                    Text(Self.formatTotalDistance(totalDistance))
-                case .talks:
-                    Text(WalkDotView.formatDuration(totalTalk) + " talked")
-                case .meditations:
-                    Text(WalkDotView.formatDuration(totalMeditate) + " meditated")
-                }
-            }
-            .font(Constants.Typography.body)
-            .foregroundColor(.stone)
-            .contentTransition(.numericText())
-
-            Group {
-                switch statMode {
-                case .walks:
-                    Text("\(totalWalks) walks · \(months) months")
-                case .talks:
-                    Text("\(talkers) walks with talk")
-                case .meditations:
-                    Text("\(meditators) walks with meditation")
-                }
-            }
-            .font(Constants.Typography.caption)
-            .foregroundColor(.fog.opacity(0.7))
-            .contentTransition(.numericText())
-        }
-        .position(x: width / 2, y: 16 + topOffset)
-        .opacity(hasAppeared ? 1 : 0)
-        .animation(.easeOut(duration: 0.8).delay(0.5), value: hasAppeared)
-        .onTapGesture {
+        return Button {
             withAnimation(.easeInOut(duration: 0.3)) {
                 let modes = StatMode.allCases
                 let idx = modes.firstIndex(of: statMode) ?? 0
                 statMode = modes[(idx + 1) % modes.count]
             }
+        } label: {
+            VStack(spacing: 2) {
+                Group {
+                    switch statMode {
+                    case .walks:
+                        Text(Self.formatTotalDistance(totalDistance))
+                    case .talks:
+                        Text(WalkDotView.formatDuration(totalTalk) + " talked")
+                    case .meditations:
+                        Text(WalkDotView.formatDuration(totalMeditate) + " meditated")
+                    }
+                }
+                .font(Constants.Typography.body)
+                .foregroundColor(.stone)
+                .contentTransition(.numericText())
+
+                Group {
+                    switch statMode {
+                    case .walks:
+                        Text("\(totalWalks) walk\(totalWalks == 1 ? "" : "s") · \(months) month\(months == 1 ? "" : "s")")
+                    case .talks:
+                        Text("\(talkers) walk\(talkers == 1 ? "" : "s") with talk")
+                    case .meditations:
+                        Text("\(meditators) walk\(meditators == 1 ? "" : "s") with meditation")
+                    }
+                }
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog.opacity(0.7))
+                .contentTransition(.numericText())
+            }
         }
+        .buttonStyle(.plain)
+        .accessibilityHint("Double tap to cycle through walk, talk, and meditation totals")
+        .position(x: width / 2, y: 16 + topOffset)
+        .opacity(hasAppeared ? 1 : 0)
+        .animation(.easeOut(duration: 0.8).delay(0.5), value: hasAppeared)
     }
 
     private static func formatTotalDistance(_ meters: Double) -> String {
@@ -350,7 +368,7 @@ struct InkScrollView: View {
                         if !isExpandedArchived {
                             if snapshot.isShared {
                                 Image(systemName: "link")
-                                    .font(.system(size: 10))
+                                    .font(.caption2)
                                     .foregroundColor(.stone)
                                     .opacity(0.5)
                             }
@@ -361,7 +379,7 @@ struct InkScrollView: View {
                                     : celestial.position(for: .moon)?.sidereal.sign
                                 if let moonSign {
                                     Text("\(celestial.planetaryHour.planet.symbol)\(moonSign.symbol)")
-                                        .font(.system(size: 10))
+                                        .font(.caption2)
                                         .foregroundColor(.fog)
                                 }
                             }
@@ -376,7 +394,7 @@ struct InkScrollView: View {
 
                         if isExpandedArchived {
                             HStack(spacing: 4) {
-                                Image(systemName: "circle.dotted").font(.system(size: 10))
+                                Image(systemName: "circle.dotted").font(.caption2)
                                 Text("Released").font(Constants.Typography.caption)
                             }
                             .foregroundColor(.fog)
@@ -427,25 +445,28 @@ struct InkScrollView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                         .fill(.ultraThinMaterial)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                                 .fill(seasonColor.opacity(0.10))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                                 .fill(Color.parchmentSecondary.opacity(isExpandedArchived ? 0.5 : 0))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big)
                                 .strokeBorder(
                                     Color.fog.opacity(0.4),
                                     style: StrokeStyle(lineWidth: 1, dash: isExpandedArchived ? [4, 3] : [])
                                 )
                                 .opacity(isExpandedArchived ? 1 : 0)
                         )
-                        .shadow(color: .ink.opacity(0.1), radius: 12, y: -4)
+                        // Fixed .black, not adaptive .ink: .ink inverts to
+                        // near-white in dark mode and renders as a faint white
+                        // glow across the card instead of a shadow.
+                        .shadow(color: .black.opacity(0.1), radius: 12, y: -4)
                 )
                 .padding(.horizontal, Constants.UI.Padding.normal)
                 .padding(.bottom, 8)
@@ -707,9 +728,8 @@ struct InkScrollView: View {
 
     // MARK: - Date labels
 
-    private func dateLabels(positions: [CalligraphyPathRenderer.DotPosition], viewportWidth: CGFloat) -> some View {
-        let labels = computeDateLabels(positions: positions, viewportWidth: viewportWidth)
-        return ForEach(labels, id: \.id) { label in
+    private func dateLabels(_ labels: [DateLabel]) -> some View {
+        ForEach(labels, id: \.id) { label in
             Text(label.text)
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog.opacity(0.5))
@@ -718,7 +738,166 @@ struct InkScrollView: View {
         }
     }
 
-    private struct DateLabel: Identifiable {
+    // MARK: - Empty state
+
+    private func emptyState(width: CGFloat) -> some View {
+        let renderer = CalligraphyPathRenderer(snapshots: [], width: width)
+        let positions = renderer.dotPositions()
+        let center = positions.first?.center ?? CGPoint(x: width / 2, y: 80)
+
+        return ZStack {
+            renderer.emptyStatePath()
+                .fill(Color.ink.opacity(0.2))
+
+            VStack(spacing: Constants.UI.Padding.small) {
+                Circle()
+                    .fill(Color.stone)
+                    .frame(width: 14, height: 14)
+
+                Text("Begin")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+            }
+            .position(center)
+        }
+    }
+
+    // MARK: - Milestones
+
+    private func milestoneMarkers(width: CGFloat, milestones: [MilestonePosition]) -> some View {
+        ForEach(milestones, id: \.distance) { milestone in
+            MilestoneMarkerView(width: width, distance: milestone.distance)
+                .position(x: width / 2, y: milestone.yPosition)
+        }
+    }
+
+    // MARK: - Haptics
+
+    private func configureHaptics(layout: Layout) {
+        hapticState.dotPositions = layout.positions.map { $0.yOffset }
+
+        hapticState.dotSizes = snapshots.map { snap in
+            let view = WalkDotView(
+                snapshot: snap,
+                position: .zero,
+                opacity: 1,
+                isNewest: false,
+                isArchived: UserPreferences.isArchivedWalk(uuid: snap.id),
+                onTap: { _ in },
+                sceneryView: nil
+            )
+            return view.dotSize
+        }
+
+        hapticState.milestonePositions = layout.milestones.map { $0.yPosition }
+    }
+
+}
+
+// MARK: - Layout cache (AF51) & visible-window culling (AF52)
+
+extension InkScrollView {
+
+    /// Everything derivable purely from (snapshots, width): dot geometry,
+    /// segment paths, per-segment astronomical colors, the lunar-event
+    /// day-scan, milestone scan, and month labels. Computed once per input
+    /// change instead of on every body evaluation — scrolling re-evaluates
+    /// the body on each haptic dot-crossing, and the lunar scan alone walks
+    /// the entire history span day by day doing Julian-day math.
+    struct Layout {
+        let positions: [CalligraphyPathRenderer.DotPosition]
+        let segments: [(path: Path, index: Int)]
+        let segmentStyles: [SegmentStyle]
+        let lunarMarkers: [LunarMarker]
+        let milestones: [MilestonePosition]
+        let dateLabels: [DateLabel]
+        let totalHeight: CGFloat
+
+        struct SegmentStyle {
+            let color: Color
+            let opacity: Double
+        }
+    }
+
+    /// Reference-type memo pad held in @State so it survives body
+    /// re-evaluations. Refreshing it inside `cachedLayout` is intentionally
+    /// not a SwiftUI state write — no re-render is scheduled.
+    final class LayoutCacheBox {
+        var key: Int?
+        var layout: Layout?
+    }
+
+    func cachedLayout(width: CGFloat) -> Layout {
+        let key = Self.layoutCacheKey(snapshots: snapshots, width: width)
+        if layoutCacheBox.key == key, let cached = layoutCacheBox.layout {
+            return cached
+        }
+        let layout = computeLayout(width: width)
+        layoutCacheBox.key = key
+        layoutCacheBox.layout = layout
+        return layout
+    }
+
+    /// Pure cache key for the derived layout. Stable within a process for
+    /// identical inputs; changes when a walk is added/removed, any walk's
+    /// identity/date/distance changes, or the viewport width changes.
+    static func layoutCacheKey(snapshots: [WalkSnapshot], width: CGFloat) -> Int {
+        var hasher = Hasher()
+        hasher.combine(width)
+        hasher.combine(snapshots.count)
+        for snapshot in snapshots {
+            hasher.combine(snapshot.id)
+            hasher.combine(snapshot.startDate)
+            hasher.combine(snapshot.distance)
+        }
+        return hasher.finalize()
+    }
+
+    private func computeLayout(width: CGFloat) -> Layout {
+        let renderer = CalligraphyPathRenderer(snapshots: snapshots, width: width)
+        let positions = renderer.dotPositions()
+        let segments = renderer.segmentPaths()
+        let styles = segments.map { segment in
+            Layout.SegmentStyle(
+                color: pathSegmentColor(index: segment.index),
+                opacity: pathSegmentOpacity(index: segment.index, total: snapshots.count)
+            )
+        }
+        return Layout(
+            positions: positions,
+            segments: segments,
+            segmentStyles: styles,
+            lunarMarkers: computeLunarMarkers(positions: positions, viewportWidth: width),
+            milestones: computeMilestonePositions(positions: positions),
+            dateLabels: computeDateLabels(positions: positions, viewportWidth: width),
+            totalHeight: renderer.totalHeight
+        )
+    }
+
+    // MARK: Culling window
+
+    /// How far the user scrolls before the dot render window shifts.
+    /// Smaller than the window's one-viewport buffer, so dots are always
+    /// instantiated before they scroll into view.
+    private static var scrollBucketSize: CGFloat { 360 }
+
+    func updateScrollBucket(offset: CGFloat) {
+        let bucket = (offset / Self.scrollBucketSize).rounded() * Self.scrollBucketSize
+        if bucket != scrollBucket {
+            scrollBucket = bucket
+        }
+    }
+
+    /// Content-space y-range within which dots (and their scenery
+    /// TimelineViews) exist. One viewport of buffer on each side of the
+    /// visible rect.
+    func renderWindow(viewportHeight: CGFloat) -> ClosedRange<CGFloat> {
+        (scrollBucket - viewportHeight)...(scrollBucket + viewportHeight * 2)
+    }
+
+    // MARK: Date labels
+
+    struct DateLabel: Identifiable {
         let id: Int
         let text: String
         let x: CGFloat
@@ -761,41 +940,9 @@ struct InkScrollView: View {
         return f
     }()
 
-    // MARK: - Empty state
+    // MARK: Milestones
 
-    private func emptyState(width: CGFloat) -> some View {
-        let renderer = CalligraphyPathRenderer(snapshots: [], width: width)
-        let positions = renderer.dotPositions()
-        let center = positions.first?.center ?? CGPoint(x: width / 2, y: 80)
-
-        return ZStack {
-            renderer.emptyStatePath()
-                .fill(Color.ink.opacity(0.2))
-
-            VStack(spacing: Constants.UI.Padding.small) {
-                Circle()
-                    .fill(Color.stone)
-                    .frame(width: 14, height: 14)
-
-                Text("Begin")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
-            .position(center)
-        }
-    }
-
-    // MARK: - Milestones
-
-    private func milestoneMarkers(width: CGFloat, positions: [CalligraphyPathRenderer.DotPosition]) -> some View {
-        let milestones = computeMilestonePositions(positions: positions)
-        return ForEach(milestones, id: \.distance) { milestone in
-            MilestoneMarkerView(width: width, distance: milestone.distance)
-                .position(x: width / 2, y: milestone.yPosition)
-        }
-    }
-
-    private struct MilestonePosition: Equatable {
+    struct MilestonePosition: Equatable {
         let distance: Double
         let yPosition: CGFloat
     }
@@ -838,30 +985,4 @@ struct InkScrollView: View {
         }
         return thresholds
     }
-
-    // MARK: - Haptics
-
-    private func configureHaptics(
-        positions: [CalligraphyPathRenderer.DotPosition],
-        renderer: CalligraphyPathRenderer
-    ) {
-        hapticState.dotPositions = positions.map { $0.yOffset }
-
-        hapticState.dotSizes = snapshots.map { snap in
-            let view = WalkDotView(
-                snapshot: snap,
-                position: .zero,
-                opacity: 1,
-                isNewest: false,
-                isArchived: UserPreferences.isArchivedWalk(uuid: snap.id),
-                onTap: { _ in },
-                sceneryView: nil
-            )
-            return view.dotSize
-        }
-
-        let milestonePositions = computeMilestonePositions(positions: positions)
-        hapticState.milestonePositions = milestonePositions.map { $0.yPosition }
-    }
-
 }

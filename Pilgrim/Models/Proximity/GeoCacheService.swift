@@ -11,6 +11,13 @@ final class GeoCacheService: ObservableObject {
 
     private let cacheRadiusMeters: Double = 50_000
     private let refetchThresholdMeters: Double = 10_000
+
+    /// Confines fetch bookkeeping to one serial queue (AF30): `fetchIfNeeded`
+    /// runs on cooperative-pool threads while `invalidateLastFetch` is called
+    /// from the main thread at walk start. The queue also makes the distance
+    /// guard check-and-act atomic, so overlapping fetch tasks can't both pass
+    /// it and double-fetch a 50 km radius.
+    private let bookkeepingQueue = DispatchQueue(label: "GeoCacheService.bookkeeping")
     private var lastFetchCenter: CLLocationCoordinate2D?
     private var whispersETag: String?
     private var cairnsETag: String?
@@ -26,19 +33,25 @@ final class GeoCacheService: ObservableObject {
     }
 
     func invalidateLastFetch() {
-        lastFetchCenter = nil
-        whispersETag = nil
-        cairnsETag = nil
+        bookkeepingQueue.sync {
+            lastFetchCenter = nil
+            whispersETag = nil
+            cairnsETag = nil
+        }
     }
 
     func fetchIfNeeded(near coordinate: CLLocationCoordinate2D) async {
-        if let center = lastFetchCenter {
-            let distance = CLLocation(latitude: center.latitude, longitude: center.longitude)
-                .distance(from: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
-            guard distance > refetchThresholdMeters else { return }
+        let shouldFetch = bookkeepingQueue.sync { () -> Bool in
+            if let center = lastFetchCenter {
+                let distance = CLLocation(latitude: center.latitude, longitude: center.longitude)
+                    .distance(from: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
+                guard distance > refetchThresholdMeters else { return false }
+            }
+            lastFetchCenter = coordinate
+            return true
         }
+        guard shouldFetch else { return }
 
-        lastFetchCenter = coordinate
         async let w: () = fetchWhispers(lat: coordinate.latitude, lon: coordinate.longitude)
         async let c: () = fetchCairns(lat: coordinate.latitude, lon: coordinate.longitude)
         _ = await (w, c)
@@ -75,7 +88,7 @@ final class GeoCacheService: ObservableObject {
     private func fetchWhispers(lat: Double, lon: Double) async {
         guard let url = URL(string: "\(baseURL)/whispers?lat=\(lat)&lon=\(lon)&radius=\(Int(cacheRadiusMeters))") else { return }
         var request = URLRequest(url: url)
-        if let etag = whispersETag {
+        if let etag = bookkeepingQueue.sync(execute: { whispersETag }) {
             request.setValue(etag, forHTTPHeaderField: "If-None-Match")
         }
 
@@ -85,7 +98,8 @@ final class GeoCacheService: ObservableObject {
             if http.statusCode == 304 { return }
             guard (200...299).contains(http.statusCode) else { return }
 
-            whispersETag = http.value(forHTTPHeaderField: "ETag")
+            let etag = http.value(forHTTPHeaderField: "ETag")
+            bookkeepingQueue.sync { whispersETag = etag }
             let decoded = try JSONDecoder().decode([CachedWhisper].self, from: data)
             await MainActor.run {
                 self.cachedWhispers = decoded
@@ -101,7 +115,7 @@ final class GeoCacheService: ObservableObject {
     private func fetchCairns(lat: Double, lon: Double) async {
         guard let url = URL(string: "\(baseURL)/cairns?lat=\(lat)&lon=\(lon)&radius=\(Int(cacheRadiusMeters))") else { return }
         var request = URLRequest(url: url)
-        if let etag = cairnsETag {
+        if let etag = bookkeepingQueue.sync(execute: { cairnsETag }) {
             request.setValue(etag, forHTTPHeaderField: "If-None-Match")
         }
 
@@ -111,7 +125,8 @@ final class GeoCacheService: ObservableObject {
             if http.statusCode == 304 { return }
             guard (200...299).contains(http.statusCode) else { return }
 
-            cairnsETag = http.value(forHTTPHeaderField: "ETag")
+            let etag = http.value(forHTTPHeaderField: "ETag")
+            bookkeepingQueue.sync { cairnsETag = etag }
             let decoded = try JSONDecoder().decode([CachedCairn].self, from: data)
             await MainActor.run {
                 self.cachedCairns = decoded

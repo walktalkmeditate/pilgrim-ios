@@ -5,7 +5,7 @@ import XCTest
 final class WhisperManifestDecodingTests: XCTestCase {
 
     func testDecodes_minimalManifest() throws {
-        let json = """
+        let json = Data("""
         {
           "version": 1,
           "whispers": [
@@ -19,7 +19,7 @@ final class WhisperManifestDecodingTests: XCTestCase {
             }
           ]
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -32,7 +32,7 @@ final class WhisperManifestDecodingTests: XCTestCase {
     }
 
     func testDecodes_dropsUnknownCategoryWithoutFailing() throws {
-        let json = """
+        let json = Data("""
         {
           "version": 3,
           "whispers": [
@@ -62,7 +62,7 @@ final class WhisperManifestDecodingTests: XCTestCase {
             }
           ]
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -75,7 +75,7 @@ final class WhisperManifestDecodingTests: XCTestCase {
     }
 
     func testDecodes_dropsMalformedEntryWithoutFailing() throws {
-        let json = """
+        let json = Data("""
         {
           "version": 1,
           "whispers": [
@@ -100,7 +100,7 @@ final class WhisperManifestDecodingTests: XCTestCase {
             }
           ]
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -110,7 +110,7 @@ final class WhisperManifestDecodingTests: XCTestCase {
     }
 
     func testDecodes_retiredAtAsISO8601() throws {
-        let json = """
+        let json = Data("""
         {
           "version": 2,
           "whispers": [
@@ -124,7 +124,7 @@ final class WhisperManifestDecodingTests: XCTestCase {
             }
           ]
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -216,5 +216,122 @@ final class WhisperManifestPlaceableCategoriesTests: XCTestCase {
     func testPlaceableCategories_emptyManifest_returnsEmpty() {
         let manifest = WhisperManifest(version: 1, whispers: [])
         XCTAssertEqual(manifest.placeableCategories, [])
+    }
+}
+
+final class WhisperManifestServiceAsyncInitTests: XCTestCase {
+
+    private var tempDir: URL!
+
+    override func setUpWithError() throws {
+        tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: tempDir)
+    }
+
+    private func writeBootstrapFixture() throws -> URL {
+        let json = Data("""
+        {
+          "version": 1,
+          "whispers": [
+            {
+              "id": "gratitude-1",
+              "title": "Alive",
+              "category": "gratitude",
+              "audioFileName": "whisper-gratitude-1",
+              "durationSec": 5,
+              "retiredAt": null
+            },
+            {
+              "id": "gratitude-2",
+              "title": "Old",
+              "category": "gratitude",
+              "audioFileName": "whisper-gratitude-2",
+              "durationSec": 5,
+              "retiredAt": "2026-04-11T00:00:00Z"
+            }
+          ]
+        }
+        """.utf8)
+        let url = tempDir.appendingPathComponent("bootstrap.json")
+        try json.write(to: url)
+        return url
+    }
+
+    private func writeLocalManifestFixture() throws {
+        let json = Data("""
+        {
+          "version": 7,
+          "whispers": [
+            {
+              "id": "presence-9",
+              "title": "Here",
+              "category": "presence",
+              "audioFileName": "whisper-presence-9",
+              "durationSec": 4,
+              "retiredAt": null
+            }
+          ]
+        }
+        """.utf8)
+        try json.write(to: tempDir.appendingPathComponent("manifest.json"))
+    }
+
+    // The initial load publishes via the main actor, which this test holds
+    // until it returns — so the pre-load state is deterministic.
+    @MainActor
+    func testLookupsBeforeInitialLoadCompletes_returnEmptyWithoutBlocking() throws {
+        let bootstrap = try writeBootstrapFixture()
+        let service = WhisperManifestService(manifestDirectory: tempDir, bootstrapManifestURL: { bootstrap })
+
+        XCTAssertNil(service.manifest)
+        XCTAssertTrue(service.whispers(for: .gratitude).isEmpty)
+        XCTAssertTrue(service.placeableWhispers(for: .gratitude).isEmpty)
+        XCTAssertNil(service.whisper(byId: "gratitude-1"))
+        XCTAssertEqual(service.placeableCategories(), [])
+    }
+
+    @MainActor
+    func testAfterInitialLoad_withNoLocalManifest_servesBootstrapCatalog() async throws {
+        let bootstrap = try writeBootstrapFixture()
+        let service = WhisperManifestService(manifestDirectory: tempDir, bootstrapManifestURL: { bootstrap })
+
+        await service.initialLoad?.value
+
+        XCTAssertEqual(service.manifest?.version, 1)
+        XCTAssertEqual(service.whispers(for: .gratitude).count, 2)
+        XCTAssertEqual(service.placeableWhispers(for: .gratitude).map(\.id), ["gratitude-1"],
+                       "Retired whispers must stay unplaceable through the async load path")
+        XCTAssertEqual(service.whisper(byId: "gratitude-2")?.category, .gratitude)
+    }
+
+    @MainActor
+    func testAfterInitialLoad_localManifestWinsOverBootstrap() async throws {
+        let bootstrap = try writeBootstrapFixture()
+        try writeLocalManifestFixture()
+        let service = WhisperManifestService(manifestDirectory: tempDir, bootstrapManifestURL: { bootstrap })
+
+        await service.initialLoad?.value
+
+        XCTAssertEqual(service.manifest?.version, 7)
+        XCTAssertNotNil(service.whisper(byId: "presence-9"))
+        XCTAssertNil(service.whisper(byId: "gratitude-1"),
+                     "Bootstrap must not be consulted when a local manifest exists")
+    }
+
+    @MainActor
+    func testAfterInitialLoad_corruptLocalManifest_fallsBackToBootstrap() async throws {
+        let bootstrap = try writeBootstrapFixture()
+        try Data("not json".utf8).write(to: tempDir.appendingPathComponent("manifest.json"))
+        let service = WhisperManifestService(manifestDirectory: tempDir, bootstrapManifestURL: { bootstrap })
+
+        await service.initialLoad?.value
+
+        XCTAssertEqual(service.manifest?.version, 1)
+        XCTAssertNotNil(service.whisper(byId: "gratitude-1"))
     }
 }

@@ -18,8 +18,41 @@ final class SoundscapePlayer: NSObject, ObservableObject {
 
     private var loopMonitor: Timer?
     private let crossfadeDuration: TimeInterval = 4.0
+    private var resumeOnInterruptionEnd = false
 
-    private override init() { super.init() }
+    override private init() {
+        super.init()
+        coordinator.addInterruptionObserver(id: "soundscape") { [weak self] event in
+            self?.handleInterruption(event)
+        }
+    }
+
+    /// AVAudioPlayer does not auto-resume after a system interruption (call,
+    /// Siri, alarm) — without this, the soundscape stays silent forever while
+    /// `isPlaying` claims otherwise and the loop monitor reads a frozen
+    /// `currentTime`.
+    func handleInterruption(_ event: AudioSessionCoordinator.InterruptionEvent) {
+        switch event {
+        case .began:
+            guard isPlaying else { return }
+            resumeOnInterruptionEnd = true
+            activePlayer?.pause()
+            fadingOutPlayer?.stop()
+            fadingOutPlayer = nil
+            stopLoopMonitor()
+            isPlaying = false
+        case .ended(let shouldResume):
+            guard resumeOnInterruptionEnd else { return }
+            resumeOnInterruptionEnd = false
+            guard shouldResume else { return }
+            if let player = activePlayer, player.play() {
+                isPlaying = true
+                startLoopMonitor()
+            } else if let asset = currentAsset {
+                play(asset, volume: targetVolume)
+            }
+        }
+    }
 
     func play(_ asset: AudioAsset, volume: Float = 0.4, fadeDuration: TimeInterval = 2.0) {
         guard asset.type == .soundscape,
@@ -55,6 +88,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
 
     func stop(fadeDuration: TimeInterval = 2.0) {
         stopLoopMonitor()
+        resumeOnInterruptionEnd = false
         fadingOutPlayer?.stop()
         fadingOutPlayer = nil
 
@@ -119,13 +153,11 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             newPlayer.play()
             activePlayer = newPlayer
             currentAsset = asset
+            isPlaying = true
             newPlayer.setVolume(volume, fadeDuration: fadeDuration)
             startLoopMonitor()
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) { [weak self] in
-                self?.fadingOutPlayer?.stop()
-                self?.fadingOutPlayer = nil
-            }
+            scheduleFadeOutCleanup(of: oldPlayer, after: fadeDuration)
         } catch {
             print("[SoundscapePlayer] Crossfade error: \(error)")
             fadingOutPlayer?.stop()
@@ -136,6 +168,17 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             isMuted = false
             stopLoopMonitor()
             coordinator.deactivate(consumer: "soundscape")
+        }
+    }
+
+    /// Identity-guarded so a stale cleanup (scheduled by an earlier
+    /// crossfade) can't cut a newer fade-out short — the closure only acts
+    /// if the player it was scheduled for is still the one fading out.
+    private func scheduleFadeOutCleanup(of oldPlayer: AVAudioPlayer?, after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak oldPlayer] in
+            guard let self, let oldPlayer, self.fadingOutPlayer === oldPlayer else { return }
+            oldPlayer.stop()
+            self.fadingOutPlayer = nil
         }
     }
 
@@ -195,10 +238,7 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             newPlayer.setVolume(fadeTarget, fadeDuration: crossfadeDuration)
             startLoopMonitor()
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + crossfadeDuration) { [weak self] in
-                self?.fadingOutPlayer?.stop()
-                self?.fadingOutPlayer = nil
-            }
+            scheduleFadeOutCleanup(of: oldPlayer, after: crossfadeDuration)
         } catch {
             print("[SoundscapePlayer] Loop crossfade error: \(error)")
             fadingOutPlayer?.stop()
@@ -211,4 +251,9 @@ final class SoundscapePlayer: NSObject, ObservableObject {
             coordinator.deactivate(consumer: "soundscape")
         }
     }
+
+    #if DEBUG
+    var _test_activePlayer: AVAudioPlayer? { activePlayer }
+    var _test_fadingOutPlayer: AVAudioPlayer? { fadingOutPlayer }
+    #endif
 }

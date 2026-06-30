@@ -36,7 +36,7 @@ public class AltitudeManagement: WalkBuilderComponent {
     private func startUpdating() {
         guard CMAltimeter.isRelativeAltitudeAvailable() else { return }
         
-        self.altimeter.startRelativeAltitudeUpdates(to: OperationQueue.main) { [weak self] (altitudeData, error) in
+        self.altimeter.startRelativeAltitudeUpdates(to: OperationQueue.main) { [weak self] (altitudeData, _) in
             guard let self, let altitudeData = altitudeData else { return }
             let differenceInMeters = Double(truncating: altitudeData.relativeAltitude)
             let altitude = AltitudeSample(timestamp: Date(), altitude: differenceInMeters)
@@ -86,16 +86,27 @@ public class AltitudeManagement: WalkBuilderComponent {
     }
     
     public func bind(builder: WalkBuilder) {
-        
+
         let input = Input(
             insufficientPermission: insufficientPermissionRelay.asBackgroundPublisher(),
             altitudes: altitudesRelay.asBackgroundPublisher()
         )
-        
-        let output = builder.tranform(input)
-        
-        output.status.withPrevious().sink(receiveValue: statusBinder).store(in: &cancellables)
-        output.onReset.sink(receiveValue: onResetBinder).store(in: &cancellables)
+
+        _ = builder.tranform(input)
+
+        // Main delivery mirrors StepCounter.bind (AF35): the altimeter handler
+        // appends to altitudesRelay on OperationQueue.main, so a reset arriving
+        // on the background pipeline could race it and leak a stale sample from
+        // the previous walk into the next one's route refinement.
+        builder.statusPublisher
+            .withPrevious()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: statusBinder)
+            .store(in: &cancellables)
+        builder.resetPublisher
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: onResetBinder)
+            .store(in: &cancellables)
     }
     
     // MARK: - AltitudeSample

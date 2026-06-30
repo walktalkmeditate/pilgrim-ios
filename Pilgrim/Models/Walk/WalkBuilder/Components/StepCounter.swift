@@ -28,7 +28,7 @@ import CombineExt
 class StepCounter: WalkBuilderComponent {
     
     /// The number of steps before the last pause.
-    private var stepsBeforeLastPause: Int? = nil
+    private var stepsBeforeLastPause: Int?
     /// A boolean indicating whether steps should be recorded.
     private var shouldRecord: Bool = false
     /// The pedometer instance used to count the steps.
@@ -45,17 +45,22 @@ class StepCounter: WalkBuilderComponent {
             return
         }
         
-        self.pedometer.startUpdates(from: date) { [weak self] (data, error) in
-            guard let self else { return }
+        // CMPedometer calls back on a private background queue; hopping to
+        // main first keeps shouldRecord/stepsBeforeLastPause confined to the
+        // same thread as the status/reset binders (AF36).
+        self.pedometer.startUpdates(from: date) { [weak self] (data, _) in
+            DispatchQueue.main.async {
+                guard let self else { return }
 
-            guard self.shouldRecord else {
-                self.stepsBeforeLastPause = self.stepsRelay.value
-                self.pedometer.stopUpdates()
-                return
+                guard self.shouldRecord else {
+                    self.stepsBeforeLastPause = self.stepsRelay.value
+                    self.pedometer.stopUpdates()
+                    return
+                }
+
+                let steps = Int(truncating: data?.numberOfSteps ?? 0) + (self.stepsBeforeLastPause ?? 0)
+                self.stepsRelay.accept(steps)
             }
-
-            let steps = Int(truncating: data?.numberOfSteps ?? 0) + (self.stepsBeforeLastPause ?? 0)
-            self.stepsRelay.accept(steps)
         }
     }
     
@@ -103,8 +108,11 @@ class StepCounter: WalkBuilderComponent {
     public required init(builder: WalkBuilder) {
         self.bind(builder: builder)
 
-        builder.registerPreSnapshotFlush { [weak self] in
-            guard let self else { return }
+        // [weak builder] breaks the self-retain cycle (AF8): the closure lives
+        // in builder.preSnapshotFlushActions, so a strong capture would keep
+        // the builder alive forever.
+        builder.registerPreSnapshotFlush { [weak self, weak builder] in
+            guard let self, let builder else { return }
             builder.flushSteps(self.stepsRelay.value)
         }
     }

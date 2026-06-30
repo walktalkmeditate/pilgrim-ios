@@ -20,7 +20,7 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
     var isPlaying: Bool { player?.isPlaying ?? false }
     var hasLastPrompt: Bool { lastPromptId != nil }
 
-    private override init() { super.init() }
+    override private init() { super.init() }
 
     func play(prompt: VoiceGuidePrompt, packId: String, onFinished: (() -> Void)? = nil) {
         guard let url = fileStore.localURL(for: prompt, packId: packId) else { return }
@@ -49,7 +49,7 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
         } catch {
             print("[VoiceGuidePlayer] Playback error: \(error)")
             restoreAndDeactivate()
-            self.onFinished = nil
+            finishPendingCallback()
         }
     }
 
@@ -57,8 +57,17 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
         guard player != nil else { return }
         player?.stop()
         player = nil
-        onFinished = nil
         restoreAndDeactivate()
+        finishPendingCallback()
+    }
+
+    /// A dropped `onFinished` wedges VoiceGuideScheduler's isPlaying latch
+    /// forever (the guide goes permanently silent) — every path that ends
+    /// playback must hand the pending callback its completion.
+    private func finishPendingCallback() {
+        let callback = onFinished
+        onFinished = nil
+        callback?()
     }
 
     func replayLast() {
@@ -88,4 +97,13 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
         }
         coordinator.deactivate(consumer: "voiceguide")
     }
+
+    #if DEBUG
+    /// Test-only hook. Installs a live player and pending callback without
+    /// requiring a voice-guide pack file on disk.
+    func _test_install(player p: AVAudioPlayer, onFinished: (() -> Void)?) {
+        player = p
+        self.onFinished = onFinished
+    }
+    #endif
 }

@@ -1,4 +1,20 @@
+import Combine
 import SwiftUI
+
+/// Leaf observer for the recording level meter (AF10). The 20 Hz metering
+/// publisher is subscribed HERE, in a view containing nothing but the
+/// waveform bars, so each tick re-renders five small rectangles — not the
+/// whole ActiveWalkView graph above it (which includes the Mapbox
+/// representable).
+struct RecordingLevelMeter: View {
+    let levelPublisher: Published<Float>.Publisher
+    @State private var level: Float = 0
+
+    var body: some View {
+        AudioWaveformView(level: level)
+            .onReceive(levelPublisher) { level = $0 }
+    }
+}
 
 struct TimeMetricItem: View {
     let label: String

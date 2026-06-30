@@ -132,11 +132,23 @@ struct VoiceGuideSettingsView: View {
 
     // MARK: - Rows
 
+    private struct PackDownloadState {
+        let isSelected: Bool
+        let isDownloaded: Bool
+        let isDownloading: Bool
+        let didFail: Bool
+        let progress: Double
+    }
+
     private func packRow(_ pack: VoiceGuidePack) -> some View {
-        let isSelected = selectedPackId == pack.id
         let isDownloaded = fileStore.isPackDownloaded(pack)
-        let isDownloading = downloadManager.activeDownloads.contains(pack.id)
-        let progress = downloadManager.downloadProgress[pack.id] ?? 0
+        let state = PackDownloadState(
+            isSelected: selectedPackId == pack.id,
+            isDownloaded: isDownloaded,
+            isDownloading: downloadManager.activeDownloads.contains(pack.id),
+            didFail: downloadManager.downloadErrors.contains(pack.id),
+            progress: downloadManager.downloadProgress[pack.id] ?? 0
+        )
 
         return Button {
             if isDownloaded {
@@ -162,17 +174,11 @@ struct VoiceGuideSettingsView: View {
 
                 Spacer()
 
-                packTrailingContent(
-                    pack: pack,
-                    isDownloading: isDownloading,
-                    isDownloaded: isDownloaded,
-                    isSelected: isSelected,
-                    progress: progress
-                )
+                packTrailingContent(pack: pack, state: state)
             }
         }
         .swipeActions(edge: .trailing) {
-            if isDownloaded && !isSelected {
+            if isDownloaded && !state.isSelected {
                 Button(role: .destructive) {
                     fileStore.deletePackFiles(pack.id)
                     if selectedPackId == pack.id {
@@ -187,18 +193,27 @@ struct VoiceGuideSettingsView: View {
     }
 
     @ViewBuilder
-    private func packTrailingContent(
-        pack: VoiceGuidePack,
-        isDownloading: Bool,
-        isDownloaded: Bool,
-        isSelected: Bool,
-        progress: Double
-    ) -> some View {
-        if isDownloading {
-            SwiftUI.ProgressView(value: progress)
+    private func packTrailingContent(pack: VoiceGuidePack, state: PackDownloadState) -> some View {
+        if state.isDownloading {
+            SwiftUI.ProgressView(value: state.progress)
                 .tint(.stone)
                 .frame(width: 40)
-        } else if !isDownloaded {
+        } else if state.didFail && !state.isDownloaded {
+            // AF23: a finished-but-failed download must say so, not silently
+            // revert to the arrow. The whole label retries on tap.
+            Button {
+                downloadManager.downloadPack(pack)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Download failed — tap to retry")
+                        .font(Constants.Typography.caption)
+                        .multilineTextAlignment(.trailing)
+                }
+                .foregroundColor(.rust)
+            }
+            .buttonStyle(.plain)
+        } else if !state.isDownloaded {
             Button {
                 downloadManager.downloadPack(pack)
             } label: {
@@ -214,7 +229,7 @@ struct VoiceGuideSettingsView: View {
                     UserPreferences.selectedVoiceGuidePackId.value = pack.id
                 }
             }
-        } else if isSelected {
+        } else if state.isSelected {
             Image(systemName: "checkmark")
                 .foregroundColor(.stone)
         }

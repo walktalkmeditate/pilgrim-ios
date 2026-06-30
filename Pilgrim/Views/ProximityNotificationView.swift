@@ -26,7 +26,9 @@ struct ProximityNotificationView: View {
             .background(
                 RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal)
                     .fill(Color.parchment.opacity(0.95))
-                    .shadow(color: .ink.opacity(0.08), radius: 8, y: 2)
+                    // Fixed .black, not adaptive .ink: .ink inverts to near-white
+                    // in dark mode and renders as a white glow under the banner.
+                    .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
             )
             .transition(.move(edge: .top).combined(with: .opacity))
         }

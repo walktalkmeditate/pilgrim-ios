@@ -95,6 +95,7 @@ final class WeatherService {
             )
             return snapshot
         } catch {
+            print("[WeatherService] native WeatherKit fetch failed (\(error)); trying REST fallback")
             return await fetchViaREST(location: location)
         }
     }

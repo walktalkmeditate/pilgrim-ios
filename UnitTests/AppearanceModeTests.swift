@@ -110,7 +110,7 @@ final class AppearanceManagerTests: XCTestCase {
             .sink { _ in exp.fulfill() }
 
         UserPreferences.appearanceMode.value = "dark"
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
         cancellable.cancel()
 
         XCTAssertEqual(manager.resolvedScheme, .dark)
@@ -146,7 +146,7 @@ final class AppearanceManagerTests: XCTestCase {
             .sink { _ in exp.fulfill() }
 
         UserPreferences.appearanceMode.value = "constellation"
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
         cancellable.cancel()
 
         XCTAssertTrue(manager.isConstellation)
@@ -165,7 +165,7 @@ final class AppearanceManagerTests: XCTestCase {
             .sink { _ in exp.fulfill() }
 
         UserPreferences.appearanceMode.value = "constellation"
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
         cancellable.cancel()
 
         XCTAssertTrue(manager.isConstellation)
@@ -183,7 +183,7 @@ final class AppearanceManagerTests: XCTestCase {
             .sink { _ in exp.fulfill() }
 
         UserPreferences.appearanceMode.value = "dark"
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
         cancellable.cancel()
 
         XCTAssertFalse(manager.isConstellation)

@@ -161,6 +161,7 @@ struct PodcastSubmissionView: View {
                     Image(systemName: consentChecked ? "checkmark.square.fill" : "square")
                         .foregroundColor(consentChecked ? .stone : .fog)
                         .font(.system(size: 20))
+                        .accessibilityHidden(true)
 
                     Text("I consent to my voice recordings being considered for an anonymous podcast episode. Submissions are curated and not all walks are selected. Recordings are unedited. I can request removal at hello@walktalkmeditate.org.")
                         .font(Constants.Typography.caption)
@@ -169,6 +170,9 @@ struct PodcastSubmissionView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityAddTraits(consentChecked ? [.isButton, .isSelected] : .isButton)
+            .accessibilityValue(consentChecked ? "Checked" : "Unchecked")
+            .accessibilityHint("Double tap to toggle consent")
 
             submitAction
         }

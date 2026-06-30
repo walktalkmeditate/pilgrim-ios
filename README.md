@@ -199,7 +199,7 @@ Pilgrim/
 │   │       ├── AutoPauseDetection
 │   │       └── MeditateDetection
 │   └── Data/
-│       ├── DataModels/Versions/   — 11-version CoreStore migration chain
+│       ├── DataModels/Versions/   — 12-version CoreStore migration chain
 │       └── PilgrimPackage/        — .pilgrim export/import format
 └── Views/                         — shared components, design system
 ```

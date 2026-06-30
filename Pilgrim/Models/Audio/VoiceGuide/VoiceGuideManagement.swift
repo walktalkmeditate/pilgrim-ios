@@ -12,6 +12,7 @@ final class VoiceGuideManagement: ObservableObject {
     private var schedulerCancellables: [AnyCancellable] = []
     private var generation = 0
     private var currentPackId: String?
+    private var wasPausedByMeditation = false
 
     var packName: String? {
         guard isActive, let packId = currentPackId else { return nil }
@@ -46,6 +47,7 @@ final class VoiceGuideManagement: ObservableObject {
         scheduler = sched
         isActive = true
         isPaused = false
+        wasPausedByMeditation = false
 
         sched.start()
     }
@@ -60,17 +62,23 @@ final class VoiceGuideManagement: ObservableObject {
         schedulerCancellables.removeAll()
         isActive = false
         isPaused = false
+        wasPausedByMeditation = false
         currentPackId = nil
     }
 
+    /// Direct calls are user-initiated, so they clear the meditation-pause
+    /// marker; the isMeditating sink re-sets it immediately after the
+    /// pauseGuide() call it makes itself.
     func pauseGuide() {
         scheduler?.pause()
         isPaused = true
+        wasPausedByMeditation = false
     }
 
     func resumeGuide() {
         scheduler?.resume()
         isPaused = false
+        wasPausedByMeditation = false
     }
 
     func replayLastPrompt() {
@@ -112,8 +120,15 @@ final class VoiceGuideManagement: ObservableObject {
             .sink { [weak self] meditating in
                 guard let self, self.isActive else { return }
                 if meditating {
-                    self.pauseGuide()
-                } else {
+                    // Only remember a pause this sink itself caused — ending
+                    // meditation must not force-resume a guide the user
+                    // paused by hand.
+                    if !self.isPaused {
+                        self.pauseGuide()
+                        self.wasPausedByMeditation = true
+                    }
+                } else if self.wasPausedByMeditation {
+                    self.wasPausedByMeditation = false
                     self.scheduler?.setPostMeditationSilence()
                     self.resumeGuide()
                 }
@@ -125,6 +140,10 @@ final class VoiceGuideManagement: ObservableObject {
     private func playPrompt(_ prompt: VoiceGuidePrompt, packId: String, generation: Int) {
         guard VoiceGuideFileStore.shared.isAvailable(prompt, packId: packId) else {
             print("[VoiceGuide] Prompt \(prompt.id) unavailable — file not downloaded")
+            // The scheduler latched isPlaying before asking us to play;
+            // skipping without markPlayed would wedge it silent forever
+            // (mirrors MeditationGuideManagement's handling).
+            scheduler?.markPlayed(prompt.id)
             return
         }
         player.play(prompt: prompt, packId: packId) { [weak self] in
@@ -168,4 +187,9 @@ final class VoiceGuideManagement: ObservableObject {
             try? data.write(to: historyFileURL)
         }
     }
+
+    #if DEBUG
+    func _test_tick() { scheduler?.testTick() }
+    var _test_playedPromptIds: Set<String> { scheduler?.playedPromptIds ?? [] }
+    #endif
 }

@@ -40,7 +40,7 @@ struct WelcomeView: View {
 
             PilgrimLogoView(size: 120, breathing: $animation.isBreathing)
                 .opacity(animation.showLogo ? 1 : 0)
-                .scaleEffect(animation.showLogo ? 1.0 : 0.85)
+                .scaleEffect((animation.showLogo ? 1.0 : 0.85) * animation.logoZoom)
                 .padding(.bottom, Constants.UI.Padding.big)
 
             Text(viewModel.currentQuote)
@@ -123,7 +123,7 @@ struct WelcomeView: View {
 
     private func beginTapped() {
         guard !animation.isExiting else { return }
-        animation.runExit {
+        animation.beginWanderZoom {
             viewModel.beginAction()
         }
     }
