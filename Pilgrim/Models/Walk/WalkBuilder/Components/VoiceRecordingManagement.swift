@@ -294,20 +294,31 @@ extension VoiceRecordingManagement: CXCallObserverDelegate {
         handleCallStateChange(hasConnected: call.hasConnected, hasEnded: call.hasEnded)
     }
 
+    /// A phone call — incoming-ringing, connected, or outgoing — takes the mic,
+    /// so the talk must stop. CXCallObserver reports any active call here
+    /// (`!hasEnded`), which is the reliable signal; an *unanswered* incoming
+    /// call (rings, never connects) is caught this way too. Only an actual call
+    /// ends the talk — see `handleAudioInterruption` for why transient
+    /// (non-call) interruptions deliberately do not.
     private func handleCallStateChange(hasConnected: Bool, hasEnded: Bool) {
-        guard hasConnected, !hasEnded, isRecording else { return }
+        guard !hasEnded, isRecording else { return }
         stopRecording()
     }
 
-    /// Non-call interruptions (declined call, Siri, alarm) pause the
-    /// AVAudioRecorder with no resume path — finalize immediately so the
-    /// captured audio is committed instead of silently truncating while the
-    /// UI keeps showing an active recording. Connected calls also arrive
-    /// here via CXCallObserver; the isRecording guard makes the overlap a
-    /// no-op for whichever fires second.
+    /// Transient audio interruptions (notifications, Siri, an alarm) must NOT
+    /// end the talk — a momentary sound shouldn't cut a long recording. Real
+    /// phone calls are handled by CXCallObserver above, not here. We log the
+    /// interruption (rather than ignore it silently) so a field report can tell
+    /// what interrupted; the recording is left as-is.
+    ///
+    /// Trade-off: AVAudioRecorder cannot resume into the same file after the
+    /// system deactivates the session (Apple-confirmed), so if a non-call
+    /// interruption genuinely breaks capture, the tail of this recording may be
+    /// lost. We accept that over the prior behavior, which finalized the talk on
+    /// every notification.
     private func handleAudioInterruption(_ event: AudioSessionCoordinator.InterruptionEvent) {
         guard case .began = event, isRecording else { return }
-        stopRecording()
+        print("[VoiceRecordingManagement] audio interruption during recording — not finalizing (calls handled via CallKit)")
     }
 
     #if DEBUG

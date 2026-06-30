@@ -21,7 +21,7 @@ final class VoiceRecordingCallInterruptionTests: XCTestCase {
                        "recording should stop the moment a call connects")
     }
 
-    func test_callChanged_doesNothing_whenCallNotConnected() {
+    func test_callChanged_stopsRecording_whenCallRinging() {
         let builder = WalkBuilder()
         let mgmt = VoiceRecordingManagement(builder: builder)
         settleCombineSchedulers()
@@ -31,10 +31,11 @@ final class VoiceRecordingCallInterruptionTests: XCTestCase {
             relativePath: "Recordings/X/rec.m4a"
         )
 
+        // An incoming call that rings but is never answered still takes the mic.
         mgmt._test_simulateCallChanged(hasConnected: false, hasEnded: false)
 
-        XCTAssertTrue(mgmt.isRecording,
-                      "ringing / declined call must NOT end the recording")
+        XCTAssertFalse(mgmt.isRecording,
+                       "an active (ringing/unanswered) call must end the recording, not just a connected one")
     }
 
     func test_callChanged_doesNothing_whenNotRecording() {
@@ -65,7 +66,7 @@ final class VoiceRecordingCallInterruptionTests: XCTestCase {
 
     // MARK: - Non-call audio interruptions (declined call, Siri, alarm)
 
-    func test_audioInterruptionBegan_finalizesActiveRecording() {
+    func test_audioInterruptionBegan_doesNotFinalize_transientNonCall() {
         let builder = WalkBuilder()
         let mgmt = VoiceRecordingManagement(builder: builder)
         settleCombineSchedulers()
@@ -77,12 +78,12 @@ final class VoiceRecordingCallInterruptionTests: XCTestCase {
 
         mgmt._test_simulateAudioInterruption(.began)
 
-        XCTAssertFalse(mgmt.isRecording,
-                       "a non-call interruption pauses the recorder with no resume — the recording must finalize, not silently truncate")
-        XCTAssertNil(mgmt.recordingStartDate)
+        XCTAssertTrue(mgmt.isRecording,
+                      "a transient non-call interruption (notification, Siri, alarm) must NOT end the talk — only a real call does")
+        XCTAssertNotNil(mgmt.recordingStartDate)
     }
 
-    func test_audioInterruptionEnded_doesNotRestartRecording() {
+    func test_audioInterruption_beginThenEnd_keepsRecording() {
         let builder = WalkBuilder()
         let mgmt = VoiceRecordingManagement(builder: builder)
         settleCombineSchedulers()
@@ -95,8 +96,8 @@ final class VoiceRecordingCallInterruptionTests: XCTestCase {
 
         mgmt._test_simulateAudioInterruption(.ended(shouldResume: true))
 
-        XCTAssertFalse(mgmt.isRecording,
-                       "the interrupted recording was finalized — .ended must not spontaneously restart capture")
+        XCTAssertTrue(mgmt.isRecording,
+                      "a transient interruption that begins and ends must leave the talk recording untouched")
     }
 
     func test_audioInterruptionBegan_doesNothing_whenNotRecording() {
