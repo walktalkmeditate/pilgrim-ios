@@ -1,0 +1,3 @@
+[submodule ".claude/asc-skills"]
+	path = .claude/asc-skills
+	url = https://github.com/rudrankriyam/app-store-connect-cli-skills.git
