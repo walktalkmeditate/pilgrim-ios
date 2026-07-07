@@ -124,13 +124,14 @@ Plan-local non-goals:
 - n=1 chain shape → out-and-back (user-confirmed).
 - Reroll UI → single "Seek anew" row (user-confirmed, recorded in origin).
 - Reduced-accuracy location → hard gate with temporary full-accuracy request (doc-review decision; no viable degrade path).
+- Ping/bowl assets → sourced and placed: ping = freesound.org/s/701071 (0.7 s short variant, the full 3.9 s reverb tail cut because it muddies the tightening cadence and the aligned double-ping); bowl = freesound.org/s/150453. Both CC0, so no Settings → About attribution needed.
 
 ### Deferred to Implementation
 
 - Alignment cone width (±60° initial) and heading-smoothing window (~15 s initial): on-device tuning against real street grids.
 - Cadence curve constants (60 s far → 10 s near) and fog opacity-vs-distance curve: on-device feel tuning.
 - Arrival debounce N and accuracy threshold: on-device tuning in urban canyon conditions.
-- Exact ping/bowl asset selection: freesound.org sourcing session with the user (prefer CC0; CC-BY requires an attribution line in Settings → About).
+- (none remaining — audio assets resolved; see Resolved During Planning)
 
 ---
 
@@ -294,7 +295,7 @@ State machine per clearing: `guiding → arrived (debounced) → stillness-windo
 - Create: `Pilgrim/Models/Audio/SeekSoundPlayer.swift`
 - Modify: `Pilgrim/Models/Haptics/HapticManager.swift` (new `HapticPattern` cases)
 - Modify: `Pilgrim/Models/Preferences/UserPreferences.swift` (`seekSonarEnabled` Required\<Bool\> default true; `seekSonarVolume` Required\<Double\> quiet-leaning default; `seekLastDurationMinutes` Required\<Int\>; `seekSafetyShown` Required\<Bool\> default false — U6's first-seek caption reads and sets it)
-- Add: bundled `seek-ping` and `seek-bowl` audio assets (freesound.org, CC0 preferred)
+- Add: bundled `seek-ping.aac` and `seek-bowl.aac` (already sourced, processed, and placed in `Pilgrim/Support Files/`; this unit's remaining audio work is adding them to the app target's resource build phase). Sources (both CC0, no attribution): ping = freesound.org/s/701071 (8bitmyketison, water drop, trimmed to a 0.7 s short variant); bowl = freesound.org/s/150453 (caiogracco, crystal bowl F3). Both normalized to mono 44.1 kHz AAC.
 - Test: `UnitTests/Seek/SeekSoundPlayerTests.swift`
 
 **Approach:**
@@ -543,7 +544,7 @@ Summary story, settings, demo, ship gate flip.
 
 ## Documentation / Operational Notes
 
-- Audio assets: freesound.org session with the user before U4 completes (placeholders until then). Prefer CC0; if CC-BY, add attribution line to Settings → About → Data Sources.
+- Audio assets: done. `seek-ping.aac` and `seek-bowl.aac` are in `Pilgrim/Support Files/` (both CC0 — no attribution obligation). Only remaining audio task is U4 adding them to the app target's resource build phase.
 - `NSMotionUsageDescription` already present — U10 owns verifying the wording covers motion-activity use, not just steps.
 - Release notes follow the wabi-sabi format (v1.5.0+ pattern); Seek is the headline.
 - The origin doc's open water-masking research question stays open — candidate for a follow-up brainstorm.
