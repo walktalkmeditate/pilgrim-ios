@@ -230,7 +230,7 @@ enum SeekChainGenerator {
         return SeekPoint(latitude: lat2 * 180 / .pi, longitude: lon2 * 180 / .pi)
     }
 
-    private static func bearingDegrees(from: SeekPoint, to: SeekPoint) -> Double {
+    static func bearingDegrees(from: SeekPoint, to: SeekPoint) -> Double {
         let lat1 = from.latitude * .pi / 180
         let lat2 = to.latitude * .pi / 180
         let dLon = (to.longitude - from.longitude) * .pi / 180
