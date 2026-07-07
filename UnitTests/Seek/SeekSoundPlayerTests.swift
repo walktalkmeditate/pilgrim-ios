@@ -53,6 +53,7 @@ final class SeekSoundPlayerTests: XCTestCase {
         UserPreferences.seekSonarVolume.delete()
         UserPreferences.seekLastDurationMinutes.delete()
         UserPreferences.seekSafetyShown.delete()
+        UserPreferences.soundsEnabled.delete()
         try? FileManager.default.removeItem(at: pingURL)
         try? FileManager.default.removeItem(at: bowlURL)
         coordinator = nil
@@ -129,6 +130,18 @@ final class SeekSoundPlayerTests: XCTestCase {
         waitForDoublePingWindow()
 
         XCTAssertEqual(totalPlays, 0)
+    }
+
+    func testGlobalSoundsDisabled_suppressesPingAndBowl() {
+        UserPreferences.soundsEnabled.value = false
+        let player = makeSoundPlayer()
+        player.prepare()
+
+        player.playPing(aligned: true)
+        player.playBowl()
+        waitForDoublePingWindow()
+
+        XCTAssertEqual(totalPlays, 0, "the master Sounds toggle silences all seek audio")
     }
 
     func testWhisperPlaying_skipsPing_playsAfterClear() {
@@ -304,6 +317,21 @@ final class SeekSoundPlayerTests: XCTestCase {
     }
 
     // MARK: - Bowl
+
+    func testBowlDuringInterruption_skipsGracefully() {
+        let player = makeSoundPlayer()
+        player.prepare()
+
+        coordinator._test_simulateInterruptionBegan()
+        settleCombineSchedulers()
+        player.playBowl()
+        XCTAssertEqual(totalPlays, 0, "a bowl must never fight another app for the session")
+
+        coordinator._test_simulateInterruptionEnded(shouldResume: true)
+        settleCombineSchedulers()
+        player.playBowl()
+        XCTAssertEqual(totalPlays, 1, "the first bowl after .ended plays without manual intervention")
+    }
 
     func testBowl_playsEvenWhenSonarDisabled() {
         UserPreferences.seekSonarEnabled.value = false

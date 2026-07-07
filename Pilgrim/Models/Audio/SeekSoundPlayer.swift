@@ -18,6 +18,13 @@ final class SeekSoundPlayer {
         set { UserPreferences.seekSonarEnabled.value = newValue }
     }
 
+    /// The master Sounds toggle silences seek audio the same way it silences
+    /// bells and whispers — checked at play time so a mid-walk flip applies
+    /// to the very next ping or bowl.
+    private var isSoundsEnabled: Bool {
+        UserPreferences.soundsEnabled.value
+    }
+
     private let coordinator: AudioSessionCoordinator
     private let pingURL: URL?
     private let bowlURL: URL?
@@ -68,20 +75,22 @@ final class SeekSoundPlayer {
     /// pending second cleanly (AF22).
     func playPing(aligned: Bool) {
         pingGeneration += 1
-        guard isEnabled else { return }
+        guard isEnabled, isSoundsEnabled else { return }
         firePingIfAllowed()
         guard aligned else { return }
         let generation = pingGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + doublePingGap) { [weak self] in
-            guard let self, generation == self.pingGeneration, self.isEnabled else { return }
+            guard let self, generation == self.pingGeneration,
+                  self.isEnabled, self.isSoundsEnabled else { return }
             self.firePingIfAllowed()
         }
     }
 
     /// Reveal/completion tone. Part of the reveal ritual rather than the
-    /// sonar guidance channel, so it plays even when the sonar toggle is off.
+    /// sonar guidance channel, so it plays even when the sonar toggle is off —
+    /// only the master Sounds toggle silences it.
     func playBowl() {
-        guard !isInterrupted else { return }
+        guard isSoundsEnabled, !isInterrupted else { return }
         activateSessionIfNeeded()
         armBowlPlayerIfNeeded()
         guard let player = bowlPlayer else {

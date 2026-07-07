@@ -40,7 +40,7 @@ struct SeekChain: Codable, Equatable {
         let kept = Array(clearings.prefix(activeIndex))
         let regenerated = SeekChainGenerator.placeChain(
             count: clearings.count - activeIndex,
-            budgetMeters: max(remainingBudgetMeters, SeekTuning.minStartDistanceMeters * 2.5),
+            budgetMeters: max(remainingBudgetMeters, SeekEngineTuning.rerollMinBudgetMeters),
             from: current,
             home: home,
             using: &rng

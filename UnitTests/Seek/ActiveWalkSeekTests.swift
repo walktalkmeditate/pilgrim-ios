@@ -58,6 +58,7 @@ final class ActiveWalkSeekTests: XCTestCase {
         senses.playWhisper = { [weak self] in self?.playedWhispers.append($0) }
         senses.isAppActive = { false }
         senses.revealWhisperDelay = 0.05
+        senses.seekCompleteSoundStopDelay = 0.05
         return senses
     }
 
@@ -165,6 +166,19 @@ final class ActiveWalkSeekTests: XCTestCase {
         XCTAssertEqual(engined.seekSetupStage, .transition)
     }
 
+    func testGPSTimeout_lateAccurateFix_doesNotBootEngine() {
+        let vm = makeSeekVM()
+        vm.beginSeekSetup()
+        vm.advanceSeekSetup(durationMinutes: 30)
+        vm.advanceSeekSetupIntentionSet()
+
+        vm.failSeekSetupGPSLock()
+        vm.currentLocation = routeSample()
+
+        XCTAssertNil(vm.seekEngine, "a fix arriving after timeout cancellation must stay a no-op")
+        XCTAssertEqual(vm.seekSetupStage, .cancelled(.gpsTimeout))
+    }
+
     // MARK: - Arrival persistence (R13, R18)
 
     func testArrival_recordsExactlyOneWaypointAndOneArrivalEvent() throws {
@@ -205,6 +219,34 @@ final class ActiveWalkSeekTests: XCTestCase {
     }
 
     // MARK: - Seek anew (R17)
+
+    func testSeekAnew_whileArrived_recordsSequentialOrdinals() throws {
+        let vm = makeSeekVM()
+        installEngine(on: vm, durationMinutes: 180)
+        let engine = try XCTUnwrap(vm.seekEngine)
+
+        driveArrival(of: engine)
+        XCTAssertEqual(engine.phase, .arrived)
+
+        vm.seekAnewRequested()
+        XCTAssertEqual(engine.phase, .guiding, "reroll from an unrevealed clearing returns to guiding")
+
+        engine.evaluateStillness(at: Date().addingTimeInterval(SeekEngineTuning.graceSeconds + 1))
+        XCTAssertEqual(engine.activeIndex, 0, "the stale grace window must not reveal after the reroll")
+        XCTAssertEqual(engine.phase, .guiding)
+
+        driveArrival(of: engine)
+
+        XCTAssertEqual(
+            vm.waypoints.map(\.label),
+            [
+                SeekPersistence.arrivalWaypointLabel(clearingOrdinal: 1),
+                SeekPersistence.arrivalWaypointLabel(clearingOrdinal: 2)
+            ],
+            "ordinals count persisted arrivals, not the replayed clearing index"
+        )
+        XCTAssertEqual(try recordedEvents(of: vm).map(\.eventType), [.seekArrival, .seekArrival])
+    }
 
     func testSeekAnew_regeneratesRemainder_prefixStable() throws {
         let vm = makeSeekVM()
@@ -274,6 +316,32 @@ final class ActiveWalkSeekTests: XCTestCase {
 
         XCTAssertEqual(sound.bowlCount, 1)
         XCTAssertTrue(playedWhispers.isEmpty, "the final bowl closes the seeking quietly")
+    }
+
+    func testSeekComplete_releasesSoundOnceBowlHasRung() {
+        let vm = makeSeekVM()
+        vm.seekSound = sound
+
+        vm.handleSeekEvent(.seekComplete)
+        XCTAssertEqual(sound.stopCount, 0, "the bowl must ring before the consumer is released")
+
+        waitForWhisperWindow()
+        XCTAssertEqual(sound.stopCount, 1, "a post-stop bowl cleans up after itself")
+    }
+
+    /// The whisper half of the master-toggle gate lives here; the audible
+    /// half — playPing/playBowl producing zero play attempts — is pinned in
+    /// SeekSoundPlayerTests, because the view model routes events
+    /// unconditionally and the player owns the master Sounds gate.
+    func testRevealedNext_soundsDisabled_suppressesWhisperAndPing() {
+        UserPreferences.soundsEnabled.value = false
+        let vm = makeSeekVM(whisper: stubWhisper)
+        vm.seekSound = sound
+
+        vm.handleSeekEvent(.revealedNext(activeIndex: 1))
+        waitForWhisperWindow()
+
+        XCTAssertTrue(playedWhispers.isEmpty, "master Sounds off suppresses the reveal whisper")
     }
 
     // MARK: - Teardown

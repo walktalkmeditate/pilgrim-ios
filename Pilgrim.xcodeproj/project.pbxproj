@@ -269,6 +269,7 @@
 		A6262227CEFF2EB5766EA2AA /* whisper-lightness-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 7F3A662D1EA6CD6D0FE3C361 /* whisper-lightness-3.aac */; };
 		A7A6E8BA14A8426581C2E09D /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE12D19DC32D4F8FB3A35965 /* WaveformCache.swift */; };
 		A7FAA64A96429E4C49B70EB3 /* CairnService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9564A30CD3DE97895B7A42 /* CairnService.swift */; };
+		A91FF286098F041643239828 /* SeekSetupFlowModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6DCD6A0B61B96409E9AA92 /* SeekSetupFlowModifier.swift */; };
 		AA000002FOOTPRINTSHAPE00 /* FootprintShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */; };
 		AA000002PILGRIMLOGO00000 /* PilgrimLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */; };
 		AA000002WALKLIGHTREADING /* WalkLightReadingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001WALKLIGHTREADING /* WalkLightReadingCard.swift */; };
@@ -769,6 +770,7 @@
 		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
 		4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceSparklineView.swift; sourceTree = "<group>"; };
 		4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteShapeView.swift; sourceTree = "<group>"; };
+		4C6DCD6A0B61B96409E9AA92 /* SeekSetupFlowModifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSetupFlowModifier.swift; sourceTree = "<group>"; };
 		4C7167E03AD5DC1D36990357 /* whisper-courage-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-courage-3.aac"; sourceTree = "<group>"; };
 		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
 		4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityNotificationView.swift; sourceTree = "<group>"; };
@@ -2091,6 +2093,7 @@
 				BB00031300000000000001 /* SoundscapePickerSheet.swift */,
 				73047DFD603DBB9F9380AF47 /* SeekDurationView.swift */,
 				E5238E3C51FA281A12447112 /* ActiveWalkViewModel+Seek.swift */,
+				4C6DCD6A0B61B96409E9AA92 /* SeekSetupFlowModifier.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -2988,6 +2991,7 @@
 				5B1B61ECF42C2E13F7E923AA /* SeekGlance.swift in Sources */,
 				17823B16CBD61D97425067C6 /* SeekSummarySection.swift in Sources */,
 				7A87A132315C9E46AFE8CF5C /* VolumeSliderRow.swift in Sources */,
+				A91FF286098F041643239828 /* SeekSetupFlowModifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

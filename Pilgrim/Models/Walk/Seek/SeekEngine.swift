@@ -29,6 +29,10 @@ enum SeekEngineTuning {
     static let graceSeconds: TimeInterval = 240
     static let stillnessWindowRange = 45.0...90.0
     static let stillnessCheckInterval: TimeInterval = 5
+    /// Floor for a rerolled remainder budget (R17) so a regenerated chain is
+    /// never degenerate — the single source for both the engine's estimate
+    /// and `SeekChain.regeneratingRemainder`'s clamp.
+    static let rerollMinBudgetMeters = SeekTuning.minStartDistanceMeters * 2.5
 }
 
 /// Session engine for a seek: consumes the ordered clearing chain, binds to
@@ -63,6 +67,10 @@ final class SeekEngine: ObservableObject {
     private var consecutiveInsideCount = 0
     private var lastCoordinate: CLLocationCoordinate2D?
     private var courseSamples: [(timestamp: Date, course: Double)] = []
+    /// Deliberately stale: carries the pre-reroll distance so the sonar
+    /// heartbeat keeps pulsing across `seekAnew` until the next fix supplies
+    /// the true distance to the replacement clearing.
+    private var rerollPulseDistance: Double?
 
     #if DEBUG
     var _test_pulseIntervalOverride: TimeInterval?
@@ -132,7 +140,7 @@ final class SeekEngine: ObservableObject {
         let fractionAhead = 1 - Double(activeIndex) / Double(max(chain.clearings.count, 1))
         let remainingBudget = max(
             chain.budgetMeters * fractionAhead,
-            SeekTuning.minStartDistanceMeters * 2.5
+            SeekEngineTuning.rerollMinBudgetMeters
         )
         var rng = SystemRandomNumberGenerator()
         chain = chain.regeneratingRemainder(
@@ -143,8 +151,12 @@ final class SeekEngine: ObservableObject {
             using: &rng
         )
         consecutiveInsideCount = 0
+        rerollPulseDistance = distanceToActiveMeters
         distanceToActiveMeters = nil
         invalidatePulseTimer()
+        if rerollPulseDistance != nil {
+            schedulePulse()
+        }
     }
 
     func stop() {
@@ -184,7 +196,8 @@ final class SeekEngine: ObservableObject {
     /// Internal so tests can drive timer events directly without waiting
     /// for a RunLoop timer.
     func emitPulse() {
-        guard phase == .guiding, !isSuspended, let distance = distanceToActiveMeters else { return }
+        guard phase == .guiding, !isSuspended,
+              let distance = distanceToActiveMeters ?? rerollPulseDistance else { return }
         eventsSubject.send(.pulse(aligned: isAligned, distanceMeters: distance))
     }
 
@@ -198,7 +211,8 @@ final class SeekEngine: ObservableObject {
         let generation = pulseGeneration
         pulseTimer?.invalidate()
         pulseTimer = nil
-        guard phase == .guiding, !isSuspended, let distance = distanceToActiveMeters else { return }
+        guard phase == .guiding, !isSuspended,
+              let distance = distanceToActiveMeters ?? rerollPulseDistance else { return }
         var interval = Self.pulseInterval(forDistance: distance, tier: currentTier)
         #if DEBUG
         if let override = _test_pulseIntervalOverride { interval = override }
@@ -226,6 +240,7 @@ final class SeekEngine: ObservableObject {
         let center = CLLocation(latitude: active.center.latitude, longitude: active.center.longitude)
         let distance = location.distance(from: center)
         distanceToActiveMeters = distance
+        rerollPulseDistance = nil
 
         switch phase {
         case .guiding:
@@ -305,6 +320,7 @@ final class SeekEngine: ObservableObject {
         activeIndex = nextIndex
         phase = .guiding
         distanceToActiveMeters = nil
+        rerollPulseDistance = nil
         consecutiveInsideCount = 0
         eventsSubject.send(.revealedNext(activeIndex: nextIndex))
     }

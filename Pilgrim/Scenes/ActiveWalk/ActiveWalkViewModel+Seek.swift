@@ -24,6 +24,9 @@ struct SeekSenses {
     /// the gate lives here so event routing can stay in the view model.
     var isAppActive: () -> Bool = { UIApplication.shared.applicationState == .active }
     var revealWhisperDelay: TimeInterval = 2.5
+    /// Slightly longer than the completion bowl's ~4 s ring so releasing the
+    /// audio consumer never clips it.
+    var seekCompleteSoundStopDelay: TimeInterval = 4.5
 }
 
 // MARK: - Seek Engine Lifecycle (F2/F3)
@@ -129,10 +132,10 @@ extension ActiveWalkViewModel {
             seekSound?.playPing(aligned: aligned)
             fireSeekHaptic(aligned ? .seekAligned : .seekTick)
 
-        case .arrived(let clearingIndex):
+        case .arrived:
             // The persistence commit happens before any ritual effect so an
             // interruption mid-ritual can never lose the arrival.
-            recordSeekArrival(clearingIndex: clearingIndex)
+            recordSeekArrival()
             fireSeekHaptic(.seekArrival)
 
         case .stillnessBegan:
@@ -144,6 +147,22 @@ extension ActiveWalkViewModel {
 
         case .seekComplete:
             seekSound?.playBowl()
+            scheduleSeekSoundRelease()
+        }
+    }
+
+    /// The completion bowl re-activates the "seekPing" consumer after the
+    /// engine has already stopped, and no further ping will ever come — so
+    /// release the consumer once the bowl has rung instead of holding the
+    /// audio session for the whole walk home. Generation-guarded like every
+    /// other seek asyncAfter chain; `stop()` is idempotent, so the regular
+    /// teardown at walk end stays safe.
+    private func scheduleSeekSoundRelease() {
+        seekGeneration += 1
+        let generation = seekGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + seekSenses.seekCompleteSoundStopDelay) { [weak self] in
+            guard let self, self.seekGeneration == generation else { return }
+            self.seekSound?.stop()
         }
     }
 
@@ -152,10 +171,15 @@ extension ActiveWalkViewModel {
         builder.addWorkoutEvent(TempWalkEvent(uuid: nil, eventType: .seekMode, timestamp: Date()))
     }
 
-    private func recordSeekArrival(clearingIndex: Int) {
+    /// The ordinal counts arrivals already persisted this walk rather than
+    /// echoing the engine's clearing index: after "Seek anew" from inside an
+    /// unrevealed clearing, the replacement clearing replays the same index,
+    /// which would duplicate labels and inflate the unknowns-found count.
+    private func recordSeekArrival() {
         builder.addWorkoutEvent(TempWalkEvent(uuid: nil, eventType: .seekArrival, timestamp: Date()))
+        let ordinal = waypoints.filter(SeekPersistence.isArrivalWaypoint).count + 1
         addWaypoint(
-            label: SeekPersistence.arrivalWaypointLabel(clearingOrdinal: clearingIndex + 1),
+            label: SeekPersistence.arrivalWaypointLabel(clearingOrdinal: ordinal),
             icon: SeekPersistence.arrivalWaypointIcon
         )
     }

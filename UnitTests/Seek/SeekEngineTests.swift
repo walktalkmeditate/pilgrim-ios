@@ -329,6 +329,18 @@ final class SeekEngineTests: XCTestCase {
         XCTAssertEqual(events.count, eventCount, "stale pulse generation must no-op")
     }
 
+    func testSeekAnew_withPriorDistance_pulsesBeforeNextFix() {
+        let engine = makeEngine(clearingCount: 2)
+        engine.processLocation(fix(at: home))
+        XCTAssertNotNil(engine.distanceToActiveMeters)
+
+        engine.seekAnew(currentLocation: home)
+        XCTAssertNil(engine.distanceToActiveMeters, "the published distance resets until the next fix")
+
+        engine.pulseTimerFired(generation: engine.pulseGeneration)
+        XCTAssertEqual(pulses().count, 1, "the heartbeat continues across the reroll on the stale distance")
+    }
+
     // MARK: - Teardown
 
     func testStop_silencesPulseTimer() {

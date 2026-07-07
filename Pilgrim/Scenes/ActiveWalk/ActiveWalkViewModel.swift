@@ -749,9 +749,12 @@ extension ActiveWalkViewModel {
     /// U7 GPS-lock hold: only the breath transition may time out. Once the
     /// stage reached `.ready` the walk may already be recording, so a late
     /// timeout stays silent and the engine simply starts on the first
-    /// accurate fix (the fix subscription stays armed).
+    /// accurate fix (the fix subscription stays armed). A real timeout bumps
+    /// the generation so the armed first-fix subscription becomes a no-op —
+    /// a late accurate fix must never boot the engine into a cancelled walk.
     func failSeekSetupGPSLock() {
         guard mode == .seek, seekEngine == nil, seekSetupStage == .transition else { return }
+        seekGeneration += 1
         seekSetupStage = .cancelled(.gpsTimeout)
     }
 }
