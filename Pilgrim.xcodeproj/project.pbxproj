@@ -317,6 +317,7 @@
 		B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */; };
 		B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */; };
 		B5A132B5FFF7DC9429076140 /* whisper-play-6.aac in Resources */ = {isa = PBXBuildFile; fileRef = 94D4ED498F6BB16685DC466E /* whisper-play-6.aac */; };
+		B630C01285A745C4C0B04FC5 /* SeekDemoSeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891AB02D5C379B14317F9FBA /* SeekDemoSeedTests.swift */; };
 		B6EE97B5CE406DEAF57A3EEC /* whisper-presence-5.aac in Resources */ = {isa = PBXBuildFile; fileRef = 27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */; };
 		B97AE0EC614F740DA0BF99D7 /* whisper-play-8.aac in Resources */ = {isa = PBXBuildFile; fileRef = 6E9C51C681E296C685A851E3 /* whisper-play-8.aac */; };
 		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
@@ -823,6 +824,7 @@
 		8585A815173A295C2F468057 /* WhisperService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
 		86222C880AE25FA86DCC6C66 /* View+ListRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "View+ListRow.swift"; sourceTree = "<group>"; };
 		862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPromptVoices.swift; sourceTree = "<group>"; };
+		891AB02D5C379B14317F9FBA /* SeekDemoSeedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekDemoSeedTests.swift; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkShareViewModel.swift; sourceTree = "<group>"; };
 		8F78DDC2E829AA3D78B6E999 /* whisper-lightness-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-lightness-2.aac"; sourceTree = "<group>"; };
@@ -1982,6 +1984,7 @@
 				418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */,
 				254CDAC411C696F71980548E /* SeekLiveActivityTests.swift */,
 				BBB2D6A557287CBD051BF314 /* SeekSummaryTests.swift */,
+				891AB02D5C379B14317F9FBA /* SeekDemoSeedTests.swift */,
 			);
 			name = Seek;
 			path = Seek;
@@ -3081,6 +3084,7 @@
 				0908DCA790C0A5619B6B7515 /* ActiveWalkSeekTests.swift in Sources */,
 				20F59ECBB3F70E369934A78F /* SeekLiveActivityTests.swift in Sources */,
 				26D2A22BA6DF2D3C6508C30F /* SeekSummaryTests.swift in Sources */,
+				B630C01285A745C4C0B04FC5 /* SeekDemoSeedTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

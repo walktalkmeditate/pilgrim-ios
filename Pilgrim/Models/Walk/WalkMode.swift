@@ -20,7 +20,7 @@ enum WalkMode: String, CaseIterable {
     }
 
     var isAvailable: Bool {
-        self == .wander
+        self == .wander || self == .seek
     }
 
     var quotes: [String] {

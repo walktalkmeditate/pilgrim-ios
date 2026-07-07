@@ -158,6 +158,13 @@ struct LS {
         comment: "Label of the slider controlling the seek sonar ping volume."
     )
 
+    /// Caption under the Sonar group in Sound Settings (R11).
+    static let seekSonarSettingsCaption = NSLocalizedString(
+        "seek.sonar.settings_caption",
+        value: "A quiet ping that guides seek walks, tightening as a clearing nears.",
+        comment: "Footer caption of the Sonar group in Sound Settings, explaining what the sonar ping is for."
+    )
+
     /// The reroll action row (R17).
     static let seekAnewTitle = NSLocalizedString(
         "seek.anew.title",

@@ -16,6 +16,8 @@ struct SoundSettingsView: View {
     @State private var selectedSoundscapeId = UserPreferences.selectedSoundscapeId.value
 
     @State private var breathRhythm = UserPreferences.breathRhythm.value
+    @State private var sonarEnabled = UserPreferences.seekSonarEnabled.value
+    @State private var sonarVolume = UserPreferences.seekSonarVolume.value
     @State private var activePicker: PickerType?
 
     private let bellPlayer = BellPlayer.shared
@@ -27,6 +29,8 @@ struct SoundSettingsView: View {
             mainToggleSection.pilgrimListRow()
             if soundsEnabled {
                 walkSection.pilgrimListRow()
+                SeekSonarSection(sonarEnabled: $sonarEnabled, sonarVolume: $sonarVolume)
+                    .pilgrimListRow()
                 meditationSection.pilgrimListRow()
                 volumeSection.pilgrimListRow()
                 storageSection.pilgrimListRow()
@@ -50,6 +54,8 @@ struct SoundSettingsView: View {
             soundsEnabled = UserPreferences.soundsEnabled.value
             hapticEnabled = UserPreferences.bellHapticEnabled.value
             soundscapeVolume = UserPreferences.soundscapeVolume.value
+            sonarEnabled = UserPreferences.seekSonarEnabled.value
+            sonarVolume = UserPreferences.seekSonarVolume.value
         }
         .onDisappear {
             bellPlayer.stop()
@@ -458,6 +464,51 @@ enum PickerType: String, Identifiable {
         case .meditationStartBell, .meditationEndBell: return "for meditation"
         case .soundscape: return "during meditation"
         case .breathRhythm: return "for meditation"
+        }
+    }
+}
+
+private struct SeekSonarSection: View {
+
+    @Binding var sonarEnabled: Bool
+    @Binding var sonarVolume: Double
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $sonarEnabled) {
+                Text(LS.seekSonarTitle)
+                    .font(Constants.Typography.body)
+            }
+            .tint(.stone)
+            .onChange(of: sonarEnabled) { _, val in
+                UserPreferences.seekSonarEnabled.value = val
+            }
+
+            if sonarEnabled {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(LS.seekSonarVolumeTitle)
+                            .font(Constants.Typography.body)
+                            .foregroundColor(.ink)
+                        Spacer()
+                        Text("\(Int(sonarVolume * 100))%")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                    Slider(value: $sonarVolume, in: 0...1)
+                        .tint(.stone)
+                        .onChange(of: sonarVolume) { _, val in
+                            UserPreferences.seekSonarVolume.value = val
+                        }
+                }
+            }
+        } header: {
+            Text(LS.seekSectionTitle)
+                .font(Constants.Typography.caption)
+        } footer: {
+            Text(LS.seekSonarSettingsCaption)
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
         }
     }
 }

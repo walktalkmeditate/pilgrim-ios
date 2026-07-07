@@ -186,6 +186,7 @@
 "seek.section.title" = "Seek";
 "seek.sonar.title" = "Sonar";
 "seek.sonar.volume" = "Sonar Volume";
+"seek.sonar.settings_caption" = "A quiet ping that guides seek walks, tightening as a clearing nears.";
 "seek.anew.title" = "Seek Anew";
 "seek.anew.complete" = "The seeking is complete";
 
