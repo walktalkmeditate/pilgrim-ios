@@ -133,9 +133,10 @@ struct WalkOptionsSheet: View {
     private var sonarToggleRow: some View {
         HStack(spacing: 12) {
             Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.body)
+                .font(Constants.Typography.body)
                 .foregroundColor(.moss)
                 .frame(width: 28)
+                .accessibilityHidden(true)
 
             Text(LS.seekSonarTitle)
                 .font(Constants.Typography.body)

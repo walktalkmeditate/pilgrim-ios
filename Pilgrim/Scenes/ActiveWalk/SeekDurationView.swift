@@ -84,8 +84,9 @@ struct SeekDurationView: View {
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.caption.weight(.semibold))
+                        .font(Constants.Typography.caption)
                         .foregroundColor(.stone)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(Constants.UI.Padding.normal)

@@ -173,12 +173,16 @@ final class SeekEngine: ObservableObject {
         }
     }
 
+    /// Internal so tests can drive timer events directly without waiting
+    /// for a RunLoop timer.
     func pulseTimerFired(generation: Int) {
         guard generation == pulseGeneration else { return }
         emitPulse()
         schedulePulse()
     }
 
+    /// Internal so tests can drive timer events directly without waiting
+    /// for a RunLoop timer.
     func emitPulse() {
         guard phase == .guiding, !isSuspended, let distance = distanceToActiveMeters else { return }
         eventsSubject.send(.pulse(aligned: isAligned, distanceMeters: distance))
