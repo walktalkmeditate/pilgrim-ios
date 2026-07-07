@@ -207,6 +207,9 @@ extension PilgrimMapView {
     static func flushDeferredSeekFog(on mapView: MBMapView, coordinator: Coordinator) {
         let renderer = coordinator.seekFogRenderer
         guard renderer.hasDeferredUpdate else { return }
+        // Keep the flag while the style is still loading — clearing it before
+        // a guaranteed apply silently drops the deferred update.
+        guard mapView.mapboxMap.isStyleLoaded else { return }
         renderer.hasDeferredUpdate = false
         applySeekFogNow(renderer.pendingState, on: mapView, renderer: renderer)
     }
@@ -220,7 +223,15 @@ extension PilgrimMapView {
         // Equality early-return (AF20): updateUIView runs on every body
         // evaluation; fog rarely changes. `nil == nil` also keeps the whole
         // seek path from ever touching the style on wander walks.
-        guard renderer.lastAppliedState != state else { return }
+        if renderer.lastAppliedState == state {
+            // Trust, but verify: a lock/unlock cycle can strip runtime layers
+            // without any style event (field-confirmed on the SE 3), leaving
+            // the bookkeeping claiming fog that no longer exists. One layer
+            // probe per pass keeps the map self-healing.
+            guard let firstCircle = state?.circles.first,
+                  !mapView.mapboxMap.layerExists(withId: firstCircle.id) else { return }
+            renderer.resetForStyleReload()
+        }
         guard let state else {
             for id in renderer.appliedCircles.keys {
                 removeFogCircle(id: id, from: mapView)
