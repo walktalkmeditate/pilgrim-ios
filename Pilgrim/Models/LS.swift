@@ -73,6 +73,62 @@ struct LS {
         comment: "VoiceOver hint for tapping the faint kanji watermark on the active walk map during a solstice or equinox."
     )
 
+    /// Title of the single seek setup question (R2).
+    static let seekDurationTitle = NSLocalizedString(
+        "seek.duration.title",
+        value: "How long do you have?",
+        comment: "Title of the seek setup sheet asking how long the walker has for the walk."
+    )
+
+    /// Seek duration preset: 30 minutes.
+    static let seekDuration30Min = NSLocalizedString(
+        "seek.duration.30min",
+        value: "30 minutes",
+        comment: "Seek duration preset label for a 30-minute walk."
+    )
+
+    /// Seek duration preset: 1 hour.
+    static let seekDuration1Hour = NSLocalizedString(
+        "seek.duration.1hour",
+        value: "1 hour",
+        comment: "Seek duration preset label for a one-hour walk."
+    )
+
+    /// Seek duration preset: 2 hours.
+    static let seekDuration2Hours = NSLocalizedString(
+        "seek.duration.2hours",
+        value: "2 hours",
+        comment: "Seek duration preset label for a two-hour walk."
+    )
+
+    /// Seek duration preset: 3 hours.
+    static let seekDuration3Hours = NSLocalizedString(
+        "seek.duration.3hours",
+        value: "3 hours",
+        comment: "Seek duration preset label for a three-hour walk."
+    )
+
+    /// One-time safety framing shown under the duration presets (R21).
+    static let seekSafetyCaption = NSLocalizedString(
+        "seek.safety.caption",
+        value: "Never trespass, and let your own judgment walk above the pulse. Any clearing may be released — seek anew.",
+        comment: "Caption shown once, on the first seek only, framing safety: no trespassing, personal judgment outranks the guidance, and any clearing can be rerolled."
+    )
+
+    /// Confirmation button on the seek duration sheet.
+    static let seekBegin = NSLocalizedString(
+        "seek.begin",
+        value: "Begin",
+        comment: "Button confirming the chosen seek duration and starting the setup ritual."
+    )
+
+    /// Gentle line shown when precise location is declined for a seek.
+    static let seekAccuracyDeclined = NSLocalizedString(
+        "seek.accuracy.declined",
+        value: "Seeking needs your precise location to sense the clearings. Wander is always open.",
+        comment: "Alert message when the walker declines temporary full-accuracy location for a seek; they are returned home where Wander remains available."
+    )
+
 
     /**
      Returns a localised string for the provided key and specified source.

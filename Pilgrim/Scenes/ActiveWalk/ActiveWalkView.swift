@@ -277,15 +277,18 @@ struct ActiveWalkView: View {
         .sheet(isPresented: $showIntention) {
             IntentionSettingView(
                 historyStore: intentionHistory,
+                allowsSkip: viewModel.mode != .seek,
                 onSet: { intention in
                     viewModel.intention = intention
                     showIntention = false
+                    viewModel.advanceSeekSetupIntentionSet()
                 },
                 onDismiss: { showIntention = false }
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
+            .interactiveDismissDisabled(viewModel.mode == .seek)
         }
         .sheet(isPresented: $showWaypoint) {
             WaypointMarkingSheet(
@@ -354,6 +357,11 @@ struct ActiveWalkView: View {
             viewModel: viewModel,
             showWaypointFailed: $showWaypointFailed
         ))
+        .modifier(SeekSetupFlowModifier(
+            viewModel: viewModel,
+            showIntention: $showIntention,
+            onCancelled: { onCancel?() }
+        ))
         .onAppear {
             // Seed sheet state from current walk status on FIRST mount only.
             // Guarded so that navigating away (meditation, walk summary) and
@@ -373,7 +381,10 @@ struct ActiveWalkView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) {
                 optionsPulseActive = false
             }
-            if UserPreferences.beginWithIntention.value && viewModel.intention == nil {
+            // Seek drives the intention step from its own stage machine —
+            // the wander-only auto-present would double-fire the sheet.
+            if viewModel.mode != .seek,
+               UserPreferences.beginWithIntention.value && viewModel.intention == nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showIntention = true
                 }

@@ -171,6 +171,16 @@
 "Seek.Quote.2" = "Wander where\nthe wi-fi is weak";
 "Seek.Quote.3" = "The real voyage of discovery\nis seeing with new eyes";
 
+// Seek setup
+"seek.duration.title" = "How long do you have?";
+"seek.duration.30min" = "30 minutes";
+"seek.duration.1hour" = "1 hour";
+"seek.duration.2hours" = "2 hours";
+"seek.duration.3hours" = "3 hours";
+"seek.safety.caption" = "Never trespass, and let your own judgment walk above the pulse. Any clearing may be released — seek anew.";
+"seek.begin" = "Begin";
+"seek.accuracy.declined" = "Seeking needs your precise location to sense the clearings. Wander is always open.";
+
 // Permissions - Preparing for the Journey
 "Permissions.Headline" = "Prepare for the journey";
 "Permissions.Subtitle" = "Pilgrim walks best with these";

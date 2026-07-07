@@ -7,6 +7,7 @@ import AVFoundation
 class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     let id = UUID()
+    let mode: WalkMode
     let builder: WalkBuilder
     let locationManagement: LocationManagement
     private let altitudeManagement: AltitudeManagement
@@ -63,6 +64,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var waypoints: [TempWaypoint] = []
     @Published var weatherSnapshot: WeatherSnapshot?
 
+    @Published private(set) var seekSetupStage: SeekSetupStage
+    private(set) var seekDurationMinutes: Int?
+    /// Captured once at walk start so the caption doesn't vanish mid-flow
+    /// when `seekSafetyShown` flips during this same setup.
+    let seekShowsSafetyCaption: Bool
+    private let seekAccuracy: SeekAccuracyProviding
+
     @Published var whispersPlacedThisWalk = 0
     @Published var stonePlacedThisWalk = false
     @Published var encounteredWhisperIDs: Set<String> = []
@@ -97,7 +105,14 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     private var cancellables: [AnyCancellable] = []
 
-    init() {
+    init(
+        mode: WalkMode = .wander,
+        seekAccuracy: SeekAccuracyProviding = SeekLocationAccuracyProvider()
+    ) {
+        self.mode = mode
+        self.seekAccuracy = seekAccuracy
+        self.seekSetupStage = mode == .seek ? .verifyingAccuracy : .ready
+        self.seekShowsSafetyCaption = mode == .seek && !UserPreferences.seekSafetyShown.value
         self.mapCameraSeed = MapCameraSeed.forActiveWalk()
         self.builder = WalkBuilder()
         self.locationManagement = LocationManagement(builder: builder)
@@ -605,6 +620,98 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         let s = total % 60
         if h > 0 { return String(format: "%d:%02d:%02d", h, m, s) }
         return String(format: "%d:%02d", m, s)
+    }
+}
+
+// MARK: - Seek Setup Flow (F1)
+
+/// Stage machine for the seek setup ritual: accuracy gate → duration
+/// question → required intention → breath transition → ready. Pure
+/// transitions so the ordering invariants (duration before intention,
+/// R2) are unit-testable. Wander walks are born `.ready` and none of
+/// the advance methods engage.
+enum SeekSetupStage: Equatable {
+    case verifyingAccuracy
+    case durationQuestion
+    case intention
+    case transition
+    case ready
+    case cancelled(SeekSetupCancelReason)
+}
+
+enum SeekSetupCancelReason: Equatable {
+    case userDismissed
+    case accuracyDeclined
+}
+
+/// Seam over CLLocationManager's accuracy authorization so the stage
+/// machine is testable without CoreLocation. Seek hard-gates on full
+/// accuracy: approximate fixes (1-3 km) make 80-120 m clearing regions
+/// physically undetectable — there is no degrade path.
+protocol SeekAccuracyProviding {
+    var hasFullAccuracy: Bool { get }
+    func requestTemporaryFullAccuracy(completion: @escaping (Bool) -> Void)
+}
+
+struct SeekLocationAccuracyProvider: SeekAccuracyProviding {
+
+    static let purposeKey = "SeekMode"
+
+    var hasFullAccuracy: Bool {
+        CLLocationManager().accuracyAuthorization == .fullAccuracy
+    }
+
+    func requestTemporaryFullAccuracy(completion: @escaping (Bool) -> Void) {
+        let manager = CLLocationManager()
+        manager.requestTemporaryFullAccuracyAuthorization(withPurposeKey: Self.purposeKey) { _ in
+            DispatchQueue.main.async {
+                completion(manager.accuracyAuthorization == .fullAccuracy)
+            }
+        }
+    }
+}
+
+extension ActiveWalkViewModel {
+
+    /// U7 hook: how long the transition may hold waiting for a good first
+    /// GPS fix (chain generation input) before returning the walker to
+    /// setup instead of holding the breath forever.
+    static let seekGPSLockTimeoutSeconds: TimeInterval = 20
+
+    func beginSeekSetup() {
+        guard mode == .seek, seekSetupStage == .verifyingAccuracy else { return }
+        if seekAccuracy.hasFullAccuracy {
+            seekSetupStage = .durationQuestion
+            return
+        }
+        seekAccuracy.requestTemporaryFullAccuracy { [weak self] granted in
+            guard let self, self.seekSetupStage == .verifyingAccuracy else { return }
+            self.seekSetupStage = granted ? .durationQuestion : .cancelled(.accuracyDeclined)
+        }
+    }
+
+    func advanceSeekSetup(durationMinutes: Int) {
+        guard mode == .seek, seekSetupStage == .durationQuestion else { return }
+        seekDurationMinutes = durationMinutes
+        UserPreferences.seekLastDurationMinutes.value = durationMinutes
+        UserPreferences.seekSafetyShown.value = true
+        seekSetupStage = .intention
+    }
+
+    func advanceSeekSetupIntentionSet() {
+        guard mode == .seek, seekSetupStage == .intention else { return }
+        seekSetupStage = .transition
+    }
+
+    func advanceSeekSetupTransitionComplete() {
+        guard mode == .seek, seekSetupStage == .transition else { return }
+        seekSetupStage = .ready
+    }
+
+    func cancelSeekSetup() {
+        guard mode == .seek, seekSetupStage != .ready else { return }
+        if case .cancelled = seekSetupStage { return }
+        seekSetupStage = .cancelled(.userDismissed)
     }
 }
 

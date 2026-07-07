@@ -245,6 +245,7 @@
 		9A477336A61C4C38B9D4F13C /* RouteDownsampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */; };
 		9B07963B7B5D6C1F8C68E304 /* SeekFogStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 128FBCBF9EE2D6BDFFB66177 /* SeekFogStateTests.swift */; };
 		9C3309EA59D57A4224524F68 /* WhisperManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */; };
+		9D37770B86FE7D5F96CFF660 /* SeekSetupFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D1577001FA4F5C5BEE2D27 /* SeekSetupFlowTests.swift */; };
 		9D37F522C28D84C1E1ECCDCC /* AudioDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1725921B51E95B8BB46C90E4 /* AudioDownloadManager.swift */; };
 		9D911971BF1766882C21072B /* PendingPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = F578B62CF2FE5D35049BA99E /* PendingPlacement.swift */; };
 		A1B2C3D4E5F601020304050B /* PilgrimV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PilgrimV3.swift */; };
@@ -354,6 +355,7 @@
 		BBBB000000000000000041 /* PhotoNarrativeArc.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000040 /* PhotoNarrativeArc.swift */; };
 		BBBB000000000000000043 /* PhotoNarrativeArcTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000042 /* PhotoNarrativeArcTests.swift */; };
 		BC913FA037F44DF0A06117B7 /* CelestialCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6EEC0A116F768CE9EEDE98 /* CelestialCalculatorTests.swift */; };
+		BDB714154D009674AFA2740C /* SeekDurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73047DFD603DBB9F9380AF47 /* SeekDurationView.swift */; };
 		BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
@@ -748,6 +750,7 @@
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
+		41D1577001FA4F5C5BEE2D27 /* SeekSetupFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSetupFlowTests.swift; sourceTree = "<group>"; };
 		44661BA899955FDD26DFF034 /* whisper-compassion-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-1.aac"; sourceTree = "<group>"; };
 		4AD7C7A50CC75536619799F2 /* PilgrimMapView+SeekFog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+SeekFog.swift"; sourceTree = "<group>"; };
 		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
@@ -797,6 +800,7 @@
 		6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationStarGenerationTests.swift; sourceTree = "<group>"; };
 		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
 		721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Combine.swift"; sourceTree = "<group>"; };
+		73047DFD603DBB9F9380AF47 /* SeekDurationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekDurationView.swift; sourceTree = "<group>"; };
 		74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestService.swift; sourceTree = "<group>"; };
 		75F7E64FC89078569CF45F03 /* VoiceGuidePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuidePlayer.swift; sourceTree = "<group>"; };
 		7D4FA04890B06A26D5C59087 /* PilgrimPackageModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageModels.swift; sourceTree = "<group>"; };
@@ -1961,6 +1965,7 @@
 				93906AE2C0546C8D298FEF51 /* SeekPersistenceTests.swift */,
 				3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */,
 				128FBCBF9EE2D6BDFFB66177 /* SeekFogStateTests.swift */,
+				41D1577001FA4F5C5BEE2D27 /* SeekSetupFlowTests.swift */,
 			);
 			name = Seek;
 			path = Seek;
@@ -2061,6 +2066,7 @@
 				BB00031100000000000001 /* TurningRitualCard.swift */,
 				BB00031200000000000001 /* ActiveWalkSubviews.swift */,
 				BB00031300000000000001 /* SoundscapePickerSheet.swift */,
+				73047DFD603DBB9F9380AF47 /* SeekDurationView.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -2952,6 +2958,7 @@
 				F242CB838FA7C4CF75C87E4B /* SeekPersistence.swift in Sources */,
 				D34BBFBCCF7D7FCF4956E864 /* SeekSoundPlayer.swift in Sources */,
 				468F3FE3EE06A11CE097F405 /* PilgrimMapView+SeekFog.swift in Sources */,
+				BDB714154D009674AFA2740C /* SeekDurationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3048,6 +3055,7 @@
 				E7A047A98B7EBFBD29C2640D /* SeekPersistenceTests.swift in Sources */,
 				71D2D8A939B9FBA47773871D /* SeekSoundPlayerTests.swift in Sources */,
 				9B07963B7B5D6C1F8C68E304 /* SeekFogStateTests.swift in Sources */,
+				9D37770B86FE7D5F96CFF660 /* SeekSetupFlowTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

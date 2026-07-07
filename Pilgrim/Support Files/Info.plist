@@ -40,6 +40,11 @@
 	<string>Pilgrim needs continuous location access to track your walking route in the background while you walk</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pilgrim needs your location to track your walking route</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>SeekMode</key>
+		<string>Pilgrim needs your precise location during a seek to sense when you arrive at a hidden clearing</string>
+	</dict>
 	<key>NSMotionUsageDescription</key>
 	<string>Pilgrim uses motion tracking to count your steps during walks</string>
 	<key>NSPhotoLibraryUsageDescription</key>
