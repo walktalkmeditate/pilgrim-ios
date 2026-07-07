@@ -268,7 +268,10 @@ struct ActiveWalkView: View {
                         viewModel.voiceGuideManagement.startGuiding(pack: pack)
                     }
                 },
-                onReplayPrompt: { viewModel.voiceGuideManagement.replayLastPrompt() }
+                onReplayPrompt: { viewModel.voiceGuideManagement.replayLastPrompt() },
+                isSeekActive: viewModel.seekEngine != nil,
+                isSeekComplete: viewModel.isSeekComplete,
+                onSeekAnew: { viewModel.seekAnewRequested() }
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
@@ -607,6 +610,8 @@ struct ActiveWalkView: View {
             onAnnotationTap: { annotation in
                 handleAnnotationTap(annotation)
             },
+            seekFog: viewModel.seekFogState,
+            seekPulseToken: viewModel.seekPulseToken,
             bottomInset: mapBottomInset,
             initialCamera: viewModel.mapCameraSeed,
             fadesInOnStyleLoad: true,

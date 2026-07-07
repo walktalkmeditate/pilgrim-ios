@@ -127,6 +127,7 @@ struct SeekSetupFlowModifier: ViewModifier {
     let onCancelled: () -> Void
 
     @State private var showAccuracyDeclined = false
+    @State private var showGPSTimeout = false
 
     private var showsDurationSheet: Binding<Bool> {
         Binding(
@@ -169,6 +170,11 @@ struct SeekSetupFlowModifier: ViewModifier {
             } message: {
                 Text(LS.seekAccuracyDeclined)
             }
+            .alert("Still Reaching for the Sky", isPresented: $showGPSTimeout) {
+                Button("OK", role: .cancel) { onCancelled() }
+            } message: {
+                Text(LS.seekGPSTimeout)
+            }
             .onChange(of: viewModel.seekSetupStage) { _, stage in
                 handleStageChange(stage)
             }
@@ -190,9 +196,12 @@ struct SeekSetupFlowModifier: ViewModifier {
                 showIntention = true
             }
         case .cancelled(let reason):
-            if reason == .accuracyDeclined {
+            switch reason {
+            case .accuracyDeclined:
                 showAccuracyDeclined = true
-            } else {
+            case .gpsTimeout:
+                showGPSTimeout = true
+            case .userDismissed:
                 onCancelled()
             }
         default:

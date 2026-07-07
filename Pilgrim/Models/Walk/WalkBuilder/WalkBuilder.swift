@@ -94,6 +94,10 @@ public class WalkBuilder: ApplicationStateObserver {
         stepsRelay.accept(steps)
     }
 
+    /// Raw cumulative step count, for consumers that need the number rather
+    /// than LiveStats' formatted string (SeekEngine's stillness vote).
+    public var stepsPublisher: AnyPublisher<Int?, Never> { stepsRelay.asBackgroundPublisher() }
+
     public var waypointsPublisher: AnyPublisher<[TempWaypoint], Never> { waypointsRelay.asBackgroundPublisher() }
 
     public func flushWaypoints(_ waypoints: [TempWaypoint]) {

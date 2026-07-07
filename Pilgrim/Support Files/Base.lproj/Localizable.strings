@@ -180,6 +180,14 @@
 "seek.safety.caption" = "Never trespass, and let your own judgment walk above the pulse. Any clearing may be released — seek anew.";
 "seek.begin" = "Begin";
 "seek.accuracy.declined" = "Seeking needs your precise location to sense the clearings. Wander is always open.";
+"seek.gps.timeout" = "The sky hasn't answered yet. Try again under more open sky — Wander is always open.";
+
+// Seek in-walk options (R11, R17)
+"seek.section.title" = "Seek";
+"seek.sonar.title" = "Sonar";
+"seek.sonar.volume" = "Sonar Volume";
+"seek.anew.title" = "Seek Anew";
+"seek.anew.complete" = "The seeking is complete";
 
 // Permissions - Preparing for the Journey
 "Permissions.Headline" = "Prepare for the journey";

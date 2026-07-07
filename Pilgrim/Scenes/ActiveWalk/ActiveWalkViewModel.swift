@@ -16,7 +16,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     let voiceRecordingManagement: VoiceRecordingManagement
     let soundManagement = SoundManagement()
     let voiceGuideManagement = VoiceGuideManagement()
-    private var sessionGuard: WalkSessionGuard?
+    private(set) var sessionGuard: WalkSessionGuard?
 
     /// Bumped before each weather-retry chain to invalidate stale closures.
     /// CLAUDE.md resource-safety policy: long walks must not leak GCD timers
@@ -71,6 +71,20 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     let seekShowsSafetyCaption: Bool
     private let seekAccuracy: SeekAccuracyProviding
 
+    // Seek engine lifecycle (U7) lives in ActiveWalkViewModel+Seek.swift —
+    // setters stay internal (not private(set)) because a same-type extension
+    // in another file has no access to private setters.
+    @Published var seekEngine: SeekEngine?
+    @Published var seekFogState: SeekFogState?
+    @Published var seekPulseToken = 0
+    let seekSenses: SeekSenses
+    var seekSound: SeekSoundPlaying?
+    /// Invalidates the GPS-lock timeout and any pending reveal whisper
+    /// (AF22 generation-guard rule for asyncAfter chains).
+    var seekGeneration = 0
+    var previousActiveFogBucket: Int?
+    var seekCancellables: [AnyCancellable] = []
+
     @Published var whispersPlacedThisWalk = 0
     @Published var stonePlacedThisWalk = false
     @Published var encounteredWhisperIDs: Set<String> = []
@@ -107,10 +121,12 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     init(
         mode: WalkMode = .wander,
-        seekAccuracy: SeekAccuracyProviding = SeekLocationAccuracyProvider()
+        seekAccuracy: SeekAccuracyProviding = SeekLocationAccuracyProvider(),
+        seekSenses: SeekSenses = SeekSenses()
     ) {
         self.mode = mode
         self.seekAccuracy = seekAccuracy
+        self.seekSenses = seekSenses
         self.seekSetupStage = mode == .seek ? .verifyingAccuracy : .ready
         self.seekShowsSafetyCaption = mode == .seek && !UserPreferences.seekSafetyShown.value
         self.mapCameraSeed = MapCameraSeed.forActiveWalk()
@@ -139,6 +155,9 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         bindVoiceGuide()
         bindCompletedRecordings()
         bindProximity()
+        if mode == .seek {
+            bindSeekLifecycle()
+        }
 
         let guard_ = WalkSessionGuard()
         guard_.builder = builder
@@ -150,6 +169,14 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
             self?.fetchWeather(retryOnFailure: true)
         }
+    }
+
+    /// stop()/cancel() are the designed teardown paths; this is the net for
+    /// a walk screen dismissed without either — the engine's timers and the
+    /// audio consumer must never outlive the walk.
+    deinit {
+        seekEngine?.stop()
+        seekSound?.stop()
     }
 
     func fetchWeather(retryOnFailure: Bool = false) {
@@ -268,6 +295,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     func startRecording() {
         proximityService.resetSession()
         builder.setStatus(.recording)
+        writeSeekMarkerEventIfNeeded()
         soundManagement.onWalkStart()
         startVoiceGuideIfEnabled()
         WalkActivityManager.shared.start(walkStartDate: Date(), intention: intention)
@@ -278,6 +306,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func stop() {
+        teardownSeek()
         cancellables.removeAll()
         proximityService.stopListening()
         // Checkpoint deletion happens in MainCoordinator's saveWalk success
@@ -292,6 +321,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func cancel() {
+        teardownSeek()
         cancellables.removeAll()
         proximityService.stopListening()
         sessionGuard?.stopAndCleanup()
@@ -642,6 +672,7 @@ enum SeekSetupStage: Equatable {
 enum SeekSetupCancelReason: Equatable {
     case userDismissed
     case accuracyDeclined
+    case gpsTimeout
 }
 
 /// Seam over CLLocationManager's accuracy authorization so the stage
@@ -712,6 +743,15 @@ extension ActiveWalkViewModel {
         guard mode == .seek, seekSetupStage != .ready else { return }
         if case .cancelled = seekSetupStage { return }
         seekSetupStage = .cancelled(.userDismissed)
+    }
+
+    /// U7 GPS-lock hold: only the breath transition may time out. Once the
+    /// stage reached `.ready` the walk may already be recording, so a late
+    /// timeout stays silent and the engine simply starts on the first
+    /// accurate fix (the fix subscription stays armed).
+    func failSeekSetupGPSLock() {
+        guard mode == .seek, seekEngine == nil, seekSetupStage == .transition else { return }
+        seekSetupStage = .cancelled(.gpsTimeout)
     }
 }
 

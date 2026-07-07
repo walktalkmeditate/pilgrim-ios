@@ -30,6 +30,13 @@ struct WalkOptionsSheet: View {
     var onSelectVoiceGuide: ((String) -> Void)?
     var onReplayPrompt: (() -> Void)?
 
+    var isSeekActive: Bool = false
+    var isSeekComplete: Bool = false
+    var onSeekAnew: (() -> Void)?
+
+    @State private var sonarEnabled = UserPreferences.seekSonarEnabled.value
+    @State private var sonarVolume = UserPreferences.seekSonarVolume.value
+
     var body: some View {
         VStack(spacing: 0) {
             Text("Options")
@@ -64,6 +71,7 @@ struct WalkOptionsSheet: View {
                     }
 
                     if isRecording {
+                        seekSection
                         traceSection
                         audioSection
                     }
@@ -87,6 +95,92 @@ struct WalkOptionsSheet: View {
             monitor.cancel()
         }
         monitor.start(queue: DispatchQueue(label: "connectivity-check"))
+    }
+
+    /// Seek-only controls (R11 sonar mirror + R17 reroll). Present for the
+    /// whole seek — after `seekComplete` the section stays visible with the
+    /// reroll row disabled (Traces-row precedent), so the layout holds still
+    /// and the quiet control confirms the seeking is complete.
+    @ViewBuilder
+    private var seekSection: some View {
+        if isSeekActive {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(LS.seekSectionTitle)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog.opacity(0.5))
+                    .padding(.top, 8)
+                    .padding(.leading, 4)
+
+                sonarToggleRow
+
+                if sonarEnabled {
+                    sonarVolumeRow
+                }
+
+                optionRow(
+                    icon: "arrow.triangle.2.circlepath",
+                    title: LS.seekAnewTitle,
+                    subtitle: isSeekComplete ? LS.seekAnewCompleteSubtitle : nil
+                ) {
+                    onSeekAnew?()
+                }
+                .disabled(isSeekComplete)
+                .opacity(isSeekComplete ? 0.4 : 1.0)
+            }
+        }
+    }
+
+    private var sonarToggleRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.body)
+                .foregroundColor(.moss)
+                .frame(width: 28)
+
+            Text(LS.seekSonarTitle)
+                .font(Constants.Typography.body)
+                .foregroundColor(.ink.opacity(0.9))
+
+            Spacer()
+
+            Toggle(LS.seekSonarTitle, isOn: $sonarEnabled)
+                .labelsHidden()
+                .tint(.stone)
+                .onChange(of: sonarEnabled) { _, value in
+                    UserPreferences.seekSonarEnabled.value = value
+                }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal)
+                .fill(Color.parchmentSecondary.opacity(0.3))
+        )
+    }
+
+    private var sonarVolumeRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(LS.seekSonarVolumeTitle)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink.opacity(0.9))
+                Spacer()
+                Text("\(Int(sonarVolume * 100))%")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+            }
+            Slider(value: $sonarVolume, in: 0...1)
+                .tint(.stone)
+                .onChange(of: sonarVolume) { _, value in
+                    UserPreferences.seekSonarVolume.value = value
+                }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal)
+                .fill(Color.parchmentSecondary.opacity(0.3))
+        )
     }
 
     @ViewBuilder

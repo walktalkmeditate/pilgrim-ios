@@ -129,6 +129,49 @@ struct LS {
         comment: "Alert message when the walker declines temporary full-accuracy location for a seek; they are returned home where Wander remains available."
     )
 
+    /// Gentle line shown when no accurate GPS fix arrives during the
+    /// breath transition (U7 GPS-lock timeout).
+    static let seekGPSTimeout = NSLocalizedString(
+        "seek.gps.timeout",
+        value: "The sky hasn't answered yet. Try again under more open sky — Wander is always open.",
+        comment: "Alert message when GPS cannot deliver an accurate fix in time to begin a seek; the walker is returned home to try again."
+    )
+
+    /// Header of the seek-only section in the in-walk options sheet (R11).
+    static let seekSectionTitle = NSLocalizedString(
+        "seek.section.title",
+        value: "Seek",
+        comment: "Caption-style header of the seek-only section in the in-walk options sheet."
+    )
+
+    /// Sonar enable toggle row in the in-walk options sheet (R11).
+    static let seekSonarTitle = NSLocalizedString(
+        "seek.sonar.title",
+        value: "Sonar",
+        comment: "Label of the toggle controlling the seek sonar ping sound."
+    )
+
+    /// Sonar volume slider row in the in-walk options sheet (R11).
+    static let seekSonarVolumeTitle = NSLocalizedString(
+        "seek.sonar.volume",
+        value: "Sonar Volume",
+        comment: "Label of the slider controlling the seek sonar ping volume."
+    )
+
+    /// The reroll action row (R17).
+    static let seekAnewTitle = NSLocalizedString(
+        "seek.anew.title",
+        value: "Seek Anew",
+        comment: "Options-sheet row that regenerates the remaining clearings of a seek; used whenever a way feels closed."
+    )
+
+    /// Subtitle of the disabled reroll row after the final reveal (R17).
+    static let seekAnewCompleteSubtitle = NSLocalizedString(
+        "seek.anew.complete",
+        value: "The seeking is complete",
+        comment: "Subtitle of the disabled Seek Anew row after the final clearing has been revealed."
+    )
+
 
     /**
      Returns a localised string for the provided key and specified source.

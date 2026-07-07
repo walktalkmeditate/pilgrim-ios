@@ -16,6 +16,7 @@
 		07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */; };
 		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
+		0908DCA790C0A5619B6B7515 /* ActiveWalkSeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */; };
 		0AA343D1A7FB780905B6A20F /* ActivityContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12245A2A15EE8E64818B6D3F /* ActivityContext.swift */; };
 		0AF0FF1EDA75BDC6A3A3D2A6 /* PromptAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6EA04337299ABAFFB2644FC /* PromptAssembler.swift */; };
 		0C411D46B6C254451E36DC75 /* whisper-presence-4.aac in Resources */ = {isa = PBXBuildFile; fileRef = 83BD1C5A8539657B3A5EC6BD /* whisper-presence-4.aac */; };
@@ -467,6 +468,7 @@
 		F9A0B1C2D3E4F5A6B7C8D9E0 /* SealGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */; };
 		FA9B9D71DB2B3EA84CC73FEE /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90392F316E29A62DA1F0DE0E /* AudioFileStore.swift */; };
 		FB767A6007B826D951706B85 /* VoiceGuideHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */; };
+		FDB572CCFF08373D8FE1E08D /* ActiveWalkViewModel+Seek.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5238E3C51FA281A12447112 /* ActiveWalkViewModel+Seek.swift */; };
 		FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */; };
 		FF22BB33CC44DD55EE66FF77 /* EtegamiRouteStrokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF22BB33CC44DD55EE66FF88 /* EtegamiRouteStrokeTests.swift */; };
 		GOSHUIN0000000000000001 /* GoshuinMilestones.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOSHUIN0000000000000002 /* GoshuinMilestones.swift */; };
@@ -750,6 +752,7 @@
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
+		418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActiveWalkSeekTests.swift; sourceTree = "<group>"; };
 		41D1577001FA4F5C5BEE2D27 /* SeekSetupFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSetupFlowTests.swift; sourceTree = "<group>"; };
 		44661BA899955FDD26DFF034 /* whisper-compassion-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-1.aac"; sourceTree = "<group>"; };
 		4AD7C7A50CC75536619799F2 /* PilgrimMapView+SeekFog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+SeekFog.swift"; sourceTree = "<group>"; };
@@ -1009,6 +1012,7 @@
 		E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderStatusTests.swift; sourceTree = "<group>"; };
 		E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealHashComputerTests.swift; sourceTree = "<group>"; };
 		E4DBAB0C576ADF8CAE31896E /* SeekChain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekChain.swift; sourceTree = "<group>"; };
+		E5238E3C51FA281A12447112 /* ActiveWalkViewModel+Seek.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ActiveWalkViewModel+Seek.swift"; sourceTree = "<group>"; };
 		E57C921D7D601C294F25037B /* whisper-gratitude-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-gratitude-1.aac"; sourceTree = "<group>"; };
 		E68D73742DD9900454DF9A06 /* CachedCairn.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CachedCairn.swift; sourceTree = "<group>"; };
 		E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteDownsampler.swift; sourceTree = "<group>"; };
@@ -1966,6 +1970,7 @@
 				3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */,
 				128FBCBF9EE2D6BDFFB66177 /* SeekFogStateTests.swift */,
 				41D1577001FA4F5C5BEE2D27 /* SeekSetupFlowTests.swift */,
+				418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */,
 			);
 			name = Seek;
 			path = Seek;
@@ -2067,6 +2072,7 @@
 				BB00031200000000000001 /* ActiveWalkSubviews.swift */,
 				BB00031300000000000001 /* SoundscapePickerSheet.swift */,
 				73047DFD603DBB9F9380AF47 /* SeekDurationView.swift */,
+				E5238E3C51FA281A12447112 /* ActiveWalkViewModel+Seek.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -2959,6 +2965,7 @@
 				D34BBFBCCF7D7FCF4956E864 /* SeekSoundPlayer.swift in Sources */,
 				468F3FE3EE06A11CE097F405 /* PilgrimMapView+SeekFog.swift in Sources */,
 				BDB714154D009674AFA2740C /* SeekDurationView.swift in Sources */,
+				FDB572CCFF08373D8FE1E08D /* ActiveWalkViewModel+Seek.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3056,6 +3063,7 @@
 				71D2D8A939B9FBA47773871D /* SeekSoundPlayerTests.swift in Sources */,
 				9B07963B7B5D6C1F8C68E304 /* SeekFogStateTests.swift in Sources */,
 				9D37770B86FE7D5F96CFF660 /* SeekSetupFlowTests.swift in Sources */,
+				0908DCA790C0A5619B6B7515 /* ActiveWalkSeekTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
