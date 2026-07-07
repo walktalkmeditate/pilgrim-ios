@@ -75,6 +75,9 @@ final class SeekSoundPlayer {
     /// pending second cleanly (AF22).
     func playPing(aligned: Bool) {
         pingGeneration += 1
+        #if DEBUG
+        print("[SeekSoundPlayer] ping request — enabled:\(isEnabled) sounds:\(isSoundsEnabled) interrupted:\(isInterrupted) mode:\(coordinator.currentMode) whisper:\(isWhisperPlaying()) voice:\(isVoiceGuidePlaying())")
+        #endif
         guard isEnabled, isSoundsEnabled else { return }
         firePingIfAllowed()
         guard aligned else { return }

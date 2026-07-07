@@ -271,7 +271,10 @@ struct ActiveWalkView: View {
                 onReplayPrompt: { viewModel.voiceGuideManagement.replayLastPrompt() },
                 isSeekActive: viewModel.seekEngine != nil,
                 isSeekComplete: viewModel.isSeekComplete,
-                onSeekAnew: { viewModel.seekAnewRequested() }
+                onSeekAnew: {
+                    showOptions = false
+                    viewModel.seekAnewRequested()
+                }
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)

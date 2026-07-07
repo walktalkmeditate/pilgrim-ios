@@ -156,6 +156,9 @@ final class SeekEngine: ObservableObject {
         invalidatePulseTimer()
         if rerollPulseDistance != nil {
             schedulePulse()
+            // The immediate pulse IS the reroll's feedback: one ping, one
+            // haptic, one ring the moment the new clearing exists.
+            emitPulse()
         }
     }
 

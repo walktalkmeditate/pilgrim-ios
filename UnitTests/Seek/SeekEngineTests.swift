@@ -336,9 +336,10 @@ final class SeekEngineTests: XCTestCase {
 
         engine.seekAnew(currentLocation: home)
         XCTAssertNil(engine.distanceToActiveMeters, "the published distance resets until the next fix")
+        XCTAssertEqual(pulses().count, 1, "the reroll answers with an immediate feedback pulse")
 
         engine.pulseTimerFired(generation: engine.pulseGeneration)
-        XCTAssertEqual(pulses().count, 1, "the heartbeat continues across the reroll on the stale distance")
+        XCTAssertEqual(pulses().count, 2, "the heartbeat continues across the reroll on the stale distance")
     }
 
     // MARK: - Teardown
@@ -417,5 +418,35 @@ final class SeekEngineTests: XCTestCase {
 
         sessionGuard.stop()
         subscription.cancel()
+    }
+
+    // MARK: - Heartbeat arming (field regression: device walk was silent —
+    // no production path ever scheduled the first pulse timer)
+
+    func testFirstFix_armsThePulseHeartbeat() {
+        let engine = makeEngine(clearingCount: 1)
+        engine._test_pulseIntervalOverride = 0.05
+        engine.processLocation(fix(at: point(metersNorthOfHome: 500)))
+
+        let exp = expectation(description: "pulse fires from the timer armed by the first fix")
+        exp.assertForOverFulfill = false
+        let subscription = engine.events.sink { event in
+            if case .pulse = event { exp.fulfill() }
+        }
+        wait(for: [exp], timeout: 1.0)
+        subscription.cancel()
+        engine.stop()
+    }
+
+    func testSeekAnew_emitsAnImmediateFeedbackPulse() {
+        let engine = makeEngine(clearingCount: 1)
+        engine.processLocation(fix(at: point(metersNorthOfHome: 500)))
+        events.removeAll()
+
+        engine.seekAnew(currentLocation: point(metersNorthOfHome: 100))
+
+        let hasPulse = events.contains { if case .pulse = $0 { return true } else { return false } }
+        XCTAssertTrue(hasPulse, "the reroll's immediate pulse is the tap feedback")
+        engine.stop()
     }
 }
