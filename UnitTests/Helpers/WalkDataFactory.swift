@@ -29,7 +29,8 @@ enum WalkDataFactory {
         workoutEvents: [TempV4.WalkEvent] = [],
         voiceRecordings: [TempV4.VoiceRecording] = [],
         activityIntervals: [TempV4.ActivityInterval] = [],
-        favicon: String? = nil
+        favicon: String? = nil,
+        waypoints: [TempV4.Waypoint] = []
     ) -> TempWalk {
         TempWalk(
             uuid: uuid, workoutType: workoutType, distance: distance, steps: steps,
@@ -42,7 +43,8 @@ enum WalkDataFactory {
             heartRates: heartRates, routeData: routeData, pauses: pauses,
             workoutEvents: workoutEvents, voiceRecordings: voiceRecordings,
             activityIntervals: activityIntervals,
-            favicon: favicon
+            favicon: favicon,
+            waypoints: waypoints
         )
     }
 

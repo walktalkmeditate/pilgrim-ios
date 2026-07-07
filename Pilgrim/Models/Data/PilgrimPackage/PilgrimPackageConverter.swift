@@ -495,6 +495,8 @@ enum PilgrimPackageConverter {
         case .lap: return "lap"
         case .marker: return "marker"
         case .segment: return "segment"
+        case .seekMode: return "seekMode"
+        case .seekArrival: return "seekArrival"
         case .unknown: return "unknown"
         }
     }
@@ -504,6 +506,8 @@ enum PilgrimPackageConverter {
         case "lap": return .lap
         case "marker": return .marker
         case "segment": return .segment
+        case "seekMode": return .seekMode
+        case "seekArrival": return .seekArrival
         default: return .unknown
         }
     }

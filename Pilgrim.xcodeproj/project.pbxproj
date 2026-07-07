@@ -431,6 +431,7 @@
 		E58124E91A8DEF710C1944B7 /* whisper-stillness-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = 98AE88EB65E9E2DBE7F0A927 /* whisper-stillness-1.aac */; };
 		E599A6F8ED9AEBCAF54D30C3 /* ProximityNotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */; };
 		E68F52E5A8F0C2714A4F2390 /* PromptStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1825CBE5A81CE064675082D /* PromptStyle.swift */; };
+		E7A047A98B7EBFBD29C2640D /* SeekPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93906AE2C0546C8D298FEF51 /* SeekPersistenceTests.swift */; };
 		E9764940E4CB98309B26AE52 /* StonePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A677576F283F65E658EB774 /* StonePlayer.swift */; };
 		E9FD884A3895457CBF231700 /* SealHashComputer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC0595CA15C420FA33BFD87 /* SealHashComputer.swift */; };
 		EB188038273C1DE46706312C /* CachedCairn.swift in Sources */ = {isa = PBXBuildFile; fileRef = E68D73742DD9900454DF9A06 /* CachedCairn.swift */; };
@@ -451,6 +452,7 @@
 		F1A2B3C4D5E6F7A8B9C0D1E5 /* PilgrimV4.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E7 /* FaviconSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D201 /* SealRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D200 /* SealRenderer.swift */; };
+		F242CB838FA7C4CF75C87E4B /* SeekPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207E5D02B1ED4FF24CCD6F36 /* SeekPersistence.swift */; };
 		F5692608E6A2333D6E107040 /* KanjiExpiryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3271A2D5ABEDAEBF7A3BDD /* KanjiExpiryPicker.swift */; };
 		F6EA13F42AEA3562CB70442D /* GeoCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70459CCA754AD3355F39DA5 /* GeoCacheService.swift */; };
 		F6F821BCD8CEF1926A95449F /* PilgrimPackageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7AF87641B4BC5D1B1E8FA9 /* PilgrimPackageBuilder.swift */; };
@@ -589,6 +591,7 @@
 		1D3271A2D5ABEDAEBF7A3BDD /* KanjiExpiryPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KanjiExpiryPicker.swift; sourceTree = "<group>"; };
 		1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioPriorityQueue.swift; sourceTree = "<group>"; };
 		1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CanvasBackground.swift; sourceTree = "<group>"; };
+		207E5D02B1ED4FF24CCD6F36 /* SeekPersistence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekPersistence.swift; sourceTree = "<group>"; };
 		2204A1DC255ACB1100906CFE /* DataTypeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTypeProtocol.swift; sourceTree = "<group>"; };
 		2204E427295DF28C00243FC3 /* SetupCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupCoordinatorView.swift; sourceTree = "<group>"; };
 		2207B75523128F8A00BA71B5 /* CLLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLLocation.swift; sourceTree = "<group>"; };
@@ -802,6 +805,7 @@
 		90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideSchedulerTests.swift; sourceTree = "<group>"; };
 		916E80AB89EFEB588F00641F /* whisper-presence-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-2.aac"; sourceTree = "<group>"; };
 		92CA99A75060F9E4C6F93A1F /* whisper-wonder-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-wonder-3.aac"; sourceTree = "<group>"; };
+		93906AE2C0546C8D298FEF51 /* SeekPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekPersistenceTests.swift; sourceTree = "<group>"; };
 		94D4ED498F6BB16685DC466E /* whisper-play-6.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-6.aac"; sourceTree = "<group>"; };
 		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -1938,6 +1942,7 @@
 				D574A07BC95CBC99586D5869 /* SeekChainGeneratorTests.swift */,
 				B37DDE9B3DE8524A9F34724C /* SeekEngineTests.swift */,
 				5FE2429C168EC1EF14EC99CD /* SeekStillnessDetectorTests.swift */,
+				93906AE2C0546C8D298FEF51 /* SeekPersistenceTests.swift */,
 			);
 			name = Seek;
 			path = Seek;
@@ -1988,6 +1993,7 @@
 				0FFEFA24B7A952A033F823BF /* SeekChainGenerator.swift */,
 				A0D927024992021199976C22 /* SeekEngine.swift */,
 				19D40461D0593348DADEA56E /* SeekStillnessDetector.swift */,
+				207E5D02B1ED4FF24CCD6F36 /* SeekPersistence.swift */,
 			);
 			name = Seek;
 			path = Seek;
@@ -2923,6 +2929,7 @@
 				A34C52220B725CFB6FFCB9BD /* SeekChainGenerator.swift in Sources */,
 				65C728BC01058D8D9A777D2E /* SeekEngine.swift in Sources */,
 				00E54B754C677E3CC38471D2 /* SeekStillnessDetector.swift in Sources */,
+				F242CB838FA7C4CF75C87E4B /* SeekPersistence.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3016,6 +3023,7 @@
 				D43932D8FB7C96D2B56E36B3 /* SeekChainGeneratorTests.swift in Sources */,
 				9893EEFF05026FAB18DA4FE6 /* SeekEngineTests.swift in Sources */,
 				C2CF7F7376ACA1F2A6981E4D /* SeekStillnessDetectorTests.swift in Sources */,
+				E7A047A98B7EBFBD29C2640D /* SeekPersistenceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
