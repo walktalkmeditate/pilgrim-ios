@@ -19,6 +19,11 @@ struct PilgrimMapView: UIViewRepresentable {
     /// brighter highlighted halo. Used by the reliquary to keep the carousel and the map
     /// visually synchronized.
     var activePhotoID: String?
+    /// Seek-only inputs. `nil` fog means wander — the seek path never
+    /// touches the style. Each `seekPulseToken` increment fires one puck
+    /// pulse ring. All fog/ring logic lives in PilgrimMapView+SeekFog.swift.
+    var seekFog: SeekFogState?
+    var seekPulseToken: Int = 0
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     @Binding var isMeditating: Bool
@@ -53,6 +58,8 @@ struct PilgrimMapView: UIViewRepresentable {
         pinAnnotations: [PilgrimAnnotation] = [],
         onAnnotationTap: ((PilgrimAnnotation) -> Void)? = nil,
         activePhotoID: String? = nil,
+        seekFog: SeekFogState? = nil,
+        seekPulseToken: Int = 0,
         cameraCenter: Binding<CLLocationCoordinate2D?> = .constant(nil),
         cameraZoom: Binding<CGFloat> = .constant(14),
         cameraBounds: MapCameraBounds? = nil,
@@ -70,6 +77,8 @@ struct PilgrimMapView: UIViewRepresentable {
         self.pinAnnotations = pinAnnotations
         self.onAnnotationTap = onAnnotationTap
         self.activePhotoID = activePhotoID
+        self.seekFog = seekFog
+        self.seekPulseToken = seekPulseToken
         self._cameraCenter = cameraCenter
         self._cameraZoom = cameraZoom
         self._isMeditating = isMeditating
@@ -150,6 +159,7 @@ struct PilgrimMapView: UIViewRepresentable {
             coordinator.pointManager = nil
             Self.applyRouteSource(coordinator.pendingSegments, walkingColor: coordinator.walkingColor, on: mapView, coordinator: coordinator)
             Self.applyAnnotations(coordinator.pendingAnnotations, activePhotoID: coordinator.pendingActivePhotoID, on: mapView, coordinator: coordinator)
+            Self.reinstallSeekFog(on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
         context.coordinator.mapView = mapView
@@ -192,6 +202,7 @@ struct PilgrimMapView: UIViewRepresentable {
             context.coordinator.hasDeferredRouteUpdate = true
         }
         Self.applyAnnotations(pinAnnotations, activePhotoID: activePhotoID, on: mapView, coordinator: context.coordinator)
+        Self.applySeekFog(seekFog, pulseToken: seekPulseToken, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
             let padding = UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
@@ -536,6 +547,10 @@ struct PilgrimMapView: UIViewRepresentable {
         /// complete, which the Coordinator wires to trigger a redraw.
         let photoMarkerLoader = PhotoMarkerImageLoader()
 
+        /// Seek fog/ring bookkeeping — state and logic live in
+        /// PilgrimMapView+SeekFog.swift; only the storage lives here.
+        let seekFogRenderer = SeekFogRenderer()
+
         fileprivate var isAppInBackground: Bool = false
         fileprivate var walkingColor: UIColor = .moss
         /// Tracks the walking color baked into the current Mapbox layer's
@@ -548,7 +563,7 @@ struct PilgrimMapView: UIViewRepresentable {
             didSet { refreshRenderState() }
         }
 
-        fileprivate var shouldRender: Bool {
+        var shouldRender: Bool {
             !isAppInBackground && !isMeditating
         }
 
@@ -616,6 +631,9 @@ struct PilgrimMapView: UIViewRepresentable {
             if shouldRender && !wasRendering && hasDeferredRouteUpdate {
                 PilgrimMapView.applyRouteSource(pendingSegments, walkingColor: walkingColor, on: mapView, coordinator: self)
                 hasDeferredRouteUpdate = false
+            }
+            if shouldRender && !wasRendering {
+                PilgrimMapView.flushDeferredSeekFog(on: mapView, coordinator: self)
             }
         }
 
