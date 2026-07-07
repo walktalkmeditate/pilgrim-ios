@@ -235,6 +235,7 @@
 		785609582C94A30C974B0F72 /* PilgrimPackageImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */; };
 		78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */; };
 		7978824143C5D5E81A6A3E06 /* StonePlacementSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */; };
+		7A87A132315C9E46AFE8CF5C /* VolumeSliderRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B886390B795403D3BB7B3372 /* VolumeSliderRow.swift */; };
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
 		7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */; };
 		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
@@ -897,6 +898,7 @@
 		B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
 		B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
 		B70459CCA754AD3355F39DA5 /* GeoCacheService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeoCacheService.swift; sourceTree = "<group>"; };
+		B886390B795403D3BB7B3372 /* VolumeSliderRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VolumeSliderRow.swift; sourceTree = "<group>"; };
 		BB00031100000000000001 /* TurningRitualCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TurningRitualCard.swift; sourceTree = "<group>"; };
 		BB00031200000000000001 /* ActiveWalkSubviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWalkSubviews.swift; sourceTree = "<group>"; };
 		BB00031300000000000001 /* SoundscapePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePickerSheet.swift; sourceTree = "<group>"; };
@@ -1630,6 +1632,7 @@
 				1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */,
 				03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */,
 				4AD7C7A50CC75536619799F2 /* PilgrimMapView+SeekFog.swift */,
+				B886390B795403D3BB7B3372 /* VolumeSliderRow.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2984,6 +2987,7 @@
 				FDB572CCFF08373D8FE1E08D /* ActiveWalkViewModel+Seek.swift in Sources */,
 				5B1B61ECF42C2E13F7E923AA /* SeekGlance.swift in Sources */,
 				17823B16CBD61D97425067C6 /* SeekSummarySection.swift in Sources */,
+				7A87A132315C9E46AFE8CF5C /* VolumeSliderRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

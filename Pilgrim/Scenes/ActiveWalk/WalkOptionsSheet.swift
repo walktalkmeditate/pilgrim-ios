@@ -159,21 +159,12 @@ struct WalkOptionsSheet: View {
     }
 
     private var sonarVolumeRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(LS.seekSonarVolumeTitle)
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.ink.opacity(0.9))
-                Spacer()
-                Text("\(Int(sonarVolume * 100))%")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-            }
-            Slider(value: $sonarVolume, in: 0...1)
-                .tint(.stone)
-                .onChange(of: sonarVolume) { _, value in
-                    UserPreferences.seekSonarVolume.value = value
-                }
+        VolumeSliderRow(
+            title: LS.seekSonarVolumeTitle,
+            volume: $sonarVolume,
+            labelColor: .ink.opacity(0.9)
+        ) { value in
+            UserPreferences.seekSonarVolume.value = value
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)

@@ -138,38 +138,12 @@ struct SoundSettingsView: View {
 
     private var volumeSection: some View {
         Section {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Bells")
-                        .font(Constants.Typography.body)
-                        .foregroundColor(.ink)
-                    Spacer()
-                    Text("\(Int(bellVolume * 100))%")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                }
-                Slider(value: $bellVolume, in: 0...1)
-                    .tint(.stone)
-                    .onChange(of: bellVolume) { _, val in
-                        UserPreferences.bellVolume.value = val
-                    }
+            VolumeSliderRow(title: "Bells", volume: $bellVolume) { val in
+                UserPreferences.bellVolume.value = val
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Soundscape")
-                        .font(Constants.Typography.body)
-                        .foregroundColor(.ink)
-                    Spacer()
-                    Text("\(Int(soundscapeVolume * 100))%")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                }
-                Slider(value: $soundscapeVolume, in: 0...1)
-                    .tint(.stone)
-                    .onChange(of: soundscapeVolume) { _, val in
-                        UserPreferences.soundscapeVolume.value = val
-                    }
+            VolumeSliderRow(title: "Soundscape", volume: $soundscapeVolume) { val in
+                UserPreferences.soundscapeVolume.value = val
             }
         } header: {
             Text("Volume")
@@ -485,21 +459,8 @@ private struct SeekSonarSection: View {
             }
 
             if sonarEnabled {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text(LS.seekSonarVolumeTitle)
-                            .font(Constants.Typography.body)
-                            .foregroundColor(.ink)
-                        Spacer()
-                        Text("\(Int(sonarVolume * 100))%")
-                            .font(Constants.Typography.caption)
-                            .foregroundColor(.fog)
-                    }
-                    Slider(value: $sonarVolume, in: 0...1)
-                        .tint(.stone)
-                        .onChange(of: sonarVolume) { _, val in
-                            UserPreferences.seekSonarVolume.value = val
-                        }
+                VolumeSliderRow(title: LS.seekSonarVolumeTitle, volume: $sonarVolume) { val in
+                    UserPreferences.seekSonarVolume.value = val
                 }
             }
         } header: {

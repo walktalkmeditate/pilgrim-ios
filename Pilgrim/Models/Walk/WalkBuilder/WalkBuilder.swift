@@ -110,10 +110,6 @@ public class WalkBuilder: ApplicationStateObserver {
 
     public var workoutEventsPublisher: AnyPublisher<[TempWalkEvent], Never> { workoutEventsRelay.asBackgroundPublisher() }
 
-    public func flushWorkoutEvents(_ events: [TempWalkEvent]) {
-        workoutEventsRelay.accept(events)
-    }
-
     public func addWorkoutEvent(_ event: TempWalkEvent) {
         workoutEventsRelay.accept(workoutEventsRelay.value + [event])
     }
