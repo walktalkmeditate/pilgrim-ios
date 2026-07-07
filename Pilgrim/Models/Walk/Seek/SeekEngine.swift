@@ -2,14 +2,8 @@ import Combine
 import CoreLocation
 import Foundation
 
-enum SeekEnginePhase: Equatable {
-    case guiding
-    case arrived
-    /// Reserved for the reveal ritual choreography (U7); the engine commits
-    /// reveals atomically and never parks here itself.
-    case revealing
-    case complete
-}
+// SeekEnginePhase lives in SeekGlance.swift — the widget-shared file — so
+// the Live Activity glance model can consume it without importing the engine.
 
 enum SeekEngineEvent: Equatable {
     case pulse(aligned: Bool, distanceMeters: Double)

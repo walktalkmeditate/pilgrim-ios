@@ -177,6 +177,30 @@ extension ActiveWalkViewModel {
 
     var isSeekComplete: Bool { seekEngine?.phase == .complete }
 
+    // MARK: - Live Activity glance (R12/AE7)
+
+    /// Computed here — never in the widget, which has no sensors. The
+    /// direction hint is relative to course over ground; the glance model
+    /// hides it while stationary or when the course is invalid.
+    func currentSeekGlance() -> SeekGlanceState? {
+        guard let engine = seekEngine else { return nil }
+        var bearing: Double?
+        if let sample = currentLocation,
+           engine.chain.clearings.indices.contains(engine.activeIndex) {
+            bearing = SeekChainGenerator.bearingDegrees(
+                from: SeekPoint(latitude: sample.latitude, longitude: sample.longitude),
+                to: engine.chain.clearings[engine.activeIndex].center
+            )
+        }
+        return SeekGlanceModel.glance(
+            distanceToActiveMeters: engine.distanceToActiveMeters,
+            courseDegrees: currentLocation?.direction,
+            speedMetersPerSecond: currentLocation?.speed,
+            bearingToClearingDegrees: bearing,
+            phase: engine.phase
+        )
+    }
+
     // MARK: - Reveal ritual (R15)
 
     /// One whisper from the walker's already-downloaded catalog, played

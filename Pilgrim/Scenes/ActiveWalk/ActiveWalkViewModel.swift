@@ -478,7 +478,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                     talkTimerStart: talkTimerStart,
                     isPaused: isPaused,
                     isMeditating: self.isMeditating,
-                    isRecordingVoice: self.isRecordingVoice
+                    isRecordingVoice: self.isRecordingVoice,
+                    seek: self.currentSeekGlance()
                 )
             }
             .store(in: &cancellables)

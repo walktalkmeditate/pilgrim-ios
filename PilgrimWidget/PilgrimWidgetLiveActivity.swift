@@ -100,6 +100,10 @@ struct PilgrimWidgetLiveActivity: Widget {
                 .font(.caption2.monospacedDigit())
                 .multilineTextAlignment(.trailing)
                 .frame(width: 48)
+        } else if let seek = state.seek, !seek.isComplete {
+            Text(seekDistanceText(bucket: seek.distanceBucketMeters, imperial: imperial))
+                .font(.caption2.monospacedDigit())
+                .foregroundColor(Self.stone)
         } else {
             Text(formatDistance(state.distanceMeters, imperial: imperial))
                 .font(.caption2.monospacedDigit())
@@ -178,9 +182,63 @@ struct PilgrimWidgetLiveActivity: Widget {
             if context.state.meditationTimerStart != nil || context.state.talkTimerStart != nil {
                 activityTimerBar(context.state)
             }
+
+            if let seek = context.state.seek {
+                seekGlanceBar(seek, imperial: context.attributes.isImperial)
+            }
         }
         .padding()
         .background(Self.parchment)
+    }
+
+    // MARK: - Seek Glance
+
+    // Static per-state rendering only: the ring glyph steps by distance
+    // bucket, no timers or animation in the widget process.
+    @ViewBuilder
+    private func seekGlanceBar(_ seek: SeekGlanceState, imperial: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: seekRingSymbol(seek))
+                .font(.caption)
+                .foregroundColor(Self.stone)
+            if seek.isComplete {
+                Text("seeking complete")
+                    .font(.system(.caption, design: .serif))
+                    .foregroundColor(Self.fog)
+            } else {
+                Text(seekDistanceText(bucket: seek.distanceBucketMeters, imperial: imperial))
+                    .font(.system(.caption, design: .rounded).monospacedDigit())
+                    .foregroundColor(Self.ink)
+                if let hint = seek.directionHint {
+                    Text(hint.rawValue)
+                        .font(.system(.caption, design: .serif))
+                        .foregroundColor(Self.fog)
+                }
+            }
+            Spacer()
+        }
+    }
+
+    private func seekRingSymbol(_ seek: SeekGlanceState) -> String {
+        if seek.isComplete { return "circle.fill" }
+        switch seek.distanceBucketMeters {
+        case 1000...: return "circle.dashed"
+        case 300..<1000: return "smallcircle.circle"
+        case 100..<300: return "target"
+        default: return "smallcircle.filled.circle"
+        }
+    }
+
+    private func seekDistanceText(bucket: Int, imperial: Bool) -> String {
+        if bucket >= 2000 { return imperial ? "1.2 mi +" : "2 km +" }
+        if bucket < 100 { return "close" }
+        if imperial {
+            return String(format: "~%.1f mi", Double(bucket) / 1609.344)
+        }
+        if bucket >= 1000 {
+            return String(format: "~%.1f km", Double(bucket) / 1000)
+        }
+        return "~\(bucket) m"
     }
 
     @ViewBuilder
@@ -285,5 +343,16 @@ struct PilgrimWidgetLiveActivity: Widget {
         isPaused: false,
         isMeditating: false,
         isRecordingVoice: true
+    )
+    WalkActivityAttributes.ContentState(
+        activeDurationSeconds: 900,
+        walkTimerStart: Date().addingTimeInterval(-900),
+        distanceMeters: 1100,
+        meditationTimerStart: nil,
+        talkTimerStart: nil,
+        isPaused: false,
+        isMeditating: false,
+        isRecordingVoice: false,
+        seek: SeekGlanceState(distanceBucketMeters: 400, directionHint: .ahead, isComplete: false)
     )
 }
