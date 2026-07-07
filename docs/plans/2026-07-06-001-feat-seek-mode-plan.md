@@ -1,7 +1,7 @@
 ---
 title: "feat: Seek mode — fogged clearings, pulse guidance, stillness reveals"
 type: feat
-status: active
+status: completed
 date: 2026-07-06
 origin: docs/brainstorms/2026-07-06-seek-mode-requirements.md
 ---
