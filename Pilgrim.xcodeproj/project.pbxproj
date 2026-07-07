@@ -30,6 +30,7 @@
 		11C747B0EAF53D9F444C6243 /* DataSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1066617851420CAB7B50442 /* DataSettingsView.swift */; };
 		12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */; };
 		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
+		17823B16CBD61D97425067C6 /* SeekSummarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105159E380C21159A15B02E6 /* SeekSummarySection.swift */; };
 		18163919B90D2DC9D6ED730F /* PilgrimPackageModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD8506242AA6CD81468A74B /* PilgrimPackageModelTests.swift */; };
 		1B1EF52AF234570C6DDAE905 /* SoundscapePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */; };
 		1BED3236A44370D58ED31DCC /* whisper-presence-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 2FCBF13CCEBEB5026330B0FD /* whisper-presence-3.aac */; };
@@ -162,6 +163,7 @@
 		22FEA0AF24CDD7B50007CA9C /* DiskStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0AE24CDD7B50007CA9C /* DiskStorage.swift */; };
 		22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */; };
 		25679B99B2C71D0991CF99A2 /* whisper-play-11.aac in Resources */ = {isa = PBXBuildFile; fileRef = 1BEB21BACB47BB26018EECA3 /* whisper-play-11.aac */; };
+		26D2A22BA6DF2D3C6508C30F /* SeekSummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB2D6A557287CBD051BF314 /* SeekSummaryTests.swift */; };
 		26FA567381DD9B65054096FF /* whisper-play-4.aac in Resources */ = {isa = PBXBuildFile; fileRef = 6C077B3FA336178A9F4CBC6F /* whisper-play-4.aac */; };
 		2A3B9A951ECE0FF8A20C559F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2B671C6679119F8E9A7508 /* HapticManager.swift */; };
 		2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D23FF60A762C30296A69E6 /* ComputationTests.swift */; };
@@ -590,6 +592,7 @@
 		0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculator.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		0FFEFA24B7A952A033F823BF /* SeekChainGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekChainGenerator.swift; sourceTree = "<group>"; };
+		105159E380C21159A15B02E6 /* SeekSummarySection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSummarySection.swift; sourceTree = "<group>"; };
 		119C8CECDB3E592FD5E40D38 /* LaunchLoadingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LaunchLoadingView.swift; sourceTree = "<group>"; };
 		12245A2A15EE8E64818B6D3F /* ActivityContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityContext.swift; sourceTree = "<group>"; };
 		123512C2E2D2088520214836 /* CairnVisualGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnVisualGenerator.swift; sourceTree = "<group>"; };
@@ -898,6 +901,7 @@
 		BB00AA010000000000000001 /* PilgrimV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV1.swift; sourceTree = "<group>"; };
 		BB00CC010000000000000002 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
 		BB44CC55DD66EE77FF88AABB /* EtegamiTextGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiTextGeneratorTests.swift; sourceTree = "<group>"; };
+		BBB2D6A557287CBD051BF314 /* SeekSummaryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSummaryTests.swift; sourceTree = "<group>"; };
 		BBBB000000000000000001 /* WaypointInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointInterface.swift; sourceTree = "<group>"; };
 		BBBB000000000000000003 /* TempWaypoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempWaypoint.swift; sourceTree = "<group>"; };
 		BBBB000000000000000005 /* PilgrimV6.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV6.swift; sourceTree = "<group>"; };
@@ -1977,6 +1981,7 @@
 				41D1577001FA4F5C5BEE2D27 /* SeekSetupFlowTests.swift */,
 				418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */,
 				254CDAC411C696F71980548E /* SeekLiveActivityTests.swift */,
+				BBB2D6A557287CBD051BF314 /* SeekSummaryTests.swift */,
 			);
 			name = Seek;
 			path = Seek;
@@ -2099,6 +2104,7 @@
 				4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */,
 				BBBB00000000000000001D /* Reliquary */,
+				105159E380C21159A15B02E6 /* SeekSummarySection.swift */,
 			);
 			path = WalkSummary;
 			sourceTree = "<group>";
@@ -2974,6 +2980,7 @@
 				BDB714154D009674AFA2740C /* SeekDurationView.swift in Sources */,
 				FDB572CCFF08373D8FE1E08D /* ActiveWalkViewModel+Seek.swift in Sources */,
 				5B1B61ECF42C2E13F7E923AA /* SeekGlance.swift in Sources */,
+				17823B16CBD61D97425067C6 /* SeekSummarySection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3073,6 +3080,7 @@
 				9D37770B86FE7D5F96CFF660 /* SeekSetupFlowTests.swift in Sources */,
 				0908DCA790C0A5619B6B7515 /* ActiveWalkSeekTests.swift in Sources */,
 				20F59ECBB3F70E369934A78F /* SeekLiveActivityTests.swift in Sources */,
+				26D2A22BA6DF2D3C6508C30F /* SeekSummaryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

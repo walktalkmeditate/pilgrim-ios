@@ -189,6 +189,20 @@
 "seek.anew.title" = "Seek Anew";
 "seek.anew.complete" = "The seeking is complete";
 
+// Seek summary (R19)
+"seek.summary.header" = "The Seeking";
+"seek.summary.found.one" = "One unknown found";
+"seek.summary.found.two" = "Two unknowns found";
+"seek.summary.found.three" = "Three unknowns found";
+"seek.summary.found.many" = "%d unknowns found";
+"seek.summary.along_the_way" = "Along the way";
+"seek.summary.sign.photo.one" = "a photo";
+"seek.summary.sign.photo.many" = "%d photos";
+"seek.summary.sign.voice.one" = "a voice note";
+"seek.summary.sign.voice.many" = "%d voice notes";
+"seek.summary.sign.mark.one" = "a mark";
+"seek.summary.sign.mark.many" = "%d marks";
+
 // Permissions - Preparing for the Journey
 "Permissions.Headline" = "Prepare for the journey";
 "Permissions.Subtitle" = "Pilgrim walks best with these";

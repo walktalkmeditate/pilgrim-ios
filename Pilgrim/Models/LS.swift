@@ -172,6 +172,90 @@ struct LS {
         comment: "Subtitle of the disabled Seek Anew row after the final clearing has been revealed."
     )
 
+    /// Header of the seek story section on the walk summary (R19).
+    static let seekSummaryHeader = NSLocalizedString(
+        "seek.summary.header",
+        value: "The Seeking",
+        comment: "Header of the walk-summary section telling the story of a seek walk."
+    )
+
+    /// R19: the note counts only reached clearings — one unknown found.
+    static let seekSummaryFoundOne = NSLocalizedString(
+        "seek.summary.found.one",
+        value: "One unknown found",
+        comment: "Walk-summary note for a seek where one clearing was reached. Must never mention a total or use 'X of Y' phrasing."
+    )
+
+    /// R19: the note counts only reached clearings — two unknowns found.
+    static let seekSummaryFoundTwo = NSLocalizedString(
+        "seek.summary.found.two",
+        value: "Two unknowns found",
+        comment: "Walk-summary note for a seek where two clearings were reached. Must never mention a total or use 'X of Y' phrasing."
+    )
+
+    /// R19: the note counts only reached clearings — three unknowns found.
+    static let seekSummaryFoundThree = NSLocalizedString(
+        "seek.summary.found.three",
+        value: "Three unknowns found",
+        comment: "Walk-summary note for a seek where three clearings were reached. Must never mention a total or use 'X of Y' phrasing."
+    )
+
+    /// R19 fallback beyond three reached clearings; %d is the reached count.
+    static let seekSummaryFoundManyFormat = NSLocalizedString(
+        "seek.summary.found.many",
+        value: "%d unknowns found",
+        comment: "Walk-summary note for a seek where more than three clearings were reached; %d is the count of reached clearings, never a total."
+    )
+
+    /// Closing group for signs marked outside every clearing (R19).
+    static let seekSummaryAlongTheWay = NSLocalizedString(
+        "seek.summary.along_the_way",
+        value: "Along the way",
+        comment: "Label of the walk-summary group gathering signs marked outside every reached clearing."
+    )
+
+    /// Single photo in a clearing's sign line.
+    static let seekSummarySignPhotoOne = NSLocalizedString(
+        "seek.summary.sign.photo.one",
+        value: "a photo",
+        comment: "Sign count fragment for one photo in a seek summary clearing group."
+    )
+
+    /// Multiple photos in a clearing's sign line; %d is the count.
+    static let seekSummarySignPhotosFormat = NSLocalizedString(
+        "seek.summary.sign.photo.many",
+        value: "%d photos",
+        comment: "Sign count fragment for several photos in a seek summary clearing group; %d is the count."
+    )
+
+    /// Single voice note in a clearing's sign line.
+    static let seekSummarySignVoiceOne = NSLocalizedString(
+        "seek.summary.sign.voice.one",
+        value: "a voice note",
+        comment: "Sign count fragment for one voice recording in a seek summary clearing group."
+    )
+
+    /// Multiple voice notes in a clearing's sign line; %d is the count.
+    static let seekSummarySignVoicesFormat = NSLocalizedString(
+        "seek.summary.sign.voice.many",
+        value: "%d voice notes",
+        comment: "Sign count fragment for several voice recordings in a seek summary clearing group; %d is the count."
+    )
+
+    /// Single waypoint mark in a clearing's sign line.
+    static let seekSummarySignMarkOne = NSLocalizedString(
+        "seek.summary.sign.mark.one",
+        value: "a mark",
+        comment: "Sign count fragment for one waypoint mark in a seek summary clearing group."
+    )
+
+    /// Multiple waypoint marks in a clearing's sign line; %d is the count.
+    static let seekSummarySignMarksFormat = NSLocalizedString(
+        "seek.summary.sign.mark.many",
+        value: "%d marks",
+        comment: "Sign count fragment for several waypoint marks in a seek summary clearing group; %d is the count."
+    )
+
 
     /**
      Returns a localised string for the provided key and specified source.
