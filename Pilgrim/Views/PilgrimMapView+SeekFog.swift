@@ -24,9 +24,10 @@ final class SeekFogRenderer {
     /// sequence bumps this, turning stale asyncAfter bodies into no-ops.
     var wispFlareGeneration = 0
     var lastWispVisibilityCheckUptime: TimeInterval = 0
-    /// The distance-keyed crescent span currently on the layer, nil when
-    /// no layer exists (or the style was reloaded, wiping its images).
-    var appliedWispSpanDegrees: Double?
+    /// The crescent image currently on the layer (distance-keyed span +
+    /// light theme), nil when no layer exists (or the style was reloaded,
+    /// wiping its images).
+    var appliedWispImageID: String?
 
     /// A style reload wipes every layer; forget what was applied so the next
     /// pass reinstalls from scratch.
@@ -34,7 +35,7 @@ final class SeekFogRenderer {
         lastAppliedState = nil
         appliedCircles = [:]
         wispFlareGeneration += 1
-        appliedWispSpanDegrees = nil
+        appliedWispImageID = nil
     }
 }
 
@@ -47,7 +48,6 @@ extension PilgrimMapView {
         // invert in dark mode and become bright halos on the map.
         static let fogColor = UIColor(hex: "#8A8175")
         static let haloColor = UIColor(hex: "#C4956A")
-        static let ringColor = UIColor(hex: "#C4956A")
         static let fogTransitionDuration: TimeInterval = 1.5
         static let fogBlur = 1.0
         static let ringLayerID = "seek-pulse-ring"
@@ -300,8 +300,10 @@ extension PilgrimMapView {
             source.data = .feature(Feature(geometry: Point(coordinate)))
             try mapView.mapboxMap.addSource(source)
 
+            // The ring is recreated per pulse, so it picks up a theme
+            // change (dawn <-> starlight) on the very next heartbeat.
             var layer = CircleLayer(id: SeekFogRendering.ringLayerID, source: SeekFogRendering.ringSourceID)
-            layer.circleColor = .constant(StyleColor(SeekFogRendering.ringColor))
+            layer.circleColor = .constant(StyleColor(SeekWispRendering.lightColor()))
             layer.circleBlur = .constant(SeekFogRendering.ringBlur)
             layer.circleStrokeWidth = .constant(0)
             layer.circleRadius = .constant(SeekFogRendering.ringStartRadiusPixels)

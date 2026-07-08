@@ -13,8 +13,23 @@ extension PilgrimMapView {
         static let layerID = "seek-wisp"
         static let sourceID = "seek-wisp-source"
 
+        /// The seek's light follows the sky: dawn under the day themes
+        /// (matching the halos and the warm stone puck), the puck's own
+        /// starlight lavender under constellation. Constellation's stone
+        /// override is a fixed color, so this never hands the map an
+        /// adaptive color that could invert.
+        static var isStarlight: Bool {
+            UserPreferences.appearanceMode.value == "constellation"
+        }
+
+        static func lightColor() -> UIColor {
+            isStarlight
+                ? SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
+                : SeekFogRendering.haloColor
+        }
+
         static func imageID(spanDegrees: Double) -> String {
-            "seek-wisp-crescent-\(Int(spanDegrees.rounded()))"
+            "seek-wisp-crescent-\(Int(spanDegrees.rounded()))-\(isStarlight ? "starlight" : "dawn")"
         }
         /// Between pulses the crescent rests dim, almost asleep; each pulse
         /// swells it. Under Reduce Motion it holds steady instead.
@@ -53,7 +68,8 @@ extension PilgrimMapView {
         renderer: SeekFogRenderer,
         on mapView: MBMapView
     ) {
-        guard wisp != previous || spanDegrees != renderer.appliedWispSpanDegrees else { return }
+        let desiredImageID = SeekWispRendering.imageID(spanDegrees: spanDegrees)
+        guard wisp != previous || desiredImageID != renderer.appliedWispImageID else { return }
         guard let wisp else {
             removeWispLayer(from: mapView, renderer: renderer)
             return
@@ -70,14 +86,14 @@ extension PilgrimMapView {
                     property: "icon-rotate",
                     value: wisp.bearingDegrees
                 )
-                if spanDegrees != renderer.appliedWispSpanDegrees {
+                if desiredImageID != renderer.appliedWispImageID {
                     ensureWispImage(spanDegrees: spanDegrees, on: mapView)
                     try mapView.mapboxMap.setLayerProperty(
                         for: SeekWispRendering.layerID,
                         property: "icon-image",
-                        value: SeekWispRendering.imageID(spanDegrees: spanDegrees)
+                        value: desiredImageID
                     )
-                    renderer.appliedWispSpanDegrees = spanDegrees
+                    renderer.appliedWispImageID = desiredImageID
                 }
                 return
             }
@@ -102,7 +118,7 @@ extension PilgrimMapView {
                 delay: 0
             )
             try mapView.mapboxMap.addLayer(layer)
-            renderer.appliedWispSpanDegrees = spanDegrees
+            renderer.appliedWispImageID = desiredImageID
             // A released wisp reinstalls at zero (style reload with fog on
             // screen) so the handoff exhale never replays.
             writeWispOpacity(
@@ -123,7 +139,7 @@ extension PilgrimMapView {
     static func removeWispLayer(from mapView: MBMapView, renderer: SeekFogRenderer) {
         renderer.wispReleased = false
         renderer.wispFlareGeneration += 1
-        renderer.appliedWispSpanDegrees = nil
+        renderer.appliedWispImageID = nil
         do {
             if mapView.mapboxMap.layerExists(withId: SeekWispRendering.layerID) {
                 try mapView.mapboxMap.removeLayer(withId: SeekWispRendering.layerID)
@@ -309,7 +325,7 @@ extension PilgrimMapView {
                     )
                     arc.lineWidth = width
                     arc.lineCapStyle = .butt
-                    SeekFogRendering.haloColor.withAlphaComponent(min(alpha, 1)).setStroke()
+                    SeekWispRendering.lightColor().withAlphaComponent(min(alpha, 1)).setStroke()
                     arc.stroke()
                 }
             }

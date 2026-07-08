@@ -125,4 +125,25 @@ final class SeekWispVisibilityTests: XCTestCase {
             )
         )
     }
+
+    // MARK: - Light theme (dawn vs constellation starlight)
+
+    func testCrescentLight_followsThePuckUnderConstellation() {
+        let original = UserPreferences.appearanceMode.value
+        defer { UserPreferences.appearanceMode.value = original }
+
+        UserPreferences.appearanceMode.value = "constellation"
+        XCTAssertEqual(
+            PilgrimMapView.SeekWispRendering.lightColor(),
+            SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full),
+            "under the constellation sky the crescent is starlight - the puck's own color"
+        )
+        XCTAssertTrue(
+            PilgrimMapView.SeekWispRendering.imageID(spanDegrees: 72).hasSuffix("starlight"),
+            "the cached image key must change with the theme or a stale dawn crescent survives the switch"
+        )
+
+        UserPreferences.appearanceMode.value = "light"
+        XCTAssertTrue(PilgrimMapView.SeekWispRendering.imageID(spanDegrees: 72).hasSuffix("dawn"))
+    }
 }
