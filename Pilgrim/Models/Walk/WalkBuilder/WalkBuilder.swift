@@ -94,6 +94,10 @@ public class WalkBuilder: ApplicationStateObserver {
         stepsRelay.accept(steps)
     }
 
+    /// Raw cumulative step count, for consumers that need the number rather
+    /// than LiveStats' formatted string (SeekEngine's stillness vote).
+    public var stepsPublisher: AnyPublisher<Int?, Never> { stepsRelay.asBackgroundPublisher() }
+
     public var waypointsPublisher: AnyPublisher<[TempWaypoint], Never> { waypointsRelay.asBackgroundPublisher() }
 
     public func flushWaypoints(_ waypoints: [TempWaypoint]) {
@@ -102,6 +106,12 @@ public class WalkBuilder: ApplicationStateObserver {
 
     public func addWaypoint(_ waypoint: TempWaypoint) {
         waypointsRelay.accept(waypointsRelay.value + [waypoint])
+    }
+
+    public var workoutEventsPublisher: AnyPublisher<[TempWalkEvent], Never> { workoutEventsRelay.asBackgroundPublisher() }
+
+    public func addWorkoutEvent(_ event: TempWalkEvent) {
+        workoutEventsRelay.accept(workoutEventsRelay.value + [event])
     }
 
     var weatherSnapshot: WeatherSnapshot?
@@ -220,6 +230,8 @@ public class WalkBuilder: ApplicationStateObserver {
     private let activityIntervalsRelay = CurrentValueRelay<[TempActivityInterval]>([])
     /// The relay to publish waypoints dropped during the walk.
     private let waypointsRelay = CurrentValueRelay<[TempWaypoint]>([])
+    /// The relay to publish walk events recorded during the walk.
+    private let workoutEventsRelay = CurrentValueRelay<[TempWalkEvent]>([])
     /// The relay to publish a reset command.
     private let resetRelay = PassthroughRelay<WalkInterface?>()
     
@@ -390,7 +402,7 @@ public class WalkBuilder: ApplicationStateObserver {
             heartRates: [],
             routeData: locationsRelay.value,
             pauses: pauses,
-            workoutEvents: [],
+            workoutEvents: workoutEventsRelay.value,
             voiceRecordings: voiceRecordingsRelay.value,
             activityIntervals: activityIntervalsRelay.value,
             waypoints: waypointsRelay.value,
@@ -422,7 +434,7 @@ public class WalkBuilder: ApplicationStateObserver {
             heartRates: [],
             routeData: locationsRelay.value,
             pauses: pausesRelay.value,
-            workoutEvents: [],
+            workoutEvents: workoutEventsRelay.value,
             voiceRecordings: voiceRecordingsRelay.value,
             activityIntervals: activityIntervalsRelay.value,
             waypoints: waypointsRelay.value,
@@ -452,6 +464,7 @@ public class WalkBuilder: ApplicationStateObserver {
         meditateDurationRelay.accept(0)
         activityIntervalsRelay.accept([])
         waypointsRelay.accept([])
+        workoutEventsRelay.accept([])
         lastPause = nil
         weatherSnapshot = nil
         resetRelay.accept(nil)
@@ -466,6 +479,7 @@ public class WalkBuilder: ApplicationStateObserver {
         startDateRelay.accept(snapshot.startDate)
         endDateRelay.accept(nil)
         pausesRelay.accept(snapshot.pauses.map { TempWalkPause(uuid: $0.uuid, startDate: $0.startDate, endDate: $0.endDate, pauseType: $0.pauseType) })
+        workoutEventsRelay.accept(snapshot.workoutEvents.map { TempWalkEvent(uuid: $0.uuid, eventType: $0.eventType, timestamp: $0.timestamp) })
         lastPause = (type: .manual, startingAt: snapshot.endDate)
         resetRelay.accept(snapshot)
         self.validateTransition(to: .recording) { isValid in

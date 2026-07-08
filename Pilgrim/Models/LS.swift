@@ -73,6 +73,196 @@ struct LS {
         comment: "VoiceOver hint for tapping the faint kanji watermark on the active walk map during a solstice or equinox."
     )
 
+    /// Title of the single seek setup question (R2).
+    static let seekDurationTitle = NSLocalizedString(
+        "seek.duration.title",
+        value: "How long do you have?",
+        comment: "Title of the seek setup sheet asking how long the walker has for the walk."
+    )
+
+    /// Seek duration preset: 30 minutes.
+    static let seekDuration30Min = NSLocalizedString(
+        "seek.duration.30min",
+        value: "30 minutes",
+        comment: "Seek duration preset label for a 30-minute walk."
+    )
+
+    /// Seek duration preset: 1 hour.
+    static let seekDuration1Hour = NSLocalizedString(
+        "seek.duration.1hour",
+        value: "1 hour",
+        comment: "Seek duration preset label for a one-hour walk."
+    )
+
+    /// Seek duration preset: 2 hours.
+    static let seekDuration2Hours = NSLocalizedString(
+        "seek.duration.2hours",
+        value: "2 hours",
+        comment: "Seek duration preset label for a two-hour walk."
+    )
+
+    /// Seek duration preset: 3 hours.
+    static let seekDuration3Hours = NSLocalizedString(
+        "seek.duration.3hours",
+        value: "3 hours",
+        comment: "Seek duration preset label for a three-hour walk."
+    )
+
+    /// One-time safety framing shown under the duration presets (R21).
+    static let seekSafetyCaption = NSLocalizedString(
+        "seek.safety.caption",
+        value: "Never trespass, and let your own judgment walk above the pulse. Any clearing may be released — seek anew.",
+        comment: "Caption shown once, on the first seek only, framing safety: no trespassing, personal judgment outranks the guidance, and any clearing can be rerolled."
+    )
+
+    /// Confirmation button on the seek duration sheet.
+    static let seekBegin = NSLocalizedString(
+        "seek.begin",
+        value: "Begin",
+        comment: "Button confirming the chosen seek duration and starting the setup ritual."
+    )
+
+    /// Gentle line shown when precise location is declined for a seek.
+    static let seekAccuracyDeclined = NSLocalizedString(
+        "seek.accuracy.declined",
+        value: "Seeking needs your precise location to sense the clearings. Wander is always open.",
+        comment: "Alert message when the walker declines temporary full-accuracy location for a seek; they are returned home where Wander remains available."
+    )
+
+    /// Gentle line shown when no accurate GPS fix arrives during the
+    /// breath transition (U7 GPS-lock timeout).
+    static let seekGPSTimeout = NSLocalizedString(
+        "seek.gps.timeout",
+        value: "The sky hasn't answered yet. Try again under more open sky — Wander is always open.",
+        comment: "Alert message when GPS cannot deliver an accurate fix in time to begin a seek; the walker is returned home to try again."
+    )
+
+    /// Header of the seek-only section in the in-walk options sheet (R11).
+    static let seekSectionTitle = NSLocalizedString(
+        "seek.section.title",
+        value: "Seek",
+        comment: "Caption-style header of the seek-only section in the in-walk options sheet."
+    )
+
+    /// Sonar enable toggle row in the in-walk options sheet (R11).
+    static let seekSonarTitle = NSLocalizedString(
+        "seek.sonar.title",
+        value: "Sonar",
+        comment: "Label of the toggle controlling the seek sonar ping sound."
+    )
+
+    /// Sonar volume slider row in the in-walk options sheet (R11).
+    static let seekSonarVolumeTitle = NSLocalizedString(
+        "seek.sonar.volume",
+        value: "Sonar Volume",
+        comment: "Label of the slider controlling the seek sonar ping volume."
+    )
+
+    /// Caption under the Sonar group in Sound Settings (R11).
+    static let seekSonarSettingsCaption = NSLocalizedString(
+        "seek.sonar.settings_caption",
+        value: "A quiet ping that guides seek walks, tightening as a clearing nears.",
+        comment: "Footer caption of the Sonar group in Sound Settings, explaining what the sonar ping is for."
+    )
+
+    /// The reroll action row (R17).
+    static let seekAnewTitle = NSLocalizedString(
+        "seek.anew.title",
+        value: "Seek Anew",
+        comment: "Options-sheet row that regenerates the remaining clearings of a seek; used whenever a way feels closed."
+    )
+
+    /// Subtitle of the disabled reroll row after the final reveal (R17).
+    static let seekAnewCompleteSubtitle = NSLocalizedString(
+        "seek.anew.complete",
+        value: "The seeking is complete",
+        comment: "Subtitle of the disabled Seek Anew row after the final clearing has been revealed."
+    )
+
+    /// Header of the seek story section on the walk summary (R19).
+    static let seekSummaryHeader = NSLocalizedString(
+        "seek.summary.header",
+        value: "The Seeking",
+        comment: "Header of the walk-summary section telling the story of a seek walk."
+    )
+
+    /// R19: the note counts only reached clearings — one unknown found.
+    static let seekSummaryFoundOne = NSLocalizedString(
+        "seek.summary.found.one",
+        value: "One unknown found",
+        comment: "Walk-summary note for a seek where one clearing was reached. Must never mention a total or use 'X of Y' phrasing."
+    )
+
+    /// R19: the note counts only reached clearings — two unknowns found.
+    static let seekSummaryFoundTwo = NSLocalizedString(
+        "seek.summary.found.two",
+        value: "Two unknowns found",
+        comment: "Walk-summary note for a seek where two clearings were reached. Must never mention a total or use 'X of Y' phrasing."
+    )
+
+    /// R19: the note counts only reached clearings — three unknowns found.
+    static let seekSummaryFoundThree = NSLocalizedString(
+        "seek.summary.found.three",
+        value: "Three unknowns found",
+        comment: "Walk-summary note for a seek where three clearings were reached. Must never mention a total or use 'X of Y' phrasing."
+    )
+
+    /// R19 fallback beyond three reached clearings; %d is the reached count.
+    static let seekSummaryFoundManyFormat = NSLocalizedString(
+        "seek.summary.found.many",
+        value: "%d unknowns found",
+        comment: "Walk-summary note for a seek where more than three clearings were reached; %d is the count of reached clearings, never a total."
+    )
+
+    /// Closing group for signs marked outside every clearing (R19).
+    static let seekSummaryAlongTheWay = NSLocalizedString(
+        "seek.summary.along_the_way",
+        value: "Along the way",
+        comment: "Label of the walk-summary group gathering signs marked outside every reached clearing."
+    )
+
+    /// Single photo in a clearing's sign line.
+    static let seekSummarySignPhotoOne = NSLocalizedString(
+        "seek.summary.sign.photo.one",
+        value: "a photo",
+        comment: "Sign count fragment for one photo in a seek summary clearing group."
+    )
+
+    /// Multiple photos in a clearing's sign line; %d is the count.
+    static let seekSummarySignPhotosFormat = NSLocalizedString(
+        "seek.summary.sign.photo.many",
+        value: "%d photos",
+        comment: "Sign count fragment for several photos in a seek summary clearing group; %d is the count."
+    )
+
+    /// Single voice note in a clearing's sign line.
+    static let seekSummarySignVoiceOne = NSLocalizedString(
+        "seek.summary.sign.voice.one",
+        value: "a voice note",
+        comment: "Sign count fragment for one voice recording in a seek summary clearing group."
+    )
+
+    /// Multiple voice notes in a clearing's sign line; %d is the count.
+    static let seekSummarySignVoicesFormat = NSLocalizedString(
+        "seek.summary.sign.voice.many",
+        value: "%d voice notes",
+        comment: "Sign count fragment for several voice recordings in a seek summary clearing group; %d is the count."
+    )
+
+    /// Single waypoint mark in a clearing's sign line.
+    static let seekSummarySignMarkOne = NSLocalizedString(
+        "seek.summary.sign.mark.one",
+        value: "a mark",
+        comment: "Sign count fragment for one waypoint mark in a seek summary clearing group."
+    )
+
+    /// Multiple waypoint marks in a clearing's sign line; %d is the count.
+    static let seekSummarySignMarksFormat = NSLocalizedString(
+        "seek.summary.sign.mark.many",
+        value: "%d marks",
+        comment: "Sign count fragment for several waypoint marks in a seek summary clearing group; %d is the count."
+    )
+
 
     /**
      Returns a localised string for the provided key and specified source.

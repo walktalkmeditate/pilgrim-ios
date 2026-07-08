@@ -16,5 +16,9 @@ struct WalkActivityAttributes: ActivityAttributes {
         var isPaused: Bool
         var isMeditating: Bool
         var isRecordingVoice: Bool
+        /// nil for wander walks — the payload and rendering stay identical
+        /// to pre-seek builds (parity requirement; synthesized Codable
+        /// omits the key when nil).
+        var seek: SeekGlanceState?
     }
 }

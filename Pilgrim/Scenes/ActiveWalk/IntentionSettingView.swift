@@ -4,6 +4,9 @@ import AVFoundation
 struct IntentionSettingView: View {
 
     @ObservedObject var historyStore: IntentionHistoryStore
+    /// Seek requires an intention (R3): passing false removes the Cancel
+    /// affordance so the only way forward is setting one.
+    var allowsSkip: Bool = true
     let onSet: (String) -> Void
     let onDismiss: () -> Void
 
@@ -313,12 +316,14 @@ struct IntentionSettingView: View {
 
     private var bottomButtons: some View {
         HStack {
-            Button("Cancel") {
-                recorder.cancel()
-                onDismiss()
+            if allowsSkip {
+                Button("Cancel") {
+                    recorder.cancel()
+                    onDismiss()
+                }
+                .font(Constants.Typography.button)
+                .foregroundColor(.fog)
             }
-            .font(Constants.Typography.button)
-            .foregroundColor(.fog)
 
             Spacer()
 

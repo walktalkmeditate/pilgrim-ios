@@ -56,7 +56,7 @@ class MainCoordinator: ObservableObject {
             return
         }
         Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
-        let vm = ActiveWalkViewModel()
+        let vm = ActiveWalkViewModel(mode: mode)
         vm.onWalkCompleted = { [weak self, weak vm] snapshot in
             snapshot.comment = vm?.intention
             DataManager.saveWalk(object: snapshot) { success, _, walk in

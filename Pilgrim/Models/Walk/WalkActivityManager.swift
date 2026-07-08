@@ -10,10 +10,30 @@ final class WalkActivityManager {
     private var lastIsPaused = false
     private var lastIsMeditating = false
     private var lastIsRecordingVoice = false
-    private let distanceThreshold: Double = 15
-    private let timeThreshold: TimeInterval = 15
+    private var lastSeekGlance: SeekGlanceState?
+    static let distanceThreshold: Double = 15
+    static let timeThreshold: TimeInterval = 15
+    /// Seek updates arrive on ~100 m bucket changes, so the dead-process
+    /// net must outlive the longest plausible gap between buckets (~3 min
+    /// at a slow walk) — the wander 45 s net would mark live seeks stale.
+    static let seekStaleInterval: TimeInterval = 180
 
     private init() {}
+
+    /// Pure gating decision: push on meaningful movement, a flag flip, a
+    /// changed seek glance (bucket/hint/completion — naturally coarse), or
+    /// the periodic floor as fallback.
+    static func shouldPush(
+        movedMeters: Double,
+        flagsChanged: Bool,
+        seekGlanceChanged: Bool,
+        secondsSinceLastPush: TimeInterval
+    ) -> Bool {
+        movedMeters >= distanceThreshold
+            || flagsChanged
+            || seekGlanceChanged
+            || secondsSinceLastPush >= timeThreshold
+    }
 
     func start(walkStartDate: Date, intention: String?) {
         dispatchPrecondition(condition: .onQueue(.main))
@@ -49,6 +69,7 @@ final class WalkActivityManager {
             lastIsPaused = false
             lastIsMeditating = false
             lastIsRecordingVoice = false
+            lastSeekGlance = nil
         } catch {
             print("[WalkActivity] Failed to start: \(error)")
         }
@@ -62,24 +83,29 @@ final class WalkActivityManager {
         talkTimerStart: Date?,
         isPaused: Bool,
         isMeditating: Bool,
-        isRecordingVoice: Bool
+        isRecordingVoice: Bool,
+        seek: SeekGlanceState? = nil
     ) {
         dispatchPrecondition(condition: .onQueue(.main))
         guard let activity = currentActivity else { return }
 
-        let distanceDelta = abs(distanceMeters - lastDistanceUpdate)
         let stateChanged = isPaused != lastIsPaused
             || isMeditating != lastIsMeditating
             || isRecordingVoice != lastIsRecordingVoice
-        let timeElapsed = Date().timeIntervalSince(lastUpdateDate) >= timeThreshold
 
-        guard distanceDelta >= distanceThreshold || stateChanged || timeElapsed else { return }
+        guard Self.shouldPush(
+            movedMeters: abs(distanceMeters - lastDistanceUpdate),
+            flagsChanged: stateChanged,
+            seekGlanceChanged: seek != lastSeekGlance,
+            secondsSinceLastPush: Date().timeIntervalSince(lastUpdateDate)
+        ) else { return }
 
         lastDistanceUpdate = distanceMeters
         lastUpdateDate = Date()
         lastIsPaused = isPaused
         lastIsMeditating = isMeditating
         lastIsRecordingVoice = isRecordingVoice
+        lastSeekGlance = seek
 
         let state = WalkActivityAttributes.ContentState(
             activeDurationSeconds: activeDuration,
@@ -89,10 +115,12 @@ final class WalkActivityManager {
             talkTimerStart: talkTimerStart,
             isPaused: isPaused,
             isMeditating: isMeditating,
-            isRecordingVoice: isRecordingVoice
+            isRecordingVoice: isRecordingVoice,
+            seek: seek
         )
 
-        let staleDate = Date().addingTimeInterval(timeThreshold * 3)
+        let staleInterval = seek != nil ? Self.seekStaleInterval : Self.timeThreshold * 3
+        let staleDate = Date().addingTimeInterval(staleInterval)
 
         Task {
             await activity.update(

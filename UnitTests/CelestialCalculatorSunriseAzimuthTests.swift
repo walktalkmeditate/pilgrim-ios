@@ -6,12 +6,12 @@ final class CelestialCalculatorSunriseAzimuthTests: XCTestCase {
 
     private let azimuthTolerance: Double = 3.0
 
-    private func date(year: Int, month: Int, day: Int) -> Date {
+    private func date(year: Int, month: Int, day: Int, hour: Int = 12) -> Date {
         var c = DateComponents()
         c.year = year
         c.month = month
         c.day = day
-        c.hour = 12
+        c.hour = hour
         c.timeZone = TimeZone(identifier: "UTC")
         return Calendar(identifier: .gregorian).date(from: c)!
     }
@@ -111,5 +111,38 @@ final class CelestialCalculatorSunriseAzimuthTests: XCTestCase {
                 "seasonalMarker(for: \(d)) returned \(String(describing: lightweight)) but snapshot returned \(String(describing: full))"
             )
         }
+    }
+
+    // MARK: - Solar elevation
+
+    private let equator = CLLocationCoordinate2D(latitude: 0, longitude: 0)
+
+    func testSolarElevation_equinoxNoonAtEquator_nearZenith() {
+        let elevation = CelestialCalculator.solarElevationDegrees(
+            at: equator, on: date(year: 2024, month: 3, day: 20)
+        )
+        XCTAssertGreaterThan(elevation, 80)
+    }
+
+    func testSolarElevation_equinoxMidnightAtEquator_deepBelowHorizon() {
+        let elevation = CelestialCalculator.solarElevationDegrees(
+            at: equator, on: date(year: 2024, month: 3, day: 20, hour: 0)
+        )
+        XCTAssertLessThan(elevation, -60)
+    }
+
+    func testSolarElevation_juneSolsticeNoonAtEquator_matchesDeclination() {
+        let elevation = CelestialCalculator.solarElevationDegrees(
+            at: equator, on: date(year: 2024, month: 6, day: 20)
+        )
+        // Sun stands over the Tropic of Cancer: 90° − 23.44° ≈ 66.6°.
+        XCTAssertEqual(elevation, 66.6, accuracy: 3.0)
+    }
+
+    func testSolarElevation_equinoxSunriseHour_nearHorizon() {
+        let elevation = CelestialCalculator.solarElevationDegrees(
+            at: equator, on: date(year: 2024, month: 3, day: 20, hour: 6)
+        )
+        XCTAssertEqual(elevation, 0, accuracy: 4.0)
     }
 }

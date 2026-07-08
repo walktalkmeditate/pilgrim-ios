@@ -171,6 +171,39 @@
 "Seek.Quote.2" = "Wander where\nthe wi-fi is weak";
 "Seek.Quote.3" = "The real voyage of discovery\nis seeing with new eyes";
 
+// Seek setup
+"seek.duration.title" = "How long do you have?";
+"seek.duration.30min" = "30 minutes";
+"seek.duration.1hour" = "1 hour";
+"seek.duration.2hours" = "2 hours";
+"seek.duration.3hours" = "3 hours";
+"seek.safety.caption" = "Never trespass, and let your own judgment walk above the pulse. Any clearing may be released — seek anew.";
+"seek.begin" = "Begin";
+"seek.accuracy.declined" = "Seeking needs your precise location to sense the clearings. Wander is always open.";
+"seek.gps.timeout" = "The sky hasn't answered yet. Try again under more open sky — Wander is always open.";
+
+// Seek in-walk options (R11, R17)
+"seek.section.title" = "Seek";
+"seek.sonar.title" = "Sonar";
+"seek.sonar.volume" = "Sonar Volume";
+"seek.sonar.settings_caption" = "A quiet ping that guides seek walks, tightening as a clearing nears.";
+"seek.anew.title" = "Seek Anew";
+"seek.anew.complete" = "The seeking is complete";
+
+// Seek summary (R19)
+"seek.summary.header" = "The Seeking";
+"seek.summary.found.one" = "One unknown found";
+"seek.summary.found.two" = "Two unknowns found";
+"seek.summary.found.three" = "Three unknowns found";
+"seek.summary.found.many" = "%d unknowns found";
+"seek.summary.along_the_way" = "Along the way";
+"seek.summary.sign.photo.one" = "a photo";
+"seek.summary.sign.photo.many" = "%d photos";
+"seek.summary.sign.voice.one" = "a voice note";
+"seek.summary.sign.voice.many" = "%d voice notes";
+"seek.summary.sign.mark.one" = "a mark";
+"seek.summary.sign.mark.many" = "%d marks";
+
 // Permissions - Preparing for the Journey
 "Permissions.Headline" = "Prepare for the journey";
 "Permissions.Subtitle" = "Pilgrim walks best with these";

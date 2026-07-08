@@ -40,6 +40,8 @@ enum ScreenshotDataSeeder {
         let weatherHumidity: Double?
         let weatherWindSpeed: Double?
         let routePoints: [(lat: Double, lon: Double, alt: Double)]
+        var waypoints: [(label: String, icon: String, lat: Double, lon: Double, offsetMinutes: Double)] = []
+        var events: [(eventType: Int, offsetMinutes: Double)] = []
     }
 
     static let walks: [ScreenshotWalk] = [
@@ -124,6 +126,35 @@ enum ScreenshotDataSeeder {
                 (42.8935, -8.5010, 290)
             ]
         ),
+        ScreenshotWalk(
+            daysAgo: 2, hour: 8, distanceMeters: 4300, durationMinutes: 75, steps: 5733,
+            latitude: 42.8730, longitude: -8.5390, altitudeBase: 255,
+            ascend: 60, descend: 60,
+            talkMinutes: 0, meditateMinutes: 10,
+            intention: "Walk toward what calls",
+            transcription: nil,
+            favicon: nil,
+            weatherCondition: "clear", weatherTemperature: 15.5, weatherHumidity: 0.62, weatherWindSpeed: 2.1,
+            routePoints: [
+                (42.8730, -8.5390, 255), (42.8745, -8.5360, 262), (42.8762, -8.5330, 270),
+                (42.8781, -8.5305, 278), (42.8800, -8.5288, 285), (42.8818, -8.5300, 292),
+                (42.8832, -8.5325, 300), (42.8838, -8.5355, 295), (42.8828, -8.5385, 285),
+                (42.8810, -8.5408, 275), (42.8788, -8.5420, 268), (42.8765, -8.5418, 262),
+                (42.8745, -8.5405, 258), (42.8732, -8.5392, 255)
+            ],
+            waypoints: [
+                (SeekPersistence.arrivalWaypointLabel(clearingOrdinal: 1),
+                 SeekPersistence.arrivalWaypointIcon, 42.8800, -8.5288, 23.1),
+                ("Grateful", "heart", 42.8801, -8.5290, 24.0),
+                (SeekPersistence.arrivalWaypointLabel(clearingOrdinal: 2),
+                 SeekPersistence.arrivalWaypointIcon, 42.8828, -8.5385, 46.2)
+            ],
+            events: [
+                (WalkEvent.EventType.seekMode.rawValue, 0),
+                (WalkEvent.EventType.seekArrival.rawValue, 23.1),
+                (WalkEvent.EventType.seekArrival.rawValue, 46.2)
+            ]
+        ),
     ]
 
     static func seed(completion: @escaping (Int) -> Void) {
@@ -140,72 +171,7 @@ enum ScreenshotDataSeeder {
                 continue
             }
 
-            let endDate = adjustedStart.addingTimeInterval(spec.durationMinutes * 60)
-
-            let routeData: [TempRouteDataSample] = spec.routePoints.enumerated().map { pointIndex, point in
-                let fraction = Double(pointIndex) / Double(max(1, spec.routePoints.count - 1))
-                let timestamp = adjustedStart.addingTimeInterval(spec.durationMinutes * 60 * fraction)
-                return TempRouteDataSample(
-                    uuid: nil,
-                    timestamp: timestamp,
-                    latitude: point.lat,
-                    longitude: point.lon,
-                    altitude: point.alt,
-                    horizontalAccuracy: Double.random(in: 3...8),
-                    verticalAccuracy: Double.random(in: 2...5),
-                    speed: spec.distanceMeters / (spec.durationMinutes * 60) + Double.random(in: -0.3...0.3),
-                    direction: Double.random(in: 0..<360)
-                )
-            }
-
-            var voiceRecordings: [TempV4.VoiceRecording] = []
-            if spec.talkMinutes > 0 {
-                let talkStart = adjustedStart.addingTimeInterval(spec.durationMinutes * 60 * 0.25)
-                let talkEnd = talkStart.addingTimeInterval(spec.talkMinutes * 60)
-                voiceRecordings.append(TempVoiceRecording(
-                    uuid: nil,
-                    startDate: talkStart,
-                    endDate: talkEnd,
-                    duration: spec.talkMinutes * 60,
-                    fileRelativePath: "demo/recording-\(index).m4a",
-                    transcription: spec.transcription
-                ))
-            }
-
-            var activityIntervals: [TempV4.ActivityInterval] = []
-            if spec.meditateMinutes > 0 {
-                let medStart = adjustedStart.addingTimeInterval(spec.durationMinutes * 60 * 0.55)
-                let medEnd = medStart.addingTimeInterval(spec.meditateMinutes * 60)
-                activityIntervals.append(TempActivityInterval(
-                    uuid: nil,
-                    activityType: .meditation,
-                    startDate: medStart,
-                    endDate: medEnd
-                ))
-            }
-
-            let walk = NewWalk(
-                workoutType: .walking,
-                distance: spec.distanceMeters,
-                steps: spec.steps,
-                startDate: adjustedStart,
-                endDate: endDate,
-                isRace: false,
-                comment: spec.intention,
-                isUserModified: false,
-                finishedRecording: true,
-                heartRates: [],
-                routeData: routeData,
-                pauses: [],
-                workoutEvents: [],
-                voiceRecordings: voiceRecordings,
-                activityIntervals: activityIntervals,
-                weatherCondition: spec.weatherCondition,
-                weatherTemperature: spec.weatherTemperature,
-                weatherHumidity: spec.weatherHumidity,
-                weatherWindSpeed: spec.weatherWindSpeed
-            )
-            walk.favicon = spec.favicon
+            let walk = makeWalk(from: spec, startDate: adjustedStart, index: index)
 
             DataManager.saveWalk(object: walk) { _, _, _ in
                 savedCount += 1
@@ -214,6 +180,96 @@ enum ScreenshotDataSeeder {
                 }
             }
         }
+    }
+
+    static func makeWalk(from spec: ScreenshotWalk, startDate adjustedStart: Date, index: Int) -> NewWalk {
+        let endDate = adjustedStart.addingTimeInterval(spec.durationMinutes * 60)
+
+        let routeData: [TempRouteDataSample] = spec.routePoints.enumerated().map { pointIndex, point in
+            let fraction = Double(pointIndex) / Double(max(1, spec.routePoints.count - 1))
+            let timestamp = adjustedStart.addingTimeInterval(spec.durationMinutes * 60 * fraction)
+            return TempRouteDataSample(
+                uuid: nil,
+                timestamp: timestamp,
+                latitude: point.lat,
+                longitude: point.lon,
+                altitude: point.alt,
+                horizontalAccuracy: Double.random(in: 3...8),
+                verticalAccuracy: Double.random(in: 2...5),
+                speed: spec.distanceMeters / (spec.durationMinutes * 60) + Double.random(in: -0.3...0.3),
+                direction: Double.random(in: 0..<360)
+            )
+        }
+
+        var voiceRecordings: [TempV4.VoiceRecording] = []
+        if spec.talkMinutes > 0 {
+            let talkStart = adjustedStart.addingTimeInterval(spec.durationMinutes * 60 * 0.25)
+            let talkEnd = talkStart.addingTimeInterval(spec.talkMinutes * 60)
+            voiceRecordings.append(TempVoiceRecording(
+                uuid: nil,
+                startDate: talkStart,
+                endDate: talkEnd,
+                duration: spec.talkMinutes * 60,
+                fileRelativePath: "demo/recording-\(index).m4a",
+                transcription: spec.transcription
+            ))
+        }
+
+        var activityIntervals: [TempV4.ActivityInterval] = []
+        if spec.meditateMinutes > 0 {
+            let medStart = adjustedStart.addingTimeInterval(spec.durationMinutes * 60 * 0.55)
+            let medEnd = medStart.addingTimeInterval(spec.meditateMinutes * 60)
+            activityIntervals.append(TempActivityInterval(
+                uuid: nil,
+                activityType: .meditation,
+                startDate: medStart,
+                endDate: medEnd
+            ))
+        }
+
+        let waypoints: [TempWaypoint] = spec.waypoints.map { waypoint in
+            TempWaypoint(
+                uuid: nil,
+                latitude: waypoint.lat,
+                longitude: waypoint.lon,
+                label: waypoint.label,
+                icon: waypoint.icon,
+                timestamp: adjustedStart.addingTimeInterval(waypoint.offsetMinutes * 60)
+            )
+        }
+
+        let workoutEvents: [TempWalkEvent] = spec.events.map { event in
+            TempWalkEvent(
+                uuid: nil,
+                eventType: WalkEvent.EventType(rawValue: event.eventType),
+                timestamp: adjustedStart.addingTimeInterval(event.offsetMinutes * 60)
+            )
+        }
+
+        let walk = NewWalk(
+            workoutType: .walking,
+            distance: spec.distanceMeters,
+            steps: spec.steps,
+            startDate: adjustedStart,
+            endDate: endDate,
+            isRace: false,
+            comment: spec.intention,
+            isUserModified: false,
+            finishedRecording: true,
+            heartRates: [],
+            routeData: routeData,
+            pauses: [],
+            workoutEvents: workoutEvents,
+            voiceRecordings: voiceRecordings,
+            activityIntervals: activityIntervals,
+            waypoints: waypoints,
+            weatherCondition: spec.weatherCondition,
+            weatherTemperature: spec.weatherTemperature,
+            weatherHumidity: spec.weatherHumidity,
+            weatherWindSpeed: spec.weatherWindSpeed
+        )
+        walk.favicon = spec.favicon
+        return walk
     }
 }
 #endif

@@ -40,8 +40,13 @@
 	<string>Pilgrim needs continuous location access to track your walking route in the background while you walk</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pilgrim needs your location to track your walking route</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>SeekMode</key>
+		<string>Pilgrim needs your precise location during a seek to sense when you arrive at a hidden clearing</string>
+	</dict>
 	<key>NSMotionUsageDescription</key>
-	<string>Pilgrim uses motion tracking to count your steps during walks</string>
+	<string>Pilgrim uses motion to count your steps and sense moments of stillness during walks. Motion data stays on your device.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Pilgrim shows photos you took along your walking routes, gathered into a reliquary for each walk. Photos stay in Apple Photos and are only copied or shared when you explicitly include them in a shared walk or an exported data file.</string>
 	<key>UIBackgroundModes</key>

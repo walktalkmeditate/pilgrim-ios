@@ -89,6 +89,11 @@ enum HapticPattern {
     case placementFailed
     case cairnProximity
     case stonePlaced(tier: Int)
+    case seekTick(closeness: Double)
+    case seekAligned(closeness: Double)
+    case seekArrival
+    case seekBreathIn
+    case seekBreathOut
 
     func fire() {
         switch self {
@@ -136,6 +141,53 @@ enum HapticPattern {
                 generator.prepare()
                 generator.impactOccurred()
             }
+
+        case .seekTick, .seekAligned, .seekArrival, .seekBreathIn, .seekBreathOut:
+            fireSeek()
+        }
+    }
+
+    /// Split from `fire()` to keep both switches inside the lint
+    /// complexity budget.
+    private func fireSeek() {
+        switch self {
+        case .seekTick(let closeness):
+            if !Self.playSeekTick(closeness: closeness) {
+                let generator = UIImpactFeedbackGenerator(style: .soft)
+                generator.prepare()
+                generator.impactOccurred()
+            }
+
+        case .seekAligned(let closeness):
+            if !Self.playSeekAligned(closeness: closeness) {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.prepare()
+                generator.impactOccurred()
+            }
+
+        case .seekArrival:
+            if !Self.playSeekArrival() {
+                let generator = UINotificationFeedbackGenerator()
+                generator.prepare()
+                generator.notificationOccurred(.success)
+            }
+
+        case .seekBreathIn:
+            if !Self.playSeekBreath(rising: true) {
+                let generator = UIImpactFeedbackGenerator(style: .soft)
+                generator.prepare()
+                generator.impactOccurred()
+            }
+
+        case .seekBreathOut:
+            if !Self.playSeekBreath(rising: false) {
+                let generator = UIImpactFeedbackGenerator(style: .soft)
+                generator.prepare()
+                generator.impactOccurred()
+            }
+
+        default:
+            break
         }
     }
 
@@ -170,6 +222,66 @@ enum HapticPattern {
         let events = [
             CHHapticEvent(eventType: .hapticTransient, parameters: [firm, sharp], relativeTime: 0),
             CHHapticEvent(eventType: .hapticTransient, parameters: [firm, sharp], relativeTime: 0.15)
+        ]
+        return HapticEngineHost.shared.play(events)
+    }
+
+    private static func playSeekTick(closeness: Double) -> Bool {
+        // Gentler than whisperProximity — a pocket metronome felt every
+        // pulse for up to hours, not an alert. Intensity rides the engine's
+        // closeness curve so skin and ear agree on distance.
+        let intensity = Float(0.3 + 0.25 * min(max(closeness, 0), 1))
+        let faint = CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity)
+        let round = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)
+        let events = [
+            CHHapticEvent(eventType: .hapticTransient, parameters: [faint, round], relativeTime: 0)
+        ]
+        return HapticEngineHost.shared.play(events)
+    }
+
+    private static func playSeekAligned(closeness: Double) -> Bool {
+        // The "this way" heartbeat: two soft pulses, wider apart than
+        // placementFailed's sharp pair so the body never confuses them.
+        let intensity = Float(0.4 + 0.3 * min(max(closeness, 0), 1))
+        let soft = CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity)
+        let round = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)
+        let events = [
+            CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0),
+            CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0.18)
+        ]
+        return HapticEngineHost.shared.play(events)
+    }
+
+    private static func playSeekArrival() -> Bool {
+        // Three rising soft taps — warm arrival, distinct from
+        // cairnProximity's two firm sharp ones.
+        let round = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.2)
+        let steps: [(time: TimeInterval, intensity: Float)] = [(0, 0.4), (0.16, 0.55), (0.34, 0.7)]
+        let events = steps.map { step in
+            CHHapticEvent(
+                eventType: .hapticTransient,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: step.intensity),
+                    round
+                ],
+                relativeTime: step.time
+            )
+        }
+        return HapticEngineHost.shared.play(events)
+    }
+
+    private static func playSeekBreath(rising: Bool) -> Bool {
+        // Slow soft swell for the in-hand stillness window, approximated as
+        // two continuous segments. Each event stays under 2 s and nothing
+        // loops — the caller repeats per breath and cancels on window exit.
+        let round = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.1)
+        let quiet = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.15)
+        let full = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.35)
+        let first = rising ? quiet : full
+        let second = rising ? full : quiet
+        let events = [
+            CHHapticEvent(eventType: .hapticContinuous, parameters: [first, round], relativeTime: 0, duration: 0.9),
+            CHHapticEvent(eventType: .hapticContinuous, parameters: [second, round], relativeTime: 0.9, duration: 0.9)
         ]
         return HapticEngineHost.shared.play(events)
     }

@@ -14,7 +14,13 @@ class WalkSessionGuard {
 
     private var checkpointTimer: Timer?
     private var currentTier: PowerTier = .normal
+    private let tierSubject = CurrentValueSubject<PowerTier, Never>(.normal)
     private var cancellables: [AnyCancellable] = []
+
+    /// Announces tier changes to consumers that adapt their own cadence
+    /// (seek pulse clock). Observation only — GPS power stays routed through
+    /// this guard exclusively (AF14).
+    var powerTierPublisher: AnyPublisher<PowerTier, Never> { tierSubject.eraseToAnyPublisher() }
     private var walkUUID: UUID?
     private var checkpointCount = 0
 
@@ -232,6 +238,7 @@ class WalkSessionGuard {
         guard newTier != currentTier else { return }
         let oldTier = currentTier
         currentTier = newTier
+        tierSubject.send(newTier)
         print("\(Self.tag) TIER \(oldTier) → \(newTier) — battery: \(String(format: "%.0f%%", batteryLevel * 100)), thermal: \(Self.thermalName(thermalState)), meditating: \(isMeditating), interval: \(newTier.checkpointInterval)s, gps: \(Self.accuracyName(newTier.gpsAccuracy))")
         applyTier(newTier)
     }
