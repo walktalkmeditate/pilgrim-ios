@@ -223,15 +223,27 @@ final class SeekFogStateTests: XCTestCase {
         )
     }
 
-    func testWisp_visibleFarAway_pointsTowardClearingAtOffset() {
+    func testWisp_visibleFarAway_ridesTheWalkerAndAimsAtTheClearing() {
         let state = wispState(distance: 900)
         guard let wisp = state.wisp else { return XCTFail("wisp should show beyond 150 m") }
-        let offset = SeekChainGenerator.distance(from: walker, to: wisp)
-        XCTAssertEqual(offset, SeekFogModel.wispOffsetMeters, accuracy: 1.0)
-        XCTAssertGreaterThan(
-            wisp.latitude, walker.latitude,
-            "clearing is due north; the wisp must lean north"
+        XCTAssertEqual(wisp.position, walker, "the crescent rides the puck, never floats away")
+        XCTAssertEqual(
+            wisp.bearingDegrees, 0, accuracy: 1.0,
+            "clearing is due north; the crescent must aim north"
         )
+    }
+
+    func testWisp_bearingIsNormalizedToPositiveDegrees() {
+        let westClearing = SeekChain(
+            clearings: [SeekClearing(center: SeekPoint(latitude: 42.0, longitude: -8.01), radiusMeters: 50)],
+            budgetMeters: 3000
+        )
+        let state = SeekFogModel.fogState(
+            chain: westClearing, activeIndex: 0, phase: .guiding,
+            distanceToActiveMeters: 900, walkerPosition: walker
+        )
+        guard let wisp = state.wisp else { return XCTFail("wisp should show") }
+        XCTAssertEqual(wisp.bearingDegrees, 270, accuracy: 1.0, "due west normalizes to 270, not -90")
     }
 
     func testWisp_hidesInsideTheHandoffBucket() {

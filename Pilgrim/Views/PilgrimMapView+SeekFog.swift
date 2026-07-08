@@ -18,16 +18,22 @@ struct SeekFogState: Equatable {
         let isHalo: Bool
     }
 
+    /// The wisp: a dawn crescent hugging the puck's rim on the clearing's
+    /// side, so a map glance answers "which way" without hunting the fog.
+    /// Attached to the walker (rotation-only), never a floating marker.
+    struct Wisp: Equatable {
+        let position: SeekPoint
+        let bearingDegrees: Double
+    }
+
     let circles: [FogCircle]
     /// Celestial override for the active fog's color (turning or full moon);
     /// nil renders the default fog grey. Fixed per walk. Halos keep dawn.
     let tintHex: String?
-    /// The wisp: a small dawn glint just beyond the puck toward the active
-    /// clearing, so a map glance answers "which way" without hunting the
-    /// fog. Nil when hidden (near the clearing, arrived, or complete).
-    let wisp: SeekPoint?
+    /// Nil when hidden (near the clearing, arrived, or complete).
+    let wisp: Wisp?
 
-    init(circles: [FogCircle], tintHex: String? = nil, wisp: SeekPoint? = nil) {
+    init(circles: [FogCircle], tintHex: String? = nil, wisp: Wisp? = nil) {
         self.circles = circles
         self.tintHex = tintHex
         self.wisp = wisp
@@ -51,9 +57,6 @@ enum SeekFogModel {
     static let bucketOpacities: [Double] = [0.25, 0.35, 0.45, 0.55, 0.65]
     static let haloOpacity = 0.12
     static let dissolvedOpacity = 0.0
-    /// The wisp floats this far beyond the walker toward the clearing —
-    /// ~40 px past the puck at walking zoom.
-    static let wispOffsetMeters = 35.0
     /// The wisp hides once the active bucket reaches 1 (< 150 m): the fog
     /// itself is on-screen by then and takes over as the guide. Keying on
     /// the bucket inherits its boundary hysteresis for free.
@@ -86,7 +89,7 @@ enum SeekFogModel {
             )
         }
 
-        var wisp: SeekPoint?
+        var wisp: SeekFogState.Wisp?
         if phase != .complete {
             let clearing = chain.clearings[clampedActive]
             let bucket = phase == .guiding
@@ -118,16 +121,13 @@ enum SeekFogModel {
         clearingCenter: SeekPoint,
         phase: SeekEnginePhase,
         activeBucket: Int
-    ) -> SeekPoint? {
+    ) -> SeekFogState.Wisp? {
         guard phase == .guiding,
               activeBucket > wispHiddenAtOrBelowBucket,
               let walkerPosition else { return nil }
-        let bearing = SeekChainGenerator.bearingDegrees(from: walkerPosition, to: clearingCenter)
-        return SeekChainGenerator.destination(
-            from: walkerPosition,
-            bearingDegrees: bearing,
-            distanceMeters: wispOffsetMeters
-        )
+        var bearing = SeekChainGenerator.bearingDegrees(from: walkerPosition, to: clearingCenter)
+        if bearing < 0 { bearing += 360 }
+        return SeekFogState.Wisp(position: walkerPosition, bearingDegrees: bearing)
     }
 
     static func opacityBucket(forDistanceMeters distance: Double?) -> Int {
@@ -207,9 +207,14 @@ extension PilgrimMapView {
         static let metersPerPixelEquatorZ0 = 78271.517
         static let wispLayerID = "seek-wisp"
         static let wispSourceID = "seek-wisp-source"
-        static let wispRadiusPixels = 7.0
-        static let wispBlur = 0.7
-        static let wispOpacity = 0.85
+        static let wispImageID = "seek-wisp-crescent"
+        static let wispOpacity = 0.9
+        /// Crescent geometry (points): the arc hugs the puck's rim just
+        /// inside the pulsing halo, drawn pointing north and rotated by
+        /// bearing at render time.
+        static let wispImageSize = 76.0
+        static let wispArcRadius = 30.0
+        static let wispArcSpanDegrees = 76.0
     }
 
     static func applySeekFog(
@@ -313,9 +318,15 @@ extension PilgrimMapView {
         renderer.lastAppliedState = state
     }
 
-    /// The wisp is a pixel-sized glint (an affordance, not geography), so
-    /// its radius stays constant across zooms; only its point moves.
-    private static func syncWispLayer(_ wisp: SeekPoint?, previous: SeekPoint?, on mapView: MBMapView) {
+    /// The wisp rides the walker's own coordinate and only rotates — a
+    /// crescent of dawn on the puck's rim, not a floating marker. Screen
+    /// geometry is constant across zooms (it is an affordance, not
+    /// geography).
+    private static func syncWispLayer(
+        _ wisp: SeekFogState.Wisp?,
+        previous: SeekFogState.Wisp?,
+        on mapView: MBMapView
+    ) {
         guard wisp != previous else { return }
         guard let wisp else {
             removeWispLayer(from: mapView)
@@ -326,32 +337,73 @@ extension PilgrimMapView {
                mapView.mapboxMap.sourceExists(withId: SeekFogRendering.wispSourceID) {
                 try mapView.mapboxMap.updateGeoJSONSource(
                     withId: SeekFogRendering.wispSourceID,
-                    geoJSON: .feature(Feature(geometry: Point(wisp.coordinate)))
+                    geoJSON: .feature(Feature(geometry: Point(wisp.position.coordinate)))
+                )
+                try mapView.mapboxMap.setLayerProperty(
+                    for: SeekFogRendering.wispLayerID,
+                    property: "icon-rotate",
+                    value: wisp.bearingDegrees
                 )
                 return
             }
             removeWispLayer(from: mapView)
 
+            try? mapView.mapboxMap.addImage(wispCrescentImage(), id: SeekFogRendering.wispImageID)
+
             var source = GeoJSONSource(id: SeekFogRendering.wispSourceID)
-            source.data = .feature(Feature(geometry: Point(wisp.coordinate)))
+            source.data = .feature(Feature(geometry: Point(wisp.position.coordinate)))
             try mapView.mapboxMap.addSource(source)
 
             let duration = UIAccessibility.isReduceMotionEnabled ? 0 : SeekFogRendering.fogTransitionDuration
-            var layer = CircleLayer(id: SeekFogRendering.wispLayerID, source: SeekFogRendering.wispSourceID)
-            layer.circleColor = .constant(StyleColor(SeekFogRendering.haloColor))
-            layer.circleBlur = .constant(SeekFogRendering.wispBlur)
-            layer.circleStrokeWidth = .constant(0)
-            layer.circleRadius = .constant(SeekFogRendering.wispRadiusPixels)
-            layer.circleOpacity = .constant(0)
-            layer.circleOpacityTransition = StyleTransition(duration: duration, delay: 0)
+            var layer = SymbolLayer(id: SeekFogRendering.wispLayerID, source: SeekFogRendering.wispSourceID)
+            layer.iconImage = .constant(.name(SeekFogRendering.wispImageID))
+            layer.iconRotate = .constant(wisp.bearingDegrees)
+            layer.iconRotationAlignment = .constant(.map)
+            layer.iconAllowOverlap = .constant(true)
+            layer.iconIgnorePlacement = .constant(true)
+            layer.iconOpacity = .constant(0)
+            layer.iconOpacityTransition = StyleTransition(duration: duration, delay: 0)
             try mapView.mapboxMap.addLayer(layer)
             try mapView.mapboxMap.setLayerProperty(
                 for: SeekFogRendering.wispLayerID,
-                property: "circle-opacity",
+                property: "icon-opacity",
                 value: SeekFogRendering.wispOpacity
             )
         } catch {
             print("[PilgrimMapView] seek wisp sync failed: \(error)")
+        }
+    }
+
+    /// A soft arc of dawn drawn pointing north; `icon-rotate` aims it at
+    /// the clearing. Two strokes — a wide faint glow under a narrow bright
+    /// core — read as light, not as a marker.
+    private static func wispCrescentImage() -> UIImage {
+        let size = SeekFogRendering.wispImageSize
+        let span = SeekFogRendering.wispArcSpanDegrees * .pi / 180
+        let start = -CGFloat.pi / 2 - CGFloat(span / 2)
+        let end = -CGFloat.pi / 2 + CGFloat(span / 2)
+        let center = CGPoint(x: size / 2, y: size / 2)
+
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
+        return renderer.image { context in
+            let glow = UIBezierPath(
+                arcCenter: center, radius: SeekFogRendering.wispArcRadius,
+                startAngle: start, endAngle: end, clockwise: true
+            )
+            glow.lineWidth = 9
+            glow.lineCapStyle = .round
+            SeekFogRendering.haloColor.withAlphaComponent(0.35).setStroke()
+            glow.stroke()
+
+            let core = UIBezierPath(
+                arcCenter: center, radius: SeekFogRendering.wispArcRadius,
+                startAngle: start + 0.12, endAngle: end - 0.12, clockwise: true
+            )
+            core.lineWidth = 3.5
+            core.lineCapStyle = .round
+            SeekFogRendering.haloColor.setStroke()
+            core.stroke()
+            _ = context
         }
     }
 
