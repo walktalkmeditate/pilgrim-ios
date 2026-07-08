@@ -76,7 +76,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     // in another file has no access to private setters.
     @Published var seekEngine: SeekEngine?
     @Published var seekFogState: SeekFogState?
-    @Published var seekPulseToken = 0
+    @Published var seekPulse = SeekPulseVisual.none
     /// The sky's mark on this seek (turning or full moon), fixed at setup.
     var seekTint: SeekTint?
     let seekSenses: SeekSenses

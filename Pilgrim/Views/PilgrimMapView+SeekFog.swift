@@ -1,175 +1,14 @@
 import UIKit
 import MapboxMaps
 
-// MARK: - Fog State Model (pure — rendering below is verified on device)
-
-/// What the map should show for a seek: fog over the active clearing, faint
-/// halos over found ones, and nothing at all for unrevealed clearings so the
-/// chain's count stays hidden (origin R6).
-struct SeekFogState: Equatable {
-
-    struct FogCircle: Equatable {
-        let id: String
-        let center: SeekPoint
-        let radiusMeters: Double
-        /// 0 = dissolved (arrived/halo), 1...N = distance buckets, thicker far.
-        let opacityBucket: Int
-        /// Found clearings keep a faint persistent halo after their reveal.
-        let isHalo: Bool
-    }
-
-    /// The wisp: a dawn crescent hugging the puck's rim on the clearing's
-    /// side, so a map glance answers "which way" without hunting the fog.
-    /// Attached to the walker (rotation-only), never a floating marker.
-    struct Wisp: Equatable {
-        let position: SeekPoint
-        let bearingDegrees: Double
-    }
-
-    let circles: [FogCircle]
-    /// Celestial override for the active fog's color (turning or full moon);
-    /// nil renders the default fog grey. Fixed per walk. Halos keep dawn.
-    let tintHex: String?
-    /// Nil when hidden (near the clearing, arrived, or complete).
-    let wisp: Wisp?
-
-    init(circles: [FogCircle], tintHex: String? = nil, wisp: Wisp? = nil) {
-        self.circles = circles
-        self.tintHex = tintHex
-        self.wisp = wisp
-    }
-
-    /// The active clearing's current bucket — callers feed this back into
-    /// the next `fogState` call so hysteresis has a reference point.
-    var activeFogBucket: Int? {
-        circles.first { !$0.isHalo }?.opacityBucket
-    }
-}
-
-enum SeekFogModel {
-
-    /// Bucket k covers distances below boundary k (ascending); anything at or
-    /// beyond the last boundary — or with no fix yet — is the thickest bucket.
-    static let distanceBucketBoundariesMeters: [Double] = [150, 300, 600, 1200]
-    /// A fix must land this fraction beyond a boundary before an adjacent
-    /// bucket change applies, so GPS jitter on the line cannot thrash writes.
-    static let hysteresisFraction = 0.1
-    static let bucketOpacities: [Double] = [0.25, 0.35, 0.45, 0.55, 0.65]
-    static let haloOpacity = 0.12
-    static let dissolvedOpacity = 0.0
-    /// The wisp hides once the active bucket reaches 1 (< 150 m): the fog
-    /// itself is on-screen by then and takes over as the guide. Keying on
-    /// the bucket inherits its boundary hysteresis for free.
-    static let wispHiddenAtOrBelowBucket = 1
-
-    static var farthestBucket: Int { distanceBucketBoundariesMeters.count + 1 }
-
-    static func fogState(
-        chain: SeekChain,
-        activeIndex: Int,
-        phase: SeekEnginePhase,
-        distanceToActiveMeters: Double?,
-        previousActiveBucket: Int? = nil,
-        tintHex: String? = nil,
-        walkerPosition: SeekPoint? = nil
-    ) -> SeekFogState {
-        let count = chain.clearings.count
-        guard count > 0 else { return SeekFogState(circles: []) }
-        let clampedActive = min(max(activeIndex, 0), count - 1)
-        let haloCount = phase == .complete ? clampedActive + 1 : clampedActive
-
-        var circles: [SeekFogState.FogCircle] = (0..<haloCount).map { index in
-            let clearing = chain.clearings[index]
-            return SeekFogState.FogCircle(
-                id: fogCircleID(forClearingIndex: index),
-                center: clearing.center,
-                radiusMeters: clearing.radiusMeters,
-                opacityBucket: 0,
-                isHalo: true
-            )
-        }
-
-        var wisp: SeekFogState.Wisp?
-        if phase != .complete {
-            let clearing = chain.clearings[clampedActive]
-            let bucket = phase == .guiding
-                ? bucketApplyingHysteresis(
-                    distanceMeters: distanceToActiveMeters,
-                    currentBucket: previousActiveBucket
-                )
-                : 0
-            circles.append(SeekFogState.FogCircle(
-                id: fogCircleID(forClearingIndex: clampedActive),
-                center: clearing.center,
-                radiusMeters: clearing.radiusMeters,
-                opacityBucket: bucket,
-                isHalo: false
-            ))
-            wisp = wispPoint(
-                walkerPosition: walkerPosition,
-                clearingCenter: clearing.center,
-                phase: phase,
-                activeBucket: bucket
-            )
-        }
-
-        return SeekFogState(circles: circles, tintHex: tintHex, wisp: wisp)
-    }
-
-    static func wispPoint(
-        walkerPosition: SeekPoint?,
-        clearingCenter: SeekPoint,
-        phase: SeekEnginePhase,
-        activeBucket: Int
-    ) -> SeekFogState.Wisp? {
-        guard phase == .guiding,
-              activeBucket > wispHiddenAtOrBelowBucket,
-              let walkerPosition else { return nil }
-        var bearing = SeekChainGenerator.bearingDegrees(from: walkerPosition, to: clearingCenter)
-        if bearing < 0 { bearing += 360 }
-        return SeekFogState.Wisp(position: walkerPosition, bearingDegrees: bearing)
-    }
-
-    static func opacityBucket(forDistanceMeters distance: Double?) -> Int {
-        guard let distance else { return farthestBucket }
-        for (index, boundary) in distanceBucketBoundariesMeters.enumerated() where distance < boundary {
-            return index + 1
-        }
-        return farthestBucket
-    }
-
-    /// Adjacent-bucket changes only apply once the fix is a margin past the
-    /// shared boundary; jumps of 2+ buckets (reroll, first fix) apply as-is.
-    static func bucketApplyingHysteresis(distanceMeters: Double?, currentBucket: Int?) -> Int {
-        let raw = opacityBucket(forDistanceMeters: distanceMeters)
-        guard let current = currentBucket, (1...farthestBucket).contains(current),
-              let distance = distanceMeters, raw != current else {
-            return raw
-        }
-        guard abs(raw - current) == 1 else { return raw }
-        let boundary = distanceBucketBoundariesMeters[min(raw, current) - 1]
-        let margin = boundary * hysteresisFraction
-        if raw < current {
-            return distance <= boundary - margin ? raw : current
-        }
-        return distance >= boundary + margin ? raw : current
-    }
-
-    static func opacity(forBucket bucket: Int, isHalo: Bool) -> Double {
-        if isHalo { return haloOpacity }
-        guard bucket >= 1 else { return dissolvedOpacity }
-        return bucketOpacities[min(bucket, bucketOpacities.count) - 1]
-    }
-
-    static func fogCircleID(forClearingIndex index: Int) -> String {
-        "seek-fog-\(index)"
-    }
-}
+// Fog circle + pulse ring rendering. The pure state model lives in
+// Pilgrim/Models/Walk/Seek/SeekFogModel.swift; the wisp crescent renderer
+// lives in PilgrimMapView+SeekWisp.swift.
 
 // MARK: - Renderer bookkeeping
 
-/// Coordinator-owned fog/ring state, kept in its own class so the main map
-/// file only gains one stored property.
+/// Coordinator-owned fog/ring/wisp state, kept in its own class so the main
+/// map file only gains one stored property.
 final class SeekFogRenderer {
     var pendingState: SeekFogState?
     var lastAppliedState: SeekFogState?
@@ -177,11 +16,21 @@ final class SeekFogRenderer {
     var hasDeferredUpdate = false
     var lastHandledPulseToken = 0
 
+    /// True while the fog is visible in the viewport and the crescent has
+    /// released. Survives style reloads on purpose: reinstalling a released
+    /// wisp at zero must not replay the handoff exhale.
+    var wispReleased = false
+    /// Cancels in-flight flare/exhale settle closures: any new opacity
+    /// sequence bumps this, turning stale asyncAfter bodies into no-ops.
+    var wispFlareGeneration = 0
+    var lastWispVisibilityCheckUptime: TimeInterval = 0
+
     /// A style reload wipes every layer; forget what was applied so the next
     /// pass reinstalls from scratch.
     func resetForStyleReload() {
         lastAppliedState = nil
         appliedCircles = [:]
+        wispFlareGeneration += 1
     }
 }
 
@@ -189,7 +38,7 @@ final class SeekFogRenderer {
 
 extension PilgrimMapView {
 
-    private enum SeekFogRendering {
+    enum SeekFogRendering {
         // Fixed palette values (light-mode fog/dawn) — adaptive named colors
         // invert in dark mode and become bright halos on the map.
         static let fogColor = UIColor(hex: "#8A8175")
@@ -205,21 +54,11 @@ extension PilgrimMapView {
         static let ringStartOpacity = 0.45
         static let ringBlur = 0.6
         static let metersPerPixelEquatorZ0 = 78271.517
-        static let wispLayerID = "seek-wisp"
-        static let wispSourceID = "seek-wisp-source"
-        static let wispImageID = "seek-wisp-crescent"
-        static let wispOpacity = 0.9
-        /// Crescent geometry (points): the arc hugs the puck's rim just
-        /// inside the pulsing halo, drawn pointing north and rotated by
-        /// bearing at render time.
-        static let wispImageSize = 76.0
-        static let wispArcRadius = 30.0
-        static let wispArcSpanDegrees = 76.0
     }
 
     static func applySeekFog(
         _ state: SeekFogState?,
-        pulseToken: Int,
+        pulse: SeekPulseVisual,
         on mapView: MBMapView,
         coordinator: Coordinator
     ) {
@@ -230,7 +69,7 @@ extension PilgrimMapView {
             // Pulses are moments, not state: swallow tokens seen while paused
             // so stale rings never fire on resume. Fog state is queued and
             // flushed instead, like deferred route updates.
-            renderer.lastHandledPulseToken = pulseToken
+            renderer.lastHandledPulseToken = pulse.token
             if renderer.lastAppliedState != state {
                 renderer.hasDeferredUpdate = true
             }
@@ -238,10 +77,11 @@ extension PilgrimMapView {
         }
 
         applySeekFogNow(state, on: mapView, renderer: renderer)
-        if pulseToken != renderer.lastHandledPulseToken {
-            renderer.lastHandledPulseToken = pulseToken
+        if pulse.token != renderer.lastHandledPulseToken {
+            renderer.lastHandledPulseToken = pulse.token
             if state != nil {
                 fireSeekPulseRing(on: mapView)
+                flareSeekWisp(pulse, on: mapView, renderer: renderer)
             }
         }
     }
@@ -293,7 +133,7 @@ extension PilgrimMapView {
                 removeFogCircle(id: id, from: mapView)
             }
             removeRingLayer(from: mapView)
-            removeWispLayer(from: mapView)
+            removeWispLayer(from: mapView, renderer: renderer)
             renderer.appliedCircles = [:]
             renderer.lastAppliedState = nil
             return
@@ -313,111 +153,10 @@ extension PilgrimMapView {
         for id in renderer.appliedCircles.keys where applied[id] == nil {
             removeFogCircle(id: id, from: mapView)
         }
-        syncWispLayer(state.wisp, previous: previousWisp, on: mapView)
+        syncWispLayer(state.wisp, previous: previousWisp, renderer: renderer, on: mapView)
         renderer.appliedCircles = applied
         renderer.lastAppliedState = state
-    }
-
-    /// The wisp rides the walker's own coordinate and only rotates — a
-    /// crescent of dawn on the puck's rim, not a floating marker. Screen
-    /// geometry is constant across zooms (it is an affordance, not
-    /// geography).
-    private static func syncWispLayer(
-        _ wisp: SeekFogState.Wisp?,
-        previous: SeekFogState.Wisp?,
-        on mapView: MBMapView
-    ) {
-        guard wisp != previous else { return }
-        guard let wisp else {
-            removeWispLayer(from: mapView)
-            return
-        }
-        do {
-            if mapView.mapboxMap.layerExists(withId: SeekFogRendering.wispLayerID),
-               mapView.mapboxMap.sourceExists(withId: SeekFogRendering.wispSourceID) {
-                try mapView.mapboxMap.updateGeoJSONSource(
-                    withId: SeekFogRendering.wispSourceID,
-                    geoJSON: .feature(Feature(geometry: Point(wisp.position.coordinate)))
-                )
-                try mapView.mapboxMap.setLayerProperty(
-                    for: SeekFogRendering.wispLayerID,
-                    property: "icon-rotate",
-                    value: wisp.bearingDegrees
-                )
-                return
-            }
-            removeWispLayer(from: mapView)
-
-            try? mapView.mapboxMap.addImage(wispCrescentImage(), id: SeekFogRendering.wispImageID)
-
-            var source = GeoJSONSource(id: SeekFogRendering.wispSourceID)
-            source.data = .feature(Feature(geometry: Point(wisp.position.coordinate)))
-            try mapView.mapboxMap.addSource(source)
-
-            let duration = UIAccessibility.isReduceMotionEnabled ? 0 : SeekFogRendering.fogTransitionDuration
-            var layer = SymbolLayer(id: SeekFogRendering.wispLayerID, source: SeekFogRendering.wispSourceID)
-            layer.iconImage = .constant(.name(SeekFogRendering.wispImageID))
-            layer.iconRotate = .constant(wisp.bearingDegrees)
-            layer.iconRotationAlignment = .constant(.map)
-            layer.iconAllowOverlap = .constant(true)
-            layer.iconIgnorePlacement = .constant(true)
-            layer.iconOpacity = .constant(0)
-            layer.iconOpacityTransition = StyleTransition(duration: duration, delay: 0)
-            try mapView.mapboxMap.addLayer(layer)
-            try mapView.mapboxMap.setLayerProperty(
-                for: SeekFogRendering.wispLayerID,
-                property: "icon-opacity",
-                value: SeekFogRendering.wispOpacity
-            )
-        } catch {
-            print("[PilgrimMapView] seek wisp sync failed: \(error)")
-        }
-    }
-
-    /// A soft arc of dawn drawn pointing north; `icon-rotate` aims it at
-    /// the clearing. Two strokes — a wide faint glow under a narrow bright
-    /// core — read as light, not as a marker.
-    private static func wispCrescentImage() -> UIImage {
-        let size = SeekFogRendering.wispImageSize
-        let span = SeekFogRendering.wispArcSpanDegrees * .pi / 180
-        let start = -CGFloat.pi / 2 - CGFloat(span / 2)
-        let end = -CGFloat.pi / 2 + CGFloat(span / 2)
-        let center = CGPoint(x: size / 2, y: size / 2)
-
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
-        return renderer.image { context in
-            let glow = UIBezierPath(
-                arcCenter: center, radius: SeekFogRendering.wispArcRadius,
-                startAngle: start, endAngle: end, clockwise: true
-            )
-            glow.lineWidth = 9
-            glow.lineCapStyle = .round
-            SeekFogRendering.haloColor.withAlphaComponent(0.35).setStroke()
-            glow.stroke()
-
-            let core = UIBezierPath(
-                arcCenter: center, radius: SeekFogRendering.wispArcRadius,
-                startAngle: start + 0.12, endAngle: end - 0.12, clockwise: true
-            )
-            core.lineWidth = 3.5
-            core.lineCapStyle = .round
-            SeekFogRendering.haloColor.setStroke()
-            core.stroke()
-            _ = context
-        }
-    }
-
-    private static func removeWispLayer(from mapView: MBMapView) {
-        do {
-            if mapView.mapboxMap.layerExists(withId: SeekFogRendering.wispLayerID) {
-                try mapView.mapboxMap.removeLayer(withId: SeekFogRendering.wispLayerID)
-            }
-            if mapView.mapboxMap.sourceExists(withId: SeekFogRendering.wispSourceID) {
-                try mapView.mapboxMap.removeSource(withId: SeekFogRendering.wispSourceID)
-            }
-        } catch {
-            print("[PilgrimMapView] seek wisp removal failed: \(error)")
-        }
+        evaluateSeekWispVisibility(on: mapView, renderer: renderer, throttled: false)
     }
 
     private static func syncFogCircle(

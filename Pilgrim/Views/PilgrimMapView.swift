@@ -20,10 +20,11 @@ struct PilgrimMapView: UIViewRepresentable {
     /// visually synchronized.
     var activePhotoID: String?
     /// Seek-only inputs. `nil` fog means wander — the seek path never
-    /// touches the style. Each `seekPulseToken` increment fires one puck
-    /// pulse ring. All fog/ring logic lives in PilgrimMapView+SeekFog.swift.
+    /// touches the style. Each `seekPulse` token increment fires one puck
+    /// pulse ring and one wisp flare. All fog/ring logic lives in
+    /// PilgrimMapView+SeekFog.swift; the wisp in PilgrimMapView+SeekWisp.swift.
     var seekFog: SeekFogState?
-    var seekPulseToken: Int = 0
+    var seekPulse: SeekPulseVisual = .none
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     @Binding var isMeditating: Bool
@@ -59,7 +60,7 @@ struct PilgrimMapView: UIViewRepresentable {
         onAnnotationTap: ((PilgrimAnnotation) -> Void)? = nil,
         activePhotoID: String? = nil,
         seekFog: SeekFogState? = nil,
-        seekPulseToken: Int = 0,
+        seekPulse: SeekPulseVisual = .none,
         cameraCenter: Binding<CLLocationCoordinate2D?> = .constant(nil),
         cameraZoom: Binding<CGFloat> = .constant(14),
         cameraBounds: MapCameraBounds? = nil,
@@ -78,7 +79,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self.onAnnotationTap = onAnnotationTap
         self.activePhotoID = activePhotoID
         self.seekFog = seekFog
-        self.seekPulseToken = seekPulseToken
+        self.seekPulse = seekPulse
         self._cameraCenter = cameraCenter
         self._cameraZoom = cameraZoom
         self._isMeditating = isMeditating
@@ -162,6 +163,8 @@ struct PilgrimMapView: UIViewRepresentable {
             Self.reinstallSeekFog(on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
+        Self.installSeekWispCameraObservers(on: mapView, coordinator: context.coordinator)
+
         context.coordinator.mapView = mapView
         context.coordinator.startObservingAppLifecycle()
         context.coordinator.isMeditating = isMeditating
@@ -202,7 +205,7 @@ struct PilgrimMapView: UIViewRepresentable {
             context.coordinator.hasDeferredRouteUpdate = true
         }
         Self.applyAnnotations(pinAnnotations, activePhotoID: activePhotoID, on: mapView, coordinator: context.coordinator)
-        Self.applySeekFog(seekFog, pulseToken: seekPulseToken, on: mapView, coordinator: context.coordinator)
+        Self.applySeekFog(seekFog, pulse: seekPulse, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
             let padding = UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)

@@ -614,7 +614,7 @@ struct ActiveWalkView: View {
                 handleAnnotationTap(annotation)
             },
             seekFog: viewModel.seekFogState,
-            seekPulseToken: viewModel.seekPulseToken,
+            seekPulse: viewModel.seekPulse,
             bottomInset: mapBottomInset,
             initialCamera: viewModel.mapCameraSeed,
             fadesInOnStyleLoad: true,

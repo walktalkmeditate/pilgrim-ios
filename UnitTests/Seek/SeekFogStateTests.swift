@@ -246,8 +246,11 @@ final class SeekFogStateTests: XCTestCase {
         XCTAssertEqual(wisp.bearingDegrees, 270, accuracy: 1.0, "due west normalizes to 270, not -90")
     }
 
-    func testWisp_hidesInsideTheHandoffBucket() {
-        XCTAssertNil(wispState(distance: 120).wisp, "fog is on-screen below 150 m")
+    func testWisp_persistsCloseIn_theViewportOwnsTheHandoff() {
+        XCTAssertNotNil(
+            wispState(distance: 120).wisp,
+            "distance no longer hides the wisp — the renderer releases it when the fog is actually visible"
+        )
     }
 
     func testWisp_hidesWhenArrivedOrRevealing() {

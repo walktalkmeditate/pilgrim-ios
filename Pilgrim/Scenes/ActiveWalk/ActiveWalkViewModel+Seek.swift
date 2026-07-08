@@ -128,8 +128,8 @@ extension ActiveWalkViewModel {
     func handleSeekEvent(_ event: SeekEngineEvent) {
         switch event {
         case .pulse(let aligned, let distanceMeters):
-            seekPulseToken += 1
             let closeness = SeekEngine.closeness(forDistanceMeters: distanceMeters)
+            seekPulse = SeekPulseVisual(token: seekPulse.token + 1, aligned: aligned, closeness: closeness)
             seekSound?.playPing(aligned: aligned, closeness: closeness)
             fireSeekHaptic(aligned ? .seekAligned(closeness: closeness) : .seekTick(closeness: closeness))
 

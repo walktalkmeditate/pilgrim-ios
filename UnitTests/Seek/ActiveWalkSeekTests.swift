@@ -281,7 +281,14 @@ final class ActiveWalkSeekTests: XCTestCase {
         vm.handleSeekEvent(.pulse(aligned: true, distanceMeters: 250))
         vm.handleSeekEvent(.pulse(aligned: false, distanceMeters: 250))
 
-        XCTAssertEqual(vm.seekPulseToken, 2)
+        XCTAssertEqual(vm.seekPulse.token, 2)
+        XCTAssertFalse(vm.seekPulse.aligned, "the last pulse's alignment rides along to the map")
+        XCTAssertEqual(
+            vm.seekPulse.closeness,
+            SeekEngine.closeness(forDistanceMeters: 250),
+            accuracy: 0.0001,
+            "closeness shapes the wisp flare like it shapes ping and haptic"
+        )
         XCTAssertEqual(sound.pings, [true, false])
     }
 
@@ -362,9 +369,9 @@ final class ActiveWalkSeekTests: XCTestCase {
         vm.stop()
 
         XCTAssertGreaterThanOrEqual(sound.stopCount, 1)
-        let tokenAfterStop = vm.seekPulseToken
+        let tokenAfterStop = vm.seekPulse.token
         engine.emitPulse()
-        XCTAssertEqual(vm.seekPulseToken, tokenAfterStop, "no seek events may flow after stop")
+        XCTAssertEqual(vm.seekPulse.token, tokenAfterStop, "no seek events may flow after stop")
 
         waitForWhisperWindow()
         XCTAssertTrue(playedWhispers.isEmpty, "teardown cancels the pending reveal whisper")
@@ -397,7 +404,7 @@ final class ActiveWalkSeekTests: XCTestCase {
 
         XCTAssertNil(vm.seekEngine)
         XCTAssertNil(vm.seekFogState)
-        XCTAssertEqual(vm.seekPulseToken, 0)
+        XCTAssertEqual(vm.seekPulse, .none)
         XCTAssertFalse(vm.isSeekComplete)
     }
 }
