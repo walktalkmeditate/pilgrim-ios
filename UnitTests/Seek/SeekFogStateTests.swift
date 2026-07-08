@@ -266,6 +266,21 @@ final class SeekFogStateTests: XCTestCase {
         XCTAssertNil(state.wisp)
     }
 
+    func testWispSpan_opensStrictlyAsTheFogNears() {
+        let spans = (1...SeekFogModel.farthestBucket).map { SeekFogModel.wispSpanDegrees(forBucket: $0) }
+        for (nearer, farther) in zip(spans, spans.dropFirst()) {
+            XCTAssertGreaterThan(nearer, farther, "the crescent must open monotonically on approach")
+        }
+    }
+
+    func testWispSpan_clampsToTheExtremes() {
+        let sliver = SeekFogModel.wispSpanDegrees(forBucket: SeekFogModel.farthestBucket)
+        let open = SeekFogModel.wispSpanDegrees(forBucket: 1)
+        XCTAssertEqual(SeekFogModel.wispSpanDegrees(forBucket: nil), sliver, "no fix yet = farthest sliver")
+        XCTAssertEqual(SeekFogModel.wispSpanDegrees(forBucket: 99), sliver)
+        XCTAssertEqual(SeekFogModel.wispSpanDegrees(forBucket: 0), open, "dissolved-adjacent stays fully open")
+    }
+
     func testWisp_movesWithTheWalker_andEqualityNoticesIt() {
         let there = SeekFogModel.fogState(
             chain: wispChain, activeIndex: 0, phase: .guiding,

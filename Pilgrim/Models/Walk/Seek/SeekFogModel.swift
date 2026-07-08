@@ -166,6 +166,17 @@ enum SeekFogModel {
         return bucketOpacities[min(bucket, bucketOpacities.count) - 1]
     }
 
+    /// The crescent opens as the fog nears: a narrow sliver far out, a
+    /// full curve close in. Keyed to the fog buckets (nearest first) so
+    /// span changes inherit their boundary hysteresis and never thrash.
+    static let wispSpanDegreesNearToFar: [Double] = [96, 86, 72, 60, 48]
+
+    static func wispSpanDegrees(forBucket bucket: Int?) -> Double {
+        guard let bucket else { return wispSpanDegreesNearToFar[wispSpanDegreesNearToFar.count - 1] }
+        let clamped = min(max(bucket, 1), wispSpanDegreesNearToFar.count)
+        return wispSpanDegreesNearToFar[clamped - 1]
+    }
+
     static func fogCircleID(forClearingIndex index: Int) -> String {
         "seek-fog-\(index)"
     }

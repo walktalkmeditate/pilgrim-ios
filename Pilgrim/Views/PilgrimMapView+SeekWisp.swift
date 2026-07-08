@@ -12,7 +12,10 @@ extension PilgrimMapView {
     enum SeekWispRendering {
         static let layerID = "seek-wisp"
         static let sourceID = "seek-wisp-source"
-        static let imageID = "seek-wisp-crescent"
+
+        static func imageID(spanDegrees: Double) -> String {
+            "seek-wisp-crescent-\(Int(spanDegrees.rounded()))"
+        }
         /// Between pulses the crescent rests dim, almost asleep; each pulse
         /// swells it. Under Reduce Motion it holds steady instead.
         static let restOpacity = 0.55
@@ -28,10 +31,10 @@ extension PilgrimMapView {
         static let flareHoldSeconds: TimeInterval = 1.05
         /// Crescent geometry (points): the arc hugs the puck's rim just
         /// inside the pulsing halo, drawn pointing north and rotated by
-        /// bearing at render time.
-        static let imageSize = 76.0
+        /// bearing at render time. The span itself is distance-keyed
+        /// (SeekFogModel.wispSpanDegrees) — one image per span bucket.
+        static let imageSize = 84.0
         static let arcRadius = 30.0
-        static let arcSpanDegrees = 76.0
         /// Camera-change events arrive per frame during gestures; the
         /// visibility check runs at most this often, with `onMapIdle`
         /// providing the authoritative trailing check.
@@ -46,10 +49,11 @@ extension PilgrimMapView {
     static func syncWispLayer(
         _ wisp: SeekFogState.Wisp?,
         previous: SeekFogState.Wisp?,
+        spanDegrees: Double,
         renderer: SeekFogRenderer,
         on mapView: MBMapView
     ) {
-        guard wisp != previous else { return }
+        guard wisp != previous || spanDegrees != renderer.appliedWispSpanDegrees else { return }
         guard let wisp else {
             removeWispLayer(from: mapView, renderer: renderer)
             return
@@ -66,11 +70,20 @@ extension PilgrimMapView {
                     property: "icon-rotate",
                     value: wisp.bearingDegrees
                 )
+                if spanDegrees != renderer.appliedWispSpanDegrees {
+                    ensureWispImage(spanDegrees: spanDegrees, on: mapView)
+                    try mapView.mapboxMap.setLayerProperty(
+                        for: SeekWispRendering.layerID,
+                        property: "icon-image",
+                        value: SeekWispRendering.imageID(spanDegrees: spanDegrees)
+                    )
+                    renderer.appliedWispSpanDegrees = spanDegrees
+                }
                 return
             }
             removeWispLayer(from: mapView, renderer: renderer)
 
-            try? mapView.mapboxMap.addImage(wispCrescentImage(), id: SeekWispRendering.imageID)
+            ensureWispImage(spanDegrees: spanDegrees, on: mapView)
 
             var source = GeoJSONSource(id: SeekWispRendering.sourceID)
             source.data = .feature(Feature(geometry: Point(wisp.position.coordinate)))
@@ -78,7 +91,7 @@ extension PilgrimMapView {
 
             let reduceMotion = UIAccessibility.isReduceMotionEnabled
             var layer = SymbolLayer(id: SeekWispRendering.layerID, source: SeekWispRendering.sourceID)
-            layer.iconImage = .constant(.name(SeekWispRendering.imageID))
+            layer.iconImage = .constant(.name(SeekWispRendering.imageID(spanDegrees: spanDegrees)))
             layer.iconRotate = .constant(wisp.bearingDegrees)
             layer.iconRotationAlignment = .constant(.map)
             layer.iconAllowOverlap = .constant(true)
@@ -89,6 +102,7 @@ extension PilgrimMapView {
                 delay: 0
             )
             try mapView.mapboxMap.addLayer(layer)
+            renderer.appliedWispSpanDegrees = spanDegrees
             // A released wisp reinstalls at zero (style reload with fog on
             // screen) so the handoff exhale never replays.
             writeWispOpacity(
@@ -100,9 +114,16 @@ extension PilgrimMapView {
         }
     }
 
+    private static func ensureWispImage(spanDegrees: Double, on mapView: MBMapView) {
+        let id = SeekWispRendering.imageID(spanDegrees: spanDegrees)
+        guard !mapView.mapboxMap.imageExists(withId: id) else { return }
+        try? mapView.mapboxMap.addImage(wispCrescentImage(spanDegrees: spanDegrees), id: id)
+    }
+
     static func removeWispLayer(from mapView: MBMapView, renderer: SeekFogRenderer) {
         renderer.wispReleased = false
         renderer.wispFlareGeneration += 1
+        renderer.appliedWispSpanDegrees = nil
         do {
             if mapView.mapboxMap.layerExists(withId: SeekWispRendering.layerID) {
                 try mapView.mapboxMap.removeLayer(withId: SeekWispRendering.layerID)
@@ -252,36 +273,46 @@ extension PilgrimMapView {
         }
     }
 
-    /// A soft arc of dawn drawn pointing north; `icon-rotate` aims it at
-    /// the clearing. Two strokes — a wide faint glow under a narrow bright
-    /// core — read as light, not as a marker.
-    private static func wispCrescentImage() -> UIImage {
+    /// An arc of dawn light drawn pointing north; `icon-rotate` aims it at
+    /// the clearing. Drawn as short segments whose width and alpha peak at
+    /// the apex and taper to nothing at the tips, in three stacked passes
+    /// (wide/faint under narrow/bright) so brightness falls off smoothly —
+    /// light, not a band with a casing.
+    private static func wispCrescentImage(spanDegrees: Double) -> UIImage {
         let size = SeekWispRendering.imageSize
-        let span = SeekWispRendering.arcSpanDegrees * .pi / 180
-        let start = -CGFloat.pi / 2 - CGFloat(span / 2)
-        let end = -CGFloat.pi / 2 + CGFloat(span / 2)
+        let span = CGFloat(spanDegrees * .pi / 180)
+        let base = -CGFloat.pi / 2 - span / 2
         let center = CGPoint(x: size / 2, y: size / 2)
+        let segments = 24
+        // Tiny angular overlap hides antialiasing seams between segments.
+        let seamCover: CGFloat = 0.008
+        let passes: [(widthScale: CGFloat, alphaScale: CGFloat)] = [(3.0, 0.10), (1.9, 0.22), (1.0, 1.0)]
 
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
-        return renderer.image { context in
-            let glow = UIBezierPath(
-                arcCenter: center, radius: SeekWispRendering.arcRadius,
-                startAngle: start, endAngle: end, clockwise: true
-            )
-            glow.lineWidth = 9
-            glow.lineCapStyle = .round
-            SeekFogRendering.haloColor.withAlphaComponent(0.35).setStroke()
-            glow.stroke()
-
-            let core = UIBezierPath(
-                arcCenter: center, radius: SeekWispRendering.arcRadius,
-                startAngle: start + 0.12, endAngle: end - 0.12, clockwise: true
-            )
-            core.lineWidth = 3.5
-            core.lineCapStyle = .round
-            SeekFogRendering.haloColor.setStroke()
-            core.stroke()
-            _ = context
+        return renderer.image { _ in
+            for pass in passes {
+                for segment in 0..<segments {
+                    let fractionStart = CGFloat(segment) / CGFloat(segments)
+                    let fractionEnd = CGFloat(segment + 1) / CGFloat(segments)
+                    // 0 at the apex (the point that aims at the clearing),
+                    // 1 at either tip.
+                    let offApex = abs((fractionStart + fractionEnd) / 2 - 0.5) * 2
+                    let fade = pow(cos(offApex * .pi / 2), 1.4)
+                    let width = (1.5 + 3.0 * fade) * pass.widthScale
+                    let alpha = (0.05 + 0.95 * fade) * pass.alphaScale
+                    let arc = UIBezierPath(
+                        arcCenter: center,
+                        radius: SeekWispRendering.arcRadius,
+                        startAngle: base + span * fractionStart,
+                        endAngle: base + span * fractionEnd + seamCover,
+                        clockwise: true
+                    )
+                    arc.lineWidth = width
+                    arc.lineCapStyle = .butt
+                    SeekFogRendering.haloColor.withAlphaComponent(min(alpha, 1)).setStroke()
+                    arc.stroke()
+                }
+            }
         }
     }
 }

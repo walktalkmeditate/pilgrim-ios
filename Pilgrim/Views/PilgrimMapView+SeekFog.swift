@@ -24,6 +24,9 @@ final class SeekFogRenderer {
     /// sequence bumps this, turning stale asyncAfter bodies into no-ops.
     var wispFlareGeneration = 0
     var lastWispVisibilityCheckUptime: TimeInterval = 0
+    /// The distance-keyed crescent span currently on the layer, nil when
+    /// no layer exists (or the style was reloaded, wiping its images).
+    var appliedWispSpanDegrees: Double?
 
     /// A style reload wipes every layer; forget what was applied so the next
     /// pass reinstalls from scratch.
@@ -31,6 +34,7 @@ final class SeekFogRenderer {
         lastAppliedState = nil
         appliedCircles = [:]
         wispFlareGeneration += 1
+        appliedWispSpanDegrees = nil
     }
 }
 
@@ -153,7 +157,13 @@ extension PilgrimMapView {
         for id in renderer.appliedCircles.keys where applied[id] == nil {
             removeFogCircle(id: id, from: mapView)
         }
-        syncWispLayer(state.wisp, previous: previousWisp, renderer: renderer, on: mapView)
+        syncWispLayer(
+            state.wisp,
+            previous: previousWisp,
+            spanDegrees: SeekFogModel.wispSpanDegrees(forBucket: state.activeFogBucket),
+            renderer: renderer,
+            on: mapView
+        )
         renderer.appliedCircles = applied
         renderer.lastAppliedState = state
         evaluateSeekWispVisibility(on: mapView, renderer: renderer, throttled: false)
