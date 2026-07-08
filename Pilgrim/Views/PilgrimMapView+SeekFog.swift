@@ -22,10 +22,15 @@ struct SeekFogState: Equatable {
     /// Celestial override for the active fog's color (turning or full moon);
     /// nil renders the default fog grey. Fixed per walk. Halos keep dawn.
     let tintHex: String?
+    /// The wisp: a small dawn glint just beyond the puck toward the active
+    /// clearing, so a map glance answers "which way" without hunting the
+    /// fog. Nil when hidden (near the clearing, arrived, or complete).
+    let wisp: SeekPoint?
 
-    init(circles: [FogCircle], tintHex: String? = nil) {
+    init(circles: [FogCircle], tintHex: String? = nil, wisp: SeekPoint? = nil) {
         self.circles = circles
         self.tintHex = tintHex
+        self.wisp = wisp
     }
 
     /// The active clearing's current bucket — callers feed this back into
@@ -46,6 +51,13 @@ enum SeekFogModel {
     static let bucketOpacities: [Double] = [0.25, 0.35, 0.45, 0.55, 0.65]
     static let haloOpacity = 0.12
     static let dissolvedOpacity = 0.0
+    /// The wisp floats this far beyond the walker toward the clearing —
+    /// ~40 px past the puck at walking zoom.
+    static let wispOffsetMeters = 35.0
+    /// The wisp hides once the active bucket reaches 1 (< 150 m): the fog
+    /// itself is on-screen by then and takes over as the guide. Keying on
+    /// the bucket inherits its boundary hysteresis for free.
+    static let wispHiddenAtOrBelowBucket = 1
 
     static var farthestBucket: Int { distanceBucketBoundariesMeters.count + 1 }
 
@@ -55,7 +67,8 @@ enum SeekFogModel {
         phase: SeekEnginePhase,
         distanceToActiveMeters: Double?,
         previousActiveBucket: Int? = nil,
-        tintHex: String? = nil
+        tintHex: String? = nil,
+        walkerPosition: SeekPoint? = nil
     ) -> SeekFogState {
         let count = chain.clearings.count
         guard count > 0 else { return SeekFogState(circles: []) }
@@ -73,6 +86,7 @@ enum SeekFogModel {
             )
         }
 
+        var wisp: SeekPoint?
         if phase != .complete {
             let clearing = chain.clearings[clampedActive]
             let bucket = phase == .guiding
@@ -88,9 +102,32 @@ enum SeekFogModel {
                 opacityBucket: bucket,
                 isHalo: false
             ))
+            wisp = wispPoint(
+                walkerPosition: walkerPosition,
+                clearingCenter: clearing.center,
+                phase: phase,
+                activeBucket: bucket
+            )
         }
 
-        return SeekFogState(circles: circles, tintHex: tintHex)
+        return SeekFogState(circles: circles, tintHex: tintHex, wisp: wisp)
+    }
+
+    static func wispPoint(
+        walkerPosition: SeekPoint?,
+        clearingCenter: SeekPoint,
+        phase: SeekEnginePhase,
+        activeBucket: Int
+    ) -> SeekPoint? {
+        guard phase == .guiding,
+              activeBucket > wispHiddenAtOrBelowBucket,
+              let walkerPosition else { return nil }
+        let bearing = SeekChainGenerator.bearingDegrees(from: walkerPosition, to: clearingCenter)
+        return SeekChainGenerator.destination(
+            from: walkerPosition,
+            bearingDegrees: bearing,
+            distanceMeters: wispOffsetMeters
+        )
     }
 
     static func opacityBucket(forDistanceMeters distance: Double?) -> Int {
@@ -168,6 +205,11 @@ extension PilgrimMapView {
         static let ringStartOpacity = 0.45
         static let ringBlur = 0.6
         static let metersPerPixelEquatorZ0 = 78271.517
+        static let wispLayerID = "seek-wisp"
+        static let wispSourceID = "seek-wisp-source"
+        static let wispRadiusPixels = 7.0
+        static let wispBlur = 0.7
+        static let wispOpacity = 0.85
     }
 
     static func applySeekFog(
@@ -246,11 +288,13 @@ extension PilgrimMapView {
                 removeFogCircle(id: id, from: mapView)
             }
             removeRingLayer(from: mapView)
+            removeWispLayer(from: mapView)
             renderer.appliedCircles = [:]
             renderer.lastAppliedState = nil
             return
         }
 
+        let previousWisp = renderer.lastAppliedState?.wisp
         var applied: [String: SeekFogState.FogCircle] = [:]
         for circle in state.circles {
             syncFogCircle(
@@ -264,8 +308,64 @@ extension PilgrimMapView {
         for id in renderer.appliedCircles.keys where applied[id] == nil {
             removeFogCircle(id: id, from: mapView)
         }
+        syncWispLayer(state.wisp, previous: previousWisp, on: mapView)
         renderer.appliedCircles = applied
         renderer.lastAppliedState = state
+    }
+
+    /// The wisp is a pixel-sized glint (an affordance, not geography), so
+    /// its radius stays constant across zooms; only its point moves.
+    private static func syncWispLayer(_ wisp: SeekPoint?, previous: SeekPoint?, on mapView: MBMapView) {
+        guard wisp != previous else { return }
+        guard let wisp else {
+            removeWispLayer(from: mapView)
+            return
+        }
+        do {
+            if mapView.mapboxMap.layerExists(withId: SeekFogRendering.wispLayerID),
+               mapView.mapboxMap.sourceExists(withId: SeekFogRendering.wispSourceID) {
+                try mapView.mapboxMap.updateGeoJSONSource(
+                    withId: SeekFogRendering.wispSourceID,
+                    geoJSON: .feature(Feature(geometry: Point(wisp.coordinate)))
+                )
+                return
+            }
+            removeWispLayer(from: mapView)
+
+            var source = GeoJSONSource(id: SeekFogRendering.wispSourceID)
+            source.data = .feature(Feature(geometry: Point(wisp.coordinate)))
+            try mapView.mapboxMap.addSource(source)
+
+            let duration = UIAccessibility.isReduceMotionEnabled ? 0 : SeekFogRendering.fogTransitionDuration
+            var layer = CircleLayer(id: SeekFogRendering.wispLayerID, source: SeekFogRendering.wispSourceID)
+            layer.circleColor = .constant(StyleColor(SeekFogRendering.haloColor))
+            layer.circleBlur = .constant(SeekFogRendering.wispBlur)
+            layer.circleStrokeWidth = .constant(0)
+            layer.circleRadius = .constant(SeekFogRendering.wispRadiusPixels)
+            layer.circleOpacity = .constant(0)
+            layer.circleOpacityTransition = StyleTransition(duration: duration, delay: 0)
+            try mapView.mapboxMap.addLayer(layer)
+            try mapView.mapboxMap.setLayerProperty(
+                for: SeekFogRendering.wispLayerID,
+                property: "circle-opacity",
+                value: SeekFogRendering.wispOpacity
+            )
+        } catch {
+            print("[PilgrimMapView] seek wisp sync failed: \(error)")
+        }
+    }
+
+    private static func removeWispLayer(from mapView: MBMapView) {
+        do {
+            if mapView.mapboxMap.layerExists(withId: SeekFogRendering.wispLayerID) {
+                try mapView.mapboxMap.removeLayer(withId: SeekFogRendering.wispLayerID)
+            }
+            if mapView.mapboxMap.sourceExists(withId: SeekFogRendering.wispSourceID) {
+                try mapView.mapboxMap.removeSource(withId: SeekFogRendering.wispSourceID)
+            }
+        } catch {
+            print("[PilgrimMapView] seek wisp removal failed: \(error)")
+        }
     }
 
     private static func syncFogCircle(

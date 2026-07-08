@@ -269,7 +269,10 @@ extension ActiveWalkViewModel {
             phase: phase,
             distanceToActiveMeters: distance,
             previousActiveBucket: previousActiveFogBucket,
-            tintHex: seekTint?.fogHex
+            tintHex: seekTint?.fogHex,
+            walkerPosition: currentLocation.map {
+                SeekPoint(latitude: $0.latitude, longitude: $0.longitude)
+            }
         )
         previousActiveFogBucket = state.activeFogBucket
         if state != seekFogState {

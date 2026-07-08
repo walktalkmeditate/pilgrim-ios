@@ -205,4 +205,59 @@ final class SeekFogStateTests: XCTestCase {
         XCTAssertNotEqual(plain, tinted)
     }
 
+    // MARK: - Wisp
+
+    private var wispChain: SeekChain {
+        SeekChain(
+            clearings: [SeekClearing(center: SeekPoint(latitude: 42.01, longitude: -8), radiusMeters: 50)],
+            budgetMeters: 3000
+        )
+    }
+
+    private let walker = SeekPoint(latitude: 42.0, longitude: -8.0)
+
+    private func wispState(distance: Double?, phase: SeekEnginePhase = .guiding) -> SeekFogState {
+        SeekFogModel.fogState(
+            chain: wispChain, activeIndex: 0, phase: phase,
+            distanceToActiveMeters: distance, walkerPosition: walker
+        )
+    }
+
+    func testWisp_visibleFarAway_pointsTowardClearingAtOffset() {
+        let state = wispState(distance: 900)
+        guard let wisp = state.wisp else { return XCTFail("wisp should show beyond 150 m") }
+        let offset = SeekChainGenerator.distance(from: walker, to: wisp)
+        XCTAssertEqual(offset, SeekFogModel.wispOffsetMeters, accuracy: 1.0)
+        XCTAssertGreaterThan(
+            wisp.latitude, walker.latitude,
+            "clearing is due north; the wisp must lean north"
+        )
+    }
+
+    func testWisp_hidesInsideTheHandoffBucket() {
+        XCTAssertNil(wispState(distance: 120).wisp, "fog is on-screen below 150 m")
+    }
+
+    func testWisp_hidesWhenArrivedOrRevealing() {
+        XCTAssertNil(wispState(distance: 900, phase: .arrived).wisp)
+        XCTAssertNil(wispState(distance: 900, phase: .revealing).wisp)
+    }
+
+    func testWisp_hidesWithoutAWalkerPosition() {
+        let state = SeekFogModel.fogState(
+            chain: wispChain, activeIndex: 0, phase: .guiding,
+            distanceToActiveMeters: 900, walkerPosition: nil
+        )
+        XCTAssertNil(state.wisp)
+    }
+
+    func testWisp_movesWithTheWalker_andEqualityNoticesIt() {
+        let there = SeekFogModel.fogState(
+            chain: wispChain, activeIndex: 0, phase: .guiding,
+            distanceToActiveMeters: 900,
+            walkerPosition: SeekPoint(latitude: 42.001, longitude: -8.0)
+        )
+        XCTAssertNotEqual(wispState(distance: 900), there)
+    }
+
 }
