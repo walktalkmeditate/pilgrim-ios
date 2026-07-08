@@ -7,7 +7,7 @@ final class SeekWispVisibilityTests: XCTestCase {
 
     private func release(
         wasReleased: Bool = false,
-        center: CGPoint,
+        center: CGPoint?,
         radius: CGFloat = 50
     ) -> Bool {
         SeekWispVisibilityModel.shouldRelease(
@@ -26,6 +26,16 @@ final class SeekWispVisibilityTests: XCTestCase {
 
     func testFogFarOffScreen_staysShown() {
         XCTAssertFalse(release(center: CGPoint(x: 3000, y: 400)))
+    }
+
+    func testUnprojectableFog_neverReleases_andAlwaysReturns() {
+        // Mapbox's point(for:) collapses every off-view coordinate to
+        // (-1, -1); the renderer maps that to nil. Field regression: the
+        // sentinel used to read as a circle grazing the top-left corner,
+        // releasing the crescent on the first camera event and pinning it
+        // released forever.
+        XCTAssertFalse(release(wasReleased: false, center: nil), "off-screen fog must not release")
+        XCTAssertFalse(release(wasReleased: true, center: nil), "off-screen fog must hand the crescent back")
     }
 
     func testFogEdgeOverlapCountsEvenWithCenterOffScreen() {

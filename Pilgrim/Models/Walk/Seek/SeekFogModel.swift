@@ -184,13 +184,17 @@ enum SeekWispVisibilityModel {
     static let releaseInsetPoints: CGFloat = 24
     static let returnOutsetPoints: CGFloat = 24
 
-    /// Returns the new released state given the previous one.
+    /// Returns the new released state given the previous one. `fogCenter`
+    /// is nil when the fog cannot be projected onto the screen — Mapbox's
+    /// `point(for:)` collapses every off-view coordinate to (-1, -1), so an
+    /// unprojectable fog is definitionally not visible: the crescent shows.
     static func shouldRelease(
         wasReleased: Bool,
-        fogCenter: CGPoint,
+        fogCenter: CGPoint?,
         fogRadiusPoints: CGFloat,
         viewSize: CGSize
     ) -> Bool {
+        guard let fogCenter else { return false }
         guard viewSize.width > 0, viewSize.height > 0,
               fogCenter.x.isFinite, fogCenter.y.isFinite, fogRadiusPoints.isFinite else {
             return wasReleased

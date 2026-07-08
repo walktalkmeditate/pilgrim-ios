@@ -188,7 +188,11 @@ extension PilgrimMapView {
         renderer.lastWispVisibilityCheckUptime = now
         guard mapView.mapboxMap.isStyleLoaded else { return }
 
-        let center = mapView.mapboxMap.point(for: fog.center.coordinate)
+        // point(for:) clamps every off-view coordinate to (-1, -1) — pass
+        // nil instead so the model reads "off screen", not "a circle just
+        // past the top-left corner" (which released the crescent forever).
+        let projected = mapView.mapboxMap.point(for: fog.center.coordinate)
+        let center: CGPoint? = (projected.x >= 0 && projected.y >= 0) ? projected : nil
         let zoom = Double(mapView.mapboxMap.cameraState.zoom)
         let metersPerPoint = SeekFogRendering.metersPerPixelEquatorZ0
             * cos(fog.center.latitude * .pi / 180) / pow(2.0, zoom)
