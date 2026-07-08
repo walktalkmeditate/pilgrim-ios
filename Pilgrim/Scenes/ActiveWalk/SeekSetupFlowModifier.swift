@@ -44,7 +44,7 @@ struct SeekSetupFlowModifier: ViewModifier {
             }
             .overlay {
                 if viewModel.seekSetupStage == .transition {
-                    BreathTransitionView {
+                    SeekGatewayView {
                         viewModel.advanceSeekSetupTransitionComplete()
                     }
                     .transition(.opacity)

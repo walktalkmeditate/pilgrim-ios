@@ -675,7 +675,7 @@ struct ActiveWalkView: View {
     /// Guarded to only fire when a greeting isn't already showing.
     private func triggerWeatherGreeting(for condition: WeatherCondition) {
         guard weatherGreeting == nil else { return }
-        let greeting: String
+        var greeting: String
         switch condition {
         case .clear: greeting = "A clear day for wandering"
         case .partlyCloudy: greeting = "Walking under shifting skies"
@@ -687,6 +687,9 @@ struct ActiveWalkView: View {
         case .fog: greeting = "Walking into the mist"
         case .wind: greeting = "The wind at your back"
         case .haze: greeting = "A hazy veil over the world"
+        }
+        if viewModel.mode == .seek {
+            greeting = SeekVoice.greeting(for: condition)
         }
         greetingGeneration += 1
         let gen = greetingGeneration

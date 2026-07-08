@@ -221,4 +221,21 @@ final class SeekSetupFlowTests: XCTestCase {
     func testGPSLockTimeoutHookExists() {
         XCTAssertGreaterThan(ActiveWalkViewModel.seekGPSLockTimeoutSeconds, 0)
     }
+
+    // MARK: - Seek voice
+
+    func testSeekVoice_coversEveryConditionInSeekLanguage() {
+        let conditions: [WeatherCondition] = [
+            .clear, .partlyCloudy, .overcast, .lightRain, .heavyRain,
+            .thunderstorm, .snow, .fog, .wind, .haze
+        ]
+        for condition in conditions {
+            let line = SeekVoice.greeting(for: condition)
+            XCTAssertFalse(line.isEmpty, "\(condition) needs a seek greeting")
+            XCTAssertFalse(
+                line.localizedCaseInsensitiveContains("wander"),
+                "\(condition): seek must not speak in wander's voice"
+            )
+        }
+    }
 }
