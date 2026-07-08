@@ -13,23 +13,21 @@ extension PilgrimMapView {
         static let layerID = "seek-wisp"
         static let sourceID = "seek-wisp-source"
 
-        /// The seek's light follows the sky: dawn under the day themes
-        /// (matching the halos and the warm stone puck), the puck's own
-        /// starlight lavender under constellation. Constellation's stone
-        /// override is a fixed color, so this never hands the map an
-        /// adaptive color that could invert.
+        /// The seek's light follows the sky twice over: the hour picks the
+        /// tone (SeekSkyLight), and constellation mode swaps the whole
+        /// family from dawn to the puck's starlight. All fixed hexes — the
+        /// map never receives an adaptive color that could invert.
         static var isStarlight: Bool {
             UserPreferences.appearanceMode.value == "constellation"
         }
 
-        static func lightColor() -> UIColor {
-            isStarlight
-                ? SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full)
-                : SeekFogRendering.haloColor
+        static func lightColor(daypart: SeekSkyLight.Daypart) -> UIColor {
+            UIColor(hex: SeekSkyLight.hex(daypart: daypart, starlight: isStarlight))
         }
 
-        static func imageID(spanDegrees: Double) -> String {
-            "seek-wisp-crescent-\(Int(spanDegrees.rounded()))-\(isStarlight ? "starlight" : "dawn")"
+        static func imageID(spanDegrees: Double, daypart: SeekSkyLight.Daypart) -> String {
+            let light = SeekSkyLight.token(daypart: daypart, starlight: isStarlight)
+            return "seek-wisp-crescent-\(Int(spanDegrees.rounded()))-\(light)"
         }
         /// Between pulses the crescent rests dim, almost asleep; each pulse
         /// swells it. Under Reduce Motion it holds steady instead.
@@ -68,7 +66,8 @@ extension PilgrimMapView {
         renderer: SeekFogRenderer,
         on mapView: MBMapView
     ) {
-        let desiredImageID = SeekWispRendering.imageID(spanDegrees: spanDegrees)
+        let daypart = currentSeekDaypart(on: mapView)
+        let desiredImageID = SeekWispRendering.imageID(spanDegrees: spanDegrees, daypart: daypart)
         guard wisp != previous || desiredImageID != renderer.appliedWispImageID else { return }
         guard let wisp else {
             removeWispLayer(from: mapView, renderer: renderer)
@@ -87,7 +86,7 @@ extension PilgrimMapView {
                     value: wisp.bearingDegrees
                 )
                 if desiredImageID != renderer.appliedWispImageID {
-                    ensureWispImage(spanDegrees: spanDegrees, on: mapView)
+                    ensureWispImage(id: desiredImageID, spanDegrees: spanDegrees, daypart: daypart, on: mapView)
                     try mapView.mapboxMap.setLayerProperty(
                         for: SeekWispRendering.layerID,
                         property: "icon-image",
@@ -99,7 +98,7 @@ extension PilgrimMapView {
             }
             removeWispLayer(from: mapView, renderer: renderer)
 
-            ensureWispImage(spanDegrees: spanDegrees, on: mapView)
+            ensureWispImage(id: desiredImageID, spanDegrees: spanDegrees, daypart: daypart, on: mapView)
 
             var source = GeoJSONSource(id: SeekWispRendering.sourceID)
             source.data = .feature(Feature(geometry: Point(wisp.position.coordinate)))
@@ -107,7 +106,7 @@ extension PilgrimMapView {
 
             let reduceMotion = UIAccessibility.isReduceMotionEnabled
             var layer = SymbolLayer(id: SeekWispRendering.layerID, source: SeekWispRendering.sourceID)
-            layer.iconImage = .constant(.name(SeekWispRendering.imageID(spanDegrees: spanDegrees)))
+            layer.iconImage = .constant(.name(desiredImageID))
             layer.iconRotate = .constant(wisp.bearingDegrees)
             layer.iconRotationAlignment = .constant(.map)
             layer.iconAllowOverlap = .constant(true)
@@ -130,10 +129,31 @@ extension PilgrimMapView {
         }
     }
 
-    private static func ensureWispImage(spanDegrees: Double, on mapView: MBMapView) {
-        let id = SeekWispRendering.imageID(spanDegrees: spanDegrees)
+    /// The hour of the walk, read from the sun's elevation at the walker's
+    /// position. No location yet falls back to golden — the seek's home
+    /// light. Shared by the crescent and the pulse ring.
+    static func currentSeekDaypart(on mapView: MBMapView) -> SeekSkyLight.Daypart {
+        let elevation = mapView.location.latestLocation.map {
+            CelestialCalculator.solarElevationDegrees(at: $0.coordinate, on: Date())
+        }
+        return SeekSkyLight.daypart(solarElevationDegrees: elevation)
+    }
+
+    static func seekLightColor(on mapView: MBMapView) -> UIColor {
+        SeekWispRendering.lightColor(daypart: currentSeekDaypart(on: mapView))
+    }
+
+    private static func ensureWispImage(
+        id: String,
+        spanDegrees: Double,
+        daypart: SeekSkyLight.Daypart,
+        on mapView: MBMapView
+    ) {
         guard !mapView.mapboxMap.imageExists(withId: id) else { return }
-        try? mapView.mapboxMap.addImage(wispCrescentImage(spanDegrees: spanDegrees), id: id)
+        try? mapView.mapboxMap.addImage(
+            wispCrescentImage(spanDegrees: spanDegrees, color: SeekWispRendering.lightColor(daypart: daypart)),
+            id: id
+        )
     }
 
     static func removeWispLayer(from mapView: MBMapView, renderer: SeekFogRenderer) {
@@ -294,7 +314,7 @@ extension PilgrimMapView {
     /// the apex and taper to nothing at the tips, in three stacked passes
     /// (wide/faint under narrow/bright) so brightness falls off smoothly —
     /// light, not a band with a casing.
-    private static func wispCrescentImage(spanDegrees: Double) -> UIImage {
+    private static func wispCrescentImage(spanDegrees: Double, color: UIColor) -> UIImage {
         let size = SeekWispRendering.imageSize
         let span = CGFloat(spanDegrees * .pi / 180)
         let base = -CGFloat.pi / 2 - span / 2
@@ -325,7 +345,7 @@ extension PilgrimMapView {
                     )
                     arc.lineWidth = width
                     arc.lineCapStyle = .butt
-                    SeekWispRendering.lightColor().withAlphaComponent(min(alpha, 1)).setStroke()
+                    color.withAlphaComponent(min(alpha, 1)).setStroke()
                     arc.stroke()
                 }
             }

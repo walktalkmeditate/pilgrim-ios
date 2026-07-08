@@ -182,6 +182,47 @@ enum SeekFogModel {
     }
 }
 
+// MARK: - The hour's light (pure)
+
+/// The crescent carries the hour: dawn-amber in the golden hours, pale gold
+/// through midday, moonlight silver after dark — and under the constellation
+/// sky the same hours move through the puck's starlight instead, exactly the
+/// puck's lavender at night, its home hour. All values are fixed hexes
+/// (adaptive colors invert on the map and become halos).
+enum SeekSkyLight {
+
+    enum Daypart: String {
+        case golden
+        case midday
+        case night
+    }
+
+    /// Golden spans civil twilight into the low sun. No elevation (no fix
+    /// yet) stays golden — the seek's home light, matching pre-hour builds.
+    static func daypart(solarElevationDegrees elevation: Double?) -> Daypart {
+        guard let elevation else { return .golden }
+        if elevation < -4 { return .night }
+        if elevation < 8 { return .golden }
+        return .midday
+    }
+
+    static func hex(daypart: Daypart, starlight: Bool) -> String {
+        switch (starlight, daypart) {
+        case (false, .golden): return "#C4956A"
+        case (false, .midday): return "#D2B283"
+        case (false, .night): return "#A9AFBC"
+        case (true, .golden): return "#D3BCE8"
+        case (true, .midday): return "#DAD4F5"
+        case (true, .night): return "#C8C0FF"
+        }
+    }
+
+    /// Cache token for pre-rendered crescent images — one per (span, light).
+    static func token(daypart: Daypart, starlight: Bool) -> String {
+        "\(starlight ? "star" : "dawn")-\(daypart.rawValue)"
+    }
+}
+
 // MARK: - Wisp viewport release (pure screen-space geometry)
 
 /// The crescent is a pointer to something beyond sight: the moment the fog

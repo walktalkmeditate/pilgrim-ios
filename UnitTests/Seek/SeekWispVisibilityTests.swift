@@ -126,24 +126,65 @@ final class SeekWispVisibilityTests: XCTestCase {
         )
     }
 
-    // MARK: - Light theme (dawn vs constellation starlight)
+    // MARK: - The hour's light
 
-    func testCrescentLight_followsThePuckUnderConstellation() {
+    private var allLights: [(SeekSkyLight.Daypart, Bool)] {
+        [SeekSkyLight.Daypart.golden, .midday, .night].flatMap { daypart in
+            [(daypart, false), (daypart, true)]
+        }
+    }
+
+    func testSkyLight_goldenDawn_keepsTheSeekSignature() {
+        XCTAssertEqual(SeekSkyLight.hex(daypart: .golden, starlight: false), "#C4956A")
+    }
+
+    func testSkyLight_nightDawn_isTheFullMoonSilver() {
+        XCTAssertEqual(
+            SeekSkyLight.hex(daypart: .night, starlight: false), "#A9AFBC",
+            "night crescents share the full-moon fog tint - one moonlight vocabulary"
+        )
+    }
+
+    func testSkyLight_constellationNight_isThePucksExactStarlight() {
+        let crescent = UIColor(hex: SeekSkyLight.hex(daypart: .night, starlight: true))
+        let puck = UIColor(red: 0.784, green: 0.753, blue: 1.0, alpha: 1.0)
+        var cRed: CGFloat = 0, cGreen: CGFloat = 0, cBlue: CGFloat = 0, cAlpha: CGFloat = 0
+        var pRed: CGFloat = 0, pGreen: CGFloat = 0, pBlue: CGFloat = 0, pAlpha: CGFloat = 0
+        crescent.getRed(&cRed, green: &cGreen, blue: &cBlue, alpha: &cAlpha)
+        puck.getRed(&pRed, green: &pGreen, blue: &pBlue, alpha: &pAlpha)
+        XCTAssertEqual(cRed, pRed, accuracy: 0.01, "constellation night must match the puck's stone override")
+        XCTAssertEqual(cGreen, pGreen, accuracy: 0.01)
+        XCTAssertEqual(cBlue, pBlue, accuracy: 0.01)
+    }
+
+    func testSkyLight_allSixLightsAndTokensDistinct() {
+        let hexes = allLights.map { SeekSkyLight.hex(daypart: $0.0, starlight: $0.1) }
+        let tokens = allLights.map { SeekSkyLight.token(daypart: $0.0, starlight: $0.1) }
+        XCTAssertEqual(Set(hexes).count, hexes.count)
+        XCTAssertEqual(Set(tokens).count, tokens.count)
+    }
+
+    func testDaypart_thresholdsAndNoFixDefault() {
+        XCTAssertEqual(SeekSkyLight.daypart(solarElevationDegrees: nil), .golden, "no fix = the seek's home light")
+        XCTAssertEqual(SeekSkyLight.daypart(solarElevationDegrees: -10), .night)
+        XCTAssertEqual(SeekSkyLight.daypart(solarElevationDegrees: -4), .golden)
+        XCTAssertEqual(SeekSkyLight.daypart(solarElevationDegrees: 0), .golden)
+        XCTAssertEqual(SeekSkyLight.daypart(solarElevationDegrees: 7.9), .golden)
+        XCTAssertEqual(SeekSkyLight.daypart(solarElevationDegrees: 8), .midday)
+        XCTAssertEqual(SeekSkyLight.daypart(solarElevationDegrees: 45), .midday)
+    }
+
+    func testImageID_carriesSpanAndLight_soThemeAndHourSwapsInvalidateTheCache() {
         let original = UserPreferences.appearanceMode.value
         defer { UserPreferences.appearanceMode.value = original }
 
         UserPreferences.appearanceMode.value = "constellation"
-        XCTAssertEqual(
-            PilgrimMapView.SeekWispRendering.lightColor(),
-            SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full),
-            "under the constellation sky the crescent is starlight - the puck's own color"
-        )
         XCTAssertTrue(
-            PilgrimMapView.SeekWispRendering.imageID(spanDegrees: 72).hasSuffix("starlight"),
-            "the cached image key must change with the theme or a stale dawn crescent survives the switch"
+            PilgrimMapView.SeekWispRendering.imageID(spanDegrees: 72, daypart: .night).hasSuffix("star-night")
         )
-
         UserPreferences.appearanceMode.value = "light"
-        XCTAssertTrue(PilgrimMapView.SeekWispRendering.imageID(spanDegrees: 72).hasSuffix("dawn"))
+        XCTAssertTrue(
+            PilgrimMapView.SeekWispRendering.imageID(spanDegrees: 72, daypart: .golden).hasSuffix("dawn-golden")
+        )
     }
 }

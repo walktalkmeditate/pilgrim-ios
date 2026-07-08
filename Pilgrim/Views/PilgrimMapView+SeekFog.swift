@@ -300,10 +300,10 @@ extension PilgrimMapView {
             source.data = .feature(Feature(geometry: Point(coordinate)))
             try mapView.mapboxMap.addSource(source)
 
-            // The ring is recreated per pulse, so it picks up a theme
-            // change (dawn <-> starlight) on the very next heartbeat.
+            // The ring is recreated per pulse, so it picks up the hour's
+            // light (and any theme change) on the very next heartbeat.
             var layer = CircleLayer(id: SeekFogRendering.ringLayerID, source: SeekFogRendering.ringSourceID)
-            layer.circleColor = .constant(StyleColor(SeekWispRendering.lightColor()))
+            layer.circleColor = .constant(StyleColor(seekLightColor(on: mapView)))
             layer.circleBlur = .constant(SeekFogRendering.ringBlur)
             layer.circleStrokeWidth = .constant(0)
             layer.circleRadius = .constant(SeekFogRendering.ringStartRadiusPixels)

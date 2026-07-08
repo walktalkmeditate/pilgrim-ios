@@ -411,6 +411,30 @@ enum CelestialCalculator {
         return azimuth
     }
 
+    /// The sun's elevation above the horizon in degrees at the given moment
+    /// and place. Declination and right ascension come from the ecliptic
+    /// longitude; the hour angle from Greenwich sidereal time and the
+    /// observer's longitude. Accuracy well under a degree — plenty for
+    /// classifying golden hour / midday / night.
+    static func solarElevationDegrees(at coordinate: CLLocationCoordinate2D, on date: Date) -> Double {
+        let jd = julianDayNumber(from: date)
+        let T = julianCenturies(from: jd)
+        let lambda = radians(solarLongitude(T: T))
+        let epsilon = radians(23.439291 - 0.0130042 * T)
+
+        let declination = asin(sin(epsilon) * sin(lambda))
+        let rightAscension = atan2(cos(epsilon) * sin(lambda), cos(lambda))
+
+        let gmstDegrees = (280.46061837 + 360.98564736629 * (jd - 2451545.0))
+            .truncatingRemainder(dividingBy: 360)
+        let hourAngle = radians(gmstDegrees + coordinate.longitude) - rightAscension
+
+        let phi = radians(coordinate.latitude)
+        let sinElevation = sin(phi) * sin(declination)
+            + cos(phi) * cos(declination) * cos(hourAngle)
+        return degrees(asin(min(max(sinElevation, -1), 1)))
+    }
+
     // MARK: - Internal Helpers
 
     private static func planetaryPosition(for planet: Planet, T: Double, system: ZodiacSystem) -> PlanetaryPosition {
