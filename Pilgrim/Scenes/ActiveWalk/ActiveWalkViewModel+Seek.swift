@@ -80,7 +80,7 @@ extension ActiveWalkViewModel {
             start: start,
             using: &rng
         )
-        let engine = SeekEngine(chain: chain, home: start)
+        let engine = SeekEngine(chain: chain)
 
         let sound = seekSenses.makeSoundPlayer()
         sound.prepare()

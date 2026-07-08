@@ -51,7 +51,6 @@ final class SeekEngine: ObservableObject {
     private(set) var currentTier: WalkSessionGuard.PowerTier = .normal
     private(set) var pulseGeneration = 0
 
-    private let home: SeekPoint
     private let now: () -> Date
     private let motionProvider: SeekMotionActivityProviding
     private let stillnessWindowOverride: TimeInterval?
@@ -78,7 +77,6 @@ final class SeekEngine: ObservableObject {
 
     init(
         chain: SeekChain,
-        home: SeekPoint,
         now: @escaping () -> Date = { Date() },
         motionProvider: SeekMotionActivityProviding = SeekMotionActivityProvider(),
         stillnessWindowOverride: TimeInterval? = nil
@@ -87,7 +85,6 @@ final class SeekEngine: ObservableObject {
         self.eventsSubject = subject
         self.events = subject.eraseToAnyPublisher()
         self.chain = chain
-        self.home = home
         self.now = now
         self.motionProvider = motionProvider
         self.stillnessWindowOverride = stillnessWindowOverride
@@ -146,7 +143,6 @@ final class SeekEngine: ObservableObject {
         chain = chain.regeneratingRemainder(
             fromActiveIndex: activeIndex,
             current: currentLocation,
-            home: home,
             remainingBudgetMeters: remainingBudget,
             using: &rng
         )

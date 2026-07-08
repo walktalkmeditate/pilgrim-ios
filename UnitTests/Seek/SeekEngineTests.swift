@@ -42,7 +42,6 @@ final class SeekEngineTests: XCTestCase {
         let clock = self.clock!
         let engine = SeekEngine(
             chain: makeChain(count: clearingCount),
-            home: home,
             now: { clock.now },
             motionProvider: motion,
             stillnessWindowOverride: window
@@ -359,7 +358,7 @@ final class SeekEngineTests: XCTestCase {
     func testDeinit_engineReleasesDespiteScheduledTimer() {
         weak var released: SeekEngine?
         autoreleasepool {
-            let engine = SeekEngine(chain: makeChain(count: 1), home: home)
+            let engine = SeekEngine(chain: makeChain(count: 1))
             engine.processLocation(fix(at: home))
             released = engine
         }

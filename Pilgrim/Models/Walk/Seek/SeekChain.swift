@@ -27,12 +27,11 @@ struct SeekChain: Codable, Equatable {
     let budgetMeters: Double
 
     /// R17: a reroll replaces the active clearing and regenerates everything
-    /// downstream under the remaining budget, with the final clearing still
-    /// landing near home (or reachable out-and-back when only one remains).
+    /// downstream as a fresh outbound wander from the walker's current
+    /// position, under the remaining one-way budget.
     func regeneratingRemainder<R: RandomNumberGenerator>(
         fromActiveIndex activeIndex: Int,
         current: SeekPoint,
-        home: SeekPoint,
         remainingBudgetMeters: Double,
         using rng: inout R
     ) -> SeekChain {
@@ -42,7 +41,6 @@ struct SeekChain: Codable, Equatable {
             count: clearings.count - activeIndex,
             budgetMeters: max(remainingBudgetMeters, SeekEngineTuning.rerollMinBudgetMeters),
             from: current,
-            home: home,
             using: &rng
         )
         return SeekChain(clearings: kept + regenerated, budgetMeters: budgetMeters)

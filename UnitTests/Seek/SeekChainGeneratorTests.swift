@@ -23,14 +23,18 @@ final class SeekChainGeneratorTests: XCTestCase {
         return SeekChainGenerator.generate(durationMinutes: minutes, start: home, using: &rng)
     }
 
-    private func pathLength(_ clearings: [SeekClearing], from: SeekPoint, to: SeekPoint) -> Double {
+    private func pathLength(_ clearings: [SeekClearing], from: SeekPoint) -> Double {
         var total = 0.0
         var cursor = from
         for clearing in clearings {
             total += SeekChainGenerator.distance(from: cursor, to: clearing.center)
             cursor = clearing.center
         }
-        return total + SeekChainGenerator.distance(from: cursor, to: to)
+        return total
+    }
+
+    private func crowReach(ofBudgetMeters budget: Double) -> Double {
+        budget / SeekTuning.streetWindingFactor
     }
 
     // MARK: - Clearing count bands (AE1)
@@ -61,25 +65,36 @@ final class SeekChainGeneratorTests: XCTestCase {
 
     // MARK: - Chain geometry
 
-    func testSingleClearing_isOutAndBackAtRoughlyTwoFifths() {
+    func testSingleClearing_landsNearTheOneWayReach() {
         for seed in 0..<50 {
             let result = chain(minutes: 30, seed: UInt64(seed))
             let fraction = SeekChainGenerator.distance(from: result.clearings[0].center, to: home)
-                / result.budgetMeters
-            XCTAssertGreaterThanOrEqual(fraction, 0.38, "seed \(seed)")
-            XCTAssertLessThanOrEqual(fraction, 0.47, "seed \(seed)")
+                / crowReach(ofBudgetMeters: result.budgetMeters)
+            XCTAssertGreaterThanOrEqual(fraction, 0.84, "seed \(seed)")
+            XCTAssertLessThanOrEqual(fraction, 1.01, "seed \(seed)")
         }
     }
 
-    func testMultiClearingChain_finalLandsNearHome() {
+    func testMultiClearingChain_finalLandsNearTheOneWayReach() {
         for seed in 0..<50 {
             let result = chain(minutes: 180, seed: UInt64(seed))
             guard let last = result.clearings.last else { return XCTFail("empty chain") }
-            XCTAssertLessThanOrEqual(
-                SeekChainGenerator.distance(from: last.center, to: home),
-                result.budgetMeters * 0.22,
-                "seed \(seed): final clearing should land near the start"
-            )
+            let fraction = SeekChainGenerator.distance(from: last.center, to: home)
+                / crowReach(ofBudgetMeters: result.budgetMeters)
+            XCTAssertGreaterThanOrEqual(fraction, 0.84, "seed \(seed): the seek is one-way — the final clearing belongs near the walking limit, not near home")
+            XCTAssertLessThanOrEqual(fraction, 1.01, "seed \(seed)")
+        }
+    }
+
+    func testChain_marchesOutward_neverDoublingBack() {
+        for seed in 0..<50 {
+            let result = chain(minutes: 180, seed: UInt64(seed))
+            var previous = 0.0
+            for clearing in result.clearings {
+                let fromStart = SeekChainGenerator.distance(from: home, to: clearing.center)
+                XCTAssertGreaterThan(fromStart, previous, "seed \(seed): each clearing should be farther out than the last")
+                previous = fromStart
+            }
         }
     }
 
@@ -127,9 +142,9 @@ final class SeekChainGeneratorTests: XCTestCase {
             }
         }
         XCTAssertLessThanOrEqual(
-            pathLength(result.clearings, from: home, to: home),
-            result.budgetMeters * 1.1,
-            "\(context): chain not walkable within budget"
+            pathLength(result.clearings, from: home),
+            crowReach(ofBudgetMeters: result.budgetMeters) * 1.15,
+            "\(context): one-way chain not walkable within budget"
         )
     }
 
@@ -142,7 +157,6 @@ final class SeekChainGeneratorTests: XCTestCase {
         let rerolled = original.regeneratingRemainder(
             fromActiveIndex: 1,
             current: current,
-            home: home,
             remainingBudgetMeters: original.budgetMeters * 0.6,
             using: &rng
         )
@@ -160,12 +174,11 @@ final class SeekChainGeneratorTests: XCTestCase {
             let rerolled = original.regeneratingRemainder(
                 fromActiveIndex: 1,
                 current: current,
-                home: home,
                 remainingBudgetMeters: remaining,
                 using: &rng
             )
-            let path = pathLength(Array(rerolled.clearings.dropFirst(1)), from: current, to: home)
-            XCTAssertLessThanOrEqual(path, remaining * 1.15, "seed \(seed)")
+            let path = pathLength(Array(rerolled.clearings.dropFirst(1)), from: current)
+            XCTAssertLessThanOrEqual(path, crowReach(ofBudgetMeters: remaining) * 1.15, "seed \(seed)")
         }
     }
 
@@ -177,7 +190,6 @@ final class SeekChainGeneratorTests: XCTestCase {
             let rerolled = original.regeneratingRemainder(
                 fromActiveIndex: 0,
                 current: current,
-                home: home,
                 remainingBudgetMeters: original.budgetMeters * 0.7,
                 using: &rng
             )
@@ -196,7 +208,6 @@ final class SeekChainGeneratorTests: XCTestCase {
         let result = original.regeneratingRemainder(
             fromActiveIndex: original.clearings.count,
             current: home,
-            home: home,
             remainingBudgetMeters: 1000,
             using: &rng
         )

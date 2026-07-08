@@ -8,8 +8,14 @@ enum SeekTuning {
     static let clearingRadiusRange = 40.0...60.0
     static let minStartDistanceMeters = 250.0
     static let minSpacingMeters = 300.0
-    static let singleClearingFraction = 0.40...0.45
-    static let homeArcFraction = 0.80...0.90
+    /// Streets aren't crow-flies: walked distance runs ~1.25× the straight
+    /// line, so placement converts the walking budget into crow-flies reach.
+    static let streetWindingFactor = 1.25
+    /// The seek is one-way: the final clearing lands near the walking
+    /// limit, and the way home belongs to the walker.
+    static let finalClearingFraction = 0.85...1.0
+    static let alongJitterFraction = 0.06
+    static let lateralWanderFraction = 0.12
     static let metersPerMile = 1609.344
     static let placementAttempts = 12
 }
@@ -44,7 +50,7 @@ enum SeekChainGenerator {
         let clamped = min(max(durationMinutes, 1), 240)
         let budget = walkableBudgetMeters(forDurationMinutes: clamped)
         let count = Int.random(in: clearingCountBand(forDurationMinutes: clamped), using: &rng)
-        let clearings = placeChain(count: count, budgetMeters: budget, from: start, home: start, using: &rng)
+        let clearings = placeChain(count: count, budgetMeters: budget, from: start, using: &rng)
         return SeekChain(clearings: clearings, budgetMeters: budget)
     }
 
@@ -54,24 +60,16 @@ enum SeekChainGenerator {
         count: Int,
         budgetMeters: Double,
         from: SeekPoint,
-        home: SeekPoint,
         using rng: inout R
     ) -> [SeekClearing] {
         var bestCandidate: [SeekClearing] = []
         var bestScore = -Double.infinity
 
         for _ in 0..<SeekTuning.placementAttempts {
-            let candidate: [SeekClearing]
-            if count <= 1 {
-                candidate = placeSingle(budgetMeters: budgetMeters, from: from, home: home, using: &rng)
-            } else if distance(from: from, to: home) < 1.0 {
-                candidate = placeLoop(count: count, budgetMeters: budgetMeters, from: from, using: &rng)
-            } else {
-                candidate = placeCorridor(
-                    count: count, budgetMeters: budgetMeters, from: from, home: home, using: &rng
-                )
-            }
-            let score = constraintScore(of: candidate, budgetMeters: budgetMeters, from: from, home: home)
+            let candidate = placeOutbound(
+                count: count, budgetMeters: budgetMeters, from: from, using: &rng
+            )
+            let score = constraintScore(of: candidate, budgetMeters: budgetMeters, from: from)
             if score >= 0 { return candidate }
             if score > bestScore {
                 bestScore = score
@@ -81,86 +79,39 @@ enum SeekChainGenerator {
         return bestCandidate
     }
 
-    private static func placeSingle<R: RandomNumberGenerator>(
-        budgetMeters: Double,
-        from: SeekPoint,
-        home: SeekPoint,
-        using rng: inout R
-    ) -> [SeekClearing] {
-        let isOutAndBack = distance(from: from, to: home) < 1.0
-
-        let bearing: Double
-        let distanceOut: Double
-        if isOutAndBack {
-            bearing = Double.random(in: 0..<360, using: &rng)
-            distanceOut = Double.random(in: SeekTuning.singleClearingFraction, using: &rng) * budgetMeters
-        } else {
-            // Rerolled final clearing: bend toward home so current → clearing → home
-            // stays inside the remaining budget.
-            bearing = bearingDegrees(from: from, to: home) + Double.random(in: -55...55, using: &rng)
-            distanceOut = Double.random(in: 0.30...0.45, using: &rng) * budgetMeters
-        }
-        let point = destination(
-            from: from,
-            bearingDegrees: bearing,
-            distanceMeters: max(distanceOut, SeekTuning.minStartDistanceMeters)
-        )
-        return [SeekClearing(
-            center: point,
-            radiusMeters: Double.random(in: SeekTuning.clearingRadiusRange, using: &rng)
-        )]
-    }
-
-    private static func placeLoop<R: RandomNumberGenerator>(
+    /// One construction for every case, fresh seek and reroll alike: the
+    /// chain wanders outward along a random bearing with lateral drift,
+    /// and the final clearing lands near the crow-flies reach of the
+    /// walking budget. The seek is one-way — no leg home is budgeted.
+    private static func placeOutbound<R: RandomNumberGenerator>(
         count: Int,
         budgetMeters: Double,
         from: SeekPoint,
         using rng: inout R
     ) -> [SeekClearing] {
-        // Clearings sit on a circle whose circumference matches the budget and
-        // which passes through the start; walking the arc visits each clearing
-        // and the final one lands most of the way around, near home.
-        let radius = budgetMeters / (2 * .pi)
-        let centerBearing = Double.random(in: 0..<360, using: &rng)
-        let center = destination(from: from, bearingDegrees: centerBearing, distanceMeters: radius)
-        let startAngle = centerBearing + 180
-        let direction: Double = Bool.random(using: &rng) ? 1 : -1
-        let lastFraction = Double.random(in: SeekTuning.homeArcFraction, using: &rng)
-
-        return (1...count).map { index in
-            let evenFraction = lastFraction * Double(index) / Double(count)
-            let jitter = index == count ? 0 : Double.random(in: -0.05...0.05, using: &rng)
-            let angle = startAngle + direction * (evenFraction + jitter) * 360
-            let point = destination(from: center, bearingDegrees: angle, distanceMeters: radius)
-            return SeekClearing(
-                center: point,
-                radiusMeters: Double.random(in: SeekTuning.clearingRadiusRange, using: &rng)
-            )
-        }
-    }
-
-    /// Reroll with 2+ clearings remaining: current position and home differ,
-    /// so clearings step along the current → home corridor with lateral
-    /// wander, the last landing most of the way home.
-    private static func placeCorridor<R: RandomNumberGenerator>(
-        count: Int,
-        budgetMeters: Double,
-        from: SeekPoint,
-        home: SeekPoint,
-        using rng: inout R
-    ) -> [SeekClearing] {
-        let direct = distance(from: from, to: home)
-        let homeward = bearingDegrees(from: from, to: home)
-        let slack = max(budgetMeters - direct, 0)
-        let lateralBound = min(slack / 3, budgetMeters * 0.25)
-        let lastFraction = Double.random(in: 0.75...0.85, using: &rng)
+        let reach = budgetMeters / SeekTuning.streetWindingFactor
+        let heading = Double.random(in: 0..<360, using: &rng)
         let side: Double = Bool.random(using: &rng) ? 1 : -1
+        let lastFraction = Double.random(in: SeekTuning.finalClearingFraction, using: &rng)
 
         return (1...count).map { index in
-            let along = lastFraction * Double(index) / Double(count) * max(direct, budgetMeters * 0.3)
-            let lateral = side * Double.random(in: 0.3...1.0, using: &rng) * lateralBound
-            let onTrack = destination(from: from, bearingDegrees: homeward, distanceMeters: along)
-            let point = destination(from: onTrack, bearingDegrees: homeward + 90, distanceMeters: lateral)
+            let isLast = index == count
+            let jitter = isLast
+                ? 0
+                : Double.random(
+                    in: -SeekTuning.alongJitterFraction...SeekTuning.alongJitterFraction,
+                    using: &rng
+                )
+            let along = max(
+                (lastFraction * Double(index) / Double(count) + jitter) * reach,
+                SeekTuning.minStartDistanceMeters
+            )
+            let lateral = isLast
+                ? 0
+                : side * Double.random(in: 0.2...1.0, using: &rng)
+                    * reach * SeekTuning.lateralWanderFraction
+            let onTrack = destination(from: from, bearingDegrees: heading, distanceMeters: along)
+            let point = destination(from: onTrack, bearingDegrees: heading + 90, distanceMeters: lateral)
             return SeekClearing(
                 center: point,
                 radiusMeters: Double.random(in: SeekTuning.clearingRadiusRange, using: &rng)
@@ -174,8 +125,7 @@ enum SeekChainGenerator {
     private static func constraintScore(
         of clearings: [SeekClearing],
         budgetMeters: Double,
-        from: SeekPoint,
-        home: SeekPoint
+        from: SeekPoint
     ) -> Double {
         var worst = 0.0
 
@@ -197,8 +147,8 @@ enum SeekChainGenerator {
             pathLength += distance(from: cursor, to: clearing.center)
             cursor = clearing.center
         }
-        pathLength += distance(from: cursor, to: home)
-        worst = min(worst, budgetMeters * 1.05 - pathLength)
+        let reach = budgetMeters / SeekTuning.streetWindingFactor
+        worst = min(worst, reach * 1.1 - pathLength)
 
         return worst
     }
