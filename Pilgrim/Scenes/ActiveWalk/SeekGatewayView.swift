@@ -8,6 +8,9 @@ import SwiftUI
 struct SeekGatewayView: View {
 
     let onComplete: () -> Void
+    /// A celestial override (turning or full moon); nil falls back to the
+    /// mode's own line.
+    var line: String?
 
     @State private var mistOpacity: Double = 0
     @State private var mistScale: CGFloat = 0.85
@@ -34,7 +37,7 @@ struct SeekGatewayView: View {
             ring(scale: ringOneScale, opacity: ringOneOpacity)
             ring(scale: ringTwoScale, opacity: ringTwoOpacity)
 
-            Text(LS["Seek.Quote.1"])
+            Text(line ?? LS["Seek.Quote.1"])
                 .font(Constants.Typography.displayMedium)
                 .foregroundColor(.fog)
                 .multilineTextAlignment(.center)
@@ -97,6 +100,43 @@ struct SeekGatewayView: View {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 6.2) { onComplete() }
+    }
+}
+
+/// The sky's mark on a seek: a turning or a full moon tints the fog and
+/// speaks its own gateway line. Turnings outrank the moon — four days a
+/// year beat thirteen nights. Hexes come from the seal palette's turning
+/// overrides (fixed values — adaptive colors become halos on the map).
+struct SeekTint: Equatable {
+    let fogHex: String
+    let gatewayLine: String
+}
+
+enum SeekSky {
+    static func tint(
+        marker: SeasonalMarker?,
+        lunarPhase: CelestialCalculator.LunarPhase
+    ) -> SeekTint? {
+        if let marker {
+            switch marker {
+            case .springEquinox:
+                return SeekTint(fogHex: "#74B495", gatewayLine: "The year leans toward light.\nSeek with it.")
+            case .summerSolstice:
+                return SeekTint(fogHex: "#C9A646", gatewayLine: "The sun stands still.\nYou don't have to.")
+            case .autumnEquinox:
+                return SeekTint(fogHex: "#8B4455", gatewayLine: "The year leans toward dusk.\nSeek while it turns.")
+            case .winterSolstice:
+                return SeekTint(fogHex: "#2377A4", gatewayLine: "The longest night\nhas the most to hide.")
+            case .imbolc, .beltane, .lughnasadh, .samhain:
+                // Cross-quarter days keep the ordinary fog; the moon may
+                // still speak below.
+                break
+            }
+        }
+        if lunarPhase == .full {
+            return SeekTint(fogHex: "#A9AFBC", gatewayLine: "Tonight the moon\nseeks with you.")
+        }
+        return nil
     }
 }
 

@@ -170,6 +170,15 @@ final class SeekEngine: ObservableObject {
 
     // MARK: - Pulse clock
 
+    /// 0 far → 1 near, on the same clamp the cadence uses — ping volume and
+    /// haptic intensity share this curve so ear and skin agree.
+    static func closeness(forDistanceMeters meters: Double) -> Double {
+        let near = SeekEngineTuning.nearDistanceMeters
+        let far = SeekEngineTuning.farDistanceMeters
+        let clamped = min(max(meters, near), far)
+        return 1 - (clamped - near) / (far - near)
+    }
+
     static func pulseInterval(
         forDistance meters: Double,
         tier: WalkSessionGuard.PowerTier

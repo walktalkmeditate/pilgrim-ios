@@ -15,10 +15,14 @@ final class ActiveWalkSeekTests: XCTestCase {
     private final class SpySeekSound: SeekSoundPlaying {
         private(set) var prepareCount = 0
         private(set) var pings: [Bool] = []
+        private(set) var pingClosenesses: [Double] = []
         private(set) var bowlCount = 0
         private(set) var stopCount = 0
         func prepare() { prepareCount += 1 }
-        func playPing(aligned: Bool) { pings.append(aligned) }
+        func playPing(aligned: Bool, closeness: Double) {
+            pings.append(aligned)
+            pingClosenesses.append(closeness)
+        }
         func playBowl() { bowlCount += 1 }
         func stop() { stopCount += 1 }
     }

@@ -19,6 +19,14 @@ struct SeekFogState: Equatable {
     }
 
     let circles: [FogCircle]
+    /// Celestial override for the active fog's color (turning or full moon);
+    /// nil renders the default fog grey. Fixed per walk. Halos keep dawn.
+    let tintHex: String?
+
+    init(circles: [FogCircle], tintHex: String? = nil) {
+        self.circles = circles
+        self.tintHex = tintHex
+    }
 
     /// The active clearing's current bucket — callers feed this back into
     /// the next `fogState` call so hysteresis has a reference point.
@@ -46,7 +54,8 @@ enum SeekFogModel {
         activeIndex: Int,
         phase: SeekEnginePhase,
         distanceToActiveMeters: Double?,
-        previousActiveBucket: Int? = nil
+        previousActiveBucket: Int? = nil,
+        tintHex: String? = nil
     ) -> SeekFogState {
         let count = chain.clearings.count
         guard count > 0 else { return SeekFogState(circles: []) }
@@ -81,7 +90,7 @@ enum SeekFogModel {
             ))
         }
 
-        return SeekFogState(circles: circles)
+        return SeekFogState(circles: circles, tintHex: tintHex)
     }
 
     static func opacityBucket(forDistanceMeters distance: Double?) -> Int {
@@ -244,7 +253,12 @@ extension PilgrimMapView {
 
         var applied: [String: SeekFogState.FogCircle] = [:]
         for circle in state.circles {
-            syncFogCircle(circle, previous: renderer.appliedCircles[circle.id], on: mapView)
+            syncFogCircle(
+                circle,
+                previous: renderer.appliedCircles[circle.id],
+                tintHex: state.tintHex,
+                on: mapView
+            )
             applied[circle.id] = circle
         }
         for id in renderer.appliedCircles.keys where applied[id] == nil {
@@ -257,10 +271,11 @@ extension PilgrimMapView {
     private static func syncFogCircle(
         _ circle: SeekFogState.FogCircle,
         previous: SeekFogState.FogCircle?,
+        tintHex: String?,
         on mapView: MBMapView
     ) {
         guard let previous else {
-            installFogCircle(circle, on: mapView)
+            installFogCircle(circle, tintHex: tintHex, on: mapView)
             return
         }
         guard previous != circle else { return }
@@ -272,11 +287,15 @@ extension PilgrimMapView {
             // Geometry or role changed (reroll, fog → halo): recreate so the
             // entrance-at-zero write below fades the new circle in.
             removeFogCircle(id: circle.id, from: mapView)
-            installFogCircle(circle, on: mapView)
+            installFogCircle(circle, tintHex: tintHex, on: mapView)
         }
     }
 
-    private static func installFogCircle(_ circle: SeekFogState.FogCircle, on mapView: MBMapView) {
+    private static func installFogCircle(
+        _ circle: SeekFogState.FogCircle,
+        tintHex: String?,
+        on mapView: MBMapView
+    ) {
         // Transitions are set once at creation; every later opacity write is
         // GPU-eased by them — no timers. Reduce Motion drops them to instant.
         let duration = UIAccessibility.isReduceMotionEnabled ? 0 : SeekFogRendering.fogTransitionDuration
@@ -285,8 +304,9 @@ extension PilgrimMapView {
             source.data = .feature(Feature(geometry: Point(circle.center.coordinate)))
             try mapView.mapboxMap.addSource(source)
 
+            let fogColor = tintHex.map { UIColor(hex: $0) } ?? SeekFogRendering.fogColor
             var layer = CircleLayer(id: circle.id, source: fogSourceID(for: circle.id))
-            layer.circleColor = .constant(StyleColor(circle.isHalo ? SeekFogRendering.haloColor : SeekFogRendering.fogColor))
+            layer.circleColor = .constant(StyleColor(circle.isHalo ? SeekFogRendering.haloColor : fogColor))
             layer.circleBlur = .constant(SeekFogRendering.fogBlur)
             layer.circlePitchAlignment = .constant(.map)
             layer.circleStrokeWidth = .constant(0)

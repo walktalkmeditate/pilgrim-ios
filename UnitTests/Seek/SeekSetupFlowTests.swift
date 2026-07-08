@@ -238,4 +238,16 @@ final class SeekSetupFlowTests: XCTestCase {
             )
         }
     }
+    // MARK: - Celestial tint (#5)
+
+    func testSeekSky_turningsOutrankTheMoon() {
+        XCTAssertEqual(SeekSky.tint(marker: .winterSolstice, lunarPhase: .full)?.fogHex, "#2377A4")
+        XCTAssertEqual(SeekSky.tint(marker: .springEquinox, lunarPhase: .new)?.fogHex, "#74B495")
+        XCTAssertEqual(SeekSky.tint(marker: .summerSolstice, lunarPhase: .new)?.fogHex, "#C9A646")
+        XCTAssertEqual(SeekSky.tint(marker: .autumnEquinox, lunarPhase: .new)?.fogHex, "#8B4455")
+        XCTAssertEqual(SeekSky.tint(marker: nil, lunarPhase: .full)?.fogHex, "#A9AFBC")
+        XCTAssertNil(SeekSky.tint(marker: nil, lunarPhase: .waxingGibbous))
+        XCTAssertFalse(SeekSky.tint(marker: .winterSolstice, lunarPhase: .new)?.gatewayLine.isEmpty ?? true)
+    }
+
 }

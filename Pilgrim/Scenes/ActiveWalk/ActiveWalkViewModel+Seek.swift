@@ -7,7 +7,7 @@ import UIKit
 /// touching the audio session.
 protocol SeekSoundPlaying: AnyObject {
     func prepare()
-    func playPing(aligned: Bool)
+    func playPing(aligned: Bool, closeness: Double)
     func playBowl()
     func stop()
 }
@@ -127,10 +127,11 @@ extension ActiveWalkViewModel {
     /// tests can drive events directly (house pattern from U2).
     func handleSeekEvent(_ event: SeekEngineEvent) {
         switch event {
-        case .pulse(let aligned, _):
+        case .pulse(let aligned, let distanceMeters):
             seekPulseToken += 1
-            seekSound?.playPing(aligned: aligned)
-            fireSeekHaptic(aligned ? .seekAligned : .seekTick)
+            let closeness = SeekEngine.closeness(forDistanceMeters: distanceMeters)
+            seekSound?.playPing(aligned: aligned, closeness: closeness)
+            fireSeekHaptic(aligned ? .seekAligned(closeness: closeness) : .seekTick(closeness: closeness))
 
         case .arrived:
             // The persistence commit happens before any ritual effect so an
@@ -267,7 +268,8 @@ extension ActiveWalkViewModel {
             activeIndex: activeIndex,
             phase: phase,
             distanceToActiveMeters: distance,
-            previousActiveBucket: previousActiveFogBucket
+            previousActiveBucket: previousActiveFogBucket,
+            tintHex: seekTint?.fogHex
         )
         previousActiveFogBucket = state.activeFogBucket
         if state != seekFogState {

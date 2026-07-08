@@ -449,4 +449,14 @@ final class SeekEngineTests: XCTestCase {
         XCTAssertTrue(hasPulse, "the reroll's immediate pulse is the tap feedback")
         engine.stop()
     }
+    // MARK: - Closeness curve (#6)
+
+    func testCloseness_sharesTheCadenceCurve() {
+        XCTAssertEqual(SeekEngine.closeness(forDistanceMeters: 2000), 0, accuracy: 0.001)
+        XCTAssertEqual(SeekEngine.closeness(forDistanceMeters: 5000), 0, accuracy: 0.001)
+        XCTAssertEqual(SeekEngine.closeness(forDistanceMeters: 100), 1, accuracy: 0.001)
+        XCTAssertEqual(SeekEngine.closeness(forDistanceMeters: 40), 1, accuracy: 0.001)
+        XCTAssertEqual(SeekEngine.closeness(forDistanceMeters: 1050), 0.5, accuracy: 0.001)
+    }
+
 }

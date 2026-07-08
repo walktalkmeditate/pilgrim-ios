@@ -186,4 +186,23 @@ final class SeekFogStateTests: XCTestCase {
     func testDifferentBuckets_compareNotEqual() {
         XCTAssertNotEqual(state(distance: 2000), state(distance: 100))
     }
+    // MARK: - Celestial tint (#5)
+
+    func testFogState_carriesTint_andEqualityHonorsIt() {
+        let chain = SeekChain(
+            clearings: [SeekClearing(center: SeekPoint(latitude: 42, longitude: -8), radiusMeters: 50)],
+            budgetMeters: 3000
+        )
+        let plain = SeekFogModel.fogState(
+            chain: chain, activeIndex: 0, phase: .guiding, distanceToActiveMeters: 500
+        )
+        let tinted = SeekFogModel.fogState(
+            chain: chain, activeIndex: 0, phase: .guiding, distanceToActiveMeters: 500,
+            tintHex: "#2377A4"
+        )
+        XCTAssertNil(plain.tintHex)
+        XCTAssertEqual(tinted.tintHex, "#2377A4")
+        XCTAssertNotEqual(plain, tinted)
+    }
+
 }

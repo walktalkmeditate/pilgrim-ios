@@ -89,8 +89,8 @@ enum HapticPattern {
     case placementFailed
     case cairnProximity
     case stonePlaced(tier: Int)
-    case seekTick
-    case seekAligned
+    case seekTick(closeness: Double)
+    case seekAligned(closeness: Double)
     case seekArrival
     case seekBreathIn
     case seekBreathOut
@@ -151,15 +151,15 @@ enum HapticPattern {
     /// complexity budget.
     private func fireSeek() {
         switch self {
-        case .seekTick:
-            if !Self.playSeekTick() {
+        case .seekTick(let closeness):
+            if !Self.playSeekTick(closeness: closeness) {
                 let generator = UIImpactFeedbackGenerator(style: .soft)
                 generator.prepare()
                 generator.impactOccurred()
             }
 
-        case .seekAligned:
-            if !Self.playSeekAligned() {
+        case .seekAligned(let closeness):
+            if !Self.playSeekAligned(closeness: closeness) {
                 let generator = UIImpactFeedbackGenerator(style: .light)
                 generator.prepare()
                 generator.impactOccurred()
@@ -226,10 +226,12 @@ enum HapticPattern {
         return HapticEngineHost.shared.play(events)
     }
 
-    private static func playSeekTick() -> Bool {
+    private static func playSeekTick(closeness: Double) -> Bool {
         // Gentler than whisperProximity — a pocket metronome felt every
-        // pulse for up to hours, not an alert.
-        let faint = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.3)
+        // pulse for up to hours, not an alert. Intensity rides the engine's
+        // closeness curve so skin and ear agree on distance.
+        let intensity = Float(0.3 + 0.25 * min(max(closeness, 0), 1))
+        let faint = CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity)
         let round = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)
         let events = [
             CHHapticEvent(eventType: .hapticTransient, parameters: [faint, round], relativeTime: 0)
@@ -237,10 +239,11 @@ enum HapticPattern {
         return HapticEngineHost.shared.play(events)
     }
 
-    private static func playSeekAligned() -> Bool {
+    private static func playSeekAligned(closeness: Double) -> Bool {
         // The "this way" heartbeat: two soft pulses, wider apart than
         // placementFailed's sharp pair so the body never confuses them.
-        let soft = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.4)
+        let intensity = Float(0.4 + 0.3 * min(max(closeness, 0), 1))
+        let soft = CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity)
         let round = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)
         let events = [
             CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0),

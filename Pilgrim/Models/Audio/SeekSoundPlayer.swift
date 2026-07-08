@@ -73,19 +73,19 @@ final class SeekSoundPlayer {
     /// `aligned` plays the bundled ping twice with a short generation-guarded
     /// gap — any later request, `stop()`, or an interruption cancels the
     /// pending second cleanly (AF22).
-    func playPing(aligned: Bool) {
+    /// `closeness` (0 far → 1 near, the engine's shared curve) shapes the
+    /// ping from a whisper over the hill to a drop beside you.
+    func playPing(aligned: Bool, closeness: Double = 1) {
         pingGeneration += 1
-        #if DEBUG
-        print("[SeekSoundPlayer] ping request — enabled:\(isEnabled) sounds:\(isSoundsEnabled) interrupted:\(isInterrupted) mode:\(coordinator.currentMode) whisper:\(isWhisperPlaying()) voice:\(isVoiceGuidePlaying())")
-        #endif
         guard isEnabled, isSoundsEnabled else { return }
-        firePingIfAllowed()
+        let volumeScale = 0.55 + 0.45 * min(max(closeness, 0), 1)
+        firePingIfAllowed(volumeScale: volumeScale)
         guard aligned else { return }
         let generation = pingGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + doublePingGap) { [weak self] in
             guard let self, generation == self.pingGeneration,
                   self.isEnabled, self.isSoundsEnabled else { return }
-            self.firePingIfAllowed()
+            self.firePingIfAllowed(volumeScale: volumeScale)
         }
     }
 
@@ -115,7 +115,7 @@ final class SeekSoundPlayer {
 
     // MARK: - Ping gating
 
-    private func firePingIfAllowed() {
+    private func firePingIfAllowed(volumeScale: Double) {
         guard !isInterrupted, canPingOverCurrentAudio else { return }
         activateSessionIfNeeded()
         armPingPlayerIfNeeded()
@@ -123,7 +123,7 @@ final class SeekSoundPlayer {
             deactivateIfNothingArmed()
             return
         }
-        play(player)
+        play(player, volumeScale: volumeScale)
     }
 
     private var canPingOverCurrentAudio: Bool {
@@ -138,8 +138,8 @@ final class SeekSoundPlayer {
 
     // MARK: - Players
 
-    private func play(_ player: AVAudioPlayer) {
-        player.volume = Float(UserPreferences.seekSonarVolume.value)
+    private func play(_ player: AVAudioPlayer, volumeScale: Double = 1) {
+        player.volume = Float(UserPreferences.seekSonarVolume.value * volumeScale)
         player.currentTime = 0
         if !player.play() {
             print("[SeekSoundPlayer] play() failed — resetting")

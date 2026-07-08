@@ -77,6 +77,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var seekEngine: SeekEngine?
     @Published var seekFogState: SeekFogState?
     @Published var seekPulseToken = 0
+    /// The sky's mark on this seek (turning or full moon), fixed at setup.
+    var seekTint: SeekTint?
     let seekSenses: SeekSenses
     var seekSound: SeekSoundPlaying?
     /// Invalidates the GPS-lock timeout and any pending reveal whisper
@@ -712,6 +714,14 @@ extension ActiveWalkViewModel {
 
     func beginSeekSetup() {
         guard mode == .seek, seekSetupStage == .verifyingAccuracy else { return }
+        if UserPreferences.celestialAwarenessEnabled.value {
+            let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+            let now = Date()
+            seekTint = SeekSky.tint(
+                marker: CelestialCalculator.snapshot(for: now, system: system).seasonalMarker,
+                lunarPhase: CelestialCalculator.lunarPhaseName(for: now)
+            )
+        }
         if seekAccuracy.hasFullAccuracy {
             seekSetupStage = .durationQuestion
             return
