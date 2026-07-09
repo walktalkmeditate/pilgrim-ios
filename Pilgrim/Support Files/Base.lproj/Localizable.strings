@@ -199,6 +199,8 @@
 "seek.summary.found_under.golden" = "Found in the golden hour";
 "seek.summary.found_under.midday" = "Found in broad daylight";
 "seek.summary.found_under.night" = "Found under the night sky";
+"seek.summary.seeded" = "The way was shaped by your intention and the moment you set out — %@.";
+"seek.summary.seeded.quiet" = "The way was shaped by the moment you set out — %@.";
 "seek.summary.along_the_way" = "Along the way";
 "seek.summary.sign.photo.one" = "a photo";
 "seek.summary.sign.photo.many" = "%d photos";

@@ -33,6 +33,11 @@ struct SeekSummaryData: Equatable {
     let alongTheWay: AlongTheWay
     /// Counts only reached clearings — never totals, never "X of Y" (R19).
     let unknownsFoundText: String
+    /// The gateway moment — the `.seekMode` event's timestamp, written at
+    /// recording start. Together with the walk's intention this is the
+    /// seed's whole provenance (SeekSeed), already persisted since 1.8.0.
+    let seededAt: Date?
+    let intentionWasVoiced: Bool
 }
 
 enum SeekSummaryModel {
@@ -75,7 +80,9 @@ enum SeekSummaryModel {
     static func summaryData(
         events: [WalkEvent.EventType],
         arrivals: [Arrival],
-        signs: [Sign]
+        signs: [Sign],
+        seededAt: Date? = nil,
+        intentionWasVoiced: Bool = false
     ) -> SeekSummaryData? {
         guard isSeekWalk(events: events), !arrivals.isEmpty else { return nil }
 
@@ -111,7 +118,9 @@ enum SeekSummaryModel {
                 voiceRecordingIDs: ids(of: .voiceRecording, in: strays),
                 waypointIDs: ids(of: .waypoint, in: strays)
             ),
-            unknownsFoundText: unknownsFoundText(arrivalCount: ordered.count)
+            unknownsFoundText: unknownsFoundText(arrivalCount: ordered.count),
+            seededAt: seededAt,
+            intentionWasVoiced: intentionWasVoiced
         )
     }
 
@@ -213,7 +222,13 @@ extension SeekSummaryModel {
                 )
             }
 
-        return summaryData(events: events, arrivals: arrivals, signs: signs)
+        return summaryData(
+            events: events,
+            arrivals: arrivals,
+            signs: signs,
+            seededAt: walk.workoutEvents.first { $0.eventType == .seekMode }?.timestamp,
+            intentionWasVoiced: !(walk.comment?.isEmpty ?? true)
+        )
     }
 
     private static func nearestRouteCoordinate(
@@ -249,6 +264,13 @@ struct SeekSummarySection: View {
             }
             if !data.alongTheWay.isEmpty {
                 alongTheWayRow
+            }
+            if let seededAt = data.seededAt {
+                Text(seededLine(at: seededAt))
+                    .font(Constants.Typography.caption)
+                    .italic()
+                    .foregroundColor(.fog)
+                    .padding(.top, Constants.UI.Padding.small)
             }
         }
         .padding(Constants.UI.Padding.normal)
@@ -310,6 +332,15 @@ struct SeekSummarySection: View {
             }
         }
         .padding(.top, Constants.UI.Padding.xs)
+    }
+
+    private func seededLine(at date: Date) -> String {
+        String(
+            format: data.intentionWasVoiced
+                ? LS.seekSummarySeededFormat
+                : LS.seekSummarySeededQuietFormat,
+            Self.arrivalTimeFormatter.string(from: date)
+        )
     }
 
     static func foundUnderText(_ daypart: SeekSkyLight.Daypart) -> String {

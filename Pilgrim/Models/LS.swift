@@ -233,6 +233,18 @@ struct LS {
         comment: "Walk-summary caption for a clearing reached after dark."
     )
 
+    static let seekSummarySeededFormat = NSLocalizedString(
+        "seek.summary.seeded",
+        value: "The way was shaped by your intention and the moment you set out — %@.",
+        comment: "Closing keepsake line of the seek summary; %@ is the time recording began. States the seed provenance honestly: intention + moment generate the clearings."
+    )
+
+    static let seekSummarySeededQuietFormat = NSLocalizedString(
+        "seek.summary.seeded.quiet",
+        value: "The way was shaped by the moment you set out — %@.",
+        comment: "Keepsake variant for the edge case of a seek without an intention text; %@ is the time recording began."
+    )
+
     static let seekSummaryAlongTheWay = NSLocalizedString(
         "seek.summary.along_the_way",
         value: "Along the way",

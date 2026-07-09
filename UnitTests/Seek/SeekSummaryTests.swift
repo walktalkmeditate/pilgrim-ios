@@ -64,6 +64,30 @@ final class SeekSummaryTests: XCTestCase {
         XCTAssertEqual(data?.groups.first?.foundUnder, .midday)
     }
 
+    // MARK: - Seed keepsake
+
+    func testSummaryData_carriesTheGatewayMomentAndIntentionPresence() {
+        let seededAt = walkStart.addingTimeInterval(-30)
+        let data = SeekSummaryModel.summaryData(
+            events: [.seekMode, .seekArrival],
+            arrivals: [arrival(ordinal: 1, center: home, minutesIn: 10)],
+            signs: [],
+            seededAt: seededAt,
+            intentionWasVoiced: true
+        )
+        XCTAssertEqual(data?.seededAt, seededAt)
+        XCTAssertEqual(data?.intentionWasVoiced, true)
+    }
+
+    func testSummaryData_defaultsLeaveTheKeepsakeSilent() {
+        let data = SeekSummaryModel.summaryData(
+            events: [.seekMode],
+            arrivals: [arrival(ordinal: 1, center: home, minutesIn: 10)],
+            signs: []
+        )
+        XCTAssertNil(data?.seededAt, "no gateway moment, no keepsake line")
+    }
+
     // MARK: - Seek Detection
 
     func testIsSeekWalk_seekModeEventPresent() {
