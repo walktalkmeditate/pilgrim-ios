@@ -40,6 +40,30 @@ final class SeekSummaryTests: XCTestCase {
         )
     }
 
+    // MARK: - Found under (the hour's light)
+
+    func testFoundUnderDaypart_readsTheSkyAtThePlaceAndMoment() {
+        let equator = SeekPoint(latitude: 0, longitude: 0)
+        let noonUTC = DateFactory.makeDate(2024, 3, 20, 12, 0, 0)
+        let midnightUTC = DateFactory.makeDate(2024, 3, 20, 0, 0, 0)
+        XCTAssertEqual(SeekSummaryModel.foundUnderDaypart(center: equator, arrivedAt: noonUTC), .midday)
+        XCTAssertEqual(SeekSummaryModel.foundUnderDaypart(center: equator, arrivedAt: midnightUTC), .night)
+    }
+
+    func testClearingGroups_carryTheirFoundUnderLight() {
+        let equator = SeekPoint(latitude: 0, longitude: 0)
+        let data = SeekSummaryModel.summaryData(
+            events: [.seekMode, .seekArrival],
+            arrivals: [SeekSummaryModel.Arrival(
+                label: "First clearing",
+                center: equator,
+                arrivedAt: DateFactory.makeDate(2024, 3, 20, 12, 0, 0)
+            )],
+            signs: []
+        )
+        XCTAssertEqual(data?.groups.first?.foundUnder, .midday)
+    }
+
     // MARK: - Seek Detection
 
     func testIsSeekWalk_seekModeEventPresent() {

@@ -11,6 +11,9 @@ struct SeekSummaryData: Equatable {
         let label: String
         let center: SeekPoint
         let arrivedAt: Date
+        /// The sky's light at the arrival — golden hour, broad daylight,
+        /// or night — computed from the sun's real elevation there and then.
+        let foundUnder: SeekSkyLight.Daypart
         let photoIDs: [String]
         let voiceRecordingIDs: [String]
         let waypointIDs: [String]
@@ -94,6 +97,7 @@ enum SeekSummaryModel {
                 label: arrival.label,
                 center: arrival.center,
                 arrivedAt: arrival.arrivedAt,
+                foundUnder: foundUnderDaypart(center: arrival.center, arrivedAt: arrival.arrivedAt),
                 photoIDs: ids(of: .photo, in: grouped[index]),
                 voiceRecordingIDs: ids(of: .voiceRecording, in: grouped[index]),
                 waypointIDs: ids(of: .waypoint, in: grouped[index])
@@ -108,6 +112,17 @@ enum SeekSummaryModel {
                 waypointIDs: ids(of: .waypoint, in: strays)
             ),
             unknownsFoundText: unknownsFoundText(arrivalCount: ordered.count)
+        )
+    }
+
+    /// The hour's light at an arrival, from the sun's real elevation at
+    /// that place and moment. Shared by the summary captions and the
+    /// summary map's halo tint.
+    static func foundUnderDaypart(center: SeekPoint, arrivedAt: Date) -> SeekSkyLight.Daypart {
+        SeekSkyLight.daypart(
+            solarElevationDegrees: CelestialCalculator.solarElevationDegrees(
+                at: center.coordinate, on: arrivedAt
+            )
         )
     }
 
@@ -263,6 +278,9 @@ struct SeekSummarySection: View {
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
+            Text(Self.foundUnderText(group.foundUnder))
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
             if let signs = signsLine(
                 photos: group.photoIDs.count,
                 voices: group.voiceRecordingIDs.count,
@@ -292,6 +310,14 @@ struct SeekSummarySection: View {
             }
         }
         .padding(.top, Constants.UI.Padding.xs)
+    }
+
+    static func foundUnderText(_ daypart: SeekSkyLight.Daypart) -> String {
+        switch daypart {
+        case .golden: return LS.seekSummaryFoundGolden
+        case .midday: return LS.seekSummaryFoundMidday
+        case .night: return LS.seekSummaryFoundNight
+        }
     }
 
     private func signsLine(photos: Int, voices: Int, marks: Int) -> String? {

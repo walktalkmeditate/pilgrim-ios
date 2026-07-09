@@ -215,6 +215,24 @@ struct LS {
     )
 
     /// Closing group for signs marked outside every clearing (R19).
+    static let seekSummaryFoundGolden = NSLocalizedString(
+        "seek.summary.found_under.golden",
+        value: "Found in the golden hour",
+        comment: "Walk-summary caption for a clearing reached while the sun was low — dawn or dusk light."
+    )
+
+    static let seekSummaryFoundMidday = NSLocalizedString(
+        "seek.summary.found_under.midday",
+        value: "Found in broad daylight",
+        comment: "Walk-summary caption for a clearing reached with the sun high."
+    )
+
+    static let seekSummaryFoundNight = NSLocalizedString(
+        "seek.summary.found_under.night",
+        value: "Found under the night sky",
+        comment: "Walk-summary caption for a clearing reached after dark."
+    )
+
     static let seekSummaryAlongTheWay = NSLocalizedString(
         "seek.summary.along_the_way",
         value: "Along the way",

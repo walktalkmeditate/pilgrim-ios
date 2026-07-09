@@ -690,7 +690,22 @@ extension WalkSummaryView {
         }
 
         for waypoint in walk.waypoints {
-            pins.append(PilgrimAnnotation(coordinate: CLLocationCoordinate2D(latitude: waypoint.latitude, longitude: waypoint.longitude), kind: .waypoint(label: waypoint.label, icon: waypoint.icon)))
+            let coordinate = CLLocationCoordinate2D(latitude: waypoint.latitude, longitude: waypoint.longitude)
+            if SeekPersistence.isArrivalWaypoint(waypoint) {
+                let daypart = SeekSummaryModel.foundUnderDaypart(
+                    center: SeekPoint(latitude: waypoint.latitude, longitude: waypoint.longitude),
+                    arrivedAt: waypoint.timestamp
+                )
+                pins.append(PilgrimAnnotation(
+                    coordinate: coordinate,
+                    kind: .seekArrival(
+                        label: waypoint.label,
+                        lightHex: SeekSkyLight.hex(daypart: daypart, starlight: false)
+                    )
+                ))
+            } else {
+                pins.append(PilgrimAnnotation(coordinate: coordinate, kind: .waypoint(label: waypoint.label, icon: waypoint.icon)))
+            }
         }
 
         return pins

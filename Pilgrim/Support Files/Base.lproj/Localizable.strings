@@ -196,6 +196,9 @@
 "seek.summary.found.two" = "Two unknowns found";
 "seek.summary.found.three" = "Three unknowns found";
 "seek.summary.found.many" = "%d unknowns found";
+"seek.summary.found_under.golden" = "Found in the golden hour";
+"seek.summary.found_under.midday" = "Found in broad daylight";
+"seek.summary.found_under.night" = "Found under the night sky";
 "seek.summary.along_the_way" = "Along the way";
 "seek.summary.sign.photo.one" = "a photo";
 "seek.summary.sign.photo.many" = "%d photos";
