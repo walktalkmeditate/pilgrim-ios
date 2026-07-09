@@ -22,6 +22,7 @@
 		0AF0FF1EDA75BDC6A3A3D2A6 /* PromptAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6EA04337299ABAFFB2644FC /* PromptAssembler.swift */; };
 		0C411D46B6C254451E36DC75 /* whisper-presence-4.aac in Resources */ = {isa = PBXBuildFile; fileRef = 83BD1C5A8539657B3A5EC6BD /* whisper-presence-4.aac */; };
 		0CFF4F227FE28FE0E48BCB44 /* CairnVisualGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 123512C2E2D2088520214836 /* CairnVisualGenerator.swift */; };
+		0D932D622CFA1D69337AD28B /* WalkModeFootprints.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3394422200CBF5C8EB78180 /* WalkModeFootprints.swift */; };
 		0DD491B2F4B55805B322709B /* whisper-compassion-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = 44661BA899955FDD26DFF034 /* whisper-compassion-1.aac */; };
 		0E29E944B6EEAD64EB33151E /* XCTestCase+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */; };
 		0E9B9341AEF918BA4BB7901C /* PilgrimPackageConverterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */; };
@@ -1056,6 +1057,7 @@
 		F1A2B3C4D5E6F7A8B9C0D1E4 /* PilgrimV4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV4.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconSelectorView.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D200 /* SealRenderer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealRenderer.swift; sourceTree = "<group>"; };
+		F3394422200CBF5C8EB78180 /* WalkModeFootprints.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkModeFootprints.swift; sourceTree = "<group>"; };
 		F42B3177F3066393F8828357 /* whisper-play-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-2.aac"; sourceTree = "<group>"; };
 		F578B62CF2FE5D35049BA99E /* PendingPlacement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PendingPlacement.swift; sourceTree = "<group>"; };
 		F5DBDBA14D74B3061F349DA5 /* whisper-stillness-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-3.aac"; sourceTree = "<group>"; };
@@ -1644,6 +1646,7 @@
 				4AD7C7A50CC75536619799F2 /* PilgrimMapView+SeekFog.swift */,
 				B886390B795403D3BB7B3372 /* VolumeSliderRow.swift */,
 				7C094BDB35610B61FBFB8488 /* PilgrimMapView+SeekWisp.swift */,
+				F3394422200CBF5C8EB78180 /* WalkModeFootprints.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -3007,6 +3010,7 @@
 				CED5FDA068F49C88B833F845 /* SeekGatewayView.swift in Sources */,
 				4E67344B8C0A415F1F08BD96 /* SeekFogModel.swift in Sources */,
 				FA3A2A63A5918E8EDA93F05C /* PilgrimMapView+SeekWisp.swift in Sources */,
+				0D932D622CFA1D69337AD28B /* WalkModeFootprints.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

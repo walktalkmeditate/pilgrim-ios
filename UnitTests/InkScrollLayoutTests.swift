@@ -27,7 +27,8 @@ final class InkScrollLayoutTests: XCTestCase {
             meditateDuration: 0,
             favicon: nil,
             isShared: false,
-            weatherCondition: nil
+            weatherCondition: nil,
+            isSeek: false
         )
     }
 
