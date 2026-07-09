@@ -70,8 +70,15 @@ struct WalkOptionsSheet: View {
                         }
                     }
 
+                    // The seek is already alive on the ready screen — the
+                    // engine boots at the gateway, fog and crescent are on
+                    // the map — so its controls appear as soon as the engine
+                    // exists (self-gated via isSeekActive), letting the
+                    // walker check the sonar or reroll before stepping off.
+                    // Wander pre-walk renders nothing here.
+                    seekSection
+
                     if isRecording {
-                        seekSection
                         traceSection
                         audioSection
                     }
