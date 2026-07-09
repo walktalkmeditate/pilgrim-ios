@@ -8,6 +8,29 @@ enum GoshuinMilestones {
         case longestWalk
         case longestMeditation
         case firstOfSeason(String)
+        /// Seeking thresholds: the walk that carried the first found place,
+        /// and the walks whose arrivals crossed a lifetime count.
+        case firstUnknown
+        case unknownsFound(Int)
+    }
+
+    /// Lifetime found-place counts that earn a seal.
+    static let unknownThresholds = [10, 25, 50, 100]
+
+    /// Seeking milestones for a walk, from its own arrivals and the
+    /// lifetime count before it. Awarded to the walk that crosses the
+    /// threshold; a walk with no arrivals never earns one.
+    static func seekingMilestones(arrivalsInWalk: Int, arrivalsBefore: Int) -> Set<Milestone> {
+        guard arrivalsInWalk > 0 else { return [] }
+        var milestones: Set<Milestone> = []
+        if arrivalsBefore == 0 {
+            milestones.insert(.firstUnknown)
+        }
+        let total = arrivalsBefore + arrivalsInWalk
+        for threshold in unknownThresholds where arrivalsBefore < threshold && total >= threshold {
+            milestones.insert(.unknownsFound(threshold))
+        }
+        return milestones
     }
 
     static func detect(
@@ -59,6 +82,16 @@ enum GoshuinMilestones {
 
         if isFirstOfSeason {
             milestones.insert(.firstOfSeason(season))
+        }
+
+        let arrivalsInWalk = walk.waypoints.filter(SeekPersistence.isArrivalWaypoint).count
+        if arrivalsInWalk > 0 {
+            let arrivalsBefore = allWalks
+                .filter { $0.uuid != walk.uuid && $0.startDate < walk.startDate }
+                .reduce(0) { $0 + $1.waypoints.filter(SeekPersistence.isArrivalWaypoint).count }
+            milestones.formUnion(
+                seekingMilestones(arrivalsInWalk: arrivalsInWalk, arrivalsBefore: arrivalsBefore)
+            )
         }
 
         return milestones
@@ -120,6 +153,15 @@ enum GoshuinMilestones {
             milestones.insert(.firstOfSeason(season))
         }
 
+        if input.foundPlaceCount > 0 {
+            let arrivalsBefore = allInputs
+                .filter { $0.uuid != input.uuid && $0.startDate < input.startDate }
+                .reduce(0) { $0 + $1.foundPlaceCount }
+            milestones.formUnion(
+                seekingMilestones(arrivalsInWalk: input.foundPlaceCount, arrivalsBefore: arrivalsBefore)
+            )
+        }
+
         return milestones
     }
 
@@ -130,6 +172,8 @@ enum GoshuinMilestones {
         case .longestWalk: return "Longest Walk"
         case .longestMeditation: return "Longest Meditation"
         case .firstOfSeason(let s): return "First of \(s)"
+        case .firstUnknown: return "First Unknown"
+        case .unknownsFound(let n): return "\(n) Unknowns"
         }
     }
 

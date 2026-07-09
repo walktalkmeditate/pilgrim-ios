@@ -25,4 +25,35 @@ final class GoshuinMilestonesTests: XCTestCase {
         let m = GoshuinMilestones.detect(walkCount: 2, walkIndex: 1, walk: nil, allWalks: [])
         XCTAssertFalse(m.contains(.firstWalk))
     }
+
+    // MARK: - Seeking thresholds
+
+    func testFirstUnknown_awardedToTheWalkWithTheFirstArrival() {
+        let m = GoshuinMilestones.seekingMilestones(arrivalsInWalk: 2, arrivalsBefore: 0)
+        XCTAssertTrue(m.contains(.firstUnknown))
+        XCTAssertFalse(m.contains(.unknownsFound(10)))
+    }
+
+    func testNoArrivals_earnsNothing() {
+        XCTAssertTrue(GoshuinMilestones.seekingMilestones(arrivalsInWalk: 0, arrivalsBefore: 5).isEmpty)
+    }
+
+    func testThresholdCrossing_awardedOnceToTheCrossingWalk() {
+        let crossing = GoshuinMilestones.seekingMilestones(arrivalsInWalk: 2, arrivalsBefore: 9)
+        XCTAssertTrue(crossing.contains(.unknownsFound(10)))
+        XCTAssertFalse(crossing.contains(.firstUnknown))
+
+        let after = GoshuinMilestones.seekingMilestones(arrivalsInWalk: 1, arrivalsBefore: 11)
+        XCTAssertFalse(after.contains(.unknownsFound(10)))
+    }
+
+    func testExactLanding_onThreshold_stillAwards() {
+        let m = GoshuinMilestones.seekingMilestones(arrivalsInWalk: 1, arrivalsBefore: 24)
+        XCTAssertTrue(m.contains(.unknownsFound(25)))
+    }
+
+    func testSeekingLabels() {
+        XCTAssertEqual(GoshuinMilestones.label(for: .firstUnknown), "First Unknown")
+        XCTAssertEqual(GoshuinMilestones.label(for: .unknownsFound(25)), "25 Unknowns")
+    }
 }
