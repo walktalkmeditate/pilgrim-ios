@@ -64,6 +64,43 @@ final class SeekSummaryTests: XCTestCase {
         XCTAssertEqual(data?.groups.first?.foundUnder, .midday)
     }
 
+    // MARK: - Summary map annotations
+
+    func testComputeAnnotations_rendersArrivalsAsHourLitHalos() {
+        let noonAtEquator = DateFactory.makeDate(2024, 3, 20, 12, 0, 0)
+        let walk = WalkDataFactory.makeWalk(waypoints: [
+            TempWaypoint(
+                uuid: nil, latitude: 0, longitude: 0,
+                label: "First clearing", icon: SeekPersistence.arrivalWaypointIcon,
+                timestamp: noonAtEquator
+            ),
+            TempWaypoint(
+                uuid: nil, latitude: 0.001, longitude: 0,
+                label: "Grateful", icon: "heart", timestamp: noonAtEquator
+            )
+        ])
+
+        let pins = WalkSummaryView.computeAnnotations(for: walk)
+
+        guard let arrivalPin = pins.first(where: {
+            if case .seekArrival = $0.kind { return true } else { return false }
+        }), case let .seekArrival(label, lightHex) = arrivalPin.kind else {
+            return XCTFail("an arrival waypoint must render as a .seekArrival halo")
+        }
+        XCTAssertEqual(label, "First clearing")
+        XCTAssertEqual(
+            lightHex,
+            SeekSkyLight.hex(daypart: .midday, starlight: false),
+            "noon at the equator is broad daylight - and the record keeps the sky palette"
+        )
+        XCTAssertTrue(
+            pins.contains {
+                if case .waypoint(_, let icon) = $0.kind { return icon == "heart" } else { return false }
+            },
+            "ordinary waypoints keep their pin"
+        )
+    }
+
     // MARK: - Seed keepsake
 
     func testSummaryData_carriesTheGatewayMomentAndIntentionPresence() {

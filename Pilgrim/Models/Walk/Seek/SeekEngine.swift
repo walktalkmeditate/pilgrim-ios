@@ -142,20 +142,10 @@ final class SeekEngine: ObservableObject {
             SeekEngineTuning.rerollMinBudgetMeters
         )
         if var seeded = seed.map(SeekSeededGenerator.init(seed:)) {
-            chain = chain.regeneratingRemainder(
-                fromActiveIndex: activeIndex,
-                current: currentLocation,
-                remainingBudgetMeters: remainingBudget,
-                using: &seeded
-            )
+            regenerateRemainder(current: currentLocation, budgetMeters: remainingBudget, using: &seeded)
         } else {
             var rng = SystemRandomNumberGenerator()
-            chain = chain.regeneratingRemainder(
-                fromActiveIndex: activeIndex,
-                current: currentLocation,
-                remainingBudgetMeters: remainingBudget,
-                using: &rng
-            )
+            regenerateRemainder(current: currentLocation, budgetMeters: remainingBudget, using: &rng)
         }
         consecutiveInsideCount = 0
         rerollPulseDistance = distanceToActiveMeters
@@ -167,6 +157,19 @@ final class SeekEngine: ObservableObject {
             // haptic, one ring the moment the new clearing exists.
             emitPulse()
         }
+    }
+
+    private func regenerateRemainder<R: RandomNumberGenerator>(
+        current: SeekPoint,
+        budgetMeters: Double,
+        using rng: inout R
+    ) {
+        chain = chain.regeneratingRemainder(
+            fromActiveIndex: activeIndex,
+            current: current,
+            remainingBudgetMeters: budgetMeters,
+            using: &rng
+        )
     }
 
     func stop() {

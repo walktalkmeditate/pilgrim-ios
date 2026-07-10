@@ -6,6 +6,7 @@ struct GoshuinPageView: View {
     let allWalks: [WalkInterface]
     let totalWalkCount: Int
     let globalStartIndex: Int
+    let arrivalCounts: [UUID: Int]
     let onSelectWalk: (UUID) -> Void
 
     private let columns = [
@@ -32,7 +33,8 @@ struct GoshuinPageView: View {
             walkCount: totalWalkCount,
             walkIndex: walkIndex,
             walk: walk,
-            allWalks: allWalks
+            allWalks: allWalks,
+            arrivalCounts: arrivalCounts
         )
         let isMilestone = !milestones.isEmpty
         let isArchived = walk.uuid.map { UserPreferences.isArchivedWalk(uuid: $0) } ?? false
@@ -61,7 +63,7 @@ struct GoshuinPageView: View {
                 Text("Archived")
                     .font(Constants.Typography.caption)
                     .foregroundStyle(Color.fog.opacity(0.7))
-            } else if let milestone = milestones.first {
+            } else if let milestone = GoshuinMilestones.primaryMilestone(of: milestones) {
                 Text(GoshuinMilestones.label(for: milestone))
                     .font(Constants.Typography.caption)
                     .foregroundStyle(Color.fog)

@@ -96,8 +96,8 @@ enum GoshuinShareRenderer {
                 input: walk,
                 allInputs: allWalks
             )
-            if let first = milestones.first {
-                map[uuid] = GoshuinMilestones.label(for: first)
+            if let primary = GoshuinMilestones.primaryMilestone(of: milestones) {
+                map[uuid] = GoshuinMilestones.label(for: primary)
             }
         }
         return map
