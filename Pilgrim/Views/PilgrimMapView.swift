@@ -391,6 +391,13 @@ struct PilgrimMapView: UIViewRepresentable {
                 // CircleAnnotation in the middle — the thumbnail IS
                 // the marker.
                 continue
+            case .seekArrival(_, let lightHex):
+                // The bright core inside the found-place halo — the same
+                // two-part reading as the web viewer's Book.
+                circle.circleRadius = 4
+                circle.circleColor = StyleColor(UIColor(hex: lightHex))
+                circle.circleOpacity = 0.9
+                circle.circleStrokeWidth = 0
             case .waypoint, .whisper, .cairn:
                 continue
             }
@@ -414,6 +421,13 @@ struct PilgrimMapView: UIViewRepresentable {
             glow.circleRadius = isActive ? 28 : 22
             glow.circleColor = StyleColor(UIColor.stone)
             glow.circleOpacity = isActive ? 0.32 : 0.18
+            glow.circleStrokeWidth = 0
+            return glow
+        case .seekArrival(_, let lightHex):
+            var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
+            glow.circleRadius = 26
+            glow.circleColor = StyleColor(UIColor(hex: lightHex))
+            glow.circleOpacity = 0.28
             glow.circleStrokeWidth = 0
             return glow
         default:

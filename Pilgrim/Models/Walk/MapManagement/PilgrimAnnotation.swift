@@ -10,6 +10,11 @@ struct PilgrimAnnotation: Identifiable {
         case meditation(duration: TimeInterval)
         case voiceRecording(label: String)
         case waypoint(label: String, icon: String)
+        /// A seek arrival on the summary map: a dawn halo in the hour's
+        /// light it was found under (fixed hex — the record keeps the sky
+        /// palette), not a pin. Live walks keep `.waypoint` — their halo
+        /// comes from the fog layer.
+        case seekArrival(label: String, lightHex: String)
         case startPoint
         case endPoint
         case whisper(categoryColor: UIColor, isNearby: Bool)

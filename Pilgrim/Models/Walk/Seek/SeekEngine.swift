@@ -127,8 +127,10 @@ final class SeekEngine: ObservableObject {
     /// R17 reroll. The remaining budget is a v1 estimate — distance walked
     /// is not tracked here, so the budget scales by the fraction of
     /// clearings still ahead, clamped so the regenerated remainder is never
-    /// degenerate.
-    func seekAnew(currentLocation: SeekPoint) {
+    /// degenerate. Callers may pass a SeekSeed so the reroll carries the
+    /// same provenance as the original generation; nil falls back to OS
+    /// entropy (tests, callers without an intention in reach).
+    func seekAnew(currentLocation: SeekPoint, seed: UInt64? = nil) {
         guard phase == .guiding || phase == .arrived else { return }
         if phase == .arrived {
             stopStillnessMachinery()
@@ -139,13 +141,12 @@ final class SeekEngine: ObservableObject {
             chain.budgetMeters * fractionAhead,
             SeekEngineTuning.rerollMinBudgetMeters
         )
-        var rng = SystemRandomNumberGenerator()
-        chain = chain.regeneratingRemainder(
-            fromActiveIndex: activeIndex,
-            current: currentLocation,
-            remainingBudgetMeters: remainingBudget,
-            using: &rng
-        )
+        if var seeded = seed.map(SeekSeededGenerator.init(seed:)) {
+            regenerateRemainder(current: currentLocation, budgetMeters: remainingBudget, using: &seeded)
+        } else {
+            var rng = SystemRandomNumberGenerator()
+            regenerateRemainder(current: currentLocation, budgetMeters: remainingBudget, using: &rng)
+        }
         consecutiveInsideCount = 0
         rerollPulseDistance = distanceToActiveMeters
         distanceToActiveMeters = nil
@@ -156,6 +157,19 @@ final class SeekEngine: ObservableObject {
             // haptic, one ring the moment the new clearing exists.
             emitPulse()
         }
+    }
+
+    private func regenerateRemainder<R: RandomNumberGenerator>(
+        current: SeekPoint,
+        budgetMeters: Double,
+        using rng: inout R
+    ) {
+        chain = chain.regeneratingRemainder(
+            fromActiveIndex: activeIndex,
+            current: current,
+            remainingBudgetMeters: budgetMeters,
+            using: &rng
+        )
     }
 
     func stop() {

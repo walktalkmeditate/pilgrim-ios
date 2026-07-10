@@ -448,6 +448,22 @@ final class SeekEngineTests: XCTestCase {
         XCTAssertTrue(hasPulse, "the reroll's immediate pulse is the tap feedback")
         engine.stop()
     }
+
+    /// The production path always passes a SeekSeed; this pins the seeded
+    /// branch that seekAnewRequested actually exercises.
+    func testSeekAnew_withSeed_regeneratesDeterministically() {
+        let first = makeEngine(clearingCount: 2)
+        let second = makeEngine(clearingCount: 2)
+        let third = makeEngine(clearingCount: 2)
+
+        first.seekAnew(currentLocation: home, seed: 7)
+        second.seekAnew(currentLocation: home, seed: 7)
+        third.seekAnew(currentLocation: home, seed: 8)
+
+        XCTAssertEqual(first.chain, second.chain, "same seed, same reroll")
+        XCTAssertNotEqual(first.chain, third.chain, "a different seed is sent a different way")
+        [first, second, third].forEach { $0.stop() }
+    }
     // MARK: - Closeness curve (#6)
 
     func testCloseness_sharesTheCadenceCurve() {

@@ -346,9 +346,10 @@ struct InkScrollView: View {
                                 .stroke(Color.fog, lineWidth: 1)
                                 .frame(width: 12, height: 18)
                         } else {
-                            FootprintShape()
-                                .fill(seasonColor.opacity(0.3))
-                                .frame(width: 12, height: 18)
+                            WalkModeFootprints(
+                                isSeek: snapshot.isSeek,
+                                color: seasonColor.opacity(0.3)
+                            )
                         }
 
                         if !isExpandedArchived {

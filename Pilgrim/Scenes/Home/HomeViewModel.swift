@@ -14,6 +14,7 @@ struct WalkSnapshot: Identifiable {
     let favicon: String?
     let isShared: Bool
     let weatherCondition: String?
+    let isSeek: Bool
 
     var walkOnlyDuration: TimeInterval {
         max(0, duration - talkDuration - meditateDuration)
@@ -69,6 +70,7 @@ class HomeViewModel: ObservableObject {
     }
 
     private func buildSnapshots() {
+        let seekWalkIDs = fetchSeekWalkIDs()
         let reversed = walks.reversed()
         var cumulative: Double = 0
         var snapshots: [WalkSnapshot] = []
@@ -90,11 +92,27 @@ class HomeViewModel: ObservableObject {
                 meditateDuration: walk.meditateDuration,
                 favicon: walk.favicon,
                 isShared: ShareService.cachedShare(for: walk.id).map { !$0.isExpired } ?? false,
-                weatherCondition: walk.weatherCondition
+                weatherCondition: walk.weatherCondition,
+                isSeek: walk.uuid.map(seekWalkIDs.contains) ?? false
             ))
         }
 
         walkSnapshots = snapshots.reversed()
+    }
+
+    /// Seek walks are marked by their `.seekMode` event (origin R18). One
+    /// bulk fetch — the event count equals the seek-walk count — instead of
+    /// faulting every walk's event list while building snapshots.
+    private func fetchSeekWalkIDs() -> Set<UUID> {
+        do {
+            let events = try DataManager.dataStack.fetchAll(
+                From<WalkEvent>().where(\._eventType == .seekMode)
+            )
+            return Set(events.compactMap { $0.workout?.uuid })
+        } catch {
+            print("[HomeViewModel] Failed to fetch seek events:", error.localizedDescription)
+            return []
+        }
     }
 
     private func updateHemisphereIfNeeded() {

@@ -74,7 +74,11 @@ extension ActiveWalkViewModel {
         seekGeneration += 1
 
         let start = SeekPoint(latitude: sample.latitude, longitude: sample.longitude)
-        var rng = SystemRandomNumberGenerator()
+        // The way is shaped by what was asked and when: intention + the
+        // gateway moment + the locking fix seed the generation (SeekSeed).
+        var rng = SeekSeededGenerator(
+            seed: SeekSeed.make(intention: intention, fix: sample)
+        )
         let chain = SeekChainGenerator.generate(
             durationMinutes: seekDurationMinutes ?? UserPreferences.seekLastDurationMinutes.value,
             start: start,
@@ -186,7 +190,9 @@ extension ActiveWalkViewModel {
     }
 
     /// R17 "Seek anew": regenerates the remainder of the chain from the
-    /// walker's current position. Uncapped by design.
+    /// walker's current position. Uncapped by design. A reroll re-asks —
+    /// the same intention, a new moment — so it is seeded like the
+    /// original generation.
     func seekAnewRequested() {
         guard let engine = seekEngine else { return }
         let point: SeekPoint
@@ -197,7 +203,10 @@ extension ActiveWalkViewModel {
         } else {
             return
         }
-        engine.seekAnew(currentLocation: point)
+        engine.seekAnew(
+            currentLocation: point,
+            seed: SeekSeed.make(intention: intention, fix: currentLocation)
+        )
     }
 
     var isSeekComplete: Bool { seekEngine?.phase == .complete }

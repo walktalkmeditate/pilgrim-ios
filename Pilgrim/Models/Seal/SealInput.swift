@@ -16,6 +16,9 @@ struct SealInput {
     let routeTimestamps: [Date]
     let activityIntervals: [(type: ActivityInterval.ActivityType, startDate: Date, endDate: Date)]
     let voiceRecordingStartDates: [Date]
+    /// Seek arrivals recorded on this walk (reserved-icon waypoints), for
+    /// the seeking milestones.
+    let foundPlaceCount: Int
 
     init(walk: WalkInterface) {
         self.uuid = walk.uuid?.uuidString
@@ -35,5 +38,6 @@ struct SealInput {
             (type: $0.activityType, startDate: $0.startDate, endDate: $0.endDate)
         }
         self.voiceRecordingStartDates = walk.voiceRecordings.map(\.startDate)
+        self.foundPlaceCount = walk.waypoints.filter(SeekPersistence.isArrivalWaypoint).count
     }
 }

@@ -11,6 +11,9 @@ struct SeekSummaryData: Equatable {
         let label: String
         let center: SeekPoint
         let arrivedAt: Date
+        /// The sky's light at the arrival — golden hour, broad daylight,
+        /// or night — computed from the sun's real elevation there and then.
+        let foundUnder: SeekSkyLight.Daypart
         let photoIDs: [String]
         let voiceRecordingIDs: [String]
         let waypointIDs: [String]
@@ -30,6 +33,11 @@ struct SeekSummaryData: Equatable {
     let alongTheWay: AlongTheWay
     /// Counts only reached clearings — never totals, never "X of Y" (R19).
     let unknownsFoundText: String
+    /// The gateway moment — the `.seekMode` event's timestamp, written at
+    /// recording start. Together with the walk's intention this is the
+    /// seed's whole provenance (SeekSeed), already persisted since 1.8.0.
+    let seededAt: Date?
+    let intentionWasVoiced: Bool
 }
 
 enum SeekSummaryModel {
@@ -72,7 +80,9 @@ enum SeekSummaryModel {
     static func summaryData(
         events: [WalkEvent.EventType],
         arrivals: [Arrival],
-        signs: [Sign]
+        signs: [Sign],
+        seededAt: Date? = nil,
+        intentionWasVoiced: Bool = false
     ) -> SeekSummaryData? {
         guard isSeekWalk(events: events), !arrivals.isEmpty else { return nil }
 
@@ -94,6 +104,7 @@ enum SeekSummaryModel {
                 label: arrival.label,
                 center: arrival.center,
                 arrivedAt: arrival.arrivedAt,
+                foundUnder: foundUnderDaypart(center: arrival.center, arrivedAt: arrival.arrivedAt),
                 photoIDs: ids(of: .photo, in: grouped[index]),
                 voiceRecordingIDs: ids(of: .voiceRecording, in: grouped[index]),
                 waypointIDs: ids(of: .waypoint, in: grouped[index])
@@ -107,7 +118,20 @@ enum SeekSummaryModel {
                 voiceRecordingIDs: ids(of: .voiceRecording, in: strays),
                 waypointIDs: ids(of: .waypoint, in: strays)
             ),
-            unknownsFoundText: unknownsFoundText(arrivalCount: ordered.count)
+            unknownsFoundText: unknownsFoundText(arrivalCount: ordered.count),
+            seededAt: seededAt,
+            intentionWasVoiced: intentionWasVoiced
+        )
+    }
+
+    /// The hour's light at an arrival, from the sun's real elevation at
+    /// that place and moment. Shared by the summary captions and the
+    /// summary map's halo tint.
+    static func foundUnderDaypart(center: SeekPoint, arrivedAt: Date) -> SeekSkyLight.Daypart {
+        SeekSkyLight.daypart(
+            solarElevationDegrees: CelestialCalculator.solarElevationDegrees(
+                at: center.coordinate, on: arrivedAt
+            )
         )
     }
 
@@ -198,7 +222,13 @@ extension SeekSummaryModel {
                 )
             }
 
-        return summaryData(events: events, arrivals: arrivals, signs: signs)
+        return summaryData(
+            events: events,
+            arrivals: arrivals,
+            signs: signs,
+            seededAt: walk.workoutEvents.first { $0.eventType == .seekMode }?.timestamp,
+            intentionWasVoiced: !(walk.comment?.isEmpty ?? true)
+        )
     }
 
     private static func nearestRouteCoordinate(
@@ -235,6 +265,13 @@ struct SeekSummarySection: View {
             if !data.alongTheWay.isEmpty {
                 alongTheWayRow
             }
+            if let seededAt = data.seededAt {
+                Text(seededLine(at: seededAt))
+                    .font(Constants.Typography.caption)
+                    .italic()
+                    .foregroundColor(.fog)
+                    .padding(.top, Constants.UI.Padding.small)
+            }
         }
         .padding(Constants.UI.Padding.normal)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -263,6 +300,9 @@ struct SeekSummarySection: View {
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
+            Text(Self.foundUnderText(group.foundUnder))
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
             if let signs = signsLine(
                 photos: group.photoIDs.count,
                 voices: group.voiceRecordingIDs.count,
@@ -292,6 +332,23 @@ struct SeekSummarySection: View {
             }
         }
         .padding(.top, Constants.UI.Padding.xs)
+    }
+
+    private func seededLine(at date: Date) -> String {
+        String(
+            format: data.intentionWasVoiced
+                ? LS.seekSummarySeededFormat
+                : LS.seekSummarySeededQuietFormat,
+            Self.arrivalTimeFormatter.string(from: date)
+        )
+    }
+
+    static func foundUnderText(_ daypart: SeekSkyLight.Daypart) -> String {
+        switch daypart {
+        case .golden: return LS.seekSummaryFoundGolden
+        case .midday: return LS.seekSummaryFoundMidday
+        case .night: return LS.seekSummaryFoundNight
+        }
     }
 
     private func signsLine(photos: Int, voices: Int, marks: Int) -> String? {
