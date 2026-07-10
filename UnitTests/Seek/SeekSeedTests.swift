@@ -68,8 +68,11 @@ final class SeekSeedTests: XCTestCase {
         let start = SeekPoint(latitude: 42.8782, longitude: -8.5448)
         var first = SeekSeededGenerator(seed: 99)
         var second = SeekSeededGenerator(seed: 99)
+        var other = SeekSeededGenerator(seed: 100)
         let one = SeekChainGenerator.generate(durationMinutes: 60, start: start, using: &first)
         let two = SeekChainGenerator.generate(durationMinutes: 60, start: start, using: &second)
+        let three = SeekChainGenerator.generate(durationMinutes: 60, start: start, using: &other)
         XCTAssertEqual(one, two, "one seed is one seek")
+        XCTAssertNotEqual(one, three, "a different seed must be sent a different way")
     }
 }

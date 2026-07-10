@@ -104,10 +104,15 @@ class HomeViewModel: ObservableObject {
     /// bulk fetch — the event count equals the seek-walk count — instead of
     /// faulting every walk's event list while building snapshots.
     private func fetchSeekWalkIDs() -> Set<UUID> {
-        let events = (try? DataManager.dataStack.fetchAll(
-            From<WalkEvent>().where(\._eventType == .seekMode)
-        )) ?? []
-        return Set(events.compactMap { $0.workout?.uuid })
+        do {
+            let events = try DataManager.dataStack.fetchAll(
+                From<WalkEvent>().where(\._eventType == .seekMode)
+            )
+            return Set(events.compactMap { $0.workout?.uuid })
+        } catch {
+            print("[HomeViewModel] Failed to fetch seek events:", error.localizedDescription)
+            return []
+        }
     }
 
     private func updateHemisphereIfNeeded() {

@@ -1,25 +1,12 @@
 import XCTest
 @testable import Pilgrim
 
-/// SplitMix64 — deterministic RNG so generation is reproducible in tests.
-struct SeededRNG: RandomNumberGenerator {
-    private var state: UInt64
-    init(seed: UInt64) { state = seed }
-    mutating func next() -> UInt64 {
-        state &+= 0x9E3779B97F4A7C15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
-        z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
-        return z ^ (z >> 31)
-    }
-}
-
 final class SeekChainGeneratorTests: XCTestCase {
 
     private let home = SeekPoint(latitude: 42.8782, longitude: -8.5448)
 
     private func chain(minutes: Int, seed: UInt64) -> SeekChain {
-        var rng = SeededRNG(seed: seed)
+        var rng = SeekSeededGenerator(seed: seed)
         return SeekChainGenerator.generate(durationMinutes: minutes, start: home, using: &rng)
     }
 
@@ -110,7 +97,7 @@ final class SeekChainGeneratorTests: XCTestCase {
             let start = SeekPoint(latitude: latitude, longitude: -8.5)
             for duration in [30, 60, 120, 180] {
                 for seed in 0..<80 {
-                    var rng = SeededRNG(seed: UInt64(seed))
+                    var rng = SeekSeededGenerator(seed: UInt64(seed))
                     let result = SeekChainGenerator.generate(
                         durationMinutes: duration, start: start, using: &rng
                     )
@@ -153,7 +140,7 @@ final class SeekChainGeneratorTests: XCTestCase {
     func testReroll_keepsPrefixAndReplacesActiveAndDownstream() {
         let original = chain(minutes: 180, seed: 11)
         let current = SeekPoint(latitude: home.latitude + 0.01, longitude: home.longitude)
-        var rng = SeededRNG(seed: 99)
+        var rng = SeekSeededGenerator(seed: 99)
         let rerolled = original.regeneratingRemainder(
             fromActiveIndex: 1,
             current: current,
@@ -170,7 +157,7 @@ final class SeekChainGeneratorTests: XCTestCase {
             let original = chain(minutes: 180, seed: UInt64(seed))
             let current = SeekPoint(latitude: home.latitude + 0.008, longitude: home.longitude - 0.004)
             let remaining = original.budgetMeters * 0.6
-            var rng = SeededRNG(seed: UInt64(seed) &+ 1000)
+            var rng = SeekSeededGenerator(seed: UInt64(seed) &+ 1000)
             let rerolled = original.regeneratingRemainder(
                 fromActiveIndex: 1,
                 current: current,
@@ -186,7 +173,7 @@ final class SeekChainGeneratorTests: XCTestCase {
         for seed in 0..<50 {
             let original = chain(minutes: 30, seed: UInt64(seed))
             let current = SeekPoint(latitude: home.latitude + 0.004, longitude: home.longitude + 0.002)
-            var rng = SeededRNG(seed: UInt64(seed) &+ 2000)
+            var rng = SeekSeededGenerator(seed: UInt64(seed) &+ 2000)
             let rerolled = original.regeneratingRemainder(
                 fromActiveIndex: 0,
                 current: current,
@@ -204,7 +191,7 @@ final class SeekChainGeneratorTests: XCTestCase {
 
     func testReroll_invalidIndex_returnsChainUnchanged() {
         let original = chain(minutes: 60, seed: 3)
-        var rng = SeededRNG(seed: 4)
+        var rng = SeekSeededGenerator(seed: 4)
         let result = original.regeneratingRemainder(
             fromActiveIndex: original.clearings.count,
             current: home,
