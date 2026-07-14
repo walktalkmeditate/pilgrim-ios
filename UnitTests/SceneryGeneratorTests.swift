@@ -55,10 +55,9 @@ final class SceneryGeneratorTests: XCTestCase {
 
     func testSeekWithoutArrivals_fallsBackToTheLottery() {
         var sawCairn = false
-        for _ in 0..<200 {
-            if SceneryGenerator.scenery(for: snapshot(isSeek: true, foundPlaces: 0))?.type == .cairn {
-                sawCairn = true
-            }
+        for _ in 0..<200
+        where SceneryGenerator.scenery(for: snapshot(isSeek: true, foundPlaces: 0))?.type == .cairn {
+            sawCairn = true
         }
         XCTAssertFalse(sawCairn, "no cairn without a found place")
     }
