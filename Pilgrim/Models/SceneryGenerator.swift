@@ -5,7 +5,7 @@ enum ScenerySide {
 }
 
 enum SceneryType: CaseIterable {
-    case tree, lantern, butterfly, mountain, grass, torii, moon
+    case tree, lantern, butterfly, mountain, grass, torii, moon, cairn
 
     var shape: AnyShape {
         switch self {
@@ -16,6 +16,7 @@ enum SceneryType: CaseIterable {
         case .grass: AnyShape(GrassShape())
         case .torii: AnyShape(ToriiGateShape())
         case .moon: AnyShape(MoonShape())
+        case .cairn: AnyShape(CairnStonesShape())
         }
     }
 
@@ -28,6 +29,7 @@ enum SceneryType: CaseIterable {
         case .grass: "moss"
         case .torii: "stone"
         case .moon: "fog"
+        case .cairn: "stone"
         }
     }
 }
@@ -44,18 +46,35 @@ struct SceneryGenerator {
 
     private static let sceneryChance: Double = 0.35
 
+    // The random torii is retired: gates now mark real thresholds only
+    // (see the deterministic branch in `scenery(for:)`). Its old band
+    // maps to tree so every other walk's rolled item stays exactly what
+    // it has always been.
     private static let weights: [(SceneryType, Double)] = [
         (.tree, 0.27),
         (.lantern, 0.18),
         (.grass, 0.22),
         (.butterfly, 0.14),
         (.mountain, 0.11),
-        (.torii, 0.05),
+        (.tree, 0.05),
         (.moon, 0.03),
     ]
 
     static func scenery(for snapshot: WalkSnapshot) -> SceneryPlacement? {
         let seed = deterministicSeed(for: snapshot)
+        let roll3 = seededRandom(seed: seed, salt: 3)
+        let side: ScenerySide = roll3 < 0.5 ? .left : .right
+        let roll4 = seededRandom(seed: seed, salt: 4)
+        let offset = CGFloat(roll4 * 15 - 7.5)
+
+        // Meaning outranks the lottery: threshold walks stand at a gate,
+        // and a seek that found places raises a cairn.
+        if snapshot.isThreshold {
+            return SceneryPlacement(type: .torii, side: side, offset: offset)
+        }
+        if snapshot.isSeek && snapshot.foundPlaces > 0 {
+            return SceneryPlacement(type: .cairn, side: side, offset: offset)
+        }
 
         let roll1 = seededRandom(seed: seed, salt: 1)
         #if DEBUG
@@ -70,12 +89,6 @@ struct SceneryGenerator {
 
         let roll2 = seededRandom(seed: seed, salt: 2)
         let type = pickType(roll: roll2)
-
-        let roll3 = seededRandom(seed: seed, salt: 3)
-        let side: ScenerySide = roll3 < 0.5 ? .left : .right
-
-        let roll4 = seededRandom(seed: seed, salt: 4)
-        let offset = CGFloat(roll4 * 15 - 7.5)
 
         return SceneryPlacement(type: type, side: side, offset: offset)
     }

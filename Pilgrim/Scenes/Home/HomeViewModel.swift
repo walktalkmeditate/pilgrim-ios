@@ -15,6 +15,12 @@ struct WalkSnapshot: Identifiable {
     let isShared: Bool
     let weatherCondition: String?
     let isSeek: Bool
+    /// Seek arrivals recorded on this walk — a found place earns the walk
+    /// a cairn on the ink scroll.
+    let foundPlaces: Int
+    /// Once-ever gates (first walk, every tenth, first unknown, unknown
+    /// milestones) — threshold walks earn a torii on the ink scroll.
+    let isThreshold: Bool
 
     var walkOnlyDuration: TimeInterval {
         max(0, duration - talkDuration - meditateDuration)
@@ -71,16 +77,27 @@ class HomeViewModel: ObservableObject {
 
     private func buildSnapshots() {
         let seekWalkIDs = fetchSeekWalkIDs()
+        let arrivalCounts = GoshuinMilestones.arrivalCounts(for: walks)
         let reversed = walks.reversed()
         var cumulative: Double = 0
+        var arrivalsBefore = 0
         var snapshots: [WalkSnapshot] = []
 
-        for walk in reversed {
+        for (chronologicalIndex, walk) in reversed.enumerated() {
             cumulative += walk.distance
             let duration = walk.activeDuration
             let pace = duration > 0 && walk.distance > 0
                 ? duration / (walk.distance / 1000.0)
                 : 0
+            let walkNumber = chronologicalIndex + 1
+            let foundPlaces = walk.uuid.flatMap { arrivalCounts[$0] } ?? 0
+            let isThreshold = walkNumber == 1
+                || walkNumber % 10 == 0
+                || !GoshuinMilestones.seekingMilestones(
+                    arrivalsInWalk: foundPlaces, arrivalsBefore: arrivalsBefore
+                ).isEmpty
+            arrivalsBefore += foundPlaces
+
             snapshots.append(WalkSnapshot(
                 id: walk.id,
                 startDate: walk.startDate,
@@ -93,7 +110,9 @@ class HomeViewModel: ObservableObject {
                 favicon: walk.favicon,
                 isShared: ShareService.cachedShare(for: walk.id).map { !$0.isExpired } ?? false,
                 weatherCondition: walk.weatherCondition,
-                isSeek: walk.uuid.map(seekWalkIDs.contains) ?? false
+                isSeek: walk.uuid.map(seekWalkIDs.contains) ?? false,
+                foundPlaces: foundPlaces,
+                isThreshold: isThreshold
             ))
         }
 

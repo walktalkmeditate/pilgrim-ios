@@ -28,7 +28,9 @@ final class InkScrollLayoutTests: XCTestCase {
             favicon: nil,
             isShared: false,
             weatherCondition: nil,
-            isSeek: false
+            isSeek: false,
+            foundPlaces: 0,
+            isThreshold: false
         )
     }
 

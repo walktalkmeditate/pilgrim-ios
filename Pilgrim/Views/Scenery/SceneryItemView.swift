@@ -27,6 +27,30 @@ struct SceneryItemView: View {
         case .moon: moonView
         case .mountain: mountainView
         case .torii: toriiView
+        case .cairn: cairnView
+        }
+    }
+
+    // MARK: - Cairn — stones raised by a seek that found places. Static:
+    // stones do not sway.
+
+    private var cairnView: some View {
+        ZStack {
+            CairnStonesShape()
+                .fill(tintColor.opacity(0.1))
+                .frame(width: size * 1.06, height: size * 1.06)
+                .offset(x: 1.5, y: 1.5)
+                .blur(radius: 1.2)
+
+            CairnStonesShape()
+                .fill(tintColor.opacity(0.35))
+                .frame(width: size, height: size)
+
+            // A trace of the dawn halo the clearing wore on the map.
+            Circle()
+                .fill(Color(red: 0.77, green: 0.58, blue: 0.42).opacity(0.10))
+                .frame(width: size * 1.5, height: size * 1.5)
+                .blur(radius: 7)
         }
     }
 
@@ -206,23 +230,30 @@ struct SceneryItemView: View {
     private var lanternView: some View {
         let month = Calendar.current.component(.month, from: walkDate)
         let isWinter = month == 12 || month <= 2
+        // The lantern remembers the hour: lit for walks that met the dark
+        // (same plain-hour idiom as the grass's morning dew), unlit and
+        // quiet for daylight walks.
+        let hour = Calendar.current.component(.hour, from: walkDate)
+        let isLit = hour >= 17 || hour < 6
         let glowColor = isWinter
             ? Color(uiColor: SeasonalColorEngine.seasonalColor(named: "dawn", intensity: .full, on: walkDate))
             : Color(uiColor: SeasonalColorEngine.seasonalColor(named: "stone", intensity: .full, on: walkDate))
 
-        return TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion || !isLit)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             let flicker1 = sin(time * 3.7) * 0.15
             let flicker2 = sin(time * 5.3) * 0.08
             let flicker3 = sin(time * 7.1) * 0.05
-            let glowIntensity = 0.35 + flicker1 + flicker2 + flicker3
+            let glowIntensity = isLit ? 0.35 + flicker1 + flicker2 + flicker3 : 0
 
             ZStack {
-                Circle()
-                    .fill(glowColor.opacity(glowIntensity * 0.3))
-                    .frame(width: size * 1.6, height: size * 1.6)
-                    .blur(radius: 6)
-                    .offset(y: -size * 0.1)
+                if isLit {
+                    Circle()
+                        .fill(glowColor.opacity(glowIntensity * 0.3))
+                        .frame(width: size * 1.6, height: size * 1.6)
+                        .blur(radius: 6)
+                        .offset(y: -size * 0.1)
+                }
 
                 LanternShape()
                     .fill(tintColor.opacity(0.1))
@@ -235,7 +266,7 @@ struct SceneryItemView: View {
                     .frame(width: size, height: size)
 
                 LanternWindowShape()
-                    .fill(glowColor.opacity(glowIntensity))
+                    .fill(isLit ? glowColor.opacity(glowIntensity) : tintColor.opacity(0.12))
                     .frame(width: size, height: size)
                     .blur(radius: 0.5)
             }
@@ -300,8 +331,23 @@ struct SceneryItemView: View {
     // MARK: - Moon — clouds, stars, moonlight rays, unique phase
 
     private var moonView: some View {
-        let daysSinceEpoch = Int(walkDate.timeIntervalSinceReferenceDate / 86400)
-        let phaseScale = 0.85 + CGFloat(abs(daysSinceEpoch % 30)) / 100.0
+        // The real moon of that night: CelestialCalculator gives the
+        // illuminated fraction, and the phase name orients the lit limb
+        // (waxing lights the right, waning the left). The shadow disc
+        // slides off the moon as illumination grows; at full it has left
+        // entirely. Hoisted out of the timeline closure — astronomy once,
+        // not per frame.
+        let T = CelestialCalculator.julianCenturies(
+            from: CelestialCalculator.julianDayNumber(from: walkDate)
+        )
+        let illumination = CGFloat(CelestialCalculator.lunarIllumination(T: T))
+        let phase = CelestialCalculator.lunarPhaseName(for: walkDate)
+        let waxing: Bool
+        switch phase {
+        case .new, .waxingCrescent, .firstQuarter, .waxingGibbous: waxing = true
+        default: waxing = false
+        }
+        let phaseScale: CGFloat = 0.9
 
         return TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
@@ -317,20 +363,35 @@ struct SceneryItemView: View {
                         content.opacity(phase ? 0.8 : 0.4)
                     } animation: { _ in .easeInOut(duration: 3.0) }
 
-                MoonShape()
-                    .fill(tintColor.opacity(0.1))
-                    .frame(width: size * 1.06 * phaseScale, height: size * 1.06 * phaseScale)
-                    .offset(x: 1, y: 1)
-                    .blur(radius: 1.5)
+                Group {
+                    MoonShape()
+                        .fill(tintColor.opacity(0.1))
+                        .frame(width: size * 1.06 * phaseScale, height: size * 1.06 * phaseScale)
+                        .offset(x: 1, y: 1)
+                        .blur(radius: 1.5)
 
-                MoonShape()
-                    .fill(tintColor.opacity(0.35))
+                    MoonShape()
+                        .fill(tintColor.opacity(0.35))
+                        .frame(width: size * phaseScale, height: size * phaseScale)
+
+                    MoonShape()
+                        .fill(.white.opacity(0.1))
+                        .frame(width: size * 0.92 * phaseScale, height: size * 0.92 * phaseScale)
+                        .offset(x: -1, y: -1)
+                }
+                .mask(
+                    // Two-disc phase carve: the shadow slides off as
+                    // illumination grows. A hairline floor keeps even a
+                    // new-moon walk from losing its moon entirely.
+                    ZStack {
+                        Circle()
+                        Circle()
+                            .offset(x: (waxing ? -1 : 1) * max(illumination, 0.08) * size * phaseScale)
+                            .blendMode(.destinationOut)
+                    }
+                    .compositingGroup()
                     .frame(width: size * phaseScale, height: size * phaseScale)
-
-                MoonShape()
-                    .fill(.white.opacity(0.1))
-                    .frame(width: size * 0.92 * phaseScale, height: size * 0.92 * phaseScale)
-                    .offset(x: -1, y: -1)
+                )
 
                 stars(time: time)
                 driftingClouds(time: time)
