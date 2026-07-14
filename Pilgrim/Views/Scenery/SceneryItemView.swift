@@ -706,18 +706,21 @@ struct SceneryItemView: View {
     }
 
     private func ropeAndShide(time: Double) -> some View {
-        let ropeY = size * 0.28
-        let leftX = -size * 0.22
-        let rightX = size * 0.22
+        // Path views draw from their frame's top-left, so this layer gets the
+        // same size×size frame as ToriiGateShape and uses its geometry:
+        // pillar inner edges at 0.27/0.73, nuki crossbeam at y 0.30–0.34.
+        let ropeY = size * 0.33
+        let leftX = size * 0.28
+        let rightX = size * 0.72
 
-        let shidePositions: [CGFloat] = [-0.12, 0.0, 0.12]
+        let shidePositions: [CGFloat] = [0.37, 0.49, 0.61]
 
         return ZStack {
             Path { path in
                 path.move(to: CGPoint(x: leftX, y: ropeY))
                 path.addQuadCurve(
                     to: CGPoint(x: rightX, y: ropeY),
-                    control: CGPoint(x: 0, y: ropeY + size * 0.06)
+                    control: CGPoint(x: size * 0.5, y: ropeY + size * 0.06)
                 )
             }
             .stroke(tintColor.opacity(0.2), lineWidth: 1)
@@ -737,6 +740,7 @@ struct SceneryItemView: View {
                 .stroke(.white.opacity(0.2), lineWidth: 0.8)
             }
         }
+        .frame(width: size, height: size)
     }
 }
 
