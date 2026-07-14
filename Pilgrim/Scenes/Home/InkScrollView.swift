@@ -661,7 +661,8 @@ struct InkScrollView: View {
                 type: placement.type,
                 tintColor: tintColor,
                 size: size,
-                walkDate: snapshot.startDate
+                walkDate: snapshot.startDate,
+                stones: placement.stones
             )
             .opacity(opacity)
             .offset(x: xOffset + placement.offset, y: -4)

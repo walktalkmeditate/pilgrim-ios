@@ -6,6 +6,8 @@ struct SceneryItemView: View {
     let tintColor: Color
     let size: CGFloat
     let walkDate: Date
+    /// Cairns only: stones in the stack (see SceneryPlacement.stones).
+    var stones: Int = 3
 
     /// When Reduce Motion is on, every animated decoration freezes at a
     /// single representative frame: the TimelineView schedule is paused
@@ -32,19 +34,31 @@ struct SceneryItemView: View {
     }
 
     // MARK: - Cairn — stones raised by a seek that found places. Static:
-    // stones do not sway.
+    // stones do not sway. The stack grows with the walk's arrivals, and
+    // winter caps the top stone with snow (the lantern-and-grass idiom).
 
     private var cairnView: some View {
-        ZStack {
-            CairnStonesShape()
+        let month = Calendar.current.component(.month, from: walkDate)
+        let isWinter = month == 12 || month <= 2
+
+        return ZStack {
+            CairnStonesShape(stones: stones)
                 .fill(tintColor.opacity(0.1))
                 .frame(width: size * 1.06, height: size * 1.06)
                 .offset(x: 1.5, y: 1.5)
                 .blur(radius: 1.2)
 
-            CairnStonesShape()
+            CairnStonesShape(stones: stones)
                 .fill(tintColor.opacity(0.35))
                 .frame(width: size, height: size)
+
+            if isWinter {
+                Ellipse()
+                    .fill(.white.opacity(0.35))
+                    .frame(width: size * 0.30, height: size * 0.10)
+                    .offset(x: size * 0.02, y: -size * 0.46)
+                    .blur(radius: 0.5)
+            }
 
             // A trace of the dawn halo the clearing wore on the map.
             Circle()

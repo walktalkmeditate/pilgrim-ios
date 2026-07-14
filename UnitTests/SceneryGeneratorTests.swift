@@ -46,6 +46,16 @@ final class SceneryGeneratorTests: XCTestCase {
         }
     }
 
+    func testCairnStack_growsWithFoundPlaces_cappedAtFive() {
+        XCTAssertEqual(SceneryGenerator.scenery(for: snapshot(isSeek: true, foundPlaces: 1))?.stones, 3)
+        XCTAssertEqual(SceneryGenerator.scenery(for: snapshot(isSeek: true, foundPlaces: 2))?.stones, 4)
+        XCTAssertEqual(SceneryGenerator.scenery(for: snapshot(isSeek: true, foundPlaces: 3))?.stones, 5)
+        XCTAssertEqual(
+            SceneryGenerator.scenery(for: snapshot(isSeek: true, foundPlaces: 9))?.stones, 5,
+            "the stack tops out at five stones"
+        )
+    }
+
     func testThresholdOutranksCairn() {
         let placement = SceneryGenerator.scenery(
             for: snapshot(isSeek: true, foundPlaces: 1, isThreshold: true)

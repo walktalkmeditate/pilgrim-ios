@@ -54,6 +54,9 @@ struct SceneryPlacement {
     let type: SceneryType
     let side: ScenerySide
     let offset: CGFloat
+    /// Cairns only: stones in the stack — a two-stone base plus one per
+    /// found place, capped at five.
+    var stones: Int = 3
     var shape: AnyShape { type.shape }
     var tintColorName: String { type.tintColorName }
 }
@@ -89,7 +92,12 @@ struct SceneryGenerator {
             return SceneryPlacement(type: .torii, side: side, offset: offset)
         }
         if snapshot.isSeek && snapshot.foundPlaces > 0 {
-            return SceneryPlacement(type: .cairn, side: side, offset: offset)
+            return SceneryPlacement(
+                type: .cairn,
+                side: side,
+                offset: offset,
+                stones: min(2 + snapshot.foundPlaces, 5)
+            )
         }
 
         let roll1 = seededRandom(seed: seed, salt: 1)
