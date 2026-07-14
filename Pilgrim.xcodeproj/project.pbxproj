@@ -193,6 +193,7 @@
 		4E67344B8C0A415F1F08BD96 /* SeekFogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB33487484B5D9579CE62A2 /* SeekFogModel.swift */; };
 		4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
+		510A5ED79C24B905DDD597A7 /* ScrollHapticEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
 		5629E7D85292B525B5FDAFEF /* WhisperPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF0C3B1FFBCAF6277D0D9E96 /* WhisperPlayer.swift */; };
 		567070362F733CB000FD1910 /* JourneyViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070352F733CB000FD1910 /* JourneyViewerView.swift */; };
@@ -1048,6 +1049,7 @@
 		E57C921D7D601C294F25037B /* whisper-gratitude-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-gratitude-1.aac"; sourceTree = "<group>"; };
 		E68D73742DD9900454DF9A06 /* CachedCairn.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CachedCairn.swift; sourceTree = "<group>"; };
 		E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteDownsampler.swift; sourceTree = "<group>"; };
+		E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrollHapticEngineTests.swift; sourceTree = "<group>"; };
 		E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometry.swift; sourceTree = "<group>"; };
 		EB9E58CB5C426052DB335181 /* seek-ping.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "seek-ping.aac"; sourceTree = "<group>"; };
 		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
@@ -1842,6 +1844,7 @@
 				D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */,
 				7774DEE9E59C00EDC2262800 /* Seek */,
 				617F15854281983E08F7E766 /* SceneryGeneratorTests.swift */,
+				E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -3129,6 +3132,7 @@
 				188DB055DF097D51DAEE2FA1 /* SeekWispVisibilityTests.swift in Sources */,
 				3F0FA8A403AAC29DE24EB134 /* SeekSeedTests.swift in Sources */,
 				921CEB92C078A872D3C4ADED /* SceneryGeneratorTests.swift in Sources */,
+				510A5ED79C24B905DDD597A7 /* ScrollHapticEngineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

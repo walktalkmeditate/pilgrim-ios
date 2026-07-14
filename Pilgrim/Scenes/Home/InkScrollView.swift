@@ -49,6 +49,11 @@ struct InkScrollView: View {
             }
             .sensoryFeedback(.impact(weight: .heavy, intensity: 0.8), trigger: hapticState.currentEvent) { _, new in
                 if case .milestone = new { return true }
+                if case .gateDot = new { return true }
+                return false
+            }
+            .sensoryFeedback(.success, trigger: hapticState.currentEvent) { _, new in
+                if case .cairnDot = new { return true }
                 return false
             }
             .overlay(expandCard)
@@ -130,7 +135,7 @@ struct InkScrollView: View {
                 let position = positions[index]
                 let opacity = self.dotOpacity(index: index, total: snapshots.count)
                 let isNewest = index == 0
-                let scenery = self.sceneryForDot(snapshot: snapshot, viewportHeight: viewportHeight)
+                let scenery = self.sceneryForDot(snapshot: snapshot, viewportHeight: viewportHeight, opacity: opacity)
 
                 self.dotContent(
                     snapshot: snapshot,
@@ -620,7 +625,7 @@ struct InkScrollView: View {
 
     // MARK: - Scenery
 
-    private func sceneryForDot(snapshot: WalkSnapshot, viewportHeight: CGFloat) -> AnyView? {
+    private func sceneryForDot(snapshot: WalkSnapshot, viewportHeight: CGFloat, opacity: Double) -> AnyView? {
         guard let placement = SceneryGenerator.scenery(for: snapshot) else {
             return nil
         }
@@ -647,6 +652,10 @@ struct InkScrollView: View {
         // beside the wrong dot near the top of the scroll and below the
         // viewport everywhere deeper. An offset from the dot's center is
         // correct in any host geometry.
+        //
+        // The item ages with its walk (the dot's own fade) and drifts by
+        // its type's depth weight — horizon barely moves, foreground most.
+        let parallax = placement.type.parallaxWeight
         return AnyView(
             SceneryItemView(
                 type: placement.type,
@@ -654,12 +663,13 @@ struct InkScrollView: View {
                 size: size,
                 walkDate: snapshot.startDate
             )
+            .opacity(opacity)
             .offset(x: xOffset + placement.offset, y: -4)
             .visualEffect { content, proxy in
                 let frame = proxy.frame(in: .global)
                 let screenMid = viewportHeight / 2
                 let distFromCenter = (frame.midY - screenMid) / screenMid
-                return content.offset(x: distFromCenter * 8)
+                return content.offset(x: distFromCenter * parallax)
             }
             .accessibilityHidden(true)
         )
@@ -779,6 +789,11 @@ struct InkScrollView: View {
 
     private func configureHaptics(layout: Layout) {
         hapticState.dotPositions = layout.positions.map { $0.yOffset }
+        hapticState.dotKinds = snapshots.map { snap in
+            if snap.isThreshold { return .gate }
+            if snap.isSeek && snap.foundPlaces > 0 { return .cairn }
+            return .plain
+        }
 
         hapticState.dotSizes = snapshots.map { snap in
             let view = WalkDotView(

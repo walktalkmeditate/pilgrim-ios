@@ -32,6 +32,22 @@ enum SceneryType: CaseIterable {
         case .cairn: "stone"
         }
     }
+
+    /// Parallax drift in points at the viewport edge — depth of field for
+    /// the scroll. Sky and horizon barely move; things at the walker's
+    /// feet move most.
+    var parallaxWeight: CGFloat {
+        switch self {
+        case .mountain: 3
+        case .moon: 4
+        case .torii: 6
+        case .tree: 8
+        case .lantern: 9
+        case .cairn: 9
+        case .grass: 12
+        case .butterfly: 14
+        }
+    }
 }
 
 struct SceneryPlacement {
