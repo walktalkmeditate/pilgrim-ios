@@ -251,6 +251,7 @@
 		8AFB81DFF602083B6B6C5255 /* whisper-gratitude-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = D4BACC6CBB52976FAD25B897 /* whisper-gratitude-3.aac */; };
 		8B72DAD9B0822C705C710838 /* whisper-play-9.aac in Resources */ = {isa = PBXBuildFile; fileRef = DD2DDA53AB9BF3A478409478 /* whisper-play-9.aac */; };
 		8D5BC6B95A9A7459DA5738FC /* PilgrimPackageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D4FA04890B06A26D5C59087 /* PilgrimPackageModels.swift */; };
+		8F9C4B1686F9A259FDE462A4 /* InkScrollView+Scenery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F782D2E7F2CCBF1C751E1000 /* InkScrollView+Scenery.swift */; };
 		921CEB92C078A872D3C4ADED /* SceneryGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 617F15854281983E08F7E766 /* SceneryGeneratorTests.swift */; };
 		93427BF9DC4BD6121A6ED7EC /* CairnStonesShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCF304CF49DA89E9F3E1AE8 /* CairnStonesShape.swift */; };
 		954B00881CABE67A4A815F56 /* whisper-compassion-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = 14EDD1EBEAA426237532A44F /* whisper-compassion-2.aac */; };
@@ -1071,6 +1072,7 @@
 		F42B3177F3066393F8828357 /* whisper-play-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-2.aac"; sourceTree = "<group>"; };
 		F578B62CF2FE5D35049BA99E /* PendingPlacement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PendingPlacement.swift; sourceTree = "<group>"; };
 		F5DBDBA14D74B3061F349DA5 /* whisper-stillness-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-3.aac"; sourceTree = "<group>"; };
+		F782D2E7F2CCBF1C751E1000 /* InkScrollView+Scenery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "InkScrollView+Scenery.swift"; sourceTree = "<group>"; };
 		F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */ = {isa = PBXFileReference; includeInIndex = 1; path = "whispers-bootstrap.json"; sourceTree = "<group>"; };
 		F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ArchivedWalkFixtures.swift; sourceTree = "<group>"; };
 		FA2E3CE11CDA4BC19D37CF82 /* SealInput.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealInput.swift; sourceTree = "<group>"; };
@@ -2100,6 +2102,7 @@
 				CC00000100000000MILEST01 /* MilestoneMarkerView.swift */,
 				CC00000100000000WKSTRT01 /* WalkStartView.swift */,
 				9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */,
+				F782D2E7F2CCBF1C751E1000 /* InkScrollView+Scenery.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -3028,6 +3031,7 @@
 				0D932D622CFA1D69337AD28B /* WalkModeFootprints.swift in Sources */,
 				B3521FF9E5891FCB4A570140 /* SeekSeed.swift in Sources */,
 				93427BF9DC4BD6121A6ED7EC /* CairnStonesShape.swift in Sources */,
+				8F9C4B1686F9A259FDE462A4 /* InkScrollView+Scenery.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
