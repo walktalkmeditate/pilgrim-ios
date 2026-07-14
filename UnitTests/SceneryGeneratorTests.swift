@@ -10,7 +10,7 @@ final class SceneryGeneratorTests: XCTestCase {
         duration: Double = 1_800,
         isSeek: Bool = false,
         foundPlaces: Int = 0,
-        isThreshold: Bool = false
+        threshold: WalkThreshold? = nil
     ) -> WalkSnapshot {
         WalkSnapshot(
             id: id,
@@ -26,7 +26,7 @@ final class SceneryGeneratorTests: XCTestCase {
             weatherCondition: nil,
             isSeek: isSeek,
             foundPlaces: foundPlaces,
-            isThreshold: isThreshold
+            threshold: threshold
         )
     }
 
@@ -34,9 +34,27 @@ final class SceneryGeneratorTests: XCTestCase {
 
     func testThresholdWalk_alwaysStandsAtAGate() {
         for _ in 0..<50 {
-            let placement = SceneryGenerator.scenery(for: snapshot(isThreshold: true))
+            let placement = SceneryGenerator.scenery(for: snapshot(threshold: .practice))
             XCTAssertEqual(placement?.type, .torii)
         }
+    }
+
+    func testGateKind_shapesTheGate() {
+        let practice = SceneryGenerator.scenery(for: snapshot(threshold: .practice))
+        XCTAssertEqual(practice?.gateKind, .practice)
+        XCTAssertEqual(practice?.tintColorName, "rust", "practice gates stand vermilion")
+
+        let seeking = SceneryGenerator.scenery(for: snapshot(threshold: .seeking))
+        XCTAssertEqual(seeking?.gateKind, .seeking)
+        XCTAssertEqual(seeking?.tintColorName, "stone", "seeking gates stand weathered stone")
+    }
+
+    func testDrift_livesInTheRetiredGateBand() {
+        var sawDrift = false
+        for _ in 0..<800 where SceneryGenerator.scenery(for: snapshot())?.type == .drift {
+            sawDrift = true
+        }
+        XCTAssertTrue(sawDrift, "the season's breath must appear in the lottery")
     }
 
     func testSeekWithFoundPlaces_alwaysRaisesACairn() {
@@ -58,7 +76,7 @@ final class SceneryGeneratorTests: XCTestCase {
 
     func testThresholdOutranksCairn() {
         let placement = SceneryGenerator.scenery(
-            for: snapshot(isSeek: true, foundPlaces: 1, isThreshold: true)
+            for: snapshot(isSeek: true, foundPlaces: 1, threshold: .seeking)
         )
         XCTAssertEqual(placement?.type, .torii, "a gate marks the threshold even on a seek walk")
     }

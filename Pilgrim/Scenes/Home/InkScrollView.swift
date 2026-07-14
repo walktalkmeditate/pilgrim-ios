@@ -662,7 +662,8 @@ struct InkScrollView: View {
                 tintColor: tintColor,
                 size: size,
                 walkDate: snapshot.startDate,
-                stones: placement.stones
+                stones: placement.stones,
+                gateKind: placement.gateKind
             )
             .opacity(opacity)
             .offset(x: xOffset + placement.offset, y: -4)
@@ -791,7 +792,7 @@ struct InkScrollView: View {
     private func configureHaptics(layout: Layout) {
         hapticState.dotPositions = layout.positions.map { $0.yOffset }
         hapticState.dotKinds = snapshots.map { snap in
-            if snap.isThreshold { return .gate }
+            if snap.threshold != nil { return .gate }
             if snap.isSeek && snap.foundPlaces > 0 { return .cairn }
             return .plain
         }

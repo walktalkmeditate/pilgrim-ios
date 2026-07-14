@@ -8,6 +8,8 @@ struct SceneryItemView: View {
     let walkDate: Date
     /// Cairns only: stones in the stack (see SceneryPlacement.stones).
     var stones: Int = 3
+    /// Gates only: which kind of threshold the torii marks.
+    var gateKind: WalkThreshold?
 
     /// When Reduce Motion is on, every animated decoration freezes at a
     /// single representative frame: the TimelineView schedule is paused
@@ -30,6 +32,110 @@ struct SceneryItemView: View {
         case .mountain: mountainView
         case .torii: toriiView
         case .cairn: cairnView
+        case .drift: driftView
+        }
+    }
+
+    // MARK: - Drift — the season's breath. One type, four faces: petals in
+    // spring, fireflies on summer evenings, red dragonflies in autumn, a
+    // sparse snow flurry in winter. The only scenery that moves through
+    // the landscape instead of standing in it.
+
+    private var driftView: some View {
+        let month = Calendar.current.component(.month, from: walkDate)
+        let hour = Calendar.current.component(.hour, from: walkDate)
+        let metTheDark = hour >= 17 || hour < 6
+
+        return TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                switch month {
+                case 3...5: petalDrift(time: time)
+                case 6...8: fireflies(time: time, lit: metTheDark)
+                case 9...11: dragonflies(time: time)
+                default: snowFlurry(time: time)
+                }
+            }
+        }
+    }
+
+    private func petalDrift(time: Double) -> some View {
+        let petals: [(phase: Double, speed: Double, r: CGFloat)] = [
+            (0.0, 0.09, 0.055), (2.1, 0.13, 0.045), (4.0, 0.07, 0.06),
+            (1.2, 0.11, 0.04), (5.3, 0.15, 0.05)
+        ]
+        return ForEach(Array(petals.enumerated()), id: \.offset) { _, petal in
+            let progress = (time * petal.speed + petal.phase).truncatingRemainder(dividingBy: 1.6) / 1.6
+            Ellipse()
+                .fill(Color(red: 1.0, green: 0.75, blue: 0.82).opacity(0.35 * (1 - progress * 0.5)))
+                .frame(width: size * petal.r * 2, height: size * petal.r * 1.3)
+                .rotationEffect(.degrees(progress * 220 + petal.phase * 40))
+                .offset(
+                    x: size * (-0.45 + progress * 0.9) + sin(time * 0.8 + petal.phase) * 3,
+                    y: size * (-0.35 + progress * 0.75)
+                )
+        }
+    }
+
+    private func fireflies(time: Double, lit: Bool) -> some View {
+        let motes: [(phase: Double, fx: Double, fy: Double)] = [
+            (0.0, 0.31, 0.23), (2.4, 0.19, 0.37), (4.7, 0.27, 0.17)
+        ]
+        let glow = Color(red: 0.95, green: 0.87, blue: 0.55)
+        return ForEach(Array(motes.enumerated()), id: \.offset) { _, mote in
+            let pulse = lit ? (sin(time * 1.7 + mote.phase * 2) + 1) / 2 : 0
+            Circle()
+                .fill(lit ? glow.opacity(0.12 + pulse * 0.38) : tintColor.opacity(0.14))
+                .frame(width: size * 0.07, height: size * 0.07)
+                .blur(radius: lit ? 1.0 : 0.3)
+                .offset(
+                    x: sin(time * mote.fx + mote.phase) * size * 0.4,
+                    y: cos(time * mote.fy + mote.phase * 1.3) * size * 0.32
+                )
+        }
+    }
+
+    private func dragonflies(time: Double) -> some View {
+        let body = Color(red: 0.72, green: 0.30, blue: 0.22)
+        return ForEach(0..<2, id: \.self) { index in
+            let phase = Double(index) * 2.6
+            // Hover with the occasional sideways dart.
+            let x = sin(time * 0.4 + phase) * size * 0.32 + sin(time * 2.3 + phase) * size * 0.06
+            let y = cos(time * 0.7 + phase) * size * 0.2 + sin(time * 3.1 + phase) * 2
+            ZStack {
+                Capsule()
+                    .fill(body.opacity(0.4))
+                    .frame(width: size * 0.16, height: size * 0.028)
+                Ellipse()
+                    .fill(.white.opacity(0.25))
+                    .frame(width: size * 0.09, height: size * 0.03)
+                    .offset(x: -size * 0.01, y: -size * 0.02)
+                    .rotationEffect(.degrees(-24))
+                Ellipse()
+                    .fill(.white.opacity(0.25))
+                    .frame(width: size * 0.09, height: size * 0.03)
+                    .offset(x: -size * 0.01, y: size * 0.02)
+                    .rotationEffect(.degrees(24))
+            }
+            .rotationEffect(.degrees(sin(time * 0.9 + phase) * 14))
+            .offset(x: x, y: y)
+        }
+    }
+
+    private func snowFlurry(time: Double) -> some View {
+        let flakes: [(phase: Double, speed: Double, x: CGFloat, r: CGFloat)] = [
+            (0.0, 0.10, -0.3, 0.030), (1.7, 0.14, 0.1, 0.022), (3.2, 0.08, 0.35, 0.026),
+            (4.5, 0.12, -0.12, 0.020), (2.6, 0.09, 0.24, 0.028), (5.5, 0.13, -0.38, 0.018)
+        ]
+        return ForEach(Array(flakes.enumerated()), id: \.offset) { _, flake in
+            let progress = (time * flake.speed + flake.phase).truncatingRemainder(dividingBy: 1.4) / 1.4
+            Circle()
+                .fill(.white.opacity(0.32 * (1 - progress * 0.35)))
+                .frame(width: size * flake.r * 2, height: size * flake.r * 2)
+                .offset(
+                    x: size * flake.x + sin(time * 0.6 + flake.phase) * 2.5,
+                    y: size * (-0.4 + progress * 0.85)
+                )
         }
     }
 
@@ -580,6 +686,19 @@ struct SceneryItemView: View {
                 ToriiGateShape()
                     .fill(tintColor.opacity(0.35))
                     .frame(width: size, height: size)
+
+                if gateKind == .seeking {
+                    // Weathered stone gates grow moss at their feet — the
+                    // seeking thresholds have stood longer than memory.
+                    Ellipse()
+                        .fill(Color(red: 0.45, green: 0.52, blue: 0.35).opacity(0.30))
+                        .frame(width: size * 0.16, height: size * 0.07)
+                        .offset(x: -size * 0.30, y: size * 0.44)
+                    Ellipse()
+                        .fill(Color(red: 0.45, green: 0.52, blue: 0.35).opacity(0.22))
+                        .frame(width: size * 0.11, height: size * 0.05)
+                        .offset(x: size * 0.32, y: size * 0.46)
+                }
 
                 ropeAndShide(time: time)
             }

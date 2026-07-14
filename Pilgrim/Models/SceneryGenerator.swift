@@ -5,7 +5,7 @@ enum ScenerySide {
 }
 
 enum SceneryType: CaseIterable {
-    case tree, lantern, butterfly, mountain, grass, torii, moon, cairn
+    case tree, lantern, butterfly, mountain, grass, torii, moon, cairn, drift
 
     var shape: AnyShape {
         switch self {
@@ -17,6 +17,7 @@ enum SceneryType: CaseIterable {
         case .torii: AnyShape(ToriiGateShape())
         case .moon: AnyShape(MoonShape())
         case .cairn: AnyShape(CairnStonesShape())
+        case .drift: AnyShape(ButterflyShape())
         }
     }
 
@@ -30,12 +31,13 @@ enum SceneryType: CaseIterable {
         case .torii: "stone"
         case .moon: "fog"
         case .cairn: "stone"
+        case .drift: "fog"
         }
     }
 
     /// Parallax drift in points at the viewport edge — depth of field for
     /// the scroll. Sky and horizon barely move; things at the walker's
-    /// feet move most.
+    /// feet move most, and drift rides the air nearest of all.
     var parallaxWeight: CGFloat {
         switch self {
         case .mountain: 3
@@ -46,6 +48,7 @@ enum SceneryType: CaseIterable {
         case .cairn: 9
         case .grass: 12
         case .butterfly: 14
+        case .drift: 16
         }
     }
 }
@@ -57,8 +60,16 @@ struct SceneryPlacement {
     /// Cairns only: stones in the stack — a two-stone base plus one per
     /// found place, capped at five.
     var stones: Int = 3
+    /// Gates only: which kind of threshold the torii marks.
+    var gateKind: WalkThreshold?
     var shape: AnyShape { type.shape }
-    var tintColorName: String { type.tintColorName }
+
+    /// Practice gates stand vermilion (rust); everything else keeps its
+    /// type's tint — seeking gates weathered stone among them.
+    var tintColorName: String {
+        if type == .torii, gateKind == .practice { return "rust" }
+        return type.tintColorName
+    }
 }
 
 struct SceneryGenerator {
@@ -67,15 +78,15 @@ struct SceneryGenerator {
 
     // The random torii is retired: gates now mark real thresholds only
     // (see the deterministic branch in `scenery(for:)`). Its old band
-    // maps to tree so every other walk's rolled item stays exactly what
-    // it has always been.
+    // belongs to drift — the season's breath — so every other walk's
+    // rolled item stays exactly what it has always been.
     private static let weights: [(SceneryType, Double)] = [
         (.tree, 0.27),
         (.lantern, 0.18),
         (.grass, 0.22),
         (.butterfly, 0.14),
         (.mountain, 0.11),
-        (.tree, 0.05),
+        (.drift, 0.05),
         (.moon, 0.03),
     ]
 
@@ -88,8 +99,8 @@ struct SceneryGenerator {
 
         // Meaning outranks the lottery: threshold walks stand at a gate,
         // and a seek that found places raises a cairn.
-        if snapshot.isThreshold {
-            return SceneryPlacement(type: .torii, side: side, offset: offset)
+        if let threshold = snapshot.threshold {
+            return SceneryPlacement(type: .torii, side: side, offset: offset, gateKind: threshold)
         }
         if snapshot.isSeek && snapshot.foundPlaces > 0 {
             return SceneryPlacement(
