@@ -58,7 +58,15 @@ struct SceneryGenerator {
         let seed = deterministicSeed(for: snapshot)
 
         let roll1 = seededRandom(seed: seed, salt: 1)
-        guard roll1 < sceneryChance else { return nil }
+        #if DEBUG
+        // Diagnostics: the journal stress seed forces scenery on every walk
+        // so depth-dependent rendering failures separate cleanly from the
+        // ordinary 35% placement roll.
+        let forceScenery = CommandLine.arguments.contains("--demo-journal-stress")
+        #else
+        let forceScenery = false
+        #endif
+        guard forceScenery || roll1 < sceneryChance else { return nil }
 
         let roll2 = seededRandom(seed: seed, salt: 2)
         let type = pickType(roll: roll2)

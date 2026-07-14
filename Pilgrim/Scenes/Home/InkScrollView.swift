@@ -130,7 +130,7 @@ struct InkScrollView: View {
                 let position = positions[index]
                 let opacity = self.dotOpacity(index: index, total: snapshots.count)
                 let isNewest = index == 0
-                let scenery = self.sceneryForDot(snapshot: snapshot, position: position.center, viewportHeight: viewportHeight)
+                let scenery = self.sceneryForDot(snapshot: snapshot, viewportHeight: viewportHeight)
 
                 self.dotContent(
                     snapshot: snapshot,
@@ -620,7 +620,7 @@ struct InkScrollView: View {
 
     // MARK: - Scenery
 
-    private func sceneryForDot(snapshot: WalkSnapshot, position: CGPoint, viewportHeight: CGFloat) -> AnyView? {
+    private func sceneryForDot(snapshot: WalkSnapshot, viewportHeight: CGFloat) -> AnyView? {
         guard let placement = SceneryGenerator.scenery(for: snapshot) else {
             return nil
         }
@@ -639,11 +639,14 @@ struct InkScrollView: View {
         let size = baseSize + sizeVariation * 24
 
         let xOffset: CGFloat = placement.side == .left ? -40 - size / 2 : 40 + size / 2
-        let sceneryPosition = CGPoint(
-            x: position.x + xOffset + placement.offset,
-            y: position.y - 4
-        )
 
+        // Dot-relative placement. The scenery is hosted inside WalkDotView's
+        // ZStack, which is framed to a ~50pt box and then positioned at the
+        // dot — so content-space `.position` coordinates get applied twice
+        // (box position + local position ≈ 2× the dot's y), landing scenery
+        // beside the wrong dot near the top of the scroll and below the
+        // viewport everywhere deeper. An offset from the dot's center is
+        // correct in any host geometry.
         return AnyView(
             SceneryItemView(
                 type: placement.type,
@@ -651,7 +654,7 @@ struct InkScrollView: View {
                 size: size,
                 walkDate: snapshot.startDate
             )
-            .position(sceneryPosition)
+            .offset(x: xOffset + placement.offset, y: -4)
             .visualEffect { content, proxy in
                 let frame = proxy.frame(in: .global)
                 let screenMid = viewportHeight / 2
