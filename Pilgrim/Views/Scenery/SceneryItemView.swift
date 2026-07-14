@@ -684,24 +684,44 @@ struct SceneryItemView: View {
                     .blur(radius: 1.5)
 
                 ToriiGateShape()
-                    .fill(tintColor.opacity(0.35))
+                    .fill(tintColor.opacity(gateKind == .seeking ? 0.45 : 0.35))
                     .frame(width: size, height: size)
 
                 if gateKind == .seeking {
-                    // Weathered stone gates grow moss at their feet — the
-                    // seeking thresholds have stood longer than memory.
-                    Ellipse()
-                        .fill(Color(red: 0.45, green: 0.52, blue: 0.35).opacity(0.30))
-                        .frame(width: size * 0.16, height: size * 0.07)
-                        .offset(x: -size * 0.30, y: size * 0.44)
-                    Ellipse()
-                        .fill(Color(red: 0.45, green: 0.52, blue: 0.35).opacity(0.22))
-                        .frame(width: size * 0.11, height: size * 0.05)
-                        .offset(x: size * 0.32, y: size * 0.46)
+                    seekingMoss
                 }
 
                 ropeAndShide(time: time)
             }
+        }
+    }
+
+    /// Weathered stone gates grow moss that creeps up the pillars — the
+    /// seeking thresholds have stood longer than memory. Heavier on the
+    /// left, the way weather leans on real stone.
+    private var seekingMoss: some View {
+        let moss = Color(red: 0.45, green: 0.52, blue: 0.35)
+        return ZStack {
+            Ellipse()
+                .fill(moss.opacity(0.50))
+                .frame(width: size * 0.20, height: size * 0.08)
+                .offset(x: -size * 0.29, y: size * 0.45)
+            Ellipse()
+                .fill(moss.opacity(0.38))
+                .frame(width: size * 0.09, height: size * 0.14)
+                .offset(x: -size * 0.24, y: size * 0.36)
+            Ellipse()
+                .fill(moss.opacity(0.26))
+                .frame(width: size * 0.06, height: size * 0.09)
+                .offset(x: -size * 0.29, y: size * 0.26)
+            Ellipse()
+                .fill(moss.opacity(0.44))
+                .frame(width: size * 0.15, height: size * 0.06)
+                .offset(x: size * 0.31, y: size * 0.46)
+            Ellipse()
+                .fill(moss.opacity(0.30))
+                .frame(width: size * 0.07, height: size * 0.11)
+                .offset(x: size * 0.27, y: size * 0.38)
         }
     }
 

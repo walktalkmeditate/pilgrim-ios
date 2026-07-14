@@ -656,6 +656,9 @@ struct InkScrollView: View {
         // The item ages with its walk (the dot's own fade) and drifts by
         // its type's depth weight — horizon barely moves, foreground most.
         let parallax = placement.type.parallaxWeight
+        // Seeking gates refuse the age fade — old stone grows older,
+        // not fainter. Everything else dims with its walk.
+        let sceneryOpacity = placement.gateKind == .seeking ? 1.0 : opacity
         return AnyView(
             SceneryItemView(
                 type: placement.type,
@@ -665,7 +668,7 @@ struct InkScrollView: View {
                 stones: placement.stones,
                 gateKind: placement.gateKind
             )
-            .opacity(opacity)
+            .opacity(sceneryOpacity)
             .offset(x: xOffset + placement.offset, y: -4)
             .visualEffect { content, proxy in
                 let frame = proxy.frame(in: .global)
