@@ -5,6 +5,18 @@ enum HapticEvent: Equatable {
     case lightDot(Int)
     case heavyDot(Int)
     case milestone(Int)
+    /// Crossing a threshold walk's torii — the milestone thump.
+    case gateDot(Int)
+    /// Crossing a seek walk's cairn — the soft double of a found place.
+    case cairnDot(Int)
+}
+
+/// What a dot means under the thumb: gates and cairns speak their own
+/// touch; everything else falls back to size.
+enum DotHapticKind {
+    case plain
+    case gate
+    case cairn
 }
 
 @Observable
@@ -12,6 +24,7 @@ class ScrollHapticState {
 
     var dotPositions: [CGFloat] = []
     var dotSizes: [CGFloat] = []
+    var dotKinds: [DotHapticKind] = []
     var milestonePositions: [CGFloat] = []
 
     private(set) var currentEvent: HapticEvent = .none
@@ -41,6 +54,13 @@ class ScrollHapticState {
             guard lastTriggeredIndex != index else { continue }
 
             lastTriggeredIndex = index
+            if index < dotKinds.count {
+                switch dotKinds[index] {
+                case .gate: return .gateDot(index)
+                case .cairn: return .cairnDot(index)
+                case .plain: break
+                }
+            }
             let isLarge = index < dotSizes.count && dotSizes[index] > 15
             return isLarge ? .heavyDot(index) : .lightDot(index)
         }

@@ -20,7 +20,7 @@ enum ScreenshotDataSeeder {
     ]
 
     struct ScreenshotWalk {
-        let daysAgo: Int
+        var daysAgo: Int
         let hour: Int
         let distanceMeters: Double
         let durationMinutes: Double
@@ -157,13 +157,29 @@ enum ScreenshotDataSeeder {
         ),
     ]
 
+    /// `--demo-journal-stress` replicates the demo walks into a deep,
+    /// months-spanning journal (diagnostics for ink-scroll culling — a
+    /// 6-walk journal can never scroll far enough to exercise the render
+    /// window).
+    static var stressWalks: [ScreenshotWalk] {
+        guard CommandLine.arguments.contains("--demo-journal-stress") else { return walks }
+        return (0..<15).flatMap { round in
+            walks.map { spec in
+                var copy = spec
+                copy.daysAgo += round * 9
+                return copy
+            }
+        }
+    }
+
     static func seed(completion: @escaping (Int) -> Void) {
         let calendar = Calendar.current
         let now = Date()
         var savedCount = 0
-        let total = walks.count
+        let seedSpecs = stressWalks
+        let total = seedSpecs.count
 
-        for (index, spec) in walks.enumerated() {
+        for (index, spec) in seedSpecs.enumerated() {
             guard let startDate = calendar.date(byAdding: .day, value: -spec.daysAgo, to: now),
                   let adjustedStart = calendar.date(bySettingHour: spec.hour, minute: Int.random(in: 0...45), second: 0, of: startDate) else {
                 savedCount += 1

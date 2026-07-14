@@ -49,6 +49,11 @@ struct InkScrollView: View {
             }
             .sensoryFeedback(.impact(weight: .heavy, intensity: 0.8), trigger: hapticState.currentEvent) { _, new in
                 if case .milestone = new { return true }
+                if case .gateDot = new { return true }
+                return false
+            }
+            .sensoryFeedback(.success, trigger: hapticState.currentEvent) { _, new in
+                if case .cairnDot = new { return true }
                 return false
             }
             .overlay(expandCard)
@@ -130,7 +135,7 @@ struct InkScrollView: View {
                 let position = positions[index]
                 let opacity = self.dotOpacity(index: index, total: snapshots.count)
                 let isNewest = index == 0
-                let scenery = self.sceneryForDot(snapshot: snapshot, position: position.center, viewportHeight: viewportHeight)
+                let scenery = self.sceneryForDot(snapshot: snapshot, viewportHeight: viewportHeight, opacity: opacity)
 
                 self.dotContent(
                     snapshot: snapshot,
@@ -570,98 +575,6 @@ struct InkScrollView: View {
         return 1.0 - normalized * 0.5
     }
 
-    // MARK: - Weather mood
-
-    private static func weatherAdjustedColor(_ color: Color, condition: String?) -> Color {
-        guard let condStr = condition,
-              let cond = WeatherCondition(rawValue: condStr) else { return color }
-
-        let uiColor = UIColor(color)
-        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        uiColor.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
-
-        switch cond {
-        case .clear:
-            h += 0.02
-            b = min(b * 1.05, 1)
-        case .partlyCloudy:
-            break
-        case .overcast:
-            s *= 0.85
-            b *= 0.95
-        case .lightRain:
-            h -= 0.01
-            b *= 0.88
-        case .heavyRain:
-            h -= 0.02
-            b *= 0.80
-        case .thunderstorm:
-            s *= 0.7
-            b *= 0.75
-        case .snow:
-            h += 0.03
-            b = min(b * 1.05, 1)
-            s *= 0.85
-        case .fog:
-            s *= 0.6
-            b *= 0.9
-        case .wind:
-            break
-        case .haze:
-            h += 0.02
-            s *= 0.85
-        }
-
-        return Color(hue: Double((h + 1).truncatingRemainder(dividingBy: 1)),
-                      saturation: Double(max(0, min(s, 1))),
-                      brightness: Double(max(0, min(b, 1))),
-                      opacity: Double(a))
-    }
-
-    // MARK: - Scenery
-
-    private func sceneryForDot(snapshot: WalkSnapshot, position: CGPoint, viewportHeight: CGFloat) -> AnyView? {
-        guard let placement = SceneryGenerator.scenery(for: snapshot) else {
-            return nil
-        }
-
-        let baseTint = Color(uiColor: SeasonalColorEngine.seasonalColor(
-            named: placement.tintColorName,
-            intensity: .full,
-            on: snapshot.startDate
-        ))
-        let tintColor = Self.weatherAdjustedColor(baseTint, condition: snapshot.weatherCondition)
-
-        let baseSize: CGFloat = 32
-        var h: UInt64 = 14695981039346656037
-        withUnsafeBytes(of: snapshot.id) { $0.forEach { h = (h ^ UInt64($0)) &* 1099511628211 } }
-        let sizeVariation = CGFloat(h % 20) / 20.0
-        let size = baseSize + sizeVariation * 24
-
-        let xOffset: CGFloat = placement.side == .left ? -40 - size / 2 : 40 + size / 2
-        let sceneryPosition = CGPoint(
-            x: position.x + xOffset + placement.offset,
-            y: position.y - 4
-        )
-
-        return AnyView(
-            SceneryItemView(
-                type: placement.type,
-                tintColor: tintColor,
-                size: size,
-                walkDate: snapshot.startDate
-            )
-            .position(sceneryPosition)
-            .visualEffect { content, proxy in
-                let frame = proxy.frame(in: .global)
-                let screenMid = viewportHeight / 2
-                let distFromCenter = (frame.midY - screenMid) / screenMid
-                return content.offset(x: distFromCenter * 8)
-            }
-            .accessibilityHidden(true)
-        )
-    }
-
     // MARK: - Path rendering
 
     private func turningColorForSegment(index: Int) -> Color? {
@@ -776,6 +689,11 @@ struct InkScrollView: View {
 
     private func configureHaptics(layout: Layout) {
         hapticState.dotPositions = layout.positions.map { $0.yOffset }
+        hapticState.dotKinds = snapshots.map { snap in
+            if snap.threshold != nil { return .gate }
+            if snap.isSeek && snap.foundPlaces > 0 { return .cairn }
+            return .plain
+        }
 
         hapticState.dotSizes = snapshots.map { snap in
             let view = WalkDotView(

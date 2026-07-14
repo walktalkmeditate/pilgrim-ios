@@ -5,7 +5,7 @@ enum ScenerySide {
 }
 
 enum SceneryType: CaseIterable {
-    case tree, lantern, butterfly, mountain, grass, torii, moon
+    case tree, lantern, butterfly, mountain, grass, torii, moon, cairn, drift
 
     var shape: AnyShape {
         switch self {
@@ -16,6 +16,8 @@ enum SceneryType: CaseIterable {
         case .grass: AnyShape(GrassShape())
         case .torii: AnyShape(ToriiGateShape())
         case .moon: AnyShape(MoonShape())
+        case .cairn: AnyShape(CairnStonesShape())
+        case .drift: AnyShape(ButterflyShape())
         }
     }
 
@@ -28,6 +30,25 @@ enum SceneryType: CaseIterable {
         case .grass: "moss"
         case .torii: "stone"
         case .moon: "fog"
+        case .cairn: "stone"
+        case .drift: "fog"
+        }
+    }
+
+    /// Parallax drift in points at the viewport edge — depth of field for
+    /// the scroll. Sky and horizon barely move; things at the walker's
+    /// feet move most, and drift rides the air nearest of all.
+    var parallaxWeight: CGFloat {
+        switch self {
+        case .mountain: 3
+        case .moon: 4
+        case .torii: 6
+        case .tree: 8
+        case .lantern: 9
+        case .cairn: 9
+        case .grass: 12
+        case .butterfly: 14
+        case .drift: 16
         }
     }
 }
@@ -36,38 +57,73 @@ struct SceneryPlacement {
     let type: SceneryType
     let side: ScenerySide
     let offset: CGFloat
+    /// Cairns only: stones in the stack — a two-stone base plus one per
+    /// found place, capped at five.
+    var stones: Int = 3
+    /// Gates only: which kind of threshold the torii marks.
+    var gateKind: WalkThreshold?
     var shape: AnyShape { type.shape }
-    var tintColorName: String { type.tintColorName }
+
+    /// Practice gates stand vermilion (rust); everything else keeps its
+    /// type's tint — seeking gates weathered stone among them.
+    var tintColorName: String {
+        if type == .torii, gateKind == .practice { return "rust" }
+        return type.tintColorName
+    }
 }
 
 struct SceneryGenerator {
 
     private static let sceneryChance: Double = 0.35
 
+    // The random torii is retired: gates now mark real thresholds only
+    // (see the deterministic branch in `scenery(for:)`). Its old band
+    // belongs to drift — the season's breath — so every other walk's
+    // rolled item stays exactly what it has always been.
     private static let weights: [(SceneryType, Double)] = [
         (.tree, 0.27),
         (.lantern, 0.18),
         (.grass, 0.22),
         (.butterfly, 0.14),
         (.mountain, 0.11),
-        (.torii, 0.05),
+        (.drift, 0.05),
         (.moon, 0.03),
     ]
 
     static func scenery(for snapshot: WalkSnapshot) -> SceneryPlacement? {
         let seed = deterministicSeed(for: snapshot)
+        let roll3 = seededRandom(seed: seed, salt: 3)
+        let side: ScenerySide = roll3 < 0.5 ? .left : .right
+        let roll4 = seededRandom(seed: seed, salt: 4)
+        let offset = CGFloat(roll4 * 15 - 7.5)
+
+        // Meaning outranks the lottery: threshold walks stand at a gate,
+        // and a seek that found places raises a cairn.
+        if let threshold = snapshot.threshold {
+            return SceneryPlacement(type: .torii, side: side, offset: offset, gateKind: threshold)
+        }
+        if snapshot.isSeek && snapshot.foundPlaces > 0 {
+            return SceneryPlacement(
+                type: .cairn,
+                side: side,
+                offset: offset,
+                stones: min(2 + snapshot.foundPlaces, 5)
+            )
+        }
 
         let roll1 = seededRandom(seed: seed, salt: 1)
-        guard roll1 < sceneryChance else { return nil }
+        #if DEBUG
+        // Diagnostics: the journal stress seed forces scenery on every walk
+        // so depth-dependent rendering failures separate cleanly from the
+        // ordinary 35% placement roll.
+        let forceScenery = CommandLine.arguments.contains("--demo-journal-stress")
+        #else
+        let forceScenery = false
+        #endif
+        guard forceScenery || roll1 < sceneryChance else { return nil }
 
         let roll2 = seededRandom(seed: seed, salt: 2)
         let type = pickType(roll: roll2)
-
-        let roll3 = seededRandom(seed: seed, salt: 3)
-        let side: ScenerySide = roll3 < 0.5 ? .left : .right
-
-        let roll4 = seededRandom(seed: seed, salt: 4)
-        let offset = CGFloat(roll4 * 15 - 7.5)
 
         return SceneryPlacement(type: type, side: side, offset: offset)
     }

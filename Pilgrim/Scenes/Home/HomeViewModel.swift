@@ -15,6 +15,13 @@ struct WalkSnapshot: Identifiable {
     let isShared: Bool
     let weatherCondition: String?
     let isSeek: Bool
+    /// Seek arrivals recorded on this walk — a found place earns the walk
+    /// a cairn on the ink scroll.
+    let foundPlaces: Int
+    /// Once-ever gates — threshold walks earn a torii on the ink scroll.
+    /// Practice gates (first walk, every tenth) stand vermilion; seeking
+    /// gates (first unknown, unknown milestones) stand weathered stone.
+    let threshold: WalkThreshold?
 
     var walkOnlyDuration: TimeInterval {
         max(0, duration - talkDuration - meditateDuration)
@@ -22,6 +29,12 @@ struct WalkSnapshot: Identifiable {
 
     var hasTalk: Bool { talkDuration > 0 }
     var hasMeditate: Bool { meditateDuration > 0 }
+}
+
+/// Which kind of gate a walk stands at.
+enum WalkThreshold {
+    case practice
+    case seeking
 }
 
 class HomeViewModel: ObservableObject {
@@ -71,16 +84,34 @@ class HomeViewModel: ObservableObject {
 
     private func buildSnapshots() {
         let seekWalkIDs = fetchSeekWalkIDs()
+        let arrivalCounts = GoshuinMilestones.arrivalCounts(for: walks)
         let reversed = walks.reversed()
         var cumulative: Double = 0
+        var arrivalsBefore = 0
         var snapshots: [WalkSnapshot] = []
 
-        for walk in reversed {
+        for (chronologicalIndex, walk) in reversed.enumerated() {
             cumulative += walk.distance
             let duration = walk.activeDuration
             let pace = duration > 0 && walk.distance > 0
                 ? duration / (walk.distance / 1000.0)
                 : 0
+            let walkNumber = chronologicalIndex + 1
+            let foundPlaces = walk.uuid.flatMap { arrivalCounts[$0] } ?? 0
+            // Mystery outranks routine: a tenth walk that also found its
+            // first unknown stands at a seeking gate.
+            let threshold: WalkThreshold?
+            if !GoshuinMilestones.seekingMilestones(
+                arrivalsInWalk: foundPlaces, arrivalsBefore: arrivalsBefore
+            ).isEmpty {
+                threshold = .seeking
+            } else if walkNumber == 1 || walkNumber % 10 == 0 {
+                threshold = .practice
+            } else {
+                threshold = nil
+            }
+            arrivalsBefore += foundPlaces
+
             snapshots.append(WalkSnapshot(
                 id: walk.id,
                 startDate: walk.startDate,
@@ -93,7 +124,9 @@ class HomeViewModel: ObservableObject {
                 favicon: walk.favicon,
                 isShared: ShareService.cachedShare(for: walk.id).map { !$0.isExpired } ?? false,
                 weatherCondition: walk.weatherCondition,
-                isSeek: walk.uuid.map(seekWalkIDs.contains) ?? false
+                isSeek: walk.uuid.map(seekWalkIDs.contains) ?? false,
+                foundPlaces: foundPlaces,
+                threshold: threshold
             ))
         }
 
