@@ -47,10 +47,6 @@ final class CollectiveCounterService: ObservableObject {
             case streakDate = "streak_date"
         }
 
-        var pilgrimageProgress: PilgrimageProgress {
-            PilgrimageProgress.from(distanceKm: totalDistanceKm)
-        }
-
         var meditationHours: Int {
             totalMeditationMin / 60
         }

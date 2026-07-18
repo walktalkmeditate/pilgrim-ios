@@ -9,6 +9,7 @@ struct PracticeSummaryHeader: View {
     @State private var statPhase = 0
     @State private var isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
     @ObservedObject private var counterService = CollectiveCounterService.shared
+    @ObservedObject private var routeCatalogService = CollectiveRouteCatalogService.shared
 
     var body: some View {
         VStack(spacing: Constants.UI.Padding.small) {
@@ -40,9 +41,17 @@ struct PracticeSummaryHeader: View {
 
             if let stats = counterService.stats, stats.totalWalks > 0 {
                 VStack(spacing: 4) {
-                    Text(stats.pilgrimageProgress.message)
-                        .font(Constants.Typography.caption.italic())
-                        .foregroundColor(.stone)
+                    if let dailyLine = routeCatalogService.dailyLine(for: Date(), collectiveKm: stats.totalDistanceKm) {
+                        // Two lines where the sibling below takes one: the route
+                        // name is curator-editable after ship, so a hard single
+                        // line would truncate a longer one at accessibility sizes.
+                        Text(dailyLine)
+                            .font(Constants.Typography.caption.italic())
+                            .foregroundColor(.stone)
+                            .multilineTextAlignment(.center)
+                            .minimumScaleFactor(0.7)
+                            .lineLimit(2)
+                    }
                     Text(collectiveStatsLine(stats))
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
