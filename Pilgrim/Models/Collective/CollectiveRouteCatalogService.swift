@@ -52,8 +52,9 @@ final class CollectiveRouteCatalogService: ObservableObject {
          fetchRemoteData: @escaping () async -> Data? = { await CollectiveRouteCatalogService.fetchPublishedCatalog() }) {
         self.catalogDirectory = catalogDirectory
         self.fetchRemoteData = fetchRemoteData
-        let localURL = catalogDirectory.appendingPathComponent(Self.cacheFileName)
-        initialLoad = Self.makeInitialLoad(service: self, localURL: localURL, bootstrapCatalogURL: bootstrapCatalogURL)
+        // Read through the stored property rather than re-deriving the path, so
+        // the load path cannot drift from where saveLocalCatalog writes.
+        initialLoad = Self.makeInitialLoad(service: self, localURL: localCatalogURL, bootstrapCatalogURL: bootstrapCatalogURL)
     }
 
     /// Loads off main (disk reads + JSON decodes, including bootstrap fallback)
@@ -112,8 +113,20 @@ final class CollectiveRouteCatalogService: ObservableObject {
             // bootstrap decode still in flight.
             await initialLoad?.value
 
-            guard let data = await fetchRemoteData(),
-                  let remote = try? Self.decoder.decode(CollectiveRouteCatalog.self, from: data) else {
+            guard let data = await fetchRemoteData() else {
+                isSyncing = false
+                return
+            }
+
+            // Decoded off main. This closure is @MainActor, so decoding inline
+            // would put a JSON parse and the canonical sort on the main thread
+            // at launch — the same shape as issue #42's stall, on an artifact
+            // that is curator-editable and can grow without an app release.
+            // The raw bytes stay in scope for the cache write below.
+            let decode = Task.detached(priority: .utility) {
+                try? Self.decoder.decode(CollectiveRouteCatalog.self, from: data)
+            }
+            guard let remote = await decode.value else {
                 isSyncing = false
                 return
             }

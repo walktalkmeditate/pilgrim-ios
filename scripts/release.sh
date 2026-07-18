@@ -425,10 +425,14 @@ cmd_release() {
     # from a clean checkout. Anything left unstaged here means every CI-built
     # binary ships whatever copy is already in git rather than the one just
     # pulled — a stale bundled artifact that nothing would report.
-    git add "$PBXPROJ" \
-            "Pilgrim/Support Files/collective-routes-bootstrap.json" \
-            "Pilgrim/Support Files/whispers-bootstrap.json" \
-            "Pilgrim/Support Files/*.aac"
+    #
+    # Staged as a directory rather than an enumeration. Listing each artifact
+    # meant a fifth one would need someone to remember this line, which is the
+    # same failure the paragraph above describes; it also missed deletions, and
+    # a pathspec matching nothing aborts under `set -e` after the build number
+    # has already been bumped.
+    git add "$PBXPROJ"
+    git add -A "Pilgrim/Support Files"
     git commit -m "release: v$version (build $build)"
     git push origin main
     pass "Committed and pushed"

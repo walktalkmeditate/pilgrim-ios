@@ -47,12 +47,19 @@ struct CollectiveTrailSection: View {
     /// summary and stays nil if the artifact failed to load, so nothing may
     /// assume an entry on first frame.
     ///
+    /// The line is an autoclosure so it is never built for a walk that cannot
+    /// show it. Phrasing resolves the day's entry and allocates a measurement
+    /// formatter — twice for a cosmic horizon — and this body re-evaluates on
+    /// every reveal transition and every publish from the shared service. Every
+    /// walk taken before this feature shipped, and every walk by a pilgrim who
+    /// never opted in, would otherwise pay for a line it immediately discards.
+    ///
     /// The collective's *total* is deliberately absent. The Settings line needs
     /// it and suppresses itself without it; this line does not, which is what
     /// lets a walk that ended on day twelve of a Camino with no signal still
     /// say something true.
-    static func renderedLine(wasContributed: Bool, contributionLine: String?) -> String? {
-        wasContributed ? contributionLine : nil
+    static func renderedLine(wasContributed: Bool, contributionLine: @autoclosure () -> String?) -> String? {
+        wasContributed ? contributionLine() : nil
     }
 
     private func trail(_ line: String) -> some View {

@@ -50,23 +50,30 @@ extension CollectiveRouteCatalog {
 
     /// The single entry every pilgrim on earth sees for this UTC day.
     ///
-    /// Each entry occupies as many slots in the pool as its seasonal weight,
-    /// and the day's scrambled seed indexes into it. The scramble is the point:
-    /// without it, consecutive dates walk contiguous runs of the same entry.
+    /// Each entry claims as many slots as its seasonal weight, and the day's
+    /// scrambled seed picks one. The scramble is the point: without it,
+    /// consecutive dates walk contiguous runs of the same entry.
+    ///
+    /// Walked as a running total rather than by materialising the pool. Both
+    /// surfaces call this from a view body, and building the array meant
+    /// copying every entry up to six times — each carrying refcounted strings
+    /// and month arrays — only to index once and discard it.
     func entry(for date: Date) -> CollectiveRoute? {
-        let month = CollectiveRouteSeed.utcMonth(of: date)
+        let day = CollectiveRouteSeed.utcDay(of: date)
 
-        var pool: [CollectiveRoute] = []
+        var totalWeight = 0
         for entry in entries {
-            let weight = entry.weight(inMonth: month)
-            guard weight > 0 else { continue }
-            pool.append(contentsOf: repeatElement(entry, count: weight))
+            totalWeight += entry.weight(inMonth: day.month)
         }
-        guard !pool.isEmpty else { return nil }
+        guard totalWeight > 0 else { return nil }
 
-        let scrambled = CollectiveRouteSeed.hash(CollectiveRouteSeed.utcSeed(for: date))
-        let index = Int(scrambled % UInt32(pool.count))
-        return pool[index]
+        let scrambled = CollectiveRouteSeed.hash(day.seed)
+        var remaining = Int(scrambled % UInt32(totalWeight))
+        for entry in entries {
+            remaining -= entry.weight(inMonth: day.month)
+            if remaining < 0 { return entry }
+        }
+        return entries.last
     }
 
     /// The Settings line. Nil when there is no catalog yet or no known
@@ -139,18 +146,28 @@ enum CollectiveRouteSeed {
         return calendar
     }()
 
+    /// The packed seed and the month from one calendar lookup.
+    ///
+    /// Selection needs both, and asking the calendar twice for the same instant
+    /// is exactly the repeated work a view body cannot afford — these are
+    /// ICU-backed calls, not arithmetic.
+    static func utcDay(of date: Date) -> (seed: UInt32, month: Int) {
+        let components = utcCalendar.dateComponents([.year, .month, .day], from: date)
+        let year = components.year ?? 0
+        let month = components.month ?? 1
+        let day = components.day ?? 0
+        let packed = year * 10_000 + month * 100 + day
+        return (UInt32(truncatingIfNeeded: packed), month)
+    }
+
     /// The UTC date packed as YYYYMMDD, matching the web's seed exactly.
     /// Truncating rather than trapping mirrors JavaScript's `>>> 0`.
     static func utcSeed(for date: Date) -> UInt32 {
-        let components = utcCalendar.dateComponents([.year, .month, .day], from: date)
-        let yearPart = (components.year ?? 0) * 10_000
-        let monthPart = (components.month ?? 0) * 100
-        let dayPart = components.day ?? 0
-        return UInt32(truncatingIfNeeded: yearPart + monthPart + dayPart)
+        utcDay(of: date).seed
     }
 
     static func utcMonth(of date: Date) -> Int {
-        utcCalendar.dateComponents([.month], from: date).month ?? 1
+        utcDay(of: date).month
     }
 
     /// The fmix32 finalizer the web scrambles its date seed with.

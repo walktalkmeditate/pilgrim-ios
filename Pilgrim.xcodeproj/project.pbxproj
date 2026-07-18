@@ -250,6 +250,7 @@
 		7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */; };
 		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
 		847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */; };
+		84BCD32DEACC4861A0DB176C /* CollectiveContributionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F01EBB4099CCC5ECC424C1E /* CollectiveContributionLog.swift */; };
 		86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */; };
 		8921FE4FE62B2D5D9770989C /* whisper-play-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = F42B3177F3066393F8828357 /* whisper-play-2.aac */; };
 		8A18817BF073E39D1CDDDCA7 /* CollectiveRouteCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A68D86FE44D740B891CF2C /* CollectiveRouteCatalog.swift */; };
@@ -846,6 +847,7 @@
 		75F7E64FC89078569CF45F03 /* VoiceGuidePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuidePlayer.swift; sourceTree = "<group>"; };
 		7C094BDB35610B61FBFB8488 /* PilgrimMapView+SeekWisp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+SeekWisp.swift"; sourceTree = "<group>"; };
 		7D4FA04890B06A26D5C59087 /* PilgrimPackageModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageModels.swift; sourceTree = "<group>"; };
+		7F01EBB4099CCC5ECC424C1E /* CollectiveContributionLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveContributionLog.swift; sourceTree = "<group>"; };
 		7F3A662D1EA6CD6D0FE3C361 /* whisper-lightness-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-lightness-3.aac"; sourceTree = "<group>"; };
 		7F7AF87641B4BC5D1B1E8FA9 /* PilgrimPackageBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageBuilder.swift; sourceTree = "<group>"; };
 		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
@@ -1998,6 +2000,7 @@
 				96A68D86FE44D740B891CF2C /* CollectiveRouteCatalog.swift */,
 				1F155D66CD2C5DF922BFF286 /* CollectiveRouteCatalogService.swift */,
 				CFC3AE0A67A2BD0CB573672A /* CollectiveMilestone.swift */,
+				7F01EBB4099CCC5ECC424C1E /* CollectiveContributionLog.swift */,
 			);
 			path = Collective;
 			sourceTree = "<group>";
@@ -3064,6 +3067,7 @@
 				AB58592D66491A8E54C4EE2B /* CollectiveRouteCatalogService.swift in Sources */,
 				48E98C7054E4A201ACFDA9E1 /* CollectiveMilestone.swift in Sources */,
 				3EEB46A2E910ADA7A264B6B2 /* CollectiveTrailSection.swift in Sources */,
+				84BCD32DEACC4861A0DB176C /* CollectiveContributionLog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
