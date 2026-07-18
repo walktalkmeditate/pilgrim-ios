@@ -43,30 +43,44 @@ VERSION=$(jq -r '.version // ""' "$TMP_JSON")
 [ -n "$VERSION" ] || fail "Artifact has no version — the app compares versions to decide when to refresh"
 
 TOTAL=$(jq '((.pilgrimages // []) + (.horizons // [])) | length' "$TMP_JSON")
+[ "$TOTAL" -gt 0 ] || fail "Artifact contains no entries"
 
 # Mirrors CollectiveRoute's decode contract exactly. Entries the app cannot
 # parse are dropped by the catalog's lossy array decode, which is deliberate —
 # it keeps a schema change from bricking clients in the wild, but it also means
 # a bad bake would bundle a half-empty catalog with no runtime signal at all.
 # Catching it here is the only place it makes a noise.
-DECODABLE=$(jq '[
-    ((.pilgrimages // []) + (.horizons // []))[]
-    | select(
+#
+# Each array is checked against its own kind rather than the two merged, because
+# a cosmic entry filed under .pilgrimages decodes cleanly on both platforms and
+# still splits them: pilgrim-landing's orderedEntries lays the day out by source
+# array while the Swift catalog lays it out by decoded kind, so the entry lands
+# at a different index on each and the two offer different routes for the same
+# date. Both sides stay silent about it — this is the only guard upstream.
+REJECTED=$(jq -r '
+    def decodes($kind):
         (.id | type == "string")
         and (.companyLine | type == "string")
         and (.km | type) == "number" and .km > 0
+        and .kind == $kind
         and (
-            (.kind == "route" and (.nameEn | type == "string"))
-            or (.kind == "cosmic" and (.preposition | type == "string") and (.body | type == "string"))
-        )
-    )
-] | length' "$TMP_JSON")
+            ($kind == "route" and (.nameEn | type == "string"))
+            or ($kind == "cosmic" and (.preposition | type == "string") and (.body | type == "string"))
+        );
+    def reject($array; $kind):
+        ((.[$array] // [])[] | select(decodes($kind) | not) | "\($array): \(.id // "(no id)") — "
+            + (if .kind != $kind
+               then "kind is \(.kind // "(none)"), expected \($kind) (mis-filed array)"
+               else "fails the \($kind) decode contract" end));
+    reject("pilgrimages"; "route"), reject("horizons"; "cosmic")
+' "$TMP_JSON")
 
-[ "$TOTAL" -gt 0 ] || fail "Artifact contains no entries"
-if [ "$DECODABLE" -ne "$TOTAL" ]; then
-    fail "$((TOTAL - DECODABLE)) of $TOTAL entries would be silently dropped by the app — re-bake in pilgrim-landing before publishing"
+if [ -n "$REJECTED" ]; then
+    echo "$REJECTED" | while IFS= read -r entry; do echo "  · $entry"; done
+    REJECTED_COUNT=$(echo "$REJECTED" | wc -l | tr -d '[:space:]')
+    fail "$REJECTED_COUNT of $TOTAL entries would be dropped or mis-filed by the app — re-bake in pilgrim-landing before publishing"
 fi
-pass "version=$VERSION, entries=$TOTAL (all decodable)"
+pass "version=$VERSION, entries=$TOTAL (all decodable, each in its own array)"
 
 step "Writing $BOOTSTRAP_JSON"
 mkdir -p "$SUPPORT_DIR"

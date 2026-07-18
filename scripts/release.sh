@@ -64,6 +64,17 @@ cmd_check() {
         fail "Workspace not found: $WORKSPACE"
     fi
 
+    # cmd_release stages "Pilgrim/Support Files" as a whole directory, which
+    # cannot tell the bootstrap steps' writes from an Info.plist tweak or an
+    # icon experiment already sitting in that folder. Gating here — before those
+    # steps deliberately dirty the tree — is what makes the sweep provably
+    # limited to what they just wrote.
+    if ! git diff --quiet || ! git diff --cached --quiet \
+        || [ -n "$(git ls-files --others --exclude-standard -- "Pilgrim/Support Files")" ]; then
+        fail "Working tree is dirty — the release commit stages $PBXPROJ and Pilgrim/Support Files wholesale, so commit or stash first (see git status)"
+    fi
+    pass "Working tree clean"
+
     local version
     version=$(current_marketing_version)
     local build
