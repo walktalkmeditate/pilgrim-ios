@@ -175,6 +175,7 @@
 		327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */; };
 		3388473FDC9340D4B1E61E75 /* CelestialCalculatorIlluminationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */; };
 		37049E79926C85FEE92366A2 /* GeneratedPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */; };
+		399E4F372A47137A69C039BF /* CollectiveRouteCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61858A83B246D92A1EDF558B /* CollectiveRouteCatalogTests.swift */; };
 		3BF183E8A14BB56BB9A98EF8 /* whisper-courage-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = 983897F799EB8C90B591419F /* whisper-courage-2.aac */; };
 		3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */; };
 		3D254F3D8D18F5FF91F89330 /* WhisperPlacementSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3542AA50A2E8FA62E52758C7 /* WhisperPlacementSheet.swift */; };
@@ -247,6 +248,7 @@
 		847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */; };
 		86DEAF7F2E18DAA455E516C8 /* VoiceGuideManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */; };
 		8921FE4FE62B2D5D9770989C /* whisper-play-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = F42B3177F3066393F8828357 /* whisper-play-2.aac */; };
+		8A18817BF073E39D1CDDDCA7 /* CollectiveRouteCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A68D86FE44D740B891CF2C /* CollectiveRouteCatalog.swift */; };
 		8A200FA63DDEC6D859F1C4EE /* WalkShareViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0BF1B23139F428720EB2CF /* WalkShareViewModel.swift */; };
 		8AFB81DFF602083B6B6C5255 /* whisper-gratitude-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = D4BACC6CBB52976FAD25B897 /* whisper-gratitude-3.aac */; };
 		8B72DAD9B0822C705C710838 /* whisper-play-9.aac in Resources */ = {isa = PBXBuildFile; fileRef = DD2DDA53AB9BF3A478409478 /* whisper-play-9.aac */; };
@@ -377,6 +379,7 @@
 		BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
+		C20E0DFA8CDB82064EEBB6C3 /* CollectiveRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84222C86D32DD5651B365FE4 /* CollectiveRoute.swift */; };
 		C2CF7F7376ACA1F2A6981E4D /* SeekStillnessDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE2429C168EC1EF14EC99CD /* SeekStillnessDetectorTests.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
 		C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */; };
@@ -816,6 +819,7 @@
 		5FE2429C168EC1EF14EC99CD /* SeekStillnessDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekStillnessDetectorTests.swift; sourceTree = "<group>"; };
 		60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporterArchivedTests.swift; sourceTree = "<group>"; };
 		617F15854281983E08F7E766 /* SceneryGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SceneryGeneratorTests.swift; sourceTree = "<group>"; };
+		61858A83B246D92A1EDF558B /* CollectiveRouteCatalogTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveRouteCatalogTests.swift; sourceTree = "<group>"; };
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
 		62963F6ED9C823C21B05E003 /* whisper-lightness-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-lightness-1.aac"; sourceTree = "<group>"; };
 		62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserPreferencesArchivedTests.swift; sourceTree = "<group>"; };
@@ -838,6 +842,7 @@
 		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
 		83BD1C5A8539657B3A5EC6BD /* whisper-presence-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-4.aac"; sourceTree = "<group>"; };
 		841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestService.swift; sourceTree = "<group>"; };
+		84222C86D32DD5651B365FE4 /* CollectiveRoute.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveRoute.swift; sourceTree = "<group>"; };
 		8585A815173A295C2F468057 /* WhisperService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
 		86222C880AE25FA86DCC6C66 /* View+ListRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "View+ListRow.swift"; sourceTree = "<group>"; };
 		862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPromptVoices.swift; sourceTree = "<group>"; };
@@ -854,6 +859,7 @@
 		93906AE2C0546C8D298FEF51 /* SeekPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekPersistenceTests.swift; sourceTree = "<group>"; };
 		94D4ED498F6BB16685DC466E /* whisper-play-6.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-6.aac"; sourceTree = "<group>"; };
 		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
+		96A68D86FE44D740B891CF2C /* CollectiveRouteCatalog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveRouteCatalog.swift; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
 		983897F799EB8C90B591419F /* whisper-courage-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-courage-2.aac"; sourceTree = "<group>"; };
 		98AE88EB65E9E2DBE7F0A927 /* whisper-stillness-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-1.aac"; sourceTree = "<group>"; };
@@ -1847,6 +1853,7 @@
 				7774DEE9E59C00EDC2262800 /* Seek */,
 				617F15854281983E08F7E766 /* SceneryGeneratorTests.swift */,
 				E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */,
+				61858A83B246D92A1EDF558B /* CollectiveRouteCatalogTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -1972,6 +1979,8 @@
 			children = (
 				567B99F42F701B8D0006A58E /* CollectiveCounterService.swift */,
 				567B99F52F701B8D0006A58E /* PilgrimageProgress.swift */,
+				84222C86D32DD5651B365FE4 /* CollectiveRoute.swift */,
+				96A68D86FE44D740B891CF2C /* CollectiveRouteCatalog.swift */,
 			);
 			path = Collective;
 			sourceTree = "<group>";
@@ -3032,6 +3041,8 @@
 				B3521FF9E5891FCB4A570140 /* SeekSeed.swift in Sources */,
 				93427BF9DC4BD6121A6ED7EC /* CairnStonesShape.swift in Sources */,
 				8F9C4B1686F9A259FDE462A4 /* InkScrollView+Scenery.swift in Sources */,
+				C20E0DFA8CDB82064EEBB6C3 /* CollectiveRoute.swift in Sources */,
+				8A18817BF073E39D1CDDDCA7 /* CollectiveRouteCatalog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3137,6 +3148,7 @@
 				3F0FA8A403AAC29DE24EB134 /* SeekSeedTests.swift in Sources */,
 				921CEB92C078A872D3C4ADED /* SceneryGeneratorTests.swift in Sources */,
 				510A5ED79C24B905DDD597A7 /* ScrollHapticEngineTests.swift in Sources */,
+				399E4F372A47137A69C039BF /* CollectiveRouteCatalogTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
