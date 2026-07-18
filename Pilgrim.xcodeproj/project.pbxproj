@@ -167,6 +167,7 @@
 		25679B99B2C71D0991CF99A2 /* whisper-play-11.aac in Resources */ = {isa = PBXBuildFile; fileRef = 1BEB21BACB47BB26018EECA3 /* whisper-play-11.aac */; };
 		26D2A22BA6DF2D3C6508C30F /* SeekSummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB2D6A557287CBD051BF314 /* SeekSummaryTests.swift */; };
 		26FA567381DD9B65054096FF /* whisper-play-4.aac in Resources */ = {isa = PBXBuildFile; fileRef = 6C077B3FA336178A9F4CBC6F /* whisper-play-4.aac */; };
+		270866FCC73A070D4842C4E3 /* collective-routes-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = 7028BC966EE0FBC3420C3B89 /* collective-routes-bootstrap.json */; };
 		2A3B9A951ECE0FF8A20C559F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2B671C6679119F8E9A7508 /* HapticManager.swift */; };
 		2B6F4CE80AB1FB057688EAA1 /* ComputationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D23FF60A762C30296A69E6 /* ComputationTests.swift */; };
 		2CEB6E11D16B97C4E7627E1E /* SeekChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DBAB0C576ADF8CAE31896E /* SeekChain.swift */; };
@@ -834,6 +835,7 @@
 		6E9C51C681E296C685A851E3 /* whisper-play-8.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-8.aac"; sourceTree = "<group>"; };
 		6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationStarGenerationTests.swift; sourceTree = "<group>"; };
 		6F17456C4D1E2DAED49B9AC6 /* SoundscapePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlayer.swift; sourceTree = "<group>"; };
+		7028BC966EE0FBC3420C3B89 /* collective-routes-bootstrap.json */ = {isa = PBXFileReference; includeInIndex = 1; path = "collective-routes-bootstrap.json"; sourceTree = "<group>"; };
 		721BF267E7540B2B259806D1 /* XCTestCase+Combine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Combine.swift"; sourceTree = "<group>"; };
 		73047DFD603DBB9F9380AF47 /* SeekDurationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekDurationView.swift; sourceTree = "<group>"; };
 		74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestService.swift; sourceTree = "<group>"; };
@@ -1488,6 +1490,7 @@
 				27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */,
 				EB9E58CB5C426052DB335181 /* seek-ping.aac */,
 				1EA24EC80491999A8B22B044 /* seek-bowl.aac */,
+				7028BC966EE0FBC3420C3B89 /* collective-routes-bootstrap.json */,
 			);
 			path = "Support Files";
 			sourceTree = "<group>";
@@ -2571,6 +2574,7 @@
 				B6EE97B5CE406DEAF57A3EEC /* whisper-presence-5.aac in Resources */,
 				702A98F10946CE89B0B52B7B /* seek-ping.aac in Resources */,
 				DAA03C0887E289E212886BB2 /* seek-bowl.aac in Resources */,
+				270866FCC73A070D4842C4E3 /* collective-routes-bootstrap.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

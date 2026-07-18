@@ -33,6 +33,7 @@ usage() {
     echo "  whatsnew          Create/edit curated App Store release notes"
     echo "  changelog        Generate release notes from git log since last tag"
     echo "  bootstrap-whispers Regenerate the bundled whisper bootstrap from R2"
+    echo "  bootstrap-routes   Regenerate the bundled collective-route bootstrap from the CDN"
     echo "  tag <version>   Create a git tag and GitHub Release"
     echo "  release         Full pipeline: check → bump → commit → archive → upload → changelog → tag"
     echo ""
@@ -364,6 +365,15 @@ bootstrap_whispers() {
     pass "Whisper bootstrap regenerated and Xcode project updated."
 }
 
+bootstrap_routes() {
+    step "Regenerating collective-route bootstrap bundle"
+    if [ ! -x scripts/regen-route-bootstrap.sh ]; then
+        fail "scripts/regen-route-bootstrap.sh not found or not executable"
+    fi
+    scripts/regen-route-bootstrap.sh
+    pass "Route bootstrap regenerated and Xcode project updated."
+}
+
 cmd_whatsnew() {
     local version
     version=$(current_marketing_version)
@@ -405,12 +415,20 @@ cmd_release() {
 
     cmd_check
     bootstrap_whispers
+    bootstrap_routes
     cmd_bump
 
     step "Committing version bump"
     local build
     build=$(current_build_number)
-    git add "$PBXPROJ"
+    # The bootstrap steps rewrite files in the working tree, and CI archives
+    # from a clean checkout. Anything left unstaged here means every CI-built
+    # binary ships whatever copy is already in git rather than the one just
+    # pulled — a stale bundled artifact that nothing would report.
+    git add "$PBXPROJ" \
+            "Pilgrim/Support Files/collective-routes-bootstrap.json" \
+            "Pilgrim/Support Files/whispers-bootstrap.json" \
+            "Pilgrim/Support Files/*.aac"
     git commit -m "release: v$version (build $build)"
     git push origin main
     pass "Committed and pushed"
@@ -449,6 +467,7 @@ case "$COMMAND" in
     upload)  cmd_upload ;;
     changelog) cmd_changelog ;;
     bootstrap-whispers) bootstrap_whispers ;;
+    bootstrap-routes) bootstrap_routes ;;
     whatsnew) cmd_whatsnew ;;
     tag)     [ -z "$ARG1" ] && fail "Usage: release.sh tag <version>" ; cmd_tag "$ARG1" ;;
     release) cmd_release ;;
