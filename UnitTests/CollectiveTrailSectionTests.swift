@@ -2,31 +2,6 @@
 import XCTest
 @testable import Pilgrim
 
-// MARK: - Fixtures
-
-/// The shipped artifact, trimmed to the fields iOS decodes. Selection is what
-/// makes the date-anchor test meaningful, so the real weighted pool is used
-/// rather than a two-entry stand-in.
-private let productionJSON = Data("""
-{
-  "version": "0faeb638520c",
-  "pilgrimages": [
-    { "id": "camino-frances", "kind": "route", "nameEn": "Camino de Santiago", "companyLine": "242,179 pilgrims completed it in 2025.", "km": 764, "bestMonths": [5,6,9], "peakMonths": [7,8] },
-    { "id": "camino-ingles", "kind": "route", "nameEn": "Camino Inglés", "companyLine": "30,204 pilgrims completed it in 2025.", "km": 112, "bestMonths": [4,5,6,9,10], "peakMonths": [7,8] },
-    { "id": "camino-norte", "kind": "route", "nameEn": "Camino del Norte", "companyLine": "21,521 pilgrims completed it in 2025.", "km": 784, "bestMonths": [5,6,9], "peakMonths": [7,8] },
-    { "id": "camino-portugues", "kind": "route", "nameEn": "Camino Portugués", "companyLine": "100,839 pilgrims completed it in 2025.", "km": 243, "bestMonths": [4,5,6,9,10], "peakMonths": [7,8] },
-    { "id": "camino-primitivo", "kind": "route", "nameEn": "Camino Primitivo", "companyLine": "27,871 pilgrims completed it in 2025.", "km": 263, "bestMonths": [5,6,9], "peakMonths": [7,8] },
-    { "id": "kumano-kodo", "kind": "route", "nameEn": "Kumano Kodo", "companyLine": "44,540 foreign visitors stayed overnight near Hongu in 2024.", "km": 39, "bestMonths": [3,4,5,10,11], "peakMonths": [4,5,10,11] },
-    { "id": "shikoku-88", "kind": "route", "nameEn": "Shikoku 88 Temple Pilgrimage", "companyLine": "About 150,000 made the circuit in 2025; 1,622 on foot.", "km": 1200, "bestMonths": [3,4,5,10,11], "peakMonths": [4,10] }
-  ],
-  "horizons": [
-    { "id": "around-earth", "kind": "cosmic", "preposition": "around", "body": "the Earth", "companyLine": "A handful have ever walked it; the first finished in 1974.", "km": 40075 },
-    { "id": "to-the-moon", "kind": "cosmic", "preposition": "to", "body": "the Moon", "companyLine": "No one has ever walked it.", "km": 384400 },
-    { "id": "to-the-sun", "kind": "cosmic", "preposition": "to", "body": "the Sun", "companyLine": "No one ever will.", "km": 149600000 }
-  ]
-}
-""".utf8)
-
 // MARK: - The render gate
 
 /// The gate is a pure function precisely so these live without a view, a
@@ -40,7 +15,7 @@ final class CollectiveTrailSectionGateTests: XCTestCase {
 
     override func setUpWithError() throws {
         UserPreferences.distanceMeasurementType.value = .kilometers
-        catalog = try JSONDecoder().decode(CollectiveRouteCatalog.self, from: productionJSON)
+        catalog = try decodeCatalog(collectiveParityFixtureJSON)
         line = try XCTUnwrap(catalog.contributionLine(for: walkDate, walkKm: 4.2))
     }
 
@@ -93,18 +68,12 @@ final class CollectiveTrailSectionGateTests: XCTestCase {
         )
     }
 
-    // AE6. The two callouts are gated on disjoint facts — the milestone on this
-    // pilgrim's own history, the trail on whether the walk was sent — so a walk
-    // that earns both shows both, stacked, rather than one displacing the other.
-    func testGate_walkCrossingAPersonalMilestone_satisfiesBothGatesIndependently() {
-        let personalMilestone: String? = "You've now walked 100 km total"
-
-        XCTAssertNotNil(personalMilestone, "WalkSummaryView renders its milestone callout on this being non-nil")
-        XCTAssertNotNil(
-            CollectiveTrailSection.renderedLine(wasContributed: true, contributionLine: line),
-            "and the trail renders beneath it on a condition that shares no input"
-        )
-    }
+    // AE6 — a contributed walk that also crosses a personal milestone renders
+    // both — is deliberately not asserted here. The milestone half of it is
+    // `WalkSummaryView.computeMilestone()`, a private method on the view that
+    // reaches into CoreStore; a test that stands up a local String beside this
+    // gate proves only that two non-nil values are both non-nil. Genuine
+    // coverage needs that method extracted from the view first.
 }
 
 // MARK: - Date anchor
@@ -118,7 +87,7 @@ final class CollectiveTrailSectionDateAnchorTests: XCTestCase {
 
     override func setUpWithError() throws {
         UserPreferences.distanceMeasurementType.value = .kilometers
-        catalog = try JSONDecoder().decode(CollectiveRouteCatalog.self, from: productionJSON)
+        catalog = try decodeCatalog(collectiveParityFixtureJSON)
     }
 
     override func tearDown() {
@@ -153,14 +122,21 @@ final class CollectiveTrailSectionDateAnchorTests: XCTestCase {
     }
 
     // The longest string the feature can produce, and the budget the section's
-    // line limit and scale factor were sized against. Company sentences are
-    // curator-editable after ship, so this is a tripwire rather than a fact.
+    // line limit and scale factor were sized against.
+    //
+    // Measured against the bundled artifact rather than the fixture above.
+    // Company sentences are curator-editable after ship — which is the entire
+    // reason this exists — so measuring a frozen transcription of them means a
+    // 300-character sentence could reach a pilgrim's screen with this still
+    // green.
     func testLine_longestPhrasingStaysWithinTheRenderBudget() throws {
+        let shipped = try BundledCollectiveArtifact.decoded()
         let longest = try XCTUnwrap(
-            catalog.entries.map { $0.contributionLine(walkKm: 12.34) }.max(by: { $0.count < $1.count })
+            shipped.entries.map { $0.contributionLine(walkKm: 12.34) }.max(by: { $0.count < $1.count })
         )
         XCTAssertLessThanOrEqual(longest.count, 130, "Re-tune lineLimit and minimumScaleFactor before letting this grow")
     }
+
 }
 
 // MARK: - Contribution log

@@ -30,32 +30,6 @@ private let fixtureJSON = Data("""
 }
 """.utf8)
 
-/// The shipped artifact at `../pilgrim-landing/assets/collective-routes.json`
-/// with `reflections` and `annual` stripped — iOS decodes neither of them.
-private let productionJSON = Data("""
-{
-  "version": "0faeb638520c",
-  "pilgrimages": [
-    { "id": "camino-frances", "kind": "route", "nameEn": "Camino de Santiago", "companyLine": "242,179 pilgrims completed it in 2025.", "km": 764, "bestMonths": [5,6,9], "peakMonths": [7,8] },
-    { "id": "camino-ingles", "kind": "route", "nameEn": "Camino Inglés", "companyLine": "30,204 pilgrims completed it in 2025.", "km": 112, "bestMonths": [4,5,6,9,10], "peakMonths": [7,8] },
-    { "id": "camino-norte", "kind": "route", "nameEn": "Camino del Norte", "companyLine": "21,521 pilgrims completed it in 2025.", "km": 784, "bestMonths": [5,6,9], "peakMonths": [7,8] },
-    { "id": "camino-portugues", "kind": "route", "nameEn": "Camino Portugués", "companyLine": "100,839 pilgrims completed it in 2025.", "km": 243, "bestMonths": [4,5,6,9,10], "peakMonths": [7,8] },
-    { "id": "camino-primitivo", "kind": "route", "nameEn": "Camino Primitivo", "companyLine": "27,871 pilgrims completed it in 2025.", "km": 263, "bestMonths": [5,6,9], "peakMonths": [7,8] },
-    { "id": "kumano-kodo", "kind": "route", "nameEn": "Kumano Kodo", "companyLine": "44,540 foreign visitors stayed overnight near Hongu in 2024.", "km": 39, "bestMonths": [3,4,5,10,11], "peakMonths": [4,5,10,11] },
-    { "id": "shikoku-88", "kind": "route", "nameEn": "Shikoku 88 Temple Pilgrimage", "companyLine": "About 150,000 made the circuit in 2025; 1,622 on foot.", "km": 1200, "bestMonths": [3,4,5,10,11], "peakMonths": [4,10] }
-  ],
-  "horizons": [
-    { "id": "around-earth", "kind": "cosmic", "preposition": "around", "body": "the Earth", "companyLine": "A handful have ever walked it; the first finished in 1974.", "km": 40075 },
-    { "id": "to-the-moon", "kind": "cosmic", "preposition": "to", "body": "the Moon", "companyLine": "No one has ever walked it.", "km": 384400 },
-    { "id": "to-the-sun", "kind": "cosmic", "preposition": "to", "body": "the Sun", "companyLine": "No one ever will.", "km": 149600000 }
-  ]
-}
-""".utf8)
-
-private func decodeCatalog(_ data: Data) throws -> CollectiveRouteCatalog {
-    try JSONDecoder().decode(CollectiveRouteCatalog.self, from: data)
-}
-
 /// Wraps bare entry literals in the artifact's envelope.
 private func catalogJSON(routes: String = "", horizons: String = "") -> Data {
     Data("{ \"version\": \"v\", \"pilgrimages\": [\(routes)], \"horizons\": [\(horizons)] }".utf8)
@@ -399,7 +373,7 @@ final class CollectiveRouteContributionTests: XCTestCase {
     }
 
     func testContributionLine_horizonDay_isNeverSkipped() throws {
-        let catalog = try decodeCatalog(productionJSON)
+        let catalog = try decodeCatalog(collectiveParityFixtureJSON)
         let horizonDay = DateFactory.makeDate(2026, 10, 12)
         XCTAssertEqual(catalog.entry(for: horizonDay)?.id, "around-earth")
         XCTAssertNotNil(catalog.contributionLine(for: horizonDay, walkKm: 4.2))
@@ -446,7 +420,7 @@ final class CollectiveRouteWebParityTests: XCTestCase {
     private var production: CollectiveRouteCatalog!
 
     override func setUpWithError() throws {
-        production = try decodeCatalog(productionJSON)
+        production = try decodeCatalog(collectiveParityFixtureJSON)
         UserPreferences.distanceMeasurementType.value = .kilometers
     }
 
