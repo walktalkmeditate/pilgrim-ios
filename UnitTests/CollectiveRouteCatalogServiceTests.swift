@@ -196,6 +196,7 @@ final class CollectiveRouteCatalogServiceSyncTests: XCTestCase {
 
         XCTAssertEqual(service.catalog?.version, "bootstrap-v1")
         XCTAssertEqual(service.catalog?.entries.map(\.id), ["from-bootstrap"])
+        XCTAssertFalse(service.isSyncing, "A failed fetch must still clear the flag, or the catalog freezes for the process")
     }
 
     @MainActor
@@ -205,6 +206,7 @@ final class CollectiveRouteCatalogServiceSyncTests: XCTestCase {
         XCTAssertEqual(service.catalog?.version, "bootstrap-v1")
         XCTAssertFalse(FileManager.default.fileExists(atPath: cacheURL.path),
                        "A payload the app cannot read must never reach the cache")
+        XCTAssertFalse(service.isSyncing, "An undecodable payload must still clear the flag, or the catalog freezes for the process")
     }
 
     // Nothing awaits `syncIfNeeded`, so a stuck flag would freeze the catalog
