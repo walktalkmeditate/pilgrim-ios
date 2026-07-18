@@ -1,7 +1,7 @@
 ---
 title: "feat: Daily-rotating collective route lens"
 type: feat
-status: active
+status: completed
 date: 2026-07-18
 origin: docs/brainstorms/2026-07-18-daily-rotating-pilgrimage-routes-requirements.md
 ---
@@ -393,7 +393,7 @@ Break the arithmetic into named intermediate values rather than a single chained
 - Test expectation: none — this is build tooling. Correctness is established by the clean-install verification below rather than by unit tests.
 
 **Verification:**
-- Covers AE4. A clean install on a simulator with networking disabled renders a line in Settings, and renders a different entry when the device date advances a day.
+- Covers AE4. A clean install on a simulator with networking disabled loads the catalog and rotates to a different entry when the device date advances a day. It renders no line in Settings, because the collective's total is unknown until a fetch has succeeded — the offline guarantee covers which route rotates, not the progress against it. The walk summary's line needs no total and does render offline.
 - A build with the bundled file deliberately removed trips the development-time failure with its remedy message.
 - The project file diff contains exactly the four expected registration entries and nothing else.
 
