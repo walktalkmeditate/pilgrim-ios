@@ -3,15 +3,10 @@ import Foundation
 
 /// One entry in the shared collective-route artifact: either a real pilgrimage
 /// route or a cosmic horizon.
-///
-/// The artifact ships the two as separate arrays. `CollectiveRouteCatalog`
-/// folds them into a single list of this type so selection and phrasing never
-/// have to infer what an entry is from the absence of a field.
 struct CollectiveRoute: Equatable {
 
-    /// What an entry is, carrying only the fields that entry actually has. A
-    /// route has a name a pilgrim would recognise; a horizon has a preposition
-    /// and an object — "around the Earth", "to the Sun" — and no name at all.
+    /// A horizon has no name a pilgrim would recognise, only a preposition and
+    /// an object: "around the Earth", "to the Sun".
     enum Kind: Equatable {
         case route(nameEn: String)
         case cosmic(preposition: String, body: String)
@@ -19,11 +14,9 @@ struct CollectiveRoute: Equatable {
 
     let id: String
     let kind: Kind
-    /// Length in kilometres. The artifact is metric throughout; conversion to
-    /// the pilgrim's unit happens at render time.
+    /// Length in kilometres — the artifact is metric throughout, converted to the pilgrim's unit at render time.
     let km: Double
-    /// A complete, unit-free sentence naming who has actually walked this
-    /// entry. Baked upstream so a curator can edit it without an app release.
+    /// A complete, unit-free sentence naming who has walked this entry, baked upstream so a curator can edit it without an app release.
     let companyLine: String
     let bestMonths: [Int]
     let peakMonths: [Int]
@@ -58,11 +51,8 @@ extension CollectiveRoute {
 
     /// How many slots this entry takes in the day's selection pool.
     ///
-    /// Horizons weigh the same all year — they have no season. A route in one
-    /// of its best months gains the season bonus, and only then can a peak
-    /// month add more. Peak is an intensifier on being in season, never a
-    /// boost of its own: a Camino whose peak months (July, August) fall
-    /// outside its best months stays at base weight through the heat.
+    /// Peak is an intensifier on being in season, never a boost of its own: a
+    /// route whose peak months fall outside its best months stays at base weight.
     func weight(inMonth month: Int) -> Int {
         guard !isCosmic else { return Self.baseWeight }
         guard bestMonths.contains(month) else { return Self.baseWeight }
@@ -79,27 +69,20 @@ extension CollectiveRoute {
 
     static let beginningLine = "The path is beginning."
 
-    /// Below this a horizon's percentage rounds to something meaningless, so
-    /// the remaining distance is stated instead.
+    /// Below this a horizon's percentage rounds to something meaningless, so the remaining distance is stated instead.
     private static let horizonPercentFloor = 1.0
 
-    /// `Int(_:)` traps above `Int.max`. A nonsense total from a bad API
-    /// response should misprint, not crash a walk summary.
+    /// `Int(_:)` traps above `Int.max`; a nonsense total from a bad API response should misprint, not crash a walk summary.
     private static let completionsCeiling = 1_000_000_000_000.0
 
-    /// The Settings phrasing: the collective's total measured against this
-    /// entry.
-    ///
-    /// Returns nil when the total is unknown, which it is until a counter
-    /// fetch has ever landed. Rendering the beginning-of-path line then would
-    /// tell a pilgrim the collective has walked nothing while it is several
-    /// hundred kilometres in, so the surface renders no line at all. A total
-    /// that is genuinely zero is a different answer, and does get that line.
+    /// The Settings phrasing: the collective's total measured against this entry.
+    /// Nil when the total is merely unknown (no counter fetch has landed), because
+    /// the beginning-of-path line would claim the collective has walked nothing
+    /// while it is hundreds of kilometres in. A genuinely zero total does get it.
     func dailyLine(collectiveKm: Double?) -> String? {
         guard let collectiveKm else { return nil }
-        // The web guards only `> 0`, which lets an infinite total through to
-        // print "Infinity times". Swift would trap converting it to Int, so
-        // the finiteness check is deliberate divergence.
+        // Deliberate divergence: the web guards only `> 0` and prints "Infinity
+        // times", where Swift would trap converting that total to Int.
         guard collectiveKm > 0, collectiveKm.isFinite else { return Self.beginningLine }
 
         let times = collectiveKm / km
@@ -114,10 +97,9 @@ extension CollectiveRoute {
         }
     }
 
-    /// The walk-summary phrasing: this walk's distance placed against the
-    /// day's entry, followed by the entry's own sentence about who has walked
-    /// it. Depends on no collective total, so it renders on a fresh offline
-    /// install and for every entry kind alike.
+    /// The walk-summary phrasing: this walk's distance against the day's entry,
+    /// then the entry's own sentence about who has walked it. Needs no collective
+    /// total, so it renders on a fresh offline install.
     func contributionLine(walkKm: Double) -> String {
         let walk = Self.formatted(km: walkKm, rounding: .oneDigit)
 
@@ -125,8 +107,7 @@ extension CollectiveRoute {
         case .route(let nameEn):
             return "Your \(walk) against the \(nameEn). \(companyLine)"
         case .cosmic(let preposition, let body):
-            // A horizon has no name a pilgrim would recognise, so its
-            // magnitude carries the contrast instead.
+            // Nameless, so its magnitude carries the contrast instead.
             let magnitude = Self.formatted(km: km, rounding: .wholeNumbers)
             return "Your \(walk) against \(magnitude) \(preposition) \(body). \(companyLine)"
         }
@@ -157,8 +138,7 @@ extension CollectiveRoute {
             return "We are \(formattedPercent)% of the way \(preposition) \(body)."
         }
 
-        // The one branch in the whole feature that states a raw distance, and
-        // so the one that has to honour the pilgrim's unit.
+        // The one branch that states a raw distance, so the one that must honour the pilgrim's unit.
         let remaining = Self.formatted(km: remainingKm, rounding: .wholeNumbers)
         return "\(remaining) \(preposition) \(body)."
     }
@@ -181,9 +161,8 @@ extension CollectiveRoute: Decodable {
         case id, kind, km, companyLine, nameEn, preposition, body, bestMonths, peakMonths
     }
 
-    /// Decoding the marker as an enum is what drops entries the app does not
-    /// understand: an unrecognised value throws, and the catalog's lossy array
-    /// decode swallows the failure while keeping every sibling.
+    /// Decoding as an enum is what drops entries the app does not understand: an
+    /// unrecognised value throws, and the catalog's lossy array decode absorbs it.
     private enum KindMarker: String, Decodable {
         case route
         case cosmic
@@ -193,16 +172,14 @@ extension CollectiveRoute: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         id = try container.decode(String.self, forKey: .id)
-        // An entry with nobody to name cannot satisfy the walk-summary line,
-        // so it is not an entry this app can render.
+        // Required: an entry with nobody to name cannot render the walk-summary line.
         companyLine = try container.decode(String.self, forKey: .companyLine)
         bestMonths = try container.decodeIfPresent([Int].self, forKey: .bestMonths) ?? []
         peakMonths = try container.decodeIfPresent([Int].self, forKey: .peakMonths) ?? []
 
         let distance = try container.decode(Double.self, forKey: .km)
         // A zero or non-finite length divides by zero in the phrasing and then
-        // traps converting the ratio to Int. Rejecting it at the boundary
-        // keeps every downstream call site free of the guard.
+        // traps converting the ratio to Int. Rejected here so no call site guards.
         guard distance.isFinite, distance > 0 else {
             throw DecodingError.dataCorruptedError(
                 forKey: .km,

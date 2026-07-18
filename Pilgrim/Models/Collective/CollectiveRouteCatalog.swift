@@ -3,22 +3,14 @@ import Foundation
 
 /// The decoded collective-route artifact, plus the daily selection and the
 /// phrasing both surfaces read from.
-///
-/// Selection and phrasing live here rather than on the service, following the
-/// convention `WhisperManifest` sets: tests then exercise the exact code the
-/// service uses, with no network and no file system in the way.
 struct CollectiveRouteCatalog: Equatable {
 
-    /// Content-derived, compared for inequality rather than order so a
-    /// rollback to an earlier artifact also applies.
+    /// Content-derived, so it carries no ordering — compared for inequality
+    /// rather than `>` so a rollback to an earlier artifact also reaches devices.
     let version: String
 
-    /// The selection pool in canonical order: routes sorted by identifier
-    /// ascending, then horizons in the order the artifact lists them.
-    ///
-    /// Stated explicitly because a curator may reorder either array at any
-    /// time. Consuming the artifact's own order would make iOS agree with the
-    /// web by coincidence, and only until the next bake.
+    /// The selection pool in canonical order: routes by identifier ascending, then
+    /// horizons as the artifact lists them — re-derived, never trusted from the wire.
     let entries: [CollectiveRoute]
 
     static let empty = CollectiveRouteCatalog(version: "", entries: [])
@@ -28,33 +20,22 @@ struct CollectiveRouteCatalog: Equatable {
         self.entries = Self.canonicallyOrdered(entries)
     }
 
-    /// The decode path, which keeps the artifact's two arrays apart.
-    ///
-    /// Which array an entry arrived in is the contract, not what kind it
-    /// decoded to. The web sorts `pilgrimages` and appends `horizons`
-    /// untouched, and never consults `kind` to order anything — so a single
-    /// mis-filed entry, a `kind: "cosmic"` sitting among the pilgrimages,
-    /// would sort here and not there. The pools would then differ, and with
-    /// them the entry almost every date resolves to.
+    /// The decode path, which keeps the artifact's two arrays apart. Which array an
+    /// entry arrived in is the contract, not its decoded `kind`: the web sorts
+    /// `pilgrimages` and appends `horizons` untouched, so a mis-filed cosmic entry
+    /// among the pilgrimages would sort here and not there, desyncing every date.
     private init(version: String, pilgrimages: [CollectiveRoute], horizons: [CollectiveRoute]) {
         self.version = version
         self.entries = Self.sortedById(pilgrimages) + horizons
     }
 
-    /// Routes first, sorted by identifier; horizons after, in the order given.
-    ///
-    /// Provenance is unavailable to callers holding a single flat list, so kind
-    /// stands in for it. Only reachable from the memberwise init — the decoder
-    /// takes the artifact's own arrays and never has to guess.
+    /// Kind stands in for provenance where a caller holds one flat list and the arrays are gone.
     static func canonicallyOrdered(_ entries: [CollectiveRoute]) -> [CollectiveRoute] {
         sortedById(entries.filter { !$0.isCosmic }) + entries.filter(\.isCosmic)
     }
 
-    /// The sort compares UTF-16 code units because that is what JavaScript's
-    /// `<` on strings does. Swift's own `<` agrees for the ASCII identifiers
-    /// the artifact ships today and would diverge the first time a curator
-    /// adds an accented one — which is exactly the kind of drift nobody would
-    /// notice until the two surfaces disagreed.
+    /// UTF-16 code units, because that is what JavaScript's `<` compares. Swift's
+    /// native `<` agrees on today's ASCII ids and diverges on the first accented one.
     private static func sortedById(_ entries: [CollectiveRoute]) -> [CollectiveRoute] {
         entries.sorted { $0.id.utf16.lexicographicallyPrecedes($1.id.utf16) }
     }
@@ -64,16 +45,8 @@ struct CollectiveRouteCatalog: Equatable {
 
 extension CollectiveRouteCatalog {
 
-    /// The single entry every pilgrim on earth sees for this UTC day.
-    ///
-    /// Each entry claims as many slots as its seasonal weight, and the day's
-    /// scrambled seed picks one. The scramble is the point: without it,
-    /// consecutive dates walk contiguous runs of the same entry.
-    ///
-    /// Walked as a running total rather than by materialising the pool. Both
-    /// surfaces call this from a view body, and building the array meant
-    /// copying every entry up to six times — each carrying refcounted strings
-    /// and month arrays — only to index once and discard it.
+    /// The single entry every pilgrim on earth sees for this UTC day, weighted by
+    /// season. Without the scramble, consecutive dates walk runs of the same entry.
     func entry(for date: Date) -> CollectiveRoute? {
         let day = CollectiveRouteSeed.utcDay(of: date)
 
@@ -92,14 +65,11 @@ extension CollectiveRouteCatalog {
         return entries.last
     }
 
-    /// The Settings line. Nil when there is no catalog yet or no known
-    /// collective total — both surfaces render nothing rather than a guess.
     func dailyLine(for date: Date, collectiveKm: Double?) -> String? {
         entry(for: date).flatMap { $0.dailyLine(collectiveKm: collectiveKm) }
     }
 
-    /// The walk-summary line, anchored to the walk's own date so reopening an
-    /// old walk shows what it showed the day it ended.
+    /// Anchored to the walk's own date, so reopening an old walk shows what it showed the day it ended.
     func contributionLine(for date: Date, walkKm: Double) -> String? {
         entry(for: date).map { $0.contributionLine(walkKm: walkKm) }
     }
@@ -113,20 +83,10 @@ extension CollectiveRouteCatalog: Decodable {
         case version, pilgrimages, horizons
     }
 
-    /// Dropping an entry that fails to decode keeps the rest of the catalog
-    /// renderable, but this is damage limitation and not graceful degradation.
-    /// Every entry contributes its weight to the day's total, and the day's
-    /// scrambled seed is taken modulo that total — so losing one entry
-    /// re-resolves *every* date, not only the days it would have claimed. A
-    /// client that drops an entry the web keeps is desynced all year, silently.
-    ///
-    /// A new entry kind is therefore the worst case rather than the safe one:
-    /// the web pools anything that is not `cosmic`, while an unrecognised
-    /// marker throws here and the entry vanishes. Kinds have to reach the app
-    /// before they reach the artifact.
-    ///
-    /// Both arrays are optional for a milder reason: a bake that emitted only
-    /// one of them should cost the pilgrim half the rotation, not all of it.
+    /// A dropped entry is damage limitation, not graceful degradation: every entry
+    /// feeds the day's total weight and the seed is taken modulo it, so losing one
+    /// silently re-resolves *every* date. A new `kind` is therefore the worst case,
+    /// not the safe one, and has to reach the app before it reaches the artifact.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let version = try container.decode(String.self, forKey: .version)
@@ -141,12 +101,8 @@ extension CollectiveRouteCatalog: Decodable {
 
 // MARK: - LossyDecodable
 
-/// Wraps a `Decodable` so a failed decode stores nil instead of throwing.
-///
-/// Deliberately duplicated from `WhisperManifest.swift` rather than promoted to
-/// a shared type. The whisper schema and the route schema should be free to
-/// move apart; sharing the wrapper would couple one contract's tolerance to
-/// the other's.
+/// Wraps a `Decodable` so a failed decode stores nil instead of throwing. Duplicated
+/// from `WhisperManifest.swift` so neither schema's tolerance constrains the other's.
 private struct LossyDecodable<T: Decodable>: Decodable {
     let value: T?
 
@@ -158,12 +114,8 @@ private struct LossyDecodable<T: Decodable>: Decodable {
 // MARK: - Seeding
 
 /// The deterministic generator behind the daily rotation, ported from the web's
-/// `utcSeed` and `hashSeed` so both surfaces land on the same entry.
-///
-/// Deliberately not `Pilgrim/Models/SeededRNG.swift`, for the same reason
-/// `LightReading` keeps its own generator: the contract here is "this UTC day
-/// resolves to this entry forever, on every platform". A change to a shared RNG
-/// would silently reshuffle everyone's day and desync iOS from pilgrimapp.org.
+/// `utcSeed` and `hashSeed`. Deliberately not `SeededRNG`: a UTC day must resolve to
+/// the same entry forever on every platform, so a shared RNG could never change.
 enum CollectiveRouteSeed {
 
     private static let utcCalendar: Calendar = {
@@ -172,11 +124,7 @@ enum CollectiveRouteSeed {
         return calendar
     }()
 
-    /// The packed seed and the month from one calendar lookup.
-    ///
-    /// Selection needs both, and asking the calendar twice for the same instant
-    /// is exactly the repeated work a view body cannot afford — these are
-    /// ICU-backed calls, not arithmetic.
+    /// Seed and month from one calendar lookup — selection needs both, and these are ICU calls, not arithmetic.
     static func utcDay(of date: Date) -> (seed: UInt32, month: Int) {
         let components = utcCalendar.dateComponents([.year, .month, .day], from: date)
         let year = components.year ?? 0
@@ -186,8 +134,7 @@ enum CollectiveRouteSeed {
         return (UInt32(truncatingIfNeeded: packed), month)
     }
 
-    /// The UTC date packed as YYYYMMDD, matching the web's seed exactly.
-    /// Truncating rather than trapping mirrors JavaScript's `>>> 0`.
+    /// The UTC date packed as YYYYMMDD; truncating rather than trapping mirrors JavaScript's `>>> 0`.
     static func utcSeed(for date: Date) -> UInt32 {
         utcDay(of: date).seed
     }
@@ -196,11 +143,9 @@ enum CollectiveRouteSeed {
         utcDay(of: date).month
     }
 
-    /// The fmix32 finalizer the web scrambles its date seed with.
-    ///
-    /// Both multiplies must use the overflow operator: `UInt32` multiplication
-    /// traps for essentially every input here, where JavaScript's `Math.imul`
-    /// simply keeps the low 32 bits.
+    /// The fmix32 finalizer the web scrambles its date seed with. Both multiplies
+    /// must use `&*`: plain `UInt32` multiplication traps for essentially every
+    /// input here, where JavaScript's `Math.imul` keeps the low 32 bits.
     static func hash(_ seed: UInt32) -> UInt32 {
         let multiplier: UInt32 = 0x45d9_f3b
         var hashed = seed

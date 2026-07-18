@@ -3,13 +3,9 @@ import Foundation
 import Combine
 
 /// Owns the collective-route artifact: loads a catalog from disk at launch,
-/// refreshes it from the CDN, and publishes whichever is current.
-///
-/// Shaped after `WhisperManifestService` deliberately rather than approximately.
-/// The pieces that look like ceremony — the cheap convenience init, the detached
-/// initial load, the service-as-parameter load factory, the await before the
-/// version comparison — are each closing a specific failure this app has already
-/// shipped once.
+/// refreshes it from the CDN, publishes whichever is current. Shaped after
+/// `WhisperManifestService` — the cheap init, detached load, service-as-parameter
+/// and await-before-compare each close a stall this app has already shipped once.
 final class CollectiveRouteCatalogService: ObservableObject {
 
     static let shared = CollectiveRouteCatalogService()
@@ -20,8 +16,7 @@ final class CollectiveRouteCatalogService: ObservableObject {
     private let catalogDirectory: URL
     private let fetchRemoteData: () async -> Data?
     private(set) var initialLoad: Task<Void, Never>?
-    /// Exposed for the same reason as `initialLoad`: nothing in the app awaits a
-    /// sync, so without a handle the tests could only poll for its effects.
+    /// Exposed for tests: nothing in the app awaits a sync, so without a handle they could only poll for its effects.
     private(set) var syncTask: Task<Void, Never>?
 
     private static let cacheFileName = "routes.json"
@@ -41,19 +36,14 @@ final class CollectiveRouteCatalogService: ObservableObject {
     /// Init must stay cheap: the first `.shared` touch happens on the main
     /// thread during the welcome entrance (issue #42), so the cache / bootstrap
     /// disk reads and JSON decodes run in a detached task and only the publish
-    /// hops back to main. Parameters are injectable for tests.
-    ///
-    /// The network is injectable too, which `WhisperManifestService` does not
-    /// need to be — its remote path has no test. This one's version comparison
-    /// is the whole point of the unit, and it cannot be exercised through
-    /// `URLSession.shared`.
+    /// hops back to main. Parameters are injectable for tests, the network included
+    /// — the version comparison is the point of this unit.
     init(catalogDirectory: URL,
          bootstrapCatalogURL: @escaping () -> URL?,
          fetchRemoteData: @escaping () async -> Data? = { await CollectiveRouteCatalogService.fetchPublishedCatalog() }) {
         self.catalogDirectory = catalogDirectory
         self.fetchRemoteData = fetchRemoteData
-        // Read through the stored property rather than re-deriving the path, so
-        // the load path cannot drift from where saveLocalCatalog writes.
+        // Through the stored property, so the load path cannot drift from where saveLocalCatalog writes.
         initialLoad = Self.makeInitialLoad(service: self, localURL: localCatalogURL, bootstrapCatalogURL: bootstrapCatalogURL)
     }
 
@@ -84,12 +74,9 @@ final class CollectiveRouteCatalogService: ObservableObject {
 
     // MARK: - Public lookups
     //
-    // All reads must happen on the main thread because @Published state
-    // is only mutated on main (via syncIfNeeded's @MainActor Task and the
-    // initial load's MainActor publish). If a future caller hits the
-    // assert, the call site needs to dispatch to main first. Until the
-    // initial load lands, lookups return nothing — every surface has to
-    // tolerate that window rather than assume a catalog on first frame.
+    // Reads must happen on main, because @Published state is only mutated there.
+    // A caller that trips the assert needs to dispatch to main first. Until the
+    // initial load lands these return nil, and no surface may assume otherwise.
 
     func dailyLine(for date: Date, collectiveKm: Double?) -> String? {
         assert(Thread.isMainThread)
@@ -104,18 +91,15 @@ final class CollectiveRouteCatalogService: ObservableObject {
     // MARK: - Sync
 
     func syncIfNeeded() {
-        // Checked before the task is built, not inside it: a second call
-        // arriving mid-sync would otherwise replace `syncTask` with a handle
-        // that returns immediately, and anything awaiting that handle would
-        // see a sync that never ran as one that finished.
+        // Before the task is built, not inside it: a re-entrant call would otherwise
+        // swap `syncTask` for a handle that returns at once, reading as a finished sync.
         guard !isSyncing else { return }
 
         syncTask = Task { @MainActor in
             isSyncing = true
 
-            // Before the comparison, never after: a fast network response
-            // would otherwise be published and then overwritten by the
-            // bootstrap decode still in flight.
+            // Before the comparison, never after: a fast network response would
+            // otherwise be overwritten by the bootstrap decode still in flight.
             await initialLoad?.value
 
             guard let data = await fetchRemoteData() else {
@@ -123,29 +107,22 @@ final class CollectiveRouteCatalogService: ObservableObject {
                 return
             }
 
-            // Decoded off main. This closure is @MainActor, so decoding inline
-            // would put a JSON parse and the canonical sort on the main thread
-            // at launch — the same shape as issue #42's stall, on an artifact
-            // that is curator-editable and can grow without an app release.
-            // The raw bytes stay in scope for the cache write below.
+            // Off main: this closure is @MainActor, so an inline decode would put
+            // a JSON parse and the canonical sort on the main thread at launch —
+            // issue #42's shape, on an artifact that can grow without a release.
             let decode = Task.detached(priority: .utility) {
                 try? Self.decoder.decode(CollectiveRouteCatalog.self, from: data)
             }
-            // An entry-less catalog is rejected exactly like an undecodable
-            // one, because the decoder cannot tell them apart: both arrays are
-            // optional and every element decodes lossily, so a bake that drops
-            // a field only Swift requires — `companyLine`, which the web reads
-            // nowhere — parses cleanly into nothing. Adopting it would cache a
-            // dark artifact over the working bundled one and leave a pilgrim
-            // with no line for as long as they stay offline.
+            // An empty catalog is rejected like an undecodable one: arrays are optional
+            // and elements decode lossily, so a bake dropping a field only Swift needs
+            // — `companyLine` — parses cleanly into nothing and would cache dark.
             guard let remote = await decode.value, !remote.entries.isEmpty else {
                 isSyncing = false
                 return
             }
 
-            // Inequality rather than `>`: the version is content-derived and
-            // carries no ordering, so a curator reverting to a prior artifact
-            // has to reach devices too.
+            // Inequality rather than `>`: the version carries no ordering, so a
+            // curator reverting to a prior artifact has to reach devices too.
             if catalog?.version != remote.version {
                 catalog = remote
                 await saveLocalCatalog(data)
@@ -158,12 +135,9 @@ final class CollectiveRouteCatalogService: ObservableObject {
     // MARK: - Private
 
     private static func fetchPublishedCatalog() async -> Data? {
-        // Bypass URLCache. The CDN serves this artifact with an ETag but no
-        // Cache-Control, so URLSession falls back to heuristic freshness and
-        // may replay a response the curator has already rolled back. The
-        // version comparison below is `!=` rather than `>` precisely so a
-        // rollback reaches devices; a replayed body would blunt that on the
-        // one launch where it has to land.
+        // Bypass URLCache: the CDN serves this with an ETag but no Cache-Control,
+        // so URLSession falls back to heuristic freshness and may replay a body the
+        // curator has already rolled back — on the launch where the rollback has to land.
         var request = URLRequest(url: Config.Collective.routeCatalogURL)
         request.cachePolicy = .reloadIgnoringLocalCacheData
         do {
@@ -178,11 +152,9 @@ final class CollectiveRouteCatalogService: ObservableObject {
         }
     }
 
-    /// Cache, then bundled bootstrap. A cached file that decodes to no entries
-    /// is passed over rather than adopted: decoding is not evidence the file is
-    /// usable, and a build shipped before the sync guard could have written one.
-    /// Serving it would shadow a working bootstrap sitting unread in the app's
-    /// own bundle for every launch until the network came back.
+    /// Cache, then bundled bootstrap. An entry-less cached file is passed over rather
+    /// than adopted — a build shipped before the sync guard could have written one,
+    /// and serving it would shadow a working bootstrap for every offline launch.
     private static func loadInitialCatalog(localURL: URL, bootstrapURL: URL?) -> CollectiveRouteCatalog {
         if FileManager.default.fileExists(atPath: localURL.path),
            let data = try? Data(contentsOf: localURL),
@@ -202,11 +174,9 @@ final class CollectiveRouteCatalogService: ObservableObject {
         return bootstrap
     }
 
-    /// Caches the exact bytes the CDN served instead of re-encoding the decoded
-    /// catalog. `CollectiveRouteCatalog` is decode-only by design, and a
-    /// round-trip through an encoder would strip every field this app ignores
-    /// today — handing the next launch a thinner artifact than the one fetched,
-    /// and one that a later app version could no longer grow into.
+    /// Caches the exact bytes the CDN served rather than re-encoding the decoded
+    /// catalog: a round-trip would strip every field this app ignores today,
+    /// handing the next launch a thinner artifact than the one fetched.
     private func saveLocalCatalog(_ data: Data) async {
         let url = localCatalogURL
         await Task.detached(priority: .utility) {
