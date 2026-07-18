@@ -52,7 +52,9 @@ struct WalkSummaryView: View {
     @State private var cachedCelestialSnapshot: CelestialSnapshot?
     @State private var lightReading: LightReading?
     @State private var hasRevealedLightReading: Bool = false
+    @State private var walkWasContributed = false
     private let sharingTracker = WalkSharingTracker()
+    private let contributionLog = CollectiveContributionLog()
 
     enum RevealPhase {
         case hidden, zoomed, revealed
@@ -80,6 +82,12 @@ struct WalkSummaryView: View {
                     if let milestone {
                         milestoneCallout(milestone)
                     }
+                    CollectiveTrailSection(
+                        walkDate: walk.startDate,
+                        walkKm: walk.distance / 1000,
+                        wasContributed: walkWasContributed,
+                        revealPhase: revealPhase
+                    )
                     statsRow
                     weatherLine
                     celestialLine
@@ -132,6 +140,7 @@ struct WalkSummaryView: View {
                 loadExistingTranscriptions()
                 recentWalkSnippets = computeRecentWalkSnippets()
                 milestone = computeMilestone()
+                walkWasContributed = walk.uuid.map { contributionLog.wasContributed(walkUUID: $0.uuidString) } ?? false
                 if UserPreferences.celestialAwarenessEnabled.value {
                     let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                     cachedCelestialSnapshot = CelestialCalculator.snapshot(for: walk.startDate, system: system)
