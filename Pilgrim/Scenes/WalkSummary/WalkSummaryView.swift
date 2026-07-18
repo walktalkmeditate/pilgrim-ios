@@ -53,6 +53,11 @@ struct WalkSummaryView: View {
     @State private var lightReading: LightReading?
     @State private var hasRevealedLightReading: Bool = false
     @State private var walkWasContributed = false
+    /// Resolved on appear and whenever the catalog lands, never in a body.
+    /// `CollectiveTrailSection` re-renders with this view roughly thirty times
+    /// during the distance count-up, and phrasing the line allocates a
+    /// measurement formatter and an ICU calendar lookup on every pass.
+    @State private var collectiveContributionLine: String?
     private let sharingTracker = WalkSharingTracker()
     private let contributionLog = CollectiveContributionLog()
 
@@ -83,8 +88,7 @@ struct WalkSummaryView: View {
                         milestoneCallout(milestone)
                     }
                     CollectiveTrailSection(
-                        walkDate: walk.startDate,
-                        walkKm: walk.distance / 1000,
+                        contributionLine: collectiveContributionLine,
                         wasContributed: walkWasContributed,
                         revealPhase: revealPhase
                     )
@@ -141,6 +145,7 @@ struct WalkSummaryView: View {
                 recentWalkSnippets = computeRecentWalkSnippets()
                 milestone = computeMilestone()
                 walkWasContributed = walk.uuid.map { contributionLog.wasContributed(walkUUID: $0.uuidString) } ?? false
+                resolveCollectiveContributionLine(from: CollectiveRouteCatalogService.shared.catalog)
                 if UserPreferences.celestialAwarenessEnabled.value {
                     let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
                     cachedCelestialSnapshot = CelestialCalculator.snapshot(for: walk.startDate, system: system)
@@ -165,6 +170,12 @@ struct WalkSummaryView: View {
                 if newState == .completed {
                     reloadTranscriptionsFromDatabase()
                 }
+            }
+            // Subscribed rather than observed: a summary opened before the
+            // detached catalog load lands still fills its trail line, without
+            // handing this whole view a second invalidation source.
+            .onReceive(CollectiveRouteCatalogService.shared.$catalog) { catalog in
+                resolveCollectiveContributionLine(from: catalog)
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationStack {
@@ -246,6 +257,28 @@ struct WalkSummaryView: View {
                 }
                 return WalkSnippet(date: w.startDate, placeName: nil, transcriptionPreview: preview, weatherCondition: w.weatherCondition, celestialSummary: celestialSummary)
             }
+    }
+
+    /// Phrasing is skipped outright for a walk that was never sent to the
+    /// collective — the section would discard the line anyway, and most walks
+    /// in a journal predate the feature.
+    ///
+    /// The catalog arrives as a parameter rather than being read back off the
+    /// service, because `@Published` emits in `willSet`: a subscriber that
+    /// re-reads the property mid-publish sees the value being replaced, not the
+    /// one that just landed.
+    private func resolveCollectiveContributionLine(from catalog: CollectiveRouteCatalog?) {
+        guard walkWasContributed else {
+            collectiveContributionLine = nil
+            return
+        }
+        // The walk's own start date, never `Date()`. This screen opens for any
+        // walk in the journal, so anchoring to today would silently re-route a
+        // walk from last month every time it is reopened.
+        collectiveContributionLine = catalog?.contributionLine(
+            for: walk.startDate,
+            walkKm: walk.distance / 1000
+        )
     }
 
     private func loadExistingTranscriptions() {

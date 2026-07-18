@@ -104,8 +104,13 @@ final class CollectiveRouteCatalogService: ObservableObject {
     // MARK: - Sync
 
     func syncIfNeeded() {
+        // Checked before the task is built, not inside it: a second call
+        // arriving mid-sync would otherwise replace `syncTask` with a handle
+        // that returns immediately, and anything awaiting that handle would
+        // see a sync that never ran as one that finished.
+        guard !isSyncing else { return }
+
         syncTask = Task { @MainActor in
-            guard !isSyncing else { return }
             isSyncing = true
 
             // Before the comparison, never after: a fast network response
@@ -126,7 +131,14 @@ final class CollectiveRouteCatalogService: ObservableObject {
             let decode = Task.detached(priority: .utility) {
                 try? Self.decoder.decode(CollectiveRouteCatalog.self, from: data)
             }
-            guard let remote = await decode.value else {
+            // An entry-less catalog is rejected exactly like an undecodable
+            // one, because the decoder cannot tell them apart: both arrays are
+            // optional and every element decodes lossily, so a bake that drops
+            // a field only Swift requires — `companyLine`, which the web reads
+            // nowhere — parses cleanly into nothing. Adopting it would cache a
+            // dark artifact over the working bundled one and leave a pilgrim
+            // with no line for as long as they stay offline.
+            guard let remote = await decode.value, !remote.entries.isEmpty else {
                 isSyncing = false
                 return
             }
@@ -146,8 +158,16 @@ final class CollectiveRouteCatalogService: ObservableObject {
     // MARK: - Private
 
     private static func fetchPublishedCatalog() async -> Data? {
+        // Bypass URLCache. The CDN serves this artifact with an ETag but no
+        // Cache-Control, so URLSession falls back to heuristic freshness and
+        // may replay a response the curator has already rolled back. The
+        // version comparison below is `!=` rather than `>` precisely so a
+        // rollback reaches devices; a replayed body would blunt that on the
+        // one launch where it has to land.
+        var request = URLRequest(url: Config.Collective.routeCatalogURL)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         do {
-            let (data, response) = try await URLSession.shared.data(from: Config.Collective.routeCatalogURL)
+            let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                 return nil
             }
@@ -158,10 +178,16 @@ final class CollectiveRouteCatalogService: ObservableObject {
         }
     }
 
+    /// Cache, then bundled bootstrap. A cached file that decodes to no entries
+    /// is passed over rather than adopted: decoding is not evidence the file is
+    /// usable, and a build shipped before the sync guard could have written one.
+    /// Serving it would shadow a working bootstrap sitting unread in the app's
+    /// own bundle for every launch until the network came back.
     private static func loadInitialCatalog(localURL: URL, bootstrapURL: URL?) -> CollectiveRouteCatalog {
         if FileManager.default.fileExists(atPath: localURL.path),
            let data = try? Data(contentsOf: localURL),
-           let saved = try? decoder.decode(CollectiveRouteCatalog.self, from: data) {
+           let saved = try? decoder.decode(CollectiveRouteCatalog.self, from: data),
+           !saved.entries.isEmpty {
             return saved
         }
         guard let bootstrapURL,

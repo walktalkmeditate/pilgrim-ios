@@ -8,6 +8,12 @@ struct PracticeSummaryHeader: View {
 
     @State private var statPhase = 0
     @State private var isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+    /// Resolved from the modifiers below rather than in the body, which
+    /// re-evaluates on every stat-cycling tap and every defaults change.
+    /// Phrasing costs an entry lookup, an ICU calendar call and a measurement
+    /// formatter — the same cost `CollectiveTrailSection` refuses to pay per
+    /// frame.
+    @State private var dailyLine: String?
     @ObservedObject private var counterService = CollectiveCounterService.shared
     @ObservedObject private var routeCatalogService = CollectiveRouteCatalogService.shared
 
@@ -41,7 +47,7 @@ struct PracticeSummaryHeader: View {
 
             if let stats = counterService.stats, stats.totalWalks > 0 {
                 VStack(spacing: 4) {
-                    if let dailyLine = routeCatalogService.dailyLine(for: Date(), collectiveKm: stats.totalDistanceKm) {
+                    if let dailyLine {
                         // Two lines where the sibling below takes one: the route
                         // name is curator-editable after ship, so a hard single
                         // line would truncate a longer one at accessibility sizes.
@@ -89,9 +95,21 @@ struct PracticeSummaryHeader: View {
         .padding(.vertical, Constants.UI.Padding.big)
         .task { await counterService.fetch() }
         .animation(.easeInOut(duration: 0.5), value: counterService.milestone?.number)
+        .onAppear(perform: refreshDailyLine)
+        .onChange(of: counterService.stats?.totalDistanceKm) { _, _ in refreshDailyLine() }
+        .onChange(of: routeCatalogService.catalog?.version) { _, _ in refreshDailyLine() }
         .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
             isImperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+            // The line carries a raw distance on its sub-one-percent horizon
+            // branch, and `CustomMeasurementFormatting` reads the preference
+            // when it formats rather than publishing a change. Re-resolving
+            // here is what makes a unit toggle reach the cached string.
+            refreshDailyLine()
         }
+    }
+
+    private func refreshDailyLine() {
+        dailyLine = routeCatalogService.dailyLine(for: Date(), collectiveKm: counterService.stats?.totalDistanceKm)
     }
 
     private func playMilestoneBell() {

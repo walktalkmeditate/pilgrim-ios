@@ -11,11 +11,12 @@ import SwiftUI
 /// than two different ideas: your own arc, then the larger one.
 struct CollectiveTrailSection: View {
 
-    /// The walk's own start date, never `Date()`. This screen opens for any
-    /// walk in the journal, so anchoring to today would silently re-route a
-    /// walk from last month every time it is reopened.
-    let walkDate: Date
-    let walkKm: Double
+    /// Already phrased, and resolved by the owning summary rather than here.
+    /// Building it costs an entry lookup, an ICU calendar call and a
+    /// measurement formatter — twice for a cosmic horizon — and this view
+    /// re-renders with its ancestor about thirty times during the distance
+    /// count-up while none of its own inputs change.
+    let contributionLine: String?
     /// Whether this walk actually moved the counter, read from
     /// `CollectiveContributionLog` — a past-tense fact, not the live
     /// contribution preference.
@@ -23,17 +24,13 @@ struct CollectiveTrailSection: View {
     let revealPhase: WalkSummaryView.RevealPhase
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ObservedObject private var catalogService = CollectiveRouteCatalogService.shared
 
     /// A beat behind the personal milestone's 0.3s rather than in lockstep
     /// with it, so the two land as two thoughts.
     private static let revealDelay: TimeInterval = 0.55
 
     var body: some View {
-        if let line = Self.renderedLine(
-            wasContributed: wasContributed,
-            contributionLine: catalogService.contributionLine(for: walkDate, walkKm: walkKm)
-        ) {
+        if let line = Self.renderedLine(wasContributed: wasContributed, contributionLine: contributionLine) {
             trail(line)
         }
     }
@@ -47,19 +44,12 @@ struct CollectiveTrailSection: View {
     /// summary and stays nil if the artifact failed to load, so nothing may
     /// assume an entry on first frame.
     ///
-    /// The line is an autoclosure so it is never built for a walk that cannot
-    /// show it. Phrasing resolves the day's entry and allocates a measurement
-    /// formatter — twice for a cosmic horizon — and this body re-evaluates on
-    /// every reveal transition and every publish from the shared service. Every
-    /// walk taken before this feature shipped, and every walk by a pilgrim who
-    /// never opted in, would otherwise pay for a line it immediately discards.
-    ///
     /// The collective's *total* is deliberately absent. The Settings line needs
     /// it and suppresses itself without it; this line does not, which is what
     /// lets a walk that ended on day twelve of a Camino with no signal still
     /// say something true.
-    static func renderedLine(wasContributed: Bool, contributionLine: @autoclosure () -> String?) -> String? {
-        wasContributed ? contributionLine() : nil
+    static func renderedLine(wasContributed: Bool, contributionLine: String?) -> String? {
+        wasContributed ? contributionLine : nil
     }
 
     private func trail(_ line: String) -> some View {

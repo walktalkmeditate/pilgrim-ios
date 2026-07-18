@@ -28,19 +28,35 @@ struct CollectiveRouteCatalog: Equatable {
         self.entries = Self.canonicallyOrdered(entries)
     }
 
+    /// The decode path, which keeps the artifact's two arrays apart.
+    ///
+    /// Which array an entry arrived in is the contract, not what kind it
+    /// decoded to. The web sorts `pilgrimages` and appends `horizons`
+    /// untouched, and never consults `kind` to order anything — so a single
+    /// mis-filed entry, a `kind: "cosmic"` sitting among the pilgrimages,
+    /// would sort here and not there. The pools would then differ, and with
+    /// them the entry almost every date resolves to.
+    private init(version: String, pilgrimages: [CollectiveRoute], horizons: [CollectiveRoute]) {
+        self.version = version
+        self.entries = Self.sortedById(pilgrimages) + horizons
+    }
+
     /// Routes first, sorted by identifier; horizons after, in the order given.
     ///
+    /// Provenance is unavailable to callers holding a single flat list, so kind
+    /// stands in for it. Only reachable from the memberwise init — the decoder
+    /// takes the artifact's own arrays and never has to guess.
+    static func canonicallyOrdered(_ entries: [CollectiveRoute]) -> [CollectiveRoute] {
+        sortedById(entries.filter { !$0.isCosmic }) + entries.filter(\.isCosmic)
+    }
+
     /// The sort compares UTF-16 code units because that is what JavaScript's
     /// `<` on strings does. Swift's own `<` agrees for the ASCII identifiers
     /// the artifact ships today and would diverge the first time a curator
     /// adds an accented one — which is exactly the kind of drift nobody would
     /// notice until the two surfaces disagreed.
-    static func canonicallyOrdered(_ entries: [CollectiveRoute]) -> [CollectiveRoute] {
-        let routes = entries
-            .filter { !$0.isCosmic }
-            .sorted { $0.id.utf16.lexicographicallyPrecedes($1.id.utf16) }
-        let horizons = entries.filter(\.isCosmic)
-        return routes + horizons
+    private static func sortedById(_ entries: [CollectiveRoute]) -> [CollectiveRoute] {
+        entries.sorted { $0.id.utf16.lexicographicallyPrecedes($1.id.utf16) }
     }
 }
 
@@ -97,11 +113,19 @@ extension CollectiveRouteCatalog: Decodable {
         case version, pilgrimages, horizons
     }
 
-    /// Entries that fail to decode are dropped and the rest of the catalog
-    /// still renders, so the bake can add fields or entry kinds without
-    /// bricking clients already in the wild.
+    /// Dropping an entry that fails to decode keeps the rest of the catalog
+    /// renderable, but this is damage limitation and not graceful degradation.
+    /// Every entry contributes its weight to the day's total, and the day's
+    /// scrambled seed is taken modulo that total — so losing one entry
+    /// re-resolves *every* date, not only the days it would have claimed. A
+    /// client that drops an entry the web keeps is desynced all year, silently.
     ///
-    /// Both arrays are optional for the same reason: a bake that emitted only
+    /// A new entry kind is therefore the worst case rather than the safe one:
+    /// the web pools anything that is not `cosmic`, while an unrecognised
+    /// marker throws here and the entry vanishes. Kinds have to reach the app
+    /// before they reach the artifact.
+    ///
+    /// Both arrays are optional for a milder reason: a bake that emitted only
     /// one of them should cost the pilgrim half the rotation, not all of it.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -109,7 +133,9 @@ extension CollectiveRouteCatalog: Decodable {
         let routes = try container.decodeIfPresent([LossyDecodable<CollectiveRoute>].self, forKey: .pilgrimages) ?? []
         let horizons = try container.decodeIfPresent([LossyDecodable<CollectiveRoute>].self, forKey: .horizons) ?? []
 
-        self.init(version: version, entries: routes.compactMap(\.value) + horizons.compactMap(\.value))
+        self.init(version: version,
+                  pilgrimages: routes.compactMap(\.value),
+                  horizons: horizons.compactMap(\.value))
     }
 }
 
