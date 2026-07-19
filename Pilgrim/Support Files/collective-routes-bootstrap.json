@@ -1,0 +1,318 @@
+{
+  "version": "0faeb638520c",
+  "pilgrimages": [
+    {
+      "id": "camino-frances",
+      "kind": "route",
+      "nameEn": "Camino de Santiago",
+      "companyLine": "242,179 pilgrims completed it in 2025.",
+      "km": 764,
+      "bestMonths": [
+        5,
+        6,
+        9
+      ],
+      "peakMonths": [
+        7,
+        8
+      ],
+      "reflections": [
+        "What did you carry up that mountain that you did not need?",
+        "How do you treat your body when it asks you to slow down?",
+        "Who are you when you step out of the wilderness and back into the world?",
+        "What would you forgive if you could? Who would you forgive?",
+        "What have you told someone on this path that you have not told anyone at home?",
+        "When was the last time you gave something to a stranger expecting nothing in return?",
+        "What is the difference between the discomfort that means stop and the discomfort that means keep going?",
+        "What would your life look like if it were this simple every day?",
+        "What traditions have you inherited that you did not choose but now carry willingly?",
+        "Can you be fully present on a day when nothing remarkable happens?",
+        "What is the difference between being alone and being lonely?",
+        "What does it mean to you that humans have walked this land for hundreds of thousands of years?",
+        "What part of you resists entering the empty spaces?",
+        "When the landscape offers you nothing, what do you find inside?",
+        "What keeps you walking when there is no scenery, no company, and no visible destination?",
+        "What would happen if you stopped trying to earn your rest?",
+        "What do you discover about yourself when all external support is removed?",
+        "Now that turning back is as far as going forward, what does commitment feel like in your body?",
+        "What will you miss about the emptiness when it is gone?",
+        "After the simplicity of the meseta, what do you actually miss?",
+        "What comforts are you most reluctant to leave behind, on the Camino and in life?",
+        "When did you last do something extravagant for no practical reason?",
+        "What are you preparing to let go of at the cross?",
+        "What stone have you been carrying? Can you name it?",
+        "What does the space feel like where the weight used to be?",
+        "When your body said it could not climb any further, what answered back?",
+        "What defenses have you been carrying that you no longer need?",
+        "Does someone else's shorter journey diminish yours?",
+        "What are you holding onto that has already changed its form?",
+        "Who has held the path open for you in your life, and have you thanked them?",
+        "Which version of yourself do you want to bring home?",
+        "What has this walk made true that was not true before you started?",
+        "You have arrived. But have you arrived at what you were looking for?"
+      ],
+      "annual": {
+        "count": 242179,
+        "year": 2025,
+        "metricNote": "Camino Francés only; 45.6% of 531,000 total Compostelas in 2025",
+        "source": "https://solviturambulando.es/api/yearly-demographics.json?year={YEAR}&v=5"
+      }
+    },
+    {
+      "id": "camino-ingles",
+      "kind": "route",
+      "nameEn": "Camino Inglés",
+      "companyLine": "30,204 pilgrims completed it in 2025.",
+      "km": 112,
+      "bestMonths": [
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "peakMonths": [
+        7,
+        8
+      ],
+      "reflections": [
+        "What does it mean to begin a journey at the edge of the sea instead of at the edge of a continent?",
+        "What pace does the route ask of you, and what pace did you arrive with?",
+        "When you turn away from the sea, what part of you is being asked to turn with it?",
+        "What does it feel like to walk toward a place whose only purpose is to receive walkers?",
+        "Why is it sometimes harder to arrive than to walk?",
+        "Walking only six days is no less arrival than walking thirty. What did this short pilgrimage teach you that a longer one might not have?"
+      ],
+      "annual": {
+        "count": 30204,
+        "year": 2025,
+        "metricNote": "Camino Inglés (Ferrol + A Coruña starts combined); 5.7% of 531,000 total Compostelas",
+        "source": "https://solviturambulando.es/api/yearly-demographics.json?year={YEAR}&v=5"
+      }
+    },
+    {
+      "id": "camino-norte",
+      "kind": "route",
+      "nameEn": "Camino del Norte",
+      "companyLine": "21,521 pilgrims completed it in 2025.",
+      "km": 784,
+      "bestMonths": [
+        5,
+        6,
+        9
+      ],
+      "peakMonths": [
+        7,
+        8
+      ],
+      "reflections": [
+        "You have chosen the hardest of the Caminos. What does beginning feel like when the first day already tells you the truth about what you are in for?",
+        "The route is settling into a pattern of climbs and bays. What rhythm did you arrive with, and does it match what the coast is asking?",
+        "The cliffs at Zumaia are 65 million years old. What does your tiredness feel like measured against that?",
+        "You left the coast for a day. Did you miss it, or was the silence of the forest a gift?",
+        "You arrived at a place whose name was already in your head before you saw it. What does walking into history feel like when the history is recent?",
+        "Four days into an inland section. What is the forest teaching that the coast could not?",
+        "You walked from an oak tree to a Frank Gehry museum in two days. What does the Camino do with that kind of contrast?",
+        "The pilgrimage tradition and the industrial revolution usually live in different books. What does it mean to walk through both on the same afternoon?",
+        "Three regions now — Gipuzkoa, Bizkaia, Cantabria — and you have not yet walked a thousandth of the Camino. What is the long walk teaching that a short one could not?",
+        "Your body is now doing something it could not do two weeks ago. What is the work of the long Camino?",
+        "A stranger has been welcoming walkers like you for forty years. What does that kind of quiet commitment look like in your own life?",
+        "You arrived by water instead of by foot. What does entering a city by boat change about first impressions?",
+        "You walked 36 km to a village that is beautiful because nothing has changed in 900 years. What does preservation mean on a Camino whose whole point is movement?",
+        "Gaudí and the Camino do not belong to the same century, but they share a village. What does encountering the unexpected do to the shape of a pilgrimage?",
+        "The indianos left Asturias poor and came back rich. What do you carry back from your own long journey?",
+        "A blowhole is a place where what is hidden comes out with force. What have you been carrying that the Camino has not yet let loose?",
+        "A beach inside a meadow. A cave with 15,000-year-old art. What does it mean to be surprised every day for three weeks?",
+        "You are walking over 140-million-year-old footprints. What is the scale of your journey measured against that?",
+        "A Camino fork is an old decision, older than roads. What is the logic that tells you which path to take?",
+        "Roman port, Franco monument, post-industrial beach. What is the right way to walk through layered history in a single afternoon?",
+        "Industrial beauty is a difficult phrase. Is it a contradiction or a reality?",
+        "The Camino has a rhythm of city and silence. Which of the two asks more of you?",
+        "A short day after many long ones is a gift. What do you do with a gift of time on a Camino?",
+        "A small chapel on a cliff is a place people keep building. What does this kind of building stand for?",
+        "A hidden harbour, a Nobel laureate buried in his home village. What does home mean to someone who leaves and comes back?",
+        "The coast has been your companion for nearly three weeks. How do you say goodbye to a landscape that walked with you?",
+        "You crossed four regions on foot in four weeks. What did each one take from you, and what did each one add?",
+        "The sea is gone. What fills the space that the sound of the sea used to fill?",
+        "A small city was once a capital. What does smallness mean when it is built with weight?",
+        "The plateau is different from the coast in a way that takes a whole day to understand. What have you learned that you can only articulate in retrospect?",
+        "New pilgrims are starting the journey you are ending. What would you tell them if they asked?",
+        "You were a new pilgrim 30 days ago. What would the version of you who arrives in Baamonde by bus need from the version of you who walked here?",
+        "You are staying in a house that has welcomed pilgrims for a thousand years. What do you bring to it, and what does it give back?",
+        "Your solitary Camino has just merged with thousands of others. What does belonging feel like after so much solitude?"
+      ],
+      "annual": {
+        "count": 21521,
+        "year": 2025,
+        "metricNote": "Camino del Norte; 4.1% of 531,000 total Compostelas in 2025. The longest non-Francés Camino but less walked than the Primitivo — demanding, less serviced, and favoured by experienced pilgrims.",
+        "source": "https://solviturambulando.es/api/yearly-demographics.json?year={YEAR}&v=5"
+      }
+    },
+    {
+      "id": "camino-portugues",
+      "kind": "route",
+      "nameEn": "Camino Portugués",
+      "companyLine": "100,839 pilgrims completed it in 2025.",
+      "km": 243,
+      "bestMonths": [
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "peakMonths": [
+        7,
+        8
+      ],
+      "reflections": [
+        "What did you pack that you are already wondering whether you actually need?",
+        "What pace does your body actually want, when you stop imposing one?",
+        "What in your life have you been refusing to cross, the way the Romans refused to cross the Lethes?",
+        "What burden did you notice on the climb that you had not noticed on the flat?",
+        "When has a border in your life turned out to be smaller than you thought it would be?",
+        "Can you carry the quiet of a forest into a factory zone? What does that take?",
+        "Who do you think of when you imagine arriving in Santiago?",
+        "Where on this route have you felt most like a guest, and where most like you belong?",
+        "What has been carrying you, the way hot water has been carrying Roman soldiers' feet for two thousand years?",
+        "What piece of your own story have you been waiting to touch with your own hands?",
+        "Not 'what did you learn?' — that question usually comes too early. Just: what are you grateful for, at this moment, standing in this square?"
+      ],
+      "annual": {
+        "count": 100839,
+        "year": 2025,
+        "metricNote": "Camino Portugués Central only; the Coastal route is tracked as a sibling variant",
+        "source": "https://solviturambulando.es/api/yearly-demographics.json?year={YEAR}&v=5"
+      }
+    },
+    {
+      "id": "camino-primitivo",
+      "kind": "route",
+      "nameEn": "Camino Primitivo",
+      "companyLine": "27,871 pilgrims completed it in 2025.",
+      "km": 263,
+      "bestMonths": [
+        5,
+        6,
+        9
+      ],
+      "peakMonths": [
+        7,
+        8
+      ],
+      "reflections": [
+        "What does it mean to walk a path that someone else made by walking it first?",
+        "What does it feel like to be greeted by people whose accent you cannot place?",
+        "What does it feel like to walk in a forest where humans have not been the dominant presence for thousands of years?",
+        "When the choice is between the hard scenic route and the safe ordinary route, which version of yourself chooses?",
+        "What does it mean to spend a day above the everyday — and what do you bring back down with you?",
+        "How do you feel about descent? Is it always a relief, or does some part of you miss the climbing?",
+        "What changes when you cross a border that has no fence?",
+        "What does it feel like to walk through landscape that seems to want nothing from you?",
+        "How does it feel to enter a city through walls built before Christianity reached Spain?",
+        "When the hardest part is behind you, what part of you misses it?",
+        "When your path joins someone else's, who do you become?"
+      ],
+      "annual": {
+        "count": 27871,
+        "year": 2025,
+        "metricNote": "Camino Primitivo; 5.2% of 531,000 total Compostelas in 2025",
+        "source": "https://solviturambulando.es/api/yearly-demographics.json?year={YEAR}&v=5"
+      }
+    },
+    {
+      "id": "kumano-kodo",
+      "kind": "route",
+      "nameEn": "Kumano Kodo",
+      "companyLine": "44,540 foreign visitors stayed overnight near Hongu in 2024.",
+      "km": 39,
+      "bestMonths": [
+        3,
+        4,
+        5,
+        10,
+        11
+      ],
+      "peakMonths": [
+        4,
+        5,
+        10,
+        11
+      ],
+      "reflections": [
+        "What did you leave behind at the gate?",
+        "When did the forest stop being scenery and become presence?",
+        "Is it the threshold that changes, or the one who crosses it?",
+        "What did the mountains give you that you could not have found in a building?"
+      ],
+      "annual": {
+        "count": 44540,
+        "year": 2024,
+        "metricNote": "Foreign overnight visitors in Hongu area — all-time record",
+        "source": "https://www.agara.co.jp/article/491535"
+      }
+    },
+    {
+      "id": "shikoku-88",
+      "kind": "route",
+      "nameEn": "Shikoku 88 Temple Pilgrimage",
+      "companyLine": "About 150,000 made the circuit in 2025; 1,622 on foot.",
+      "km": 1200,
+      "bestMonths": [
+        3,
+        4,
+        5,
+        10,
+        11
+      ],
+      "peakMonths": [
+        4,
+        10
+      ],
+      "reflections": [
+        "What awakened in you when you decided to walk?",
+        "Now that you know what this costs, do you still choose it?",
+        "What discipline sustains you when the path offers no reward?",
+        "What is at your own Cape Ashizuri — the farthest point from home?",
+        "What has this walk taught you that you could not have learned sitting still?",
+        "Where does the sacred live when the wilderness is gone?",
+        "What in you has been strengthened by the climbing, and what has fallen away?",
+        "What does it mean to approach the end of something you have given yourself to?",
+        "In the darkness beneath Kūkai's birthplace, what did your hands find that your eyes could not?",
+        "The circle closes. What opened in you that you want to keep open?"
+      ],
+      "annual": {
+        "count": 150000,
+        "year": 2025,
+        "metricNote": "Estimated total (all modes). Walking completions: 1,622.",
+        "source": "https://www.omotenashi88.net/list_henrotaishi.html"
+      }
+    }
+  ],
+  "horizons": [
+    {
+      "id": "around-earth",
+      "preposition": "around",
+      "body": "the Earth",
+      "companyLine": "A handful have ever walked it; the first finished in 1974.",
+      "km": 40075,
+      "kind": "cosmic"
+    },
+    {
+      "id": "to-the-moon",
+      "preposition": "to",
+      "body": "the Moon",
+      "companyLine": "No one has ever walked it.",
+      "km": 384400,
+      "kind": "cosmic"
+    },
+    {
+      "id": "to-the-sun",
+      "preposition": "to",
+      "body": "the Sun",
+      "companyLine": "No one ever will.",
+      "km": 149600000,
+      "kind": "cosmic"
+    }
+  ]
+}

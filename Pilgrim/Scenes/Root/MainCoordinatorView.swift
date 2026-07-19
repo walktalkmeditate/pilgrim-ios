@@ -75,6 +75,7 @@ class MainCoordinator: ObservableObject {
                     self.triggerAutoTranscription(for: snapshot)
                     self.requestReviewIfAppropriate()
                     CollectiveCounterService.shared.recordWalk(
+                        walkUUID: snapshot.uuid,
                         distanceKm: snapshot.distance / 1000,
                         meditationMin: Int(snapshot.meditateDuration / 60),
                         talkMin: Int(snapshot.talkDuration / 60)

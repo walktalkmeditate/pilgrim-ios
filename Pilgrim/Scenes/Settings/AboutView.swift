@@ -320,6 +320,22 @@ struct AboutView: View {
                 label: "\u{F8FF} Weather — Legal attribution",
                 url: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!
             )
+
+            Text("The pilgrimage routes named alongside the collective's distance — their lengths, their seasons, and how many people walk them each year — come from the open-pilgrimages dataset, shared under the Open Database License.")
+                .font(Constants.Typography.body)
+                .foregroundColor(.ink)
+
+            linkRow(
+                icon: "signpost.right",
+                label: "Pilgrimage routes — open-pilgrimages",
+                url: URL(string: "https://github.com/walktalkmeditate/open-pilgrimages")!
+            )
+
+            linkRow(
+                icon: "doc.text",
+                label: "Open Database License (ODbL 1.0)",
+                url: URL(string: "https://opendatacommons.org/licenses/odbl/1-0/")!
+            )
         }
         .padding(.bottom, Constants.UI.Padding.big)
         .frame(maxWidth: .infinity, alignment: .leading)

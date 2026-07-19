@@ -7,7 +7,7 @@ final class CollectiveCounterService: ObservableObject {
     @Published var stats: CollectiveStats?
     @Published var milestone: CollectiveMilestone?
 
-    private let baseURL = "https://walk.pilgrimapp.org/api/counter"
+    private static let baseURL = "https://walk.pilgrimapp.org/api/counter"
     private let pendingKey = "collectivePendingDelta"
     private let cachedStatsKey = "collectiveCachedStats"
 
@@ -23,8 +23,28 @@ final class CollectiveCounterService: ObservableObject {
     private static let fetchTTL: TimeInterval = 216
 
     private var lastFetchedAt: Date?
+    private let defaults: UserDefaults
+    private let contributionLog: CollectiveContributionLog
+    private let postDelta: (PendingDelta) async -> Bool
 
-    private init() {
+    private convenience init() {
+        self.init(defaults: .standard)
+    }
+
+    /// Injectable for the same reason `CollectiveRouteCatalogService` is: the
+    /// contribution log written below is the whole mechanism behind a
+    /// walk-summary line that reports what a walk actually did, and it cannot be
+    /// exercised through `UserDefaults.standard` without a test's writes landing
+    /// in the real suite.
+    ///
+    /// The POST is injectable too, and less optionally: it increments a live
+    /// shared counter, so a test that reaches it publishes phantom walks to
+    /// every pilgrim's total.
+    init(defaults: UserDefaults,
+         postDelta: @escaping (PendingDelta) async -> Bool = { await CollectiveCounterService.postCounter($0) }) {
+        self.defaults = defaults
+        self.contributionLog = CollectiveContributionLog(defaults: defaults)
+        self.postDelta = postDelta
         loadCachedStats()
     }
 
@@ -47,10 +67,6 @@ final class CollectiveCounterService: ObservableObject {
             case streakDate = "streak_date"
         }
 
-        var pilgrimageProgress: PilgrimageProgress {
-            PilgrimageProgress.from(distanceKm: totalDistanceKm)
-        }
-
         var meditationHours: Int {
             totalMeditationMin / 60
         }
@@ -67,7 +83,7 @@ final class CollectiveCounterService: ObservableObject {
         if let last = lastFetchedAt, Date().timeIntervalSince(last) < Self.fetchTTL {
             return
         }
-        guard let url = URL(string: baseURL) else { return }
+        guard let url = URL(string: Self.baseURL) else { return }
         // Bypass URLCache. The worker sends Cache-Control: max-age=10800
         // (3 hours), so the default policy would serve cached responses
         // for hours — including a fetch right after a walk POST, which
@@ -90,8 +106,17 @@ final class CollectiveCounterService: ObservableObject {
         }
     }
 
-    func recordWalk(distanceKm: Double, meditationMin: Int, talkMin: Int) {
+    func recordWalk(walkUUID: UUID?, distanceKm: Double, meditationMin: Int, talkMin: Int) {
         guard UserPreferences.contributeToCollective.value else { return }
+
+        // Past the preference gate this walk's distance belongs to the
+        // collective's ledger: the pending delta is written below and survives
+        // a failed POST to ride along with the next one. Recording the fact
+        // here rather than on POST success is what lets a walk that ended with
+        // no signal still say something true about the collective.
+        if let walkUUID {
+            contributionLog.record(walkUUID: walkUUID.uuidString)
+        }
 
         DispatchQueue.main.async {
             var pending = self.loadPending()
@@ -103,7 +128,7 @@ final class CollectiveCounterService: ObservableObject {
 
             let snapshot = pending
             Task {
-                let success = await self.postCounter(snapshot)
+                let success = await self.postDelta(snapshot)
                 if success {
                     await MainActor.run {
                         var current = self.loadPending()
@@ -135,7 +160,7 @@ final class CollectiveCounterService: ObservableObject {
         }
     }
 
-    private func postCounter(_ delta: PendingDelta) async -> Bool {
+    private static func postCounter(_ delta: PendingDelta) async -> Bool {
         guard let url = URL(string: baseURL) else { return false }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -203,12 +228,12 @@ final class CollectiveCounterService: ObservableObject {
     }
 
     private func loadCachedStats() {
-        guard let data = UserDefaults.standard.data(forKey: cachedStatsKey) else { return }
+        guard let data = defaults.data(forKey: cachedStatsKey) else { return }
         stats = try? JSONDecoder().decode(CollectiveStats.self, from: data)
     }
 
     private func cacheStats(_ data: Data) {
-        UserDefaults.standard.set(data, forKey: cachedStatsKey)
+        defaults.set(data, forKey: cachedStatsKey)
     }
 
     struct PendingDelta: Codable {
@@ -219,16 +244,16 @@ final class CollectiveCounterService: ObservableObject {
     }
 
     private func loadPending() -> PendingDelta {
-        guard let data = UserDefaults.standard.data(forKey: pendingKey) else { return PendingDelta() }
+        guard let data = defaults.data(forKey: pendingKey) else { return PendingDelta() }
         return (try? JSONDecoder().decode(PendingDelta.self, from: data)) ?? PendingDelta()
     }
 
     private func savePending(_ delta: PendingDelta) {
         let data = try? JSONEncoder().encode(delta)
-        UserDefaults.standard.set(data, forKey: pendingKey)
+        defaults.set(data, forKey: pendingKey)
     }
 
     private func clearPending() {
-        UserDefaults.standard.removeObject(forKey: pendingKey)
+        defaults.removeObject(forKey: pendingKey)
     }
 }

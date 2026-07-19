@@ -92,6 +92,12 @@ enum Config {
         static let cdnBaseURL = URL(string: "https://cdn.pilgrimapp.org/audio/whisper")!
     }
 
+    enum Collective {
+        /// The route artifact `pilgrimapp.org` and both apps read, so a curator
+        /// edit reaches every surface from one publish.
+        static let routeCatalogURL = URL(string: "https://cdn.pilgrimapp.org/collective/routes.json")!
+    }
+
     enum Web {
         static let viewer = URL(string: "https://view.pilgrimapp.org")!
         static let editor = URL(string: "https://edit.pilgrimapp.org")!
