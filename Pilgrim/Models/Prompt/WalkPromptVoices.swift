@@ -4,7 +4,7 @@ struct ContemplativeVoice: PromptVoice {
     func preamble(hasSpeech: Bool) -> String {
         hasSpeech
             ? "During a walking meditation, these words arose naturally from the rhythm of movement and breath. They were not planned or curated — they emerged as the body moved through space."
-            : "This walk was taken in silence — no words were spoken, only movement. The walker chose presence over expression, letting the body speak through pace, pauses, and the places it was drawn to."
+            : StandardPreamble.text(hasSpeech: false)
     }
 
     func instruction(hasSpeech: Bool) -> String {

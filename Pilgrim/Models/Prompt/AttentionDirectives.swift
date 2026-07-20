@@ -22,9 +22,12 @@ enum AttentionDirectives {
 
     // MARK: - Detectors
 
-    /// A sustained still stretch that no logged meditation accounts for.
-    /// Sample spacing is unknown here, so minutes are estimated from the
-    /// run's share of all samples — imprecise, honest enough to point at.
+    /// A sustained still stretch that neither a logged meditation nor a
+    /// recorded pause accounts for — otherwise the directive would re-brand
+    /// the walk's own Pauses line as mystery. Sample spacing is unknown
+    /// here, so minutes are estimated from the run's share of all samples —
+    /// imprecise, honest enough to point at. Negative speeds are invalid
+    /// GPS fixes, not stillness.
     private static func stillness(_ context: ActivityContext) -> String? {
         let speeds = context.routeSpeeds
         guard speeds.count >= 30, context.duration > 0 else { return nil }
@@ -32,13 +35,14 @@ enum AttentionDirectives {
         var longestRun = 0
         var currentRun = 0
         for speed in speeds {
-            currentRun = speed < movingThreshold ? currentRun + 1 : 0
+            currentRun = (0..<movingThreshold).contains(speed) ? currentRun + 1 : 0
             longestRun = max(longestRun, currentRun)
         }
 
         let estimatedMinutes = context.duration * (Double(longestRun) / Double(speeds.count)) / 60
-        let meditationMinutes = context.meditations.reduce(0) { $0 + $1.duration } / 60
-        guard estimatedMinutes >= 3, estimatedMinutes > meditationMinutes else { return nil }
+        let explainedMinutes = (context.meditations.reduce(0) { $0 + $1.duration }
+            + context.pauses.reduce(0) { $0 + $1.duration }) / 60
+        guard estimatedMinutes >= 3, estimatedMinutes > explainedMinutes else { return nil }
 
         return "The route shows about \(Int(estimatedMinutes.rounded())) minutes of stillness in one place — ask what held the walker there."
     }

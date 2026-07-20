@@ -51,6 +51,28 @@ final class PracticeLexiconTests: XCTestCase {
         XCTAssertTrue(prompt.text.contains("No clearing was reached"))
     }
 
+    func testWalkPracticeModel_noSeekEvent_isWander() {
+        let practice = WalkPracticeModel.practice(events: [(.marker, start)])
+        XCTAssertEqual(practice.mode, .wander)
+        XCTAssertNil(practice.seekStory)
+    }
+
+    func testWalkPracticeModel_seekEvent_collectsSortedArrivals() {
+        let late = start.addingTimeInterval(2800)
+        let early = start.addingTimeInterval(1400)
+        let practice = WalkPracticeModel.practice(events: [
+            (.seekMode, start), (.seekArrival, late), (.seekArrival, early)
+        ])
+        XCTAssertEqual(practice.mode, .seek)
+        XCTAssertEqual(practice.seekStory?.arrivalTimes, [early, late])
+    }
+
+    func testWalkPracticeModel_seekWithoutArrivals_keepsEmptyStory() {
+        let practice = WalkPracticeModel.practice(events: [(.seekMode, start)])
+        XCTAssertEqual(practice.mode, .seek)
+        XCTAssertEqual(practice.seekStory?.arrivalTimes, [])
+    }
+
     func testCustomStyle_carriesTheLexicon() {
         let custom = CustomPromptStyle(
             id: UUID(), title: "Letters", icon: "envelope",

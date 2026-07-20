@@ -24,6 +24,15 @@ final class WalkCharacterTests: XCTestCase {
         XCTAssertTrue(note?.contains("night") == true)
     }
 
+    func testNote_longNightWalk_composesGrammatically() {
+        let context = ActivityContext.make(duration: 5400, startDate: night, lunarPhase: halfMoon)
+        XCTAssertEqual(
+            WalkCharacter.note(context: context),
+            "This was a long walk into the night — the kind where thought thins out and something quieter takes over.",
+            "the time phrase must attach to the walk noun, not trail the elaboration"
+        )
+    }
+
     func testNote_briefWalk_honorsBrevity() {
         let context = ActivityContext.make(duration: 600, startDate: morning, lunarPhase: halfMoon)
         XCTAssertTrue(WalkCharacter.note(context: context)?.contains("brief") == true)
@@ -32,6 +41,12 @@ final class WalkCharacterTests: XCTestCase {
     func testNote_fullMoon_isNamed() {
         let context = ActivityContext.make(duration: 1800, startDate: morning, lunarPhase: fullMoon)
         XCTAssertTrue(WalkCharacter.note(context: context)?.contains("full moon") == true)
+    }
+
+    func testNote_newMoon_isNamed() {
+        let newMoon = LunarPhase(illumination: 0.01, age: 0.3, name: "New Moon")
+        let context = ActivityContext.make(duration: 1800, startDate: morning, lunarPhase: newMoon)
+        XCTAssertTrue(WalkCharacter.note(context: context)?.contains("new moon") == true)
     }
 
     func testNote_meditatedWalk_namesStillness() {

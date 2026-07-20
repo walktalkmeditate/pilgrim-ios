@@ -59,6 +59,23 @@ final class AttentionDirectivesTests: XCTestCase {
                        "stillness explained by a logged meditation is not news")
     }
 
+    func testStillness_coveredByRecordedPause_doesNotFire() {
+        let speeds = Array(repeating: 1.4, count: 40) + Array(repeating: 0.0, count: 20) + Array(repeating: 1.4, count: 40)
+        let pause = PauseContext(startDate: start.addingTimeInterval(600), duration: 900)
+        let context = ActivityContext.make(
+            duration: 3600, startDate: start, routeSpeeds: speeds, pauses: [pause]
+        )
+        XCTAssertFalse(joined(context).contains("stillness"),
+                       "stillness explained by a recorded pause is not news — the Pauses line already tells it")
+    }
+
+    func testStillness_invalidNegativeSpeeds_doNotCountAsStillness() {
+        let speeds = Array(repeating: 1.4, count: 40) + Array(repeating: -1.0, count: 20) + Array(repeating: 1.4, count: 40)
+        let context = ActivityContext.make(duration: 3600, startDate: start, routeSpeeds: speeds)
+        XCTAssertFalse(joined(context).contains("stillness"),
+                       "negative speeds are invalid GPS fixes, not a still walker")
+    }
+
     // MARK: - Intention echo
 
     func testIntentionEcho_intentionWordSpoken_fires() {

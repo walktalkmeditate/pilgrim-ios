@@ -3,8 +3,9 @@ import XCTest
 
 /// Bumping the shipped Whisper variant (`tiny` → `base`) must not strand
 /// existing installs: the saved model path predates the variant bump, so
-/// resolution has to reject it and purge has to reclaim the stale model's
-/// disk space before the new variant downloads.
+/// resolution has to reject it, and the sibling purge — which runs only
+/// after the replacement model has downloaded and loaded — reclaims the
+/// stale model's disk space without ever deleting the working model first.
 final class TranscriptionServiceModelVariantTests: XCTestCase {
 
     private let suiteName = "TranscriptionServiceModelVariantTests"
@@ -70,24 +71,37 @@ final class TranscriptionServiceModelVariantTests: XCTestCase {
         XCTAssertNil(resolved)
     }
 
-    func testPurgeStaleModel_legacyModel_removesFolderAndKeys() {
-        saveModel(variant: nil)
+    func testResolvedModelPath_relativePath_resolvesAgainstDocuments() throws {
+        let relative = "\(suiteName)-relative/openai_whisper-base"
+        let absolute = TranscriptionService.documentsDirectory.appendingPathComponent(relative)
+        try FileManager.default.createDirectory(at: absolute, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: absolute.deletingLastPathComponent()) }
+        defaults.set(relative, forKey: TranscriptionService.modelPathDefaultsKey)
+        defaults.set("base", forKey: TranscriptionService.modelVariantDefaultsKey)
 
-        TranscriptionService.purgeStaleModel(defaults: defaults, variant: "base")
+        let resolved = TranscriptionService.resolvedModelPath(defaults: defaults, variant: "base")
 
-        XCTAssertFalse(FileManager.default.fileExists(atPath: modelDir.path),
-                       "the stale model folder must be deleted to reclaim disk space")
-        XCTAssertNil(defaults.string(forKey: TranscriptionService.modelPathDefaultsKey))
-        XCTAssertNil(defaults.string(forKey: TranscriptionService.modelVariantDefaultsKey))
+        XCTAssertEqual(resolved?.path, absolute.path,
+                       "relative paths must survive container relocation by resolving against the current Documents")
     }
 
-    func testPurgeStaleModel_currentVariant_keepsModel() {
-        saveModel(variant: "base")
+    func testRelativeModelPath_stripsDocumentsPrefix() {
+        let url = TranscriptionService.documentsDirectory
+            .appendingPathComponent("huggingface/models/openai_whisper-base")
 
-        TranscriptionService.purgeStaleModel(defaults: defaults, variant: "base")
+        XCTAssertEqual(TranscriptionService.relativeModelPath(for: url),
+                       "huggingface/models/openai_whisper-base")
+    }
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: modelDir.path))
-        XCTAssertEqual(defaults.string(forKey: TranscriptionService.modelPathDefaultsKey), modelDir.path)
-        XCTAssertEqual(defaults.string(forKey: TranscriptionService.modelVariantDefaultsKey), "base")
+    func testPurgeStaleModels_removesSiblingVariantsOnly() throws {
+        let baseDir = containerDir.appendingPathComponent("openai_whisper-base")
+        try FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
+
+        TranscriptionService.purgeStaleModels(around: baseDir)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: modelDir.path),
+                       "the stale tiny sibling must be deleted to reclaim disk space")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: baseDir.path),
+                      "the freshly verified model must never be purged")
     }
 }

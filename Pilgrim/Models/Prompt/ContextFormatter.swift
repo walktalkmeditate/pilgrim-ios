@@ -94,13 +94,16 @@ enum ContextFormatter {
         return "**Recent Walk Context (for continuity):**\n\n" + lines.joined(separator: "\n\n")
     }
 
+    /// Pauses under a minute are breath, not story — surfacing "0 min"
+    /// entries would invite the downstream model to interpret a non-event.
     static func formatPauses(_ pauses: [PauseContext]) -> String? {
-        guard !pauses.isEmpty,
-              let longest = pauses.max(by: { $0.duration < $1.duration }) else { return nil }
-        let totalMinutes = Int((pauses.reduce(0) { $0 + $1.duration } / 60).rounded())
+        let meaningful = pauses.filter { $0.duration >= 60 }
+        guard !meaningful.isEmpty,
+              let longest = meaningful.max(by: { $0.duration < $1.duration }) else { return nil }
+        let totalMinutes = Int((meaningful.reduce(0) { $0 + $1.duration } / 60).rounded())
         let longestMinutes = Int((longest.duration / 60).rounded())
         let when = timeFormatter.string(from: longest.startDate)
-        return "**Pauses:** Paused \(pauses.count) time\(pauses.count == 1 ? "" : "s") (\(totalMinutes) min total); the longest, \(longestMinutes) min, began at \(when)."
+        return "**Pauses:** Paused \(meaningful.count) time\(meaningful.count == 1 ? "" : "s") (\(totalMinutes) min total); the longest, \(longestMinutes) min, began at \(when)."
     }
 
     static func formatElevation(ascent: Double?, descent: Double?) -> String? {
@@ -136,11 +139,14 @@ enum ContextFormatter {
         return "Weather: \(parts.joined(separator: ", "))"
     }
 
-    static func formatMetadata(duration: Double, distance: Double, startDate: Date, lunarPhase: LunarPhase? = nil) -> String {
+    /// `duration` is active walking time; `pauseDuration` restores the
+    /// wall-clock end so a paused walk doesn't claim to have ended in a
+    /// time of day it never saw.
+    static func formatMetadata(duration: Double, distance: Double, startDate: Date, lunarPhase: LunarPhase? = nil, pauseDuration: Double = 0) -> String {
         let durationMin = Int(duration / 60)
         let distanceStr = distanceFormatter.string(from: Measurement(value: distance, unit: UnitLength.meters))
         let startDescription = timeOfDayDescription(startDate)
-        let endDescription = timeOfDayDescription(startDate.addingTimeInterval(duration))
+        let endDescription = timeOfDayDescription(startDate.addingTimeInterval(duration + pauseDuration))
         let timePhrase = startDescription == endDescription
             ? "\(startDescription) on \(dateTimeFormatter.string(from: startDate))"
             : "began in the \(startDescription), ended in the \(endDescription), on \(dateTimeFormatter.string(from: startDate))"

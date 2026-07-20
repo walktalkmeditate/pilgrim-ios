@@ -7,11 +7,14 @@ import Foundation
 enum WalkCharacter {
 
     static func note(context: ActivityContext) -> String? {
-        var body: String?
+        var noun = "a walk"
+        var elaboration: String?
         if context.duration >= 3600 {
-            body = "a long walk — the kind where thought thins out and something quieter takes over"
+            noun = "a long walk"
+            elaboration = " — the kind where thought thins out and something quieter takes over"
         } else if context.duration < 900 {
-            body = "a brief walk, taken anyway — brevity is not smallness"
+            noun = "a brief walk"
+            elaboration = ", taken anyway — brevity is not smallness"
         }
 
         var timePhrase: String?
@@ -32,11 +35,17 @@ enum WalkCharacter {
             tail.append("with stillness folded into it")
         }
 
-        guard body != nil || timePhrase != nil || !tail.isEmpty else { return nil }
+        guard elaboration != nil || timePhrase != nil || !tail.isEmpty else { return nil }
 
-        var sentence = "This was \(body ?? "a walk")"
+        // The time phrase attaches to the walk noun before any em-dash
+        // elaboration — the reverse order reads as garbled prose ("something
+        // quieter takes over into the night").
+        var sentence = "This was \(noun)"
         if let timePhrase {
             sentence += " \(timePhrase)"
+        }
+        if let elaboration {
+            sentence += elaboration
         }
         if !tail.isEmpty {
             sentence += ", \(tail.joined(separator: ", "))"

@@ -7,7 +7,8 @@ enum PromptAssembler {
             duration: context.duration,
             distance: context.distance,
             startDate: context.startDate,
-            lunarPhase: context.lunarPhase
+            lunarPhase: context.lunarPhase,
+            pauseDuration: context.pauses.reduce(0) { $0 + $1.duration }
         )
 
         var preamble = voice.preamble(hasSpeech: context.hasSpeech)

@@ -13,6 +13,26 @@ struct SeekStoryContext {
     let arrivalTimes: [Date]
 }
 
+/// Pure mapping from a walk's events to its practice context, mirroring how
+/// SeekSummaryModel keeps event interpretation testable outside the view. A
+/// `.seekMode` event marks the walk as a seek; `.seekArrival` events carry
+/// when each clearing was reached.
+enum WalkPracticeModel {
+
+    static func practice(
+        events: [(type: WalkEvent.EventType, timestamp: Date)]
+    ) -> (mode: PracticeMode, seekStory: SeekStoryContext?) {
+        guard events.contains(where: { $0.type == .seekMode }) else {
+            return (.wander, nil)
+        }
+        let arrivals = events
+            .filter { $0.type == .seekArrival }
+            .map(\.timestamp)
+            .sorted()
+        return (.seek, SeekStoryContext(arrivalTimes: arrivals))
+    }
+}
+
 struct ActivityContext {
     let recordings: [RecordingContext]
     let meditations: [MeditationContext]

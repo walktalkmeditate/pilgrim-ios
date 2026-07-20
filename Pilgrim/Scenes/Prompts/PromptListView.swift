@@ -171,8 +171,8 @@ struct PromptListView: View {
             celestial: celestial,
             photoContexts: photoEntries,
             narrativeArc: narrativeArc,
-            mode: practiceMode,
-            seekStory: seekStory,
+            mode: practice.mode,
+            seekStory: practice.seekStory,
             pauses: walk.pauses.map {
                 PauseContext(startDate: $0.startDate, duration: $0.endDate.timeIntervalSince($0.startDate))
             },
@@ -181,19 +181,8 @@ struct PromptListView: View {
         )
     }
 
-    /// A `.seekMode` event marks the walk as a seek; `.seekArrival` events
-    /// carry when each clearing was reached.
-    private var practiceMode: PracticeMode {
-        walk.workoutEvents.contains { $0.eventType == .seekMode } ? .seek : .wander
-    }
-
-    private var seekStory: SeekStoryContext? {
-        guard practiceMode == .seek else { return nil }
-        let arrivals = walk.workoutEvents
-            .filter { $0.eventType == .seekArrival }
-            .map(\.timestamp)
-            .sorted()
-        return SeekStoryContext(arrivalTimes: arrivals)
+    private var practice: (mode: PracticeMode, seekStory: SeekStoryContext?) {
+        WalkPracticeModel.practice(events: walk.workoutEvents.map { ($0.eventType, $0.timestamp) })
     }
 
     private func buildPhotoContext() -> ([PhotoContextEntry], NarrativeArc?) {

@@ -86,25 +86,44 @@ final class TranscriptionService: ObservableObject {
     /// A saved model only counts when it was downloaded for the variant the
     /// app currently ships. Installs that predate the variant key (pre-base
     /// installs on `tiny`) resolve to nil, which routes them through a fresh
-    /// download instead of silently staying on the old model.
+    /// download instead of silently staying on the old model. Paths are
+    /// stored relative to Documents because iOS may relocate the app
+    /// container between launches — an absolute path would strand the model
+    /// after every update. Absolute values (pre-relative installs) still
+    /// resolve as-is.
     static func resolvedModelPath(defaults: UserDefaults, variant: String) -> URL? {
         guard let path = defaults.string(forKey: modelPathDefaultsKey),
               defaults.string(forKey: modelVariantDefaultsKey) == variant else { return nil }
-        let url = URL(fileURLWithPath: path)
+        let url = path.hasPrefix("/")
+            ? URL(fileURLWithPath: path)
+            : documentsDirectory.appendingPathComponent(path)
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         return url
     }
 
-    /// Reclaims the previous variant's model folder (~150 MB for `tiny`)
-    /// before the new one downloads, so a variant bump never doubles the
-    /// app's disk footprint.
-    static func purgeStaleModel(defaults: UserDefaults, variant: String) {
-        guard defaults.string(forKey: modelVariantDefaultsKey) != variant else { return }
-        if let path = defaults.string(forKey: modelPathDefaultsKey) {
-            try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
+    /// Reclaims other variants' model folders (~150 MB for `tiny`) once a
+    /// fresh model has downloaded AND loaded. Deleting siblings of the
+    /// verified folder — instead of trusting a stored path — survives
+    /// container relocation and never removes the working model before its
+    /// replacement is proven.
+    static func purgeStaleModels(around modelURL: URL) {
+        let parent = modelURL.deletingLastPathComponent()
+        let siblings = (try? FileManager.default.contentsOfDirectory(
+            at: parent, includingPropertiesForKeys: nil
+        )) ?? []
+        for sibling in siblings where sibling.lastPathComponent != modelURL.lastPathComponent {
+            try? FileManager.default.removeItem(at: sibling)
         }
-        defaults.removeObject(forKey: modelPathDefaultsKey)
-        defaults.removeObject(forKey: modelVariantDefaultsKey)
+    }
+
+    static var documentsDirectory: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    }
+
+    static func relativeModelPath(for url: URL) -> String {
+        let docsPath = documentsDirectory.path
+        guard url.path.hasPrefix(docsPath + "/") else { return url.path }
+        return String(url.path.dropFirst(docsPath.count + 1))
     }
 
     /// Production loads WhisperKit from disk/download; tests inject a loader
@@ -122,11 +141,12 @@ final class TranscriptionService: ObservableObject {
             Self.resolvedModelPath(defaults: .standard, variant: Self.modelVariant)
         }
         set {
-            UserDefaults.standard.set(newValue?.path, forKey: Self.modelPathDefaultsKey)
-            if newValue == nil {
-                UserDefaults.standard.removeObject(forKey: Self.modelVariantDefaultsKey)
-            } else {
+            if let newValue {
+                UserDefaults.standard.set(Self.relativeModelPath(for: newValue), forKey: Self.modelPathDefaultsKey)
                 UserDefaults.standard.set(Self.modelVariant, forKey: Self.modelVariantDefaultsKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Self.modelPathDefaultsKey)
+                UserDefaults.standard.removeObject(forKey: Self.modelVariantDefaultsKey)
             }
         }
     }
@@ -174,12 +194,13 @@ final class TranscriptionService: ObservableObject {
         }
 
         let modelURL: URL
+        let freshDownload: Bool
         if let existing = savedModelPath {
             modelURL = existing
+            freshDownload = false
         } else {
-            Self.purgeStaleModel(defaults: .standard, variant: Self.modelVariant)
             modelURL = try await downloadModel()
-            savedModelPath = modelURL
+            freshDownload = true
         }
 
         let config = WhisperKitConfig(
@@ -187,7 +208,22 @@ final class TranscriptionService: ObservableObject {
             load: true,
             download: false
         )
-        return try await WhisperKit(config)
+        do {
+            let engine = try await WhisperKit(config)
+            if freshDownload {
+                savedModelPath = modelURL
+                Self.purgeStaleModels(around: modelURL)
+            }
+            return engine
+        } catch {
+            // A model that downloaded but cannot load must never wedge
+            // transcription permanently: clear the saved path and remove the
+            // folder so the next attempt re-downloads. Transient load
+            // failures cost a re-download; a corrupt model costs everything.
+            try? FileManager.default.removeItem(at: modelURL)
+            savedModelPath = nil
+            throw error
+        }
     }
 
     @MainActor
