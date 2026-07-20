@@ -41,7 +41,7 @@ zero-arrival seeks honored).
 **Success Criteria**: Seek walks explain the seed/clearings surrender; wander
 walks get one sentence; prompt list derives mode from walk events.
 **Tests**: PracticeLexiconTests — mode sentences, arrival story, zero-arrival.
-**Status**: Not Started
+**Status**: Complete
 
 ## Stage 5: Body data injection
 **Goal**: Pauses (count/total/longest), ascent/descent, and time-of-day

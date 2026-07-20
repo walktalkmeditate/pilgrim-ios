@@ -1,5 +1,18 @@
 import Foundation
 
+/// How the walk was undertaken — each mode carries its own ritual grammar,
+/// explained to the downstream model by the practice lexicon.
+enum PracticeMode {
+    case wander
+    case seek
+}
+
+/// What this seek held: when each clearing was reached. An empty list is a
+/// zero-arrival seek, which the lexicon honors rather than hides.
+struct SeekStoryContext {
+    let arrivalTimes: [Date]
+}
+
 struct ActivityContext {
     let recordings: [RecordingContext]
     let meditations: [MeditationContext]
@@ -16,6 +29,8 @@ struct ActivityContext {
     let celestial: CelestialSnapshot?
     let photoContexts: [PhotoContextEntry]
     let narrativeArc: NarrativeArc?
+    let mode: PracticeMode
+    let seekStory: SeekStoryContext?
 
     var hasSpeech: Bool { !recordings.isEmpty }
 }
@@ -36,7 +51,9 @@ extension ActivityContext {
         lunarPhase: LunarPhase? = nil,
         celestial: CelestialSnapshot? = nil,
         photoContexts: [PhotoContextEntry] = [],
-        narrativeArc: NarrativeArc? = nil
+        narrativeArc: NarrativeArc? = nil,
+        mode: PracticeMode = .wander,
+        seekStory: SeekStoryContext? = nil
     ) -> ActivityContext {
         ActivityContext(
             recordings: recordings,
@@ -53,7 +70,9 @@ extension ActivityContext {
             lunarPhase: lunarPhase ?? LunarPhase.current(date: startDate),
             celestial: celestial,
             photoContexts: photoContexts,
-            narrativeArc: narrativeArc
+            narrativeArc: narrativeArc,
+            mode: mode,
+            seekStory: seekStory
         )
     }
 }

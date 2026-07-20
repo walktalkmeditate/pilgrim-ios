@@ -170,8 +170,25 @@ struct PromptListView: View {
             lunarPhase: LunarPhase.current(date: walk.startDate),
             celestial: celestial,
             photoContexts: photoEntries,
-            narrativeArc: narrativeArc
+            narrativeArc: narrativeArc,
+            mode: practiceMode,
+            seekStory: seekStory
         )
+    }
+
+    /// A `.seekMode` event marks the walk as a seek; `.seekArrival` events
+    /// carry when each clearing was reached.
+    private var practiceMode: PracticeMode {
+        walk.workoutEvents.contains { $0.eventType == .seekMode } ? .seek : .wander
+    }
+
+    private var seekStory: SeekStoryContext? {
+        guard practiceMode == .seek else { return nil }
+        let arrivals = walk.workoutEvents
+            .filter { $0.eventType == .seekArrival }
+            .map(\.timestamp)
+            .sorted()
+        return SeekStoryContext(arrivalTimes: arrivals)
     }
 
     private func buildPhotoContext() -> ([PhotoContextEntry], NarrativeArc?) {

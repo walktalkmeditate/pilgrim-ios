@@ -545,6 +545,7 @@
 		LR00000200000000LRPRCT01 /* PromptResponseContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPRCT01 /* PromptResponseContractTests.swift */; };
 		LR00000200000000LRATDR01 /* AttentionDirectivesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRATDR01 /* AttentionDirectivesTests.swift */; };
 		LR00000200000000LRWKCH01 /* WalkCharacterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWKCH01 /* WalkCharacterTests.swift */; };
+		LR00000200000000LRPRLX01 /* PracticeLexiconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */; };
 		LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */; };
 		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
@@ -1155,6 +1156,7 @@
 		LR00000100000000LRPRCT01 /* PromptResponseContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptResponseContractTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRATDR01 /* AttentionDirectivesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AttentionDirectivesTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWKCH01 /* WalkCharacterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkCharacterTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PracticeLexiconTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelLoadTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
@@ -1878,6 +1880,7 @@
 				LR00000100000000LRPRCT01 /* PromptResponseContractTests.swift */,
 				LR00000100000000LRATDR01 /* AttentionDirectivesTests.swift */,
 				LR00000100000000LRWKCH01 /* WalkCharacterTests.swift */,
+				LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */,
 				LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */,
 				LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */,
 				LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */,
@@ -3182,6 +3185,7 @@
 				LR00000200000000LRPRCT01 /* PromptResponseContractTests.swift in Sources */,
 				LR00000200000000LRATDR01 /* AttentionDirectivesTests.swift in Sources */,
 				LR00000200000000LRWKCH01 /* WalkCharacterTests.swift in Sources */,
+				LR00000200000000LRPRLX01 /* PracticeLexiconTests.swift in Sources */,
 				LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */,
 				LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */,
 				LR00000200000000LRWSST01 /* WaveformScrubberStepTests.swift in Sources */,

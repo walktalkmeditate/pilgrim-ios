@@ -38,6 +38,8 @@ enum PromptAssembler {
             sections += "\n\n\(celestialText)"
         }
 
+        sections += "\n\n\(practiceLexicon(context: context))"
+
         if let intention = context.intention {
             sections += "\n\n**The walker's intention:** \"\(intention)\"\nThis intention was set deliberately before the walk began. It represents what the walker chose to carry with them. Let it be the lens through which you interpret everything below."
         }
@@ -111,6 +113,29 @@ enum PromptAssembler {
             """
 
         return sections
+    }
+
+    /// Teaches the downstream model the walk's ritual grammar in Pilgrim's
+    /// own vocabulary, so route and pace data read as practice, not as
+    /// fitness telemetry. Seek walks carry their story; a zero-arrival seek
+    /// is named, not hidden.
+    static func practiceLexicon(context: ActivityContext) -> String {
+        switch context.mode {
+        case .wander:
+            return "**About this practice:** This walk was a wander — no destination, no goal; the path chose itself."
+        case .seek:
+            var text = "**About this practice:** This walk was a Seek. The walker surrendered the choice of destination: a seed cast hidden clearings across the map, veiled in fog, revealed only by nearness and stillness. Arriving is not achievement; it is consent to be led."
+            if let story = context.seekStory {
+                if story.arrivalTimes.isEmpty {
+                    text += " No clearing was reached this time — the seek honors this too; some walks are about the looking."
+                } else if let only = story.arrivalTimes.first, story.arrivalTimes.count == 1 {
+                    text += " One clearing was found, reached in the \(ContextFormatter.timeOfDayDescription(only))."
+                } else if let first = story.arrivalTimes.first, let last = story.arrivalTimes.last {
+                    text += " \(story.arrivalTimes.count) clearings were found — the first in the \(ContextFormatter.timeOfDayDescription(first)), the last in the \(ContextFormatter.timeOfDayDescription(last))."
+                }
+            }
+            return text
+        }
     }
 
     /// The closing contract every prompt carries: what the response may not
