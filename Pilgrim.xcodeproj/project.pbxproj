@@ -539,6 +539,7 @@
 		LR00000200000000LRTMPL01 /* LightReadingTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */; };
 		LR00000200000000LRTMPL02 /* LightReadingTemplatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */; };
 		LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */; };
+		LR00000200000000LRTSMV01 /* TranscriptionServiceModelVariantTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSMV01 /* TranscriptionServiceModelVariantTests.swift */; };
 		LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */; };
 		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
@@ -1143,6 +1144,7 @@
 		LR00000100000000LRTMPL01 /* LightReadingTemplates.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingTemplates.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTMPL02 /* LightReadingTemplatesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LightReadingTemplatesTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceBatchStateTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRTSMV01 /* TranscriptionServiceModelVariantTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelVariantTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelLoadTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
@@ -1862,6 +1864,7 @@
 				LR00000100000000LRWBLT01 /* WalkBuilderLifecycleTests.swift */,
 				LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */,
 				LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */,
+				LR00000100000000LRTSMV01 /* TranscriptionServiceModelVariantTests.swift */,
 				LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */,
 				LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */,
 				LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */,
@@ -3158,6 +3161,7 @@
 				LR00000200000000LRWBLT01 /* WalkBuilderLifecycleTests.swift in Sources */,
 				LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */,
 				LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */,
+				LR00000200000000LRTSMV01 /* TranscriptionServiceModelVariantTests.swift in Sources */,
 				LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */,
 				LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */,
 				LR00000200000000LRWSST01 /* WaveformScrubberStepTests.swift in Sources */,

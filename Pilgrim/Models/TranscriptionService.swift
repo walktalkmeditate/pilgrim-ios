@@ -78,7 +78,34 @@ final class TranscriptionService: ObservableObject {
     /// In-flight model load; concurrent `ensureModelReady` callers await
     /// this one task instead of racing to load twice.
     @MainActor private var modelLoadTask: Task<Void, Error>?
-    private let modelVariant = "tiny"
+
+    static let modelVariant = "base"
+    static let modelPathDefaultsKey = "whisperModelPath"
+    static let modelVariantDefaultsKey = "whisperModelVariant"
+
+    /// A saved model only counts when it was downloaded for the variant the
+    /// app currently ships. Installs that predate the variant key (pre-base
+    /// installs on `tiny`) resolve to nil, which routes them through a fresh
+    /// download instead of silently staying on the old model.
+    static func resolvedModelPath(defaults: UserDefaults, variant: String) -> URL? {
+        guard let path = defaults.string(forKey: modelPathDefaultsKey),
+              defaults.string(forKey: modelVariantDefaultsKey) == variant else { return nil }
+        let url = URL(fileURLWithPath: path)
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return url
+    }
+
+    /// Reclaims the previous variant's model folder (~150 MB for `tiny`)
+    /// before the new one downloads, so a variant bump never doubles the
+    /// app's disk footprint.
+    static func purgeStaleModel(defaults: UserDefaults, variant: String) {
+        guard defaults.string(forKey: modelVariantDefaultsKey) != variant else { return }
+        if let path = defaults.string(forKey: modelPathDefaultsKey) {
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
+        }
+        defaults.removeObject(forKey: modelPathDefaultsKey)
+        defaults.removeObject(forKey: modelVariantDefaultsKey)
+    }
 
     /// Production loads WhisperKit from disk/download; tests inject a loader
     /// so model lifecycle behavior is provable without a real CoreML model.
@@ -92,13 +119,15 @@ final class TranscriptionService: ObservableObject {
 
     private var savedModelPath: URL? {
         get {
-            guard let path = UserDefaults.standard.string(forKey: "whisperModelPath") else { return nil }
-            let url = URL(fileURLWithPath: path)
-            guard FileManager.default.fileExists(atPath: url.path) else { return nil }
-            return url
+            Self.resolvedModelPath(defaults: .standard, variant: Self.modelVariant)
         }
         set {
-            UserDefaults.standard.set(newValue?.path, forKey: "whisperModelPath")
+            UserDefaults.standard.set(newValue?.path, forKey: Self.modelPathDefaultsKey)
+            if newValue == nil {
+                UserDefaults.standard.removeObject(forKey: Self.modelVariantDefaultsKey)
+            } else {
+                UserDefaults.standard.set(Self.modelVariant, forKey: Self.modelVariantDefaultsKey)
+            }
         }
     }
 
@@ -148,6 +177,7 @@ final class TranscriptionService: ObservableObject {
         if let existing = savedModelPath {
             modelURL = existing
         } else {
+            Self.purgeStaleModel(defaults: .standard, variant: Self.modelVariant)
             modelURL = try await downloadModel()
             savedModelPath = modelURL
         }
@@ -165,7 +195,7 @@ final class TranscriptionService: ObservableObject {
 
     private func downloadModel() async throws -> URL {
         try await WhisperKit.download(
-            variant: modelVariant,
+            variant: Self.modelVariant,
             from: "argmaxinc/whisperkit-coreml",
             progressCallback: { [weak self] progress in
                 Task { @MainActor in
