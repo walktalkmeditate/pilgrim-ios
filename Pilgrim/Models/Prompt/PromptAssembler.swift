@@ -15,7 +15,10 @@ enum PromptAssembler {
         let pace = ContextFormatter.formatPaceContext(speeds: context.routeSpeeds)
         let recentWalks = ContextFormatter.formatRecentWalks(context.recentWalkSnippets)
 
-        let preamble = voice.preamble(hasSpeech: context.hasSpeech)
+        var preamble = voice.preamble(hasSpeech: context.hasSpeech)
+        if let characterNote = WalkCharacter.note(context: context) {
+            preamble += " \(characterNote)"
+        }
         let instruction = voice.instruction(hasSpeech: context.hasSpeech)
 
         var sections = """

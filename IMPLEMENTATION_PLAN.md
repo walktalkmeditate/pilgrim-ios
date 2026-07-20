@@ -31,7 +31,7 @@ stops hardcoding a duplicate preamble and shares the standard one.
 same style; custom styles inherit preamble improvements automatically.
 **Tests**: WalkCharacterTests — trait detection boundaries; note appears in
 built-in and custom prompts.
-**Status**: Not Started
+**Status**: Complete
 
 ## Stage 4: Practice lexicon + seek story
 **Goal**: ActivityContext learns the walk's mode (wander/seek). Assembler emits
