@@ -97,9 +97,26 @@ enum PromptAssembler {
             ---
 
             \(fullInstruction)
+
+            \(responseContract(voice: voice, hasSpeech: context.hasSpeech))
             """
 
         return sections
+    }
+
+    /// The closing contract every prompt carries: what the response may not
+    /// do (invent, flatten, switch language) plus the voice's own form
+    /// constraints. This shapes the *reply's* quality — the part of the
+    /// feature the walker actually experiences.
+    static func responseContract(voice: PromptVoice, hasSpeech: Bool) -> String {
+        var lines = voice.responseConstraints(hasSpeech: hasSpeech)
+        if hasSpeech {
+            lines.append("Respond in the language the walker speaks in the transcription.")
+            lines.append("If more than one voice appears in the transcription, honor it as a conversation — attend to what happened between the speakers, and never guess at names.")
+        }
+        lines.append("Draw only on what this walk actually holds — never invent details, events, or memories that are not in the context above.")
+        let bullets = lines.map { "- \($0)" }.joined(separator: "\n")
+        return "**How to respond:**\n\(bullets)"
     }
 
     private static func formatPhotoSection(
