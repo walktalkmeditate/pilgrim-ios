@@ -26,8 +26,27 @@ struct WalkSnippet {
     let date: Date
     let placeName: String?
     let transcriptionPreview: String
-    var weatherCondition: String? = nil
-    var celestialSummary: String? = nil
+    var weatherCondition: String?
+    var celestialSummary: String?
+
+    init(
+        date: Date,
+        placeName: String?,
+        transcriptionPreview: String,
+        weatherCondition: String? = nil,
+        celestialSummary: String? = nil
+    ) {
+        self.date = date
+        self.placeName = placeName
+        self.transcriptionPreview = transcriptionPreview
+        self.weatherCondition = weatherCondition
+        self.celestialSummary = celestialSummary
+    }
+}
+
+struct PauseContext {
+    let startDate: Date
+    let duration: TimeInterval
 }
 
 struct WaypointContext {

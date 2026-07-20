@@ -42,6 +42,7 @@ enum ScreenshotDataSeeder {
         let routePoints: [(lat: Double, lon: Double, alt: Double)]
         var waypoints: [(label: String, icon: String, lat: Double, lon: Double, offsetMinutes: Double)] = []
         var events: [(eventType: Int, offsetMinutes: Double)] = []
+        var pauses: [(offsetMinutes: Double, durationMinutes: Double)] = []
     }
 
     static let walks: [ScreenshotWalk] = [
@@ -153,7 +154,8 @@ enum ScreenshotDataSeeder {
                 (WalkEvent.EventType.seekMode.rawValue, 0),
                 (WalkEvent.EventType.seekArrival.rawValue, 23.1),
                 (WalkEvent.EventType.seekArrival.rawValue, 46.2)
-            ]
+            ],
+            pauses: [(offsetMinutes: 33, durationMinutes: 6)]
         ),
     ]
 
@@ -262,6 +264,16 @@ enum ScreenshotDataSeeder {
             )
         }
 
+        let pauses: [TempWalkPause] = spec.pauses.map { pause in
+            let pauseStart = adjustedStart.addingTimeInterval(pause.offsetMinutes * 60)
+            return TempWalkPause(
+                uuid: nil,
+                startDate: pauseStart,
+                endDate: pauseStart.addingTimeInterval(pause.durationMinutes * 60),
+                pauseType: .manual
+            )
+        }
+
         let walk = NewWalk(
             workoutType: .walking,
             distance: spec.distanceMeters,
@@ -274,7 +286,7 @@ enum ScreenshotDataSeeder {
             finishedRecording: true,
             heartRates: [],
             routeData: routeData,
-            pauses: [],
+            pauses: pauses,
             workoutEvents: workoutEvents,
             voiceRecordings: voiceRecordings,
             activityIntervals: activityIntervals,

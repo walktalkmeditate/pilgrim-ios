@@ -1,5 +1,38 @@
 import Foundation
 
+/// How the walk was undertaken — each mode carries its own ritual grammar,
+/// explained to the downstream model by the practice lexicon.
+enum PracticeMode {
+    case wander
+    case seek
+}
+
+/// What this seek held: when each clearing was reached. An empty list is a
+/// zero-arrival seek, which the lexicon honors rather than hides.
+struct SeekStoryContext {
+    let arrivalTimes: [Date]
+}
+
+/// Pure mapping from a walk's events to its practice context, mirroring how
+/// SeekSummaryModel keeps event interpretation testable outside the view. A
+/// `.seekMode` event marks the walk as a seek; `.seekArrival` events carry
+/// when each clearing was reached.
+enum WalkPracticeModel {
+
+    static func practice(
+        events: [(type: WalkEvent.EventType, timestamp: Date)]
+    ) -> (mode: PracticeMode, seekStory: SeekStoryContext?) {
+        guard events.contains(where: { $0.type == .seekMode }) else {
+            return (.wander, nil)
+        }
+        let arrivals = events
+            .filter { $0.type == .seekArrival }
+            .map(\.timestamp)
+            .sorted()
+        return (.seek, SeekStoryContext(arrivalTimes: arrivals))
+    }
+}
+
 struct ActivityContext {
     let recordings: [RecordingContext]
     let meditations: [MeditationContext]
@@ -16,6 +49,11 @@ struct ActivityContext {
     let celestial: CelestialSnapshot?
     let photoContexts: [PhotoContextEntry]
     let narrativeArc: NarrativeArc?
+    let mode: PracticeMode
+    let seekStory: SeekStoryContext?
+    let pauses: [PauseContext]
+    let ascent: Double?
+    let descent: Double?
 
     var hasSpeech: Bool { !recordings.isEmpty }
 }
@@ -36,7 +74,12 @@ extension ActivityContext {
         lunarPhase: LunarPhase? = nil,
         celestial: CelestialSnapshot? = nil,
         photoContexts: [PhotoContextEntry] = [],
-        narrativeArc: NarrativeArc? = nil
+        narrativeArc: NarrativeArc? = nil,
+        mode: PracticeMode = .wander,
+        seekStory: SeekStoryContext? = nil,
+        pauses: [PauseContext] = [],
+        ascent: Double? = nil,
+        descent: Double? = nil
     ) -> ActivityContext {
         ActivityContext(
             recordings: recordings,
@@ -53,7 +96,12 @@ extension ActivityContext {
             lunarPhase: lunarPhase ?? LunarPhase.current(date: startDate),
             celestial: celestial,
             photoContexts: photoContexts,
-            narrativeArc: narrativeArc
+            narrativeArc: narrativeArc,
+            mode: mode,
+            seekStory: seekStory,
+            pauses: pauses,
+            ascent: ascent,
+            descent: descent
         )
     }
 }

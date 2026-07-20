@@ -170,8 +170,19 @@ struct PromptListView: View {
             lunarPhase: LunarPhase.current(date: walk.startDate),
             celestial: celestial,
             photoContexts: photoEntries,
-            narrativeArc: narrativeArc
+            narrativeArc: narrativeArc,
+            mode: practice.mode,
+            seekStory: practice.seekStory,
+            pauses: walk.pauses.map {
+                PauseContext(startDate: $0.startDate, duration: $0.endDate.timeIntervalSince($0.startDate))
+            },
+            ascent: walk.ascend,
+            descent: walk.descend
         )
+    }
+
+    private var practice: (mode: PracticeMode, seekStory: SeekStoryContext?) {
+        WalkPracticeModel.practice(events: walk.workoutEvents.map { ($0.eventType, $0.timestamp) })
     }
 
     private func buildPhotoContext() -> ([PhotoContextEntry], NarrativeArc?) {
