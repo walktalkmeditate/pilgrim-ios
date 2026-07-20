@@ -31,6 +31,9 @@ struct ActivityContext {
     let narrativeArc: NarrativeArc?
     let mode: PracticeMode
     let seekStory: SeekStoryContext?
+    let pauses: [PauseContext]
+    let ascent: Double?
+    let descent: Double?
 
     var hasSpeech: Bool { !recordings.isEmpty }
 }
@@ -53,7 +56,10 @@ extension ActivityContext {
         photoContexts: [PhotoContextEntry] = [],
         narrativeArc: NarrativeArc? = nil,
         mode: PracticeMode = .wander,
-        seekStory: SeekStoryContext? = nil
+        seekStory: SeekStoryContext? = nil,
+        pauses: [PauseContext] = [],
+        ascent: Double? = nil,
+        descent: Double? = nil
     ) -> ActivityContext {
         ActivityContext(
             recordings: recordings,
@@ -72,7 +78,10 @@ extension ActivityContext {
             photoContexts: photoContexts,
             narrativeArc: narrativeArc,
             mode: mode,
-            seekStory: seekStory
+            seekStory: seekStory,
+            pauses: pauses,
+            ascent: ascent,
+            descent: descent
         )
     }
 }

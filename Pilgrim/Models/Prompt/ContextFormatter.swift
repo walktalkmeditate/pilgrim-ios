@@ -94,6 +94,29 @@ enum ContextFormatter {
         return "**Recent Walk Context (for continuity):**\n\n" + lines.joined(separator: "\n\n")
     }
 
+    static func formatPauses(_ pauses: [PauseContext]) -> String? {
+        guard !pauses.isEmpty,
+              let longest = pauses.max(by: { $0.duration < $1.duration }) else { return nil }
+        let totalMinutes = Int((pauses.reduce(0) { $0 + $1.duration } / 60).rounded())
+        let longestMinutes = Int((longest.duration / 60).rounded())
+        let when = timeFormatter.string(from: longest.startDate)
+        return "**Pauses:** Paused \(pauses.count) time\(pauses.count == 1 ? "" : "s") (\(totalMinutes) min total); the longest, \(longestMinutes) min, began at \(when)."
+    }
+
+    static func formatElevation(ascent: Double?, descent: Double?) -> String? {
+        let up = ascent ?? 0
+        let down = descent ?? 0
+        guard up > 10 || down > 10 else { return nil }
+        let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
+        func formatted(_ meters: Double) -> String {
+            imperial ? "\(Int((meters * 3.28084).rounded())) ft" : "\(Int(meters.rounded())) m"
+        }
+        var parts: [String] = []
+        if up > 10 { parts.append("climbed \(formatted(up))") }
+        if down > 10 { parts.append("descended \(formatted(down))") }
+        return "**Elevation:** \(parts.joined(separator: ", "))."
+    }
+
     static func formatWeather(_ walk: WalkInterface) -> String? {
         guard let conditionStr = walk.weatherCondition,
               let condition = WeatherCondition(rawValue: conditionStr),
@@ -116,10 +139,14 @@ enum ContextFormatter {
     static func formatMetadata(duration: Double, distance: Double, startDate: Date, lunarPhase: LunarPhase? = nil) -> String {
         let durationMin = Int(duration / 60)
         let distanceStr = distanceFormatter.string(from: Measurement(value: distance, unit: UnitLength.meters))
-        let timeOfDay = timeOfDayDescription(startDate)
+        let startDescription = timeOfDayDescription(startDate)
+        let endDescription = timeOfDayDescription(startDate.addingTimeInterval(duration))
+        let timePhrase = startDescription == endDescription
+            ? "\(startDescription) on \(dateTimeFormatter.string(from: startDate))"
+            : "began in the \(startDescription), ended in the \(endDescription), on \(dateTimeFormatter.string(from: startDate))"
 
         let lunar = lunarPhase ?? LunarPhase.current(date: startDate)
-        return "Walk duration: \(durationMin) minutes | Distance: \(distanceStr) | Time: \(timeOfDay) on \(dateTimeFormatter.string(from: startDate)) | Moon: \(lunar.name) (\(Int(round(lunar.illumination * 100)))% illumination)"
+        return "Walk duration: \(durationMin) minutes | Distance: \(distanceStr) | Time: \(timePhrase) | Moon: \(lunar.name) (\(Int(round(lunar.illumination * 100)))% illumination)"
     }
 
     static func timeOfDayDescription(_ date: Date) -> String {

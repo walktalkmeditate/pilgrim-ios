@@ -3,39 +3,42 @@ import Foundation
 enum PromptAssembler {
 
     static func assemble(context: ActivityContext, voice: PromptVoice) -> String {
-        let transcription = ContextFormatter.formatRecordings(context.recordings)
-        let meditations = ContextFormatter.formatMeditations(context.meditations)
         let metadata = ContextFormatter.formatMetadata(
             duration: context.duration,
             distance: context.distance,
             startDate: context.startDate,
             lunarPhase: context.lunarPhase
         )
-        let location = ContextFormatter.formatPlaceNames(context.placeNames)
-        let pace = ContextFormatter.formatPaceContext(speeds: context.routeSpeeds)
-        let recentWalks = ContextFormatter.formatRecentWalks(context.recentWalkSnippets)
 
         var preamble = voice.preamble(hasSpeech: context.hasSpeech)
         if let characterNote = WalkCharacter.note(context: context) {
             preamble += " \(characterNote)"
         }
-        let instruction = voice.instruction(hasSpeech: context.hasSpeech)
 
-        var sections = """
-            \(preamble)
-
-            ---
-
-            **Context:** \(metadata)
-            """
-
+        var sections = "\(preamble)\n\n---\n\n**Context:** \(metadata)"
         if let weather = context.weather {
             sections += " | \(weather)"
         }
+        sections += contextDossier(context: context)
+        sections += walkRecord(context: context)
+
+        var fullInstruction = voice.instruction(hasSpeech: context.hasSpeech)
+        if let intention = context.intention {
+            fullInstruction += " Ground your response in the walker's stated intention: '\(intention)'. Return to it. Help them see how their walk — its pace, its pauses, its moments — spoke to this purpose."
+        }
+
+        sections += "\n\n---\n\n\(fullInstruction)"
+        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech))"
+        return sections
+    }
+
+    /// The walk's circumstances: sky, practice, intention, place, and what
+    /// the body did — everything the walker brought to or met on the path.
+    private static func contextDossier(context: ActivityContext) -> String {
+        var sections = ""
 
         if let celestial = context.celestial {
-            let celestialText = ContextFormatter.formatCelestial(celestial)
-            sections += "\n\n\(celestialText)"
+            sections += "\n\n\(ContextFormatter.formatCelestial(celestial))"
         }
 
         sections += "\n\n\(practiceLexicon(context: context))"
@@ -44,12 +47,20 @@ enum PromptAssembler {
             sections += "\n\n**The walker's intention:** \"\(intention)\"\nThis intention was set deliberately before the walk began. It represents what the walker chose to carry with them. Let it be the lens through which you interpret everything below."
         }
 
-        if let location = location {
+        if let location = ContextFormatter.formatPlaceNames(context.placeNames) {
             sections += "\n\n\(location)"
         }
 
-        if let pace = pace {
+        if let pace = ContextFormatter.formatPaceContext(speeds: context.routeSpeeds) {
             sections += "\n\n\(pace)"
+        }
+
+        if let pauses = ContextFormatter.formatPauses(context.pauses) {
+            sections += "\n\n\(pauses)"
+        }
+
+        if let elevation = ContextFormatter.formatElevation(ascent: context.ascent, descent: context.descent) {
+            sections += "\n\n\(elevation)"
         }
 
         if !context.waypoints.isEmpty {
@@ -63,32 +74,25 @@ enum PromptAssembler {
             sections += formatPhotoSection(context.photoContexts, arc: context.narrativeArc)
         }
 
+        return sections
+    }
+
+    /// What the walk produced — words, stillness, continuity with recent
+    /// walks — closed by the directives that point at its patterns.
+    private static func walkRecord(context: ActivityContext) -> String {
+        var sections = ""
+
+        let transcription = ContextFormatter.formatRecordings(context.recordings)
         if !transcription.isEmpty {
-            sections += """
-
-
-            **Walking Transcription:**
-
-            \(transcription)
-            """
+            sections += "\n\n**Walking Transcription:**\n\n\(transcription)"
         }
 
-        if let meditations = meditations {
-            sections += """
-
-
-            **Meditation Sessions:**
-
-            \(meditations)
-            """
+        if let meditations = ContextFormatter.formatMeditations(context.meditations) {
+            sections += "\n\n**Meditation Sessions:**\n\n\(meditations)"
         }
 
-        if let recentWalks = recentWalks {
-            sections += """
-
-
-            \(recentWalks)
-            """
+        if let recentWalks = ContextFormatter.formatRecentWalks(context.recentWalkSnippets) {
+            sections += "\n\n\(recentWalks)"
         }
 
         let directives = AttentionDirectives.detect(context: context)
@@ -96,21 +100,6 @@ enum PromptAssembler {
             let bullets = directives.map { "- \($0)" }.joined(separator: "\n")
             sections += "\n\n**Attend to:**\n\(bullets)"
         }
-
-        var fullInstruction = instruction
-        if let intention = context.intention {
-            fullInstruction += " Ground your response in the walker's stated intention: '\(intention)'. Return to it. Help them see how their walk — its pace, its pauses, its moments — spoke to this purpose."
-        }
-
-        sections += """
-
-
-            ---
-
-            \(fullInstruction)
-
-            \(responseContract(voice: voice, hasSpeech: context.hasSpeech))
-            """
 
         return sections
     }

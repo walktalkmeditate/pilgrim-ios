@@ -172,7 +172,12 @@ struct PromptListView: View {
             photoContexts: photoEntries,
             narrativeArc: narrativeArc,
             mode: practiceMode,
-            seekStory: seekStory
+            seekStory: seekStory,
+            pauses: walk.pauses.map {
+                PauseContext(startDate: $0.startDate, duration: $0.endDate.timeIntervalSince($0.startDate))
+            },
+            ascent: walk.ascend,
+            descent: walk.descend
         )
     }
 
