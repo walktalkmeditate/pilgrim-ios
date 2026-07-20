@@ -21,7 +21,7 @@ meditation, intention word echo, recurring word, first-vs-last recording).
 capped at 4; assembler section omitted when none fire.
 **Tests**: AttentionDirectivesTests — one per detector (fires + doesn't fire),
 cap, assembler integration.
-**Status**: Not Started
+**Status**: Complete
 
 ## Stage 3: Walk-character preamble + custom style dedupe
 **Goal**: Assembler-level walk character note (long/brief, night/early-morning,

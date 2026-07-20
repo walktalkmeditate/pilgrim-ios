@@ -86,6 +86,12 @@ enum PromptAssembler {
             """
         }
 
+        let directives = AttentionDirectives.detect(context: context)
+        if !directives.isEmpty {
+            let bullets = directives.map { "- \($0)" }.joined(separator: "\n")
+            sections += "\n\n**Attend to:**\n\(bullets)"
+        }
+
         var fullInstruction = instruction
         if let intention = context.intention {
             fullInstruction += " Ground your response in the walker's stated intention: '\(intention)'. Return to it. Help them see how their walk — its pace, its pauses, its moments — spoke to this purpose."
