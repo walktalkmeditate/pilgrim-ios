@@ -61,10 +61,10 @@ struct CairnDetailView: View {
                             colors: [glowColor.opacity(breathing ? glowIntensity : glowIntensity * 0.5), Color.clear],
                             center: .center,
                             startRadius: 10,
-                            endRadius: breathing ? 90 : 80
+                            endRadius: breathing ? 130 : 116
                         )
                     )
-                    .frame(width: 180, height: 180)
+                    .frame(width: 260, height: 260)
             }
 
             Image(tier.glyphAssetName)
@@ -76,7 +76,7 @@ struct CairnDetailView: View {
                 .opacity(appeared ? 1.0 : 0)
                 .scaleEffect(breathing ? 1.03 : 1.0)
         }
-        .frame(height: 140)
+        .frame(height: 220)
     }
 
     // MARK: - Info
@@ -180,13 +180,13 @@ struct CairnDetailView: View {
 
     private var iconSize: CGFloat {
         switch tier {
-        case .faint: return 32
-        case .small: return 38
-        case .medium: return 44
-        case .large: return 50
-        case .great: return 56
-        case .sacred: return 62
-        case .eternal: return 68
+        case .faint: return 64
+        case .small: return 76
+        case .medium: return 88
+        case .large: return 100
+        case .great: return 112
+        case .sacred: return 124
+        case .eternal: return 136
         }
     }
 
