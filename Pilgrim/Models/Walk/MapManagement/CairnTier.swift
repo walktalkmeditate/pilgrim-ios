@@ -9,6 +9,11 @@ enum CairnTier: Int, CaseIterable {
     case sacred = 5
     case eternal = 6
 
+    /// Asset catalog name for this tier's glyph art. Derived from the case
+    /// name — renaming a case requires renaming its imageset in
+    /// Assets.xcassets/glyphs/, which GlyphAssetTests enforces.
+    var glyphAssetName: String { "cairn-\(self)" }
+
     static func from(stoneCount: Int) -> CairnTier {
         switch stoneCount {
         case 108...: return .eternal
