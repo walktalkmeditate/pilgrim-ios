@@ -451,20 +451,18 @@ struct PilgrimMapView: UIViewRepresentable {
                 points.append(point)
             case .whisper(let categoryColor, _):
                 var point = PointAnnotation(coordinate: pin.coordinate)
-                let colorKey = String(format: "whisper-%02X%02X%02X",
-                    Int((categoryColor.cgColor.components?[0] ?? 0) * 255),
-                    Int((categoryColor.cgColor.components?[1] ?? 0) * 255),
-                    Int((categoryColor.cgColor.components?[2] ?? 0) * 255))
-                if let image = cachedSymbolImage("wind", size: 14, color: categoryColor, cacheKey: colorKey) {
-                    point.image = .init(image: image, name: colorKey)
+                let glyph = MapGlyph.whisper(tint: categoryColor)
+                if let image = MapGlyphImageBuilder.image(for: glyph, size: 14) {
+                    point.image = .init(image: image, name: MapGlyphImageBuilder.cacheKey(for: glyph))
                 }
                 point.iconSize = 1.0
                 points.append(point)
             case .cairn(_, let tier):
                 var point = PointAnnotation(coordinate: pin.coordinate)
                 let iconSize: CGFloat = 12 + CGFloat(tier.rawValue)
-                if let image = cachedSymbolImage("mountain.2", size: iconSize, color: .moss, cacheKey: "cairn-\(tier.rawValue)") {
-                    point.image = .init(image: image, name: "cairn-\(tier.rawValue)")
+                let glyph = MapGlyph.cairn(tier: tier)
+                if let image = MapGlyphImageBuilder.image(for: glyph, size: iconSize) {
+                    point.image = .init(image: image, name: MapGlyphImageBuilder.cacheKey(for: glyph))
                 }
                 point.iconSize = 1.0
                 points.append(point)
@@ -508,8 +506,9 @@ struct PilgrimMapView: UIViewRepresentable {
 
     /// Rasterized SF-symbol pin images keyed by the same symbol+color+size
     /// strings used as Mapbox image names (AF20). The key space is small and
-    /// fixed — waypoint icons, 8 whisper category colors, 5 cairn tiers — so
-    /// the cache never needs eviction. Main-thread only, like all callers.
+    /// fixed — waypoint icons only, now that whispers and cairns render
+    /// through MapGlyphImageBuilder — so the cache never needs eviction.
+    /// Main-thread only, like all callers.
     private static var symbolImageCache: [String: UIImage] = [:]
 
     private static func cachedSymbolImage(_ name: String, size: CGFloat, color: UIColor, cacheKey: String) -> UIImage? {
