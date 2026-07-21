@@ -1,7 +1,7 @@
 ---
 title: "feat: SVG glyphs for whispers and cairns"
 type: feat
-status: active
+status: completed
 date: 2026-07-21
 origin: docs/brainstorms/2026-07-21-svg-map-glyphs-requirements.md
 ---
