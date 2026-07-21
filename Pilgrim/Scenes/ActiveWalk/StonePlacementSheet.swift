@@ -9,8 +9,8 @@ struct StonePlacementSheet: View {
 
     /// Glyph frames scale with the walker's text size — the surrounding
     /// copy grows under accessibility sizes and the art must keep pace.
-    @ScaledMetric(relativeTo: .title) private var existingGlyphSize: CGFloat = 96
-    @ScaledMetric(relativeTo: .title) private var newGlyphSize: CGFloat = 112
+    @ScaledMetric(relativeTo: .title) private var existingGlyphSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .title) private var newGlyphSize: CGFloat = 56
 
     var body: some View {
         VStack(spacing: 0) {
