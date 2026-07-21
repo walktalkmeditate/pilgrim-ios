@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-45.05 0 246 246">
 <!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
   <radialGradient id="SVGID_1_" cx="77.79" cy="115.2" r="62.35" gradientUnits="userSpaceOnUse">
-    <stop stop-color="#FFDBAC" stop-opacity="0.5" offset="0"/>
+    <stop stop-color="#FFDBAC" stop-opacity="0.25" offset="0"/>
     <stop stop-color="#FFDBAC" stop-opacity="0" offset="1"/>
   </radialGradient>
   <path fill="url(#SVGID_1_)" d="m135 139c-11 27-57 39-57 39s-47-12-57-39c-10.7-28.4-9.8-51.9 14-69 19-13.4 43-14.1 43-14.1s25 0.6 42 14.1c24 20 23.9 46.4 15 69z"/>

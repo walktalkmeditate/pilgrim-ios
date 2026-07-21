@@ -24,6 +24,12 @@ enum CairnTier: Int, CaseIterable {
         }
     }
 
+    /// "a faint" … "an eternal" — VoiceOver labels splice this after a verb,
+    /// and the milestone tier must not read as "a eternal cairn".
+    var displayNameWithArticle: String {
+        self == .eternal ? "an \(displayName)" : "a \(displayName)"
+    }
+
     /// Natural-language tier name for user-facing text (VoiceOver labels),
     /// deliberately independent of asset naming.
     var displayName: String {

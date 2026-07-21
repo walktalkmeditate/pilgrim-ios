@@ -20,10 +20,12 @@ enum MapGlyphImageBuilder {
     /// the SwiftUI mood rows, and the asset tests.
     static let whisperAssetName = "whisperWisp"
 
+    /// Main-thread only, like all callers (buildPoints via updateUIView) —
+    /// same discipline as PilgrimMapView.symbolImageCache.
     private static var cache: [String: UIImage] = [:]
 
     static func image(for glyph: MapGlyph, size: CGFloat) -> UIImage? {
-        let key = "\(cacheKey(for: glyph))-\(Int(size))"
+        let key = "\(cacheKey(for: glyph))-\(size)"
         if let cached = cache[key] {
             return cached
         }
@@ -43,8 +45,12 @@ enum MapGlyphImageBuilder {
     static func cacheKey(for glyph: MapGlyph) -> String {
         switch glyph {
         case .whisper(let tint):
+            // Tints are the fixed, opaque WhisperCategory.borderColor
+            // literals; the key hashes RGB only. A non-RGB-convertible or
+            // translucent tint would collide keys — fail fast in DEBUG.
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
-            tint.getRed(&red, green: &green, blue: &blue, alpha: nil)
+            let converted = tint.getRed(&red, green: &green, blue: &blue, alpha: nil)
+            assert(converted, "whisper tint must be RGB-convertible for a stable cache key")
             return String(format: "whisper-%02X%02X%02X",
                           Int(red * 255), Int(green * 255), Int(blue * 255))
         case .cairn(let tier):

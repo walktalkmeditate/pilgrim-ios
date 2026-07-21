@@ -7,11 +7,10 @@ struct StonePlacementSheet: View {
     let onPlace: () -> Void
     let onDismiss: () -> Void
 
-    /// The sheet shows what the walker's stone makes, not what already
-    /// stands; a first stone begins a faint cairn.
-    private var becomingTier: CairnTier {
-        nearbyCairn?.becomingTier ?? CairnTier.from(stoneCount: 1)
-    }
+    /// Glyph frames scale with the walker's text size — the surrounding
+    /// copy grows under accessibility sizes and the art must keep pace.
+    @ScaledMetric(relativeTo: .title) private var existingGlyphSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .title) private var newGlyphSize: CGFloat = 56
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,11 +47,11 @@ struct StonePlacementSheet: View {
 
     private func existingCairnSection(_ cairn: CachedCairn) -> some View {
         VStack(spacing: Constants.UI.Padding.small) {
-            Image(becomingTier.glyphAssetName)
+            Image(cairn.becomingTier.glyphAssetName)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 48, height: 48)
-                .accessibilityLabel("Becomes a \(becomingTier.displayName) cairn")
+                .frame(width: existingGlyphSize, height: existingGlyphSize)
+                .accessibilityLabel("Becomes \(cairn.becomingTier.displayNameWithArticle) cairn")
 
             Text("\(cairn.stoneCount)")
                 .font(Constants.Typography.displayMedium)
@@ -72,12 +71,13 @@ struct StonePlacementSheet: View {
         VStack(spacing: Constants.UI.Padding.normal) {
             // View-level opacity, not a tint: the baked-color art ignores
             // foregroundColor, and "not yet placed" must still read as ghost.
-            Image(becomingTier.glyphAssetName)
+            // A first stone always begins a faint cairn.
+            Image(CairnTier.faint.glyphAssetName)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 56, height: 56)
+                .frame(width: newGlyphSize, height: newGlyphSize)
                 .opacity(0.4)
-                .accessibilityLabel("Begins a \(becomingTier.displayName) cairn")
+                .accessibilityLabel("Begins a faint cairn")
 
             Text("Start a new cairn here")
                 .font(Constants.Typography.body)

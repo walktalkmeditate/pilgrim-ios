@@ -51,6 +51,7 @@ struct CairnDetailView: View {
             Text(tierKanji)
                 .font(.system(size: 120, weight: .ultraLight))
                 .foregroundColor(tierAccentColor.opacity(kanjiOpacity))
+                .accessibilityHidden(true)
 
             // Glow ring for great+ tiers
             if tier.rawValue >= CairnTier.great.rawValue {
@@ -70,7 +71,7 @@ struct CairnDetailView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: iconSize, height: iconSize)
-                .accessibilityLabel("A \(tier.displayName) cairn")
+                .accessibilityLabel("\(tier.displayNameWithArticle) cairn")
                 .scaleEffect(appeared ? 1.0 : entryScale)
                 .opacity(appeared ? 1.0 : 0)
                 .scaleEffect(breathing ? 1.03 : 1.0)
