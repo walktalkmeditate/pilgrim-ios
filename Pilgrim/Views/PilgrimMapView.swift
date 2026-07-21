@@ -452,14 +452,14 @@ struct PilgrimMapView: UIViewRepresentable {
             case .whisper(let categoryColor, _):
                 var point = PointAnnotation(coordinate: pin.coordinate)
                 let glyph = MapGlyph.whisper(tint: categoryColor)
-                if let image = MapGlyphImageBuilder.image(for: glyph, size: 14) {
+                if let image = MapGlyphImageBuilder.image(for: glyph, size: 28) {
                     point.image = .init(image: image, name: MapGlyphImageBuilder.cacheKey(for: glyph))
                 }
                 point.iconSize = 1.0
                 points.append(point)
             case .cairn(_, let tier):
                 var point = PointAnnotation(coordinate: pin.coordinate)
-                let iconSize: CGFloat = 12 + CGFloat(tier.rawValue)
+                let iconSize: CGFloat = 24 + CGFloat(tier.rawValue) * 2
                 let glyph = MapGlyph.cairn(tier: tier)
                 if let image = MapGlyphImageBuilder.image(for: glyph, size: iconSize) {
                     point.image = .init(image: image, name: MapGlyphImageBuilder.cacheKey(for: glyph))
