@@ -16,6 +16,10 @@ enum MapGlyph {
 /// swap from SF Symbols changes pixels, not refresh behavior.
 enum MapGlyphImageBuilder {
 
+    /// The wisp's one canonical asset name, shared by the map raster path,
+    /// the SwiftUI mood rows, and the asset tests.
+    static let whisperAssetName = "whisperWisp"
+
     private static var cache: [String: UIImage] = [:]
 
     static func image(for glyph: MapGlyph, size: CGFloat) -> UIImage? {
@@ -26,7 +30,7 @@ enum MapGlyphImageBuilder {
         let rendered: UIImage?
         switch glyph {
         case .whisper(let tint):
-            rendered = self.rendered(assetNamed: "whisperWisp", tint: tint, size: size)
+            rendered = self.rendered(assetNamed: whisperAssetName, tint: tint, size: size)
         case .cairn(let tier):
             rendered = self.rendered(assetNamed: tier.glyphAssetName, tint: nil, size: size)
         }

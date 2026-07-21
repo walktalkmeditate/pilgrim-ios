@@ -7,10 +7,10 @@ struct StonePlacementSheet: View {
     let onPlace: () -> Void
     let onDismiss: () -> Void
 
-    /// The tier this cairn becomes with the walker's stone added — the
-    /// sheet shows what their stone makes, not what already stands (AE1-AE3).
+    /// The sheet shows what the walker's stone makes, not what already
+    /// stands; a first stone begins a faint cairn.
     private var becomingTier: CairnTier {
-        CairnTier.from(stoneCount: (nearbyCairn?.stoneCount ?? 0) + 1)
+        nearbyCairn?.becomingTier ?? CairnTier.from(stoneCount: 1)
     }
 
     var body: some View {
@@ -52,7 +52,7 @@ struct StonePlacementSheet: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 48, height: 48)
-                .accessibilityLabel("Becomes a \(becomingTier) cairn")
+                .accessibilityLabel("Becomes a \(becomingTier.displayName) cairn")
 
             Text("\(cairn.stoneCount)")
                 .font(Constants.Typography.displayMedium)
@@ -77,7 +77,7 @@ struct StonePlacementSheet: View {
                 .scaledToFit()
                 .frame(width: 56, height: 56)
                 .opacity(0.4)
-                .accessibilityLabel("Begins a faint cairn")
+                .accessibilityLabel("Begins a \(becomingTier.displayName) cairn")
 
             Text("Start a new cairn here")
                 .font(Constants.Typography.body)

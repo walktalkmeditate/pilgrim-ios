@@ -9,10 +9,34 @@ enum CairnTier: Int, CaseIterable {
     case sacred = 5
     case eternal = 6
 
-    /// Asset catalog name for this tier's glyph art. Derived from the case
-    /// name — renaming a case requires renaming its imageset in
-    /// Assets.xcassets/glyphs/, which GlyphAssetTests enforces.
-    var glyphAssetName: String { "cairn-\(self)" }
+    /// Asset catalog name for this tier's glyph art in Assets.xcassets/glyphs/.
+    /// Not the same string as MapGlyphImageBuilder's cache key ("cairn-<rawValue>"),
+    /// which preserves the pre-glyph annotation-name format.
+    var glyphAssetName: String {
+        switch self {
+        case .faint: return "cairn-faint"
+        case .small: return "cairn-small"
+        case .medium: return "cairn-medium"
+        case .large: return "cairn-large"
+        case .great: return "cairn-great"
+        case .sacred: return "cairn-sacred"
+        case .eternal: return "cairn-eternal"
+        }
+    }
+
+    /// Natural-language tier name for user-facing text (VoiceOver labels),
+    /// deliberately independent of asset naming.
+    var displayName: String {
+        switch self {
+        case .faint: return "faint"
+        case .small: return "small"
+        case .medium: return "medium"
+        case .large: return "large"
+        case .great: return "great"
+        case .sacred: return "sacred"
+        case .eternal: return "eternal"
+        }
+    }
 
     static func from(stoneCount: Int) -> CairnTier {
         switch stoneCount {

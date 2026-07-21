@@ -22,26 +22,30 @@ final class CairnTierTests: XCTestCase {
         XCTAssertEqual(CairnTier.from(stoneCount: 108), .eternal)
     }
 
-    // The add-a-stone sheet previews the tier the cairn becomes with the
-    // walker's stone: from(stoneCount: current + 1).
+    // The add-a-stone sheet previews CachedCairn.becomingTier — the tier
+    // the cairn becomes with the walker's stone.
+
+    private func cairn(stones: Int) -> CachedCairn {
+        CachedCairn(id: "test", latitude: 0, longitude: 0, stoneCount: stones, lastPlacedAt: "")
+    }
 
     func testBecoming_sixStones_crossesIntoMedium() {
-        XCTAssertEqual(CairnTier.from(stoneCount: 6 + 1), .medium, "AE1: the walker sees what their stone makes")
+        XCTAssertEqual(cairn(stones: 6).becomingTier, .medium, "AE1: the walker sees what their stone makes")
     }
 
     func testBecoming_eightStones_staysMedium() {
-        XCTAssertEqual(CairnTier.from(stoneCount: 8 + 1), .medium, "AE2: most stones deepen a tier, not change it")
+        XCTAssertEqual(cairn(stones: 8).becomingTier, .medium, "AE2: most stones deepen a tier, not change it")
     }
 
     func testBecoming_newCairn_isFaint() {
-        XCTAssertEqual(CairnTier.from(stoneCount: 0 + 1), .faint, "AE3: a first stone begins a faint cairn")
+        XCTAssertEqual(CairnTier.from(stoneCount: 1), .faint, "AE3: a first stone begins a faint cairn")
     }
 
     func testBecoming_thresholdCrossings() {
-        XCTAssertEqual(CairnTier.from(stoneCount: 2 + 1), .small)
-        XCTAssertEqual(CairnTier.from(stoneCount: 11 + 1), .large)
-        XCTAssertEqual(CairnTier.from(stoneCount: 41 + 1), .great)
-        XCTAssertEqual(CairnTier.from(stoneCount: 76 + 1), .sacred)
-        XCTAssertEqual(CairnTier.from(stoneCount: 107 + 1), .eternal)
+        XCTAssertEqual(cairn(stones: 2).becomingTier, .small)
+        XCTAssertEqual(cairn(stones: 11).becomingTier, .large)
+        XCTAssertEqual(cairn(stones: 41).becomingTier, .great)
+        XCTAssertEqual(cairn(stones: 76).becomingTier, .sacred)
+        XCTAssertEqual(cairn(stones: 107).becomingTier, .eternal)
     }
 }

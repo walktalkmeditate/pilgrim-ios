@@ -103,7 +103,7 @@ struct WhisperPlacementSheet: View {
                     ? "Stop preview"
                     : "Preview a \(category.rawValue.capitalized) whisper")
 
-                Image("whisperWisp")
+                Image(MapGlyphImageBuilder.whisperAssetName)
                     .resizable()
                     .renderingMode(.template)
                     .scaledToFit()

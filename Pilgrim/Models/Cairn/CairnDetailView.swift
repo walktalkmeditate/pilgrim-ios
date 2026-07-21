@@ -70,7 +70,7 @@ struct CairnDetailView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: iconSize, height: iconSize)
-                .accessibilityLabel("A \(tier) cairn")
+                .accessibilityLabel("A \(tier.displayName) cairn")
                 .scaleEffect(appeared ? 1.0 : entryScale)
                 .opacity(appeared ? 1.0 : 0)
                 .scaleEffect(breathing ? 1.03 : 1.0)

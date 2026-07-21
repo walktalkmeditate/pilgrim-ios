@@ -6,11 +6,8 @@ import XCTest
 /// rather than silently rendering nothing on the map.
 final class GlyphAssetTests: XCTestCase {
 
-    static let allGlyphNames = [
-        "whisperWisp",
-        "cairn-faint", "cairn-small", "cairn-medium", "cairn-large",
-        "cairn-great", "cairn-sacred", "cairn-eternal"
-    ]
+    static let allGlyphNames = [MapGlyphImageBuilder.whisperAssetName]
+        + CairnTier.allCases.map(\.glyphAssetName)
 
     func testAllGlyphAssetsResolve() {
         for name in Self.allGlyphNames {
