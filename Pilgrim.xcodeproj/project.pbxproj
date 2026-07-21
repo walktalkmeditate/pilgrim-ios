@@ -380,6 +380,7 @@
 		BBBB000000000000000033 /* ExportDateRangeFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000032 /* ExportDateRangeFormatterTests.swift */; };
 		BBBB000000000000000035 /* PilgrimPackageImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000034 /* PilgrimPackageImporterTests.swift */; };
 		BBBB000000000000000037 /* PhotoMarkerImageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000036 /* PhotoMarkerImageBuilder.swift */; };
+		AD00000200000000MGIB0001 /* MapGlyphImageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD00000100000000MGIB0001 /* MapGlyphImageBuilder.swift */; };
 		BBBB000000000000000039 /* PhotoMarkerImageBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000038 /* PhotoMarkerImageBuilderTests.swift */; };
 		BBBB00000000000000003B /* PhotoMarkerImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000003A /* PhotoMarkerImageLoader.swift */; };
 		BBBB00000000000000003D /* PhotoContextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000003C /* PhotoContextAnalyzer.swift */; };
@@ -547,6 +548,9 @@
 		LR00000200000000LRWKCH01 /* WalkCharacterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWKCH01 /* WalkCharacterTests.swift */; };
 		LR00000200000000LRPRLX01 /* PracticeLexiconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */; };
 		LR00000200000000LRBDCT01 /* BodyDataContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRBDCT01 /* BodyDataContextTests.swift */; };
+		LR00000200000000LRCRTT01 /* CairnTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRCRTT01 /* CairnTierTests.swift */; };
+		LR00000200000000LRGLAT01 /* GlyphAssetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRGLAT01 /* GlyphAssetTests.swift */; };
+		LR00000200000000LRMGIB01 /* MapGlyphImageBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRMGIB01 /* MapGlyphImageBuilderTests.swift */; };
 		LR00000200000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */; };
 		LR00000200000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */; };
 		LR00000200000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */; };
@@ -982,6 +986,7 @@
 		BBBB000000000000000032 /* ExportDateRangeFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportDateRangeFormatterTests.swift; sourceTree = "<group>"; };
 		BBBB000000000000000034 /* PilgrimPackageImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporterTests.swift; sourceTree = "<group>"; };
 		BBBB000000000000000036 /* PhotoMarkerImageBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMarkerImageBuilder.swift; sourceTree = "<group>"; };
+		AD00000100000000MGIB0001 /* MapGlyphImageBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapGlyphImageBuilder.swift; sourceTree = "<group>"; };
 		BBBB000000000000000038 /* PhotoMarkerImageBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoMarkerImageBuilderTests.swift; sourceTree = "<group>"; };
 		BBBB00000000000000003A /* PhotoMarkerImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMarkerImageLoader.swift; sourceTree = "<group>"; };
 		BBBB00000000000000003C /* PhotoContextAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoContextAnalyzer.swift; sourceTree = "<group>"; };
@@ -1159,6 +1164,9 @@
 		LR00000100000000LRWKCH01 /* WalkCharacterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkCharacterTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PracticeLexiconTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRBDCT01 /* BodyDataContextTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BodyDataContextTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRCRTT01 /* CairnTierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnTierTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRGLAT01 /* GlyphAssetTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GlyphAssetTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRMGIB01 /* MapGlyphImageBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MapGlyphImageBuilderTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRTSML01 /* TranscriptionServiceModelLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceModelLoadTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCIT1 /* VoiceRecordingCallInterruptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCallInterruptionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRVRCPT1 /* VoiceRecordingCheckpointTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceRecordingCheckpointTests.swift; sourceTree = "<group>"; };
@@ -1682,6 +1690,7 @@
 				AAAA00000000000000000MF8 /* PilgrimMapView.swift */,
 				LR00000100000000LRPMRS01 /* PilgrimMapView+RouteSource.swift */,
 				BBBB000000000000000036 /* PhotoMarkerImageBuilder.swift */,
+				AD00000100000000MGIB0001 /* MapGlyphImageBuilder.swift */,
 				BBBB00000000000000003A /* PhotoMarkerImageLoader.swift */,
 				56EEE45B2F70788E003F4391 /* StreakFlameView.swift */,
 				22BC992C2941D9A800D9B1A5 /* PillView.swift */,
@@ -1884,6 +1893,9 @@
 				LR00000100000000LRWKCH01 /* WalkCharacterTests.swift */,
 				LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */,
 				LR00000100000000LRBDCT01 /* BodyDataContextTests.swift */,
+				LR00000100000000LRCRTT01 /* CairnTierTests.swift */,
+				LR00000100000000LRGLAT01 /* GlyphAssetTests.swift */,
+				LR00000100000000LRMGIB01 /* MapGlyphImageBuilderTests.swift */,
 				LR00000100000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift */,
 				LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */,
 				LR00000100000000LRWSST01 /* WaveformScrubberStepTests.swift */,
@@ -2791,6 +2803,7 @@
 				LR00000200000000LRPMRS01 /* PilgrimMapView+RouteSource.swift in Sources */,
 				AAAA00000000000000000MC1 /* MapCameraSeed.swift in Sources */,
 				BBBB000000000000000037 /* PhotoMarkerImageBuilder.swift in Sources */,
+				AD00000200000000MGIB0001 /* MapGlyphImageBuilder.swift in Sources */,
 				BBBB00000000000000003B /* PhotoMarkerImageLoader.swift in Sources */,
 				22834F73254220FC00057FEB /* WalkPauseInterface.swift in Sources */,
 				22A5D03625C1ABDA00C30786 /* TempV4.swift in Sources */,
@@ -3190,6 +3203,9 @@
 				LR00000200000000LRWKCH01 /* WalkCharacterTests.swift in Sources */,
 				LR00000200000000LRPRLX01 /* PracticeLexiconTests.swift in Sources */,
 				LR00000200000000LRBDCT01 /* BodyDataContextTests.swift in Sources */,
+				LR00000200000000LRCRTT01 /* CairnTierTests.swift in Sources */,
+				LR00000200000000LRGLAT01 /* GlyphAssetTests.swift in Sources */,
+				LR00000200000000LRMGIB01 /* MapGlyphImageBuilderTests.swift in Sources */,
 				LR00000200000000LRWSGDT1 /* WalkSessionGuardDispatchTests.swift in Sources */,
 				LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */,
 				LR00000200000000LRWSST01 /* WaveformScrubberStepTests.swift in Sources */,

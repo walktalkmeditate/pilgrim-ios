@@ -51,6 +51,7 @@ struct CairnDetailView: View {
             Text(tierKanji)
                 .font(.system(size: 120, weight: .ultraLight))
                 .foregroundColor(tierAccentColor.opacity(kanjiOpacity))
+                .accessibilityHidden(true)
 
             // Glow ring for great+ tiers
             if tier.rawValue >= CairnTier.great.rawValue {
@@ -66,9 +67,11 @@ struct CairnDetailView: View {
                     .frame(width: 180, height: 180)
             }
 
-            Image(systemName: iconName)
-                .font(.system(size: iconSize, weight: .light))
-                .foregroundStyle(iconGradient)
+            Image(tier.glyphAssetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: iconSize, height: iconSize)
+                .accessibilityLabel("\(tier.displayNameWithArticle) cairn")
                 .scaleEffect(appeared ? 1.0 : entryScale)
                 .opacity(appeared ? 1.0 : 0)
                 .scaleEffect(breathing ? 1.03 : 1.0)
@@ -175,10 +178,6 @@ struct CairnDetailView: View {
 
     // MARK: - Tier Properties
 
-    private var iconName: String {
-        tier.rawValue >= CairnTier.medium.rawValue ? "mountain.2.fill" : "mountain.2"
-    }
-
     private var iconSize: CGFloat {
         switch tier {
         case .faint: return 32
@@ -196,19 +195,6 @@ struct CairnDetailView: View {
         case .faint: return 0.8
         case .small: return 0.6
         default: return 0.4
-        }
-    }
-
-    private var iconGradient: LinearGradient {
-        switch tier {
-        case .faint, .small:
-            return LinearGradient(colors: [Color.fog.opacity(0.5), Color.fog.opacity(0.3)], startPoint: .top, endPoint: .bottom)
-        case .medium, .large:
-            return LinearGradient(colors: [Color.stone.opacity(0.8), Color.stone.opacity(0.5)], startPoint: .top, endPoint: .bottom)
-        case .great, .sacred:
-            return LinearGradient(colors: [Color.stone, Color.dawn.opacity(0.7)], startPoint: .top, endPoint: .bottom)
-        case .eternal:
-            return LinearGradient(colors: [Color.dawn, Color.stone], startPoint: .top, endPoint: .bottom)
         }
     }
 

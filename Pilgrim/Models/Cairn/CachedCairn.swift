@@ -13,6 +13,12 @@ struct CachedCairn: Codable, Identifiable {
         CairnTier.from(stoneCount: stoneCount)
     }
 
+    /// The tier this cairn becomes when a walker adds one stone — the
+    /// add-a-stone sheet previews this, not the current tier (AE1-AE3).
+    var becomingTier: CairnTier {
+        CairnTier.from(stoneCount: stoneCount + 1)
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
         case latitude

@@ -7,6 +7,11 @@ struct StonePlacementSheet: View {
     let onPlace: () -> Void
     let onDismiss: () -> Void
 
+    /// Glyph frames scale with the walker's text size — the surrounding
+    /// copy grows under accessibility sizes and the art must keep pace.
+    @ScaledMetric(relativeTo: .title) private var existingGlyphSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .title) private var newGlyphSize: CGFloat = 56
+
     var body: some View {
         VStack(spacing: 0) {
             Text("Place a Stone")
@@ -41,11 +46,12 @@ struct StonePlacementSheet: View {
     }
 
     private func existingCairnSection(_ cairn: CachedCairn) -> some View {
-        let tier = cairn.tier
-        return VStack(spacing: Constants.UI.Padding.small) {
-            Image(systemName: tier.rawValue >= CairnTier.medium.rawValue ? "mountain.2.fill" : "mountain.2")
-                .font(.system(size: 36, weight: .light))
-                .foregroundColor(.stone)
+        VStack(spacing: Constants.UI.Padding.small) {
+            Image(cairn.becomingTier.glyphAssetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: existingGlyphSize, height: existingGlyphSize)
+                .accessibilityLabel("Becomes \(cairn.becomingTier.displayNameWithArticle) cairn")
 
             Text("\(cairn.stoneCount)")
                 .font(Constants.Typography.displayMedium)
@@ -63,9 +69,15 @@ struct StonePlacementSheet: View {
 
     private var newCairnSection: some View {
         VStack(spacing: Constants.UI.Padding.normal) {
-            Image(systemName: "mountain.2")
-                .font(Constants.Typography.displayLarge)
-                .foregroundColor(.stone.opacity(0.4))
+            // View-level opacity, not a tint: the baked-color art ignores
+            // foregroundColor, and "not yet placed" must still read as ghost.
+            // A first stone always begins a faint cairn.
+            Image(CairnTier.faint.glyphAssetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: newGlyphSize, height: newGlyphSize)
+                .opacity(0.4)
+                .accessibilityLabel("Begins a faint cairn")
 
             Text("Start a new cairn here")
                 .font(Constants.Typography.body)

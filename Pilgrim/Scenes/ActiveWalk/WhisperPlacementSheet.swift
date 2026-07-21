@@ -103,6 +103,14 @@ struct WhisperPlacementSheet: View {
                     ? "Stop preview"
                     : "Preview a \(category.rawValue.capitalized) whisper")
 
+                Image(MapGlyphImageBuilder.whisperAssetName)
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(Color(category.borderColor))
+                    .accessibilityHidden(true)
+
                 Text(category.rawValue.capitalized)
                     .font(Constants.Typography.body)
                     .foregroundColor(.ink.opacity(0.9))

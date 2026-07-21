@@ -98,6 +98,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 // populated DB.
                 #if DEBUG
                 if CommandLine.arguments.contains("--demo-mode") {
+                    if CommandLine.arguments.contains("--demo-cairns") {
+                        GeoCacheService.shared.injectDemoCairns(
+                            near: 42.8782, longitude: -8.5448
+                        )
+                    }
                     self.seedDemoData {
                         self.appLaunchState = .done
                     }

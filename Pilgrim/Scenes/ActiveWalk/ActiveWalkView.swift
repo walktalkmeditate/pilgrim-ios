@@ -812,9 +812,6 @@ extension ActiveWalkView {
             return
         }
 
-        let cairn = nearestCachedCairn()
-        let tier = cairn?.tier.soundTier ?? 1
-
         Task {
             do {
                 let result = try await CairnService.placeStone(
@@ -822,7 +819,12 @@ extension ActiveWalkView {
                     longitude: location.longitude
                 )
                 await MainActor.run {
-                    HapticPattern.stonePlaced(tier: tier).fire()
+                    // The haptic celebrates the tier the stone MADE, from the
+                    // server-confirmed count — matching the chime and the
+                    // sheet's becoming preview. A pre-placement tier misses
+                    // the milestone pattern at every crossing.
+                    let placedTier = CairnTier.soundTier(forStoneCount: result.stoneCount)
+                    HapticPattern.stonePlaced(tier: placedTier).fire()
                     viewModel.stonePlacedThisWalk = true
                     StonePlayer.shared.playForCount(result.stoneCount)
                     let nowISO = Self.isoFormatter.string(from: Date())
