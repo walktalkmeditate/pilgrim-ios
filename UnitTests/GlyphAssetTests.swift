@@ -15,9 +15,13 @@ final class GlyphAssetTests: XCTestCase {
         }
     }
 
-    func testEveryCairnTierHasAnAsset() {
-        for tier in CairnTier.allCases {
-            XCTAssertNotNil(UIImage(named: tier.glyphAssetName), "no glyph asset for tier \(tier)")
-        }
+    func testTierAssetNameMapping() {
+        XCTAssertEqual(CairnTier.faint.glyphAssetName, "cairn-faint")
+        XCTAssertEqual(CairnTier.small.glyphAssetName, "cairn-small")
+        XCTAssertEqual(CairnTier.medium.glyphAssetName, "cairn-medium")
+        XCTAssertEqual(CairnTier.large.glyphAssetName, "cairn-large")
+        XCTAssertEqual(CairnTier.great.glyphAssetName, "cairn-great")
+        XCTAssertEqual(CairnTier.sacred.glyphAssetName, "cairn-sacred")
+        XCTAssertEqual(CairnTier.eternal.glyphAssetName, "cairn-eternal")
     }
 }

@@ -41,6 +41,23 @@ final class CairnTierTests: XCTestCase {
         XCTAssertEqual(CairnTier.from(stoneCount: 1), .faint, "AE3: a first stone begins a faint cairn")
     }
 
+    func testSoundTier_boundaryCounts() {
+        XCTAssertEqual(CairnTier.soundTier(forStoneCount: 2), 1)
+        XCTAssertEqual(CairnTier.soundTier(forStoneCount: 3), 2)
+        XCTAssertEqual(CairnTier.soundTier(forStoneCount: 6), 2)
+        XCTAssertEqual(CairnTier.soundTier(forStoneCount: 7), 3)
+        XCTAssertEqual(CairnTier.soundTier(forStoneCount: 41), 4)
+        XCTAssertEqual(CairnTier.soundTier(forStoneCount: 42), 5, "the great crossing must reach the milestone haptic gate")
+        XCTAssertEqual(CairnTier.soundTier(forStoneCount: 77), 6)
+        XCTAssertEqual(CairnTier.soundTier(forStoneCount: 108), 7)
+    }
+
+    func testDisplayNameWithArticle_handlesEternal() {
+        XCTAssertEqual(CairnTier.eternal.displayNameWithArticle, "an eternal",
+                       "the milestone tier must not read as 'a eternal' in VoiceOver")
+        XCTAssertEqual(CairnTier.faint.displayNameWithArticle, "a faint")
+    }
+
     func testBecoming_thresholdCrossings() {
         XCTAssertEqual(cairn(stones: 2).becomingTier, .small)
         XCTAssertEqual(cairn(stones: 11).becomingTier, .large)

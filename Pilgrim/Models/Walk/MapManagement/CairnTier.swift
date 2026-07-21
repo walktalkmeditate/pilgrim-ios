@@ -44,6 +44,13 @@ enum CairnTier: Int, CaseIterable {
         }
     }
 
+    /// The one tier derivation for stone-count-driven feedback (placement
+    /// haptic, stone chime). StonePlayer and ActiveWalkView both route
+    /// through here so the threshold table cannot silently fork again.
+    static func soundTier(forStoneCount count: Int) -> Int {
+        from(stoneCount: count).soundTier
+    }
+
     static func from(stoneCount: Int) -> CairnTier {
         switch stoneCount {
         case 108...: return .eternal

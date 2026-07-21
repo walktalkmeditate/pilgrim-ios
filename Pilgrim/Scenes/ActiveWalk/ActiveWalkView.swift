@@ -823,7 +823,7 @@ extension ActiveWalkView {
                     // server-confirmed count — matching the chime and the
                     // sheet's becoming preview. A pre-placement tier misses
                     // the milestone pattern at every crossing.
-                    let placedTier = CairnTier.from(stoneCount: result.stoneCount).soundTier
+                    let placedTier = CairnTier.soundTier(forStoneCount: result.stoneCount)
                     HapticPattern.stonePlaced(tier: placedTier).fire()
                     viewModel.stonePlacedThisWalk = true
                     StonePlayer.shared.playForCount(result.stoneCount)

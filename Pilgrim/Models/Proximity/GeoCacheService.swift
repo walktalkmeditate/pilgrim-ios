@@ -263,3 +263,25 @@ final class GeoCacheService: ObservableObject {
         return try? JSONSerialization.data(withJSONObject: dict)
     }
 }
+
+#if DEBUG
+extension GeoCacheService {
+
+    /// `--demo-cairns` (with `--demo-mode`) seeds one cairn per tier,
+    /// stepping north from the given center, so every tier's art is
+    /// inspectable on device and in CI without the live API — the plan's
+    /// device-verification path for tier progression (U3, AE5).
+    func injectDemoCairns(near latitude: Double, longitude: Double) {
+        let tierCounts = [1, 3, 7, 12, 42, 77, 108]
+        cachedCairns = tierCounts.enumerated().map { index, count in
+            CachedCairn(
+                id: "demo-cairn-\(count)",
+                latitude: latitude + Double(index) * 0.0005,
+                longitude: longitude,
+                stoneCount: count,
+                lastPlacedAt: "2026-07-21T00:00:00Z"
+            )
+        }
+    }
+}
+#endif
