@@ -7,6 +7,12 @@ struct StonePlacementSheet: View {
     let onPlace: () -> Void
     let onDismiss: () -> Void
 
+    /// The tier this cairn becomes with the walker's stone added — the
+    /// sheet shows what their stone makes, not what already stands (AE1-AE3).
+    private var becomingTier: CairnTier {
+        CairnTier.from(stoneCount: (nearbyCairn?.stoneCount ?? 0) + 1)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Text("Place a Stone")
@@ -41,11 +47,12 @@ struct StonePlacementSheet: View {
     }
 
     private func existingCairnSection(_ cairn: CachedCairn) -> some View {
-        let tier = cairn.tier
-        return VStack(spacing: Constants.UI.Padding.small) {
-            Image(systemName: tier.rawValue >= CairnTier.medium.rawValue ? "mountain.2.fill" : "mountain.2")
-                .font(.system(size: 36, weight: .light))
-                .foregroundColor(.stone)
+        VStack(spacing: Constants.UI.Padding.small) {
+            Image(becomingTier.glyphAssetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 48, height: 48)
+                .accessibilityLabel("Becomes a \(becomingTier) cairn")
 
             Text("\(cairn.stoneCount)")
                 .font(Constants.Typography.displayMedium)
@@ -63,9 +70,14 @@ struct StonePlacementSheet: View {
 
     private var newCairnSection: some View {
         VStack(spacing: Constants.UI.Padding.normal) {
-            Image(systemName: "mountain.2")
-                .font(Constants.Typography.displayLarge)
-                .foregroundColor(.stone.opacity(0.4))
+            // View-level opacity, not a tint: the baked-color art ignores
+            // foregroundColor, and "not yet placed" must still read as ghost.
+            Image(becomingTier.glyphAssetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 56, height: 56)
+                .opacity(0.4)
+                .accessibilityLabel("Begins a faint cairn")
 
             Text("Start a new cairn here")
                 .font(Constants.Typography.body)
