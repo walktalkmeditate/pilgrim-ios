@@ -391,14 +391,10 @@ struct PilgrimMapView: UIViewRepresentable {
                 // CircleAnnotation in the middle — the thumbnail IS
                 // the marker.
                 continue
-            case .seekArrival(_, let lightHex):
-                // The bright core inside the found-place halo — the same
-                // two-part reading as the web viewer's Book.
-                circle.circleRadius = 4
-                circle.circleColor = StyleColor(UIColor(hex: lightHex))
-                circle.circleOpacity = 0.9
-                circle.circleStrokeWidth = 0
-            case .waypoint, .whisper, .cairn:
+            case .waypoint, .whisper, .cairn, .seekArrival:
+                // The clearing's core is its tree, drawn as a PointAnnotation
+                // in `buildPoints`; the halo above still carries the hour's
+                // light, so the two-part reading survives the glyph swap.
                 continue
             }
             circles.append(circle)
@@ -424,8 +420,11 @@ struct PilgrimMapView: UIViewRepresentable {
             glow.circleStrokeWidth = 0
             return glow
         case .seekArrival(_, let lightHex):
+            // Tightened from 26 when the clearing gained its tree: the halo
+            // is light *around* the mark now, not the mark itself. Wider and
+            // the 30pt tree floats in it.
             var glow = CircleAnnotation(centerCoordinate: pin.coordinate)
-            glow.circleRadius = 26
+            glow.circleRadius = 20
             glow.circleColor = StyleColor(UIColor(hex: lightHex))
             glow.circleOpacity = 0.28
             glow.circleStrokeWidth = 0
@@ -444,7 +443,17 @@ struct PilgrimMapView: UIViewRepresentable {
             switch pin.kind {
             case .waypoint(_, let icon):
                 var point = PointAnnotation(coordinate: pin.coordinate)
-                if let image = cachedSymbolImage(icon, size: 18, color: .stone, cacheKey: icon) {
+                if icon == SeekPersistence.arrivalWaypointIcon {
+                    // A clearing reached mid-walk. Live walks keep `.waypoint`
+                    // (their halo is the fog layer), but the mark must not
+                    // change under the walker — same tree as the summary map,
+                    // wearing the stone every live waypoint wears. The hour's
+                    // light belongs to the record.
+                    let glyph = MapGlyph.seekClearing(tint: .stone)
+                    if let image = MapGlyphImageBuilder.image(for: glyph, size: 22) {
+                        point.image = .init(image: image, name: MapGlyphImageBuilder.cacheKey(for: glyph))
+                    }
+                } else if let image = cachedSymbolImage(icon, size: 18, color: .stone, cacheKey: icon) {
                     point.image = .init(image: image, name: icon)
                 }
                 point.iconSize = 1.0
@@ -462,6 +471,18 @@ struct PilgrimMapView: UIViewRepresentable {
                 let iconSize: CGFloat = 24 + CGFloat(tier.rawValue) * 2
                 let glyph = MapGlyph.cairn(tier: tier)
                 if let image = MapGlyphImageBuilder.image(for: glyph, size: iconSize) {
+                    point.image = .init(image: image, name: MapGlyphImageBuilder.cacheKey(for: glyph))
+                }
+                point.iconSize = 1.0
+                points.append(point)
+            case .seekArrival(_, let lightHex):
+                // The tree standing in the clearing, tinted with the sky it
+                // was found under. 30pt against `glowCircle`'s 26pt radius
+                // leaves the halo reading as light around the tree — smaller
+                // and the tree floats, larger and the halo becomes a rim.
+                var point = PointAnnotation(coordinate: pin.coordinate)
+                let glyph = MapGlyph.seekClearing(tint: UIColor(hex: lightHex))
+                if let image = MapGlyphImageBuilder.image(for: glyph, size: 30) {
                     point.image = .init(image: image, name: MapGlyphImageBuilder.cacheKey(for: glyph))
                 }
                 point.iconSize = 1.0
@@ -506,8 +527,9 @@ struct PilgrimMapView: UIViewRepresentable {
 
     /// Rasterized SF-symbol pin images keyed by the same symbol+color+size
     /// strings used as Mapbox image names (AF20). The key space is small and
-    /// fixed — waypoint icons only, now that whispers and cairns render
-    /// through MapGlyphImageBuilder — so the cache never needs eviction.
+    /// fixed — user-pickable waypoint icons only, now that whispers, cairns,
+    /// and clearings render through MapGlyphImageBuilder — so the cache never
+    /// needs eviction.
     /// Main-thread only, like all callers.
     private static var symbolImageCache: [String: UIImage] = [:]
 
