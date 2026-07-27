@@ -281,8 +281,13 @@ struct SeekSummarySection: View {
 
     private var header: some View {
         HStack {
-            Image(systemName: SeekPersistence.arrivalWaypointIcon)
+            Image(MapGlyphImageBuilder.seekClearingAssetName)
+                .resizable()
+                .renderingMode(.template)
+                .scaledToFit()
+                .frame(width: 22, height: 22)
                 .foregroundColor(.stone)
+                .accessibilityHidden(true)
             Text(LS.seekSummaryHeader)
                 .font(Constants.Typography.heading)
                 .foregroundColor(.ink)
