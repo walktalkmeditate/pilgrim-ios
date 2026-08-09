@@ -36,8 +36,10 @@ The feature is named by its button: **"Walk with me"**.
    no words is an ambient one, not a broken talk. Sound plays only where it was
    recorded. Between recordings the page is quiet. No loops, no fabricated
    soundscape.
-5. **Voice is the most intimate data in the app.** Every recording is opt-in,
-   per recording, default off.
+5. **Voice is the most intimate data in the app.** The tour is opt-in at the
+   share level: one explicit **"Interactive"** toggle, default off. With it on,
+   every recording remains individually excludable. With it off, no audio
+   leaves the device and the share is exactly today's.
 
 ## What exists today (verified 2026-08-09)
 
@@ -78,9 +80,11 @@ The feature is named by its button: **"Walk with me"**.
 ### Entry
 
 The pre-rendered page gains a hero button under the map section — **"Walk with
-me →"** — present only when the share includes **at least one recording**.
-Voice is the point of the tour; photos-only shares keep today's static page
-unchanged (a photos-only tour is a trivial later enablement if wanted). Tapping
+me →"** — present whenever the walker shared with **Interactive on**. A tour
+needs no audio to stand: the Koya Bound reference itself is silent — photos,
+waypoint marks, rests, and the drawing stroke carry a voiceless walk, and
+voices elevate it when present. Non-interactive shares keep today's static
+page unchanged. Tapping
 the button is the audio-unlock
 gesture (iOS Safari requires one): the engine fetches `/{id}/tour.json`, opens a
 full-screen overlay, and resumes the AudioContext inside the tap handler. The
@@ -113,7 +117,7 @@ Compiled server-side at share time (see tour.json), ordered by timestamp:
 | Departure | `start_date`, `place_start`, weather, journal | Title card: date, place, weather line; journal text as epigraph if present |
 | Spoken encounter | recording with `kind: "spoken"` | Scroll settles into a station; audio plays with ~300 ms gain fade-in; transcription revealed as flowing text (full text, slow reveal — no word-sync in v1); scrolling past a threshold fades audio out (never force-listen) |
 | Ambient passage | recording with `kind: "ambient"` | A span from position(start_ts) to position(end_ts); audio fades in while the viewer is inside the span (~1.5 s ramps), no transcript, scroll never stops |
-| Photo | photo `{lat, lon, ts}` | Photo card blooms at its ts-position (600×600 relic card in the ink world, not full-bleed — matches the reliquary aesthetic and today's pipeline) |
+| Photo | photo `{lat, lon, ts}` | Photo blooms at its ts-position, up to near-full-bleed — interactive shares upload photos at high resolution (see iOS changes) |
 | Waypoint mark | waypoint | Small card: icon + label, drifts past |
 | Rest | pause interval ≥3 min (new `pauses` payload field) | Quiet beat: "stillness here · 12 min" — the stroke pauses drawing for a breath |
 | Arrival | `place_end`, toggled stats | Closing card: place, duration, the stats the walker chose to share; then the overlay closes onto the static page at the seal section — the walk literally returns to the artifact |
@@ -154,18 +158,27 @@ as noise and never displayed. All inputs already exist on
 
 ### iOS changes (share flow only — no schema change, no migration)
 
-1. **"Voices on the trail" section** in `WalkShareView`, shown when the walk has
-   recordings whose files still exist. One row per recording, styled after
-   `VoiceRecordingRow` (index title, duration, start time, one-line transcript
-   preview), each with a toggle **default off**. Recordings whose file was
-   deleted (transcript kept) appear grayed: "audio removed". When ≥1 recording
-   is on, show the warning (mirroring the photos warning): "Voices will be
-   audible to anyone with the link."
+1. **"Interactive" toggle** — a new section in `WalkShareView`, available on
+   every walk. One switch, default **off**, with explanatory subtitle:
+   "Interactive" / "Viewers walk your route step by step — your voices and
+   photos play where they happened." Turning it on:
+   - reveals the recordings disclosure when the walk has recordings: one row
+     per recording (index title, duration, start time, one-line transcript
+     preview), each individually excludable but **included by default** —
+     consent happened at the master switch; exclusion handles the one
+     recording that was private. Deleted-file recordings (transcript kept)
+     appear grayed: "audio removed";
+   - auto-enables the existing "Reliquary Photos" toggle when pinned photos
+     exist (still independently controllable — a voice-only tour is valid, and
+     so is a voiceless one);
+   - shows the warning when ≥1 recording is included, mirroring the photos
+     one: "Voices will be audible to anyone with the link."
+   Excluding every recording simply makes a silent tour. Interactive off =
+   today's share exactly; no audio is uploaded.
 2. **"Soften start & end" toggle** — trims route points within ~150 m
    path-distance of each end **before** payload build, so the static map, og
-   image, and tour all inherit it. Default **on when ≥1 recording is included**,
-   off otherwise (preserves current behavior for existing share types). Tour
-   anchor positions falling inside a trimmed zone clamp to the trimmed ends.
+   image, and tour all inherit it. Default **on when Interactive is on**, off
+   otherwise (preserves current behavior for existing share types).
 3. **Payload additions** (`SharePayload`):
    ```json
    "tour": {
@@ -180,23 +193,35 @@ as noise and never displayed. All inputs already exist on
    ```
    `transcription`/`wpm` are included **only** for selected recordings — no
    transcript leaves the device for a recording the walker didn't choose. The
-   `tour` object is sent only when ≥1 recording is selected.
-4. **Audio upload** in `ShareService`: after `POST /api/share` returns `{id}`,
-   PUT each selected file sequentially —
-   `PUT /api/share/{id}/audio/{n}` with `X-Device-Token`, raw `.m4a` body
-   (no transcode; files are already AAC mono) — with a progress UI
-   ("Uploading voice 2 of 5"). Per-file failure offers Retry / Skip; a skipped
-   file degrades to transcript-only on the page. No finalize handshake needed.
+   `tour` object is sent whenever Interactive is on; its `recordings` array
+   may be empty (a silent tour).
+4. **Media upload** in `ShareService`: after `POST /api/share` returns `{id}`,
+   PUT each included file sequentially with `X-Device-Token` and a progress UI
+   ("Uploading voice 2 of 5", "Uploading photo 3 of 8"):
+   - `PUT /api/share/{id}/audio/{n}` — raw `.m4a` body (no transcode; files
+     are already AAC mono). Per-file failure offers Retry / Skip; a skipped
+     file degrades to transcript-only on the page.
+   - `PUT /api/share/{id}/photos/{n}` — raw JPEG. **Interactive shares upload
+     photos at high resolution** — 1600 px long edge, q0.7, EXIF-free by
+     re-encode — instead of the base64 route: `SharePayload.Photo.data` is
+     omitted and files land at the same R2 keys the static page already
+     references, so the reliquary section and its lightboxes get the sharper
+     photos for free. Non-interactive shares keep today's 600×600 base64 path
+     unchanged.
+   The share link is revealed when uploads complete. No finalize handshake:
+   the page tolerates missing files.
 5. **Caps enforced client-side** (mirrored server-side): ≤12 recordings,
-   ≤15 MB per file, ≤60 MB and ≤45 min total. If a selection exceeds a cap, the
+   ≤15 MB per audio file, ≤60 MB and ≤45 min of audio total; ≤20 photos
+   (existing cap), ≤2 MB per photo file. If a selection exceeds a cap, the
    share button disables with gentle copy until the selection fits.
 
 ### Worker changes
 
 1. **`POST /api/share`** accepts the optional `tour` and `pauses` fields,
    validates recording metadata (count/duration/size caps, ts ordering, kind
-   enum, transcription length ≤ 10k chars each), and when `tour` is present
-   (≥1 recording):
+   enum, transcription length ≤ 10k chars each), accepts `photos[].data`
+   omitted when `tour` is present (files arrive via PUT; base64 required
+   otherwise), and when `tour` is present:
    - compiles **`walks/{id}/tour.json`** — the finished encounter script:
      `{v: 1, theme, place_start, place_end, weather, route (trimmed, ts),
      elevation profile, encounters[], meditation_segments[], expires}`.
@@ -206,11 +231,13 @@ as noise and never displayed. All inputs already exist on
      vitest-testable;
    - renders the page with the "Walk with me" button and a
      `<script defer src="/assets/tour-v1.js">` tag.
-2. **`PUT /api/share/{id}/audio/{n}`** — auth: SHA-256 of `X-Device-Token` must
-   equal `meta.device_token_hash`; walk must be unexpired; `n` must be within
-   the declared recording count; `Content-Length` ≤ 15 MB; body streamed to R2
-   `walks/{id}/audio/{n}.m4a`. No separate daily quota: PUTs are bounded by
-   the declared recording count of an already rate-limited share.
+2. **`PUT /api/share/{id}/audio/{n}` and `PUT /api/share/{id}/photos/{n}`** —
+   auth: SHA-256 of `X-Device-Token` must equal `meta.device_token_hash`; walk
+   must be unexpired; `n` must be within the declared count (recordings /
+   photos); `Content-Length` ≤ 15 MB for audio, ≤ 2 MB for photos; bodies
+   streamed to R2 `walks/{id}/audio/{n}.m4a` / `walks/{id}/photos/{n}.jpg`
+   (the photo key today's serving already uses). No separate daily quota:
+   PUTs are bounded by the declared counts of an already rate-limited share.
 3. **`GET /{id}/audio/{n}.m4a`** — new `ASSET_ROUTES` entry, `audio/mp4`,
    max-age 86400, **with HTTP Range support** (R2 range get → 206): iOS Safari
    issues byte-range requests for media and misbehaves without it.
@@ -241,9 +268,11 @@ inserted via `textContent`, never `innerHTML`.
 
 ## Privacy
 
-- Per-recording opt-in, default off; transcript and wpm ride only with selected
-  recordings. Photos warning pattern reused for voices.
-- Trim defaults on for voice shares; applies to every downstream artifact
+- The tour is gated by the explicit Interactive toggle, default off; with it
+  on, every recording is individually excludable, and transcript/wpm ride only
+  with included recordings. Photos warning pattern reused for voices.
+  Interactive off = nothing new leaves the device.
+- Trim defaults on for Interactive shares; applies to every downstream artifact
   because it happens before payload build.
 - Same threat model as photos today: unlisted 10-char nanoid, `noindex`,
   ephemeral by expiry (moon/season/cycle), served over the same domain. Audio
@@ -253,8 +282,15 @@ inserted via `textContent`, never `innerHTML`.
 
 ## Limits and costs
 
-- Storage: ≤60 MB/walk worst case, ephemeral. R2 egress to Cloudflare-served
-  requests is free; no new vendor dependencies; Mapbox usage unchanged.
+- Storage: ≤100 MB/walk worst case (60 MB audio + 40 MB photos), ephemeral.
+  R2 egress to Cloudflare-served requests is free; no new vendor dependencies;
+  Mapbox usage unchanged.
+- The media caps are policy, not platform limits (a Worker request body allows
+  ~100 MB per request; R2 objects far more). They bound worst-case storage per
+  walk on an endpoint whose device tokens are self-issued — anyone can mint
+  one, so per-walk caps are the blast-radius control, not the daily rate
+  limit. Server-side constants, tunable anytime; the client mirrors them only
+  for friendly early failure.
 - The 2 MB JSON payload cap stays: audio never rides in JSON (a single 3-min
   recording exceeds the whole cap as base64 — this is why audio is per-file
   PUTs), and transcription text at ≤10k × 12 fits comfortably.
@@ -265,7 +301,7 @@ inserted via `textContent`, never `innerHTML`.
 
 - **Worker (vitest):** tour payload validation (caps, ordering, kinds);
   encounter compilation against a golden walk fixture (recordings + photos +
-  waypoints + pauses → expected encounter script); PUT auth (wrong token, wrong
+  waypoints + pauses → expected encounter script) and a voiceless fixture; PUT auth (wrong token, wrong
   n, oversize, expired walk); Range responses (206/416); prefix-delete expiry
   including >1000 objects and audio keys.
 - **iOS (XCTest):** wpm gate cases (nil/hallucinated/slow-poem/normal);
@@ -281,8 +317,8 @@ inserted via `textContent`, never `innerHTML`.
 
 - **v1 (this spec):** everything above.
 - **Phase 2:** "walk it for me" auto-advance at the walker's compressed real
-  pace; daypart sky gradient following the walk's actual clock; full-bleed
-  photo option via per-file PUTs; transcript sync highlighting.
+  pace; daypart sky gradient following the walk's actual clock; transcript
+  sync highlighting.
 - **Phase 3:** "leave a stone" — one anonymous tap at the arrival, surfaced to
   the walker as "N people walked with you" (collective-counter language, no
   comments, no accounts); pilgrim-cards QR → tour of a trail.
@@ -297,6 +333,10 @@ inserted via `textContent`, never `innerHTML`.
   schema entity, no migration.
 - **A second share type / separate tour URL** — one artifact, one link; the
   tour enhances the page that already exists.
+- **Granular-first selection** (per-recording checkboxes as the primary consent
+  surface — this spec's first draft) — replaced by the single Interactive
+  toggle: consent lives at the mode level where it's legible; granular
+  exclusion remains as a disclosure beneath it.
 - **Base64 audio in the JSON payload** — breaks the 2 MB cap immediately.
 - **On-device transcode before upload** — files are already AAC mono; recompression
   adds code and loses quality for ~2× size savings that caps make unnecessary.
