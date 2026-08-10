@@ -158,6 +158,21 @@ phrases on wind and street noise, so low-wpm/low-count transcripts are treated
 as noise and never displayed. All inputs already exist on
 `VoiceRecordingInterface`.
 
+*(Revised 2026-08-10 — long continuous talks.)* Talks recorded continuously
+while walking (10–50 min) are **spans, not stations**: a voice covers its
+real route stretch (`frac..end_frac`), playback is **position-synced** — the
+reader hears the part spoken where they are; slow scrolling never interrupts
+(re-seek only past ~45 s of drift), leaving fades, returning resumes in
+place. Long transcripts chunk into ~110-word passages distributed along the
+span (proportional placement; when iOS ships Whisper **segment timings** via
+an optional per-recording `segments: [{start, end, text}]` payload field,
+anchoring becomes exact). `MAX_TRANSCRIPTION_LEN` is 60,000 chars (a
+50-minute talk). **Untranscribed recordings default to spoken**, not ambient
+— the gate above applies only when a transcription exists; without one the
+page renders "a voice, unwritten" with duration, position-synced at full
+volume. The iOS share sheet may offer a per-recording spoken/ambient
+override.
+
 ### Degraded modes (all first-class) *(revised 2026-08-10)*
 
 - **Sound never requested / muted:** the story is complete as served —
