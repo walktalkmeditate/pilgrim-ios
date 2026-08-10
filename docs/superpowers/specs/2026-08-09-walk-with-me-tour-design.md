@@ -33,11 +33,16 @@ The feature is named by its button: **"Walk with me"**.
    the route drawing as a connecting thread between them, photos full-bleed,
    transcripts as large serif prose. Audio is chapter-anchored; scroll is
    never hijacked.
-3. **The ink world, no tile map.** No Mapbox GL, no tiles. The tour renders the
-   route as a sumi-e stroke drawing itself, with the elevation ribbon as the
-   scrubber and geocoded place names as drifting labels. Distinctive,
-   featherweight, and gentler on privacy than a satellite flythrough. Photos
-   carry visual reality; the map only carries shape.
+3. **The map is the canvas.** *(Revised again 2026-08-10 — the user's
+   original instinct, restored: "follow the walk step by step.")* A fixed
+   full-viewport Mapbox GL backdrop traverses the real route as the reader
+   scrolls; the route line draws itself on real streets; chapters float over
+   the map as parchment cards anchored where they happened; a warm daypart
+   scrim keeps it Pilgrim rather than navigation-app. Requires a public
+   Mapbox token (`MAPBOX_PUBLIC_TOKEN` worker var) and CSP allowances for
+   api.mapbox.com + blob workers; when the token is absent the story
+   degrades gracefully to chapters on paper. Start/end trim remains the
+   privacy control.
 4. **Honest sound.** The recorder already captures ambience — a recording with
    no words is an ambient one, not a broken talk. Sound plays only where it was
    recorded. Between recordings the page is quiet. No loops, no fabricated
@@ -105,10 +110,10 @@ requested, which resolves the prime-all open question by construction.
 
 Chapters flow as a normal document — no scroll hijacking, no camera lock:
 
-- Between chapters, the **route thread** draws itself — a sumi-e stroke
-  segment (SVG `stroke-dashoffset` driven by scroll/IntersectionObserver
-  progress) tracing the actual route geometry for that leg of the walk,
-  connecting each chapter to the next.
+- Between chapters, the reader glides: transparent leg spacers give the
+  map room, the camera interpolating along the real route from one
+  chapter's coordinates to the next while the walked portion of the route
+  line draws itself (line-trim) on the streets below.
 - A hairline **progress line** (route fraction walked) sits fixed at the
   viewport edge; the elevation profile renders once inside the arrival
   chapter rather than as a persistent ribbon.
