@@ -20,13 +20,19 @@ The feature is named by its button: **"Walk with me"**.
 
 ## Design principles
 
-1. **One artifact, one URL.** The tour is a progressive enhancement of the
-   existing share page at `walk.pilgrimapp.org/{id}`. The static Journey layout
-   remains what unfurls in iMessage, serves no-JS readers, and is the page the
-   tour returns to. There is never a second share type to choose.
-2. **Encounters, not a film.** Scroll is walking; stations are moments. Movement
-   between encounters is position-based (scroll), each encounter is time-based
-   (audio plays, a photo holds). This is how audio and scroll coexist.
+1. **One artifact, one URL — and the page IS the story.** *(Revised 2026-08-10
+   after live preview: the first build made the tour a button-gated overlay on
+   the classic page; seeing it real showed the vision is Koya Bound — you land
+   in the story.)* An interactive share renders the story directly at
+   `walk.pilgrimapp.org/{id}`: full-viewport chapters, with the classic
+   Journey layout (map, stats, seal, keepsake) as the final arrival chapter.
+   Chapters are server-rendered HTML — a no-JS reader gets the whole story.
+   Non-interactive shares keep today's page exactly. Never a second URL.
+2. **Chapters, not a film.** *(Revised 2026-08-10.)* The story reads as a
+   document — Koya Bound's grammar: full-viewport chapters scrolled naturally,
+   the route drawing as a connecting thread between them, photos full-bleed,
+   transcripts as large serif prose. Audio is chapter-anchored; scroll is
+   never hijacked.
 3. **The ink world, no tile map.** No Mapbox GL, no tiles. The tour renders the
    route as a sumi-e stroke drawing itself, with the elevation ribbon as the
    scrubber and geocoded place names as drifting labels. Distinctive,
@@ -77,55 +83,58 @@ The feature is named by its button: **"Walk with me"**.
 
 ## Experience design
 
-### Entry
+### Landing *(revised 2026-08-10 — replaces the button-gated overlay)*
 
-The pre-rendered page gains a hero button under the map section — **"Walk with
-me →"** — present whenever the walker shared with **Interactive on**. A tour
-needs no audio to stand: the Koya Bound reference itself is silent — photos,
-waypoint marks, rests, and the drawing stroke carry a voiceless walk, and
-voices elevate it when present. Non-interactive shares keep today's static
-page unchanged. Tapping
-the button is the audio-unlock
-gesture (iOS Safari requires one): the engine fetches `/{id}/tour.json`, opens a
-full-screen overlay, and resumes the AudioContext inside the tap handler. The
-static page below is untouched; closing the tour returns to it.
+Opening an interactive share lands directly on the **departure chapter**: a
+full-viewport daypart sky (the walk's actual time of day — a dawn walk opens
+in dawn light), date, place, weather, and the journal as epigraph. No cover,
+no button. A tour needs no audio to stand: the Koya Bound reference itself is
+silent — photos, waypoint marks, rests, and the route thread carry a
+voiceless walk, and voices elevate it when present. Non-interactive shares
+keep today's static page unchanged.
 
-### The tour
+**Sound is an invitation, not an ambush.** When the tour has recordings, the
+departure chapter carries a quiet **"walk with sound"** pill. Tapping it is
+the iOS audio-unlock gesture: the engine unlocks the AudioContext, primes the
+audio elements, and from then on voice chapters play as they enter view.
+Without the tap the story is fully readable — transcripts are server-rendered
+prose. This also bounds bandwidth: no audio downloads until sound is
+requested, which resolves the prime-all open question by construction.
 
-A vertical scroll drives progress along the route. The scroll track length is
-proportional to route distance, with fixed-height dwell blocks inserted at
-encounters so each moment has scroll room to breathe.
+### The story
 
-While walking (between encounters):
+Chapters flow as a normal document — no scroll hijacking, no camera lock:
 
-- The route stroke draws forward (`stroke-dashoffset` linked to scroll
-  progress); the camera — a translate/scale of one SVG group using the same
-  Web-Mercator projection the worker already uses (`camera.ts`) — keeps the
-  active point centered.
-- The elevation ribbon sits fixed at the bottom as the scrubber: progress dot,
-  tick marks for upcoming encounters.
-- Meditation intervals render as glow segments along the stroke (colors match
-  the static page's activity palette).
-- Place names (start/end from the payload) drift in at their ends of the walk.
+- Between chapters, the **route thread** draws itself — a sumi-e stroke
+  segment (SVG `stroke-dashoffset` driven by scroll/IntersectionObserver
+  progress) tracing the actual route geometry for that leg of the walk,
+  connecting each chapter to the next.
+- A hairline **progress line** (route fraction walked) sits fixed at the
+  viewport edge; the elevation profile renders once inside the arrival
+  chapter rather than as a persistent ribbon.
+- Meditation stretches tint their thread segments with the activity palette.
+- The daypart sky shifts subtly from chapter to chapter as the walk's clock
+  advances from start time to end time.
 
-### Encounter types
+### Chapter types *(revised 2026-08-10)*
 
-Compiled server-side at share time (see tour.json), ordered by timestamp:
+Compiled server-side at share time (same tour.json encounter script; the page
+generator renders encounters as server-side HTML chapters, ordered by
+timestamp):
 
-| Type | Source | Behavior |
+| Chapter | Source | Treatment |
 |---|---|---|
-| Departure | `start_date`, `place_start`, weather, journal | Title card: date, place, weather line; journal text as epigraph if present |
-| Spoken encounter | recording with `kind: "spoken"` | Scroll settles into a station; audio plays with ~300 ms gain fade-in; transcription revealed as flowing text (full text, slow reveal — no word-sync in v1); scrolling past a threshold fades audio out (never force-listen) |
-| Ambient passage | recording with `kind: "ambient"` | A span from position(start_ts) to position(end_ts); audio fades in while the viewer is inside the span (~1.5 s ramps), no transcript, scroll never stops |
-| Photo | photo `{lat, lon, ts}` | Photo blooms at its ts-position, up to near-full-bleed — interactive shares upload photos at high resolution (see iOS changes) |
-| Waypoint mark | waypoint | Small card: icon + label, drifts past |
-| Rest | pause interval ≥3 min (new `pauses` payload field) | Quiet beat: "stillness here · 12 min" — the stroke pauses drawing for a breath |
-| Arrival | `place_end`, toggled stats | Closing card: place, duration, the stats the walker chose to share; then the overlay closes onto the static page at the seal section — the walk literally returns to the artifact |
+| Departure | `start_date`, `place_start`, weather, journal | Full-viewport daypart sky; date, place, weather line; journal as epigraph; "walk with sound" pill when recordings exist |
+| Voice | recording with `kind: "spoken"` | Full-viewport chapter: the transcription as large Cormorant prose, server-rendered; with sound on, audio plays (~300 ms gain fade-in) as the chapter enters view and fades if the reader moves on — never force-listen |
+| Ambience | recording with `kind: "ambient"` | No chapter of its own: with sound on, the clip fades in (~1.5 s ramps) while the reader is within the chapters spanning its route range; ducks to ~0.3 under a voice |
+| Photo | photo `{lat, lon, ts}` | Full-bleed photo chapter (interactive shares upload photos at high resolution — see iOS changes) |
+| Waypoint | waypoint | Short interstitial: glyph + label between chapters |
+| Rest | pause interval ≥3 min (`pauses` payload field) | Quiet beat chapter: "stillness here · 12 min", extra whitespace, thread pauses |
+| Arrival | the classic page | The existing Journey layout in full — map, stats, timeline, elevation, reliquary, seal, keepsake, verify, colophon — as the story's final chapter; the walk's shape is revealed at the end |
 
-At most one spoken audio plays at a time; an ambient passage ducks (gain to
-~0.3) under a spoken encounter if spans overlap, and both share one Web Audio
-graph (iOS Safari ignores the `volume` property on media elements, so all
-level control is GainNodes on MediaElementAudioSourceNodes).
+At most one voice plays at a time; ambience ducks under voice; all level
+control is Web Audio GainNodes on MediaElementAudioSourceNodes (iOS Safari
+ignores the `volume` property on media elements).
 
 ### Ambient vs spoken (the wpm gate)
 
@@ -144,15 +153,19 @@ phrases on wind and street noise, so low-wpm/low-count transcripts are treated
 as noise and never displayed. All inputs already exist on
 `VoiceRecordingInterface`.
 
-### Degraded modes (all first-class)
+### Degraded modes (all first-class) *(revised 2026-08-10)*
 
-- **Muted / no audio:** everything works as a text-and-image walk; spoken
-  encounters show transcripts, ambient passages are skipped visually.
-- **Missing audio file** (upload failed, or expired asset): spoken encounter
-  renders transcript-only; ambient passage is dropped.
-- **`prefers-reduced-motion`:** no camera glide, no stroke animation — stepped
-  transitions between encounters, tap/arrow to advance.
-- **No JS / crawlers / iMessage preview:** the static page, unchanged.
+- **Sound never requested / muted:** the story is complete as served —
+  chapters are real HTML; transcripts read as prose. Nothing downloads.
+- **Missing audio file** (upload failed, or expired asset): the voice chapter
+  simply stays text; a quiet "voice unavailable" note appears only after a
+  requested play fails.
+- **`prefers-reduced-motion`:** thread-drawing and sky-shift animations are
+  disabled; the document scrolls normally — chapters need no special
+  navigation because they are ordinary flow content.
+- **No JS / crawlers / iMessage previews:** the full story renders — chapters
+  are server-side HTML; only the thread animation, progress line, and audio
+  require JS. (This is a resilience upgrade over the overlay model.)
 
 ## Architecture
 
@@ -229,8 +242,11 @@ as noise and never displayed. All inputs already exist on
      inside trimmed zones to the trimmed ends, encounter ordering, dwell hints)
      happens here so the page engine is a pure renderer and the logic is
      vitest-testable;
-   - renders the page with the "Walk with me" button and a
-     `<script defer src="/assets/tour-v1.js">` tag.
+   - renders the **story page** *(revised 2026-08-10)*: server-side HTML
+     chapters (departure sky → voices/photos/waypoints/rests → the classic
+     Journey layout as the arrival chapter) with per-chapter route-thread SVGs,
+     plus a `<script defer src="/assets/tour-v1.js">` tag for the enhancement
+     layer (thread animation, progress line, audio).
 2. **`PUT /api/share/{id}/audio/{n}` and `PUT /api/share/{id}/photos/{n}`** —
    auth: SHA-256 of `X-Device-Token` must equal `meta.device_token_hash`; walk
    must be unexpired; `n` must be within the declared count (recordings /
@@ -256,15 +272,16 @@ as noise and never displayed. All inputs already exist on
    unpaginated `photos/` list (>1000 objects partially missed) and removes the
    duplication.
 
-### Page engine (vanilla JS, budget ≈25 KB minified)
+### Page engine (vanilla JS, enhancement layer) *(revised 2026-08-10)*
 
-No framework, no external deps. Scroll handler + `requestAnimationFrame` drive:
-stroke dashoffset, SVG group transform (projection math ported from
-`camera.ts` — it is already TypeScript), encounter card opacity, elevation
-scrubber. One `AudioContext` (created in the entry tap), one
-`MediaElementAudioSourceNode` + GainNode per active audio, prefetch policy of
-"next encounter only" (`preload="none"` otherwise). All text from tour.json is
-inserted via `textContent`, never `innerHTML`.
+No framework, no external deps — and now a much lighter job, because chapters
+are server-rendered: the engine only animates thread-drawing
+(`stroke-dashoffset` per chapter-connector SVG, driven by
+IntersectionObserver/scroll progress), maintains the fixed progress line, and
+runs audio. One `AudioContext` (created in the "walk with sound" tap), one
+`MediaElementAudioSourceNode` + GainNode per active audio; audio elements are
+created and primed only after the sound opt-in. All dynamic text originates
+server-side; the engine never uses `innerHTML`.
 
 ## Privacy
 
@@ -308,17 +325,18 @@ inserted via `textContent`, never `innerHTML`.
   trim function (path-distance, anchor clamping, degenerate short walks);
   payload build with mixed selections (deleted files excluded, transcripts
   scoped to selected).
-- **Manual matrix:** iOS Safari (audio unlock, Range, background/lock
+- **Manual matrix:** iOS Safari (sound opt-in unlock, Range, background/lock
   behavior), macOS Safari, Chrome desktop, Android Chrome; VoiceOver pass over
-  the tour overlay; `prefers-reduced-motion`; muted walkthrough; expired-walk
-  tombstone from inside a tour.
+  the story page; `prefers-reduced-motion`; no-sound read-through; expired-walk
+  tombstone.
 
 ## Phasing
 
-- **v1 (this spec):** everything above.
+- **v1 (this spec):** everything above — including the daypart sky, pulled
+  forward from Phase 2 by the 2026-08-10 story-page revision (it is the
+  departure chapter's canvas, not a nice-to-have).
 - **Phase 2:** "walk it for me" auto-advance at the walker's compressed real
-  pace; daypart sky gradient following the walk's actual clock; transcript
-  sync highlighting.
+  pace; transcript sync highlighting.
 - **Phase 3:** "leave a stone" — one anonymous tap at the arrival, surfaced to
   the walker as "N people walked with you" (collective-counter language, no
   comments, no accounts); pilgrim-cards QR → tour of a trail.
@@ -331,8 +349,14 @@ inserted via `textContent`, never `innerHTML`.
 - **A dedicated "ambience capture" feature** — the record button already
   captures ambience; a recording with no words *is* the ambient capture. No new
   schema entity, no migration.
-- **A second share type / separate tour URL** — one artifact, one link; the
-  tour enhances the page that already exists.
+- **A second share type / separate tour URL** — one artifact, one link; for
+  interactive shares that one page is the story.
+- **Button-gated overlay on the classic page** *(the 2026-08-09 first build)*
+  — implemented, previewed live, and replaced: landing on a stats page with a
+  "Walk with me" button made the story subordinate to the artifact. The Koya
+  Bound feel requires landing in the story; the classic layout survives as the
+  arrival chapter. The API layer (validation, compilation, PUTs, Range
+  serving, expiry) carried over unchanged.
 - **Granular-first selection** (per-recording checkboxes as the primary consent
   surface — this spec's first draft) — replaced by the single Interactive
   toggle: consent lives at the mode level where it's legible; granular
