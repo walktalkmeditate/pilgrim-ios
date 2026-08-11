@@ -22,13 +22,10 @@ enum RouteTrimmer {
         return Array(route[start...end])
     }
 
-    /// Whether a 150m trim can actually apply — the UI uses this to say
+    /// Whether trim can actually apply to the route — the UI uses this to show
     /// "too short to trim" instead of silently promising protection.
     static func canTrim(_ route: [SharePayload.RoutePoint], meters: Double) -> Bool {
-        guard meters > 0, route.count > 3 else { return false }
-        var total = 0.0
-        for i in 1..<route.count { total += haversineMeters(route[i - 1], route[i]) }
-        return total >= meters * 4
+        trim(route, meters: meters).count < route.count
     }
 
     private static func haversineMeters(_ a: SharePayload.RoutePoint, _ b: SharePayload.RoutePoint) -> Double {
