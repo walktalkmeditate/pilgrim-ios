@@ -574,6 +574,7 @@
 		LR00000200000000LRWVLD01 /* WebViewLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLD01 /* WebViewLoader.swift */; };
 		LR00000200000000LRWVLDT1 /* WebViewLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */; };
 		LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */; };
+		F111E1130A361093119C4459 /* InteractiveShareSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BF7056E6064D6423F5E736E /* InteractiveShareSection.swift */; };
 		LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRWVRP01 /* WebViewRepresentable.swift */; };
 		PERM000100000003 /* PermissionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000002 /* PermissionsViewModel.swift */; };
 		PERM000100000005 /* PermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PERM000100000004 /* PermissionsViewModelTests.swift */; };
@@ -1199,6 +1200,7 @@
 		LR00000100000000LRWVLD01 /* WebViewLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoader.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVLDT1 /* WebViewLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewLoaderTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkSharePreviewView.swift; sourceTree = "<group>"; };
+		6BF7056E6064D6423F5E736E /* InteractiveShareSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InteractiveShareSection.swift; sourceTree = "<group>"; };
 		LR00000100000000LRWVRP01 /* WebViewRepresentable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebViewRepresentable.swift; sourceTree = "<group>"; };
 		PERM000100000002 /* PermissionsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsViewModel.swift; sourceTree = "<group>"; };
 		PERM000100000004 /* PermissionsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionsViewModelTests.swift; sourceTree = "<group>"; };
@@ -2094,6 +2096,7 @@
 				LR00000100000000LRWVLD01 /* WebViewLoader.swift */,
 				LR00000100000000LRWVRP01 /* WebViewRepresentable.swift */,
 				LR00000100000000LRWVPV01 /* WalkSharePreviewView.swift */,
+				6BF7056E6064D6423F5E736E /* InteractiveShareSection.swift */,
 			);
 			path = WalkShare;
 			sourceTree = "<group>";
@@ -3111,6 +3114,7 @@
 				LR00000200000000LRHEMS01 /* Hemisphere.swift in Sources */,
 				LR00000200000000LRWVRP01 /* WebViewRepresentable.swift in Sources */,
 				LR00000200000000LRWVPV01 /* WalkSharePreviewView.swift in Sources */,
+				F111E1130A361093119C4459 /* InteractiveShareSection.swift in Sources */,
 				1ED04A655291254525CB5A42 /* JourneyEditorView.swift in Sources */,
 				BABACBE432D649DEE348D186 /* AppearanceView.swift in Sources */,
 				78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */,

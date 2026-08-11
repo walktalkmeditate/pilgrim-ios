@@ -41,6 +41,7 @@ struct WalkShareView: View {
                     } else {
                         routePreview
                         statToggles
+                        InteractiveShareSection(viewModel: viewModel)
                         journalSection
                         expiryPicker
                         shareButton
