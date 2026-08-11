@@ -174,4 +174,67 @@ final class WalkShareInteractiveTests: XCTestCase {
         let withoutExport = vm.testBuildPayload(tourPhotoMeta: [])
         XCTAssertNil(withoutExport.photos, "the interactive branch must never fall back to mapping pinnedPhotos")
     }
+
+    // MARK: - Task 8: share orchestration
+
+    func testShareButtonDisabledWhenTourInvalid() {
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        vm.interactiveEnabled = true
+        vm.tourCandidates = (0..<13).map { i in
+            TourRecordingCandidate(id: i, startTs: i, endTs: i + 1, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil)
+        }
+        XCTAssertNotNil(vm.tourValidationError)
+        XCTAssertFalse(vm.canShare)
+    }
+
+    func testInteractivePayloadPhotoCountMatchesExportedMeta() {
+        UserPreferences.walkReliquaryEnabled.value = true
+        let walk = WalkDataFactory.makeWalk()
+        let vm = WalkShareViewModel(walk: walk, pinnedPhotos: [PhotoCandidate.fixture()], isPhotosGranted: { true })
+        vm.interactiveEnabled = true
+        vm.includePhotos = true
+        vm.prepareInteractive()
+
+        let meta = [
+            SharePayload.Photo(lat: 1, lon: 2, ts: 3, data: nil),
+            SharePayload.Photo(lat: 4, lon: 5, ts: 6, data: nil),
+            SharePayload.Photo(lat: 7, lon: 8, ts: 9, data: nil)
+        ]
+        let payload = vm.testBuildPayload(tourPhotoMeta: meta)
+        XCTAssertEqual(payload.photos?.count, meta.count, "declared payload count must match the exported byte count — that's what authorizes each PUT index")
+    }
+
+    func testPartialAndSuccessBothCountAsShared() {
+        let successID = UUID()
+        let successWalk = WalkDataFactory.makeWalk(uuid: successID)
+        ShareService.cacheShare(
+            ShareService.ShareResult(url: "https://walk.pilgrimapp.org/success1", id: "success1"),
+            walkID: successID,
+            expiryDays: 90,
+            expiryOption: "season"
+        )
+        let successVM = WalkShareViewModel(walk: successWalk)
+        XCTAssertTrue(successVM.isShared)
+        guard case .success = successVM.shareState else {
+            return XCTFail("expected .success when no media failed")
+        }
+
+        let partialID = UUID()
+        let partialWalk = WalkDataFactory.makeWalk(uuid: partialID)
+        ShareService.cacheShare(
+            ShareService.ShareResult(url: "https://walk.pilgrimapp.org/partial1", id: "partial1"),
+            walkID: partialID,
+            expiryDays: 90,
+            expiryOption: "season"
+        )
+        ShareService.cacheFailedMedia([(kind: .audio, n: 1)], walkID: partialID)
+        let partialVM = WalkShareViewModel(walk: partialWalk)
+        XCTAssertTrue(partialVM.isShared, ".partial must count as shared — the page is already live")
+        guard case .partial(_, let failedCount) = partialVM.shareState else {
+            return XCTFail("expected .partial when media failed")
+        }
+        XCTAssertEqual(failedCount, 1)
+
+        ShareService.cacheFailedMedia([], walkID: partialID)
+    }
 }

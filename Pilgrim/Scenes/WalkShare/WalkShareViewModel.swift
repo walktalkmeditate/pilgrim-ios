@@ -44,6 +44,9 @@ final class WalkShareViewModel: ObservableObject {
         interactiveEnabled ? TourBuilder.validationError(for: tourCandidates) : nil
     }
 
+    /// Gates the Share button: an over-cap tour must be trimmed before POSTing, never silently clipped.
+    var canShare: Bool { tourValidationError == nil }
+
     var tourTotalsLabel: String {
         let (count, bytes, seconds) = TourBuilder.totals(of: tourCandidates)
         let photoCount = includePhotos ? min(pinnedPhotos.count, 20) : 0
@@ -106,9 +109,22 @@ final class WalkShareViewModel: ObservableObject {
 
     enum ShareState: Equatable {
         case idle
-        case uploading
+        case preparingPhotos(completed: Int, total: Int) // hi-res export (pre-POST)
+        case uploading                                   // POST phase
+        case uploadingMedia(completed: Int, total: Int)  // PUT phase
         case success(url: String)
+        case partial(url: String, failedCount: Int)      // page live, some media missing
         case error(message: String)
+    }
+
+    /// VM-level source of truth for "this walk has a live page" — `.partial`
+    /// counts the same as `.success`. Exists so the distinction is testable
+    /// without SwiftUI (the view mirrors this locally).
+    var isShared: Bool {
+        switch shareState {
+        case .success, .partial: return true
+        default: return false
+        }
     }
 
     var expiryDate: Date {
@@ -118,6 +134,18 @@ final class WalkShareViewModel: ObservableObject {
             to: Date()
         ) ?? Date()
     }
+
+    /// Shared by both the pre-share expiry picker and the post-share card
+    /// so "Expires..." and "Returns to the trail on..." always agree.
+    var formattedExpiry: String {
+        Self.expiryFormatter.string(from: expiryDate)
+    }
+
+    private static let expiryFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .long
+        return f
+    }()
 
     var hasExistingShare: Bool {
         guard let uuid = walk.uuid else { return false }
@@ -173,27 +201,19 @@ final class WalkShareViewModel: ObservableObject {
         self.pinnedPhotos = pinnedPhotos
         self.isPhotosGranted = isPhotosGranted
         if let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid), !cached.isExpired {
-            shareState = .success(url: cached.url)
             cachedExpiryDate = cached.expiry
+            // A share with un-landed media PUTs still has a live page —
+            // restore .partial so "Carry the missing files" survives
+            // leaving and returning here, not a quiet .success.
+            let failedCount = ShareService.failedMedia(for: uuid).count
+            shareState = failedCount > 0
+                ? .partial(url: cached.url, failedCount: failedCount)
+                : .success(url: cached.url)
         }
     }
 
-    func share() async {
-        shareState = .uploading
-
-        let placeNames = await geocodeEndpoints()
-        let payload = buildPayload(placeStart: placeNames.start, placeEnd: placeNames.end)
-
-        do {
-            let result = try await ShareService.share(payload: payload)
-            if let uuid = walk.uuid {
-                ShareService.cacheShare(result, walkID: uuid, expiryDays: selectedExpiry.rawValue, expiryOption: selectedExpiry.cacheKey)
-            }
-            shareState = .success(url: result.url)
-        } catch {
-            shareState = .error(message: error.localizedDescription)
-        }
-    }
+    // share(), retryFailedMedia(), and their private helpers live in
+    // WalkShareViewModel+ShareOrchestration.swift.
 
     func prepareInteractive() {
         if tourCandidates.isEmpty {
@@ -229,7 +249,8 @@ final class WalkShareViewModel: ObservableObject {
         computeInteractiveRoute().keptWindow
     }
 
-    private func geocodeEndpoints() async -> (start: String?, end: String?) {
+    // Called from WalkShareViewModel+ShareOrchestration.swift's `share()`.
+    func geocodeEndpoints() async -> (start: String?, end: String?) {
         let routeData = walk.routeData
         guard let first = routeData.first, let last = routeData.last else {
             return (nil, nil)

@@ -21,9 +21,17 @@ struct WalkShareView: View {
         _viewModel = StateObject(wrappedValue: WalkShareViewModel(walk: walk, pinnedPhotos: pinnedPhotos))
     }
 
-    private var isShared: Bool {
-        if case .success = viewModel.shareState { return true }
-        return false
+    private var isShared: Bool { viewModel.isShared }
+
+    /// The POST already created a live page and, once media starts landing,
+    /// partial progress is recorded server-side — the sheet must not be
+    /// abandonable mid-flight. Gates both the toolbar Cancel and
+    /// `.interactiveDismissDisabled` below.
+    private var isShareInFlight: Bool {
+        switch viewModel.shareState {
+        case .preparingPhotos, .uploading, .uploadingMedia: return true
+        default: return false
+        }
     }
 
     var body: some View {
@@ -31,7 +39,7 @@ struct WalkShareView: View {
             ScrollView {
                 VStack(spacing: Constants.UI.Padding.big) {
                     if isShared {
-                        shareButton
+                        ShareStatusSection(viewModel: viewModel, onOpenPreview: openPreview)
                         if showPodcastCard,
                            PodcastSubmissionService.shared.isEligible(walk: walk),
                            case .success(let url) = viewModel.shareState {
@@ -44,7 +52,7 @@ struct WalkShareView: View {
                         InteractiveShareSection(viewModel: viewModel)
                         journalSection
                         expiryPicker
-                        shareButton
+                        ShareStatusSection(viewModel: viewModel, onOpenPreview: openPreview)
                     }
                 }
                 .padding(Constants.UI.Padding.normal)
@@ -64,13 +72,14 @@ struct WalkShareView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
-                    if !isShared {
+                    if !isShared && !isShareInFlight {
                         Button("Cancel") { dismiss() }
                             .foregroundColor(.stone)
                     }
                 }
             }
         }
+        .interactiveDismissDisabled(isShareInFlight)
         // Reveal the podcast card after the ritual modal dismisses, not at
         // the moment of share success. The previous 800ms-after-success
         // trigger collided with the ritual's own reveal — the card animated
@@ -262,7 +271,7 @@ struct WalkShareView: View {
 
             HStack {
                 Spacer()
-                Text("Expires \(expiryDateFormatted)")
+                Text("Expires \(viewModel.formattedExpiry)")
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                 Spacer()
@@ -294,113 +303,6 @@ struct WalkShareView: View {
         }
     }
 
-    private var expiryDateFormatted: String {
-        Self.expiryFormatter.string(from: viewModel.expiryDate)
-    }
-
-    private static let expiryFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .long
-        return f
-    }()
-
-    // MARK: - Share Button
-
-    @ViewBuilder
-    private var shareButton: some View {
-        switch viewModel.shareState {
-        case .idle:
-            primaryButton("Share Walk") {
-                Task { await viewModel.share() }
-            }
-
-        case .uploading:
-            HStack(spacing: Constants.UI.Padding.small) {
-                SwiftUI.ProgressView()
-                    .tint(.parchment)
-                Text("Sharing...")
-                    .font(Constants.Typography.button)
-                    .foregroundColor(.parchment)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color.stone.opacity(0.6))
-            .cornerRadius(Constants.UI.CornerRadius.normal)
-
-        case .success(let url):
-            VStack(spacing: Constants.UI.Padding.normal) {
-                Button {
-                    openPreview(url: url)
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        routePreview
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(.fog.opacity(0.4))
-                            .padding(8)
-                            .accessibilityHidden(true)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("View shared walk page")
-                .accessibilityHint("Opens the scroll of your shared walk")
-
-                HStack(spacing: 6) {
-                    Text("Shared")
-                        .font(Constants.Typography.body)
-                        .foregroundColor(.stone)
-                    Image(systemName: "checkmark")
-                        .font(.caption)
-                        .foregroundColor(.moss)
-                }
-
-                Text("Returns to the trail on \(expiryDateFormatted)")
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
-                    .italic()
-
-                Button {
-                    openPreview(url: url)
-                } label: {
-                    Text("View scroll")
-                        .font(Constants.Typography.caption)
-                        .foregroundColor(.fog)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(Constants.UI.Padding.normal)
-            .background(Color.parchmentSecondary)
-            .cornerRadius(Constants.UI.CornerRadius.normal)
-
-        case .error(let message):
-            VStack(spacing: Constants.UI.Padding.small) {
-                Text(message)
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.rust)
-                    .multilineTextAlignment(.center)
-
-                primaryButton("Try Again") {
-                    Task { await viewModel.share() }
-                }
-            }
-        }
-    }
-
-    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Constants.Typography.button)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Color.stone)
-                .foregroundColor(.parchment)
-                .cornerRadius(Constants.UI.CornerRadius.normal)
-        }
-    }
-
     // MARK: - Helpers
 
     private func sectionLabel(_ text: String) -> some View {
@@ -428,7 +330,11 @@ struct WalkShareView: View {
         old: WalkShareViewModel.ShareState,
         new: WalkShareViewModel.ShareState
     ) {
-        guard case .uploading = old, case .success(let url) = new else { return }
+        guard case .success(let url) = new else { return }
+        switch old {
+        case .uploading, .uploadingMedia: break
+        default: return
+        }
         guard let parsedURL = URL(string: url) else { return }
 
         webViewLoaderHolder.create(url: parsedURL)
