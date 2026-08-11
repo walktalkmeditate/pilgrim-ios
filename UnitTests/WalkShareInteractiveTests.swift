@@ -28,6 +28,7 @@ final class WalkShareInteractiveTests: XCTestCase {
         let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
         let payload = vm.testBuildPayload()
         XCTAssertNil(payload.tour)
+        XCTAssertNil(payload.pauses)
     }
 
     func testInteractivePayloadCarriesTourPausesAndTrim() {
@@ -136,6 +137,25 @@ final class WalkShareInteractiveTests: XCTestCase {
         let labels = vm.testBuildPayload().waypoints?.map(\.label) ?? []
         XCTAssertFalse(labels.contains("Doorstep"), "trim excludes waypoints outside the kept route window")
         XCTAssertTrue(labels.contains("Midpoint"), "waypoints inside the kept window still ride along")
+    }
+
+    func testInteractiveKeptWindowIncludesWaypointsAtExactBoundary() {
+        let route = longRoute(points: 20)
+        let routePoints = route.map {
+            SharePayload.RoutePoint(lat: $0.latitude, lon: $0.longitude, alt: $0.altitude, ts: Int($0.timestamp.timeIntervalSince1970))
+        }
+        let trimmed = RouteTrimmer.trim(routePoints, meters: Double(WalkShareViewModel.trimMeters))
+        let atLowerBound = TempV4.Waypoint(uuid: nil, latitude: 48.86, longitude: 2.3522, label: "AtLowerBound", icon: "flag", timestamp: Date(timeIntervalSince1970: Double(trimmed.first!.ts)))
+        let atUpperBound = TempV4.Waypoint(uuid: nil, latitude: 48.86, longitude: 2.3522, label: "AtUpperBound", icon: "flag", timestamp: Date(timeIntervalSince1970: Double(trimmed.last!.ts)))
+        let walk = WalkDataFactory.makeWalk(routeData: route, waypoints: [atLowerBound, atUpperBound])
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.includeWaypoints = true
+        vm.prepareInteractive()
+
+        let labels = vm.testBuildPayload().waypoints?.map(\.label) ?? []
+        XCTAssertTrue(labels.contains("AtLowerBound"), "a waypoint exactly at the kept window's lower bound must be included — ClosedRange.contains is inclusive")
+        XCTAssertTrue(labels.contains("AtUpperBound"), "a waypoint exactly at the kept window's upper bound must be included — ClosedRange.contains is inclusive")
     }
 
     func testInteractivePhotoMetaUsesOnlyExportedPhotos() {

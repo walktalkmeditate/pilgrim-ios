@@ -58,14 +58,12 @@ final class WalkShareViewModel: ObservableObject {
         return parts.isEmpty ? "no recordings included" : parts.joined(separator: " · ")
     }
 
-    /// `RouteTrimmer.canTrim` only needs to know whether trimming would
-    /// shorten the route, not the trimmed result — so this works off the raw
-    /// route rather than sharing `computeInteractiveRoute()`'s downsampled one.
+    /// Judges trim against the same points `computeInteractiveRoute()` would
+    /// actually hand `RouteTrimmer.trim` — both read `downsampledRoutePoints()`
+    /// so a route long enough to trim can never disagree with a route the UI
+    /// was told could be trimmed.
     var canTrimRoute: Bool {
-        let points = walk.routeData.map {
-            SharePayload.RoutePoint(lat: $0.latitude, lon: $0.longitude, alt: $0.altitude, ts: Int($0.timestamp.timeIntervalSince1970))
-        }
-        return RouteTrimmer.canTrim(points, meters: Double(Self.trimMeters))
+        RouteTrimmer.canTrim(downsampledRoutePoints(), meters: Double(Self.trimMeters))
     }
 
     private var didAutoEnablePhotos = false
@@ -427,11 +425,11 @@ final class WalkShareViewModel: ObservableObject {
         ).map { SharePayload.Pause(startTs: $0.start, endTs: $0.end) }
     }
 
-    /// Single source of truth for the trimmed route: `buildPayload` and
-    /// `interactiveKeptWindow()` must never compute this independently, or the
-    /// payload's route and the window used to filter waypoints/photos against
-    /// it could drift apart.
-    private func computeInteractiveRoute() -> (route: [SharePayload.RoutePoint], trimM: Int, keptWindow: ClosedRange<Int>?) {
+    /// Shared by `canTrimRoute` and `computeInteractiveRoute()` so the route
+    /// judged for trimmability and the route actually trimmed can never be
+    /// two different arrays — the same divergence class Task 3 closed for
+    /// `RouteTrimmer.canTrim`/`.trim` themselves.
+    private func downsampledRoutePoints() -> [SharePayload.RoutePoint] {
         let routePoints = walk.routeData.map { sample in
             SharePayload.RoutePoint(
                 lat: sample.latitude,
@@ -440,7 +438,15 @@ final class WalkShareViewModel: ObservableObject {
                 ts: Int(sample.timestamp.timeIntervalSince1970)
             )
         }
-        let downsampled = RouteDownsampler.downsample(routePoints)
+        return RouteDownsampler.downsample(routePoints)
+    }
+
+    /// Single source of truth for the trimmed route: `buildPayload` and
+    /// `interactiveKeptWindow()` must never compute this independently, or the
+    /// payload's route and the window used to filter waypoints/photos against
+    /// it could drift apart.
+    private func computeInteractiveRoute() -> (route: [SharePayload.RoutePoint], trimM: Int, keptWindow: ClosedRange<Int>?) {
+        let downsampled = downsampledRoutePoints()
 
         let trimM = interactiveEnabled && trimEnabled ? Self.trimMeters : 0
         let finalRoute = interactiveEnabled && trimM > 0
