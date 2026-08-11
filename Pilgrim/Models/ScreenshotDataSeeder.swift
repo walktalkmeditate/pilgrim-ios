@@ -223,12 +223,14 @@ enum ScreenshotDataSeeder {
         if spec.talkMinutes > 0 {
             let talkStart = adjustedStart.addingTimeInterval(spec.durationMinutes * 60 * 0.25)
             let talkEnd = talkStart.addingTimeInterval(spec.talkMinutes * 60)
+            let relativePath = "demo/recording-\(index).m4a"
+            seedRecordingFileIfNeeded(relativePath: relativePath)
             voiceRecordings.append(TempVoiceRecording(
                 uuid: nil,
                 startDate: talkStart,
                 endDate: talkEnd,
                 duration: spec.talkMinutes * 60,
-                fileRelativePath: "demo/recording-\(index).m4a",
+                fileRelativePath: relativePath,
                 transcription: spec.transcription
             ))
         }
@@ -298,6 +300,28 @@ enum ScreenshotDataSeeder {
         )
         walk.favicon = spec.favicon
         return walk
+    }
+
+    /// Seeded recordings point `fileRelativePath` at `demo/recording-N.m4a`,
+    /// but nothing wrote those files — `TourBuilder.candidates(for:)` stats
+    /// the file on disk and marks a missing/zero-byte recording unavailable,
+    /// so the Interactive share section showed only "No recordings" rows.
+    /// Copies a short bundled sound into Documents the first time a given
+    /// path is needed; a no-op on every later seed.
+    private static func seedRecordingFileIfNeeded(relativePath: String) {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let destination = docs.appendingPathComponent(relativePath)
+        guard !FileManager.default.fileExists(atPath: destination.path) else { return }
+        guard let source = Bundle.main.url(forResource: "stone-tier-1", withExtension: "m4a") else { return }
+        do {
+            try FileManager.default.createDirectory(
+                at: destination.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try FileManager.default.copyItem(at: source, to: destination)
+        } catch {
+            print("[ScreenshotDataSeeder] Failed to seed recording file at \(relativePath): \(error)")
+        }
     }
 }
 #endif
