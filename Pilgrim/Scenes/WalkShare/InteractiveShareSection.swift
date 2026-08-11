@@ -40,7 +40,9 @@ struct InteractiveShareSection: View {
                     if viewModel.tourCandidates.contains(where: { $0.includeInShare && $0.unavailableReason == nil }) {
                         Text("Voices will be audible to anyone with the link.")
                             .font(Constants.Typography.caption)
-                            .foregroundColor(.rust)
+                            .foregroundColor(.fog)
+                            .padding(.horizontal, Constants.UI.Padding.normal)
+                            .transition(.opacity)
                     }
                 } else {
                     Text("No recordings on this walk — the page will carry your route, photos, and moments.")
@@ -176,11 +178,12 @@ private struct TourRecordingRow: View {
                 .padding(.vertical, 4)
                 .background(Color.stone.opacity(0.12))
                 .cornerRadius(4)
-                .frame(minHeight: 44)
+                .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Recording \(candidate.id + 1) kind, \(kindLabel)")
+        .accessibilityValue(candidate.effectiveKind == .spoken ? "voice" : "ambience")
         .accessibilityHint("Double tap to switch")
         .opacity(candidate.includeInShare ? 1 : 0.35)
     }
