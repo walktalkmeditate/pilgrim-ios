@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import os
 
 enum ShareService {
 
@@ -166,59 +167,55 @@ extension ShareService {
         photos: [Data],
         progress: @escaping (MediaProgress) -> Void
     ) async -> [(kind: MediaKind, n: Int)] {
-        var failures: [(kind: MediaKind, n: Int)] = []
-        let total = audioFiles.count + photos.count
-        var completed = 0
+        return await withBackgroundAssertion(named: "pilgrim.share.media") {
+            var failures: [(kind: MediaKind, n: Int)] = []
+            let total = audioFiles.count + photos.count
+            var completed = 0
 
-        func report() { progress(MediaProgress(completed: completed, total: total)) }
-        report()
-
-        // Keep the PUT chain alive through pocketing/locking: request
-        // background execution for the whole sequence.
-        let bgTask = await MainActor.run {
-            UIApplication.shared.beginBackgroundTask(withName: "pilgrim.share.media")
-        }
-        defer {
-            if bgTask != .invalid {
-                Task { @MainActor in UIApplication.shared.endBackgroundTask(bgTask) }
-            }
-        }
-
-        // Photos first: enrich's keepsake render waits (bounded) on the
-        // LAST photo; audio has a graceful fallback on the page.
-        for (index, data) in photos.enumerated() {
-            let ok = await putWithRetry(shareID: shareID, kind: .photos, n: index + 1) { data }
-            if !ok { failures.append((.photos, index + 1)) }
-            completed += 1
+            func report() { progress(MediaProgress(completed: completed, total: total)) }
             report()
-        }
 
-        for (index, fileURL) in audioFiles.enumerated() {
-            let ok = await putWithRetry(shareID: shareID, kind: .audio, n: index + 1) {
-                try Data(contentsOf: fileURL)
+            // Photos first: enrich's keepsake render waits (bounded) on the
+            // LAST photo; audio has a graceful fallback on the page.
+            for (index, data) in photos.enumerated() {
+                let ok = await putWithRetry(shareID: shareID, kind: .photos, n: index + 1) { data }
+                if !ok { failures.append((.photos, index + 1)) }
+                completed += 1
+                report()
             }
-            if !ok { failures.append((.audio, index + 1)) }
-            completed += 1
-            report()
+
+            for (index, fileURL) in audioFiles.enumerated() {
+                let ok = await putWithRetry(shareID: shareID, kind: .audio, n: index + 1) {
+                    try Data(contentsOf: fileURL)
+                }
+                if !ok { failures.append((.audio, index + 1)) }
+                completed += 1
+                report()
+            }
+            return failures
         }
-        return failures
     }
 
     /// Targeted re-upload for a previous share's failed items ("Carry the
     /// missing files"). Same ordering rules; audio resolved from URLs,
-    /// photos re-exported by the caller.
+    /// photos re-exported by the caller. This is the recovery path with
+    /// the same per-file sizes as the original upload, so it shares the
+    /// same background-task protection as uploadAllMedia.
     static func uploadSpecific(
         shareID: String,
         items: [(kind: MediaKind, n: Int, data: () throws -> Data)],
         progress: @escaping (MediaProgress) -> Void
     ) async -> [(kind: MediaKind, n: Int)] {
-        var failures: [(kind: MediaKind, n: Int)] = []
-        for (i, item) in items.enumerated() {
-            let ok = await putWithRetry(shareID: shareID, kind: item.kind, n: item.n, body: item.data)
-            if !ok { failures.append((item.kind, item.n)) }
-            progress(MediaProgress(completed: i + 1, total: items.count))
+        return await withBackgroundAssertion(named: "pilgrim.share.media") {
+            var failures: [(kind: MediaKind, n: Int)] = []
+            progress(MediaProgress(completed: 0, total: items.count))
+            for (i, item) in items.enumerated() {
+                let ok = await putWithRetry(shareID: shareID, kind: item.kind, n: item.n, body: item.data)
+                if !ok { failures.append((item.kind, item.n)) }
+                progress(MediaProgress(completed: i + 1, total: items.count))
+            }
+            return failures
         }
-        return failures
     }
 
     /// Failed-media bookkeeping alongside the cached share, so a re-entry
@@ -243,12 +240,65 @@ extension ShareService {
         }
     }
 
+    /// Begins a background-task assertion, runs `body`, then ends it — so
+    /// backgrounding the app (pocketing, locking) doesn't suspend an
+    /// in-flight PUT chain. `BackgroundAssertionState` is the one-shot
+    /// guard: the expiration handler (fired by the OS if we overstay our
+    /// background time) and the normal completion path both race to end
+    /// the same assertion, and the lock ensures only the first of them
+    /// actually calls endBackgroundTask — calling it twice is documented
+    /// Apple misuse.
+    private static func withBackgroundAssertion<T: Sendable>(
+        named name: String,
+        _ body: () async -> T
+    ) async -> T {
+        let state = OSAllocatedUnfairLock(initialState: BackgroundAssertionState())
+
+        func endOnce() -> UIBackgroundTaskIdentifier? {
+            state.withLock { s in
+                guard !s.ended, s.identifier != .invalid else { return nil }
+                s.ended = true
+                return s.identifier
+            }
+        }
+
+        await MainActor.run {
+            let identifier = UIApplication.shared.beginBackgroundTask(withName: name) {
+                // Apple's documented contract: the expiration handler runs
+                // on the main thread already, so assert isolation instead
+                // of hopping through a Task — the app may already be
+                // suspending by the time this fires.
+                guard let idToEnd = endOnce() else { return }
+                MainActor.assumeIsolated {
+                    UIApplication.shared.endBackgroundTask(idToEnd)
+                }
+            }
+            state.withLock { $0.identifier = identifier }
+        }
+
+        let result = await body()
+
+        if let idToEnd = endOnce() {
+            await MainActor.run {
+                UIApplication.shared.endBackgroundTask(idToEnd)
+            }
+        }
+
+        return result
+    }
+
+    private struct BackgroundAssertionState {
+        var identifier: UIBackgroundTaskIdentifier = .invalid
+        var ended = false
+    }
+
     private static func putWithRetry(
         shareID: String,
         kind: MediaKind,
         n: Int,
         body: () throws -> Data
     ) async -> Bool {
+        var lastError: Error?
         for attempt in 0..<2 {
             do {
                 let data = try body()
@@ -258,12 +308,15 @@ extension ShareService {
                     return true
                 }
             } catch {
-                // fall through to retry
+                lastError = error
             }
             if attempt == 0 {
                 try? await Task.sleep(nanoseconds: 800_000_000)
             }
         }
+        #if DEBUG
+        print("[ShareService] media upload failed after retry: \(kind.rawValue)/\(n) — \(lastError?.localizedDescription ?? "non-2xx response")")
+        #endif
         return false
     }
 }
