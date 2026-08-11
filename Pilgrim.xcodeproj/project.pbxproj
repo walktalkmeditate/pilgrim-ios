@@ -202,6 +202,7 @@
 		1A2B3C4D5E6F7A8B9C0D1E2F /* TourBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */; };
 		7E8F9A0B1C2D3E4F5A6B7C8D /* RouteTrimmerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A0B1C2D3E4F5A6B7C8D9E /* RouteTrimmerTests.swift */; };
 		D69446C38B3D4915B5EE6940 /* TourPhotoExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */; };
+		FF09C76A879AAD0D3E6C1A54 /* ShareMediaUploadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598E81D4C0900F5E3DF2B1BC /* ShareMediaUploadTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		510A5ED79C24B905DDD597A7 /* ScrollHapticEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
@@ -810,6 +811,7 @@
 		2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourBuilderTests.swift; sourceTree = "<group>"; };
 		8F9A0B1C2D3E4F5A6B7C8D9E /* RouteTrimmerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteTrimmerTests.swift; sourceTree = "<group>"; };
 		82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourPhotoExporterTests.swift; sourceTree = "<group>"; };
+		598E81D4C0900F5E3DF2B1BC /* ShareMediaUploadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareMediaUploadTests.swift; sourceTree = "<group>"; };
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
@@ -1844,6 +1846,7 @@
 				2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */,
 				8F9A0B1C2D3E4F5A6B7C8D9E /* RouteTrimmerTests.swift */,
 				82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */,
+				598E81D4C0900F5E3DF2B1BC /* ShareMediaUploadTests.swift */,
 				AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */,
 				AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */,
 				BBBB00000000000000000B /* WaypointCodableTests.swift */,
@@ -3161,6 +3164,7 @@
 				1A2B3C4D5E6F7A8B9C0D1E2F /* TourBuilderTests.swift in Sources */,
 				7E8F9A0B1C2D3E4F5A6B7C8D /* RouteTrimmerTests.swift in Sources */,
 				D69446C38B3D4915B5EE6940 /* TourPhotoExporterTests.swift in Sources */,
+				FF09C76A879AAD0D3E6C1A54 /* ShareMediaUploadTests.swift in Sources */,
 				AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */,
 				AAAA000000000000000000F3 /* IntentionHistoryStoreTests.swift in Sources */,
 				BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */,
