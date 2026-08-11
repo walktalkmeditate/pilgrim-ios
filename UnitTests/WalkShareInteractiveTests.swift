@@ -1,0 +1,157 @@
+import XCTest
+@testable import Pilgrim
+
+@MainActor
+final class WalkShareInteractiveTests: XCTestCase {
+
+    override func tearDown() {
+        super.tearDown()
+        UserPreferences.walkReliquaryEnabled.delete()
+    }
+
+    /// ~111m per 0.001 degree of latitude — the same geometry
+    /// `RouteTrimmerTests` uses, spanning well past the 4x trim-distance
+    /// threshold `RouteTrimmer` requires before it will shorten a route.
+    private func longRoute(points: Int, baseDate: Date = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)) -> [TempV4.RouteDataSample] {
+        (0..<points).map { i in
+            WalkDataFactory.makeRouteDataSample(
+                timestamp: baseDate.addingTimeInterval(Double(i) * 30),
+                latitude: 48.8566 + Double(i) * 0.001,
+                longitude: 2.3522
+            )
+        }
+    }
+
+    // MARK: - Brief's authoritative tests
+
+    func testPayloadWithoutInteractiveHasNoTour() {
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        let payload = vm.testBuildPayload()
+        XCTAssertNil(payload.tour)
+    }
+
+    func testInteractivePayloadCarriesTourPausesAndTrim() {
+        let walk = WalkDataFactory.makeWalk(
+            routeData: longRoute(points: 20),
+            pauses: [WalkDataFactory.makePause()],
+            voiceRecordings: [WalkDataFactory.makeVoiceRecording()]
+        )
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.prepareInteractive()
+        let payload = vm.testBuildPayload()
+        XCTAssertNotNil(payload.tour)
+        XCTAssertEqual(payload.tour?.trimM, 150)
+        XCTAssertNotNil(payload.pauses)
+    }
+
+    func testTrimTogglePassesZero() {
+        let walk = WalkDataFactory.makeWalk()
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.trimEnabled = false
+        vm.prepareInteractive()
+        XCTAssertEqual(vm.testBuildPayload().tour?.trimM, 0)
+    }
+
+    func testInteractiveAutoEnablesPhotosOnce() {
+        UserPreferences.walkReliquaryEnabled.value = true
+        let walk = WalkDataFactory.makeWalk()
+        let vm = WalkShareViewModel(walk: walk, pinnedPhotos: [PhotoCandidate.fixture()], isPhotosGranted: { true })
+        vm.interactiveEnabled = true
+        vm.prepareInteractive()
+        XCTAssertTrue(vm.includePhotos)
+        vm.includePhotos = false
+        vm.prepareInteractive()
+        XCTAssertFalse(vm.includePhotos, "auto-enable happens once; the walker's off stays off")
+    }
+
+    func testSubSecondPauseDroppedAfterTruncation() {
+        let goodPause = WalkDataFactory.makePause(
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 10, 0),
+            endDate: DateFactory.makeDate(2024, 6, 15, 9, 15, 0)
+        )
+        let blipStart = DateFactory.makeDate(2024, 6, 15, 9, 20, 0)
+        let subSecondPause = WalkDataFactory.makePause(startDate: blipStart, endDate: blipStart.addingTimeInterval(0.5))
+        let walk = WalkDataFactory.makeWalk(pauses: [goodPause, subSecondPause])
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.prepareInteractive()
+        let payload = vm.testBuildPayload()
+        XCTAssertEqual(payload.pauses?.count, 1, "the truncated-to-zero-length pause must be dropped, not just the good one kept")
+        XCTAssertEqual(payload.pauses?.contains(where: { $0.endTs <= $0.startTs }), false)
+    }
+
+    func testFlipKindTogglesOverride() {
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        vm.tourCandidates = [TourRecordingCandidate(id: 0, startTs: 1, endTs: 2, duration: 1, sizeBytes: 1, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil)]
+        vm.flipKind(candidateID: 0)
+        XCTAssertEqual(vm.tourCandidates[0].effectiveKind, .ambient)
+        vm.flipKind(candidateID: 0)
+        XCTAssertEqual(vm.tourCandidates[0].effectiveKind, .spoken)
+    }
+
+    // MARK: - Supplementary coverage
+
+    func testToggleIncludeSkipsUnavailableCandidates() {
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        let unavailable = TourRecordingCandidate(id: 0, startTs: 1, endTs: 2, duration: 1, sizeBytes: 0, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: false, kindOverride: nil, fileURL: nil, unavailableReason: "audio removed")
+        let available = TourRecordingCandidate(id: 1, startTs: 1, endTs: 2, duration: 1, sizeBytes: 100, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil)
+        vm.tourCandidates = [unavailable, available]
+
+        vm.toggleInclude(candidateID: 0)
+        XCTAssertFalse(vm.tourCandidates[0].includeInShare, "an unavailable candidate can never be toggled on")
+
+        vm.toggleInclude(candidateID: 1)
+        XCTAssertFalse(vm.tourCandidates[1].includeInShare)
+        vm.toggleInclude(candidateID: 1)
+        XCTAssertTrue(vm.tourCandidates[1].includeInShare)
+    }
+
+    func testCanTrimRouteReflectsRouteLength() {
+        let shortWalk = WalkDataFactory.makeWalk(routeData: longRoute(points: 4))
+        XCTAssertFalse(WalkShareViewModel(walk: shortWalk).canTrimRoute)
+
+        let longWalk = WalkDataFactory.makeWalk(routeData: longRoute(points: 20))
+        XCTAssertTrue(WalkShareViewModel(walk: longWalk).canTrimRoute)
+    }
+
+    func testNonInteractiveKeptWindowIsNil() {
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk(routeData: longRoute(points: 20)))
+        XCTAssertNil(vm.interactiveKeptWindow())
+    }
+
+    func testInteractiveKeptWindowExcludesTrimmedWaypoints() {
+        let route = longRoute(points: 20)
+        let doorstep = TempV4.Waypoint(uuid: nil, latitude: 48.8566, longitude: 2.3522, label: "Doorstep", icon: "flag", timestamp: route[0].timestamp)
+        let midpoint = TempV4.Waypoint(uuid: nil, latitude: 48.87, longitude: 2.3522, label: "Midpoint", icon: "flag", timestamp: route[10].timestamp)
+        let walk = WalkDataFactory.makeWalk(routeData: route, waypoints: [doorstep, midpoint])
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.includeWaypoints = true
+        vm.prepareInteractive()
+
+        XCTAssertNotNil(vm.interactiveKeptWindow())
+
+        let labels = vm.testBuildPayload().waypoints?.map(\.label) ?? []
+        XCTAssertFalse(labels.contains("Doorstep"), "trim excludes waypoints outside the kept route window")
+        XCTAssertTrue(labels.contains("Midpoint"), "waypoints inside the kept window still ride along")
+    }
+
+    func testInteractivePhotoMetaUsesOnlyExportedPhotos() {
+        UserPreferences.walkReliquaryEnabled.value = true
+        let walk = WalkDataFactory.makeWalk()
+        let vm = WalkShareViewModel(walk: walk, pinnedPhotos: [PhotoCandidate.fixture()], isPhotosGranted: { true })
+        vm.interactiveEnabled = true
+        vm.includePhotos = true
+        vm.prepareInteractive()
+
+        let exported = [SharePayload.Photo(lat: 1, lon: 2, ts: 999, data: nil)]
+        let withExport = vm.testBuildPayload(tourPhotoMeta: exported)
+        XCTAssertEqual(withExport.photos?.count, 1)
+        XCTAssertEqual(withExport.photos?.first?.ts, 999, "metadata must come from the export, not from pinnedPhotos")
+
+        let withoutExport = vm.testBuildPayload(tourPhotoMeta: [])
+        XCTAssertNil(withoutExport.photos, "the interactive branch must never fall back to mapping pinnedPhotos")
+    }
+}

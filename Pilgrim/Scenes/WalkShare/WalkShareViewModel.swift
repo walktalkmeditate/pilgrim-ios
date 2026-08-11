@@ -19,12 +19,56 @@ final class WalkShareViewModel: ObservableObject {
     var waypointCount: Int { walk.waypoints.count }
     var hasWaypoints: Bool { waypointCount > 0 }
 
+    /// Injected rather than read straight off `PermissionManager.standard`
+    /// (defaults to the real check): the OS permission prompt can't be driven
+    /// from a unit test, so `prepareInteractive()`'s auto-enable-once branch
+    /// needs a seam a test can force true or false deterministically.
+    private let isPhotosGranted: () -> Bool
+
     var pinnedPhotoCount: Int { pinnedPhotos.count }
     var hasPinnedPhotos: Bool {
         pinnedPhotoCount > 0
             && UserPreferences.walkReliquaryEnabled.value
-            && PermissionManager.standard.isPhotosGranted
+            && isPhotosGranted()
     }
+
+    @Published var interactiveEnabled = false
+    @Published var tourCandidates: [TourRecordingCandidate] = []
+    @Published var trimEnabled = true
+
+    static let trimMeters = 150
+
+    var hasRecordings: Bool { !tourCandidates.isEmpty }
+
+    var tourValidationError: String? {
+        interactiveEnabled ? TourBuilder.validationError(for: tourCandidates) : nil
+    }
+
+    var tourTotalsLabel: String {
+        let (count, bytes, seconds) = TourBuilder.totals(of: tourCandidates)
+        let photoCount = includePhotos ? min(pinnedPhotos.count, 20) : 0
+        var parts: [String] = []
+        if count > 0 {
+            let mb = Double(bytes) / 1_048_576
+            parts.append("\(count) recording\(count == 1 ? "" : "s") · \(String(format: "%.1f", mb)) MB · \(Int(seconds / 60)) min")
+        }
+        if photoCount > 0 {
+            parts.append("\(photoCount) hi-res photo\(photoCount == 1 ? "" : "s")")
+        }
+        return parts.isEmpty ? "no recordings included" : parts.joined(separator: " · ")
+    }
+
+    /// `RouteTrimmer.canTrim` only needs to know whether trimming would
+    /// shorten the route, not the trimmed result — so this works off the raw
+    /// route rather than sharing `computeInteractiveRoute()`'s downsampled one.
+    var canTrimRoute: Bool {
+        let points = walk.routeData.map {
+            SharePayload.RoutePoint(lat: $0.latitude, lon: $0.longitude, alt: $0.altitude, ts: Int($0.timestamp.timeIntervalSince1970))
+        }
+        return RouteTrimmer.canTrim(points, meters: Double(Self.trimMeters))
+    }
+
+    private var didAutoEnablePhotos = false
 
     @Published var journal = ""
     @Published var selectedExpiry: ExpiryOption = .season
@@ -112,7 +156,7 @@ final class WalkShareViewModel: ObservableObject {
     var formattedActivityBreakdown: String? {
         let parts = [
             walk.meditateDuration > 0 ? "\(Int(walk.meditateDuration / 60))m meditation" : nil,
-            walk.talkDuration > 0 ? "\(Int(walk.talkDuration / 60))m reflection" : nil,
+            walk.talkDuration > 0 ? "\(Int(walk.talkDuration / 60))m reflection" : nil
         ].compactMap { $0 }
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
@@ -122,9 +166,14 @@ final class WalkShareViewModel: ObservableObject {
         return "\(steps.formatted())"
     }
 
-    init(walk: WalkInterface, pinnedPhotos: [PhotoCandidate] = []) {
+    init(
+        walk: WalkInterface,
+        pinnedPhotos: [PhotoCandidate] = [],
+        isPhotosGranted: @escaping () -> Bool = { PermissionManager.standard.isPhotosGranted }
+    ) {
         self.walk = walk
         self.pinnedPhotos = pinnedPhotos
+        self.isPhotosGranted = isPhotosGranted
         if let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid), !cached.isExpired {
             shareState = .success(url: cached.url)
             cachedExpiryDate = cached.expiry
@@ -146,6 +195,40 @@ final class WalkShareViewModel: ObservableObject {
         } catch {
             shareState = .error(message: error.localizedDescription)
         }
+    }
+
+    func prepareInteractive() {
+        if tourCandidates.isEmpty {
+            tourCandidates = TourBuilder.candidates(for: walk)
+        }
+        // Interactive means "carry the media": the first enable brings photos
+        // along automatically (the spec's auto-enable); the walker can still
+        // switch them off afterwards and we never re-flip.
+        if hasPinnedPhotos && !didAutoEnablePhotos {
+            didAutoEnablePhotos = true
+            includePhotos = true
+        }
+    }
+
+    func toggleInclude(candidateID: Int) {
+        guard let i = tourCandidates.firstIndex(where: { $0.id == candidateID }),
+              tourCandidates[i].unavailableReason == nil else { return }
+        tourCandidates[i].includeInShare.toggle()
+    }
+
+    func flipKind(candidateID: Int) {
+        guard let i = tourCandidates.firstIndex(where: { $0.id == candidateID }) else { return }
+        let current = tourCandidates[i].effectiveKind
+        let flipped: TourRecordingKind = current == .spoken ? .ambient : .spoken
+        tourCandidates[i].kindOverride = flipped == tourCandidates[i].autoKind ? nil : flipped
+    }
+
+    /// Task 8's `share()` must filter `pinnedPhotos` to this same window before
+    /// exporting hi-res bytes — otherwise the export, the declared photo
+    /// metadata, and the trimmed route would each tell a different story about
+    /// which photos belong to the shared page.
+    func interactiveKeptWindow() -> ClosedRange<Int>? {
+        computeInteractiveRoute().keptWindow
     }
 
     private func geocodeEndpoints() async -> (start: String?, end: String?) {
@@ -218,19 +301,10 @@ final class WalkShareViewModel: ObservableObject {
         }
     }
 
-    private func buildPayload(placeStart: String?, placeEnd: String?) -> SharePayload {
+    func buildPayload(placeStart: String?, placeEnd: String?, tourPhotoMeta: [SharePayload.Photo] = []) -> SharePayload {
         let isMetric = UserPreferences.distanceMeasurementType.safeValue == .kilometers
-
-        let routePoints = walk.routeData.map { sample in
-            SharePayload.RoutePoint(
-                lat: sample.latitude,
-                lon: sample.longitude,
-                alt: sample.altitude,
-                ts: Int(sample.timestamp.timeIntervalSince1970)
-            )
-        }
-
-        let downsampled = RouteDownsampler.downsample(routePoints)
+        let interactive = interactiveEnabled
+        let (finalRoute, trimM, keptWindow) = computeInteractiveRoute()
 
         var intervals: [SharePayload.ActivityIntervalPayload] = []
 
@@ -280,34 +354,9 @@ final class WalkShareViewModel: ObservableObject {
 
         let formatter = ISO8601DateFormatter()
 
-        let waypointPayload: [SharePayload.Waypoint]? = {
-            guard includeWaypoints, hasWaypoints else { return nil }
-            return walk.waypoints.map { wp in
-                SharePayload.Waypoint(
-                    lat: wp.latitude,
-                    lon: wp.longitude,
-                    label: wp.label,
-                    icon: wp.icon,
-                    ts: Int(wp.timestamp.timeIntervalSince1970)
-                )
-            }
-        }()
-
-        let photoPayload: [SharePayload.Photo]? = {
-            guard includePhotos, hasPinnedPhotos else { return nil }
-            return pinnedPhotos.compactMap { photo in
-                Self.loadSharePhoto(
-                    localIdentifier: photo.localIdentifier,
-                    lat: photo.capturedLat,
-                    lon: photo.capturedLng,
-                    capturedAt: photo.capturedAt
-                )
-            }
-        }()
-
         var payload = SharePayload(
             stats: stats,
-            route: downsampled,
+            route: finalRoute,
             activityIntervals: intervals,
             journal: journal.isEmpty ? nil : journal,
             expiryDays: selectedExpiry.rawValue,
@@ -318,11 +367,92 @@ final class WalkShareViewModel: ObservableObject {
             placeStart: placeStart,
             placeEnd: placeEnd,
             mark: markValue,
-            waypoints: waypointPayload,
-            photos: photoPayload
+            waypoints: waypointPayload(keptWindow: keptWindow),
+            photos: photoPayload(interactive: interactive, tourPhotoMeta: tourPhotoMeta)
         )
+        if interactive {
+            applyInteractiveTourAndPauses(to: &payload, trimM: trimM)
+        }
         payload.turningDay = turningDayCode()
         return payload
+    }
+
+    /// Test-only passthrough so specs can build a payload without geocoding.
+    func testBuildPayload(tourPhotoMeta: [SharePayload.Photo] = []) -> SharePayload {
+        buildPayload(placeStart: nil, placeEnd: nil, tourPhotoMeta: tourPhotoMeta)
+    }
+
+    private func waypointPayload(keptWindow: ClosedRange<Int>?) -> [SharePayload.Waypoint]? {
+        guard includeWaypoints, hasWaypoints else { return nil }
+        return walk.waypoints
+            .filter { wp in keptWindow.map { $0.contains(Int(wp.timestamp.timeIntervalSince1970)) } ?? true }
+            .map { wp in
+                SharePayload.Waypoint(
+                    lat: wp.latitude,
+                    lon: wp.longitude,
+                    label: wp.label,
+                    icon: wp.icon,
+                    ts: Int(wp.timestamp.timeIntervalSince1970)
+                )
+            }
+    }
+
+    private func photoPayload(interactive: Bool, tourPhotoMeta: [SharePayload.Photo]) -> [SharePayload.Photo]? {
+        guard includePhotos, hasPinnedPhotos else { return nil }
+        if interactive {
+            // Metadata comes ONLY from the export (same array, same order), so
+            // declared photo n always matches the uploaded file n. Never map
+            // pinnedPhotos here — a failed export would orphan map markers.
+            return tourPhotoMeta.isEmpty ? nil : tourPhotoMeta
+        }
+        return pinnedPhotos.compactMap { photo in
+            Self.loadSharePhoto(
+                localIdentifier: photo.localIdentifier,
+                lat: photo.capturedLat,
+                lon: photo.capturedLng,
+                capturedAt: photo.capturedAt
+            )
+        }
+    }
+
+    private func applyInteractiveTourAndPauses(to payload: inout SharePayload, trimM: Int) {
+        payload.tour = TourBuilder.tourItems(candidates: tourCandidates, trimM: trimM).tour
+        // The worker validates TRUNCATED integers: filter after truncation or a
+        // sub-second pause 400s the whole share.
+        payload.pauses = Array(
+            walk.pauses
+                .map { (start: Int($0.startDate.timeIntervalSince1970), end: Int($0.endDate.timeIntervalSince1970)) }
+                .filter { $0.end > $0.start }
+                .prefix(200)
+        ).map { SharePayload.Pause(startTs: $0.start, endTs: $0.end) }
+    }
+
+    /// Single source of truth for the trimmed route: `buildPayload` and
+    /// `interactiveKeptWindow()` must never compute this independently, or the
+    /// payload's route and the window used to filter waypoints/photos against
+    /// it could drift apart.
+    private func computeInteractiveRoute() -> (route: [SharePayload.RoutePoint], trimM: Int, keptWindow: ClosedRange<Int>?) {
+        let routePoints = walk.routeData.map { sample in
+            SharePayload.RoutePoint(
+                lat: sample.latitude,
+                lon: sample.longitude,
+                alt: sample.altitude,
+                ts: Int(sample.timestamp.timeIntervalSince1970)
+            )
+        }
+        let downsampled = RouteDownsampler.downsample(routePoints)
+
+        let trimM = interactiveEnabled && trimEnabled ? Self.trimMeters : 0
+        let finalRoute = interactiveEnabled && trimM > 0
+            ? RouteTrimmer.trim(downsampled, meters: Double(trimM))
+            : downsampled
+        // Trim's promise covers everything with a coordinate: waypoints and photo
+        // metadata whose timestamps fall outside the kept route window are excluded
+        // too — a doorstep photo must not pin the doorstep trim just hid.
+        let keptWindow: ClosedRange<Int>? = (interactiveEnabled && trimM > 0 && finalRoute.count >= 2)
+            ? finalRoute.first!.ts...finalRoute.last!.ts
+            : nil
+        return (finalRoute, trimM, keptWindow)
     }
 
     private func turningDayCode() -> String? {
