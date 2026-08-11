@@ -198,6 +198,7 @@
 		4DC9042641824FA1900ABF64 /* SealInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA2E3CE11CDA4BC19D37CF82 /* SealInput.swift */; };
 		4E67344B8C0A415F1F08BD96 /* SeekFogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB33487484B5D9579CE62A2 /* SeekFogModel.swift */; };
 		4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */; };
+		7ac8ee442a1ce6fcb926501a /* SharePayloadTourTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		510A5ED79C24B905DDD597A7 /* ScrollHapticEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
@@ -799,6 +800,7 @@
 		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
 		3A98AEE09143482AA1EFE5DC /* SolarHorizon.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SolarHorizon.swift; sourceTree = "<group>"; };
 		3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityIntervalTests.swift; sourceTree = "<group>"; };
+		cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayloadTourTests.swift; sourceTree = "<group>"; };
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
@@ -1826,6 +1828,7 @@
 				E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */,
 				B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */,
 				3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */,
+				cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */,
 				AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */,
 				AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */,
 				BBBB00000000000000000B /* WaypointCodableTests.swift */,
@@ -3133,6 +3136,7 @@
 				CDB0F563A56A46B5981279A2 /* WalkBuilderStatusTests.swift in Sources */,
 				FE15922AE9DAD82F62BA4601 /* NewWalkComputationTests.swift in Sources */,
 				4E9F3E9C7E3A4840ACD9DA73 /* ActivityIntervalTests.swift in Sources */,
+				7ac8ee442a1ce6fcb926501a /* SharePayloadTourTests.swift in Sources */,
 				AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */,
 				AAAA000000000000000000F3 /* IntentionHistoryStoreTests.swift in Sources */,
 				BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */,
