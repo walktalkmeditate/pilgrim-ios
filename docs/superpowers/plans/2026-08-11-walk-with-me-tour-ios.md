@@ -551,7 +551,8 @@ enum TourPhotoExporter {
 // cancels the UNDERLYING Photos request, so wall-clock is genuinely bounded —
 // a task-group race cannot bound it because withTaskGroup awaits cancelled
 // children and PHImageManager fetches are not cancellation-aware. (Amended
-// during implementation; empirically verified 1s deadline → 1.009s elapsed.)
+// during implementation; mechanism verified via synthetic probes — real-device
+// PhotoKit behavior still needs the Task 9 / hardware pass.)
 ```
 
 - [ ] **Step 1: Write the failing test**
