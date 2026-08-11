@@ -1,0 +1,82 @@
+import XCTest
+@testable import Pilgrim
+
+final class TourBuilderTests: XCTestCase {
+
+    func testClassify_noTranscriptionIsSpoken() {
+        XCTAssertEqual(TourBuilder.classify(transcription: nil, wpm: nil), .spoken)
+    }
+
+    func testClassify_fewWordsIsAmbient() {
+        XCTAssertEqual(TourBuilder.classify(transcription: "wind and birds", wpm: 200), .ambient)
+    }
+
+    func testClassify_slowSpeechIsAmbient() {
+        let words = Array(repeating: "word", count: 20).joined(separator: " ")
+        XCTAssertEqual(TourBuilder.classify(transcription: words, wpm: 12), .ambient)
+    }
+
+    func testClassify_realSpeechIsSpoken() {
+        let words = Array(repeating: "word", count: 20).joined(separator: " ")
+        XCTAssertEqual(TourBuilder.classify(transcription: words, wpm: 110), .spoken)
+    }
+
+    func testClassify_transcriptionWithoutWpmUsesWordCountOnly() {
+        let words = Array(repeating: "word", count: 20).joined(separator: " ")
+        XCTAssertEqual(TourBuilder.classify(transcription: words, wpm: nil), .spoken)
+    }
+
+    private func candidate(id: Int, bytes: Int = 1_000_000, seconds: Double = 60, included: Bool = true, kind: TourRecordingKind = .spoken) -> TourRecordingCandidate {
+        TourRecordingCandidate(id: id, startTs: 1000 + id * 100, endTs: 1050 + id * 100, duration: seconds, sizeBytes: bytes, transcription: nil, wpm: nil, autoKind: kind, includeInShare: included, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/\(id).m4a"), unavailableReason: nil)
+    }
+
+    func testTourItems_renumbersAfterExclusion() {
+        let candidates = [candidate(id: 0), candidate(id: 1, included: false), candidate(id: 2)]
+        let (tour, files) = TourBuilder.tourItems(candidates: candidates, trimM: 150)
+        XCTAssertEqual(tour.recordings.map(\.n), [1, 2])
+        XCTAssertEqual(tour.recordings[1].startTs, 1200)
+        XCTAssertEqual(tour.trimM, 150)
+        XCTAssertEqual(files.map(\.lastPathComponent), ["0.m4a", "2.m4a"])
+    }
+
+    func testTourItems_kindOverrideWins() {
+        var flipped = candidate(id: 0, kind: .spoken)
+        flipped.kindOverride = .ambient
+        let (tour, _) = TourBuilder.tourItems(candidates: [flipped], trimM: 0)
+        XCTAssertEqual(tour.recordings[0].kind, "ambient")
+    }
+
+    func testTourItems_payloadAndFilesAlwaysAlign() {
+        var urlless = candidate(id: 1)
+        urlless.fileURL = nil
+        let (tour, files) = TourBuilder.tourItems(candidates: [candidate(id: 0), urlless, candidate(id: 2)], trimM: 0)
+        XCTAssertEqual(tour.recordings.count, files.count)
+        XCTAssertEqual(files.map(\.lastPathComponent), ["0.m4a", "2.m4a"])
+    }
+
+    func testValidation_overTwelveRecordingsFails() {
+        let candidates = (0..<13).map { candidate(id: $0) }
+        XCTAssertNotNil(TourBuilder.validationError(for: candidates))
+        XCTAssertNil(TourBuilder.validationError(for: Array(candidates.prefix(12))))
+    }
+
+    func testValidation_totalBytesAndSecondsCaps() {
+        let heavy = (0..<5).map { candidate(id: $0, bytes: 14_000_000) }   // 70MB
+        XCTAssertNotNil(TourBuilder.validationError(for: heavy))
+        let long = (0..<3).map { candidate(id: $0, seconds: 1000) }        // 3000s
+        XCTAssertNotNil(TourBuilder.validationError(for: long))
+    }
+
+    func testValidation_excludedRecordingsDoNotCount() {
+        let candidates = (0..<13).map { candidate(id: $0, included: $0 < 12) }
+        XCTAssertNil(TourBuilder.validationError(for: candidates))
+    }
+
+    func testUnavailableCandidatesNeverEnterTour() {
+        var removed = candidate(id: 1)
+        removed = TourRecordingCandidate(id: 1, startTs: 1100, endTs: 1150, duration: 50, sizeBytes: 0, transcription: "kept transcript", wpm: nil, autoKind: .spoken, includeInShare: false, kindOverride: nil, fileURL: nil, unavailableReason: "audio removed")
+        let (tour, files) = TourBuilder.tourItems(candidates: [candidate(id: 0), removed], trimM: 0)
+        XCTAssertEqual(tour.recordings.count, 1)
+        XCTAssertEqual(files.count, 1)
+    }
+}
