@@ -218,26 +218,41 @@ extension ShareService {
         }
     }
 
+    /// A failed upload's slot (`kind`/`n`, the PUT index the worker is still
+    /// missing) plus the STABLE identity of the file it was meant to carry.
+    /// `n` alone isn't safe to retry against later: the local candidate list
+    /// an index was drawn from can shift (an export drop, an unpin) between
+    /// the original share and a retry, so the caller resolving this cache
+    /// must verify identity (recording `startTs`, or photo `localIdentifier`
+    /// + captured `ts`) before uploading anything under `n` again — see
+    /// `WalkShareViewModel.resolveRetryItems`. `kind` is a raw string, not
+    /// `MediaKind`, so this format doesn't depend on that enum's cases.
+    struct FailedMediaItem: Codable, Equatable {
+        let kind: String
+        let n: Int
+        let audioStartTs: Int?
+        let photoLocalID: String?
+        let photoTs: Int?
+    }
+
     /// Failed-media bookkeeping alongside the cached share, so a re-entry
     /// can offer repair for the share's whole life (the worker accepts
-    /// PUTs until expiry).
-    static func cacheFailedMedia(_ failures: [(kind: MediaKind, n: Int)], walkID: UUID) {
+    /// PUTs until expiry). Stored as JSON — no shipped data exists in this
+    /// format yet, so it's free to change without a migration.
+    static func cacheFailedMedia(_ failures: [FailedMediaItem], walkID: UUID) {
         let key = "share-failed-media:\(walkID.uuidString)"
         if failures.isEmpty {
             UserDefaults.standard.removeObject(forKey: key)
-        } else {
-            UserDefaults.standard.set(failures.map { "\($0.kind.rawValue):\($0.n)" }, forKey: key)
+        } else if let data = try? JSONEncoder().encode(failures) {
+            UserDefaults.standard.set(data, forKey: key)
         }
     }
 
-    static func failedMedia(for walkID: UUID) -> [(kind: MediaKind, n: Int)] {
+    static func failedMedia(for walkID: UUID) -> [FailedMediaItem] {
         let key = "share-failed-media:\(walkID.uuidString)"
-        guard let raw = UserDefaults.standard.stringArray(forKey: key) else { return [] }
-        return raw.compactMap { entry in
-            let parts = entry.split(separator: ":")
-            guard parts.count == 2, let kind = MediaKind(rawValue: String(parts[0])), let n = Int(parts[1]) else { return nil }
-            return (kind, n)
-        }
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let items = try? JSONDecoder().decode([FailedMediaItem].self, from: data) else { return [] }
+        return items
     }
 
     /// Begins a background-task assertion, runs `body`, then ends it — so

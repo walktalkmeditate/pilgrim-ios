@@ -206,6 +206,7 @@ final class WalkShareInteractiveTests: XCTestCase {
 
     func testPartialAndSuccessBothCountAsShared() {
         let successID = UUID()
+        addTeardownBlock { UserDefaults.standard.removeObject(forKey: "share:\(successID.uuidString)") }
         let successWalk = WalkDataFactory.makeWalk(uuid: successID)
         ShareService.cacheShare(
             ShareService.ShareResult(url: "https://walk.pilgrimapp.org/success1", id: "success1"),
@@ -220,6 +221,10 @@ final class WalkShareInteractiveTests: XCTestCase {
         }
 
         let partialID = UUID()
+        addTeardownBlock {
+            UserDefaults.standard.removeObject(forKey: "share:\(partialID.uuidString)")
+            ShareService.cacheFailedMedia([], walkID: partialID)
+        }
         let partialWalk = WalkDataFactory.makeWalk(uuid: partialID)
         ShareService.cacheShare(
             ShareService.ShareResult(url: "https://walk.pilgrimapp.org/partial1", id: "partial1"),
@@ -227,14 +232,94 @@ final class WalkShareInteractiveTests: XCTestCase {
             expiryDays: 90,
             expiryOption: "season"
         )
-        ShareService.cacheFailedMedia([(kind: .audio, n: 1)], walkID: partialID)
+        ShareService.cacheFailedMedia(
+            [ShareService.FailedMediaItem(kind: "audio", n: 1, audioStartTs: 100, photoLocalID: nil, photoTs: nil)],
+            walkID: partialID
+        )
         let partialVM = WalkShareViewModel(walk: partialWalk)
         XCTAssertTrue(partialVM.isShared, ".partial must count as shared — the page is already live")
         guard case .partial(_, let failedCount) = partialVM.shareState else {
             return XCTFail("expected .partial when media failed")
         }
         XCTAssertEqual(failedCount, 1)
+    }
 
-        ShareService.cacheFailedMedia([], walkID: partialID)
+    // MARK: - resolveRetryItems (pure identity resolution)
+
+    func testResolveRetryItemsMatchesPhotoByIdentityNotIndex() {
+        // Cached failure says n=1 for "photo-B" (captured at ts 500). In the
+        // CURRENT export, photo-B sits at array position 1 (index 1), not 0
+        // — an export-order shift. A naive index-based lookup
+        // (currentPhotos[n-1] == currentPhotos[0]) would grab photo-A's
+        // bytes instead and upload them under photo-B's old slot.
+        let cached = [ShareService.FailedMediaItem(kind: "photos", n: 1, audioStartTs: nil, photoLocalID: "photo-B", photoTs: 500)]
+        let photos = [
+            TourPhoto(meta: SharePayload.Photo(lat: 0, lon: 0, ts: 100, data: nil), jpegData: Data([0xAA]), sourceLocalIdentifier: "photo-A"),
+            TourPhoto(meta: SharePayload.Photo(lat: 1, lon: 2, ts: 500, data: nil), jpegData: Data([0xBB]), sourceLocalIdentifier: "photo-B")
+        ]
+
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
+            cached: cached,
+            currentRecordings: [],
+            currentAudioFiles: [],
+            currentPhotos: photos
+        )
+
+        XCTAssertTrue(remaining.isEmpty)
+        guard let resolved = uploadable.first else { return XCTFail("expected photo-B to resolve by identity") }
+        XCTAssertEqual(resolved.n, 1, "must upload under the CACHED slot n, not photo-B's current array position")
+        XCTAssertEqual(try? resolved.data(), Data([0xBB]), "must upload photo-B's bytes (matched by identity), never photo-A's (which sat at the naive index)")
+    }
+
+    func testResolveRetryItemsPhotoMissingIdentityGoesToRemaining() {
+        // "photo-gone" was unpinned between the original share and this retry
+        // — it no longer appears anywhere in the current export.
+        let cached = [ShareService.FailedMediaItem(kind: "photos", n: 1, audioStartTs: nil, photoLocalID: "photo-gone", photoTs: 500)]
+        let photos = [TourPhoto(meta: SharePayload.Photo(lat: 0, lon: 0, ts: 999, data: nil), jpegData: Data([0xAA]), sourceLocalIdentifier: "photo-other")]
+
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
+            cached: cached,
+            currentRecordings: [],
+            currentAudioFiles: [],
+            currentPhotos: photos
+        )
+
+        XCTAssertTrue(uploadable.isEmpty)
+        XCTAssertEqual(remaining, cached, "an unresolved item must be carried forward unchanged, not dropped")
+    }
+
+    func testResolveRetryItemsAudioStartTsMismatchGoesToRemaining() {
+        // recordings[0] is now a DIFFERENT recording (startTs 200, not the
+        // cached 100) — the candidate set shifted since the original share.
+        let cached = [ShareService.FailedMediaItem(kind: "audio", n: 1, audioStartTs: 100, photoLocalID: nil, photoTs: nil)]
+        let recordings = [SharePayload.TourRecording(n: 1, startTs: 200, endTs: 260, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000)]
+        let audioFiles = [URL(fileURLWithPath: "/tmp/audio1.m4a")]
+
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
+            cached: cached,
+            currentRecordings: recordings,
+            currentAudioFiles: audioFiles,
+            currentPhotos: []
+        )
+
+        XCTAssertTrue(uploadable.isEmpty)
+        XCTAssertEqual(remaining, cached)
+    }
+
+    func testResolveRetryItemsAudioMatchesWhenStartTsAgrees() {
+        let cached = [ShareService.FailedMediaItem(kind: "audio", n: 1, audioStartTs: 100, photoLocalID: nil, photoTs: nil)]
+        let recordings = [SharePayload.TourRecording(n: 1, startTs: 100, endTs: 160, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000)]
+        let fileURL = URL(fileURLWithPath: "/tmp/audio1.m4a")
+
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
+            cached: cached,
+            currentRecordings: recordings,
+            currentAudioFiles: [fileURL],
+            currentPhotos: []
+        )
+
+        XCTAssertTrue(remaining.isEmpty)
+        XCTAssertEqual(uploadable.first?.n, 1)
+        XCTAssertEqual(uploadable.first?.kind, .audio)
     }
 }

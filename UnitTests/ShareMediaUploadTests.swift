@@ -20,11 +20,14 @@ final class ShareMediaUploadTests: XCTestCase {
 
     func testCacheFailedMedia_roundTripsThenEmptyClears() {
         let walkID = UUID()
-        let failures: [(kind: ShareService.MediaKind, n: Int)] = [(.photos, 2), (.audio, 1)]
+        let failures: [ShareService.FailedMediaItem] = [
+            ShareService.FailedMediaItem(kind: "photos", n: 2, audioStartTs: nil, photoLocalID: "photo-abc", photoTs: 1_000),
+            ShareService.FailedMediaItem(kind: "audio", n: 1, audioStartTs: 500, photoLocalID: nil, photoTs: nil)
+        ]
 
         ShareService.cacheFailedMedia(failures, walkID: walkID)
         let reloaded = ShareService.failedMedia(for: walkID)
-        XCTAssertEqual(reloaded.map { "\($0.kind.rawValue):\($0.n)" }, ["photos:2", "audio:1"])
+        XCTAssertEqual(reloaded, failures, "round-trip through JSON must preserve identity fields, not just kind/n")
 
         ShareService.cacheFailedMedia([], walkID: walkID)
         XCTAssertTrue(ShareService.failedMedia(for: walkID).isEmpty)

@@ -5,6 +5,12 @@ import os
 struct TourPhoto {
     let meta: SharePayload.Photo
     let jpegData: Data
+    /// The PHAsset identifier this export came from — stable identity for
+    /// matching a failed upload back to its source photo later, even if the
+    /// candidate list's ORDER or LENGTH has since changed (see
+    /// `WalkShareViewModel.resolveRetryItems`). Never sent to the server;
+    /// `meta`/`jpegData` are the payload.
+    let sourceLocalIdentifier: String
 }
 
 enum TourPhotoExporter {
@@ -88,7 +94,8 @@ enum TourPhotoExporter {
                         ts: Int(candidate.capturedAt.timeIntervalSince1970),
                         data: nil
                     ),
-                    jpegData: data
+                    jpegData: data,
+                    sourceLocalIdentifier: candidate.localIdentifier
                 ))
             }
 
