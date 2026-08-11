@@ -12,6 +12,7 @@ enum TourPhotoExporter {
     static let maxBytes = 2 * 1024 * 1024
     static let targetPixels: CGFloat = 1600
     static let perPhotoTimeout: TimeInterval = 20
+    static let backstopGrace: TimeInterval = 2
 
     /// Interactive pages show photography full-bleed: export at 1600px
     /// (vs the classic page's 600px inline thumbnails), walking quality
@@ -25,6 +26,12 @@ enum TourPhotoExporter {
         return nil
     }
 
+    /// `progress` fires after every photo, off the main thread — `export` is a
+    /// nonisolated async function and reports from whatever executor happens to
+    /// be running when the current photo finishes, never the main actor. This
+    /// differs from the sibling `WalkPhotoMatcher.findCandidates`, whose
+    /// `completion` closure is always delivered on the main thread. Callers that
+    /// update UI from `progress` must hop to the MainActor themselves.
     static func export(_ candidates: [PhotoCandidate], progress: @escaping (Int, Int) -> Void) async -> [TourPhoto] {
         var out: [TourPhoto] = []
         for (i, candidate) in candidates.enumerated() {
@@ -34,12 +41,15 @@ enum TourPhotoExporter {
         return out
     }
 
-    // Guarantee: perPhotoTimeout cancels the underlying PHImageManager request
-    // itself (via cancelImageRequest), not just the value this function is
-    // waiting on. PhotoKit's documented contract is to invoke the result
-    // handler with a nil image once a request is cancelled, so a stalled
-    // iCloud fetch is interrupted at the source and cannot block the share
-    // beyond perPhotoTimeout — wall-clock time is genuinely bounded.
+    // Guarantee: wall-clock time is bounded by timeout + grace, not unbounded.
+    // perPhotoTimeout cancels the underlying PHImageManager request itself
+    // (PhotoKit's documented contract is to invoke the result handler with a
+    // nil image once a request is cancelled), and an independent backstop at
+    // perPhotoTimeout + backstopGrace force-resumes with nil even if that
+    // callback never fires at all — wedged iCloud requests are a credible
+    // failure mode, so the bound cannot depend entirely on PhotoKit calling
+    // back. Either path resumes through the same one-shot lock, and whichever
+    // fires first cancels the other's pending DispatchWorkItem.
     private static func loadOne(_ candidate: PhotoCandidate) async -> TourPhoto? {
         let fetch = PHAsset.fetchAssets(withLocalIdentifiers: [candidate.localIdentifier], options: nil)
         guard let asset = fetch.firstObject else { return nil }
@@ -51,7 +61,7 @@ enum TourPhotoExporter {
         options.resizeMode = .exact
 
         return await withCheckedContinuation { continuation in
-            let hasResumed = OSAllocatedUnfairLock(initialState: false)
+            let state = OSAllocatedUnfairLock(initialState: LoadState())
 
             let requestID = PHImageManager.default().requestImage(
                 for: asset,
@@ -59,9 +69,11 @@ enum TourPhotoExporter {
                 contentMode: .aspectFit,
                 options: options
             ) { image, _ in
-                let shouldResume = hasResumed.withLock { alreadyResumed -> Bool in
-                    guard !alreadyResumed else { return false }
-                    alreadyResumed = true
+                let shouldResume = state.withLock { box -> Bool in
+                    guard !box.resumed else { return false }
+                    box.resumed = true
+                    box.cancelItem?.cancel()
+                    box.backstopItem?.cancel()
                     return true
                 }
                 guard shouldResume else { return }
@@ -80,9 +92,37 @@ enum TourPhotoExporter {
                 ))
             }
 
-            DispatchQueue.global().asyncAfter(deadline: .now() + perPhotoTimeout) {
+            // Deadline 1: nudge PhotoKit to give up on the fetch itself.
+            let cancelItem = DispatchWorkItem {
                 PHImageManager.default().cancelImageRequest(requestID)
             }
+
+            // Deadline 2 (backstop): force the continuation to resume even if
+            // PhotoKit never calls the result handler at all — independent of
+            // whether cancelImageRequest actually interrupted anything.
+            let backstopItem = DispatchWorkItem {
+                let shouldResume = state.withLock { box -> Bool in
+                    guard !box.resumed else { return false }
+                    box.resumed = true
+                    return true
+                }
+                guard shouldResume else { return }
+                continuation.resume(returning: nil)
+            }
+
+            state.withLock {
+                $0.cancelItem = cancelItem
+                $0.backstopItem = backstopItem
+            }
+
+            DispatchQueue.global().asyncAfter(deadline: .now() + perPhotoTimeout, execute: cancelItem)
+            DispatchQueue.global().asyncAfter(deadline: .now() + perPhotoTimeout + backstopGrace, execute: backstopItem)
         }
+    }
+
+    private struct LoadState {
+        var resumed = false
+        var cancelItem: DispatchWorkItem?
+        var backstopItem: DispatchWorkItem?
     }
 }
