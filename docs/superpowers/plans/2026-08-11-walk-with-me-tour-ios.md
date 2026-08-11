@@ -190,6 +190,7 @@ struct TourRecordingCandidate: Identifiable, Equatable {
     var kindOverride: TourRecordingKind?
     var effectiveKind: TourRecordingKind { kindOverride ?? autoKind }
     var fileURL: URL?
+    let unavailableReason: String?   // "audio removed" / "too large to carry"; nil = offerable
 }
 
 enum TourRecordingKind: String { case spoken, ambient }
@@ -199,8 +200,8 @@ enum TourBuilder {
     static func classify(transcription: String?, wpm: Double?) -> TourRecordingKind
     static func totals(of candidates: [TourRecordingCandidate]) -> (count: Int, bytes: Int, seconds: Double)
     static func validationError(for candidates: [TourRecordingCandidate]) -> String?
-    static func tourPayload(candidates: [TourRecordingCandidate], trimM: Int) -> SharePayload.Tour
-    static func includedFileURLs(candidates: [TourRecordingCandidate]) -> [URL]  // same order as payload n=1..N
+    static func tourItems(candidates: [TourRecordingCandidate], trimM: Int) -> (tour: SharePayload.Tour, files: [URL])
+    // ONE filtered pass builds both, so payload n and file order cannot diverge
 }
 ```
 
@@ -238,22 +239,31 @@ final class TourBuilderTests: XCTestCase {
     }
 
     private func candidate(id: Int, bytes: Int = 1_000_000, seconds: Double = 60, included: Bool = true, kind: TourRecordingKind = .spoken) -> TourRecordingCandidate {
-        TourRecordingCandidate(id: id, startTs: 1000 + id * 100, endTs: 1050 + id * 100, duration: seconds, sizeBytes: bytes, transcription: nil, wpm: nil, autoKind: kind, includeInShare: included, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/\(id).m4a"))
+        TourRecordingCandidate(id: id, startTs: 1000 + id * 100, endTs: 1050 + id * 100, duration: seconds, sizeBytes: bytes, transcription: nil, wpm: nil, autoKind: kind, includeInShare: included, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/\(id).m4a"), unavailableReason: nil)
     }
 
-    func testTourPayload_renumbersAfterExclusion() {
+    func testTourItems_renumbersAfterExclusion() {
         let candidates = [candidate(id: 0), candidate(id: 1, included: false), candidate(id: 2)]
-        let tour = TourBuilder.tourPayload(candidates: candidates, trimM: 150)
+        let (tour, files) = TourBuilder.tourItems(candidates: candidates, trimM: 150)
         XCTAssertEqual(tour.recordings.map(\.n), [1, 2])
         XCTAssertEqual(tour.recordings[1].startTs, 1200)
         XCTAssertEqual(tour.trimM, 150)
+        XCTAssertEqual(files.map(\.lastPathComponent), ["0.m4a", "2.m4a"])
     }
 
-    func testTourPayload_kindOverrideWins() {
+    func testTourItems_kindOverrideWins() {
         var flipped = candidate(id: 0, kind: .spoken)
         flipped.kindOverride = .ambient
-        let tour = TourBuilder.tourPayload(candidates: [flipped], trimM: 0)
+        let (tour, _) = TourBuilder.tourItems(candidates: [flipped], trimM: 0)
         XCTAssertEqual(tour.recordings[0].kind, "ambient")
+    }
+
+    func testTourItems_payloadAndFilesAlwaysAlign() {
+        var urlless = candidate(id: 1)
+        urlless.fileURL = nil
+        let (tour, files) = TourBuilder.tourItems(candidates: [candidate(id: 0), urlless, candidate(id: 2)], trimM: 0)
+        XCTAssertEqual(tour.recordings.count, files.count)
+        XCTAssertEqual(files.map(\.lastPathComponent), ["0.m4a", "2.m4a"])
     }
 
     func testValidation_overTwelveRecordingsFails() {
@@ -274,10 +284,12 @@ final class TourBuilderTests: XCTestCase {
         XCTAssertNil(TourBuilder.validationError(for: candidates))
     }
 
-    func testIncludedFileURLs_matchPayloadOrder() {
-        let candidates = [candidate(id: 0), candidate(id: 1, included: false), candidate(id: 2)]
-        let urls = TourBuilder.includedFileURLs(candidates: candidates)
-        XCTAssertEqual(urls.map(\.lastPathComponent), ["0.m4a", "2.m4a"])
+    func testUnavailableCandidatesNeverEnterTour() {
+        var removed = candidate(id: 1)
+        removed = TourRecordingCandidate(id: 1, startTs: 1100, endTs: 1150, duration: 50, sizeBytes: 0, transcription: "kept transcript", wpm: nil, autoKind: .spoken, includeInShare: false, kindOverride: nil, fileURL: nil, unavailableReason: "audio removed")
+        let (tour, files) = TourBuilder.tourItems(candidates: [candidate(id: 0), removed], trimM: 0)
+        XCTAssertEqual(tour.recordings.count, 1)
+        XCTAssertEqual(files.count, 1)
     }
 }
 ```
@@ -303,6 +315,7 @@ struct TourRecordingCandidate: Identifiable, Equatable {
     var includeInShare: Bool
     var kindOverride: TourRecordingKind?
     var fileURL: URL?
+    let unavailableReason: String?
 
     var effectiveKind: TourRecordingKind { kindOverride ?? autoKind }
 }
@@ -333,26 +346,40 @@ enum TourBuilder {
         return sorted.enumerated().compactMap { index, rec in
             guard !rec.fileRelativePath.isEmpty else { return nil }
             let url = docs.appendingPathComponent(rec.fileRelativePath)
+            let startTs = Int(rec.startDate.timeIntervalSince1970)
+            let endTs = Int(rec.endDate.timeIntervalSince1970)
+            // The worker validates truncated integers and rejects the WHOLE
+            // POST on end_ts <= start_ts — a sub-second blip recording must
+            // be excluded here, not shipped.
+            guard endTs > startTs else { return nil }
             let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? Int
-            guard let size, size > 0, size <= maxFileBytes else { return nil }
+            let unavailableReason: String?
+            if size == nil || size == 0 {
+                unavailableReason = "audio removed"
+            } else if let size, size > maxFileBytes {
+                unavailableReason = "too large to carry"
+            } else {
+                unavailableReason = nil
+            }
             return TourRecordingCandidate(
                 id: index,
-                startTs: Int(rec.startDate.timeIntervalSince1970),
-                endTs: Int(rec.endDate.timeIntervalSince1970),
+                startTs: startTs,
+                endTs: endTs,
                 duration: rec.duration,
-                sizeBytes: size,
+                sizeBytes: size ?? 0,
                 transcription: rec.transcription,
                 wpm: rec.wordsPerMinute,
                 autoKind: classify(transcription: rec.transcription, wpm: rec.wordsPerMinute),
-                includeInShare: true,
+                includeInShare: unavailableReason == nil,
                 kindOverride: nil,
-                fileURL: url
+                fileURL: unavailableReason == nil ? url : nil,
+                unavailableReason: unavailableReason
             )
         }
     }
 
     static func totals(of candidates: [TourRecordingCandidate]) -> (count: Int, bytes: Int, seconds: Double) {
-        let included = candidates.filter(\.includeInShare)
+        let included = candidates.filter { $0.includeInShare && $0.unavailableReason == nil }
         return (included.count,
                 included.reduce(0) { $0 + $1.sizeBytes },
                 included.reduce(0) { $0 + $1.duration })
@@ -366,8 +393,8 @@ enum TourBuilder {
         return nil
     }
 
-    static func tourPayload(candidates: [TourRecordingCandidate], trimM: Int) -> SharePayload.Tour {
-        let included = candidates.filter(\.includeInShare)
+    static func tourItems(candidates: [TourRecordingCandidate], trimM: Int) -> (tour: SharePayload.Tour, files: [URL]) {
+        let included = candidates.filter { $0.includeInShare && $0.unavailableReason == nil && $0.fileURL != nil }
         let recordings = included.enumerated().map { index, c in
             SharePayload.TourRecording(
                 n: index + 1,
@@ -380,11 +407,8 @@ enum TourBuilder {
                 sizeBytes: c.sizeBytes
             )
         }
-        return SharePayload.Tour(recordings: recordings, trimM: trimM)
-    }
-
-    static func includedFileURLs(candidates: [TourRecordingCandidate]) -> [URL] {
-        candidates.filter(\.includeInShare).compactMap(\.fileURL)
+        let files = included.compactMap(\.fileURL)
+        return (SharePayload.Tour(recordings: recordings, trimM: trimM), files)
     }
 }
 ```
@@ -403,7 +427,7 @@ Note `transcription: nil` in the payload: the page never renders transcripts and
 - Test: `UnitTests/RouteTrimmerTests.swift` (create)
 
 **Interfaces:**
-- Produces: `RouteTrimmer.trim(_ route: [SharePayload.RoutePoint], meters: Double) -> [SharePayload.RoutePoint]` — used by Task 6. Trims cumulative haversine distance from each end; always returns at least the innermost 2 points when the route is long enough to trim, and returns the route unchanged when `meters <= 0` or total distance `< 4 * meters` (a walk too short to trim meaningfully shares untrimmed — matches the spec's "trim is a courtesy, not a guarantee").
+- Produces: `RouteTrimmer.trim(_:meters:)` and `RouteTrimmer.canTrim(_ route: [SharePayload.RoutePoint], meters: Double) -> Bool` — `canTrim` is the UI's honesty check (Task 7 disables the toggle and says so when trimming cannot apply) — used by Task 6. Trims cumulative haversine distance from each end; always returns at least the innermost 2 points when the route is long enough to trim, and returns the route unchanged when `meters <= 0` or total distance `< 4 * meters` (a walk too short to trim meaningfully shares untrimmed — matches the spec's "trim is a courtesy, not a guarantee").
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -438,6 +462,11 @@ final class RouteTrimmerTests: XCTestCase {
         let route = straightRoute(points: 4)    // ~333m total < 4 * 150
         XCTAssertEqual(RouteTrimmer.trim(route, meters: 150).count, 4)
     }
+
+    func testCanTrimReflectsThreshold() {
+        XCTAssertFalse(RouteTrimmer.canTrim(straightRoute(points: 4), meters: 150))
+        XCTAssertTrue(RouteTrimmer.canTrim(straightRoute(points: 20), meters: 150))
+    }
 }
 ```
 
@@ -468,6 +497,15 @@ enum RouteTrimmer {
         while end > 0 && total - cumulative[end] < meters { end -= 1 }
         guard end > start else { return route }
         return Array(route[start...end])
+    }
+
+    /// Whether a 150m trim can actually apply — the UI uses this to say
+    /// "too short to trim" instead of silently promising protection.
+    static func canTrim(_ route: [SharePayload.RoutePoint], meters: Double) -> Bool {
+        guard meters > 0, route.count > 3 else { return false }
+        var total = 0.0
+        for i in 1..<route.count { total += haversineMeters(route[i - 1], route[i]) }
+        return total >= meters * 4
     }
 
     private static func haversineMeters(_ a: SharePayload.RoutePoint, _ b: SharePayload.RoutePoint) -> Double {
@@ -504,9 +542,13 @@ struct TourPhoto {
 }
 
 enum TourPhotoExporter {
-    static func export(_ candidates: [PhotoCandidate]) async -> [TourPhoto]
+    static func export(_ candidates: [PhotoCandidate], progress: @escaping (Int, Int) -> Void) async -> [TourPhoto]
     static func jpegDataUnder(cap: Int, image: UIImage) -> Data?   // quality ladder, testable
 }
+// export reports (completed, total) after each photo and applies a 20s
+// per-photo deadline: an iCloud fetch that exceeds it is skipped (dropped
+// photos surface in Task 8's notice), so the share can never hang forever
+// behind a single unreachable original.
 ```
 
 - [ ] **Step 1: Write the failing test**
@@ -571,12 +613,34 @@ enum TourPhotoExporter {
         return nil
     }
 
-    static func export(_ candidates: [PhotoCandidate]) async -> [TourPhoto] {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let photos = candidates.compactMap(loadOne)
-                continuation.resume(returning: photos)
+    static let perPhotoTimeout: TimeInterval = 20
+
+    static func export(_ candidates: [PhotoCandidate], progress: @escaping (Int, Int) -> Void) async -> [TourPhoto] {
+        var out: [TourPhoto] = []
+        for (i, candidate) in candidates.enumerated() {
+            let photo = await withTimeoutOrNil(seconds: perPhotoTimeout) {
+                await withCheckedContinuation { continuation in
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        continuation.resume(returning: loadOne(candidate))
+                    }
+                }
             }
+            if let photo { out.append(photo) }
+            progress(i + 1, candidates.count)
+        }
+        return out
+    }
+
+    private static func withTimeoutOrNil<T: Sendable>(seconds: TimeInterval, _ work: @escaping () async -> T?) async -> T? {
+        await withTaskGroup(of: T?.self) { group in
+            group.addTask { await work() }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
         }
     }
 
@@ -639,14 +703,32 @@ extension ShareService {
 
     /// Sequential by contract: photos MUST land in index order (enrich
     /// HEADs only the last one), and one-at-a-time keeps memory flat for
-    /// 15MB audio files. Each item gets one retry. Returns the indices
-    /// (1-based, per kind) that ultimately failed.
+    /// 15MB audio files. PHOTOS UPLOAD FIRST — they gate the keepsake
+    /// render window; audio degrades gracefully to "voice unavailable".
+    /// Each item gets one retry. Runs inside a background-task assertion
+    /// so pocketing the phone doesn't kill the remaining PUTs. Returns
+    /// the indices (1-based, per kind) that ultimately failed.
     static func uploadAllMedia(
         shareID: String,
         audioFiles: [URL],
         photos: [Data],
         progress: @escaping (MediaProgress) -> Void
     ) async -> [(kind: MediaKind, n: Int)]
+
+    /// Targeted re-upload for a previous share's failed items ("Carry the
+    /// missing files"). Same ordering rules; audio resolved from URLs,
+    /// photos re-exported by the caller.
+    static func uploadSpecific(
+        shareID: String,
+        items: [(kind: MediaKind, n: Int, data: () throws -> Data)],
+        progress: @escaping (MediaProgress) -> Void
+    ) async -> [(kind: MediaKind, n: Int)]
+
+    /// Failed-media bookkeeping alongside the cached share, so a re-entry
+    /// can offer repair for the share's whole life (the worker accepts
+    /// PUTs until expiry).
+    static func cacheFailedMedia(_ failures: [(kind: MediaKind, n: Int)], walkID: UUID)
+    static func failedMedia(for walkID: UUID) -> [(kind: MediaKind, n: Int)]
 }
 ```
 
@@ -683,7 +765,7 @@ final class ShareMediaUploadTests: XCTestCase {
 
 - [ ] **Step 2: Run to verify failure**
 
-- [ ] **Step 3: Implement** in `ShareService.swift`:
+- [ ] **Step 3: Implement** in `ShareService.swift` (add `import UIKit` for the background-task assertion):
 
 ```swift
 // MARK: - Interactive media uploads
@@ -721,6 +803,26 @@ extension ShareService {
         func report() { progress(MediaProgress(completed: completed, total: total)) }
         report()
 
+        // Keep the PUT chain alive through pocketing/locking: request
+        // background execution for the whole sequence.
+        let bgTask = await MainActor.run {
+            UIApplication.shared.beginBackgroundTask(withName: "pilgrim.share.media")
+        }
+        defer {
+            if bgTask != .invalid {
+                Task { @MainActor in UIApplication.shared.endBackgroundTask(bgTask) }
+            }
+        }
+
+        // Photos first: enrich's keepsake render waits (bounded) on the
+        // LAST photo; audio has a graceful fallback on the page.
+        for (index, data) in photos.enumerated() {
+            let ok = await putWithRetry(shareID: shareID, kind: .photos, n: index + 1) { data }
+            if !ok { failures.append((.photos, index + 1)) }
+            completed += 1
+            report()
+        }
+
         for (index, fileURL) in audioFiles.enumerated() {
             let ok = await putWithRetry(shareID: shareID, kind: .audio, n: index + 1) {
                 try Data(contentsOf: fileURL)
@@ -729,14 +831,40 @@ extension ShareService {
             completed += 1
             report()
         }
+        return failures
+    }
 
-        for (index, data) in photos.enumerated() {
-            let ok = await putWithRetry(shareID: shareID, kind: .photos, n: index + 1) { data }
-            if !ok { failures.append((.photos, index + 1)) }
-            completed += 1
-            report()
+    static func uploadSpecific(
+        shareID: String,
+        items: [(kind: MediaKind, n: Int, data: () throws -> Data)],
+        progress: @escaping (MediaProgress) -> Void
+    ) async -> [(kind: MediaKind, n: Int)] {
+        var failures: [(kind: MediaKind, n: Int)] = []
+        for (i, item) in items.enumerated() {
+            let ok = await putWithRetry(shareID: shareID, kind: item.kind, n: item.n, body: item.data)
+            if !ok { failures.append((item.kind, item.n)) }
+            progress(MediaProgress(completed: i + 1, total: items.count))
         }
         return failures
+    }
+
+    static func cacheFailedMedia(_ failures: [(kind: MediaKind, n: Int)], walkID: UUID) {
+        let key = "share-failed-media:\(walkID.uuidString)"
+        if failures.isEmpty {
+            UserDefaults.standard.removeObject(forKey: key)
+        } else {
+            UserDefaults.standard.set(failures.map { "\($0.kind.rawValue):\($0.n)" }, forKey: key)
+        }
+    }
+
+    static func failedMedia(for walkID: UUID) -> [(kind: MediaKind, n: Int)] {
+        let key = "share-failed-media:\(walkID.uuidString)"
+        guard let raw = UserDefaults.standard.stringArray(forKey: key) else { return [] }
+        return raw.compactMap { entry in
+            let parts = entry.split(separator: ":")
+            guard parts.count == 2, let kind = MediaKind(rawValue: String(parts[0])), let n = Int(parts[1]) else { return nil }
+            return (kind, n)
+        }
     }
 
     private static func putWithRetry(
@@ -831,9 +959,29 @@ final class WalkShareInteractiveTests: XCTestCase {
         XCTAssertEqual(vm.testBuildPayload().tour?.trimM, 0)
     }
 
+    func testInteractiveAutoEnablesPhotosOnce() {
+        let walk = WalkDataFactory.makeWalk()   // factory walk with pinned photos
+        let vm = WalkShareViewModel(walk: walk, pinnedPhotos: [PhotoCandidate.fixture()])
+        vm.interactiveEnabled = true
+        vm.prepareInteractive()
+        XCTAssertTrue(vm.includePhotos)
+        vm.includePhotos = false
+        vm.prepareInteractive()
+        XCTAssertFalse(vm.includePhotos, "auto-enable happens once; the walker's off stays off")
+    }
+
+    func testSubSecondPauseDroppedAfterTruncation() {
+        let walk = WalkDataFactory.makeWalk()   // extend factory: pause of 0.5s (same truncated second)
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.prepareInteractive()
+        let payload = vm.testBuildPayload()
+        XCTAssertEqual(payload.pauses?.contains(where: { $0.endTs <= $0.startTs }), false)
+    }
+
     func testFlipKindTogglesOverride() {
         let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
-        vm.tourCandidates = [TourRecordingCandidate(id: 0, startTs: 1, endTs: 2, duration: 1, sizeBytes: 1, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil)]
+        vm.tourCandidates = [TourRecordingCandidate(id: 0, startTs: 1, endTs: 2, duration: 1, sizeBytes: 1, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil)]
         vm.flipKind(candidateID: 0)
         XCTAssertEqual(vm.tourCandidates[0].effectiveKind, .ambient)
         vm.flipKind(candidateID: 0)
@@ -863,18 +1011,43 @@ var tourValidationError: String? {
 
 var tourTotalsLabel: String {
     let (count, bytes, seconds) = TourBuilder.totals(of: tourCandidates)
-    guard count > 0 else { return "no recordings included" }
-    let mb = Double(bytes) / 1_048_576
-    return "\(count) recording\(count == 1 ? "" : "s") · \(String(format: "%.1f", mb)) MB · \(Int(seconds / 60)) min"
+    let photoCount = includePhotos ? min(pinnedPhotos.count, 20) : 0
+    var parts: [String] = []
+    if count > 0 {
+        let mb = Double(bytes) / 1_048_576
+        parts.append("\(count) recording\(count == 1 ? "" : "s") · \(String(format: "%.1f", mb)) MB · \(Int(seconds / 60)) min")
+    }
+    if photoCount > 0 {
+        parts.append("\(photoCount) hi-res photo\(photoCount == 1 ? "" : "s")")
+    }
+    return parts.isEmpty ? "no recordings included" : parts.joined(separator: " · ")
 }
 
+private var didAutoEnablePhotos = false
+
 func prepareInteractive() {
-    guard tourCandidates.isEmpty else { return }
-    tourCandidates = TourBuilder.candidates(for: walk)
+    if tourCandidates.isEmpty {
+        tourCandidates = TourBuilder.candidates(for: walk)
+    }
+    // Interactive means "carry the media": the first enable brings photos
+    // along automatically (the spec's auto-enable); the walker can still
+    // switch them off afterwards and we never re-flip.
+    if hasPinnedPhotos && !didAutoEnablePhotos {
+        didAutoEnablePhotos = true
+        includePhotos = true
+    }
+}
+
+var canTrimRoute: Bool {
+    let points = walk.routeData.map {
+        SharePayload.RoutePoint(lat: $0.latitude, lon: $0.longitude, alt: $0.altitude, ts: Int($0.timestamp.timeIntervalSince1970))
+    }
+    return RouteTrimmer.canTrim(points, meters: Double(Self.trimMeters))
 }
 
 func toggleInclude(candidateID: Int) {
-    guard let i = tourCandidates.firstIndex(where: { $0.id == candidateID }) else { return }
+    guard let i = tourCandidates.firstIndex(where: { $0.id == candidateID }),
+          tourCandidates[i].unavailableReason == nil else { return }
     tourCandidates[i].includeInShare.toggle()
 }
 
@@ -886,7 +1059,7 @@ func flipKind(candidateID: Int) {
 }
 ```
 
-In `buildPayload` (now `internal`), after `downsampled`:
+`buildPayload` becomes `internal` and gains the parameter Task 8 passes — the full signature is `func buildPayload(placeStart: String?, placeEnd: String?, tourPhotoMeta: [SharePayload.Photo] = []) -> SharePayload`. After `downsampled`:
 
 ```swift
 let interactive = interactiveEnabled
@@ -894,17 +1067,27 @@ let trimM = interactive && trimEnabled ? Self.trimMeters : 0
 let finalRoute = interactive && trimM > 0
     ? RouteTrimmer.trim(downsampled, meters: Double(trimM))
     : downsampled
+// Trim's promise covers everything with a coordinate: waypoints and photo
+// metadata whose timestamps fall outside the kept route window are excluded
+// too — a doorstep photo must not pin the doorstep trim just hid.
+let keptWindow: ClosedRange<Int>? = (interactive && trimM > 0 && finalRoute.count >= 2)
+    ? finalRoute.first!.ts...finalRoute.last!.ts
+    : nil
 ```
 
-Use `finalRoute` in the payload's `route:`. After constructing `payload`:
+Use `finalRoute` in the payload's `route:`. Apply `keptWindow` to the waypoint closure (`waypointPayload` filters `keptWindow.map { $0.contains(Int(wp.timestamp.timeIntervalSince1970)) } ?? true`) and expose it via `func interactiveKeptWindow() -> ClosedRange<Int>?` so Task 8's `share()` filters `pinnedPhotos` by captured timestamp BEFORE export — the export list, metadata, and PUT sequence must all see the same filtered set. After constructing `payload`:
 
 ```swift
 if interactive {
-    payload.tour = TourBuilder.tourPayload(candidates: tourCandidates, trimM: trimM)
-    payload.pauses = walk.pauses
-        .filter { $0.endDate > $0.startDate }
-        .prefix(200)
-        .map { SharePayload.Pause(startTs: Int($0.startDate.timeIntervalSince1970), endTs: Int($0.endDate.timeIntervalSince1970)) }
+    payload.tour = TourBuilder.tourItems(candidates: tourCandidates, trimM: trimM).tour
+    // The worker validates TRUNCATED integers: filter after truncation or a
+    // sub-second pause 400s the whole share.
+    payload.pauses = Array(
+        walk.pauses
+            .map { (start: Int($0.startDate.timeIntervalSince1970), end: Int($0.endDate.timeIntervalSince1970)) }
+            .filter { $0.end > $0.start }
+            .prefix(200)
+    ).map { SharePayload.Pause(startTs: $0.start, endTs: $0.end) }
 }
 ```
 
@@ -914,11 +1097,14 @@ Interactive photo metadata (classic path untouched): in the `photoPayload` closu
 let photoPayload: [SharePayload.Photo]? = {
     guard includePhotos, hasPinnedPhotos else { return nil }
     if interactiveEnabled {
-        return pinnedPhotos.prefix(20).map {
-            SharePayload.Photo(lat: $0.capturedLat, lon: $0.capturedLng, ts: Int($0.capturedAt.timeIntervalSince1970), data: nil)
-        }
+        // Metadata comes ONLY from the export (same array, same order), so
+        // declared photo n always matches the uploaded file n. Never map
+        // pinnedPhotos here — a failed export would orphan map markers.
+        return tourPhotoMeta.isEmpty ? nil : tourPhotoMeta
     }
-    return pinnedPhotos.compactMap { /* existing classic 600px base64 path unchanged */ }
+    return pinnedPhotos.compactMap {
+        Self.loadSharePhoto(localIdentifier: $0.localIdentifier, lat: $0.capturedLat, lon: $0.capturedLng, capturedAt: $0.capturedAt)
+    }
 }()
 ```
 
@@ -939,6 +1125,8 @@ let photoPayload: [SharePayload.Photo]? = {
 - Consumes: Task 6's published state.
 - Produces: UI only.
 
+- [ ] **Step 0: Demo recordings get real audio** — the seeder creates recording rows pointing at `demo/recording-N.m4a` but writes no files, so every later visual/E2E check would show "No recordings on this walk." Extend `ScreenshotDataSeeder` (DEBUG/demo-mode only): when seeding voice recordings, copy any short bundled `.m4a` asset into `Documents/demo/recording-<n>.m4a` via FileManager if absent, so `TourBuilder.candidates(for:)` resolves real files with nonzero sizes. Commit: `chore(demo): demo recordings carry real audio files`.
+
 - [ ] **Step 1: Build `InteractiveShareSection`**
 
 ```swift
@@ -957,7 +1145,7 @@ struct InteractiveShareSection: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Interactive")
                         .font(Constants.Typography.body)
-                    Text("Viewers walk your route on a living map — your recordings play where you made them, photos appear where you took them.")
+                    Text("Viewers walk your route on a living map — your recordings play where you made them, photos appear where you took them. Recordings and full-size photos upload over your connection.")
                         .font(Constants.Typography.caption)
                         .foregroundColor(.secondary)
                 }
@@ -972,6 +1160,11 @@ struct InteractiveShareSection: View {
                     Text(viewModel.tourTotalsLabel)
                         .font(Constants.Typography.caption)
                         .foregroundColor(.secondary)
+                    if viewModel.tourCandidates.contains(where: { $0.includeInShare && $0.unavailableReason == nil }) {
+                        Text("Voices will be audible to anyone with the link.")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(Color("rust"))
+                    }
                 } else {
                     Text("No recordings on this walk — the page will carry your route, photos, and moments.")
                         .font(Constants.Typography.caption)
@@ -988,11 +1181,14 @@ struct InteractiveShareSection: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Trim start & end")
                             .font(Constants.Typography.body)
-                        Text("Keeps the first and last 150 m off the shared map.")
+                        Text(viewModel.canTrimRoute
+                            ? "Keeps the first and last 150 m off the shared map — including photos and waymarkers there."
+                            : "This walk is too short to trim.")
                             .font(Constants.Typography.caption)
                             .foregroundColor(.secondary)
                     }
                 }
+                .disabled(!viewModel.canTrimRoute)
             }
         }
     }
@@ -1021,39 +1217,66 @@ private struct TourRecordingRow: View {
         return String(format: "%d:%02d", s / 60, s % 60)
     }
 
+    private var startLabel: String {
+        Date(timeIntervalSince1970: TimeInterval(candidate.startTs))
+            .formatted(date: .omitted, time: .shortened)
+    }
+
     private var sizeLabel: String {
         String(format: "%.1f MB", Double(candidate.sizeBytes) / 1_048_576)
     }
 
     var body: some View {
         HStack(spacing: Constants.UI.Padding.small) {
-            Button(action: onToggleInclude) {
-                Image(systemName: candidate.includeInShare ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(candidate.includeInShare ? Color("moss") : .secondary)
+            if candidate.unavailableReason == nil {
+                Button(action: onToggleInclude) {
+                    Image(systemName: candidate.includeInShare ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(candidate.includeInShare ? Color("moss") : .secondary)
+                }
+                .buttonStyle(.plain)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityLabel("Include recording \(candidate.id + 1)")
+                .accessibilityValue(candidate.includeInShare ? "included" : "excluded")
             }
-            .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Recording \(candidate.id + 1) · \(durationLabel)")
+                Text("Recording \(candidate.id + 1) · \(durationLabel) · \(startLabel)")
                     .font(Constants.Typography.body)
-                Text(sizeLabel)
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.secondary)
+                if let reason = candidate.unavailableReason {
+                    Text(reason)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    if let preview = candidate.transcription?.trimmingCharacters(in: .whitespacesAndNewlines), !preview.isEmpty {
+                        Text(preview)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+                    Text(sizeLabel)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.secondary)
+                }
             }
 
             Spacer()
 
-            Button(action: onFlipKind) {
-                Text(candidate.effectiveKind == .spoken ? "voice" : "ambience")
-                    .font(Constants.Typography.caption)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Capsule().strokeBorder(Color.secondary.opacity(0.4)))
+            if candidate.unavailableReason == nil {
+                Button(action: onFlipKind) {
+                    Text(candidate.effectiveKind == .spoken ? "voice" : "ambience")
+                        .font(Constants.Typography.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().strokeBorder(Color.secondary.opacity(0.4)))
+                }
+                .buttonStyle(.plain)
+                .frame(minHeight: 44)
+                .accessibilityLabel("Recording \(candidate.id + 1) kind, \(candidate.effectiveKind == .spoken ? "voice" : "ambience")")
+                .accessibilityHint("Double tap to switch")
+                .opacity(candidate.includeInShare ? 1 : 0.35)
             }
-            .buttonStyle(.plain)
-            .opacity(candidate.includeInShare ? 1 : 0.35)
         }
-        .opacity(candidate.includeInShare ? 1 : 0.6)
+        .opacity(candidate.unavailableReason != nil ? 0.45 : (candidate.includeInShare ? 1 : 0.6))
     }
 }
 ```
@@ -1095,10 +1318,11 @@ Expected: BUILD SUCCEEDED.
 ```swift
 enum ShareState: Equatable {
     case idle
-    case uploading                                  // POST phase (existing)
-    case uploadingMedia(completed: Int, total: Int) // PUT phase
+    case preparingPhotos(completed: Int, total: Int) // hi-res export (pre-POST)
+    case uploading                                   // POST phase (existing)
+    case uploadingMedia(completed: Int, total: Int)  // PUT phase
     case success(url: String)
-    case partial(url: String, failedCount: Int)     // page live, some media missing
+    case partial(url: String, failedCount: Int)      // page live, some media missing
     case error(message: String)
 }
 ```
@@ -1110,14 +1334,26 @@ func testShareButtonDisabledWhenTourInvalid() {
     let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
     vm.interactiveEnabled = true
     vm.tourCandidates = (0..<13).map { i in
-        TourRecordingCandidate(id: i, startTs: i, endTs: i + 1, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil)
+        TourRecordingCandidate(id: i, startTs: i, endTs: i + 1, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil)
     }
     XCTAssertNotNil(vm.tourValidationError)
     XCTAssertFalse(vm.canShare)
 }
 ```
 
-Add `var canShare: Bool { tourValidationError == nil }` to the view model.
+Add `var canShare: Bool { tourValidationError == nil }` to the view model. Also add the metadata/bytes alignment test:
+
+```swift
+func testInteractivePayloadPhotoCountMatchesExportedMeta() {
+    let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+    vm.interactiveEnabled = true
+    let meta = [SharePayload.Photo(lat: 1, lon: 2, ts: 3, data: nil)]
+    let payload = vm.testBuildPayload(tourPhotoMeta: meta)
+    XCTAssertEqual(payload.photos?.count, meta.count)
+}
+```
+
+(`testBuildPayload` passes `tourPhotoMeta` through to `buildPayload`.)
 
 - [ ] **Step 2: Run to verify failure**
 
@@ -1130,7 +1366,15 @@ func share() async {
 
     let tourPhotos: [TourPhoto]
     if interactiveEnabled, includePhotos, hasPinnedPhotos {
-        tourPhotos = await TourPhotoExporter.export(Array(pinnedPhotos.prefix(20)))
+        let window = interactiveKeptWindow()
+        let exportList = Array(
+            pinnedPhotos
+                .filter { window?.contains(Int($0.capturedAt.timeIntervalSince1970)) ?? true }
+                .prefix(20)
+        )
+        tourPhotos = await TourPhotoExporter.export(exportList) { [weak self] done, total in
+            Task { @MainActor in self?.shareState = .preparingPhotos(completed: done, total: total) }
+        }
     } else {
         tourPhotos = []
     }
@@ -1149,7 +1393,7 @@ func share() async {
         }
 
         if interactiveEnabled {
-            let audioFiles = TourBuilder.includedFileURLs(candidates: tourCandidates)
+            let audioFiles = TourBuilder.tourItems(candidates: tourCandidates, trimM: 0).files
             let failures = await ShareService.uploadAllMedia(
                 shareID: result.id,
                 audioFiles: audioFiles,
@@ -1159,6 +1403,7 @@ func share() async {
                     self?.shareState = .uploadingMedia(completed: progress.completed, total: progress.total)
                 }
             }
+            if let uuid = walk.uuid { ShareService.cacheFailedMedia(failures, walkID: uuid) }
             shareState = failures.isEmpty
                 ? .success(url: result.url)
                 : .partial(url: result.url, failedCount: failures.count)
@@ -1178,9 +1423,13 @@ Photo/audio ordering invariants (worker contract): audio URLs are already payloa
 - [ ] **Step 4: Progress + partial UI in WalkShareView**
 
 Where the view switches on `shareState`, add:
-- `.uploadingMedia(let completed, let total)`: the existing uploading spinner with `Text("Carrying your recordings… \(completed)/\(total)")` (`Constants.Typography.caption`).
-- `.partial(let url, let failedCount)`: the success layout plus a one-line note: `Text("\(failedCount) file\(failedCount == 1 ? "" : "s") didn't make it — those voices show as unavailable on the page.")` — the share URL still presents and copies.
+- `.preparingPhotos(let done, let total)`: spinner with `Text("Preparing photos… \(done)/\(total)")`.
+- `.uploadingMedia(let completed, let total)`: the existing uploading spinner with `Text("Carrying your walk… \(completed)/\(total)")` (`Constants.Typography.caption`).
+- `.partial(let url, let failedCount)`: the success layout plus `Text("\(failedCount) file\(failedCount == 1 ? "" : "s") didn't make it — they'll show as unavailable on the page.")` and a `Button("Carry the missing files")` invoking `viewModel.retryFailedMedia()`.
 - Share button `.disabled(!viewModel.canShare)` alongside its existing conditions.
+- **State-machine repairs (the new states break two existing gates):** extend `isShared` to also match `.partial`, and relax `triggerRitualIfNeeded` so the old state may be `.uploading` OR `.uploadingMedia` — the ritual fires on `.success` only; `.partial` shows the success layout without the ritual. Without both, interactive shares get no reveal ritual and `.partial` renders the editable pre-share form around a live page.
+- **No abandoning a live upload:** hide the toolbar Cancel and set `.interactiveDismissDisabled(true)` while `shareState` is `.preparingPhotos`, `.uploading`, or `.uploadingMedia` — the POST already created a live page; the sheet closes only from a terminal state.
+- **Repair on re-entry:** in `init`, when a cached share exists and `ShareService.failedMedia(for:)` is non-empty, restore `.partial(url:failedCount:)` instead of `.success`, so the "Carry the missing files" affordance survives leaving the screen. `retryFailedMedia()` filters the current audio URLs/re-exported photos to the failed `(kind, n)` list, calls `ShareService.uploadSpecific`, then updates the cache via `cacheFailedMedia` with whatever still failed.
 
 - [ ] **Step 5: Run all new unit tests + build**
 
@@ -1199,10 +1448,17 @@ Expected: PASS.
 - [ ] **Step 1: Full unit test suite** — `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` → all green.
 - [ ] **Step 2: Full-repo SwiftLint** (per project memory: pre-commit only checks staged files) — `swiftlint --strict` clean, especially `type_body_length` on `WalkShareView` and `WalkShareViewModel`.
 - [ ] **Step 3: Simulator end-to-end against production worker** — demo-mode walk with recordings → Interactive on → share → watch progress → open the returned URL in Safari: story page renders, voices play at their places (macOS Safari on the shared URL is acceptable here; the phone hardware pass is deferred by decision 2026-08-11).
+- [ ] **Step 3.5: Privacy manifest** — this is the first flow moving recorded voice off the device: add an audio-data entry to `Pilgrim/PrivacyInfo.xcprivacy` `NSPrivacyCollectedDataTypes` (`NSPrivacyCollectedDataTypeAudioData`; not linked to identity, not used for tracking, purpose: app functionality), and update the App Store Connect App Privacy questionnaire to match before release.
 - [ ] **Step 4: Privacy sanity** — confirm the payload omits transcriptions (`tour.recordings[].transcription == nil` in a captured request body), classic (non-interactive) shares are byte-identical to before (no `tour`, no `pauses` keys), and trim actually shortens the route in the page.
 - [ ] **Step 5: Commit any fixes; update `docs/superpowers/plans/2026-08-11-walk-with-me-tour-ios.md` statuses; remove plan file only when shipped.**
 
 ---
+
+## Open Questions (from 2026-08-11 review)
+
+- **Cached classic share blocks Interactive until expiry** (adversarial, P2): a walk shared classic keeps its cached `.success` layout, hiding every toggle for up to 365 days — those walks can't be upgraded. A second share would mean a new URL. Decide: offer "share again, interactive" from the shared state (new URL, old link keeps working), or accept first-share-only for now.
+- Share automatic (detection-based) pauses, or manual pauses only? All pause types currently ship (≤200), which reveals every lingering point on the route.
+- Spec cleanup: the 2026-08-09 spec's pre-revision sections still describe transcript rendering and transcript-only degradation, superseded by the 2026-08-10 revisions and the shipped audio-only page — mark them superseded so future reviews stop tripping on them.
 
 ## Deferred (explicitly out of scope)
 
