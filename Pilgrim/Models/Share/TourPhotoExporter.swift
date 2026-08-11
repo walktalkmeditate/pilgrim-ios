@@ -1,5 +1,6 @@
 import Photos
 import UIKit
+import os
 
 struct TourPhoto {
     let meta: SharePayload.Photo
@@ -27,60 +28,61 @@ enum TourPhotoExporter {
     static func export(_ candidates: [PhotoCandidate], progress: @escaping (Int, Int) -> Void) async -> [TourPhoto] {
         var out: [TourPhoto] = []
         for (i, candidate) in candidates.enumerated() {
-            let photo = await withTimeoutOrNil(seconds: perPhotoTimeout) {
-                await withCheckedContinuation { continuation in
-                    DispatchQueue.global(qos: .userInitiated).async {
-                        continuation.resume(returning: loadOne(candidate))
-                    }
-                }
-            }
-            if let photo { out.append(photo) }
+            if let photo = await loadOne(candidate) { out.append(photo) }
             progress(i + 1, candidates.count)
         }
         return out
     }
 
-    private static func withTimeoutOrNil<T: Sendable>(seconds: TimeInterval, _ work: @escaping () async -> T?) async -> T? {
-        await withTaskGroup(of: T?.self) { group in
-            group.addTask { await work() }
-            group.addTask {
-                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-                return nil
-            }
-            guard let first = await group.next() else { return nil }
-            group.cancelAll()
-            return first
-        }
-    }
-
-    private static func loadOne(_ candidate: PhotoCandidate) -> TourPhoto? {
+    // Guarantee: perPhotoTimeout cancels the underlying PHImageManager request
+    // itself (via cancelImageRequest), not just the value this function is
+    // waiting on. PhotoKit's documented contract is to invoke the result
+    // handler with a nil image once a request is cancelled, so a stalled
+    // iCloud fetch is interrupted at the source and cannot block the share
+    // beyond perPhotoTimeout — wall-clock time is genuinely bounded.
+    private static func loadOne(_ candidate: PhotoCandidate) async -> TourPhoto? {
         let fetch = PHAsset.fetchAssets(withLocalIdentifiers: [candidate.localIdentifier], options: nil)
         guard let asset = fetch.firstObject else { return nil }
 
         let options = PHImageRequestOptions()
         options.deliveryMode = .highQualityFormat
         options.isNetworkAccessAllowed = true
-        options.isSynchronous = true
+        options.isSynchronous = false
         options.resizeMode = .exact
 
-        var result: TourPhoto?
-        PHImageManager.default().requestImage(
-            for: asset,
-            targetSize: CGSize(width: targetPixels, height: targetPixels),
-            contentMode: .aspectFit,
-            options: options
-        ) { image, _ in
-            guard let image, let data = jpegDataUnder(cap: maxBytes, image: image) else { return }
-            result = TourPhoto(
-                meta: SharePayload.Photo(
-                    lat: candidate.capturedLat,
-                    lon: candidate.capturedLng,
-                    ts: Int(candidate.capturedAt.timeIntervalSince1970),
-                    data: nil
-                ),
-                jpegData: data
-            )
+        return await withCheckedContinuation { continuation in
+            let hasResumed = OSAllocatedUnfairLock(initialState: false)
+
+            let requestID = PHImageManager.default().requestImage(
+                for: asset,
+                targetSize: CGSize(width: targetPixels, height: targetPixels),
+                contentMode: .aspectFit,
+                options: options
+            ) { image, _ in
+                let shouldResume = hasResumed.withLock { alreadyResumed -> Bool in
+                    guard !alreadyResumed else { return false }
+                    alreadyResumed = true
+                    return true
+                }
+                guard shouldResume else { return }
+                guard let image, let data = jpegDataUnder(cap: maxBytes, image: image) else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                continuation.resume(returning: TourPhoto(
+                    meta: SharePayload.Photo(
+                        lat: candidate.capturedLat,
+                        lon: candidate.capturedLng,
+                        ts: Int(candidate.capturedAt.timeIntervalSince1970),
+                        data: nil
+                    ),
+                    jpegData: data
+                ))
+            }
+
+            DispatchQueue.global().asyncAfter(deadline: .now() + perPhotoTimeout) {
+                PHImageManager.default().cancelImageRequest(requestID)
+            }
         }
-        return result
     }
 }
