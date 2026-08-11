@@ -201,6 +201,7 @@
 		7ac8ee442a1ce6fcb926501a /* SharePayloadTourTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */; };
 		1A2B3C4D5E6F7A8B9C0D1E2F /* TourBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */; };
 		7E8F9A0B1C2D3E4F5A6B7C8D /* RouteTrimmerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A0B1C2D3E4F5A6B7C8D9E /* RouteTrimmerTests.swift */; };
+		D69446C38B3D4915B5EE6940 /* TourPhotoExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		510A5ED79C24B905DDD597A7 /* ScrollHapticEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
@@ -255,6 +256,7 @@
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
 		3C4D5E6F7A8B9C0D1E2F3A4B /* TourBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F7A8B9C0D1E2F3A4B5C /* TourBuilder.swift */; };
 		5C6D7E8F9A0B1C2D3E4F5A6B /* RouteTrimmer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E8F9A0B1C2D3E4F5A6B7C /* RouteTrimmer.swift */; };
+		F9B0C02BADD44059819D57D6 /* TourPhotoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D82C6861710E41CF801A9A4F /* TourPhotoExporter.swift */; };
 		7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */; };
 		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
 		847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */; };
@@ -807,6 +809,7 @@
 		cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayloadTourTests.swift; sourceTree = "<group>"; };
 		2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourBuilderTests.swift; sourceTree = "<group>"; };
 		8F9A0B1C2D3E4F5A6B7C8D9E /* RouteTrimmerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteTrimmerTests.swift; sourceTree = "<group>"; };
+		82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourPhotoExporterTests.swift; sourceTree = "<group>"; };
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
@@ -1075,6 +1078,7 @@
 		D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayload.swift; sourceTree = "<group>"; };
 		4D5E6F7A8B9C0D1E2F3A4B5C /* TourBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourBuilder.swift; sourceTree = "<group>"; };
 		6D7E8F9A0B1C2D3E4F5A6B7C /* RouteTrimmer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteTrimmer.swift; sourceTree = "<group>"; };
+		D82C6861710E41CF801A9A4F /* TourPhotoExporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourPhotoExporter.swift; sourceTree = "<group>"; };
 		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityListView.swift; sourceTree = "<group>"; };
 		D30651941E3AA93F6BB14A1D /* whisper-play-12.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-12.aac"; sourceTree = "<group>"; };
@@ -1839,6 +1843,7 @@
 				cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */,
 				2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */,
 				8F9A0B1C2D3E4F5A6B7C8D9E /* RouteTrimmerTests.swift */,
+				82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */,
 				AAAA000000000000000000D4 /* CustomPromptStyleStoreTests.swift */,
 				AAAA000000000000000000F4 /* IntentionHistoryStoreTests.swift */,
 				BBBB00000000000000000B /* WaypointCodableTests.swift */,
@@ -2116,6 +2121,7 @@
 				5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */,
 				4D5E6F7A8B9C0D1E2F3A4B5C /* TourBuilder.swift */,
 				6D7E8F9A0B1C2D3E4F5A6B7C /* RouteTrimmer.swift */,
+				D82C6861710E41CF801A9A4F /* TourPhotoExporter.swift */,
 			);
 			path = Share;
 			sourceTree = "<group>";
@@ -2982,6 +2988,7 @@
 				6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */,
 				3C4D5E6F7A8B9C0D1E2F3A4B /* TourBuilder.swift in Sources */,
 				5C6D7E8F9A0B1C2D3E4F5A6B /* RouteTrimmer.swift in Sources */,
+				F9B0C02BADD44059819D57D6 /* TourPhotoExporter.swift in Sources */,
 				E9FD884A3895457CBF231700 /* SealHashComputer.swift in Sources */,
 				B3C4D5E6F7A8B9C0D1E2F3A4 /* SealColorPalette.swift in Sources */,
 				D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */,
@@ -3153,6 +3160,7 @@
 				7ac8ee442a1ce6fcb926501a /* SharePayloadTourTests.swift in Sources */,
 				1A2B3C4D5E6F7A8B9C0D1E2F /* TourBuilderTests.swift in Sources */,
 				7E8F9A0B1C2D3E4F5A6B7C8D /* RouteTrimmerTests.swift in Sources */,
+				D69446C38B3D4915B5EE6940 /* TourPhotoExporterTests.swift in Sources */,
 				AAAA000000000000000000D3 /* CustomPromptStyleStoreTests.swift in Sources */,
 				AAAA000000000000000000F3 /* IntentionHistoryStoreTests.swift in Sources */,
 				BBBB00000000000000000C /* WaypointCodableTests.swift in Sources */,
