@@ -546,9 +546,12 @@ enum TourPhotoExporter {
     static func jpegDataUnder(cap: Int, image: UIImage) -> Data?   // quality ladder, testable
 }
 // export reports (completed, total) after each photo and applies a 20s
-// per-photo deadline: an iCloud fetch that exceeds it is skipped (dropped
-// photos surface in Task 8's notice), so the share can never hang forever
-// behind a single unreachable original.
+// per-photo deadline via PHImageRequestID cancellation (isSynchronous=false,
+// cancelImageRequest on deadline, one-shot continuation resume): the deadline
+// cancels the UNDERLYING Photos request, so wall-clock is genuinely bounded —
+// a task-group race cannot bound it because withTaskGroup awaits cancelled
+// children and PHImageManager fetches are not cancellation-aware. (Amended
+// during implementation; empirically verified 1s deadline → 1.009s elapsed.)
 ```
 
 - [ ] **Step 1: Write the failing test**
