@@ -26,6 +26,14 @@ final class TourBuilderTests: XCTestCase {
         XCTAssertEqual(TourBuilder.classify(transcription: words, wpm: nil), .spoken)
     }
 
+    func testClassify_emptyTranscriptionIsAmbient() {
+        XCTAssertEqual(TourBuilder.classify(transcription: "", wpm: nil), .ambient)
+    }
+
+    func testClassify_whitespaceOnlyTranscriptionIsAmbient() {
+        XCTAssertEqual(TourBuilder.classify(transcription: "  \n ", wpm: 200), .ambient)
+    }
+
     private func candidate(id: Int, bytes: Int = 1_000_000, seconds: Double = 60, included: Bool = true, kind: TourRecordingKind = .spoken) -> TourRecordingCandidate {
         TourRecordingCandidate(id: id, startTs: 1000 + id * 100, endTs: 1050 + id * 100, duration: seconds, sizeBytes: bytes, transcription: nil, wpm: nil, autoKind: kind, includeInShare: included, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/\(id).m4a"), unavailableReason: nil)
     }

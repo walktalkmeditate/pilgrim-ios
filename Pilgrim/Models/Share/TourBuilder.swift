@@ -30,7 +30,7 @@ enum TourBuilder {
     /// that reads as non-speech (too few words, or implausibly slow) files
     /// the recording as ambience. The walker can override either way.
     static func classify(transcription: String?, wpm: Double?) -> TourRecordingKind {
-        guard let text = transcription?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+        guard let text = transcription?.trimmingCharacters(in: .whitespacesAndNewlines) else {
             return .spoken
         }
         let wordCount = text.split(whereSeparator: \.isWhitespace).count
