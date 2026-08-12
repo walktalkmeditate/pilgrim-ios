@@ -341,13 +341,12 @@ final class WalkShareViewModel: ObservableObject {
             ))
         }
 
-        for recording in walk.voiceRecordings {
-            intervals.append(SharePayload.ActivityIntervalPayload(
-                type: "talk",
-                startTs: Int(recording.startDate.timeIntervalSince1970),
-                endTs: Int(recording.endDate.timeIntervalSince1970)
-            ))
-        }
+        // Consent follows the checkbox: an excluded recording leaves no trace — no talk interval, no rust on the route, no minutes in the total.
+        let includedTalkCandidates = tourCandidates.filter { $0.includeInShare && $0.unavailableReason == nil }
+        let talkIntervals: [SharePayload.ActivityIntervalPayload] = interactive
+            ? includedTalkCandidates.map { SharePayload.ActivityIntervalPayload(type: "talk", startTs: $0.startTs, endTs: $0.endTs) }
+            : walk.voiceRecordings.map { SharePayload.ActivityIntervalPayload(type: "talk", startTs: Int($0.startDate.timeIntervalSince1970), endTs: Int($0.endDate.timeIntervalSince1970)) }
+        intervals.append(contentsOf: talkIntervals)
 
         var toggledStats: [String] = []
         if toggleDistance { toggledStats.append("distance") }
@@ -363,7 +362,7 @@ final class WalkShareViewModel: ObservableObject {
             elevationDescent: toggleElevation ? walk.descend : nil,
             steps: toggleSteps ? walk.steps : nil,
             meditateDuration: walk.meditateDuration,
-            talkDuration: walk.talkDuration,
+            talkDuration: interactive ? includedTalkCandidates.reduce(0) { $0 + $1.duration } : walk.talkDuration,
             weatherCondition: walk.weatherCondition,
             weatherTemperature: walk.weatherTemperature
         )

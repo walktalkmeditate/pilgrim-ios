@@ -9,9 +9,7 @@ final class WalkShareInteractiveTests: XCTestCase {
         UserPreferences.walkReliquaryEnabled.delete()
     }
 
-    /// ~111m per 0.001 degree of latitude — the same geometry
-    /// `RouteTrimmerTests` uses, spanning well past the 4x trim-distance
-    /// threshold `RouteTrimmer` requires before it will shorten a route.
+    /// ~111m per 0.001 degree of latitude — the same geometry `RouteTrimmerTests` uses, spanning well past the 4x trim-distance threshold `RouteTrimmer` requires before it will shorten a route.
     private func longRoute(points: Int, baseDate: Date = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)) -> [TempV4.RouteDataSample] {
         (0..<points).map { i in
             WalkDataFactory.makeRouteDataSample(
@@ -92,6 +90,40 @@ final class WalkShareInteractiveTests: XCTestCase {
         XCTAssertEqual(vm.tourCandidates[0].effectiveKind, .spoken)
     }
 
+    // MARK: - Review finding #17: excluded recordings leave no trace
+
+    func testExcludedRecordingLeavesNoTalkInterval() {
+        let keptCandidate = TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
+        let excludedCandidate = TourRecordingCandidate(id: 1, startTs: 2000, endTs: 2090, duration: 90, sizeBytes: 1_500_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil)
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        vm.tourCandidates = [keptCandidate, excludedCandidate]
+        vm.interactiveEnabled = true
+        vm.toggleInclude(candidateID: excludedCandidate.id)
+        let payload = vm.testBuildPayload()
+        let talkIntervals = payload.activityIntervals.filter { $0.type == "talk" }
+        XCTAssertEqual(talkIntervals.count, 1, "the excluded candidate's talk interval must not appear")
+        XCTAssertEqual(talkIntervals.first?.startTs, keptCandidate.startTs)
+        XCTAssertEqual(talkIntervals.first?.endTs, keptCandidate.endTs)
+        XCTAssertEqual(payload.stats.talkDuration, keptCandidate.duration, "excluded duration must not count toward the total")
+    }
+
+    func testClassicTalkIntervalsUnchangedByExclusions() {
+        let rec1 = WalkDataFactory.makeVoiceRecording(startDate: DateFactory.makeDate(2024, 6, 15, 9, 5, 0), endDate: DateFactory.makeDate(2024, 6, 15, 9, 6, 0), duration: 60)
+        let rec2 = WalkDataFactory.makeVoiceRecording(startDate: DateFactory.makeDate(2024, 6, 15, 9, 10, 0), endDate: DateFactory.makeDate(2024, 6, 15, 9, 11, 30), duration: 90)
+        let walk = WalkDataFactory.makeWalk(talkDuration: 999, voiceRecordings: [rec1, rec2])
+        let vm = WalkShareViewModel(walk: walk)
+        // interactiveEnabled left false — classic share must ignore tourCandidates exclusions entirely.
+        vm.tourCandidates = [rec1, rec2].enumerated().map { i, rec in
+            TourRecordingCandidate(id: i, startTs: Int(rec.startDate.timeIntervalSince1970), endTs: Int(rec.endDate.timeIntervalSince1970), duration: rec.duration, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil)
+        }
+        vm.toggleInclude(candidateID: 1)
+        let payload = vm.testBuildPayload()
+        let talkIntervals = payload.activityIntervals.filter { $0.type == "talk" }
+        XCTAssertEqual(talkIntervals.count, 2, "classic path reads walk.voiceRecordings directly — candidate exclusions must have zero effect")
+        XCTAssertEqual(talkIntervals.map(\.startTs).sorted(), [rec1, rec2].map { Int($0.startDate.timeIntervalSince1970) }.sorted())
+        XCTAssertEqual(payload.stats.talkDuration, walk.talkDuration)
+    }
+
     // MARK: - Supplementary coverage
 
     func testToggleIncludeSkipsUnavailableCandidates() {
@@ -110,9 +142,7 @@ final class WalkShareInteractiveTests: XCTestCase {
     }
 
     func testInteractivePayloadJSONContainsNoTranscription() throws {
-        // Guards the whole payload path, not just TourBuilder.tourItems: even
-        // an offerable, transcript-bearing candidate must never put the
-        // transcript's text — or the "transcription" key itself — on the wire.
+        // Guards the whole payload path, not just TourBuilder.tourItems: even an offerable, transcript-bearing candidate must never put the transcript's text — or the "transcription" key itself — on the wire.
         let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
         vm.tourCandidates = [
             TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: "some real speech", wpm: 120, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
@@ -350,23 +380,14 @@ final class WalkShareInteractiveTests: XCTestCase {
     // MARK: - resolveRetryItems (pure identity resolution)
 
     func testResolveRetryItemsMatchesPhotoByIdentityNotIndex() {
-        // Cached failure says n=1 for "photo-B" (captured at ts 500). In the
-        // CURRENT export, photo-B sits at array position 1 (index 1), not 0
-        // — an export-order shift. A naive index-based lookup
-        // (currentPhotos[n-1] == currentPhotos[0]) would grab photo-A's
-        // bytes instead and upload them under photo-B's old slot.
+        // Cached failure says n=1 for "photo-B" (captured at ts 500). In the CURRENT export, photo-B sits at array position 1 (index 1), not 0 — an export-order shift. A naive index-based lookup (currentPhotos[n-1] == currentPhotos[0]) would grab photo-A's bytes instead and upload them under photo-B's old slot.
         let cached = [ShareService.FailedMediaItem(kind: "photos", n: 1, audioStartTs: nil, photoLocalID: "photo-B", photoTs: 500)]
         let photos = [
             TourPhoto(meta: SharePayload.Photo(lat: 0, lon: 0, ts: 100, data: nil), jpegData: Data([0xAA]), sourceLocalIdentifier: "photo-A"),
             TourPhoto(meta: SharePayload.Photo(lat: 1, lon: 2, ts: 500, data: nil), jpegData: Data([0xBB]), sourceLocalIdentifier: "photo-B")
         ]
 
-        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
-            cached: cached,
-            currentRecordings: [],
-            currentAudioFiles: [],
-            currentPhotos: photos
-        )
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(cached: cached, currentRecordings: [], currentAudioFiles: [], currentPhotos: photos)
 
         XCTAssertTrue(remaining.isEmpty)
         guard let resolved = uploadable.first else { return XCTFail("expected photo-B to resolve by identity") }
@@ -375,17 +396,11 @@ final class WalkShareInteractiveTests: XCTestCase {
     }
 
     func testResolveRetryItemsPhotoMissingIdentityGoesToRemaining() {
-        // "photo-gone" was unpinned between the original share and this retry
-        // — it no longer appears anywhere in the current export.
+        // "photo-gone" was unpinned between the original share and this retry — it no longer appears anywhere in the current export.
         let cached = [ShareService.FailedMediaItem(kind: "photos", n: 1, audioStartTs: nil, photoLocalID: "photo-gone", photoTs: 500)]
         let photos = [TourPhoto(meta: SharePayload.Photo(lat: 0, lon: 0, ts: 999, data: nil), jpegData: Data([0xAA]), sourceLocalIdentifier: "photo-other")]
 
-        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
-            cached: cached,
-            currentRecordings: [],
-            currentAudioFiles: [],
-            currentPhotos: photos
-        )
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(cached: cached, currentRecordings: [], currentAudioFiles: [], currentPhotos: photos)
 
         XCTAssertTrue(uploadable.isEmpty)
         XCTAssertEqual(remaining, cached, "an unresolved item must be carried forward unchanged, not dropped")
@@ -394,21 +409,14 @@ final class WalkShareInteractiveTests: XCTestCase {
     func testResolveRetryItemsUnrecognizedKindGoesToRemaining() {
         let cached = [ShareService.FailedMediaItem(kind: "video", n: 1, audioStartTs: nil, photoLocalID: nil, photoTs: nil)]
 
-        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
-            cached: cached,
-            currentRecordings: [],
-            currentAudioFiles: [],
-            currentPhotos: []
-        )
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(cached: cached, currentRecordings: [], currentAudioFiles: [], currentPhotos: [])
 
         XCTAssertTrue(uploadable.isEmpty)
         XCTAssertEqual(remaining, cached, "a kind this build no longer recognizes must be carried forward, not dropped or crashed on")
     }
 
     func testResolveRetryItemsAudioStartTsMismatchGoesToRemaining() {
-        // The cached startTs (100) is absent from EVERY current recording —
-        // not just shifted position, but genuinely gone. Two recordings (not
-        // one) so this can't accidentally pass just because index 0 mismatches.
+        // The cached startTs (100) is absent from EVERY current recording — not just shifted position, but genuinely gone. Two recordings (not one) so this can't accidentally pass just because index 0 mismatches.
         let cached = [ShareService.FailedMediaItem(kind: "audio", n: 1, audioStartTs: 100, photoLocalID: nil, photoTs: nil)]
         let recordings = [
             SharePayload.TourRecording(n: 1, startTs: 200, endTs: 260, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000),
@@ -416,22 +424,14 @@ final class WalkShareInteractiveTests: XCTestCase {
         ]
         let audioFiles = [URL(fileURLWithPath: "/tmp/audio1.m4a"), URL(fileURLWithPath: "/tmp/audio2.m4a")]
 
-        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
-            cached: cached,
-            currentRecordings: recordings,
-            currentAudioFiles: audioFiles,
-            currentPhotos: []
-        )
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(cached: cached, currentRecordings: recordings, currentAudioFiles: audioFiles, currentPhotos: [])
 
         XCTAssertTrue(uploadable.isEmpty)
         XCTAssertEqual(remaining, cached)
     }
 
     func testResolveRetryItemsAudioFoundAtShiftedIndex() {
-        // The cached failure originally pointed at slot n=3, whose recording
-        // had startTs 500. Since then an earlier recording dropped out of the
-        // candidate set, so that SAME recording (still startTs 500) now sits
-        // at index 0 — an index-locked lookup (index 2) would miss it entirely.
+        // The cached failure originally pointed at slot n=3, whose recording had startTs 500. Since then an earlier recording dropped out of the candidate set, so that SAME recording (still startTs 500) now sits at index 0 — an index-locked lookup (index 2) would miss it entirely.
         let cached = [ShareService.FailedMediaItem(kind: "audio", n: 3, audioStartTs: 500, photoLocalID: nil, photoTs: nil)]
         let recordings = [
             SharePayload.TourRecording(n: 1, startTs: 500, endTs: 560, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000),
@@ -439,12 +439,7 @@ final class WalkShareInteractiveTests: XCTestCase {
         ]
         let audioFiles = [URL(fileURLWithPath: "/tmp/shifted-0.m4a"), URL(fileURLWithPath: "/tmp/shifted-1.m4a")]
 
-        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
-            cached: cached,
-            currentRecordings: recordings,
-            currentAudioFiles: audioFiles,
-            currentPhotos: []
-        )
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(cached: cached, currentRecordings: recordings, currentAudioFiles: audioFiles, currentPhotos: [])
 
         XCTAssertTrue(remaining.isEmpty)
         XCTAssertEqual(uploadable.first?.n, 3, "must upload under the CACHED slot n, not the recording's shifted array position")
@@ -456,12 +451,7 @@ final class WalkShareInteractiveTests: XCTestCase {
         let recordings = [SharePayload.TourRecording(n: 1, startTs: 100, endTs: 160, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000)]
         let fileURL = URL(fileURLWithPath: "/tmp/audio1.m4a")
 
-        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(
-            cached: cached,
-            currentRecordings: recordings,
-            currentAudioFiles: [fileURL],
-            currentPhotos: []
-        )
+        let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(cached: cached, currentRecordings: recordings, currentAudioFiles: [fileURL], currentPhotos: [])
 
         XCTAssertTrue(remaining.isEmpty)
         XCTAssertEqual(uploadable.first?.n, 1)
