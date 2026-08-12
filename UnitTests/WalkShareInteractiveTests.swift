@@ -95,7 +95,9 @@ final class WalkShareInteractiveTests: XCTestCase {
     func testExcludedRecordingLeavesNoTalkInterval() {
         let keptCandidate = TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
         let excludedCandidate = TourRecordingCandidate(id: 1, startTs: 2000, endTs: 2090, duration: 90, sizeBytes: 1_500_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil)
-        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        // talkDuration must cover the kept candidate's 60s, or the round-2 active-duration clamp
+        // (min(includedSum, walk.talkDuration)) would mask this test's actual target: exclusion filtering.
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk(talkDuration: 150))
         vm.tourCandidates = [keptCandidate, excludedCandidate]
         vm.interactiveEnabled = true
         vm.toggleInclude(candidateID: excludedCandidate.id)
@@ -122,6 +124,20 @@ final class WalkShareInteractiveTests: XCTestCase {
         XCTAssertEqual(talkIntervals.count, 2, "classic path reads walk.voiceRecordings directly — candidate exclusions must have zero effect")
         XCTAssertEqual(talkIntervals.map(\.startTs).sorted(), [rec1, rec2].map { Int($0.startDate.timeIntervalSince1970) }.sorted())
         XCTAssertEqual(payload.stats.talkDuration, walk.talkDuration)
+    }
+
+    // MARK: - Round 2 review: talk duration clamped to walk.talkDuration
+
+    func testInteractiveTalkDurationClampedToWalkTalkDuration() {
+        let walk = WalkDataFactory.makeWalk(talkDuration: 100)
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.tourCandidates = [
+            TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil),
+            TourRecordingCandidate(id: 1, startTs: 2000, endTs: 2060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil)
+        ]
+        let payload = vm.testBuildPayload()
+        XCTAssertEqual(payload.stats.talkDuration, 100, "the included candidates sum to 120 — must clamp to walk.talkDuration, same reason NewWalk clamps to activeDuration")
     }
 
     // MARK: - Supplementary coverage
@@ -496,5 +512,58 @@ final class WalkShareInteractiveTests: XCTestCase {
         vm.shareState = .photosDropped(prepared: 2, dropped: 1)
         vm.cancelDroppedPhotoShare()
         XCTAssertEqual(vm.shareState, .idle)
+    }
+
+    // MARK: - Round 2 review: completeShare choke point, decline cancels in-flight resume
+
+    func testShareCancelledBeforePostReturnsToIdle() async {
+        let walk = WalkDataFactory.makeWalk(voiceRecordings: [WalkDataFactory.makeVoiceRecording()])
+        let vm = WalkShareViewModel(walk: walk)
+        vm.beginShare()
+        vm.cancelShare()
+        await vm.shareTask?.value
+        XCTAssertEqual(vm.shareState, .idle, "cancelling before the POST must never leave a live-looking state behind")
+    }
+
+    func testShareEntersPhotosDroppedWhenExportComesUpShort() async {
+        UserPreferences.walkReliquaryEnabled.value = true
+        let walk = WalkDataFactory.makeWalk()
+        let vm = WalkShareViewModel(walk: walk, pinnedPhotos: [PhotoCandidate.fixture()], isPhotosGranted: { true })
+        vm.interactiveEnabled = true
+        vm.includePhotos = true
+        vm.prepareInteractive()
+
+        vm.beginShare()
+        await vm.shareTask?.value
+
+        XCTAssertEqual(vm.shareState, .photosDropped(prepared: 0, dropped: 1), "the fixture's localIdentifier never resolves in PHAsset.fetchAssets, so the export comes up short deterministically, without network")
+    }
+
+    func testContinueShareClaimsUploadingSynchronously() async {
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        vm.shareState = .photosDropped(prepared: 1, dropped: 1)
+
+        vm.continueShareWithoutDroppedPhotos()
+        XCTAssertEqual(vm.shareState, .uploading, "the prompt's buttons must vanish within the same runloop turn, before any await")
+        XCTAssertNotNil(vm.shareTask, "a resume task must be running")
+
+        vm.continueShareWithoutDroppedPhotos()
+        XCTAssertEqual(vm.shareState, .uploading, "a same-runloop double-tap must be a no-op — the shareTask guard covers it, not a second resume task")
+        XCTAssertNotNil(vm.shareTask, "the no-op call must not have cleared the original task")
+
+        vm.cancelShare()
+        await vm.shareTask?.value
+        XCTAssertEqual(vm.shareState, .idle, "cleanup: the cancelled resume must still land on idle via completeShare's pre-POST checkpoint")
+    }
+
+    func testDeclineCancelsInFlightResume() async {
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        vm.shareState = .photosDropped(prepared: 2, dropped: 1)
+
+        vm.continueShareWithoutDroppedPhotos()
+        vm.cancelDroppedPhotoShare()
+
+        await vm.shareTask?.value
+        XCTAssertEqual(vm.shareState, .idle, "declining while a resume is in flight must cancel it — completeShare's pre-POST checkpoint returns idle before geocoding or POSTing ever run")
     }
 }

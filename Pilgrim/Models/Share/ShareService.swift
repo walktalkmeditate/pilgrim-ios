@@ -168,6 +168,7 @@ extension ShareService {
         shareID: String,
         audioFiles: [URL],
         photos: [Data],
+        onItemSuccess: ((MediaKind, Int) -> Void)? = nil,
         progress: @escaping (MediaProgress) -> Void
     ) async -> [(kind: MediaKind, n: Int)] {
         return await withBackgroundAssertion(named: "pilgrim.share.media") {
@@ -186,12 +187,17 @@ extension ShareService {
                 // missing-files offer instead of a truncated upload.
                 if await backgroundTimeExhausted() {
                     for remaining in index..<photos.count { failures.append((.photos, remaining + 1)) }
-                    completed = total
+                    // Bounded to what THIS loop still owes, not the grand total — jumping straight to `total` would let `completed` overshoot if the app foregrounds before the audio loop below and that one finishes normally.
+                    completed += photos.count - index
                     report()
                     break
                 }
                 let ok = await putWithRetry(shareID: shareID, kind: .photos, n: index + 1) { data }
-                if !ok { failures.append((.photos, index + 1)) }
+                if ok {
+                    onItemSuccess?(.photos, index + 1)
+                } else {
+                    failures.append((.photos, index + 1))
+                }
                 completed += 1
                 report()
             }
@@ -199,14 +205,19 @@ extension ShareService {
             for (index, fileURL) in audioFiles.enumerated() {
                 if await backgroundTimeExhausted() {
                     for remaining in index..<audioFiles.count { failures.append((.audio, remaining + 1)) }
-                    completed = total
+                    // Same reasoning as the photos loop above.
+                    completed += audioFiles.count - index
                     report()
                     break
                 }
                 let ok = await putWithRetry(shareID: shareID, kind: .audio, n: index + 1) {
                     try Data(contentsOf: fileURL)
                 }
-                if !ok { failures.append((.audio, index + 1)) }
+                if ok {
+                    onItemSuccess?(.audio, index + 1)
+                } else {
+                    failures.append((.audio, index + 1))
+                }
                 completed += 1
                 report()
             }
@@ -222,6 +233,7 @@ extension ShareService {
     static func uploadSpecific(
         shareID: String,
         items: [(kind: MediaKind, n: Int, data: () throws -> Data)],
+        onItemSuccess: ((MediaKind, Int) -> Void)? = nil,
         progress: @escaping (MediaProgress) -> Void
     ) async -> [(kind: MediaKind, n: Int)] {
         return await withBackgroundAssertion(named: "pilgrim.share.media") {
@@ -234,23 +246,39 @@ extension ShareService {
                     break
                 }
                 let ok = await putWithRetry(shareID: shareID, kind: item.kind, n: item.n, body: item.data)
-                if !ok { failures.append((item.kind, item.n)) }
+                if ok {
+                    onItemSuccess?(item.kind, item.n)
+                } else {
+                    failures.append((item.kind, item.n))
+                }
                 progress(MediaProgress(completed: i + 1, total: items.count))
             }
             return failures
         }
     }
 
+    /// Injected rather than reading `UIApplication.shared` directly (mirrors
+    /// `WalkShareViewModel.isPhotosGranted`'s precedent): the OS background
+    /// state can't be driven from a unit test, so `backgroundTimeExhausted()`
+    /// needs a seam a test can force deterministically. Tests restore the
+    /// default in `tearDown`.
+    nonisolated(unsafe) static var backgroundStateProvider: @MainActor () -> (isBackground: Bool, remaining: TimeInterval) = {
+        (UIApplication.shared.applicationState == .background, UIApplication.shared.backgroundTimeRemaining)
+    }
+
     /// True once the OS is about to suspend the app mid-background-task: a
     /// PUT started now could be killed with the connection half-open, which
     /// the worker would just see as a dropped upload — better to never start
     /// it and let the repair record ("Carry the missing files") offer it
-    /// once Pilgrim is foreground again. 35s leaves headroom for the retry
-    /// window inside `putWithRetry` (one 800ms backoff) plus the request
-    /// itself to at least fail cleanly instead of being torn down mid-PUT.
+    /// once Pilgrim is foreground again. iOS grants ~30s of background time
+    /// total — a threshold at or above that grant is always-true the instant
+    /// the app backgrounds, abandoning the usable ~25s before it. 10s lets
+    /// small items still proceed and only stops near true exhaustion; the
+    /// real fix is a background URLSession (scheduled fast-follow).
     private static func backgroundTimeExhausted() async -> Bool {
         await MainActor.run {
-            UIApplication.shared.applicationState == .background && UIApplication.shared.backgroundTimeRemaining < 35
+            let state = backgroundStateProvider()
+            return state.isBackground && state.remaining < 10
         }
     }
 
@@ -365,6 +393,14 @@ extension ShareService {
                 lastError = error
             }
             if attempt == 0 {
+                // A single item's own attempt-plus-retry cycle can burn up to
+                // ~60s of request timeouts on its own — re-check here, not
+                // just once per item before this call, so a slow first
+                // attempt can't blow through the remaining background grant
+                // before the retry even starts.
+                if await backgroundTimeExhausted() {
+                    return false
+                }
                 try? await Task.sleep(nanoseconds: 800_000_000)
             }
         }

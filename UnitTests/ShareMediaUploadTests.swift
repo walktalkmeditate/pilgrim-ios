@@ -30,7 +30,42 @@ final class ShareMediaUploadTests: XCTestCase {
         let reloaded = ShareService.failedMedia(for: walkID)
         XCTAssertEqual(reloaded, failures, "round-trip through JSON must preserve identity fields, not just kind/n")
 
+        // Simulates the per-item prune `completeShare`/`retryFailedMedia` perform via
+        // `uploadAllMedia`/`uploadSpecific`'s `onItemSuccess`: a completed (kind, n) removed
+        // from the cached record with the same read-modify-write `cacheFailedMedia` round trip.
+        let afterOnePruned = ShareService.failedMedia(for: walkID).filter { !($0.kind == "audio" && $0.n == 1) }
+        ShareService.cacheFailedMedia(afterOnePruned, walkID: walkID)
+        XCTAssertEqual(ShareService.failedMedia(for: walkID), [failures[0]], "pruning the completed item must remove exactly it, leaving the other cached failure untouched")
+
         ShareService.cacheFailedMedia([], walkID: walkID)
         XCTAssertTrue(ShareService.failedMedia(for: walkID).isEmpty)
+    }
+
+    // MARK: - Round 2 review: honest background budget
+
+    override func tearDown() {
+        ShareService.backgroundStateProvider = { (UIApplication.shared.applicationState == .background, UIApplication.shared.backgroundTimeRemaining) }
+        super.tearDown()
+    }
+
+    @MainActor
+    func testBackgroundStateProviderDefaultReflectsRealApplicationState() {
+        let state = ShareService.backgroundStateProvider()
+        XCTAssertFalse(state.isBackground, "the test host runs foreground — the default provider must read UIApplication directly, not report background")
+    }
+
+    func testUploadAllMediaSkipsNetworkWhenBackgroundExhausted() async {
+        ShareService.backgroundStateProvider = { (true, 2) } // background, well under the 10s threshold
+
+        let audioFiles = [URL(fileURLWithPath: "/tmp/pilgrim-share-media-upload-tests-nonexistent.m4a")]
+        let photos = [Data([0xAA]), Data([0xBB])]
+        var lastProgress: ShareService.MediaProgress?
+
+        let failures = await ShareService.uploadAllMedia(shareID: "test-share-id", audioFiles: audioFiles, photos: photos) { progress in
+            lastProgress = progress
+        }
+
+        XCTAssertEqual(failures.count, audioFiles.count + photos.count, "background-exhausted from the very first item of each loop must fail everything without attempting a PUT — the nonexistent audio fileURL never gets read")
+        XCTAssertEqual(lastProgress, ShareService.MediaProgress(completed: audioFiles.count + photos.count, total: audioFiles.count + photos.count), "the per-loop skip accounting must still land exactly on (total, total)")
     }
 }

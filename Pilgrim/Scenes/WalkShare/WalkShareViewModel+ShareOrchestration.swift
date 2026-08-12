@@ -71,8 +71,14 @@ extension WalkShareViewModel {
     /// "Share without them": resumes past the dropped-photo pause with
     /// whatever exported successfully. Goes through `shareTask` — not a bare
     /// `Task { }` — for the same reason `beginShare()` does: so a Cancel tap
-    /// during the resumed upload has something to cancel.
+    /// during the resumed upload has something to cancel, and so a
+    /// same-runloop double-tap has nothing to hit. Claims `.uploading`
+    /// SYNCHRONOUSLY, before the `Task` is even spawned, so the prompt's
+    /// "Share without them" / "Don't share yet" buttons vanish immediately
+    /// instead of staying tappable through the geocode+POST that follows.
     func continueShareWithoutDroppedPhotos() {
+        guard shareTask == nil else { return }
+        shareState = .uploading
         shareTask = Task { [weak self] in
             guard let self else { return }
             await self.completeShare(tourPhotos: self.pendingTourPhotos)
@@ -81,10 +87,13 @@ extension WalkShareViewModel {
         }
     }
 
-    /// "Don't share yet": nothing exists server-side during `.photosDropped`,
-    /// so undoing it is just local state — no task to cancel, no cache to
-    /// unwind.
+    /// "Don't share yet": nothing exists server-side during `.photosDropped`
+    /// itself, but a "Share without them" resume may already be running (a
+    /// fast tap on that button followed by this one) — cancelling
+    /// `shareTask` is what makes "Don't share yet" actually mean no, rather
+    /// than letting an in-flight resume sail past this and share anyway.
     func cancelDroppedPhotoShare() {
+        shareTask?.cancel()
         pendingTourPhotos = []
         shareState = .idle
     }
@@ -94,6 +103,12 @@ extension WalkShareViewModel {
     /// onward, once the walker's photo set (full export, or "without them")
     /// is final.
     private func completeShare(tourPhotos: [TourPhoto]) async {
+        // Claim the locking state at the single choke point: from here through the POST a live page may exist — every caller gets the dismiss-lock, no caller can forget it.
+        shareState = .uploading
+        guard !Task.isCancelled else {
+            shareState = .idle
+            return
+        }
         let placeNames = await geocodeEndpoints()
         let payload = buildPayload(
             placeStart: placeNames.start,
@@ -122,7 +137,10 @@ extension WalkShareViewModel {
                 let failures = await ShareService.uploadAllMedia(
                     shareID: result.id,
                     audioFiles: audioFiles,
-                    photos: tourPhotos.map(\.jpegData)
+                    photos: tourPhotos.map(\.jpegData),
+                    onItemSuccess: { [weak self] kind, n in
+                        Task { @MainActor in self?.pruneFailedMedia(kind: kind, n: n) }
+                    }
                 ) { [weak self] progress in
                     Task { @MainActor in self?.applyMediaProgress(progress) }
                 }
@@ -191,6 +209,21 @@ extension WalkShareViewModel {
         return audioItems + photoItems
     }
 
+    /// Routes "Carry the missing files" through the same `shareTask` guard as
+    /// `beginShare()`. `retryFailedMedia()` flips `shareState` to
+    /// `.uploadingMedia` synchronously as its first real action (see below),
+    /// and that state change is what removes the retry button from
+    /// `.partial`'s view (`ShareStatusSection` only renders it there) — the
+    /// guard here is what covers the same-runloop double-tap before that
+    /// removal has rendered.
+    func beginRetry() {
+        guard shareTask == nil else { return }
+        shareTask = Task { [weak self] in
+            await self?.retryFailedMedia()
+            self?.shareTask = nil
+        }
+    }
+
     /// Rebuilds data sources for a previous share's failed items and
     /// re-attempts just those ("Carry the missing files"). Never trusts `n`
     /// alone to still point at the right file — `resolveRetryItems` verifies
@@ -249,7 +282,13 @@ extension WalkShareViewModel {
         }
 
         shareState = .uploadingMedia(completed: 0, total: uploadable.count)
-        let stillFailedRaw = await ShareService.uploadSpecific(shareID: cached.id, items: uploadable) { [weak self] progress in
+        let stillFailedRaw = await ShareService.uploadSpecific(
+            shareID: cached.id,
+            items: uploadable,
+            onItemSuccess: { [weak self] kind, n in
+                Task { @MainActor in self?.pruneFailedMedia(kind: kind, n: n) }
+            }
+        ) { [weak self] progress in
             Task { @MainActor in self?.applyMediaProgress(progress) }
         }
         // Recover each still-failed item's full identity from the cache we
@@ -318,6 +357,22 @@ extension WalkShareViewModel {
         }
 
         return (uploadable, remaining)
+    }
+
+    /// Prunes one just-uploaded item from the failed-media cache the moment
+    /// its PUT lands — wired as `onItemSuccess` from both `uploadAllMedia`
+    /// (in `completeShare`) and `uploadSpecific` (in `retryFailedMedia`), off
+    /// the MainActor, hence the `Task { @MainActor in ... }` hop at each call
+    /// site. A kill mid-upload (crash, force-quit, backgrounding past the OS
+    /// budget) now restores `.partial` counting only what's ACTUALLY still
+    /// missing, not everything the upload started with — the final
+    /// `cacheFailedMedia` write at the end of a normal run still supersedes
+    /// this, so it only matters for the interrupted case.
+    private func pruneFailedMedia(kind: ShareService.MediaKind, n: Int) {
+        guard let uuid = walk.uuid else { return }
+        var remaining = ShareService.failedMedia(for: uuid)
+        remaining.removeAll { $0.kind == kind.rawValue && $0.n == n }
+        ShareService.cacheFailedMedia(remaining, walkID: uuid)
     }
 
     /// Applies a media-upload progress tick only while `shareState` is still

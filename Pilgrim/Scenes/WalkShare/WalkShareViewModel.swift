@@ -241,7 +241,7 @@ final class WalkShareViewModel: ObservableObject {
     }
 
     /// Task 8's `share()` must filter `pinnedPhotos` to this same window before exporting hi-res
-    /// bytes — otherwise the export, the declared photo metadata, and the trimmed route would each tell a different story.
+    /// bytes — otherwise the export, the declared photo metadata, and the trimmed route would each tell a different story about which photos belong to the shared page.
     func interactiveKeptWindow() -> ClosedRange<Int>? {
         computeInteractiveRoute().keptWindow
     }
@@ -361,7 +361,8 @@ final class WalkShareViewModel: ObservableObject {
             elevationDescent: toggleElevation ? walk.descend : nil,
             steps: toggleSteps ? walk.steps : nil,
             meditateDuration: walk.meditateDuration,
-            talkDuration: interactive ? includedTalkCandidates.reduce(0) { $0 + $1.duration } : walk.talkDuration,
+            // Recordings outrun active time by design (a talk can run through a pause); NewWalk clamps talkDuration to activeDuration for the same reason, and the worker 400s on meditate+talk > active — clamp the included-candidate sum the same way.
+            talkDuration: interactive ? min(includedTalkCandidates.reduce(0) { $0 + $1.duration }, walk.talkDuration) : walk.talkDuration,
             weatherCondition: walk.weatherCondition,
             weatherTemperature: walk.weatherTemperature
         )

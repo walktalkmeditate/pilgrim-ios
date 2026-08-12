@@ -167,16 +167,19 @@ struct WalkShareView: View {
             revealTask = nil
             podcastRevealTask?.cancel()
             podcastRevealTask = nil
-            // Swipe-to-dismiss during .preparingPhotos never runs the
-            // toolbar Cancel button's action — without this, a sheet closed
-            // that way would keep exporting photos and POSTing in the
-            // background with no UI left to show it.
-            viewModel.cancelShare()
             // Guard against iOS versions / scene configs where onDisappear
             // fires on the parent while the cover is still presented (e.g.,
-            // app backgrounded with modal open). Clearing the loader mid-
-            // presentation would leave the cover rendering an empty view.
+            // app backgrounded with modal open, or presenting the cover
+            // itself). Cancelling the share here would kill a live upload or
+            // a "Carry the missing files" repair running underneath the
+            // cover; clearing the loader mid-presentation would leave the
+            // cover rendering an empty view.
             if !showPreview {
+                // Swipe-to-dismiss during .preparingPhotos never runs the
+                // toolbar Cancel button's action — without this, a sheet
+                // closed that way would keep exporting photos and POSTing in
+                // the background with no UI left to show it.
+                viewModel.cancelShare()
                 webViewLoaderHolder.clear()
             }
         }

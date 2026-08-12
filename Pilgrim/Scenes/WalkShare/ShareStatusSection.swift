@@ -50,7 +50,7 @@ struct ShareStatusSection: View {
                             .multilineTextAlignment(.center)
                     } else {
                         Button {
-                            Task { await viewModel.retryFailedMedia() }
+                            viewModel.beginRetry()
                         } label: {
                             Text("Carry the missing files")
                                 .font(Constants.Typography.button)
