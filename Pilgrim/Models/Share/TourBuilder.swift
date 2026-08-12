@@ -27,15 +27,16 @@ enum TourBuilder {
     static let maxTotalSeconds: Double = 2700
 
     /// A deliberate recording is presumed to be a voice: only a transcription
-    /// that reads as non-speech (too few words, or implausibly slow) files
-    /// the recording as ambience. The walker can override either way.
-    static func classify(transcription: String?, wpm: Double?) -> TourRecordingKind {
+    /// that reads as non-speech (too few words) files the recording as
+    /// ambience. The walker can override either way. No words-per-minute
+    /// gate: contemplative talks — a thought, then a long silence — measure
+    /// ~25 wpm on real walks, and slow speech is still speech.
+    static func classify(transcription: String?) -> TourRecordingKind {
         guard let text = transcription?.trimmingCharacters(in: .whitespacesAndNewlines) else {
             return .spoken
         }
         let wordCount = text.split(whereSeparator: \.isWhitespace).count
         if wordCount < 8 { return .ambient }
-        if let wpm, wpm < 30 { return .ambient }
         return .spoken
     }
 
@@ -68,7 +69,7 @@ enum TourBuilder {
                 sizeBytes: size ?? 0,
                 transcription: rec.transcription,
                 wpm: rec.wordsPerMinute,
-                autoKind: classify(transcription: rec.transcription, wpm: rec.wordsPerMinute),
+                autoKind: classify(transcription: rec.transcription),
                 includeInShare: unavailableReason == nil,
                 kindOverride: nil,
                 fileURL: unavailableReason == nil ? url : nil,
