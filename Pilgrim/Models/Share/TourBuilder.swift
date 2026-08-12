@@ -101,6 +101,9 @@ enum TourBuilder {
                 endTs: c.endTs,
                 duration: c.duration,
                 kind: c.effectiveKind.rawValue,
+                // Transcripts never leave the device: the page renders none, and
+                // a 45-minute walk's transcripts would blow the 2MB POST budget.
+                // Deliberate — do not wire c.transcription through.
                 transcription: nil,
                 wpm: c.wpm,
                 sizeBytes: c.sizeBytes

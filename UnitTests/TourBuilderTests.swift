@@ -62,6 +62,12 @@ final class TourBuilderTests: XCTestCase {
         XCTAssertEqual(files.map(\.lastPathComponent), ["0.m4a", "2.m4a"])
     }
 
+    func testTourItems_stripsTranscription() {
+        let withTranscript = TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: "some real speech", wpm: 120, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
+        let (tour, _) = TourBuilder.tourItems(candidates: [withTranscript], trimM: 0)
+        XCTAssertNil(tour.recordings[0].transcription, "transcripts never leave the device — the page renders none of them")
+    }
+
     func testValidation_overTwelveRecordingsFails() {
         let candidates = (0..<13).map { candidate(id: $0) }
         XCTAssertNotNil(TourBuilder.validationError(for: candidates))

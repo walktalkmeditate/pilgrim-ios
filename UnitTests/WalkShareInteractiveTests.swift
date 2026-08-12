@@ -109,6 +109,24 @@ final class WalkShareInteractiveTests: XCTestCase {
         XCTAssertTrue(vm.tourCandidates[1].includeInShare)
     }
 
+    func testInteractivePayloadJSONContainsNoTranscription() throws {
+        // Guards the whole payload path, not just TourBuilder.tourItems: even
+        // an offerable, transcript-bearing candidate must never put the
+        // transcript's text — or the "transcription" key itself — on the wire.
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        vm.tourCandidates = [
+            TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: "some real speech", wpm: 120, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
+        ]
+        vm.interactiveEnabled = true
+        vm.prepareInteractive()
+
+        let data = try JSONEncoder().encode(vm.testBuildPayload())
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8))
+
+        XCTAssertFalse(json.contains("some real speech"), "transcript content must never leave the device")
+        XCTAssertFalse(json.contains("transcription"), "the transcription key itself must never appear in the payload")
+    }
+
     func testCanTrimRouteReflectsRouteLength() {
         let shortWalk = WalkDataFactory.makeWalk(routeData: longRoute(points: 4))
         XCTAssertFalse(WalkShareViewModel(walk: shortWalk).canTrimRoute)
