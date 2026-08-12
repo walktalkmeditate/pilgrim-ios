@@ -49,7 +49,7 @@ final class WalkShareViewModel: ObservableObject {
 
     var tourTotalsLabel: String {
         let (count, bytes, seconds) = TourBuilder.totals(of: tourCandidates)
-        let photoCount = includePhotos ? min(pinnedPhotos.count, 20) : 0
+        let photoCount = includePhotos ? interactivePhotoExportList().count : 0
         var parts: [String] = []
         if count > 0 {
             let mb = Double(bytes) / 1_048_576
@@ -75,6 +75,8 @@ final class WalkShareViewModel: ObservableObject {
     @Published var selectedExpiry: ExpiryOption = .season
 
     @Published var shareState: ShareState = .idle
+    /// Set when `retryFailedMedia()` can't re-identify any cached failure against current data — `.partial` still holds, but `ShareStatusSection` swaps the retry button for an explanation. Reset at the top of both `share()` and `retryFailedMedia()`. Not `private(set)`: both live in the orchestration extension file, and Swift's private access is file-scoped, not type-scoped — same reason `shareState` above is unrestricted.
+    @Published var repairUnavailable = false
     private var cachedExpiryDate: Date?
 
     enum ExpiryOption: Int, CaseIterable {
@@ -135,8 +137,7 @@ final class WalkShareViewModel: ObservableObject {
         ) ?? Date()
     }
 
-    /// Shared by both the pre-share expiry picker and the post-share card
-    /// so "Expires..." and "Returns to the trail on..." always agree.
+    /// Shared by both the pre-share expiry picker and the post-share card so "Expires..." and "Returns to the trail on..." always agree.
     var formattedExpiry: String {
         Self.expiryFormatter.string(from: expiryDate)
     }
@@ -212,8 +213,7 @@ final class WalkShareViewModel: ObservableObject {
         }
     }
 
-    // share(), retryFailedMedia(), and their private helpers live in
-    // WalkShareViewModel+ShareOrchestration.swift.
+    // share(), retryFailedMedia(), and their private helpers live in WalkShareViewModel+ShareOrchestration.swift.
 
     func prepareInteractive() {
         if tourCandidates.isEmpty {

@@ -48,10 +48,20 @@ struct WalkShareView: View {
                         }
                     } else {
                         routePreview
-                        statToggles
-                        InteractiveShareSection(viewModel: viewModel)
-                        journalSection
-                        expiryPicker
+                        // A share is already in flight once the POST has landed a
+                        // live page and media PUTs are streaming — editing toggles,
+                        // the journal, or expiry now would desync the payload
+                        // already sent from what these controls show (wrong-slot
+                        // audio, a broken trim promise, undeclared PUTs). Disabling
+                        // at this container level freezes every input inside in one
+                        // place instead of chasing each control individually.
+                        Group {
+                            statToggles
+                            InteractiveShareSection(viewModel: viewModel)
+                            journalSection
+                            expiryPicker
+                        }
+                        .disabled(isShareInFlight)
                         ShareStatusSection(viewModel: viewModel, onOpenPreview: openPreview)
                     }
                 }

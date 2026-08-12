@@ -37,16 +37,23 @@ struct ShareStatusSection: View {
                         .foregroundColor(.rust)
                         .multilineTextAlignment(.center)
 
-                    Button {
-                        Task { await viewModel.retryFailedMedia() }
-                    } label: {
-                        Text("Carry the missing files")
-                            .font(Constants.Typography.button)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.stone)
-                            .foregroundColor(.parchment)
-                            .cornerRadius(Constants.UI.CornerRadius.small)
+                    if viewModel.repairUnavailable {
+                        Text("These files can no longer be carried — the walk's recordings have changed.")
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                            .multilineTextAlignment(.center)
+                    } else {
+                        Button {
+                            Task { await viewModel.retryFailedMedia() }
+                        } label: {
+                            Text("Carry the missing files")
+                                .font(Constants.Typography.button)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color.stone)
+                                .foregroundColor(.parchment)
+                                .cornerRadius(Constants.UI.CornerRadius.small)
+                        }
                     }
                 }
             }

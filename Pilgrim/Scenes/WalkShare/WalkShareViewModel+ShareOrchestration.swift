@@ -8,6 +8,7 @@ extension WalkShareViewModel {
 
     func share() async {
         guard canShare else { return }
+        repairUnavailable = false
         shareState = .uploading
 
         let tourPhotos: [TourPhoto]
@@ -37,6 +38,9 @@ extension WalkShareViewModel {
             let result = try await ShareService.share(payload: payload)
             if let uuid = walk.uuid {
                 ShareService.cacheShare(result, walkID: uuid, expiryDays: selectedExpiry.rawValue, expiryOption: selectedExpiry.cacheKey)
+                // A fresh share must never inherit a previous share's failed-media
+                // record — this walk may have had a `.partial` share before.
+                ShareService.cacheFailedMedia([], walkID: uuid)
             }
 
             if interactiveEnabled {
@@ -100,6 +104,7 @@ extension WalkShareViewModel {
     /// upload, so a shifted or missing candidate is skipped (stays counted
     /// as failed) rather than risking the wrong bytes landing on a live page.
     func retryFailedMedia() async {
+        repairUnavailable = false
         guard let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid) else { return }
         let failed = ShareService.failedMedia(for: uuid)
         guard !failed.isEmpty else { return }
@@ -139,6 +144,9 @@ extension WalkShareViewModel {
 
         guard !uploadable.isEmpty else {
             ShareService.cacheFailedMedia(remainingAfterResolve, walkID: uuid)
+            // None of the cached failures still match anything carryable —
+            // don't silently loop back to the same retry button forever.
+            repairUnavailable = true
             shareState = .partial(url: cached.url, failedCount: remainingAfterResolve.count)
             return
         }
@@ -235,8 +243,11 @@ extension WalkShareViewModel {
     /// The candidate list `share()` exports hi-res photos from — reused by
     /// `retryFailedMedia()` so a retry re-derives the same trimmed window
     /// and 20-photo cap the original share used (assuming `interactiveEnabled`
-    /// and `trimEnabled` haven't changed since; see `retryFailedMedia`).
-    private func interactivePhotoExportList() -> [PhotoCandidate] {
+    /// and `trimEnabled` haven't changed since; see `retryFailedMedia`), and by
+    /// `tourTotalsLabel` so the pre-share totals count the same kept-window
+    /// photos the export will actually send. Internal (not `private`) so it's
+    /// callable from `WalkShareViewModel.swift` across the file boundary.
+    func interactivePhotoExportList() -> [PhotoCandidate] {
         guard hasPinnedPhotos else { return [] }
         let window = interactiveKeptWindow()
         return Array(
