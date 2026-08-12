@@ -109,3 +109,22 @@ enum WalkDataFactory {
         TempWalkEvent(uuid: uuid, eventType: eventType, timestamp: timestamp)
     }
 }
+
+extension PhotoCandidate {
+
+    static func fixture(
+        localIdentifier: String = "test-photo-1",
+        capturedAt: Date = DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
+        capturedLat: Double = 48.8566,
+        capturedLng: Double = 2.3522,
+        isPinned: Bool = true
+    ) -> PhotoCandidate {
+        PhotoCandidate(
+            localIdentifier: localIdentifier,
+            capturedAt: capturedAt,
+            capturedLat: capturedLat,
+            capturedLng: capturedLng,
+            isPinned: isPinned
+        )
+    }
+}

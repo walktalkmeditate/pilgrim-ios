@@ -73,11 +73,52 @@ struct SharePayload: Encodable {
         let lat: Double
         let lon: Double
         let ts: Int
-        let data: String
+        let data: String?
     }
 
+    struct Pause: Encodable {
+        let startTs: Int
+        let endTs: Int
+
+        enum CodingKeys: String, CodingKey {
+            case startTs = "start_ts"
+            case endTs = "end_ts"
+        }
+    }
+
+    struct Tour: Encodable {
+        let recordings: [TourRecording]
+        let trimM: Int
+
+        enum CodingKeys: String, CodingKey {
+            case recordings
+            case trimM = "trim_m"
+        }
+    }
+
+    struct TourRecording: Encodable {
+        let n: Int
+        let startTs: Int
+        let endTs: Int
+        let duration: Double
+        let kind: String
+        let transcription: String?
+        let wpm: Double?
+        let sizeBytes: Int
+
+        enum CodingKeys: String, CodingKey {
+            case n, duration, kind, transcription, wpm
+            case startTs = "start_ts"
+            case endTs = "end_ts"
+            case sizeBytes = "size_bytes"
+        }
+    }
+
+    var tour: Tour? = nil
+    var pauses: [Pause]? = nil
+
     enum CodingKeys: String, CodingKey {
-        case stats, route, journal, units, waypoints, mark, photos
+        case stats, route, journal, units, waypoints, mark, photos, tour, pauses
         case activityIntervals = "activity_intervals"
         case expiryDays = "expiry_days"
         case startDate = "start_date"

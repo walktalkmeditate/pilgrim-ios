@@ -1,0 +1,415 @@
+import Foundation
+
+/// The POST → media-PUT orchestration `share()` drives, plus the "Carry the
+/// missing files" retry path. Lives in its own file to keep
+/// `WalkShareViewModel` under the type-body-length ceiling (mirrors
+/// `ActiveWalkViewModel+Seek.swift`).
+extension WalkShareViewModel {
+
+    func beginShare() {
+        guard shareTask == nil else { return }
+        shareTask = Task { [weak self] in
+            await self?.share()
+            self?.shareTask = nil
+        }
+    }
+
+    /// Safe to call any time: a no-op once nothing is running, and a no-op
+    /// in EFFECT once the POST has landed — `share()` only honors
+    /// cancellation at the one checkpoint before anything exists
+    /// server-side.
+    func cancelShare() {
+        shareTask?.cancel()
+    }
+
+    func share() async {
+        guard canShare else { return }
+        repairUnavailable = false
+        shareState = .uploading
+
+        let tourPhotos: [TourPhoto]
+        let exportCount: Int
+        if interactiveEnabled, includePhotos, hasPinnedPhotos {
+            let exportList = interactivePhotoExportList()
+            exportCount = exportList.count
+            // Prime synchronously, same reason as .uploadingMedia below — the
+            // first progress tick only fires after the first photo finishes
+            // loading, so without this the phase would never actually become
+            // .preparingPhotos and applyPreparingPhotosProgress's guard would
+            // reject every tick.
+            shareState = .preparingPhotos(completed: 0, total: exportList.count)
+            tourPhotos = await ShareService.withBackgroundAssertion(named: "pilgrim.share.photo-export") {
+                await TourPhotoExporter.export(exportList) { [weak self] done, total in
+                    Task { @MainActor in self?.applyPreparingPhotosProgress(completed: done, total: total) }
+                }
+            }
+        } else {
+            tourPhotos = []
+            exportCount = 0
+        }
+
+        // Nothing exists server-side yet — cancellation is clean up to the POST.
+        if Task.isCancelled {
+            shareState = .idle
+            return
+        }
+
+        // Fewer photos exported than requested (iCloud-only assets that
+        // never downloaded, deletions mid-export) — pause for the walker's
+        // consent before anything POSTs, rather than silently shipping a
+        // page short of photos it promised.
+        let dropped = exportCount - tourPhotos.count
+        if dropped > 0 {
+            pendingTourPhotos = tourPhotos
+            shareState = .photosDropped(prepared: tourPhotos.count, dropped: dropped)
+            return
+        }
+
+        await completeShare(tourPhotos: tourPhotos)
+    }
+
+    /// "Share without them": resumes past the dropped-photo pause with
+    /// whatever exported successfully. Goes through `shareTask` — not a bare
+    /// `Task { }` — for the same reason `beginShare()` does: so a Cancel tap
+    /// during the resumed upload has something to cancel, and so a
+    /// same-runloop double-tap has nothing to hit. Claims `.uploading`
+    /// SYNCHRONOUSLY, before the `Task` is even spawned, so the prompt's
+    /// "Share without them" / "Don't share yet" buttons vanish immediately
+    /// instead of staying tappable through the geocode+POST that follows.
+    func continueShareWithoutDroppedPhotos() {
+        guard shareTask == nil else { return }
+        shareState = .uploading
+        shareTask = Task { [weak self] in
+            guard let self else { return }
+            await self.completeShare(tourPhotos: self.pendingTourPhotos)
+            self.pendingTourPhotos = []
+            self.shareTask = nil
+        }
+    }
+
+    /// "Don't share yet": nothing exists server-side during `.photosDropped`
+    /// itself, but a "Share without them" resume may already be running (a
+    /// fast tap on that button followed by this one) — cancelling
+    /// `shareTask` is what makes "Don't share yet" actually mean no, rather
+    /// than letting an in-flight resume sail past this and share anyway.
+    func cancelDroppedPhotoShare() {
+        shareTask?.cancel()
+        pendingTourPhotos = []
+        shareState = .idle
+    }
+
+    /// The POST → media-PUT path shared by `share()`'s happy path and
+    /// `continueShareWithoutDroppedPhotos()` — everything from geocoding
+    /// onward, once the walker's photo set (full export, or "without them")
+    /// is final.
+    private func completeShare(tourPhotos: [TourPhoto]) async {
+        // Claim the locking state at the single choke point: from here through the POST a live page may exist — every caller gets the dismiss-lock, no caller can forget it.
+        shareState = .uploading
+        guard !Task.isCancelled else {
+            shareState = .idle
+            return
+        }
+        let placeNames = await geocodeEndpoints()
+        let payload = buildPayload(
+            placeStart: placeNames.start,
+            placeEnd: placeNames.end,
+            tourPhotoMeta: tourPhotos.map(\.meta)
+        )
+
+        do {
+            let result = try await ShareService.share(payload: payload)
+            if let uuid = walk.uuid {
+                ShareService.cacheShare(result, walkID: uuid, expiryDays: selectedExpiry.rawValue, expiryOption: selectedExpiry.cacheKey)
+            }
+
+            if interactiveEnabled {
+                let tourItems = TourBuilder.tourItems(candidates: tourCandidates, trimM: 0)
+                let audioFiles = tourItems.files
+                let audioRecordings = tourItems.tour.recordings
+                if let uuid = walk.uuid {
+                    // Pre-populate so a kill mid-upload restores a repairable .partial instead of a lying .success; PUTs are idempotent, over-repair is harmless.
+                    ShareService.cacheFailedMedia(Self.expectedFailureRecords(recordings: audioRecordings, photos: tourPhotos), walkID: uuid)
+                }
+                // Prime the phase synchronously (no unstructured-Task hop to
+                // race) so the FIRST progress tick already finds shareState
+                // in .uploadingMedia — see applyMediaProgress.
+                shareState = .uploadingMedia(completed: 0, total: audioFiles.count + tourPhotos.count)
+                let failures = await ShareService.uploadAllMedia(
+                    shareID: result.id,
+                    audioFiles: audioFiles,
+                    photos: tourPhotos.map(\.jpegData),
+                    onItemSuccess: { [weak self] kind, n in
+                        Task { @MainActor in self?.pruneFailedMedia(kind: kind, n: n) }
+                    }
+                ) { [weak self] progress in
+                    Task { @MainActor in self?.applyMediaProgress(progress) }
+                }
+                if let uuid = walk.uuid {
+                    let failureItems = failures.map {
+                        Self.failedMediaItem(for: $0, audioRecordings: audioRecordings, tourPhotos: tourPhotos)
+                    }
+                    ShareService.cacheFailedMedia(failureItems, walkID: uuid)
+                }
+                shareState = failures.isEmpty
+                    ? .success(url: result.url)
+                    : .partial(url: result.url, failedCount: failures.count)
+            } else {
+                if let uuid = walk.uuid {
+                    // A fresh share must never inherit a previous share's failed-media
+                    // record — this walk may have had a `.partial` share before.
+                    ShareService.cacheFailedMedia([], walkID: uuid)
+                }
+                shareState = .success(url: result.url)
+            }
+        } catch {
+            shareState = .error(message: error.localizedDescription)
+        }
+    }
+
+    /// Builds the stable-identity cache record for one failed upload slot,
+    /// reading from the SAME arrays `share()` just uploaded from — `failure.n`
+    /// indexes directly into them, since that's the order `uploadAllMedia`
+    /// PUT things in. This identity (not `n` alone) is what lets a later
+    /// retry verify it's about to send the right bytes — see
+    /// `resolveRetryItems`.
+    private static func failedMediaItem(
+        for failure: (kind: ShareService.MediaKind, n: Int),
+        audioRecordings: [SharePayload.TourRecording],
+        tourPhotos: [TourPhoto]
+    ) -> ShareService.FailedMediaItem {
+        switch failure.kind {
+        case .audio:
+            let startTs = audioRecordings.indices.contains(failure.n - 1) ? audioRecordings[failure.n - 1].startTs : nil
+            return ShareService.FailedMediaItem(kind: failure.kind.rawValue, n: failure.n, audioStartTs: startTs, photoLocalID: nil, photoTs: nil)
+        case .photos:
+            let photo = tourPhotos.indices.contains(failure.n - 1) ? tourPhotos[failure.n - 1] : nil
+            return ShareService.FailedMediaItem(kind: failure.kind.rawValue, n: failure.n, audioStartTs: nil, photoLocalID: photo?.sourceLocalIdentifier, photoTs: photo?.meta.ts)
+        }
+    }
+
+    /// The full "everything in this upload just failed" identity list, built
+    /// from the exact recordings/photos arrays about to be uploaded — the
+    /// same per-slot identity fields `failedMediaItem` computes for a real
+    /// failure, for every slot instead of just the failed ones. `share()`
+    /// writes this to the cache BEFORE `uploadAllMedia` runs (see the call
+    /// site) so a kill mid-upload leaves a repairable `.partial` record
+    /// instead of the stale all-clear that used to sit there. Not `private`:
+    /// unit-tested directly, same file-scoped-access reasoning as
+    /// `resolveRetryItems` below.
+    static func expectedFailureRecords(
+        recordings: [SharePayload.TourRecording],
+        photos: [TourPhoto]
+    ) -> [ShareService.FailedMediaItem] {
+        let audioItems = recordings.indices.map { index in
+            failedMediaItem(for: (kind: .audio, n: index + 1), audioRecordings: recordings, tourPhotos: photos)
+        }
+        let photoItems = photos.indices.map { index in
+            failedMediaItem(for: (kind: .photos, n: index + 1), audioRecordings: recordings, tourPhotos: photos)
+        }
+        return audioItems + photoItems
+    }
+
+    /// Routes "Carry the missing files" through the same `shareTask` guard as
+    /// `beginShare()`. `retryFailedMedia()` flips `shareState` to
+    /// `.uploadingMedia` synchronously as its first real action (see below),
+    /// and that state change is what removes the retry button from
+    /// `.partial`'s view (`ShareStatusSection` only renders it there) — the
+    /// guard here is what covers the same-runloop double-tap before that
+    /// removal has rendered.
+    func beginRetry() {
+        guard shareTask == nil else { return }
+        shareTask = Task { [weak self] in
+            await self?.retryFailedMedia()
+            self?.shareTask = nil
+        }
+    }
+
+    /// Rebuilds data sources for a previous share's failed items and
+    /// re-attempts just those ("Carry the missing files"). Never trusts `n`
+    /// alone to still point at the right file — `resolveRetryItems` verifies
+    /// stable identity (recording `startTs`; photo `localIdentifier` + `ts`)
+    /// against the CURRENT candidate set before anything is queued for
+    /// upload, so a shifted or missing candidate is skipped (stays counted
+    /// as failed) rather than risking the wrong bytes landing on a live page.
+    func retryFailedMedia() async {
+        repairUnavailable = false
+        guard let uuid = walk.uuid, let cached = ShareService.cachedShare(for: uuid) else { return }
+        let failed = ShareService.failedMedia(for: uuid)
+        guard !failed.isEmpty else { return }
+
+        // Leave .partial synchronously, before the possibly-multi-second photo
+        // re-export below — otherwise "Carry the missing files" stays on
+        // screen and tappable during that gap, and a second tap would start
+        // an overlapping retry of the same items.
+        shareState = .uploadingMedia(completed: 0, total: failed.count)
+
+        let currentRecordings: [SharePayload.TourRecording]
+        let currentAudioFiles: [URL]
+        if failed.contains(where: { $0.kind == ShareService.MediaKind.audio.rawValue }) {
+            let candidates = tourCandidates.isEmpty ? TourBuilder.candidates(for: walk) : tourCandidates
+            let tourItems = TourBuilder.tourItems(candidates: candidates, trimM: 0)
+            currentRecordings = tourItems.tour.recordings
+            currentAudioFiles = tourItems.files
+        } else {
+            currentRecordings = []
+            currentAudioFiles = []
+        }
+
+        // Re-export only the specific photos that failed, by identity — not
+        // the whole (up to 20-photo) export list again.
+        let failedPhotoIDs = Set(failed.compactMap { $0.kind == ShareService.MediaKind.photos.rawValue ? $0.photoLocalID : nil })
+        let photoCandidatesToReExport = pinnedPhotos.filter { failedPhotoIDs.contains($0.localIdentifier) }
+        let currentPhotos: [TourPhoto] = photoCandidatesToReExport.isEmpty
+            ? []
+            : await ShareService.withBackgroundAssertion(named: "pilgrim.share.photo-export") {
+                await TourPhotoExporter.export(photoCandidatesToReExport) { _, _ in }
+            }
+
+        let (uploadable, remainingAfterResolve) = Self.resolveRetryItems(
+            cached: failed,
+            currentRecordings: currentRecordings,
+            currentAudioFiles: currentAudioFiles,
+            currentPhotos: currentPhotos
+        )
+
+        guard !uploadable.isEmpty else {
+            ShareService.cacheFailedMedia(remainingAfterResolve, walkID: uuid)
+            // None of the cached failures still match anything carryable —
+            // don't silently loop back to the same retry button forever.
+            repairUnavailable = true
+            shareState = .partial(url: cached.url, failedCount: remainingAfterResolve.count)
+            return
+        }
+
+        shareState = .uploadingMedia(completed: 0, total: uploadable.count)
+        let stillFailedRaw = await ShareService.uploadSpecific(
+            shareID: cached.id,
+            items: uploadable,
+            onItemSuccess: { [weak self] kind, n in
+                Task { @MainActor in self?.pruneFailedMedia(kind: kind, n: n) }
+            }
+        ) { [weak self] progress in
+            Task { @MainActor in self?.applyMediaProgress(progress) }
+        }
+        // Recover each still-failed item's full identity from the cache we
+        // resolved it from, so a THIRD attempt can still verify it too.
+        let stillFailed = stillFailedRaw.compactMap { raw in
+            failed.first { $0.kind == raw.kind.rawValue && $0.n == raw.n }
+        }
+
+        let remaining = stillFailed + remainingAfterResolve
+        ShareService.cacheFailedMedia(remaining, walkID: uuid)
+        shareState = remaining.isEmpty
+            ? .success(url: cached.url)
+            : .partial(url: cached.url, failedCount: remaining.count)
+    }
+
+    /// Pure identity resolution — no MainActor/instance state — so it's
+    /// directly unit-testable. Matches each cached failure to CURRENT data by
+    /// stable identity, never by `n` alone: an index that's still "in bounds"
+    /// after the underlying candidate set shifted (an export drop, an unpin)
+    /// can silently point at a DIFFERENT file than the one that failed. Both
+    /// audio (by `startTs`) and photos (by `localIdentifier` + captured `ts`)
+    /// are found by identity search across the whole current set — neither
+    /// kind's position is assumed to be stable — and uploaded under the
+    /// CACHED `n`, never their own current position. Anything that doesn't
+    /// verify is returned in `remaining`, untouched, rather than uploaded to
+    /// a guessed slot.
+    nonisolated static func resolveRetryItems(
+        cached: [ShareService.FailedMediaItem],
+        currentRecordings: [SharePayload.TourRecording],
+        currentAudioFiles: [URL],
+        currentPhotos: [TourPhoto]
+    ) -> (uploadable: [(kind: ShareService.MediaKind, n: Int, data: () throws -> Data)], remaining: [ShareService.FailedMediaItem]) {
+        var uploadable: [(kind: ShareService.MediaKind, n: Int, data: () throws -> Data)] = []
+        var remaining: [ShareService.FailedMediaItem] = []
+
+        for item in cached {
+            guard let kind = ShareService.MediaKind(rawValue: item.kind) else {
+                remaining.append(item)
+                continue
+            }
+            switch kind {
+            case .audio:
+                // Identity search, not an index-locked lookup: startTs
+                // collisions are structurally impossible (recordings can't
+                // overlap within one truncated second), so a match on
+                // startTs alone is safe wherever it now sits — an excluded
+                // or reordered candidate can shift a recording OUT of its
+                // original slot without dropping it from the current set.
+                guard let index = currentRecordings.firstIndex(where: { $0.startTs == item.audioStartTs }),
+                      currentAudioFiles.indices.contains(index) else {
+                    remaining.append(item)
+                    continue
+                }
+                let fileURL = currentAudioFiles[index]
+                uploadable.append((kind: .audio, n: item.n, data: { try Data(contentsOf: fileURL) }))
+            case .photos:
+                guard let match = currentPhotos.first(where: {
+                    $0.sourceLocalIdentifier == item.photoLocalID && $0.meta.ts == item.photoTs
+                }) else {
+                    remaining.append(item)
+                    continue
+                }
+                let data = match.jpegData
+                uploadable.append((kind: .photos, n: item.n, data: { data }))
+            }
+        }
+
+        return (uploadable, remaining)
+    }
+
+    /// Prunes one just-uploaded item from the failed-media cache the moment
+    /// its PUT lands — wired as `onItemSuccess` from both `uploadAllMedia`
+    /// (in `completeShare`) and `uploadSpecific` (in `retryFailedMedia`), off
+    /// the MainActor, hence the `Task { @MainActor in ... }` hop at each call
+    /// site. A kill mid-upload (crash, force-quit, backgrounding past the OS
+    /// budget) now restores `.partial` counting only what's ACTUALLY still
+    /// missing, not everything the upload started with — the final
+    /// `cacheFailedMedia` write at the end of a normal run still supersedes
+    /// this, so it only matters for the interrupted case.
+    private func pruneFailedMedia(kind: ShareService.MediaKind, n: Int) {
+        guard let uuid = walk.uuid else { return }
+        var remaining = ShareService.failedMedia(for: uuid)
+        remaining.removeAll { $0.kind == kind.rawValue && $0.n == n }
+        ShareService.cacheFailedMedia(remaining, walkID: uuid)
+    }
+
+    /// Applies a media-upload progress tick only while `shareState` is still
+    /// `.uploadingMedia`. Progress hops from `uploadAllMedia`/`uploadSpecific`
+    /// run as unstructured `Task`s off their (nonisolated) progress closure,
+    /// so a hop can still be queued on the MainActor after `share()` or
+    /// `retryFailedMedia()` has already set a terminal state and run after
+    /// it. Gating on the phase makes a late hop a no-op instead of
+    /// clobbering `.success`/`.partial`/`.error`.
+    private func applyMediaProgress(_ progress: ShareService.MediaProgress) {
+        guard case .uploadingMedia = shareState else { return }
+        shareState = .uploadingMedia(completed: progress.completed, total: progress.total)
+    }
+
+    /// Same late-arrival guard as `applyMediaProgress`, for the photo-export
+    /// phase: a stale tick landing after a terminal state must not clobber
+    /// `.success`/`.partial`/`.error`, and must not re-lock dismissal by
+    /// flipping `shareState` back into an `isShareInFlight` case.
+    private func applyPreparingPhotosProgress(completed: Int, total: Int) {
+        guard case .preparingPhotos = shareState else { return }
+        shareState = .preparingPhotos(completed: completed, total: total)
+    }
+
+    /// The candidate list `share()` exports hi-res photos from — reused by
+    /// `retryFailedMedia()` so a retry re-derives the same trimmed window
+    /// and 20-photo cap the original share used (assuming `interactiveEnabled`
+    /// and `trimEnabled` haven't changed since; see `retryFailedMedia`), and by
+    /// `tourTotalsLabel` so the pre-share totals count the same kept-window
+    /// photos the export will actually send. Internal (not `private`) so it's
+    /// callable from `WalkShareViewModel.swift` across the file boundary.
+    func interactivePhotoExportList() -> [PhotoCandidate] {
+        guard hasPinnedPhotos else { return [] }
+        let window = interactiveKeptWindow()
+        return Array(
+            pinnedPhotos
+                .filter { window?.contains(Int($0.capturedAt.timeIntervalSince1970)) ?? true }
+                .prefix(20)
+        )
+    }
+}
