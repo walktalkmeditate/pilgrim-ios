@@ -4,34 +4,31 @@ import XCTest
 final class TourBuilderTests: XCTestCase {
 
     func testClassify_noTranscriptionIsSpoken() {
-        XCTAssertEqual(TourBuilder.classify(transcription: nil, wpm: nil), .spoken)
+        XCTAssertEqual(TourBuilder.classify(transcription: nil), .spoken)
     }
 
     func testClassify_fewWordsIsAmbient() {
-        XCTAssertEqual(TourBuilder.classify(transcription: "wind and birds", wpm: 200), .ambient)
+        XCTAssertEqual(TourBuilder.classify(transcription: "wind and birds"), .ambient)
     }
 
-    func testClassify_slowSpeechIsAmbient() {
-        let words = Array(repeating: "word", count: 20).joined(separator: " ")
-        XCTAssertEqual(TourBuilder.classify(transcription: words, wpm: 12), .ambient)
+    func testClassify_slowContemplativeSpeechIsSpoken() {
+        // 25 wpm over a 5-minute talk is a real pattern on real walks —
+        // sparse words must not demote a deliberate talk to ambience.
+        let words = Array(repeating: "word", count: 120).joined(separator: " ")
+        XCTAssertEqual(TourBuilder.classify(transcription: words), .spoken)
     }
 
     func testClassify_realSpeechIsSpoken() {
         let words = Array(repeating: "word", count: 20).joined(separator: " ")
-        XCTAssertEqual(TourBuilder.classify(transcription: words, wpm: 110), .spoken)
-    }
-
-    func testClassify_transcriptionWithoutWpmUsesWordCountOnly() {
-        let words = Array(repeating: "word", count: 20).joined(separator: " ")
-        XCTAssertEqual(TourBuilder.classify(transcription: words, wpm: nil), .spoken)
+        XCTAssertEqual(TourBuilder.classify(transcription: words), .spoken)
     }
 
     func testClassify_emptyTranscriptionIsAmbient() {
-        XCTAssertEqual(TourBuilder.classify(transcription: "", wpm: nil), .ambient)
+        XCTAssertEqual(TourBuilder.classify(transcription: ""), .ambient)
     }
 
     func testClassify_whitespaceOnlyTranscriptionIsAmbient() {
-        XCTAssertEqual(TourBuilder.classify(transcription: "  \n ", wpm: 200), .ambient)
+        XCTAssertEqual(TourBuilder.classify(transcription: "  \n "), .ambient)
     }
 
     private func candidate(id: Int, bytes: Int = 1_000_000, seconds: Double = 60, included: Bool = true, kind: TourRecordingKind = .spoken) -> TourRecordingCandidate {
