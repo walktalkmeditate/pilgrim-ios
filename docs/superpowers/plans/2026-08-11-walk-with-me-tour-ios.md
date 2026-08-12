@@ -31,7 +31,7 @@
 - Consumes: nothing new.
 - Produces: `SharePayload.Tour`, `SharePayload.TourRecording`, `SharePayload.Pause`, `SharePayload.Photo.data: String?`, `SharePayload.tour: Tour?`, `SharePayload.pauses: [Pause]?` — exact shapes below; Tasks 2/6 build these.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 import XCTest
@@ -108,12 +108,12 @@ final class SharePayloadTourTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/SharePayloadTourTests`
 Expected: FAIL — `Tour`, `Pause` types don't exist; `Photo.data` is non-optional.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `SharePayload.swift`:
 
@@ -161,8 +161,8 @@ Change `Photo.data` to `let data: String?`, add `var tour: Tour? = nil` and `var
 
 The one existing `Photo(...)` construction site (`WalkShareViewModel.loadSharePhoto`) passes `data:` explicitly, so the optional change compiles without edits there.
 
-- [ ] **Step 4: Run tests to verify pass** (same command)
-- [ ] **Step 5: Commit** — `feat(share): payload learns tour, pauses, and PUT-uploaded photos`
+- [x] **Step 4: Run tests to verify pass** (same command)
+- [x] **Step 5: Commit** — `feat(share): payload learns tour, pauses, and PUT-uploaded photos`
 
 ---
 
@@ -207,7 +207,7 @@ enum TourBuilder {
 
 Caps as constants: `maxRecordings = 12`, `maxFileBytes = 15 * 1024 * 1024`, `maxTotalBytes = 60 * 1024 * 1024`, `maxTotalSeconds: Double = 2700`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -294,9 +294,9 @@ final class TourBuilderTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure** (`-only-testing:UnitTests/TourBuilderTests`)
+- [x] **Step 2: Run to verify failure** (`-only-testing:UnitTests/TourBuilderTests`)
 
-- [ ] **Step 3: Implement `TourBuilder.swift`**
+- [x] **Step 3: Implement `TourBuilder.swift`**
 
 ```swift
 import Foundation
@@ -415,8 +415,8 @@ enum TourBuilder {
 
 Note `transcription: nil` in the payload: the page never renders transcripts and omitting them keeps the POST body small (transcripts of a 45-minute walk approach the 2 MB payload cap).
 
-- [ ] **Step 4: Run tests to verify pass**
-- [ ] **Step 5: Commit** — `feat(share): TourBuilder classifies, caps, and renumbers recordings`
+- [x] **Step 4: Run tests to verify pass**
+- [x] **Step 5: Commit** — `feat(share): TourBuilder classifies, caps, and renumbers recordings`
 
 ---
 
@@ -429,7 +429,7 @@ Note `transcription: nil` in the payload: the page never renders transcripts and
 **Interfaces:**
 - Produces: `RouteTrimmer.trim(_:meters:)` and `RouteTrimmer.canTrim(_ route: [SharePayload.RoutePoint], meters: Double) -> Bool` — `canTrim` is the UI's honesty check (Task 7 disables the toggle and says so when trimming cannot apply) — used by Task 6. Trims cumulative haversine distance from each end; always returns at least the innermost 2 points when the route is long enough to trim, and returns the route unchanged when `meters <= 0` or total distance `< 4 * meters` (a walk too short to trim meaningfully shares untrimmed — matches the spec's "trim is a courtesy, not a guarantee").
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -470,9 +470,9 @@ final class RouteTrimmerTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```swift
 import Foundation
@@ -520,8 +520,8 @@ enum RouteTrimmer {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify pass**
-- [ ] **Step 5: Commit** — `feat(share): RouteTrimmer keeps doorsteps off shared pages`
+- [x] **Step 4: Run tests to verify pass**
+- [x] **Step 5: Commit** — `feat(share): RouteTrimmer keeps doorsteps off shared pages`
 
 ---
 
@@ -555,7 +555,7 @@ enum TourPhotoExporter {
 // PhotoKit behavior still needs the Task 9 / hardware pass.)
 ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 import XCTest
@@ -587,9 +587,9 @@ final class TourPhotoExporterTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```swift
 import Photos
@@ -683,8 +683,8 @@ enum TourPhotoExporter {
 
 Notes: `isNetworkAccessAllowed = true` (unlike the classic 600px path) because interactive shares are deliberate enough to wait for iCloud originals; the whole export runs on a background queue — never on main (resource-safety rule).
 
-- [ ] **Step 4: Run tests to verify pass**
-- [ ] **Step 5: Commit** — `feat(share): hi-res tour photo export with 2MB quality ladder`
+- [x] **Step 4: Run tests to verify pass**
+- [x] **Step 5: Commit** — `feat(share): hi-res tour photo export with 2MB quality ladder`
 
 ---
 
@@ -742,7 +742,7 @@ Internally, one requestable unit — injectable for tests:
 static func mediaUploadRequest(shareID: String, kind: MediaKind, n: Int, contentLength: Int) -> URLRequest
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -767,9 +767,9 @@ final class ShareMediaUploadTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
-- [ ] **Step 3: Implement** in `ShareService.swift` (add `import UIKit` for the background-task assertion):
+- [x] **Step 3: Implement** in `ShareService.swift` (add `import UIKit` for the background-task assertion):
 
 ```swift
 // MARK: - Interactive media uploads
@@ -899,8 +899,8 @@ extension ShareService {
 
 Make the existing `private static let baseURL` and `private static func deviceToken()` accessible to the extension (same file — already fine).
 
-- [ ] **Step 4: Run tests to verify pass**
-- [ ] **Step 5: Commit** — `feat(share): sequential media PUTs with per-file retry and progress`
+- [x] **Step 4: Run tests to verify pass**
+- [x] **Step 5: Commit** — `feat(share): sequential media PUTs with per-file retry and progress`
 
 ---
 
@@ -927,7 +927,7 @@ func flipKind(candidateID: Int)
 static let trimMeters = 150
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Use `WalkDataFactory` (existing fixtures) to make a walk with voice recordings and pauses. If the factory lacks a recordings-capable maker, extend the test with the factory's existing `makeVoiceRecording`/`makeWalk` helpers (check `UnitTests/Support/` for the factory before writing; follow its patterns exactly).
 
@@ -996,9 +996,9 @@ final class WalkShareInteractiveTests: XCTestCase {
 
 Expose `func testBuildPayload() -> SharePayload` as an internal passthrough to `buildPayload(placeStart:placeEnd:)` guarded by `#if DEBUG` if needed (tests import `@testable`, so plain `internal` suffices — just drop the `private` on `buildPayload` instead; simplest and honest).
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
-- [ ] **Step 3: Implement in the view model**
+- [x] **Step 3: Implement in the view model**
 
 ```swift
 @Published var interactiveEnabled = false
@@ -1114,8 +1114,8 @@ let photoPayload: [SharePayload.Photo]? = {
 
 (Check `walk.pauses` element type for the exact date property names — `WalkPauseInterface` — and adjust `startDate/endDate` accessors to what the interface actually exposes before writing; the factory tests will catch a mismatch.)
 
-- [ ] **Step 4: Run tests to verify pass**
-- [ ] **Step 5: Commit** — `feat(share): view model builds interactive payloads — tour, pauses, trim, hi-res photo metadata`
+- [x] **Step 4: Run tests to verify pass**
+- [x] **Step 5: Commit** — `feat(share): view model builds interactive payloads — tour, pauses, trim, hi-res photo metadata`
 
 ---
 
@@ -1129,9 +1129,9 @@ let photoPayload: [SharePayload.Photo]? = {
 - Consumes: Task 6's published state.
 - Produces: UI only.
 
-- [ ] **Step 0: Demo recordings get real audio** — the seeder creates recording rows pointing at `demo/recording-N.m4a` but writes no files, so every later visual/E2E check would show "No recordings on this walk." Extend `ScreenshotDataSeeder` (DEBUG/demo-mode only): when seeding voice recordings, copy any short bundled `.m4a` asset into `Documents/demo/recording-<n>.m4a` via FileManager if absent, so `TourBuilder.candidates(for:)` resolves real files with nonzero sizes. Commit: `chore(demo): demo recordings carry real audio files`.
+- [x] **Step 0: Demo recordings get real audio** — the seeder creates recording rows pointing at `demo/recording-N.m4a` but writes no files, so every later visual/E2E check would show "No recordings on this walk." Extend `ScreenshotDataSeeder` (DEBUG/demo-mode only): when seeding voice recordings, copy any short bundled `.m4a` asset into `Documents/demo/recording-<n>.m4a` via FileManager if absent, so `TourBuilder.candidates(for:)` resolves real files with nonzero sizes. Commit: `chore(demo): demo recordings carry real audio files`.
 
-- [ ] **Step 1: Build `InteractiveShareSection`**
+- [x] **Step 1: Build `InteractiveShareSection`**
 
 ```swift
 import SwiftUI
@@ -1287,7 +1287,7 @@ private struct TourRecordingRow: View {
 
 Adjust color names (`moss`, `rust`) to the asset-catalog names actually present (grep `Color("` in the project and match); same for `Constants.UI.Padding` members.
 
-- [ ] **Step 2: Insert into WalkShareView**
+- [x] **Step 2: Insert into WalkShareView**
 
 In the main VStack after `statToggles` (before `journalSection`):
 
@@ -1297,14 +1297,14 @@ InteractiveShareSection(viewModel: viewModel)
 
 with the same section framing the neighbors use (`sectionLabel("Walk with me")` above it if the design reads better with the label — match `statToggles`' visual rhythm).
 
-- [ ] **Step 3: Build**
+- [x] **Step 3: Build**
 
 Run: `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator build`
 Expected: BUILD SUCCEEDED.
 
-- [ ] **Step 4: Visual check** — simulator, demo mode (`--demo-mode` seeds walks with recordings): open a walk → share → flip Interactive on → recordings list shows with sizes; exclusion dims a row; kind chip flips voice ⇄ ambience; totals update; over-cap state shows the rust message and the share button disables (Task 8 wires the disable).
+- [x] **Step 4: Visual check** — simulator, demo mode (`--demo-mode` seeds walks with recordings): open a walk → share → flip Interactive on → recordings list shows with sizes; exclusion dims a row; kind chip flips voice ⇄ ambience; totals update; over-cap state shows the rust message and the share button disables (Task 8 wires the disable).
 
-- [ ] **Step 5: Commit** — `feat(share): Interactive section — recordings disclosure, kind flip, trim`
+- [x] **Step 5: Commit** — `feat(share): Interactive section — recordings disclosure, kind flip, trim`
 
 ---
 
@@ -1331,7 +1331,7 @@ enum ShareState: Equatable {
 }
 ```
 
-- [ ] **Step 1: Write the failing test** — state math only (network stays untested here):
+- [x] **Step 1: Write the failing test** — state math only (network stays untested here):
 
 ```swift
 func testShareButtonDisabledWhenTourInvalid() {
@@ -1359,9 +1359,9 @@ func testInteractivePayloadPhotoCountMatchesExportedMeta() {
 
 (`testBuildPayload` passes `tourPhotoMeta` through to `buildPayload`.)
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
-- [ ] **Step 3: Extend `share()`**
+- [x] **Step 3: Extend `share()`**
 
 ```swift
 func share() async {
@@ -1424,7 +1424,7 @@ func share() async {
 
 Photo/audio ordering invariants (worker contract): audio URLs are already payload-ordered by `TourBuilder`; `tourPhotos` order defines both `payload.photos` and the PUT sequence 1..N — never reorder between the two.
 
-- [ ] **Step 4: Progress + partial UI in WalkShareView**
+- [x] **Step 4: Progress + partial UI in WalkShareView**
 
 Where the view switches on `shareState`, add:
 - `.preparingPhotos(let done, let total)`: spinner with `Text("Preparing photos… \(done)/\(total)")`.
@@ -1435,12 +1435,12 @@ Where the view switches on `shareState`, add:
 - **No abandoning a live upload:** hide the toolbar Cancel and set `.interactiveDismissDisabled(true)` while `shareState` is `.preparingPhotos`, `.uploading`, or `.uploadingMedia` — the POST already created a live page; the sheet closes only from a terminal state.
 - **Repair on re-entry:** in `init`, when a cached share exists and `ShareService.failedMedia(for:)` is non-empty, restore `.partial(url:failedCount:)` instead of `.success`, so the "Carry the missing files" affordance survives leaving the screen. `retryFailedMedia()` filters the current audio URLs/re-exported photos to the failed `(kind, n)` list, calls `ShareService.uploadSpecific`, then updates the cache via `cacheFailedMedia` with whatever still failed.
 
-- [ ] **Step 5: Run all new unit tests + build**
+- [x] **Step 5: Run all new unit tests + build**
 
 Run: `xcodebuild test ... -only-testing:UnitTests/SharePayloadTourTests -only-testing:UnitTests/TourBuilderTests -only-testing:UnitTests/RouteTrimmerTests -only-testing:UnitTests/TourPhotoExporterTests -only-testing:UnitTests/WalkShareInteractiveTests`
 Expected: PASS.
 
-- [ ] **Step 6: Commit** — `feat(share): interactive share flow — POST, sequential media, progress, partial results`
+- [x] **Step 6: Commit** — `feat(share): interactive share flow — POST, sequential media, progress, partial results`
 
 ---
 
@@ -1449,12 +1449,12 @@ Expected: PASS.
 **Files:**
 - Modify: only what the checklist shakes out.
 
-- [ ] **Step 1: Full unit test suite** — `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` → all green.
-- [ ] **Step 2: Full-repo SwiftLint** (per project memory: pre-commit only checks staged files) — `swiftlint --strict` clean, especially `type_body_length` on `WalkShareView` and `WalkShareViewModel`.
-- [ ] **Step 3: Simulator end-to-end against production worker** — demo-mode walk with recordings → Interactive on → share → watch progress → open the returned URL in Safari: story page renders, voices play at their places (macOS Safari on the shared URL is acceptable here; the phone hardware pass is deferred by decision 2026-08-11).
-- [ ] **Step 3.5: Privacy manifest** — this is the first flow moving recorded voice off the device: add an audio-data entry to `Pilgrim/PrivacyInfo.xcprivacy` `NSPrivacyCollectedDataTypes` (`NSPrivacyCollectedDataTypeAudioData`; not linked to identity, not used for tracking, purpose: app functionality), and update the App Store Connect App Privacy questionnaire to match before release.
-- [ ] **Step 4: Privacy sanity** — confirm the payload omits transcriptions (`tour.recordings[].transcription == nil` in a captured request body), classic (non-interactive) shares are byte-identical to before (no `tour`, no `pauses` keys), and trim actually shortens the route in the page.
-- [ ] **Step 5: Commit any fixes; update `docs/superpowers/plans/2026-08-11-walk-with-me-tour-ios.md` statuses; remove plan file only when shipped.**
+- [x] **Step 1: Full unit test suite** — `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` → all green.
+- [x] **Step 2: Full-repo SwiftLint** (per project memory: pre-commit only checks staged files) — `swiftlint --strict` clean, especially `type_body_length` on `WalkShareView` and `WalkShareViewModel`.
+- [x] **Step 3: Simulator end-to-end against production worker** — demo-mode walk with recordings → Interactive on → share → watch progress → open the returned URL in Safari: story page renders, voices play at their places (macOS Safari on the shared URL is acceptable here; the phone hardware pass is deferred by decision 2026-08-11).
+- [x] **Step 3.5: Privacy manifest** — this is the first flow moving recorded voice off the device: add an audio-data entry to `Pilgrim/PrivacyInfo.xcprivacy` `NSPrivacyCollectedDataTypes` (`NSPrivacyCollectedDataTypeAudioData`; not linked to identity, not used for tracking, purpose: app functionality), and update the App Store Connect App Privacy questionnaire to match before release.
+- [x] **Step 4: Privacy sanity** — confirm the payload omits transcriptions (`tour.recordings[].transcription == nil` in a captured request body), classic (non-interactive) shares are byte-identical to before (no `tour`, no `pauses` keys), and trim actually shortens the route in the page.
+- [x] **Step 5: Commit any fixes; update `docs/superpowers/plans/2026-08-11-walk-with-me-tour-ios.md` statuses; remove plan file only when shipped.**
 
 ---
 
