@@ -163,11 +163,7 @@ struct WalkShareView: View {
     // MARK: - Route Preview
 
     private var routePreview: some View {
-        let points = viewModel.walk.routeData
-        return RouteShapeView(routeData: points)
-            .frame(height: 200)
-            .background(Color.parchmentSecondary)
-            .cornerRadius(Constants.UI.CornerRadius.normal)
+        ShareRouteThumbnail(routeData: viewModel.walk.routeData)
     }
 
     // MARK: - Stat Toggles
@@ -316,10 +312,7 @@ struct WalkShareView: View {
     // MARK: - Helpers
 
     private func sectionLabel(_ text: String) -> some View {
-        Text(text.uppercased())
-            .font(Constants.Typography.micro)
-            .foregroundColor(.fog)
-            .tracking(1.5)
+        ShareSectionLabel(text: text)
     }
 
     private func openPreview(url: String) {

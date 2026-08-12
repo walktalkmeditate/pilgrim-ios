@@ -20,8 +20,10 @@ extension WalkShareViewModel {
             // .preparingPhotos and applyPreparingPhotosProgress's guard would
             // reject every tick.
             shareState = .preparingPhotos(completed: 0, total: exportList.count)
-            tourPhotos = await TourPhotoExporter.export(exportList) { [weak self] done, total in
-                Task { @MainActor in self?.applyPreparingPhotosProgress(completed: done, total: total) }
+            tourPhotos = await ShareService.withBackgroundAssertion(named: "pilgrim.share.photo-export") {
+                await TourPhotoExporter.export(exportList) { [weak self] done, total in
+                    Task { @MainActor in self?.applyPreparingPhotosProgress(completed: done, total: total) }
+                }
             }
         } else {
             tourPhotos = []
@@ -38,15 +40,16 @@ extension WalkShareViewModel {
             let result = try await ShareService.share(payload: payload)
             if let uuid = walk.uuid {
                 ShareService.cacheShare(result, walkID: uuid, expiryDays: selectedExpiry.rawValue, expiryOption: selectedExpiry.cacheKey)
-                // A fresh share must never inherit a previous share's failed-media
-                // record — this walk may have had a `.partial` share before.
-                ShareService.cacheFailedMedia([], walkID: uuid)
             }
 
             if interactiveEnabled {
                 let tourItems = TourBuilder.tourItems(candidates: tourCandidates, trimM: 0)
                 let audioFiles = tourItems.files
                 let audioRecordings = tourItems.tour.recordings
+                if let uuid = walk.uuid {
+                    // Pre-populate so a kill mid-upload restores a repairable .partial instead of a lying .success; PUTs are idempotent, over-repair is harmless.
+                    ShareService.cacheFailedMedia(Self.expectedFailureRecords(recordings: audioRecordings, photos: tourPhotos), walkID: uuid)
+                }
                 // Prime the phase synchronously (no unstructured-Task hop to
                 // race) so the FIRST progress tick already finds shareState
                 // in .uploadingMedia — see applyMediaProgress.
@@ -68,6 +71,11 @@ extension WalkShareViewModel {
                     ? .success(url: result.url)
                     : .partial(url: result.url, failedCount: failures.count)
             } else {
+                if let uuid = walk.uuid {
+                    // A fresh share must never inherit a previous share's failed-media
+                    // record — this walk may have had a `.partial` share before.
+                    ShareService.cacheFailedMedia([], walkID: uuid)
+                }
                 shareState = .success(url: result.url)
             }
         } catch {
@@ -94,6 +102,28 @@ extension WalkShareViewModel {
             let photo = tourPhotos.indices.contains(failure.n - 1) ? tourPhotos[failure.n - 1] : nil
             return ShareService.FailedMediaItem(kind: failure.kind.rawValue, n: failure.n, audioStartTs: nil, photoLocalID: photo?.sourceLocalIdentifier, photoTs: photo?.meta.ts)
         }
+    }
+
+    /// The full "everything in this upload just failed" identity list, built
+    /// from the exact recordings/photos arrays about to be uploaded — the
+    /// same per-slot identity fields `failedMediaItem` computes for a real
+    /// failure, for every slot instead of just the failed ones. `share()`
+    /// writes this to the cache BEFORE `uploadAllMedia` runs (see the call
+    /// site) so a kill mid-upload leaves a repairable `.partial` record
+    /// instead of the stale all-clear that used to sit there. Not `private`:
+    /// unit-tested directly, same file-scoped-access reasoning as
+    /// `resolveRetryItems` below.
+    static func expectedFailureRecords(
+        recordings: [SharePayload.TourRecording],
+        photos: [TourPhoto]
+    ) -> [ShareService.FailedMediaItem] {
+        let audioItems = recordings.indices.map { index in
+            failedMediaItem(for: (kind: .audio, n: index + 1), audioRecordings: recordings, tourPhotos: photos)
+        }
+        let photoItems = photos.indices.map { index in
+            failedMediaItem(for: (kind: .photos, n: index + 1), audioRecordings: recordings, tourPhotos: photos)
+        }
+        return audioItems + photoItems
     }
 
     /// Rebuilds data sources for a previous share's failed items and
@@ -133,7 +163,9 @@ extension WalkShareViewModel {
         let photoCandidatesToReExport = pinnedPhotos.filter { failedPhotoIDs.contains($0.localIdentifier) }
         let currentPhotos: [TourPhoto] = photoCandidatesToReExport.isEmpty
             ? []
-            : await TourPhotoExporter.export(photoCandidatesToReExport) { _, _ in }
+            : await ShareService.withBackgroundAssertion(named: "pilgrim.share.photo-export") {
+                await TourPhotoExporter.export(photoCandidatesToReExport) { _, _ in }
+            }
 
         let (uploadable, remainingAfterResolve) = Self.resolveRetryItems(
             cached: failed,
@@ -172,13 +204,13 @@ extension WalkShareViewModel {
     /// directly unit-testable. Matches each cached failure to CURRENT data by
     /// stable identity, never by `n` alone: an index that's still "in bounds"
     /// after the underlying candidate set shifted (an export drop, an unpin)
-    /// can silently point at a DIFFERENT file than the one that failed.
-    /// Audio is index-checked THEN identity-verified at that same index
-    /// (recordings keep their relative order); photos are found by identity
-    /// search across the whole current set (their position isn't assumed to
-    /// be stable at all) and uploaded under the CACHED `n`, never their own
-    /// current position. Anything that doesn't verify is returned in
-    /// `remaining`, untouched, rather than uploaded to a guessed slot.
+    /// can silently point at a DIFFERENT file than the one that failed. Both
+    /// audio (by `startTs`) and photos (by `localIdentifier` + captured `ts`)
+    /// are found by identity search across the whole current set — neither
+    /// kind's position is assumed to be stable — and uploaded under the
+    /// CACHED `n`, never their own current position. Anything that doesn't
+    /// verify is returned in `remaining`, untouched, rather than uploaded to
+    /// a guessed slot.
     nonisolated static func resolveRetryItems(
         cached: [ShareService.FailedMediaItem],
         currentRecordings: [SharePayload.TourRecording],
@@ -195,10 +227,14 @@ extension WalkShareViewModel {
             }
             switch kind {
             case .audio:
-                let index = item.n - 1
-                guard currentRecordings.indices.contains(index),
-                      currentAudioFiles.indices.contains(index),
-                      currentRecordings[index].startTs == item.audioStartTs else {
+                // Identity search, not an index-locked lookup: startTs
+                // collisions are structurally impossible (recordings can't
+                // overlap within one truncated second), so a match on
+                // startTs alone is safe wherever it now sits — an excluded
+                // or reordered candidate can shift a recording OUT of its
+                // original slot without dropping it from the current set.
+                guard let index = currentRecordings.firstIndex(where: { $0.startTs == item.audioStartTs }),
+                      currentAudioFiles.indices.contains(index) else {
                     remaining.append(item)
                     continue
                 }

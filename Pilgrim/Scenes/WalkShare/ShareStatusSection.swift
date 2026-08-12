@@ -73,10 +73,7 @@ struct ShareStatusSection: View {
     }
 
     private var routePreview: some View {
-        RouteShapeView(routeData: viewModel.walk.routeData)
-            .frame(height: 200)
-            .background(Color.parchmentSecondary)
-            .cornerRadius(Constants.UI.CornerRadius.normal)
+        ShareRouteThumbnail(routeData: viewModel.walk.routeData)
     }
 
     /// Shared by `.uploading`, `.preparingPhotos`, and `.uploadingMedia` —
@@ -162,5 +159,21 @@ struct ShareStatusSection: View {
                 .cornerRadius(Constants.UI.CornerRadius.normal)
         }
         .disabled(!viewModel.canShare)
+    }
+}
+
+// MARK: - Route Thumbnail
+
+/// The small route-shape preview shown both while sharing (`WalkShareView`)
+/// and once shared (`ShareStatusSection`'s card) — same `RouteShapeView`,
+/// frame, background, and corner radius either way, so one source exists.
+struct ShareRouteThumbnail: View {
+    let routeData: [RouteDataSampleInterface]
+
+    var body: some View {
+        RouteShapeView(routeData: routeData)
+            .frame(height: 200)
+            .background(Color.parchmentSecondary)
+            .cornerRadius(Constants.UI.CornerRadius.normal)
     }
 }

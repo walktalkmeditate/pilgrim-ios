@@ -93,4 +93,70 @@ final class TourBuilderTests: XCTestCase {
         XCTAssertEqual(tour.recordings.count, 1)
         XCTAssertEqual(files.count, 1)
     }
+
+    // MARK: - candidates(for:)
+
+    func testCandidates_availableFileIncluded() throws {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        // Flat filename, deliberately outside Documents/recordings — the app
+        // host's OrphanRecordingSweep owns that directory and would race this file.
+        let relativePath = "tourbuilder-available-\(UUID().uuidString).m4a"
+        let fileURL = docs.appendingPathComponent(relativePath)
+        try TestAudioFile.writeSilentAudioFile(to: fileURL, duration: 0.2)
+        addTeardownBlock { try? FileManager.default.removeItem(at: fileURL) }
+
+        let recording = WalkDataFactory.makeVoiceRecording(fileRelativePath: relativePath)
+        let walk = WalkDataFactory.makeWalk(voiceRecordings: [recording])
+
+        let candidates = TourBuilder.candidates(for: walk)
+
+        let found = try XCTUnwrap(candidates.first)
+        XCTAssertEqual(candidates.count, 1)
+        XCTAssertNil(found.unavailableReason)
+        XCTAssertTrue(found.includeInShare)
+        let expectedSize = try XCTUnwrap(FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? Int)
+        XCTAssertEqual(found.sizeBytes, expectedSize)
+        XCTAssertEqual(found.fileURL, fileURL)
+    }
+
+    func testCandidates_missingFileMarkedAudioRemoved() {
+        let recording = WalkDataFactory.makeVoiceRecording(fileRelativePath: "tourbuilder-missing-\(UUID().uuidString).m4a")
+        let walk = WalkDataFactory.makeWalk(voiceRecordings: [recording])
+
+        let candidates = TourBuilder.candidates(for: walk)
+
+        XCTAssertEqual(candidates.count, 1, "a recording with no file on disk is still a candidate — just an unavailable one")
+        XCTAssertEqual(candidates.first?.unavailableReason, "audio removed")
+        XCTAssertEqual(candidates.first?.includeInShare, false)
+        XCTAssertNil(candidates.first?.fileURL)
+    }
+
+    func testCandidates_subSecondBlipExcluded() {
+        let start = DateFactory.makeDate(2024, 6, 15, 9, 5, 0)
+        let recording = WalkDataFactory.makeVoiceRecording(startDate: start, endDate: start.addingTimeInterval(0.4))
+        let walk = WalkDataFactory.makeWalk(voiceRecordings: [recording])
+
+        let candidates = TourBuilder.candidates(for: walk)
+
+        XCTAssertTrue(candidates.isEmpty, "a recording whose start/end truncate to the same Int second must not appear as a candidate at all — not even an unavailable one")
+    }
+
+    func testCandidates_sortedByStartDate() {
+        let early = WalkDataFactory.makeVoiceRecording(
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            endDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 30)
+        )
+        let late = WalkDataFactory.makeVoiceRecording(
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 10, 0),
+            endDate: DateFactory.makeDate(2024, 6, 15, 9, 10, 30)
+        )
+        // Walk stores them out of chronological order.
+        let walk = WalkDataFactory.makeWalk(voiceRecordings: [late, early])
+
+        let candidates = TourBuilder.candidates(for: walk)
+
+        XCTAssertEqual(candidates.map(\.startTs), candidates.map(\.startTs).sorted(), "candidates must come back sorted by start date regardless of storage order")
+        XCTAssertEqual(candidates.first?.startTs, Int(early.startDate.timeIntervalSince1970))
+        XCTAssertEqual(candidates.last?.startTs, Int(late.startDate.timeIntervalSince1970))
+    }
 }

@@ -8,7 +8,11 @@ final class TourPhotoExporterTests: XCTestCase {
         return renderer.image { ctx in
             for x in stride(from: 0 as CGFloat, to: side, by: 8) {
                 for y in stride(from: 0 as CGFloat, to: side, by: 8) {
-                    UIColor(hue: .random(in: 0...1), saturation: 0.8, brightness: 0.9, alpha: 1).setFill()
+                    // Deterministic but still fully uncorrelated block-to-block —
+                    // a fixed formula, not `.random`, so the test can't flake
+                    // between runs while still defeating JPEG's neighbor prediction.
+                    let hue = CGFloat((Int(x) * 31 + Int(y) * 17) % 100) / 100.0
+                    UIColor(hue: hue, saturation: 0.8, brightness: 0.9, alpha: 1).setFill()
                     ctx.fill(CGRect(x: x, y: y, width: 8, height: 8))
                 }
             }

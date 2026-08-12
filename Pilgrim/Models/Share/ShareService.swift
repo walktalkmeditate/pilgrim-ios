@@ -262,8 +262,11 @@ extension ShareService {
     /// background time) and the normal completion path both race to end
     /// the same assertion, and the lock ensures only the first of them
     /// actually calls endBackgroundTask — calling it twice is documented
-    /// Apple misuse.
-    private static func withBackgroundAssertion<T: Sendable>(
+    /// Apple misuse. Not `private`: `WalkShareViewModel+ShareOrchestration.swift`
+    /// wraps `TourPhotoExporter.export` in the same assertion — Swift's
+    /// `private` is file-scoped, so staying cross-file-callable means at
+    /// most internal access (the default).
+    static func withBackgroundAssertion<T: Sendable>(
         named name: String,
         _ body: () async -> T
     ) async -> T {

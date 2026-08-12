@@ -9,10 +9,7 @@ struct InteractiveShareSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-            Text("Walk with me".uppercased())
-                .font(Constants.Typography.micro)
-                .foregroundColor(.fog)
-                .tracking(1.5)
+            ShareSectionLabel(text: "Walk with me")
 
             Toggle(isOn: $viewModel.interactiveEnabled.animation()) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -88,6 +85,23 @@ struct InteractiveShareSection: View {
     }
 }
 
+// MARK: - Share Section Label
+
+/// The uppercased, tracked micro-label used above every WalkShare section
+/// ("Walk with me", "Share these details", "Reflection", "This walk lives
+/// for"). Single source for that exact chain — `WalkShareView.sectionLabel`
+/// forwards to this too, so the two files can't drift apart style-wise.
+struct ShareSectionLabel: View {
+    let text: String
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(Constants.Typography.micro)
+            .foregroundColor(.fog)
+            .tracking(1.5)
+    }
+}
+
 // MARK: - Tour Recording Row
 
 private struct TourRecordingRow: View {
@@ -146,6 +160,7 @@ private struct TourRecordingRow: View {
                         .foregroundColor(.fog)
                 }
             }
+            .accessibilityElement(children: .combine)
 
             Spacer()
 

@@ -241,23 +241,18 @@ final class WalkShareViewModel: ObservableObject {
         tourCandidates[i].kindOverride = flipped == tourCandidates[i].autoKind ? nil : flipped
     }
 
-    /// Task 8's `share()` must filter `pinnedPhotos` to this same window before
-    /// exporting hi-res bytes — otherwise the export, the declared photo
-    /// metadata, and the trimmed route would each tell a different story about
-    /// which photos belong to the shared page.
+    /// Task 8's `share()` must filter `pinnedPhotos` to this same window before exporting hi-res
+    /// bytes — otherwise the export, the declared photo metadata, and the trimmed route would each tell a different story.
     func interactiveKeptWindow() -> ClosedRange<Int>? {
         computeInteractiveRoute().keptWindow
     }
 
     // Called from WalkShareViewModel+ShareOrchestration.swift's `share()`.
     func geocodeEndpoints() async -> (start: String?, end: String?) {
-        let routeData = walk.routeData
-        guard let first = routeData.first, let last = routeData.last else {
-            return (nil, nil)
-        }
+        guard let anchors = geocodeAnchorPoints() else { return (nil, nil) }
 
-        let startLoc = CLLocation(latitude: first.latitude, longitude: first.longitude)
-        let endLoc = CLLocation(latitude: last.latitude, longitude: last.longitude)
+        let startLoc = CLLocation(latitude: anchors.start.lat, longitude: anchors.start.lon)
+        let endLoc = CLLocation(latitude: anchors.end.lat, longitude: anchors.end.lon)
 
         async let startName = geocodeSingle(geocoder: CLGeocoder(), location: startLoc)
         async let endName = geocodeSingle(geocoder: CLGeocoder(), location: endLoc)
@@ -265,6 +260,17 @@ final class WalkShareViewModel: ObservableObject {
         let (s, e) = await (startName, endName)
         if s != nil && e != nil && s == e { return (s, nil) }
         return (s, e)
+    }
+
+    /// The coordinates `geocodeEndpoints()` reverse-geocodes: the shipped, post-trim route when interactive, the walk's raw route ends otherwise.
+    func geocodeAnchorPoints() -> (start: SharePayload.RoutePoint, end: SharePayload.RoutePoint)? {
+        if interactiveEnabled {
+            let route = computeInteractiveRoute().route
+            guard let first = route.first, let last = route.last else { return nil }
+            return (first, last)
+        }
+        guard let first = walk.routeData.first, let last = walk.routeData.last else { return nil }
+        return (routePoint(first), routePoint(last))
     }
 
     /// Loads a pinned photo as a low-res base64 JPEG for the share
@@ -451,35 +457,29 @@ final class WalkShareViewModel: ObservableObject {
     /// two different arrays — the same divergence class Task 3 closed for
     /// `RouteTrimmer.canTrim`/`.trim` themselves.
     private func downsampledRoutePoints() -> [SharePayload.RoutePoint] {
-        let routePoints = walk.routeData.map { sample in
-            SharePayload.RoutePoint(
-                lat: sample.latitude,
-                lon: sample.longitude,
-                alt: sample.altitude,
-                ts: Int(sample.timestamp.timeIntervalSince1970)
-            )
-        }
-        return RouteDownsampler.downsample(routePoints)
+        RouteDownsampler.downsample(walk.routeData.map(routePoint))
     }
 
-    /// Single source of truth for the trimmed route: `buildPayload` and
-    /// `interactiveKeptWindow()` must never compute this independently, or the
-    /// payload's route and the window used to filter waypoints/photos against
-    /// it could drift apart.
+    /// The `RouteDataSampleInterface` → `SharePayload.RoutePoint` field mapping shared by `downsampledRoutePoints()` and `geocodeAnchorPoints()`'s classic branch.
+    private func routePoint(_ sample: RouteDataSampleInterface) -> SharePayload.RoutePoint {
+        SharePayload.RoutePoint(lat: sample.latitude, lon: sample.longitude, alt: sample.altitude, ts: Int(sample.timestamp.timeIntervalSince1970))
+    }
+
+    /// Single source of truth for the trimmed route: `buildPayload` and `interactiveKeptWindow()`
+    /// must never compute this independently, or the payload's route and the filter window could drift apart.
     private func computeInteractiveRoute() -> (route: [SharePayload.RoutePoint], trimM: Int, keptWindow: ClosedRange<Int>?) {
         let downsampled = downsampledRoutePoints()
+        guard interactiveEnabled && trimEnabled else { return (downsampled, 0, nil) }
 
-        let trimM = interactiveEnabled && trimEnabled ? Self.trimMeters : 0
-        let finalRoute = interactiveEnabled && trimM > 0
-            ? RouteTrimmer.trim(downsampled, meters: Double(trimM))
-            : downsampled
-        // Trim's promise covers everything with a coordinate: waypoints and photo
-        // metadata whose timestamps fall outside the kept route window are excluded
-        // too — a doorstep photo must not pin the doorstep trim just hid.
-        let keptWindow: ClosedRange<Int>? = (interactiveEnabled && trimM > 0 && finalRoute.count >= 2)
-            ? finalRoute.first!.ts...finalRoute.last!.ts
+        // Report the trim by OUTCOME, not intent: RouteTrimmer silently no-ops on a route too short to trim, so trimM/keptWindow must reflect what actually happened — never claim a 150m trim while shipping the full, untrimmed route.
+        let trimmed = RouteTrimmer.trim(downsampled, meters: Double(Self.trimMeters))
+        let didTrim = trimmed.count < downsampled.count
+        let trimM = didTrim ? Self.trimMeters : 0
+        // Trim's promise covers everything with a coordinate: waypoints and photo metadata outside the kept route window are excluded too — a doorstep photo must not pin the doorstep trim just hid.
+        let keptWindow: ClosedRange<Int>? = (didTrim && trimmed.count >= 2)
+            ? trimmed.first!.ts...trimmed.last!.ts
             : nil
-        return (finalRoute, trimM, keptWindow)
+        return (trimmed, trimM, keptWindow)
     }
 
     private func turningDayCode() -> String? {
