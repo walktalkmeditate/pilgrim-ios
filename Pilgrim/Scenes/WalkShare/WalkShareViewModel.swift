@@ -19,10 +19,7 @@ final class WalkShareViewModel: ObservableObject {
     var waypointCount: Int { walk.waypoints.count }
     var hasWaypoints: Bool { waypointCount > 0 }
 
-    /// Injected rather than read straight off `PermissionManager.standard`
-    /// (defaults to the real check): the OS permission prompt can't be driven
-    /// from a unit test, so `prepareInteractive()`'s auto-enable-once branch
-    /// needs a seam a test can force true or false deterministically.
+    /// Injected rather than read straight off `PermissionManager.standard` (defaults to the real check): the OS permission prompt can't be driven from a unit test, so `prepareInteractive()`'s auto-enable-once branch needs a seam a test can force true or false deterministically.
     private let isPhotosGranted: () -> Bool
 
     var pinnedPhotoCount: Int { pinnedPhotos.count }
@@ -61,10 +58,7 @@ final class WalkShareViewModel: ObservableObject {
         return parts.isEmpty ? "no recordings included" : parts.joined(separator: " · ")
     }
 
-    /// Judges trim against the same points `computeInteractiveRoute()` would
-    /// actually hand `RouteTrimmer.trim` — both read `downsampledRoutePoints()`
-    /// so a route long enough to trim can never disagree with a route the UI
-    /// was told could be trimmed.
+    /// Judges trim against the same points `computeInteractiveRoute()` would actually hand `RouteTrimmer.trim` — both read `downsampledRoutePoints()` so a route long enough to trim can never disagree with a route the UI was told could be trimmed.
     var canTrimRoute: Bool {
         RouteTrimmer.canTrim(downsampledRoutePoints(), meters: Double(Self.trimMeters))
     }
@@ -77,6 +71,10 @@ final class WalkShareViewModel: ObservableObject {
     @Published var shareState: ShareState = .idle
     /// Set when `retryFailedMedia()` can't re-identify any cached failure against current data — `.partial` still holds, but `ShareStatusSection` swaps the retry button for an explanation. Reset at the top of both `share()` and `retryFailedMedia()`. Not `private(set)`: both live in the orchestration extension file, and Swift's private access is file-scoped, not type-scoped — same reason `shareState` above is unrestricted.
     @Published var repairUnavailable = false
+    /// Owns the in-flight `share()`/`completeShare()` attempt — nil whenever nothing is running, so `beginShare()` can guard a double-tap and `cancelShare()` has something to cancel. Not `@Published` (nothing renders off it directly) and not `private`, same file-scoped-access reasoning as `shareState` above.
+    var shareTask: Task<Void, Never>?
+    /// Photos already exported when `.photosDropped` paused the share for consent — "Share without them" resumes with these, "Don't share yet" discards them. Same access reasoning as `shareTask`.
+    var pendingTourPhotos: [TourPhoto] = []
     private var cachedExpiryDate: Date?
 
     enum ExpiryOption: Int, CaseIterable {
@@ -112,6 +110,7 @@ final class WalkShareViewModel: ObservableObject {
     enum ShareState: Equatable {
         case idle
         case preparingPhotos(completed: Int, total: Int) // hi-res export (pre-POST)
+        case photosDropped(prepared: Int, dropped: Int)  // export done short; pre-POST consent pause
         case uploading                                   // POST phase
         case uploadingMedia(completed: Int, total: Int)  // PUT phase
         case success(url: String)

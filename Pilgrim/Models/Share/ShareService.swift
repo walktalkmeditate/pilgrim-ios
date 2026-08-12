@@ -150,7 +150,10 @@ extension ShareService {
         request.setValue(kind == .audio ? "audio/mp4" : "image/jpeg", forHTTPHeaderField: "Content-Type")
         request.setValue("\(contentLength)", forHTTPHeaderField: "Content-Length")
         request.setValue(deviceToken(), forHTTPHeaderField: "X-Device-Token")
-        request.timeoutInterval = 120
+        // Idle timeout — resets on bytes moving, so slow uploads survive;
+        // stalls fail fast so the repair path picks them up instead of
+        // burning background time on a connection that's already dead.
+        request.timeoutInterval = 30
         return request
     }
 
@@ -178,6 +181,15 @@ extension ShareService {
             // Photos first: enrich's keepsake render waits (bounded) on the
             // LAST photo; audio has a graceful fallback on the page.
             for (index, data) in photos.enumerated() {
+                // Don't start a PUT the OS is about to kill mid-flight — the
+                // repair record turns the untried tail into a Carry-the-
+                // missing-files offer instead of a truncated upload.
+                if await backgroundTimeExhausted() {
+                    for remaining in index..<photos.count { failures.append((.photos, remaining + 1)) }
+                    completed = total
+                    report()
+                    break
+                }
                 let ok = await putWithRetry(shareID: shareID, kind: .photos, n: index + 1) { data }
                 if !ok { failures.append((.photos, index + 1)) }
                 completed += 1
@@ -185,6 +197,12 @@ extension ShareService {
             }
 
             for (index, fileURL) in audioFiles.enumerated() {
+                if await backgroundTimeExhausted() {
+                    for remaining in index..<audioFiles.count { failures.append((.audio, remaining + 1)) }
+                    completed = total
+                    report()
+                    break
+                }
                 let ok = await putWithRetry(shareID: shareID, kind: .audio, n: index + 1) {
                     try Data(contentsOf: fileURL)
                 }
@@ -210,11 +228,29 @@ extension ShareService {
             var failures: [(kind: MediaKind, n: Int)] = []
             progress(MediaProgress(completed: 0, total: items.count))
             for (i, item) in items.enumerated() {
+                if await backgroundTimeExhausted() {
+                    for remaining in i..<items.count { failures.append((items[remaining].kind, items[remaining].n)) }
+                    progress(MediaProgress(completed: items.count, total: items.count))
+                    break
+                }
                 let ok = await putWithRetry(shareID: shareID, kind: item.kind, n: item.n, body: item.data)
                 if !ok { failures.append((item.kind, item.n)) }
                 progress(MediaProgress(completed: i + 1, total: items.count))
             }
             return failures
+        }
+    }
+
+    /// True once the OS is about to suspend the app mid-background-task: a
+    /// PUT started now could be killed with the connection half-open, which
+    /// the worker would just see as a dropped upload — better to never start
+    /// it and let the repair record ("Carry the missing files") offer it
+    /// once Pilgrim is foreground again. 35s leaves headroom for the retry
+    /// window inside `putWithRetry` (one 800ms backoff) plus the request
+    /// itself to at least fail cleanly instead of being torn down mid-PUT.
+    private static func backgroundTimeExhausted() async -> Bool {
+        await MainActor.run {
+            UIApplication.shared.applicationState == .background && UIApplication.shared.backgroundTimeRemaining < 35
         }
     }
 

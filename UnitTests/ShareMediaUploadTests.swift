@@ -10,6 +10,7 @@ final class ShareMediaUploadTests: XCTestCase {
         XCTAssertEqual(req.value(forHTTPHeaderField: "Content-Type"), "audio/mp4")
         XCTAssertEqual(req.value(forHTTPHeaderField: "Content-Length"), "12345")
         XCTAssertNotNil(req.value(forHTTPHeaderField: "X-Device-Token"))
+        XCTAssertEqual(req.timeoutInterval, 30, "an idle timeout, not a whole-upload one — it resets on bytes moving")
     }
 
     func testPhotoRequestUsesJpegContentType() {

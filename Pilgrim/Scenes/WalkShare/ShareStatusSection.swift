@@ -14,7 +14,7 @@ struct ShareStatusSection: View {
         switch viewModel.shareState {
         case .idle:
             primaryButton("Share Walk") {
-                Task { await viewModel.share() }
+                viewModel.beginShare()
             }
 
         case .uploading:
@@ -23,8 +23,14 @@ struct ShareStatusSection: View {
         case .preparingPhotos(let done, let total):
             progressRow("Preparing photos… \(done)/\(total)")
 
+        case .photosDropped(let prepared, let dropped):
+            droppedPhotosPrompt(prepared: prepared, dropped: dropped)
+
         case .uploadingMedia(let completed, let total):
-            progressRow("Carrying your walk… \(completed)/\(total)")
+            progressRow(
+                "Carrying your walk… \(completed)/\(total)",
+                subtitle: "keep Pilgrim open while your walk uploads"
+            )
 
         case .success(let url):
             sharedCard(url: url) { EmptyView() }
@@ -66,7 +72,7 @@ struct ShareStatusSection: View {
                     .multilineTextAlignment(.center)
 
                 primaryButton("Try Again") {
-                    Task { await viewModel.share() }
+                    viewModel.beginShare()
                 }
             }
         }
@@ -77,19 +83,57 @@ struct ShareStatusSection: View {
     }
 
     /// Shared by `.uploading`, `.preparingPhotos`, and `.uploadingMedia` —
-    /// same spinner-row chrome, different label.
-    private func progressRow(_ text: String, font: Font = Constants.Typography.caption) -> some View {
-        HStack(spacing: Constants.UI.Padding.small) {
-            SwiftUI.ProgressView()
-                .tint(.parchment)
-            Text(text)
-                .font(font)
-                .foregroundColor(.parchment)
+    /// same spinner-row chrome, different label. `subtitle` adds a second,
+    /// de-emphasized line below the spinner row (only `.uploadingMedia`
+    /// uses it today, for the "keep Pilgrim open" reminder).
+    private func progressRow(_ text: String, subtitle: String? = nil, font: Font = Constants.Typography.caption) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: Constants.UI.Padding.small) {
+                SwiftUI.ProgressView()
+                    .tint(.parchment)
+                Text(text)
+                    .font(font)
+                    .foregroundColor(.parchment)
+            }
+            if let subtitle {
+                Text(subtitle)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .background(Color.stone.opacity(0.6))
         .cornerRadius(Constants.UI.CornerRadius.normal)
+    }
+
+    /// `.photosDropped`'s pre-POST consent pause: some requested photos
+    /// didn't export (iCloud-only assets that never downloaded, deletions
+    /// mid-export), so the walker chooses whether to proceed without them
+    /// or hold off — nothing has POSTed yet, so both choices are still free.
+    private func droppedPhotosPrompt(prepared: Int, dropped: Int) -> some View {
+        VStack(spacing: Constants.UI.Padding.small) {
+            Text("\(dropped) of \(prepared + dropped) photo\(dropped == 1 ? "" : "s") couldn't be prepared — they may still be waiting in iCloud.")
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
+                .multilineTextAlignment(.center)
+
+            primaryButton("Share without them") {
+                viewModel.continueShareWithoutDroppedPhotos()
+            }
+
+            Button {
+                viewModel.cancelDroppedPhotoShare()
+            } label: {
+                Text("Don't share yet")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     /// The "page is live" card shared by `.success` and `.partial` — the

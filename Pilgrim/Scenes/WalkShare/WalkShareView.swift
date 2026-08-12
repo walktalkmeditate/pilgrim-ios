@@ -23,13 +23,27 @@ struct WalkShareView: View {
 
     private var isShared: Bool { viewModel.isShared }
 
-    /// The POST already created a live page and, once media starts landing,
-    /// partial progress is recorded server-side — the sheet must not be
-    /// abandonable mid-flight. Gates both the toolbar Cancel and
-    /// `.interactiveDismissDisabled` below.
+    /// Mid-edit desyncs (toggles, journal, expiry) must stay impossible for
+    /// the whole in-flight span — including the pre-POST photo-export phase
+    /// and the dropped-photo consent pause, neither of which has anything
+    /// server-side yet but both of which are mid-attempt. Gates the form
+    /// `Group.disabled` below. Narrower than this: `isDismissLocked`.
     private var isShareInFlight: Bool {
         switch viewModel.shareState {
-        case .preparingPhotos, .uploading, .uploadingMedia: return true
+        case .preparingPhotos, .photosDropped, .uploading, .uploadingMedia: return true
+        default: return false
+        }
+    }
+
+    /// Only `.uploading` (the POST has landed a live page) and
+    /// `.uploadingMedia` (PUTs are streaming) have put anything server-side
+    /// that abandoning the sheet would leave stranded — `.preparingPhotos`
+    /// is a local, cancellable export and `.photosDropped` is a pre-POST
+    /// consent pause, so neither locks the toolbar Cancel or interactive
+    /// dismiss the way `isShareInFlight` locks the form.
+    private var isDismissLocked: Bool {
+        switch viewModel.shareState {
+        case .uploading, .uploadingMedia: return true
         default: return false
         }
     }
@@ -82,14 +96,17 @@ struct WalkShareView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
-                    if !isShared && !isShareInFlight {
-                        Button("Cancel") { dismiss() }
-                            .foregroundColor(.stone)
+                    if !isShared && !isDismissLocked {
+                        Button("Cancel") {
+                            viewModel.cancelShare()
+                            dismiss()
+                        }
+                        .foregroundColor(.stone)
                     }
                 }
             }
         }
-        .interactiveDismissDisabled(isShareInFlight)
+        .interactiveDismissDisabled(isDismissLocked)
         // Reveal the podcast card after the ritual modal dismisses, not at
         // the moment of share success. The previous 800ms-after-success
         // trigger collided with the ritual's own reveal — the card animated
@@ -150,6 +167,11 @@ struct WalkShareView: View {
             revealTask = nil
             podcastRevealTask?.cancel()
             podcastRevealTask = nil
+            // Swipe-to-dismiss during .preparingPhotos never runs the
+            // toolbar Cancel button's action — without this, a sheet closed
+            // that way would keep exporting photos and POSTing in the
+            // background with no UI left to show it.
+            viewModel.cancelShare()
             // Guard against iOS versions / scene configs where onDisappear
             // fires on the parent while the cover is still presented (e.g.,
             // app backgrounded with modal open). Clearing the loader mid-

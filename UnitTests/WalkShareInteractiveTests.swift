@@ -487,4 +487,14 @@ final class WalkShareInteractiveTests: XCTestCase {
         XCTAssertEqual(records[2].photoLocalID, "photo-1")
         XCTAssertEqual(records[2].photoTs, 999)
     }
+
+    // MARK: - Fix #11: dropped-photo consent moment
+    // (testPhotosDroppedCountsAsInFlightForFormFreeze omitted: `isShareInFlight` is `private` on `WalkShareView`, not VM-exposed — nothing here to assert against.)
+
+    func testCancelDroppedPhotoShareReturnsToIdle() {
+        let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
+        vm.shareState = .photosDropped(prepared: 2, dropped: 1)
+        vm.cancelDroppedPhotoShare()
+        XCTAssertEqual(vm.shareState, .idle)
+    }
 }

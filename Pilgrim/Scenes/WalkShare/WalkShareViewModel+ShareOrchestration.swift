@@ -6,14 +6,32 @@ import Foundation
 /// `ActiveWalkViewModel+Seek.swift`).
 extension WalkShareViewModel {
 
+    func beginShare() {
+        guard shareTask == nil else { return }
+        shareTask = Task { [weak self] in
+            await self?.share()
+            self?.shareTask = nil
+        }
+    }
+
+    /// Safe to call any time: a no-op once nothing is running, and a no-op
+    /// in EFFECT once the POST has landed — `share()` only honors
+    /// cancellation at the one checkpoint before anything exists
+    /// server-side.
+    func cancelShare() {
+        shareTask?.cancel()
+    }
+
     func share() async {
         guard canShare else { return }
         repairUnavailable = false
         shareState = .uploading
 
         let tourPhotos: [TourPhoto]
+        let exportCount: Int
         if interactiveEnabled, includePhotos, hasPinnedPhotos {
             let exportList = interactivePhotoExportList()
+            exportCount = exportList.count
             // Prime synchronously, same reason as .uploadingMedia below — the
             // first progress tick only fires after the first photo finishes
             // loading, so without this the phase would never actually become
@@ -27,8 +45,55 @@ extension WalkShareViewModel {
             }
         } else {
             tourPhotos = []
+            exportCount = 0
         }
 
+        // Nothing exists server-side yet — cancellation is clean up to the POST.
+        if Task.isCancelled {
+            shareState = .idle
+            return
+        }
+
+        // Fewer photos exported than requested (iCloud-only assets that
+        // never downloaded, deletions mid-export) — pause for the walker's
+        // consent before anything POSTs, rather than silently shipping a
+        // page short of photos it promised.
+        let dropped = exportCount - tourPhotos.count
+        if dropped > 0 {
+            pendingTourPhotos = tourPhotos
+            shareState = .photosDropped(prepared: tourPhotos.count, dropped: dropped)
+            return
+        }
+
+        await completeShare(tourPhotos: tourPhotos)
+    }
+
+    /// "Share without them": resumes past the dropped-photo pause with
+    /// whatever exported successfully. Goes through `shareTask` — not a bare
+    /// `Task { }` — for the same reason `beginShare()` does: so a Cancel tap
+    /// during the resumed upload has something to cancel.
+    func continueShareWithoutDroppedPhotos() {
+        shareTask = Task { [weak self] in
+            guard let self else { return }
+            await self.completeShare(tourPhotos: self.pendingTourPhotos)
+            self.pendingTourPhotos = []
+            self.shareTask = nil
+        }
+    }
+
+    /// "Don't share yet": nothing exists server-side during `.photosDropped`,
+    /// so undoing it is just local state — no task to cancel, no cache to
+    /// unwind.
+    func cancelDroppedPhotoShare() {
+        pendingTourPhotos = []
+        shareState = .idle
+    }
+
+    /// The POST → media-PUT path shared by `share()`'s happy path and
+    /// `continueShareWithoutDroppedPhotos()` — everything from geocoding
+    /// onward, once the walker's photo set (full export, or "without them")
+    /// is final.
+    private func completeShare(tourPhotos: [TourPhoto]) async {
         let placeNames = await geocodeEndpoints()
         let payload = buildPayload(
             placeStart: placeNames.start,

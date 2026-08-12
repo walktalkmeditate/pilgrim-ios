@@ -41,6 +41,11 @@ enum TourPhotoExporter {
     static func export(_ candidates: [PhotoCandidate], progress: @escaping (Int, Int) -> Void) async -> [TourPhoto] {
         var out: [TourPhoto] = []
         for (i, candidate) in candidates.enumerated() {
+            // A cancelled share() must stop within ~one photo, not run the
+            // whole remaining list — loadOne itself isn't cancellation-aware
+            // (its own timeout/backstop bound it independently), so this is
+            // the only place that can act on it.
+            if Task.isCancelled { break }
             if let photo = await loadOne(candidate) { out.append(photo) }
             progress(i + 1, candidates.count)
         }
