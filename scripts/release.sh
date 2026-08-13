@@ -56,6 +56,40 @@ current_build_number() {
     grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= *\(.*\);/\1/' | tr -d '[:space:]'
 }
 
+# A bundled bootstrap only serves a fresh install that has not synced yet — the
+# offline first launch this app is actually used on. It goes stale the moment
+# someone publishes upstream without re-running the regen script, and nothing
+# reports it: the CDN is healthy, the app is healthy, and the copy in git is
+# simply older. The whisper bundle drifted a full version this way and sat
+# unnoticed for three months.
+#
+# Warn, never fail. A stale bundle ships a working app, and a release should not
+# depend on the CDN being reachable.
+check_bootstrap_freshness() {
+    local name="$1" file="$2" url="$3" refresh_cmd="$4"
+
+    if [ ! -f "$file" ]; then
+        warn "$name bootstrap not found at $file"
+        return
+    fi
+    if ! command -v jq &>/dev/null; then
+        warn "jq not installed, skipping $name bootstrap freshness check"
+        return
+    fi
+
+    local bundled live
+    bundled=$(jq -r '.version // empty' "$file" 2>/dev/null || true)
+    live=$(curl -fsS --max-time 10 "$url" 2>/dev/null | jq -r '.version // empty' 2>/dev/null || true)
+
+    if [ -z "$live" ]; then
+        warn "$name bootstrap: CDN unreachable, freshness unverified"
+    elif [ "$bundled" = "$live" ]; then
+        pass "$name bootstrap current (version $bundled)"
+    else
+        warn "$name bootstrap is stale — bundled $bundled, CDN $live. Run: scripts/release.sh $refresh_cmd"
+    fi
+}
+
 cmd_check() {
     step "Checking release readiness"
     local errors=0
@@ -90,6 +124,15 @@ cmd_check() {
         fail "Info.plist still references armv7"
     fi
     pass "Device capabilities OK (arm64)"
+
+    check_bootstrap_freshness "Whisper" \
+        "Pilgrim/Support Files/whispers-bootstrap.json" \
+        "https://cdn.pilgrimapp.org/audio/whisper/manifest.json" \
+        "bootstrap-whispers"
+    check_bootstrap_freshness "Route" \
+        "Pilgrim/Support Files/collective-routes-bootstrap.json" \
+        "https://cdn.pilgrimapp.org/collective/routes.json" \
+        "bootstrap-routes"
 
     step "Running SwiftLint"
     if command -v swiftlint &>/dev/null; then
