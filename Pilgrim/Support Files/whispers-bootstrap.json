@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "whispers": [
     {
       "id": "presence-1",
@@ -79,6 +79,14 @@
       "category": "wonder",
       "audioFileName": "whisper-wonder-3",
       "durationSec": 9,
+      "retiredAt": null
+    },
+    {
+      "id": "wonder-4",
+      "title": "Life must be in balance",
+      "category": "wonder",
+      "audioFileName": "whisper-wonder-4",
+      "durationSec": 17,
       "retiredAt": null
     },
     {
