@@ -24,7 +24,7 @@ enum TourBuilder {
     static let maxRecordings = 12
     static let maxFileBytes = 15 * 1024 * 1024
     static let maxTotalBytes = 60 * 1024 * 1024
-    static let maxTotalSeconds: Double = 2700
+    static let maxTotalSeconds: Double = 6480  // 108 minutes — the eternal cairn's number
 
     /// A deliberate recording is presumed to be a voice: only a transcription
     /// that reads as non-speech (too few words) files the recording as
@@ -89,7 +89,7 @@ enum TourBuilder {
         let (count, bytes, seconds) = totals(of: candidates)
         if count > maxRecordings { return "A walk page carries at most \(maxRecordings) recordings — leave some out." }
         if bytes > maxTotalBytes { return "Recordings total \(bytes / 1_048_576) MB — the page carries at most 60 MB." }
-        if seconds > maxTotalSeconds { return "Recordings total \(Int(seconds / 60)) minutes — the page carries at most 45." }
+        if seconds > maxTotalSeconds { return "Recordings total \(Int(seconds / 60)) minutes — the page carries at most \(Int(maxTotalSeconds / 60))." }
         return nil
     }
 
@@ -103,7 +103,7 @@ enum TourBuilder {
                 duration: c.duration,
                 kind: c.effectiveKind.rawValue,
                 // Transcripts never leave the device: the page renders none, and
-                // a 45-minute walk's transcripts would blow the 2MB POST budget.
+                // a 108-minute walk's transcripts would blow the 2MB POST budget.
                 // Deliberate — do not wire c.transcription through.
                 transcription: nil,
                 wpm: c.wpm,
