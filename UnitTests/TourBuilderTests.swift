@@ -74,8 +74,10 @@ final class TourBuilderTests: XCTestCase {
     func testValidation_totalBytesAndSecondsCaps() {
         let heavy = (0..<5).map { candidate(id: $0, bytes: 14_000_000) }   // 70MB
         XCTAssertNotNil(TourBuilder.validationError(for: heavy))
-        let long = (0..<3).map { candidate(id: $0, seconds: 1000) }        // 3000s
+        let long = (0..<7).map { candidate(id: $0, seconds: 1000) }        // 7000s > 6480
         XCTAssertNotNil(TourBuilder.validationError(for: long))
+        let contemplative = (0..<6).map { candidate(id: $0, seconds: 1000) } // 6000s fits in 108 min
+        XCTAssertNil(TourBuilder.validationError(for: contemplative))
     }
 
     func testValidation_excludedRecordingsDoNotCount() {
