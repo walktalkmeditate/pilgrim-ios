@@ -64,9 +64,11 @@ final class TourBuilderTests: XCTestCase {
             AudioAsset(id: "stream-1", type: .soundscape, name: "stream", displayName: "Stream",
                        durationSec: 300, r2Key: "soundscape/stream.m4a", fileSizeBytes: 1_000_000, usageTags: [])
         ])
+        // base/type/{id}.aac — the formula AudioDownloadManager fetches
+        // with; r2Key would double the audio/ prefix (caught live: 404).
         XCTAssertEqual(
             TourBuilder.soundscapeUrl(selectedId: "stream-1", manifest: manifest),
-            "https://cdn.pilgrimapp.org/audio/soundscape/stream.m4a"
+            "https://cdn.pilgrimapp.org/audio/soundscape/stream-1.aac"
         )
         XCTAssertNil(TourBuilder.soundscapeUrl(selectedId: nil, manifest: manifest),
                      "silence chosen stays silence")

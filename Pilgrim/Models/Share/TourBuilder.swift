@@ -93,13 +93,19 @@ enum TourBuilder {
         return nil
     }
 
-    /// Resolves the walker's chosen soundscape to its public CDN URL.
-    /// nil in = silence chosen = nil out; an id the manifest no longer
-    /// carries also resolves to nil rather than a dead link.
+    /// Resolves the walker's chosen soundscape to its public CDN URL,
+    /// using the same base/type/{id}.aac formula AudioDownloadManager
+    /// fetches with — NOT r2Key, whose bucket-relative path already
+    /// contains the audio/ prefix and would double it. nil in = silence
+    /// chosen = nil out; a retired id also resolves to nil, never a
+    /// dead link.
     static func soundscapeUrl(selectedId: String?, manifest: AudioManifest?) -> String? {
         guard let selectedId,
               let asset = manifest?.soundscapes.first(where: { $0.id == selectedId }) else { return nil }
-        return Config.Audio.r2BaseURL.appendingPathComponent(asset.r2Key).absoluteString
+        return Config.Audio.r2BaseURL
+            .appendingPathComponent(asset.type.rawValue)
+            .appendingPathComponent("\(asset.id).aac")
+            .absoluteString
     }
 
     static func tourItems(candidates: [TourRecordingCandidate], trimM: Int, soundscapeUrl: String? = nil) -> (tour: SharePayload.Tour, files: [URL]) {
