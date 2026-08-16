@@ -93,7 +93,16 @@ enum TourBuilder {
         return nil
     }
 
-    static func tourItems(candidates: [TourRecordingCandidate], trimM: Int) -> (tour: SharePayload.Tour, files: [URL]) {
+    /// Resolves the walker's chosen soundscape to its public CDN URL.
+    /// nil in = silence chosen = nil out; an id the manifest no longer
+    /// carries also resolves to nil rather than a dead link.
+    static func soundscapeUrl(selectedId: String?, manifest: AudioManifest?) -> String? {
+        guard let selectedId,
+              let asset = manifest?.soundscapes.first(where: { $0.id == selectedId }) else { return nil }
+        return Config.Audio.r2BaseURL.appendingPathComponent(asset.r2Key).absoluteString
+    }
+
+    static func tourItems(candidates: [TourRecordingCandidate], trimM: Int, soundscapeUrl: String? = nil) -> (tour: SharePayload.Tour, files: [URL]) {
         let included = candidates.filter { $0.includeInShare && $0.unavailableReason == nil && $0.fileURL != nil }
         let recordings = included.enumerated().map { index, c in
             SharePayload.TourRecording(
@@ -111,6 +120,6 @@ enum TourBuilder {
             )
         }
         let files = included.compactMap(\.fileURL)
-        return (SharePayload.Tour(recordings: recordings, trimM: trimM), files)
+        return (SharePayload.Tour(recordings: recordings, trimM: trimM, soundscapeUrl: soundscapeUrl), files)
     }
 }
