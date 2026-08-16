@@ -440,7 +440,14 @@ final class WalkShareViewModel: ObservableObject {
     }
 
     private func applyInteractiveTourAndPauses(to payload: inout SharePayload, trimM: Int) {
-        payload.tour = TourBuilder.tourItems(candidates: tourCandidates, trimM: trimM).tour
+        payload.tour = TourBuilder.tourItems(
+            candidates: tourCandidates,
+            trimM: trimM,
+            soundscapeUrl: TourBuilder.soundscapeUrl(
+                selectedId: UserPreferences.selectedSoundscapeId.value,
+                manifest: AudioManifestService.shared.manifest
+            )
+        ).tour
         // The worker validates TRUNCATED integers: filter after truncation or a
         // sub-second pause 400s the whole share.
         payload.pauses = Array(

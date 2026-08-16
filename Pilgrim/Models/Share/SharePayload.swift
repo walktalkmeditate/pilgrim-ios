@@ -89,10 +89,14 @@ struct SharePayload: Encodable {
     struct Tour: Encodable {
         let recordings: [TourRecording]
         let trimM: Int
+        /// The walker's own meditation soundscape (cdn URL). nil when the
+        /// walker sits in silence — the page then stays silent too.
+        let soundscapeUrl: String?
 
         enum CodingKeys: String, CodingKey {
             case recordings
             case trimM = "trim_m"
+            case soundscapeUrl = "soundscape_url"
         }
     }
 

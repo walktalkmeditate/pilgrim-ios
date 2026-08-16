@@ -34,11 +34,13 @@ final class SharePayloadTourTests: XCTestCase {
                 .init(n: 1, startTs: 1100, endTs: 1400, duration: 300, kind: "spoken", transcription: nil, wpm: 120, sizeBytes: 2_400_000),
                 .init(n: 2, startTs: 1450, endTs: 1500, duration: 50, kind: "ambient", transcription: nil, wpm: nil, sizeBytes: 800_000),
             ],
-            trimM: 150
+            trimM: 150,
+            soundscapeUrl: "https://cdn.pilgrimapp.org/audio/soundscape/stream.m4a"
         )
         let json = try encodeToJSON(minimalPayload(tour: tour))
         let tourJSON = try XCTUnwrap(json["tour"] as? [String: Any])
         XCTAssertEqual(tourJSON["trim_m"] as? Int, 150)
+        XCTAssertEqual(tourJSON["soundscape_url"] as? String, "https://cdn.pilgrimapp.org/audio/soundscape/stream.m4a")
         let recs = try XCTUnwrap(tourJSON["recordings"] as? [[String: Any]])
         XCTAssertEqual(recs.count, 2)
         XCTAssertEqual(recs[0]["n"] as? Int, 1)

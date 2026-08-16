@@ -59,6 +59,30 @@ final class TourBuilderTests: XCTestCase {
         XCTAssertEqual(files.map(\.lastPathComponent), ["0.m4a", "2.m4a"])
     }
 
+    func testSoundscapeUrl_resolvesThroughManifest() {
+        let manifest = AudioManifest(version: "1", assets: [
+            AudioAsset(id: "stream-1", type: .soundscape, name: "stream", displayName: "Stream",
+                       durationSec: 300, r2Key: "soundscape/stream.m4a", fileSizeBytes: 1_000_000, usageTags: [])
+        ])
+        XCTAssertEqual(
+            TourBuilder.soundscapeUrl(selectedId: "stream-1", manifest: manifest),
+            "https://cdn.pilgrimapp.org/audio/soundscape/stream.m4a"
+        )
+        XCTAssertNil(TourBuilder.soundscapeUrl(selectedId: nil, manifest: manifest),
+                     "silence chosen stays silence")
+        XCTAssertNil(TourBuilder.soundscapeUrl(selectedId: "retired-id", manifest: manifest),
+                     "a retired id must not become a dead link")
+        XCTAssertNil(TourBuilder.soundscapeUrl(selectedId: "stream-1", manifest: nil))
+    }
+
+    func testTourItems_carriesSoundscapeUrl() {
+        let (tour, _) = TourBuilder.tourItems(candidates: [candidate(id: 0)], trimM: 0,
+                                              soundscapeUrl: "https://cdn.pilgrimapp.org/audio/soundscape/stream.m4a")
+        XCTAssertEqual(tour.soundscapeUrl, "https://cdn.pilgrimapp.org/audio/soundscape/stream.m4a")
+        let (bare, _) = TourBuilder.tourItems(candidates: [candidate(id: 0)], trimM: 0)
+        XCTAssertNil(bare.soundscapeUrl)
+    }
+
     func testTourItems_stripsTranscription() {
         let withTranscript = TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: "some real speech", wpm: 120, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
         let (tour, _) = TourBuilder.tourItems(candidates: [withTranscript], trimM: 0)
