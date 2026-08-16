@@ -53,7 +53,10 @@ struct InteractiveShareSection: View {
                         .foregroundColor(.rust)
                 }
 
-                Toggle(isOn: $viewModel.trimEnabled) {
+                Toggle(isOn: Binding(
+                    get: { viewModel.trimEnabled && viewModel.canTrimRoute },
+                    set: { viewModel.trimEnabled = $0 }
+                )) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Trim start & end")
                             .font(Constants.Typography.body)
