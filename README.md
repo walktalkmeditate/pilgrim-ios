@@ -85,6 +85,12 @@ Moon phase, zodiac sign, and planetary hour appear in the walk context. A contem
 
 Share a walk as a goshuin seal image, a hand-painted etegami postcard, or an ephemeral HTML walk page (no login required). Shared pages render on Mapbox's outdoors style with terrain contours and trail markings. Optionally include waypoints and pinned photos — both off by default, per-share opt-in. The walk is yours to keep or share as you see fit.
 
+**Walk with me**
+
+Turn on *Interactive* when sharing and the page becomes a living walk: the camera glides your route across a real map under your walk's true sun and weather, your voice recordings play at the places you spoke them, photographs appear where you took them, and meditations become breathing pools with your own soundscape playing low underneath. Viewers can take the guided walk or replay it minute for minute — *as it happened* — with the walker's own clock. Whoever reaches the end may leave one anonymous stone on the walk's cairn, which grows through the same tiers as the cairns on the trail. Recordings and full-size photos upload only when you choose Interactive, transcripts never leave the device, and pages expire — taking everything with them.
+
+→ **[Walk one yourself](https://walk.pilgrimapp.org/9mYhRL7GWx)** — a real walk, shared from the app.
+
 **Walk with the collective**
 
 Opt-in anonymous counter that tracks total walks, distance, and meditation time across all pilgrims. Your Settings screen shows the collective progress mapped to real pilgrimage routes — from the Kumano Kodo to the Camino de Santiago. Sacred number milestones ring a temple bell. A streak flame tracks consecutive days someone, somewhere, has walked. The logo gently pulses when another pilgrim walked in the last hour.
