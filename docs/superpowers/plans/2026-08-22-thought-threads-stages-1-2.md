@@ -37,7 +37,8 @@
   - `TranscriptNLP.LemmaMention` — `{ lemma: String, surface: String, start: Int, length: Int }` (character offsets into the input string)
   - `TranscriptNLP.contentLemmaMentions(in text: String) -> [LemmaMention]` (nouns/verbs/adjectives only, lowercased, length > 2)
   - `TranscriptNLP.contentLemmas(in text: String) -> [String]`
-  - `TranscriptNLP.related(_ a: String, _ b: String, languageCode: String) -> Bool` (embedding cosine distance ≤ 0.85, or exact match; false when no embedding for the language)
+  - `TranscriptNLP.related(_ a: String, _ b: String, languageCode: String) -> Bool` (embedding cosine distance ≤ 0.95, or exact match; false when no embedding for the language; the loaded `NLEmbedding` is memoized per language)
+  - `TranscriptNLP.wordTokens(in text: String) -> [String]` / `TranscriptNLP.wordCount(in text: String) -> Int` — the ONE tokenizer every word count and density in this feature uses (MarkerAnalyzer, ThemeExtractor, TranscriptContextAnalyzer all call it; never re-implement the chain)
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -106,7 +107,7 @@ import NaturalLanguage
 /// device.
 enum TranscriptNLP {
 
-    static let relatedDistanceCeiling = 0.85
+    static let relatedDistanceCeiling = 0.95
 
     struct LemmaMention: Equatable {
         let lemma: String
@@ -155,11 +156,36 @@ enum TranscriptNLP {
         contentLemmaMentions(in: text).map(\.lemma)
     }
 
+    /// The single tokenizer for every word count and density in the feature
+    /// — a second implementation means diverging denominators.
+    static func wordTokens(in text: String) -> [String] {
+        text.lowercased()
+            .components(separatedBy: CharacterSet.letters.inverted)
+            .filter { !$0.isEmpty }
+    }
+
+    static func wordCount(in text: String) -> Int {
+        wordTokens(in: text).count
+    }
+
     static func related(_ a: String, _ b: String, languageCode: String) -> Bool {
         if a == b { return true }
-        guard let embedding = NLEmbedding.wordEmbedding(for: NLLanguage(rawValue: languageCode)),
+        guard let embedding = embedding(for: languageCode),
               embedding.contains(a), embedding.contains(b) else { return false }
         return embedding.distance(between: a, and: b, distanceType: .cosine) <= relatedDistanceCeiling
+    }
+
+    /// NLEmbedding loads are expensive and related() runs inside loops.
+    private static var embeddingCache: [String: NLEmbedding] = [:]
+    private static let embeddingLock = NSLock()
+
+    private static func embedding(for languageCode: String) -> NLEmbedding? {
+        embeddingLock.lock()
+        defer { embeddingLock.unlock() }
+        if let cached = embeddingCache[languageCode] { return cached }
+        let loaded = NLEmbedding.wordEmbedding(for: NLLanguage(rawValue: languageCode))
+        if let loaded { embeddingCache[languageCode] = loaded }
+        return loaded
     }
 }
 ```
@@ -169,6 +195,8 @@ Add both files to the project (app target / UnitTests target) in `project.pbxpro
 - [ ] **Step 4: Run tests to verify they pass**
 
 Same command. Expected: PASS (embedding test may skip on simulator — skip is acceptable, not failure).
+
+The 0.95 ceiling is calibrated against measured Apple embedding distances (river↔water 0.892, grief↔grieve 0.917 — real synonym pairs sit ABOVE 0.85, which would have shipped both embedding features inert; nearest unrelated pair mean↔move measured 1.051, so 0.95 keeps a margin). Values were measured on the macOS host framework: re-verify these anchor pairs on the iOS 18 simulator before committing, and keep `river↔deadline` asserted false as the drift canary.
 
 - [ ] **Step 5: Commit**
 
@@ -194,11 +222,22 @@ git commit -m "feat(threads): TranscriptNLP — language detection, content lemm
 ```swift
     // MARK: - Semantic upgrade (Thought Threads Stage 1)
 
-    func testIntentionEcho_lemmaVariantFires() {
+    func testIntentionEcho_lemmaVariantFires() throws {
+        try XCTSkipIf(NLEmbedding.wordEmbedding(for: .english) == nil,
+                      "word embeddings unavailable in this environment")
         let context = ActivityContext.make(
             recordings: [recording("I have been grieving all morning on this path")],
             startDate: start,
             intention: "sit with grief"
+        )
+        XCTAssertTrue(joined(context).contains("intention spoke of"))
+    }
+
+    func testIntentionEcho_sharedLemmaFires() {
+        let context = ActivityContext.make(
+            recordings: [recording("walking my worry out under the pines")],
+            startDate: start,
+            intention: "worry less"
         )
         XCTAssertTrue(joined(context).contains("intention spoke of"))
     }
@@ -220,7 +259,7 @@ git commit -m "feat(threads): TranscriptNLP — language detection, content lemm
     }
 ```
 
-Note for the "grieving"/"grief" pair: NLTagger lemmatizes "grieving"→"grieve" and "grief"→"grief" — different lemmas, so this echo exercises the embedding path. Guard it: add `try XCTSkipIf(NLEmbedding.wordEmbedding(for: .english) == nil, ...)` at the top of `testIntentionEcho_lemmaVariantFires` and make it `throws`. Add a second, non-skippable echo test where intention and speech share an inflection pair with the same lemma ("walking my worry out" / intention "worry less" → lemma "worry" matches exactly).
+The "grieving"/"grief" pair lemmatizes to different lemmas ("grieve" vs "grief"), so the first test exercises the embedding path and carries the skip guard; the second shares lemma "worry" exactly and never skips. The test file needs `import NaturalLanguage`.
 
 - [ ] **Step 2: Run to verify the new tests fail**
 
@@ -507,9 +546,7 @@ enum MarkerAnalyzer {
     /// return nil and the pipeline degrades to themes-only (spec principle 6).
     static func compute(text: String, languageCode: String?) -> MarkerPack? {
         guard languageCode == "en" else { return nil }
-        let words = text.lowercased()
-            .components(separatedBy: CharacterSet.letters.inverted)
-            .filter { !$0.isEmpty }
+        let words = TranscriptNLP.wordTokens(in: text)
 
         func count(in lexicon: Set<String>) -> Int {
             words.reduce(0) { $0 + (lexicon.contains($1) ? 1 : 0) }
@@ -636,19 +673,16 @@ enum ThemeExtractor {
     ]
 
     static func themes(in text: String, languageCode: String?) -> [Theme] {
-        let wordCount = text.lowercased()
-            .components(separatedBy: CharacterSet.letters.inverted)
-            .filter { !$0.isEmpty }
-            .count
+        let wordCount = TranscriptNLP.wordCount(in: text)
         guard wordCount >= minimumWords else { return [] }
 
-        let mentions = TranscriptNLP.contentLemmaMentions(in: text)
-            .filter { !walkingDomain.contains($0.lemma) }
-        var groups = Dictionary(grouping: mentions, by: \.lemma)
-
-        if let code = languageCode {
-            mergeRelatedLemmas(&groups, languageCode: code)
-        }
+        // Thread identity is exact-lemma in v1. Per-transcript synonym
+        // merging split cross-walk identity — a lemma folded into a
+        // neighbor in one walk read "first time" in the next, a false
+        // origin claim. Embedding clustering is re-evaluated at the field
+        // gate with a cross-walk-consistent design; languageCode is
+        // reserved for that. (`related()` still serves intention echo.)
+        let groups = Dictionary(grouping: mentions(in: text), by: \.lemma)
 
         return groups
             .filter { $0.value.count >= minimumMentions }
@@ -670,23 +704,9 @@ enum ThemeExtractor {
             .map { $0 }
     }
 
-    /// Deterministic near-synonym merge: lemma keys are scanned in sorted
-    /// order and a later key folds into an earlier related one, so the same
-    /// transcript always produces the same clusters.
-    private static func mergeRelatedLemmas(
-        _ groups: inout [String: [TranscriptNLP.LemmaMention]],
-        languageCode: String
-    ) {
-        let keys = groups.keys.sorted()
-        for (i, a) in keys.enumerated() {
-            guard groups[a] != nil else { continue }
-            for b in keys.dropFirst(i + 1) {
-                guard let absorbed = groups[b], groups[a] != nil,
-                      TranscriptNLP.related(a, b, languageCode: languageCode) else { continue }
-                groups[a]?.append(contentsOf: absorbed)
-                groups[b] = nil
-            }
-        }
+    private static func mentions(in text: String) -> [TranscriptNLP.LemmaMention] {
+        TranscriptNLP.contentLemmaMentions(in: text)
+            .filter { !walkingDomain.contains($0.lemma) }
     }
 }
 ```
@@ -712,7 +732,7 @@ git commit -m "feat(threads): theme extraction — lemma clusters with mention o
 - Consumes: `Theme` (Task 5), `MarkerPack` (Task 4), CryptoKit.
 - Produces (used by Tasks 7, 8, 9, 10):
   - `struct TranscriptContext: Codable, Equatable` — `{ schemaVersion: Int, recordingUUID: UUID, transcriptHash: String, languageCode: String?, wordCount: Int, themes: [Theme], markers: MarkerPack? }` with `static let currentSchemaVersion = 1`
-  - `final class TranscriptContextStore` — `static let shared`; `init(directory: URL)` for tests; `static func hash(of transcript: String) -> String`; `func save(_:)`; `func context(for recordingUUID: UUID, matching transcriptHash: String) -> TranscriptContext?`; `func loadAll() -> [TranscriptContext]`; `func delete(recordingUUIDs: [UUID])`; `func deleteAll()`; `func pruneOrphans(keeping valid: Set<UUID>)`
+  - `final class TranscriptContextStore` — `static let shared`; `init(directory: URL)` for tests; `static func hash(of transcript: String) -> String`; `func save(_:)`; `func context(for recordingUUID: UUID, matching transcriptHash: String) -> TranscriptContext?`; `func hasContext(for recordingUUID: UUID) -> Bool`; `func loadAll() -> [TranscriptContext]`; `func delete(recordingUUIDs: [UUID])`; `func deleteAll()`; `func pruneOrphans(keeping valid: Set<UUID>)`; `private(set) var changeCount: Int` (bumps on every mutation — the dossier builder's memo key). All file mutations run on a private serial queue, and deleted UUIDs are tombstoned in memory so a queued analysis finishing after a deletion cannot resurrect derived data (tombstones clear on relaunch — safe, because re-imported recordings re-analyze via the backfill reset in Task 7).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -779,6 +799,15 @@ final class TranscriptContextStoreTests: XCTestCase {
         XCTAssertTrue(store.loadAll().isEmpty)
     }
 
+    func testSaveAfterDelete_doesNotResurrect() {
+        let context = makeContext()
+        store.save(context)
+        store.delete(recordingUUIDs: [context.recordingUUID])
+        store.save(context)
+        XCTAssertTrue(store.loadAll().isEmpty,
+                      "a queued analysis landing after deletion must not resurrect derived data")
+    }
+
     func testPruneOrphans() {
         let keep = makeContext(), orphan = makeContext()
         store.save(keep); store.save(orphan)
@@ -836,6 +865,9 @@ final class TranscriptContextStore {
     )
 
     private let directory: URL
+    private let writeQueue = DispatchQueue(label: "org.walktalkmeditate.pilgrim.transcript-contexts")
+    private var tombstones: Set<UUID> = []
+    private(set) var changeCount = 0
 
     init(directory: URL) {
         self.directory = directory
@@ -849,9 +881,16 @@ final class TranscriptContextStore {
             .joined()
     }
 
+    /// Deleted UUIDs are tombstoned so a queued analysis finishing after a
+    /// deletion cannot resurrect derived data. Stale writes self-heal: any
+    /// consumer that finds a hash mismatch re-analyzes and persists.
     func save(_ context: TranscriptContext) {
-        guard let data = try? JSONEncoder().encode(context) else { return }
-        try? data.write(to: fileURL(for: context.recordingUUID), options: .atomic)
+        writeQueue.sync {
+            guard !tombstones.contains(context.recordingUUID),
+                  let data = try? JSONEncoder().encode(context) else { return }
+            try? data.write(to: fileURL(for: context.recordingUUID), options: .atomic)
+            changeCount += 1
+        }
     }
 
     func context(for recordingUUID: UUID, matching transcriptHash: String) -> TranscriptContext? {
@@ -861,31 +900,54 @@ final class TranscriptContextStore {
         return loaded
     }
 
+    func hasContext(for recordingUUID: UUID) -> Bool {
+        FileManager.default.fileExists(atPath: fileURL(for: recordingUUID).path)
+    }
+
     func loadAll() -> [TranscriptContext] {
-        let files = (try? FileManager.default.contentsOfDirectory(
-            at: directory, includingPropertiesForKeys: nil
-        )) ?? []
-        return files
-            .filter { $0.pathExtension == "json" }
+        contextFileURLs()
             .compactMap { try? JSONDecoder().decode(TranscriptContext.self, from: Data(contentsOf: $0)) }
             .sorted { $0.recordingUUID.uuidString < $1.recordingUUID.uuidString }
     }
 
     func delete(recordingUUIDs: [UUID]) {
-        for uuid in recordingUUIDs {
-            try? FileManager.default.removeItem(at: fileURL(for: uuid))
+        writeQueue.sync {
+            for uuid in recordingUUIDs {
+                tombstones.insert(uuid)
+                try? FileManager.default.removeItem(at: fileURL(for: uuid))
+            }
+            changeCount += 1
         }
     }
 
     func deleteAll() {
-        try? FileManager.default.removeItem(at: directory)
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        writeQueue.sync {
+            for url in contextFileURLs() {
+                UUID(uuidString: url.deletingPathExtension().lastPathComponent)
+                    .map { tombstones.insert($0) }
+            }
+            do {
+                try FileManager.default.removeItem(at: directory)
+            } catch {
+                print("[TranscriptContextStore] Failed to remove context directory: \(error)")
+            }
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            changeCount += 1
+        }
         excludeFromBackup()
     }
 
     func pruneOrphans(keeping valid: Set<UUID>) {
         let orphans = loadAll().map(\.recordingUUID).filter { !valid.contains($0) }
+        guard !orphans.isEmpty else { return }
         delete(recordingUUIDs: orphans)
+    }
+
+    private func contextFileURLs() -> [URL] {
+        ((try? FileManager.default.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil
+        )) ?? [])
+            .filter { $0.pathExtension == "json" }
     }
 
     private func load(recordingUUID: UUID) -> TranscriptContext? {
@@ -931,9 +993,9 @@ git commit -m "feat(threads): transcript context file store — hash-validated, 
 - Produces (used by Tasks 9, 10):
   - `TranscriptContextAnalyzer.analyze(recordingUUID: UUID, transcript: String, flaggedFragments: [String]) -> TranscriptContext`
   - `TranscriptContextAnalyzer.analyzeAndStore(recordingUUID: UUID, transcript: String, flaggedFragments: [String], store: TranscriptContextStore) -> TranscriptContext` (`store` defaults to `.shared`, `flaggedFragments` to `[]`)
-  - `TranscriptionOutput` gains `let flaggedFragments: [String]` (texts of segments with `noSpeechProb > 0.6` or `compressionRatio > 2.4` — the standard Whisper hallucination signals; adjust property access to WhisperKit 0.16's `TranscriptionSegment` field names when wiring the adapter)
-  - `ThreadsBackfill.runIfNeeded()` / `ThreadsBackfill.isComplete: Bool` (UserDefaults key `"threadsBackfillCompleted"`)
-  - `DataManager.transcribedRecordingsSnapshot() -> [(uuid: UUID, transcript: String)]`
+  - `TranscriptionOutput` gains `let flaggedFragments: [String]` — texts of segments with `compressionRatio > 2.4` or `noSpeechProb > 0.6`, each normalized through the same shared cleaning helper as the transcript (Step 5; raw segment text never matches the cleaned persisted transcript). Vendored WhisperKit 0.16 hardcodes `noSpeechProb` to 0 (upstream TODO, TextDecoder.swift:993), so compressionRatio is the effective signal today — keep the branch for a future WhisperKit.
+  - `ThreadsBackfill.runIfNeeded()` (`@MainActor`, single-flight, battery-gated) / `isComplete: Bool` / `reset()` (UserDefaults key `"threadsBackfillCompleted"`)
+  - `@MainActor DataManager.transcribedRecordingsSnapshot() -> [(uuid: UUID, transcript: String)]` (CoreStore fetches assert main-thread)
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -968,7 +1030,27 @@ final class TranscriptContextAnalyzerTests: XCTestCase {
         let context = TranscriptContextAnalyzer.analyze(
             recordingUUID: UUID(), transcript: text, flaggedFragments: [hallucination]
         )
-        XCTAssertFalse(context.themes.contains { $0.lemma == "watch" || $0.lemma == "thank" })
+        XCTAssertFalse(context.themes.contains { ["watch", "thank", "thanks"].contains($0.lemma) })
+    }
+
+    func testRepeatedFlaggedFragment_everyOccurrenceExcluded() {
+        let fragment = "thanks for watching"
+        let base = "A long quiet reflection about the garden and the fall and whether the move makes sense for both of us this year, spoken slowly. "
+        let text = base + fragment + ". " + fragment + ". " + fragment + "."
+        let context = TranscriptContextAnalyzer.analyze(
+            recordingUUID: UUID(), transcript: text, flaggedFragments: [fragment]
+        )
+        XCTAssertFalse(context.themes.contains { ["watch", "thank", "thanks"].contains($0.lemma) })
+    }
+
+    func testPartiallyFlaggedTheme_survives() {
+        let flagged = "the move the move the move"
+        let text = "Still circling the move today and what the move would cost us, more than twenty-five honest words about the whole question spoken here. " + flagged
+        let context = TranscriptContextAnalyzer.analyze(
+            recordingUUID: UUID(), transcript: text, flaggedFragments: [flagged]
+        )
+        XCTAssertTrue(context.themes.contains { $0.lemma == "move" },
+                      "a theme with at least one unflagged mention survives")
     }
 
     func testAnalyzeAndStore_persists() {
@@ -1022,9 +1104,7 @@ enum TranscriptContextAnalyzer {
             recordingUUID: recordingUUID,
             transcriptHash: TranscriptContextStore.hash(of: transcript),
             languageCode: language,
-            wordCount: analysisText
-                .components(separatedBy: CharacterSet.letters.inverted)
-                .filter { !$0.isEmpty }.count,
+            wordCount: TranscriptNLP.wordCount(in: transcript),
             themes: themes,
             markers: MarkerAnalyzer.compute(text: analysisText, languageCode: language)
         )
@@ -1046,12 +1126,19 @@ enum TranscriptContextAnalyzer {
         return context
     }
 
+    /// Every occurrence, not just the first — repeated hallucination is the
+    /// canonical Whisper failure shape.
     private static func characterRanges(of fragments: [String], in text: String) -> [Range<Int>] {
-        fragments.compactMap { fragment in
-            guard let range = text.range(of: fragment) else { return nil }
-            let start = text.distance(from: text.startIndex, to: range.lowerBound)
-            return start..<(start + text.distance(from: range.lowerBound, to: range.upperBound))
+        var ranges: [Range<Int>] = []
+        for fragment in fragments where !fragment.isEmpty {
+            var searchStart = text.startIndex
+            while let range = text.range(of: fragment, range: searchStart..<text.endIndex) {
+                let start = text.distance(from: text.startIndex, to: range.lowerBound)
+                ranges.append(start..<(start + text.distance(from: range.lowerBound, to: range.upperBound)))
+                searchStart = range.upperBound
+            }
         }
+        return ranges
     }
 }
 ```
@@ -1067,7 +1154,7 @@ git commit -m "feat(threads): analyzer — themes plus markers per recording, ha
 
 In `TranscriptionService.swift`:
 1. Extend `TranscriptionOutput` (line 7) with `let flaggedFragments: [String]`.
-2. In the `WhisperKit: TranscriptionEngine` adapter (line ~20), collect segment texts where `noSpeechProb > 0.6 || compressionRatio > 2.4` into `flaggedFragments` (WhisperKit 0.16 exposes these on its transcription segments; match the exact property names there). Every other construction site of `TranscriptionOutput` (including test doubles) passes `flaggedFragments: []`.
+2. In the `WhisperKit: TranscriptionEngine` adapter (line ~20), collect segment texts where `compressionRatio > 2.4 || noSpeechProb > 0.6` into `flaggedFragments` (match WhisperKit 0.16's `TranscriptionSegment` field names). **Normalize each fragment through the same cleaning as the transcript**: extract `cleanTranscription` (:427-437) into a shared static helper applied to both, so fragment text can actually be found inside the cleaned persisted transcript — raw segment text with leading spaces and artifacts never matches, which would silently no-op the entire gate. WhisperKit 0.16 hardcodes `noSpeechProb` to 0 (upstream TODO), so compressionRatio is the effective signal today; keep the branch. Every other construction site of `TranscriptionOutput` (including test doubles) passes `flaggedFragments: []`.
 3. Make `DataManager.updateVoiceRecordingTranscription` (DataManager.swift:569) the single analysis choke point — it is the one write path shared by batch transcription, single retranscribe, AND the manual transcript-edit UIs (`VoiceRecordingRow`, `RecordingsListView`), which is exactly what the spec's "recompute on edit" requires. Add a defaulted parameter and trigger analysis on success:
 
 ```swift
@@ -1075,23 +1162,44 @@ In `TranscriptionService.swift`:
         uuid: UUID,
         transcription: String,
         flaggedFragments: [String] = [],
-        // ...existing parameters/completion unchanged...
+        transcriptContextStore: TranscriptContextStore = .shared,
+        // ...existing dataStack/completion parameters unchanged...
     )
 ```
 
-In its success path:
+The success signal lives inside the shared `updateVoiceRecording` helper
+(DataManager.swift:602-628), whose `.success` case includes `found == false`
+(row deleted or replaced mid-batch — firing then would store psychological
+data for a recording the user just deleted). Wrap the completion this
+function already hands to the shared helper, matching that helper's actual
+closure shape:
 
 ```swift
-        Task.detached(priority: .utility) {
-            TranscriptContextAnalyzer.analyzeAndStore(
-                recordingUUID: uuid,
-                transcript: transcription,
-                flaggedFragments: flaggedFragments
-            )
+        updateVoiceRecording(uuid: uuid, dataStack: dataStack, mutate: {
+            $0._transcription.value = transcription
+        }) { success, found, error in
+            if success, found {
+                Task.detached(priority: .utility) {
+                    TranscriptContextAnalyzer.analyzeAndStore(
+                        recordingUUID: uuid,
+                        transcript: transcription,
+                        flaggedFragments: flaggedFragments,
+                        store: transcriptContextStore
+                    )
+                }
+            }
+            completion(success, found, error)
         }
 ```
 
-`TranscriptionService.persistTranscription` passes `output.flaggedFragments` through; the edit UIs compile unchanged via the default. The detached utility task keeps analysis off the transcription loop so `unloadModel()` at :317 is never delayed (spec: analyzer must not extend the WhisperKit memory window), and an in-place edit replaces the stale context file the moment it saves — no stale themes ever reach thread aggregation.
+The trigger stays local to this function — the shared helper also serves
+WPM/isEnhanced updates, which must never analyze. `TranscriptionService.persistTranscription`
+passes `output.flaggedFragments` through; the edit UIs compile unchanged via
+the defaults. The detached utility task keeps analysis off the transcription
+loop so `unloadModel()` at :317 is never delayed, and an in-place edit
+replaces the stale context file when it saves. Extend
+`UnitTests/VoiceRecordingPersistenceTests.swift` with an injected temp store
+asserting analysis persists on `found == true` and does not on `found == false`.
 
 - [ ] **Step 6: Implement the backfill**
 
@@ -1099,6 +1207,7 @@ In its success path:
 
 ```swift
 import Foundation
+import UIKit
 
 /// One-time pass over already-transcribed recordings when the feature first
 /// activates — origin claims ("first time", "where it began") are only true
@@ -1106,25 +1215,47 @@ import Foundation
 enum ThreadsBackfill {
 
     static let completedKey = "threadsBackfillCompleted"
+    private static var isRunning = false
 
     static var isComplete: Bool {
         UserDefaults.standard.bool(forKey: completedKey)
     }
 
+    /// Called from PilgrimPackageImporter's success path: imports bypass the
+    /// transcription choke point, so the flag resets and the next launch
+    /// sweeps the imported recordings (origin labels re-suppress meanwhile).
+    static func reset() {
+        UserDefaults.standard.set(false, forKey: completedKey)
+    }
+
+    /// Main-actor only: the CoreStore snapshot must be taken before
+    /// detaching — `dataStack.fetchAll` asserts main-thread. Single-flight,
+    /// and battery-gated like MainCoordinator.triggerAutoTranscription.
+    /// Fills MISSING contexts only: a hash-mismatched (edited) recording is
+    /// owned by the edit trigger, and overwriting it here would race a
+    /// newer analysis with this launch's stale snapshot.
+    @MainActor
     static func runIfNeeded(store: TranscriptContextStore = .shared) {
-        guard !isComplete else { return }
+        guard !isComplete, !isRunning else { return }
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        guard UIDevice.current.batteryLevel > 0.2
+            || UIDevice.current.batteryState == .charging
+            || UIDevice.current.batteryState == .full else { return }
+        isRunning = true
+
+        let items = DataManager.transcribedRecordingsSnapshot()
         Task.detached(priority: .utility) {
-            for item in DataManager.transcribedRecordingsSnapshot() {
-                let hash = TranscriptContextStore.hash(of: item.transcript)
-                if store.context(for: item.uuid, matching: hash) == nil {
-                    TranscriptContextAnalyzer.analyzeAndStore(
-                        recordingUUID: item.uuid,
-                        transcript: item.transcript,
-                        store: store
-                    )
-                }
+            for item in items where !store.hasContext(for: item.uuid) {
+                TranscriptContextAnalyzer.analyzeAndStore(
+                    recordingUUID: item.uuid,
+                    transcript: item.transcript,
+                    store: store
+                )
             }
-            UserDefaults.standard.set(true, forKey: completedKey)
+            await MainActor.run {
+                UserDefaults.standard.set(true, forKey: completedKey)
+                isRunning = false
+            }
         }
     }
 }
@@ -1135,6 +1266,8 @@ In `DataManager.swift`, next to `updateVoiceRecordingTranscription` (:569):
 ```swift
     /// Snapshot of every transcribed recording for the Threads backfill —
     /// UUIDs and text only, fetched once, no live objects escape the stack.
+    /// Main-actor only: `dataStack.fetchAll` asserts Thread.isMainThread.
+    @MainActor
     public static func transcribedRecordingsSnapshot() -> [(uuid: UUID, transcript: String)] {
         let recordings = (try? dataStack.fetchAll(From<VoiceRecording>())) ?? []
         return recordings.compactMap { recording in
@@ -1148,7 +1281,9 @@ In `DataManager.swift`, next to `updateVoiceRecordingTranscription` (:569):
 
 (Verify the exact attribute property names against `PilgrimV7.swift:233-241` — `_uuid` and `_transcription` per the entity definition.)
 
-In `MainCoordinatorView.swift`, add `ThreadsBackfill.runIfNeeded()` alongside the existing launch-time work (the same lifecycle point where `triggerAutoTranscription` support lives, e.g. the coordinator's `onAppear`/launch task).
+In `MainCoordinatorView.swift`, call `ThreadsBackfill.runIfNeeded()` from `MainCoordinator.init()` (MainCoordinatorView.swift:21-26, alongside `WalkSessionGuard.recoverIfNeeded` — the file has no `onAppear` launch task), guaranteeing main-actor invocation.
+
+One more wiring: `.pilgrim` import bypasses the choke point — `PilgrimPackageImporter` writes transcriptions via `persistVoiceRecordings` (DataManager.swift:378, reached from PilgrimPackageImporter.swift:252). Call `ThreadsBackfill.reset()` in the importer's success completion so the next launch's idempotent backfill sweeps the imported recordings; until it completes, origin labels correctly re-suppress.
 
 - [ ] **Step 7: Build the app target and run the full UnitTests suite.**
 
@@ -1168,12 +1303,86 @@ git commit -m "feat(threads): analysis rides transcription — quality-gated fra
 
 **Files:**
 - Modify: `Pilgrim/Models/Data/DataManager.swift:902-966` (`deleteObject`, `deleteAll`)
+- Test: `UnitTests/DataManagerThreadsDeletionTests.swift` (create)
 
 **Interfaces:**
-- Consumes: `TranscriptContextStore.shared.delete(recordingUUIDs:)` / `.deleteAll()` (Task 6).
-- Produces: deletion-triggered context-file removal; the spec's "deletion is the trigger, not luck" requirement.
+- Consumes: `TranscriptContextStore.delete(recordingUUIDs:)` / `.deleteAll()` (Task 6).
+- Produces: deletion-triggered context-file removal via `DataManager.transcriptContextStore` (a `static var` seam defaulting to `.shared`, swapped by tests); the spec's "deletion is the trigger, not luck" requirement.
 
-- [ ] **Step 1: Modify `deleteObject`** — the transaction already collects `filePaths` from `editable._voiceRecordings.value` (line 911); collect UUIDs the same way and return both:
+- [ ] **Step 1: Write the failing test**
+
+Mirror the CoreStore seeding pattern used in `UnitTests/VoiceRecordingPersistenceTests.swift` (walk + voice-recording rows against the test stack — reuse its seeding helper idiom):
+
+```swift
+import XCTest
+@testable import Pilgrim
+
+final class DataManagerThreadsDeletionTests: XCTestCase {
+
+    private var store: TranscriptContextStore!
+    private var directory: URL!
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ThreadsDeletionTests-\(UUID().uuidString)")
+        store = TranscriptContextStore(directory: directory)
+        DataManager.transcriptContextStore = store
+    }
+
+    override func tearDownWithError() throws {
+        DataManager.transcriptContextStore = .shared
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    private func context(for uuid: UUID) -> TranscriptContext {
+        TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion,
+            recordingUUID: uuid, transcriptHash: "h", languageCode: "en",
+            wordCount: 2, themes: [], markers: nil
+        )
+    }
+
+    func testDeleteWalk_removesItsRecordingContexts() throws {
+        let (walk, recordingUUID) = try seedWalkWithTranscribedRecording()
+        store.save(context(for: recordingUUID))
+
+        let deleted = expectation(description: "deleted")
+        DataManager.deleteObject(object: walk) { success, _ in
+            XCTAssertTrue(success)
+            deleted.fulfill()
+        }
+        wait(for: [deleted], timeout: 5)
+        XCTAssertFalse(store.hasContext(for: recordingUUID))
+    }
+
+    func testDeleteAll_removesEveryContextFile() throws {
+        let (_, recordingUUID) = try seedWalkWithTranscribedRecording()
+        store.save(context(for: recordingUUID))
+        store.save(context(for: UUID()))
+
+        let deleted = expectation(description: "deleted all")
+        DataManager.deleteAll { success, _ in
+            XCTAssertTrue(success)
+            deleted.fulfill()
+        }
+        wait(for: [deleted], timeout: 5)
+        XCTAssertTrue(store.loadAll().isEmpty)
+    }
+}
+```
+
+(`seedWalkWithTranscribedRecording()` mirrors the walk+recording seeding already used in `VoiceRecordingPersistenceTests.swift` — copy that file's helper shape.)
+
+- [ ] **Step 2: Run to verify failure** (`-only-testing:UnitTests/DataManagerThreadsDeletionTests`). Expected: FAIL — context files survive deletion.
+
+- [ ] **Step 3: Implement** — add the seam near the top of `DataManager`:
+
+```swift
+    /// Injection seam for tests; production always uses the shared store.
+    static var transcriptContextStore: TranscriptContextStore = .shared
+```
+
+Then modify `deleteObject` — the transaction already collects `filePaths` from `editable._voiceRecordings.value` (line 911); collect UUIDs the same way and return both:
 
 ```swift
         dataStack.perform(asynchronous: { (transaction) -> ([String], [UUID]) in
@@ -1192,7 +1401,7 @@ git commit -m "feat(threads): analysis rides transcription — quality-gated fra
             switch result {
             case .success(let (filePaths, recordingUUIDs)):
                 cleanupRecordingFiles(relativePaths: filePaths)
-                TranscriptContextStore.shared.delete(recordingUUIDs: recordingUUIDs)
+                transcriptContextStore.delete(recordingUUIDs: recordingUUIDs)
                 if let uuid = walkUUID {
                     UserPreferences.unmarkWalkArchived(uuid: uuid)
                 }
@@ -1203,18 +1412,20 @@ git commit -m "feat(threads): analysis rides transcription — quality-gated fra
         }
 ```
 
-- [ ] **Step 2: Modify `deleteAll`** — in the `.success` branch (line 956), after `cleanupRecordingFiles`:
+And `deleteAll` — in the `.success` branch (line 956), after `cleanupRecordingFiles`:
 
 ```swift
-                TranscriptContextStore.shared.deleteAll()
+                transcriptContextStore.deleteAll()
 ```
 
-- [ ] **Step 3: Build and run the full UnitTests suite** (same command as Task 7 Step 7). Expected: PASS — deletion behavior itself is covered by `TranscriptContextStoreTests`; this task's diff is glue whose correctness is the transaction-success placement (delete files only after the database transaction committed, matching the existing `cleanupRecordingFiles` discipline in `.claude/CLAUDE.md` Data Safety).
+Both calls sit in the transaction-success completion, preserving the Data Safety rule (never remove derived artifacts unless the database transaction committed — the same discipline as `cleanupRecordingFiles`).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Run the test — PASS** (then the full UnitTests suite, same command as Task 7 Step 7).
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add Pilgrim/Models/Data/DataManager.swift
+git add Pilgrim/Models/Data/DataManager.swift UnitTests/DataManagerThreadsDeletionTests.swift Pilgrim.xcodeproj/project.pbxproj
 git commit -m "feat(threads): deletion removes transcript contexts — single delete and Delete All Data"
 ```
 
@@ -1237,7 +1448,7 @@ git commit -m "feat(threads): deletion removes transcript contexts — single de
   - `ThreadStore.build(contexts: [TranscriptContext], walks: [UUID: (walkUUID: UUID, date: Date)]) -> [WalkThread]`
   - `ThreadStore.status(of: WalkThread, atWalk: UUID, backfillComplete: Bool) -> ThreadStatus?` (nil when the thread isn't in that walk, or when an origin claim would be made pre-backfill)
   - `ThreadStore.salienceDirection(of: WalkThread) -> SalienceDirection?` (nil below 3 appearances)
-  - `DataManager.voiceRecordingWalkIndex() -> [UUID: (walkUUID: UUID, date: Date)]` (recording UUID → owning walk)
+  - `@MainActor DataManager.voiceRecordingWalkIndex() -> [UUID: (walkUUID: UUID, date: Date)]` (recording UUID → owning walk; CoreStore fetches assert main-thread — callers fetch on the main actor and pass the index into off-main work)
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1322,7 +1533,7 @@ final class ThreadStoreTests: XCTestCase {
 
     func testSalienceDirection_fadingAndFloor() {
         let (threads, _) = fixture()
-        XCTAssertNotNil(ThreadStore.salienceDirection(of: threads[0]))
+        XCTAssertEqual(ThreadStore.salienceDirection(of: threads[0]), .fading)
         let (two, _) = { () -> ([WalkThread], [UUID]) in
             let r = [UUID(), UUID()]; let w = [UUID(), UUID()]
             let c = [self.context(r[0], lemma: "x", mentions: 3), self.context(r[1], lemma: "x", mentions: 3)]
@@ -1445,14 +1656,17 @@ In `DataManager.swift`, next to `transcribedRecordingsSnapshot()`:
 
 ```swift
     /// Recording UUID → owning walk, for thread aggregation. The walk
-    /// relationship property on PilgrimV7.VoiceRecording is used here —
-    /// verify its name at PilgrimV7.swift:233-241.
+    /// relationship on PilgrimV7.VoiceRecording is `_workout` — a frozen
+    /// SQL identifier ("workout", PilgrimV7.swift:244) from the OutRun era;
+    /// never rename the entity property to "fix" the name. Main-actor only:
+    /// `dataStack.fetchAll` asserts Thread.isMainThread.
+    @MainActor
     public static func voiceRecordingWalkIndex() -> [UUID: (walkUUID: UUID, date: Date)] {
         let recordings = (try? dataStack.fetchAll(From<VoiceRecording>())) ?? []
         var index: [UUID: (walkUUID: UUID, date: Date)] = [:]
         for recording in recordings {
             guard let uuid = recording._uuid.value,
-                  let walk = recording._walk.value,
+                  let walk = recording._workout.value,
                   let walkUUID = walk._uuid.value,
                   let date = walk._startDate.value else { continue }
             index[uuid] = (walkUUID, date)
@@ -1489,7 +1703,8 @@ git commit -m "feat(threads): ThreadStore — full-history first-time, walk-anch
   - `UserPreferences.threadsAfterWalks` — `UserPreference.Required<Bool>(key: "threadsAfterWalks", defaultValue: true)`
   - `ThreadsDossierFormatter.dossier(currentRecordingContexts:allContexts:threads:currentWalkUUID:backfillComplete:) -> String?`
   - `ThreadsDossierFormatter.personalBaseline(from: [TranscriptContext]) -> (absolutist: Double, firstPerson: Double)?` (nil below 5 recordings of ≥100 words)
-  - `ThreadsDossierBuilder.build(walkUUID: UUID, recordings: [RecordingContext]) -> String?` (nil when toggle off, store empty, or nothing matches)
+  - `ThreadsDossierBuilder.build(walkUUID: UUID, recordings: [RecordingContext], walkIndex: [UUID: (walkUUID: UUID, date: Date)], store: TranscriptContextStore = .shared) -> String?` (nil when toggle off or no recordings; callable off-main — the caller fetches the walk index on the main actor; results memoized per `store.changeCount`)
+  - `RecordingContext` gains `var recordingUUID: UUID? = nil` (defaulted last property — every existing construction site compiles unchanged)
   - `ActivityContext.threadsDossier: String?` (default nil — existing call sites unaffected)
 
 - [ ] **Step 1: Write the failing tests**
@@ -1542,6 +1757,76 @@ final class ThreadsDossierTests: XCTestCase {
         let today = context(words: 200, absolutist: 6)  // 3%
         let line = ThreadsDossierFormatter.markerLine(for: today, baseline: baseline)
         XCTAssertTrue(line.contains("your usual"))
+    }
+
+    func testBuilder_toggleOffReturnsNil() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = false
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierBuilderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let recording = RecordingContext(
+            text: String(repeating: "the move keeps returning to me today ", count: 6),
+            timestamp: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            startCoordinate: nil, endCoordinate: nil, wordsPerMinute: nil,
+            recordingUUID: UUID()
+        )
+        XCTAssertNil(ThreadsDossierBuilder.build(
+            walkUUID: UUID(), recordings: [recording], walkIndex: [:],
+            store: TranscriptContextStore(directory: directory)
+        ), "off means off everywhere — no dossier, no analysis surfaced")
+    }
+
+    func testBuilder_toggleOnBuildsAndPersistsFallback() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierBuilderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+        let uuid = UUID()
+        let recording = RecordingContext(
+            text: String(repeating: "the move keeps returning to me today ", count: 6),
+            timestamp: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            startCoordinate: nil, endCoordinate: nil, wordsPerMinute: nil,
+            recordingUUID: uuid
+        )
+        let dossier = ThreadsDossierBuilder.build(
+            walkUUID: UUID(), recordings: [recording], walkIndex: [:], store: store
+        )
+        XCTAssertNotNil(dossier, "an empty store still yields marker profiles — the spec's degradation")
+        XCTAssertTrue(dossier!.contains("Thought threads"))
+        XCTAssertTrue(store.hasContext(for: uuid), "fallback analysis persists under the real UUID and self-heals")
+    }
+
+    func testDossierFormatter_originGatedOnBackfill() {
+        let current = context(words: 200, absolutist: 2)
+        let walkA = UUID(), walkB = UUID()
+        let thread = WalkThread(
+            lemma: "move", displayTerm: "move",
+            appearances: [
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: walkA,
+                                 date: DateFactory.makeDate(2024, 6, 1, 9, 0, 0),
+                                 mentionCount: 3, salience: 0.02),
+                ThreadAppearance(recordingUUID: current.recordingUUID, walkUUID: walkB,
+                                 date: DateFactory.makeDate(2024, 6, 10, 9, 0, 0),
+                                 mentionCount: 3, salience: 0.02)
+            ]
+        )
+        let gated = ThreadsDossierFormatter.dossier(
+            currentRecordingContexts: [current], allContexts: [current],
+            threads: [thread], currentWalkUUID: walkB, backfillComplete: false
+        )
+        XCTAssertFalse(gated!.contains("first spoken"), "origin claims suppressed pre-backfill")
+        let open = ThreadsDossierFormatter.dossier(
+            currentRecordingContexts: [current], allContexts: [current],
+            threads: [thread], currentWalkUUID: walkB, backfillComplete: true
+        )
+        XCTAssertTrue(open!.contains("first spoken"))
     }
 
     func testAssembler_omitsDossierWhenNil() {
@@ -1665,43 +1950,52 @@ enum ThreadsDossierFormatter {
 ```swift
 import Foundation
 
-/// Single insertion point for PromptListView: everything the dossier needs
-/// (store, walk index, backfill state, the toggle) is resolved here so the
-/// view stays ignorant of the Threads module's internals.
+/// Single insertion point for PromptListView. Callable off the main actor:
+/// the CoreStore walk index is fetched by the caller on the main actor and
+/// passed in; everything else is file I/O and pure computation. Results are
+/// memoized against the store's changeCount so reopening the prompt screen
+/// doesn't re-read the whole context directory.
 enum ThreadsDossierBuilder {
+
+    private static var memo: (changeCount: Int, walkUUID: UUID, dossier: String?)?
 
     static func build(
         walkUUID: UUID,
         recordings: [RecordingContext],
+        walkIndex: [UUID: (walkUUID: UUID, date: Date)],
         store: TranscriptContextStore = .shared
     ) -> String? {
         guard UserPreferences.threadsAfterWalks.value, !recordings.isEmpty else { return nil }
+        if let memo, memo.changeCount == store.changeCount, memo.walkUUID == walkUUID {
+            return memo.dossier
+        }
 
-        let all = store.loadAll()
-        guard !all.isEmpty else { return nil }
+        store.pruneOrphans(keeping: Set(walkIndex.keys))
 
-        let byHash = Dictionary(grouping: all, by: \.transcriptHash)
         let current = recordings.compactMap { recording -> TranscriptContext? in
-            if let stored = byHash[TranscriptContextStore.hash(of: recording.text)]?.first {
-                return stored
-            }
-            // Spec's lazy-backfill fallback: an unanalyzed recording still
-            // earns a marker profile for this prompt, ephemerally — never
-            // stored (no real UUID here), never in thread aggregation.
-            return TranscriptContextAnalyzer.analyze(
-                recordingUUID: UUID(), transcript: recording.text, flaggedFragments: []
+            guard let uuid = recording.recordingUUID else { return nil }
+            let hash = TranscriptContextStore.hash(of: recording.text)
+            if let stored = store.context(for: uuid, matching: hash) { return stored }
+            // Lazy-backfill fallback, persisted under the real UUID so the
+            // store self-heals instead of re-analyzing on every open. Also
+            // covers edited transcripts whose stored hash no longer matches.
+            return TranscriptContextAnalyzer.analyzeAndStore(
+                recordingUUID: uuid, transcript: recording.text, store: store
             )
         }
         guard !current.isEmpty else { return nil }
 
-        let threads = ThreadStore.build(contexts: all, walks: DataManager.voiceRecordingWalkIndex())
-        return ThreadsDossierFormatter.dossier(
+        let all = store.loadAll()
+        let threads = ThreadStore.build(contexts: all, walks: walkIndex)
+        let dossier = ThreadsDossierFormatter.dossier(
             currentRecordingContexts: current,
             allContexts: all,
             threads: threads,
             currentWalkUUID: walkUUID,
             backfillComplete: ThreadsBackfill.isComplete
         )
+        memo = (store.changeCount, walkUUID, dossier)
+        return dossier
     }
 }
 ```
@@ -1725,7 +2019,16 @@ enum ThreadsDossierBuilder {
                lines.append("The thought-thread marker profiles are descriptive on-device linguistic signals, not assessments — interpret them gently, never produce clinical or diagnostic language, and never treat a single walk's numbers as meaningful on their own.")
            }
    ```
-4. `PromptListView.buildActivityContext` (:117-182): where the walk's UUID and `recordings` array are in hand, compute `let threadsDossier = walk.uuid.flatMap { ThreadsDossierBuilder.build(walkUUID: $0, recordings: recordings) }` and pass it into the `ActivityContext` construction.
+4. `RecordingContext` (Pilgrim/Models/Prompt/PromptContextTypes.swift): append `var recordingUUID: UUID? = nil` as the last property — defaulted, so every existing construction site (including test helpers) compiles unchanged. In `PromptListView.buildActivityContext` (:117-182) populate it from the recording's uuid already unwrapped there (PromptListView.swift:122 — the UUID is in hand; never match by content hash). Then, inside generatePrompts' existing background Task, fetch the walk index on the main actor and build off it:
+
+```swift
+        let walkIndex = await MainActor.run { DataManager.voiceRecordingWalkIndex() }
+        let threadsDossier = walk.uuid.flatMap {
+            ThreadsDossierBuilder.build(walkUUID: $0, recordings: recordings, walkIndex: walkIndex)
+        }
+```
+
+and pass `threadsDossier` into the `ActivityContext` construction.
 5. `VoiceCard.swift`: add `@State private var threadsAfterWalks = UserPreferences.threadsAfterWalks.value` (line 8) and, below the Auto-transcribe toggle (line 48):
    ```swift
                settingToggle(

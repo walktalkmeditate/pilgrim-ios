@@ -66,8 +66,11 @@ Meta social integration in Settings or release notes).
 Recurring content-word clusters across a walk's recordings and across recent
 walks. Built from `NLTagger` lemmatization (grief/grieving/grieved unify) +
 part-of-speech filtering (nouns, verbs, adjectives — replaces the current
-hardcoded English stopword list), clustered with `NLEmbedding` word similarity
-so near-synonyms join a thread. Deterministic: same transcripts, same themes,
+hardcoded English stopword list). Thread identity is exact-lemma in v1 —
+per-transcript `NLEmbedding` synonym clustering would split cross-walk
+identity (a lemma merged away in one walk reads "first time" in the next),
+so embedding-based merging is re-evaluated at the field gate with a
+cross-walk-consistent design. Deterministic: same transcripts, same themes,
 with tie-breaks matching the existing `recurringWord` convention. A
 walking-domain suppression list (path, trail, hill, uphill, and similar
 narration vocabulary) keeps the activity's own words from dominating every
