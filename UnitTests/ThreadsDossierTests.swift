@@ -106,15 +106,82 @@ final class ThreadsDossierTests: XCTestCase {
             ]
         )
         let gated = ThreadsDossierFormatter.dossier(
-            currentRecordingContexts: [current], allContexts: [current],
+            currentRecordings: [(current, nil)], allContexts: [current],
             threads: [thread], currentWalkUUID: walkB, backfillComplete: false
         )
         XCTAssertFalse(gated!.contains("first spoken"), "origin claims suppressed pre-backfill")
         let open = ThreadsDossierFormatter.dossier(
-            currentRecordingContexts: [current], allContexts: [current],
+            currentRecordings: [(current, nil)], allContexts: [current],
             threads: [thread], currentWalkUUID: walkB, backfillComplete: true
         )
         XCTAssertTrue(open!.contains("first spoken"))
+    }
+
+    func testAbsenceLines_gatedOnBackfillAndTwoDistinctWalks() {
+        let current = context(words: 200, absolutist: 2)
+        let walkA = UUID(), walkB = UUID(), walkC = UUID()
+        let quietDate1 = DateFactory.makeDate(2024, 6, 1, 9, 0, 0)
+        let quietDate2 = DateFactory.makeDate(2024, 6, 5, 9, 0, 0)
+        let currentDate = DateFactory.makeDate(2024, 6, 10, 9, 0, 0)
+        let quietThread = WalkThread(
+            lemma: "father", displayTerm: "father",
+            appearances: [
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: walkA, date: quietDate1,
+                                 mentionCount: 2, salience: 0.02),
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: walkB, date: quietDate2,
+                                 mentionCount: 2, salience: 0.02)
+            ]
+        )
+        let activeThread = WalkThread(
+            lemma: "move", displayTerm: "move",
+            appearances: [
+                ThreadAppearance(recordingUUID: current.recordingUUID, walkUUID: walkC, date: currentDate,
+                                 mentionCount: 3, salience: 0.03)
+            ]
+        )
+
+        let gated = ThreadsDossierFormatter.dossier(
+            currentRecordings: [(current, nil)], allContexts: [current],
+            threads: [quietThread, activeThread], currentWalkUUID: walkC, backfillComplete: false
+        )
+        XCTAssertFalse(gated!.contains("Notably quiet"), "absence claims suppressed pre-backfill")
+
+        let open = ThreadsDossierFormatter.dossier(
+            currentRecordings: [(current, nil)], allContexts: [current],
+            threads: [quietThread, activeThread], currentWalkUUID: walkC, backfillComplete: true
+        )
+        XCTAssertTrue(open!.contains("**Quiet this walk:**"))
+        XCTAssertTrue(open!.contains("Notably quiet this walk: 'father' — present in 2 of the walker's recent walks."))
+    }
+
+    func testPaceCorrelation_slowerThemeGroupNotedOnActiveThread() {
+        let walkUUID = UUID()
+        let date = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let slowContext = TranscriptContext(
+            schemaVersion: 1, recordingUUID: UUID(), transcriptHash: "h1",
+            languageCode: "en", wordCount: 200,
+            themes: [Theme(lemma: "move", displayTerm: "move", mentionCount: 3, salience: 0.03, mentions: [])],
+            markers: markers(words: 200, absolutist: 2)
+        )
+        let fastContext = TranscriptContext(
+            schemaVersion: 1, recordingUUID: UUID(), transcriptHash: "h2",
+            languageCode: "en", wordCount: 200, themes: [],
+            markers: markers(words: 200, absolutist: 2)
+        )
+        let thread = WalkThread(
+            lemma: "move", displayTerm: "move",
+            appearances: [
+                ThreadAppearance(recordingUUID: slowContext.recordingUUID, walkUUID: walkUUID, date: date,
+                                 mentionCount: 3, salience: 0.03)
+            ]
+        )
+
+        let dossier = ThreadsDossierFormatter.dossier(
+            currentRecordings: [(slowContext, 80), (fastContext, 140)],
+            allContexts: [slowContext, fastContext],
+            threads: [thread], currentWalkUUID: walkUUID, backfillComplete: false
+        )
+        XCTAssertTrue(dossier!.contains("spoken more slowly than the rest of this walk"))
     }
 
     func testAssembler_omitsDossierWhenNil() {

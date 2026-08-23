@@ -4,6 +4,10 @@ enum ThreadsDossierFormatter {
 
     static let densityFloorWords = 100
     static let baselineFloorRecordings = 5
+    static let absenceWindow: TimeInterval = 30 * 86400
+    static let minimumAbsenceWalks = 2
+    static let maxAbsenceLines = 2
+    static let paceDifferenceThreshold = 0.15
 
     static func markerLine(for context: TranscriptContext, baseline: (absolutist: Double, firstPerson: Double)?) -> String {
         guard let markers = context.markers else {
@@ -45,18 +49,18 @@ enum ThreadsDossierFormatter {
     }
 
     static func dossier(
-        currentRecordingContexts: [TranscriptContext],
+        currentRecordings: [(context: TranscriptContext, wordsPerMinute: Double?)],
         allContexts: [TranscriptContext],
         threads: [WalkThread],
         currentWalkUUID: UUID,
         backfillComplete: Bool
     ) -> String? {
-        guard !currentRecordingContexts.isEmpty else { return nil }
+        guard !currentRecordings.isEmpty else { return nil }
         let baseline = personalBaseline(from: allContexts)
 
         var section = "**Thought threads (on-device linguistic analysis):**"
-        for (index, context) in currentRecordingContexts.enumerated() {
-            section += "\nRecording \(index + 1): \(markerLine(for: context, baseline: baseline))"
+        for (index, recording) in currentRecordings.enumerated() {
+            section += "\nRecording \(index + 1): \(markerLine(for: recording.context, baseline: baseline))"
         }
 
         let activeThreads = threads.filter { thread in
@@ -80,9 +84,70 @@ enum ThreadsDossierFormatter {
                 if let origin = thread.appearances.first, backfillComplete {
                     line += " (first spoken \(ContextFormatter.shortDateFormatter.string(from: origin.date)))"
                 }
+                if let paceNote = paceCorrelation(of: thread, in: currentRecordings) {
+                    line += paceNote
+                }
                 section += line
             }
         }
+
+        if backfillComplete, let quiet = quietLines(threads: threads, currentWalkUUID: currentWalkUUID) {
+            section += "\n\n**Quiet this walk:**"
+            section += quiet
+        }
         return section
+    }
+
+    /// Absence is a history claim ("this recurred without you") — as risky
+    /// as an origin claim, so it waits on the same backfill gate.
+    private static func quietLines(threads: [WalkThread], currentWalkUUID: UUID) -> String? {
+        let allAppearances = threads.flatMap(\.appearances)
+        let currentWalkDates = allAppearances.filter { $0.walkUUID == currentWalkUUID }.map(\.date)
+        guard let anchor = currentWalkDates.max() ?? allAppearances.map(\.date).max() else { return nil }
+        let windowStart = anchor.addingTimeInterval(-absenceWindow)
+
+        let absent = threads
+            .filter { thread in !thread.appearances.contains { $0.walkUUID == currentWalkUUID } }
+            .compactMap { thread -> (thread: WalkThread, walks: Int)? in
+                let walksInWindow = Set(
+                    thread.appearances
+                        .filter { $0.date >= windowStart && $0.date <= anchor }
+                        .map(\.walkUUID)
+                ).count
+                guard walksInWindow >= minimumAbsenceWalks else { return nil }
+                return (thread, walksInWindow)
+            }
+            .sorted { ($0.walks, $1.thread.lemma) > ($1.walks, $0.thread.lemma) }
+            .prefix(maxAbsenceLines)
+
+        guard !absent.isEmpty else { return nil }
+        return absent
+            .map { "\nNotably quiet this walk: '\($0.thread.displayTerm)' — present in \($0.walks) of the walker's recent walks." }
+            .joined()
+    }
+
+    /// Mechanical, not editorial: a relative gap between the theme group's
+    /// mean pace and the rest of the walk's, with no numbers in the phrasing
+    /// (spec principle 1 — trajectory/correlation language stays dossier-only).
+    private static func paceCorrelation(
+        of thread: WalkThread,
+        in recordings: [(context: TranscriptContext, wordsPerMinute: Double?)]
+    ) -> String? {
+        let inTheme = recordings
+            .filter { $0.context.themes.contains { $0.lemma == thread.lemma } }
+            .compactMap(\.wordsPerMinute)
+        let rest = recordings
+            .filter { !$0.context.themes.contains { $0.lemma == thread.lemma } }
+            .compactMap(\.wordsPerMinute)
+        guard !inTheme.isEmpty, !rest.isEmpty else { return nil }
+
+        let themeMean = inTheme.reduce(0, +) / Double(inTheme.count)
+        let restMean = rest.reduce(0, +) / Double(rest.count)
+        guard restMean > 0 else { return nil }
+        let change = (themeMean - restMean) / restMean
+
+        if change <= -paceDifferenceThreshold { return ", spoken more slowly than the rest of this walk" }
+        if change >= paceDifferenceThreshold { return ", spoken more quickly than the rest of this walk" }
+        return nil
     }
 }

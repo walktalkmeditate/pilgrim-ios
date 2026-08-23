@@ -41,10 +41,12 @@ enum ThreadsDossierBuilder {
         let live = all.filter { !orphans.contains($0.recordingUUID) }
 
         var freshlySaved: [UUID: TranscriptContext] = [:]
-        let current = recordings.compactMap { recording -> TranscriptContext? in
+        let current: [(context: TranscriptContext, wordsPerMinute: Double?)] = recordings.compactMap { recording in
             guard let uuid = recording.recordingUUID else { return nil }
             let hash = TranscriptContextStore.hash(of: recording.text)
-            if let stored = store.context(for: uuid, matching: hash) { return stored }
+            if let stored = store.context(for: uuid, matching: hash) {
+                return (stored, recording.wordsPerMinute)
+            }
             // Lazy-backfill fallback, persisted under the real UUID so the
             // store self-heals instead of re-analyzing on every open. Also
             // covers edited transcripts whose stored hash no longer matches.
@@ -56,7 +58,7 @@ enum ThreadsDossierBuilder {
             if result.saved && store.hasContext(for: uuid) {
                 freshlySaved[uuid] = result.context
             }
-            return result.context
+            return (result.context, recording.wordsPerMinute)
         }
         guard !current.isEmpty else { return nil }
 
@@ -69,7 +71,7 @@ enum ThreadsDossierBuilder {
 
         let threads = ThreadStore.build(contexts: allContexts, walks: walkIndex)
         let dossier = ThreadsDossierFormatter.dossier(
-            currentRecordingContexts: current,
+            currentRecordings: current,
             allContexts: allContexts,
             threads: threads,
             currentWalkUUID: walkUUID,
