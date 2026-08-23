@@ -67,51 +67,54 @@ enum AttentionDirectives {
     }
 
     /// A word from the stated intention resurfacing in the walker's own
-    /// spoken words.
+    /// spoken words — by shared lemma first, by embedding nearness second.
     private static func intentionEcho(_ context: ActivityContext) -> String? {
         guard let intention = context.intention, context.hasSpeech else { return nil }
-        let spoken = contentWords(in: context.recordings.map(\.text).joined(separator: " "))
-        guard let echoed = contentWords(in: intention).first(where: { spoken.contains($0) }) else {
-            return nil
+        let spokenText = context.recordings.map(\.text).joined(separator: " ")
+        let spoken = TranscriptNLP.contentLemmaMentions(in: spokenText)
+        guard !spoken.isEmpty else { return nil }
+        let language = TranscriptNLP.detectLanguage(spokenText) ?? "en"
+        let spokenLemmas = Set(spoken.map(\.lemma))
+
+        for word in TranscriptNLP.contentLemmaMentions(in: intention) {
+            if spokenLemmas.contains(word.lemma) {
+                return "The walker's intention spoke of '\(word.surface)', and '\(word.surface)' surfaces again in their spoken words — trace how it traveled."
+            }
+            if let match = spoken.first(where: { TranscriptNLP.related(word.lemma, $0.lemma, languageCode: language) }) {
+                return "The walker's intention spoke of '\(word.surface)', and '\(match.surface)' surfaces in their spoken words — trace how it traveled."
+            }
         }
-        return "The walker's intention spoke of '\(echoed)', and '\(echoed)' surfaces again in their spoken words — trace how it traveled."
+        return nil
     }
 
-    /// The most-repeated content word across all recordings, excluding any
-    /// word the intention-echo directive already claimed.
+    /// The most-repeated content lemma across all recordings, excluding any
+    /// lemma the intention already claimed. Shown as its most frequent
+    /// surface form so the walker's own inflection is echoed back.
     private static func recurringWord(_ context: ActivityContext) -> String? {
         guard context.hasSpeech else { return nil }
-        let intentionWords = context.intention.map { Set(contentWords(in: $0)) } ?? []
+        let intentionLemmas = context.intention
+            .map { Set(TranscriptNLP.contentLemmas(in: $0)) } ?? []
 
         var counts: [String: Int] = [:]
-        for word in contentWords(in: context.recordings.map(\.text).joined(separator: " ")) where !intentionWords.contains(word) {
-            counts[word, default: 0] += 1
+        var surfaces: [String: [String: Int]] = [:]
+        let mentions = TranscriptNLP.contentLemmaMentions(
+            in: context.recordings.map(\.text).joined(separator: " ")
+        )
+        for mention in mentions where !intentionLemmas.contains(mention.lemma) {
+            counts[mention.lemma, default: 0] += 1
+            surfaces[mention.lemma, default: [:]][mention.surface, default: 0] += 1
         }
 
-        guard let (word, count) = counts.filter({ $0.value >= 3 })
+        guard let (lemma, count) = counts.filter({ $0.value >= 3 })
             .min(by: { ($0.value, $1.key) > ($1.value, $0.key) }) else { return nil }
+        let display = surfaces[lemma]?
+            .min(by: { ($0.value, $1.key) > ($1.value, $0.key) })?.key ?? lemma
 
-        return "The word '\(word)' returns \(count) times across the recordings — it may be doing quiet work."
+        return "The word '\(display)' returns \(count) times across the recordings — it may be doing quiet work."
     }
 
     private static func firstVersusLast(_ context: ActivityContext) -> String? {
         guard context.recordings.count >= 2 else { return nil }
         return "Compare the first recording with the last — measure what changed in the walker between them."
-    }
-
-    // MARK: - Words
-
-    private static let stopwords: Set<String> = [
-        "the", "and", "that", "this", "with", "from", "have", "what", "your",
-        "them", "they", "been", "were", "will", "would", "could", "should",
-        "about", "into", "just", "like", "know", "then", "there", "when",
-        "where", "which", "while", "because", "again", "back", "keep",
-        "still", "very", "really", "today", "cannot", "something"
-    ]
-
-    private static func contentWords(in text: String) -> [String] {
-        text.lowercased()
-            .components(separatedBy: CharacterSet.letters.inverted)
-            .filter { $0.count > 3 && !stopwords.contains($0) }
     }
 }
