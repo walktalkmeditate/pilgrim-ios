@@ -11,18 +11,51 @@ struct PromptGenerator {
 
     // MARK: - ActivityContext API
 
-    static func generate(style: PromptStyle, context: ActivityContext) -> GeneratedPrompt {
-        let text = PromptAssembler.assemble(context: context, voice: style.voice)
+    static func generate(
+        style: PromptStyle,
+        context: ActivityContext,
+        directives: [String]? = nil,
+        detectedLanguageName: String? = nil
+    ) -> GeneratedPrompt {
+        let text = PromptAssembler.assemble(
+            context: context,
+            voice: style.voice,
+            directives: directives,
+            detectedLanguageName: detectedLanguageName
+        )
         return GeneratedPrompt(style: style, customStyle: nil, text: text)
     }
 
-    static func generateCustom(customStyle: CustomPromptStyle, context: ActivityContext) -> GeneratedPrompt {
-        let text = PromptAssembler.assemble(context: context, voice: customStyle)
+    static func generateCustom(
+        customStyle: CustomPromptStyle,
+        context: ActivityContext,
+        directives: [String]? = nil,
+        detectedLanguageName: String? = nil
+    ) -> GeneratedPrompt {
+        let text = PromptAssembler.assemble(
+            context: context,
+            voice: customStyle,
+            directives: directives,
+            detectedLanguageName: detectedLanguageName
+        )
         return GeneratedPrompt(style: nil, customStyle: customStyle, text: text)
     }
 
-    static func generateAll(context: ActivityContext) -> [GeneratedPrompt] {
-        PromptStyle.allCases.map { generate(style: $0, context: context) }
+    static func generateAll(
+        context: ActivityContext,
+        directives: [String]? = nil,
+        detectedLanguageName: String? = nil
+    ) -> [GeneratedPrompt] {
+        let directives = directives ?? AttentionDirectives.detect(context: context)
+        let detectedLanguageName = detectedLanguageName ?? PromptAssembler.detectedLanguageName(context: context)
+        return PromptStyle.allCases.map {
+            generate(
+                style: $0,
+                context: context,
+                directives: directives,
+                detectedLanguageName: detectedLanguageName
+            )
+        }
     }
 
     static func formatWeather(_ walk: WalkInterface) -> String? {

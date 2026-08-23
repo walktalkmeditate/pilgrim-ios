@@ -7,7 +7,7 @@ import Foundation
 /// doesn't re-read the whole context directory.
 enum ThreadsDossierBuilder {
 
-    private static var memo: (changeCount: Int, walkUUID: UUID, dossier: String?)?
+    private static var memo: (changeCount: Int, walkUUID: UUID, backfillComplete: Bool, dossier: String?)?
     private static let memoLock = NSLock()
 
     static func build(
@@ -17,15 +17,30 @@ enum ThreadsDossierBuilder {
         store: TranscriptContextStore = .shared
     ) -> String? {
         guard UserPreferences.threadsAfterWalks.value, !recordings.isEmpty else { return nil }
+        // One consistent read each, captured before any store mutation: a
+        // mid-build mutation leaves the memoized changeCount stale, so the
+        // next call rebuilds instead of absorbing the mutation unseen.
+        let backfillComplete = ThreadsBackfill.isComplete
+        let preBuildChangeCount = store.changeCount
         memoLock.lock()
         let cached = memo
         memoLock.unlock()
-        if let cached, cached.changeCount == store.changeCount, cached.walkUUID == walkUUID {
+        if let cached, cached.changeCount == preBuildChangeCount,
+           cached.walkUUID == walkUUID, cached.backfillComplete == backfillComplete {
             return cached.dossier
         }
 
-        store.pruneOrphans(keeping: Set(walkIndex.keys))
+        // Single directory decode per build: orphans come from the same load
+        // that feeds the dossier, and fresh analyses are merged in by hand
+        // instead of re-reading the directory afterwards.
+        let all = store.loadAll()
+        let orphans = Set(all.map(\.recordingUUID)).subtracting(walkIndex.keys)
+        if !orphans.isEmpty {
+            store.delete(recordingUUIDs: Array(orphans))
+        }
+        let live = all.filter { !orphans.contains($0.recordingUUID) }
 
+        var freshlySaved: [UUID: TranscriptContext] = [:]
         let current = recordings.compactMap { recording -> TranscriptContext? in
             guard let uuid = recording.recordingUUID else { return nil }
             let hash = TranscriptContextStore.hash(of: recording.text)
@@ -33,23 +48,35 @@ enum ThreadsDossierBuilder {
             // Lazy-backfill fallback, persisted under the real UUID so the
             // store self-heals instead of re-analyzing on every open. Also
             // covers edited transcripts whose stored hash no longer matches.
-            return TranscriptContextAnalyzer.analyzeAndStore(
+            let result = TranscriptContextAnalyzer.analyzeAndStore(
                 recordingUUID: uuid, transcript: recording.text, store: store
             )
+            // Merge only what actually reached disk — a tombstone-blocked
+            // save reports true but writes nothing.
+            if result.saved && store.hasContext(for: uuid) {
+                freshlySaved[uuid] = result.context
+            }
+            return result.context
         }
         guard !current.isEmpty else { return nil }
 
-        let all = store.loadAll()
-        let threads = ThreadStore.build(contexts: all, walks: walkIndex)
+        var contextsByUUID = Dictionary(uniqueKeysWithValues: live.map { ($0.recordingUUID, $0) })
+        for (uuid, context) in freshlySaved {
+            contextsByUUID[uuid] = context
+        }
+        let allContexts = contextsByUUID.values
+            .sorted { $0.recordingUUID.uuidString < $1.recordingUUID.uuidString }
+
+        let threads = ThreadStore.build(contexts: allContexts, walks: walkIndex)
         let dossier = ThreadsDossierFormatter.dossier(
             currentRecordingContexts: current,
-            allContexts: all,
+            allContexts: allContexts,
             threads: threads,
             currentWalkUUID: walkUUID,
-            backfillComplete: ThreadsBackfill.isComplete
+            backfillComplete: backfillComplete
         )
         memoLock.lock()
-        memo = (store.changeCount, walkUUID, dossier)
+        memo = (preBuildChangeCount, walkUUID, backfillComplete, dossier)
         memoLock.unlock()
         return dossier
     }

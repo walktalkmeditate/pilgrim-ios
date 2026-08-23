@@ -73,6 +73,9 @@ enum PilgrimPackageImporter {
         // origin labels correctly re-suppress until it completes.
         let reportResult: (Result<ImportSummary, PilgrimPackageError>) -> Void = { result in
             if case .success = result {
+                // Stale tombstones would silently block analysis of imported
+                // recordings that reuse a previously deleted UUID.
+                TranscriptContextStore.shared.clearAllTombstones()
                 ThreadsBackfill.reset()
             }
             completion(result)

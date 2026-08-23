@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 /// One-time pass over already-transcribed recordings when the feature first
 /// activates — origin claims ("first time", "where it began") are only true
@@ -27,35 +26,52 @@ enum ThreadsBackfill {
         UserDefaults.standard.set(false, forKey: completedKey)
     }
 
+    private static let batchSize = 25
+
     /// Main-actor only: the CoreStore snapshot must be taken before
     /// detaching — `dataStack.fetchAll` asserts main-thread. Single-flight,
     /// and battery-gated like MainCoordinator.triggerAutoTranscription.
     /// Fills MISSING contexts only: a hash-mismatched (edited) recording is
     /// owned by the edit trigger, and overwriting it here would race a
     /// newer analysis with this launch's stale snapshot.
+    ///
+    /// The completed flag is set only when every snapshot item is accounted
+    /// for — saved by this sweep, or already on disk after the attempt.
+    /// A failed save (or the battery gate closing mid-sweep) leaves the flag
+    /// false so the next launch retries just the missing ones.
     @MainActor
     static func runIfNeeded(store: TranscriptContextStore = .shared) {
         guard !isComplete, !isRunning else { return }
-        let wasMonitoring = UIDevice.current.isBatteryMonitoringEnabled
-        UIDevice.current.isBatteryMonitoringEnabled = true
-        let level = UIDevice.current.batteryLevel
-        let batteryState = UIDevice.current.batteryState
-        UIDevice.current.isBatteryMonitoringEnabled = wasMonitoring
-        guard level < 0 || level > 0.2 || batteryState == .charging || batteryState == .full else { return }
+        guard BatteryGate.allowsBackgroundWork() else { return }
         isRunning = true
 
         let startGeneration = generation
         let items = DataManager.transcribedRecordingsSnapshot()
         Task.detached(priority: .utility) {
-            for item in items where !store.hasContext(for: item.uuid) {
-                TranscriptContextAnalyzer.analyzeAndStore(
-                    recordingUUID: item.uuid,
-                    transcript: item.transcript,
-                    store: store
-                )
+            var allAccounted = true
+            var gateClosed = false
+            var batchStart = 0
+            while batchStart < items.count {
+                guard await MainActor.run(body: { BatteryGate.allowsBackgroundWork() }) else {
+                    gateClosed = true
+                    break
+                }
+                let batch = items[batchStart..<min(batchStart + batchSize, items.count)]
+                for item in batch where !store.hasContext(for: item.uuid) {
+                    let saved = TranscriptContextAnalyzer.analyzeAndStore(
+                        recordingUUID: item.uuid,
+                        transcript: item.transcript,
+                        store: store
+                    ).saved
+                    if !saved && !store.hasContext(for: item.uuid) {
+                        allAccounted = false
+                    }
+                }
+                batchStart += batchSize
+                await Task.yield()
             }
             await MainActor.run {
-                if generation == startGeneration {
+                if generation == startGeneration && allAccounted && !gateClosed {
                     UserDefaults.standard.set(true, forKey: completedKey)
                 }
                 isRunning = false

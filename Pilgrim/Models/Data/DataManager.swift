@@ -844,10 +844,12 @@ struct DataManager {
             case .success:
                 cleanupRecordingFiles(relativePaths: allRecordingPaths)
                 cleanupEmptyRecordingsDirectory()
-                // Tombstone every known recording UUID explicitly: deleteAll()
-                // only tombstones files already on disk, so an in-flight
-                // analysis queued before the wipe could still write afterward.
-                transcriptContextStore.delete(recordingUUIDs: allRecordingUUIDs)
+                // Tombstone every known recording UUID explicitly BEFORE the
+                // wipe: deleteAll() only tombstones files already on disk, so
+                // an in-flight analysis queued before the wipe could still
+                // write afterward. Kept synchronous on purpose — ordering
+                // safety on this rare destructive op beats micro-latency.
+                transcriptContextStore.insertTombstones(for: allRecordingUUIDs)
                 transcriptContextStore.deleteAll()
                 UserPreferences.clearArchivedRegistry()
                 completion(true, nil)

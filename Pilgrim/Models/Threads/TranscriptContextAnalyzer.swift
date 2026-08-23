@@ -36,20 +36,23 @@ enum TranscriptContextAnalyzer {
         )
     }
 
+    /// `saved` is false only when the store failed to persist the context
+    /// (encode/write error) — the backfill uses it to decide whether an item
+    /// is accounted for. A tombstone-blocked save reports true.
     @discardableResult
     static func analyzeAndStore(
         recordingUUID: UUID,
         transcript: String,
         flaggedFragments: [String] = [],
         store: TranscriptContextStore = .shared
-    ) -> TranscriptContext {
+    ) -> (context: TranscriptContext, saved: Bool) {
         let context = analyze(
             recordingUUID: recordingUUID,
             transcript: transcript,
             flaggedFragments: flaggedFragments
         )
-        store.save(context)
-        return context
+        let saved = store.save(context)
+        return (context, saved)
     }
 
     /// Every occurrence, not just the first — repeated hallucination is the

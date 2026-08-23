@@ -158,12 +158,9 @@ class MainCoordinator: ObservableObject {
         guard UserPreferences.autoTranscribe.value,
               !snapshot.voiceRecordings.isEmpty else { return }
 
-        let wasMonitoring = UIDevice.current.isBatteryMonitoringEnabled
-        UIDevice.current.isBatteryMonitoringEnabled = true
-        let level = UIDevice.current.batteryLevel
-        let batteryState = UIDevice.current.batteryState
-        UIDevice.current.isBatteryMonitoringEnabled = wasMonitoring
-        let batteryOK = level < 0 || level > 0.2 || batteryState == .charging || batteryState == .full
+        // Safe to assume: saveWalk completions land on the main queue
+        // (CoreStore's default), same as the other completions in this file.
+        let batteryOK = MainActor.assumeIsolated { BatteryGate.allowsBackgroundWork() }
 
         if batteryOK {
             Task {

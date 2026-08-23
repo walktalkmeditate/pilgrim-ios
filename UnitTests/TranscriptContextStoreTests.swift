@@ -69,6 +69,39 @@ final class TranscriptContextStoreTests: XCTestCase {
                       "a queued analysis landing after deletion must not resurrect derived data")
     }
 
+    func testSaveAfterDelete_reportsAccountedWithoutWriting() {
+        let context = makeContext()
+        store.save(context)
+        store.delete(recordingUUIDs: [context.recordingUUID])
+        XCTAssertTrue(store.save(context),
+                      "a tombstone-blocked save is deliberately accounted for, not a failure")
+        XCTAssertTrue(store.loadAll().isEmpty)
+    }
+
+    func testSave_reportsWriteFailure() throws {
+        let readOnly = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ReadOnlyStore-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: readOnly, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: readOnly.path)
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: readOnly.path)
+            try? FileManager.default.removeItem(at: readOnly)
+        }
+        let readOnlyStore = TranscriptContextStore(directory: readOnly)
+        XCTAssertFalse(readOnlyStore.save(makeContext()),
+                       "a context that never reached disk must not be reported as saved")
+    }
+
+    func testClearAllTombstones_allowsSaveAfterDelete() {
+        let context = makeContext()
+        store.save(context)
+        store.delete(recordingUUIDs: [context.recordingUUID])
+        store.clearAllTombstones()
+        store.save(context)
+        XCTAssertEqual(store.loadAll().map(\.recordingUUID), [context.recordingUUID],
+                       "an import re-establishes recordings as live, analyzable data")
+    }
+
     func testPruneOrphans() {
         let keep = makeContext(), orphan = makeContext()
         store.save(keep); store.save(orphan)

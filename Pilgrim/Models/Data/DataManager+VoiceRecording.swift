@@ -20,6 +20,7 @@
 //
 
 import Foundation
+import CoreData
 import CoreStore
 
 extension DataManager {
@@ -135,17 +136,44 @@ extension DataManager {
     /// Recording UUID → owning walk, for thread aggregation. The walk
     /// relationship on PilgrimV7.VoiceRecording is `_workout` — a frozen
     /// SQL identifier ("workout", PilgrimV7.swift:244) from the OutRun era;
-    /// never rename the entity property to "fix" the name. Main-actor only:
-    /// `dataStack.fetchAll` asserts Thread.isMainThread.
+    /// never rename the entity property to "fix" the name. Two dictionary
+    /// queries joined by object ID instead of `fetchAll` — the old path
+    /// faulted in every recording row plus its walk, one SQL round-trip
+    /// each. Main-actor only, matching the other snapshot queries here.
     @MainActor
     public static func voiceRecordingWalkIndex() -> [UUID: (walkUUID: UUID, date: Date)] {
-        let recordings = (try? dataStack.fetchAll(From<VoiceRecording>())) ?? []
+        guard
+            let walkRows = try? dataStack.queryAttributes(
+                From<Walk>().select(
+                    NSDictionary.self,
+                    .objectID(),
+                    .attribute(\._uuid),
+                    .attribute(\._startDate)
+                )
+            ),
+            let recordingRows = try? dataStack.queryAttributes(
+                From<VoiceRecording>().select(
+                    NSDictionary.self,
+                    .attribute(\._uuid),
+                    .attribute("workout")
+                )
+            )
+        else { return [:] }
+
+        var walksByObjectID: [NSManagedObjectID: (walkUUID: UUID, date: Date)] = [:]
+        for row in walkRows {
+            guard let objectID = row["objectID"] as? NSManagedObjectID,
+                  let walkUUID = row["id"] as? UUID,
+                  let startDate = row["startDate"] as? Date else { continue }
+            walksByObjectID[objectID] = (walkUUID, startDate)
+        }
+
         var index: [UUID: (walkUUID: UUID, date: Date)] = [:]
-        for recording in recordings {
-            guard let uuid = recording._uuid.value,
-                  let walk = recording._workout.value,
-                  let walkUUID = walk._uuid.value else { continue }
-            index[uuid] = (walkUUID, walk._startDate.value)
+        for row in recordingRows {
+            guard let uuid = row["id"] as? UUID,
+                  let walkObjectID = row["workout"] as? NSManagedObjectID,
+                  let walk = walksByObjectID[walkObjectID] else { continue }
+            index[uuid] = walk
         }
         return index
     }

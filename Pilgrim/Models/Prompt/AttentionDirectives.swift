@@ -10,11 +10,16 @@ enum AttentionDirectives {
     private static let maxDirectives = 4
 
     static func detect(context: ActivityContext) -> [String] {
+        // Lemmatizing the full transcript is the expensive step; do it once
+        // here and share it between the two detectors that need it.
+        let spokenMentions = context.hasSpeech
+            ? TranscriptNLP.contentLemmaMentions(in: context.recordings.map(\.text).joined(separator: " "))
+            : []
         let directives = [
             stillness(context),
             paceShift(context),
-            intentionEcho(context),
-            recurringWord(context),
+            intentionEcho(context, spokenMentions: spokenMentions),
+            recurringWord(context, spokenMentions: spokenMentions),
             firstVersusLast(context)
         ].compactMap { $0 }
         return Array(directives.prefix(maxDirectives))
@@ -68,17 +73,20 @@ enum AttentionDirectives {
 
     /// A word from the stated intention resurfacing in the walker's own
     /// spoken words — by shared lemma first, by embedding nearness second.
-    private static func intentionEcho(_ context: ActivityContext) -> String? {
+    /// "Again" is only honest when the walker repeated the exact surface;
+    /// an inflection ("worrying" for "worry") quotes what was actually said.
+    private static func intentionEcho(_ context: ActivityContext, spokenMentions spoken: [TranscriptNLP.LemmaMention]) -> String? {
         guard let intention = context.intention, context.hasSpeech else { return nil }
-        let spokenText = context.recordings.map(\.text).joined(separator: " ")
-        let spoken = TranscriptNLP.contentLemmaMentions(in: spokenText)
         guard !spoken.isEmpty else { return nil }
+        let spokenText = context.recordings.map(\.text).joined(separator: " ")
         let language = TranscriptNLP.detectLanguage(spokenText) ?? "en"
-        let spokenLemmas = Set(spoken.map(\.lemma))
 
         for word in TranscriptNLP.contentLemmaMentions(in: intention) {
-            if spokenLemmas.contains(word.lemma) {
-                return "The walker's intention spoke of '\(word.surface)', and '\(word.surface)' surfaces again in their spoken words — trace how it traveled."
+            if let match = spoken.first(where: { $0.lemma == word.lemma }) {
+                if match.surface == word.surface {
+                    return "The walker's intention spoke of '\(word.surface)', and '\(word.surface)' surfaces again in their spoken words — trace how it traveled."
+                }
+                return "The walker's intention spoke of '\(word.surface)', and '\(match.surface)' surfaces in their spoken words — trace how it traveled."
             }
             if let match = spoken.first(where: { TranscriptNLP.related(word.lemma, $0.lemma, languageCode: language) }) {
                 return "The walker's intention spoke of '\(word.surface)', and '\(match.surface)' surfaces in their spoken words — trace how it traveled."
@@ -90,16 +98,13 @@ enum AttentionDirectives {
     /// The most-repeated content lemma across all recordings, excluding any
     /// lemma the intention already claimed. Shown as its most frequent
     /// surface form so the walker's own inflection is echoed back.
-    private static func recurringWord(_ context: ActivityContext) -> String? {
+    private static func recurringWord(_ context: ActivityContext, spokenMentions mentions: [TranscriptNLP.LemmaMention]) -> String? {
         guard context.hasSpeech else { return nil }
         let intentionLemmas = context.intention
             .map { Set(TranscriptNLP.contentLemmas(in: $0)) } ?? []
 
         var counts: [String: Int] = [:]
         var surfaces: [String: [String: Int]] = [:]
-        let mentions = TranscriptNLP.contentLemmaMentions(
-            in: context.recordings.map(\.text).joined(separator: " ")
-        )
         for mention in mentions where !intentionLemmas.contains(mention.lemma) {
             counts[mention.lemma, default: 0] += 1
             surfaces[mention.lemma, default: [:]][mention.surface, default: 0] += 1

@@ -88,6 +88,19 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertTrue(joined(context).contains("surfaces again"))
     }
 
+    func testIntentionEcho_inflectedSurface_quotesSpokenFormWithoutAgain() {
+        let context = ActivityContext.make(
+            recordings: [recording("worrying through the pines")],
+            startDate: start,
+            intention: "worry less"
+        )
+        let text = joined(context)
+        XCTAssertTrue(text.contains("'worrying' surfaces in"),
+                      "the echo must quote what the walker actually said")
+        XCTAssertFalse(text.contains("surfaces again"),
+                       "'again' is only honest for an exact surface repeat")
+    }
+
     func testIntentionEcho_noOverlap_doesNotFire() {
         let context = ActivityContext.make(
             recordings: [recording("The bakery smelled wonderful this morning")],

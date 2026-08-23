@@ -338,6 +338,7 @@
 		AAAA000000000000000000A1 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA000000000000000000A3 /* WhisperKit */; };
 		AAAA000000000000000000B1 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000B2 /* TranscriptionService.swift */; };
 		AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C2 /* PromptGenerator.swift */; };
+		BA77E6A7E000000000000001 /* BatteryGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA77E6A7E000000000000002 /* BatteryGate.swift */; };
 		AAAA000000000000000000C3 /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C4 /* PromptListView.swift */; };
 		AAAA000000000000000000C5 /* PromptDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000C6 /* PromptDetailView.swift */; };
 		AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */; };
@@ -991,6 +992,7 @@
 		AA33BB44CC55DD66EE77FF99 /* EtegamiTextGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiTextGenerator.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000B2 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C2 /* PromptGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptGenerator.swift; sourceTree = "<group>"; };
+		BA77E6A7E000000000000002 /* BatteryGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryGate.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C4 /* PromptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptListView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000C6 /* PromptDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptDetailView.swift; sourceTree = "<group>"; };
 		AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptStyleStore.swift; sourceTree = "<group>"; };
@@ -1683,6 +1685,7 @@
 				AAAA000000000000000000B2 /* TranscriptionService.swift */,
 				22834F792542239800057FEB /* HelperMethods.swift */,
 				AAAA000000000000000000C2 /* PromptGenerator.swift */,
+				BA77E6A7E000000000000002 /* BatteryGate.swift */,
 				56E07B2B2F6DE08B004EBC44 /* ScreenshotDataSeeder.swift */,
 				AAAA000000000000000000D2 /* CustomPromptStyleStore.swift */,
 				CC00000100000000LUNRPH01 /* LunarPhase.swift */,
@@ -3052,6 +3055,7 @@
 				EF1533CDBBC5498EA3BFDFC6 /* ActivityIntervalInterface.swift in Sources */,
 				DD00CC0100000000000002 /* MeditateDetection.swift in Sources */,
 				AAAA000000000000000000C1 /* PromptGenerator.swift in Sources */,
+				BA77E6A7E000000000000001 /* BatteryGate.swift in Sources */,
 				AAAA000000000000000000D1 /* CustomPromptStyleStore.swift in Sources */,
 				AAAA000000000000000000F1 /* IntentionHistoryStore.swift in Sources */,
 				AAAA000000000000000000F7 /* IntentionVoiceRecorder.swift in Sources */,

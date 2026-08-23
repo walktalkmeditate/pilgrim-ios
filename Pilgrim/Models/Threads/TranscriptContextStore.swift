@@ -15,7 +15,9 @@ final class TranscriptContextStore {
     private let directory: URL
     private let writeQueue = DispatchQueue(label: "org.walktalkmeditate.pilgrim.transcript-contexts")
     private var tombstones: Set<UUID> = []
-    private(set) var changeCount = 0
+    private var _changeCount = 0
+
+    var changeCount: Int { writeQueue.sync { _changeCount } }
 
     init(directory: URL) {
         self.directory = directory
@@ -32,12 +34,22 @@ final class TranscriptContextStore {
     /// Deleted UUIDs are tombstoned so a queued analysis finishing after a
     /// deletion cannot resurrect derived data. Stale writes self-heal: any
     /// consumer that finds a hash mismatch re-analyzes and persists.
-    func save(_ context: TranscriptContext) {
+    ///
+    /// Returns true when the context is accounted for — written to disk, or
+    /// deliberately blocked by a tombstone. False only on encode/write
+    /// failure, so callers (the backfill) know the item is still missing.
+    @discardableResult
+    func save(_ context: TranscriptContext) -> Bool {
         writeQueue.sync {
-            guard !tombstones.contains(context.recordingUUID),
-                  let data = try? JSONEncoder().encode(context) else { return }
-            try? data.write(to: fileURL(for: context.recordingUUID), options: .atomic)
-            changeCount += 1
+            guard !tombstones.contains(context.recordingUUID) else { return true }
+            guard let data = try? JSONEncoder().encode(context) else { return false }
+            do {
+                try data.write(to: fileURL(for: context.recordingUUID), options: .atomic)
+            } catch {
+                return false
+            }
+            _changeCount += 1
+            return true
         }
     }
 
@@ -64,7 +76,26 @@ final class TranscriptContextStore {
                 tombstones.insert(uuid)
                 try? FileManager.default.removeItem(at: fileURL(for: uuid))
             }
-            changeCount += 1
+            _changeCount += 1
+        }
+    }
+
+    /// Tombstones without touching files — for Delete All, which follows up
+    /// with `deleteAll()` for the file sweep (and its changeCount bump).
+    /// The insert-before-wipe ordering is the late-write protection: an
+    /// analysis queued before the wipe finds its UUID blocked afterward.
+    func insertTombstones(for uuids: [UUID]) {
+        writeQueue.sync {
+            tombstones.formUnion(uuids)
+        }
+    }
+
+    /// Import success wipes the tombstones: any stale tombstone's writer no
+    /// longer exists (its recording was deleted before the import), and the
+    /// import re-establishes recordings as live data that must be analyzable.
+    func clearAllTombstones() {
+        writeQueue.sync {
+            tombstones.removeAll()
         }
     }
 
@@ -80,7 +111,7 @@ final class TranscriptContextStore {
                 print("[TranscriptContextStore] Failed to remove context directory: \(error)")
             }
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            changeCount += 1
+            _changeCount += 1
         }
         excludeFromBackup()
     }

@@ -15,6 +15,8 @@ struct PromptListView: View {
     @State private var editingStyle: CustomPromptStyle?
     @State private var activityContext: ActivityContext?
     @State private var customPrompts: [GeneratedPrompt] = []
+    @State private var directives: [String]?
+    @State private var detectedLanguageName: String?
 
     var body: some View {
         List {
@@ -115,7 +117,7 @@ struct PromptListView: View {
             let walkUUID = walk.uuid
             let walkIndex = DataManager.voiceRecordingWalkIndex()
 
-            let (context, generated) = await Task.detached(priority: .userInitiated) {
+            let (context, generated, derivedDirectives, derivedLanguageName) = await Task.detached(priority: .userInitiated) {
                 var context = baseContext
                 context.threadsDossier = walkUUID.flatMap {
                     ThreadsDossierBuilder.build(
@@ -124,11 +126,20 @@ struct PromptListView: View {
                         walkIndex: walkIndex
                     )
                 }
-                return (context, PromptGenerator.generateAll(context: context))
+                let derivedDirectives = AttentionDirectives.detect(context: context)
+                let derivedLanguageName = PromptAssembler.detectedLanguageName(context: context)
+                let generated = PromptGenerator.generateAll(
+                    context: context,
+                    directives: derivedDirectives,
+                    detectedLanguageName: derivedLanguageName
+                )
+                return (context, generated, derivedDirectives, derivedLanguageName)
             }.value
 
             activityContext = context
             prompts = generated
+            directives = derivedDirectives
+            detectedLanguageName = derivedLanguageName
             regenerateCustomPrompts()
         }
     }
@@ -292,10 +303,28 @@ struct PromptListView: View {
         }
     }
 
+    /// Same shape as generatePrompts: main-actor inputs gathered first,
+    /// assembly detached, @State assigned back on main. The derivations
+    /// cached by generatePrompts are reused so both paths share one NLP pass.
     private func regenerateCustomPrompts() {
         guard let context = activityContext else { return }
-        customPrompts = customStyleStore.styles.map { customStyle in
-            PromptGenerator.generateCustom(customStyle: customStyle, context: context)
+        let styles = customStyleStore.styles
+        let cachedDirectives = directives
+        let cachedLanguageName = detectedLanguageName
+        Task {
+            let generated = await Task.detached(priority: .userInitiated) {
+                let resolvedDirectives = cachedDirectives ?? AttentionDirectives.detect(context: context)
+                let resolvedLanguageName = cachedLanguageName ?? PromptAssembler.detectedLanguageName(context: context)
+                return styles.map { customStyle in
+                    PromptGenerator.generateCustom(
+                        customStyle: customStyle,
+                        context: context,
+                        directives: resolvedDirectives,
+                        detectedLanguageName: resolvedLanguageName
+                    )
+                }
+            }.value
+            customPrompts = generated
         }
     }
 

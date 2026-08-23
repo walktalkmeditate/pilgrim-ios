@@ -2,7 +2,16 @@ import Foundation
 
 enum PromptAssembler {
 
-    static func assemble(context: ActivityContext, voice: PromptVoice) -> String {
+    /// `directives` and `detectedLanguageName` default to nil, meaning
+    /// "compute here" — single-style callers stay unchanged, while
+    /// `generateAll` computes both once and fans them out so a screen-open
+    /// pays for one NLP pass instead of one per style.
+    static func assemble(
+        context: ActivityContext,
+        voice: PromptVoice,
+        directives: [String]? = nil,
+        detectedLanguageName: String? = nil
+    ) -> String {
         let metadata = ContextFormatter.formatMetadata(
             duration: context.duration,
             distance: context.distance,
@@ -21,7 +30,11 @@ enum PromptAssembler {
             sections += " | \(weather)"
         }
         sections += contextDossier(context: context)
-        sections += walkRecord(context: context)
+        sections += walkRecord(
+            context: context,
+            directives: directives,
+            detectedLanguageName: detectedLanguageName
+        )
 
         var fullInstruction = voice.instruction(hasSpeech: context.hasSpeech)
         if let intention = context.intention {
@@ -78,9 +91,22 @@ enum PromptAssembler {
         return sections
     }
 
+    /// English display name of the transcript's dominant language, or nil
+    /// when no language clears the recognizer's confidence bar.
+    static func detectedLanguageName(context: ActivityContext) -> String? {
+        guard context.hasSpeech,
+              let code = TranscriptNLP.detectLanguage(context.recordings.map(\.text).joined(separator: " "))
+        else { return nil }
+        return Locale(identifier: "en").localizedString(forLanguageCode: code)
+    }
+
     /// What the walk produced — words, stillness, continuity with recent
     /// walks — closed by the directives that point at its patterns.
-    private static func walkRecord(context: ActivityContext) -> String {
+    private static func walkRecord(
+        context: ActivityContext,
+        directives: [String]?,
+        detectedLanguageName: String?
+    ) -> String {
         var sections = ""
 
         let transcription = ContextFormatter.formatRecordings(context.recordings)
@@ -89,8 +115,7 @@ enum PromptAssembler {
         }
 
         if !transcription.isEmpty,
-           let code = TranscriptNLP.detectLanguage(context.recordings.map(\.text).joined(separator: " ")),
-           let name = Locale(identifier: "en").localizedString(forLanguageCode: code) {
+           let name = detectedLanguageName ?? Self.detectedLanguageName(context: context) {
             sections += "\n\n**Detected language:** \(name)"
         }
 
@@ -106,9 +131,9 @@ enum PromptAssembler {
             sections += "\n\n\(dossier)"
         }
 
-        let directives = AttentionDirectives.detect(context: context)
-        if !directives.isEmpty {
-            let bullets = directives.map { "- \($0)" }.joined(separator: "\n")
+        let resolvedDirectives = directives ?? AttentionDirectives.detect(context: context)
+        if !resolvedDirectives.isEmpty {
+            let bullets = resolvedDirectives.map { "- \($0)" }.joined(separator: "\n")
             sections += "\n\n**Attend to:**\n\(bullets)"
         }
 

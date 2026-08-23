@@ -29,6 +29,12 @@ enum TranscriptNLP {
         tagger.string = text
         let contentClasses: Set<NLTag> = [.noun, .verb, .adjective]
         var mentions: [LemmaMention] = []
+        // Running cursor: enumerateTags visits ranges in order, so advancing
+        // the character offset from the previous mention keeps this linear
+        // instead of re-measuring from startIndex per mention (quadratic on
+        // long transcripts).
+        var lastIndex = text.startIndex
+        var lastOffset = 0
         tagger.enumerateTags(
             in: text.startIndex..<text.endIndex,
             unit: .word,
@@ -40,10 +46,12 @@ enum TranscriptNLP {
             guard surface.count > 2 else { return true }
             let lemma = tagger.tag(at: range.lowerBound, unit: .word, scheme: .lemma)
                 .0?.rawValue.lowercased() ?? surface
+            lastOffset += text.distance(from: lastIndex, to: range.lowerBound)
+            lastIndex = range.lowerBound
             mentions.append(LemmaMention(
                 lemma: lemma,
                 surface: surface,
-                start: text.distance(from: text.startIndex, to: range.lowerBound),
+                start: lastOffset,
                 length: text.distance(from: range.lowerBound, to: range.upperBound)
             ))
             return true
