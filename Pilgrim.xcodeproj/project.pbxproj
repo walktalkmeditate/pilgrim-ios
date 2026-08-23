@@ -213,6 +213,7 @@
 		F18D20D852D7432B9403D064 /* TranscriptContextStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDFBDD16091E474E8A5067CF /* TranscriptContextStoreTests.swift */; };
 		9199078D805D40A087270BF5 /* DataManagerThreadsDeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 871968A73E694CE1A7813792 /* DataManagerThreadsDeletionTests.swift */; };
 		4A874B223DF94F32AE65A3B2 /* ThreadStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44E1DA26DB135B0837E447F /* ThreadStoreTests.swift */; };
+		AB27642252E24998A3ABFA3B /* FieldGateReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F8773000AC4CCC93F68DAF /* FieldGateReportTests.swift */; };
 		CDAF7513E68142C58DC5C6A2 /* TranscriptContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABD94794DC646449548E6FE /* TranscriptContext.swift */; };
 		F68DAA11D2864EEF954B29D2 /* TranscriptContextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A9DB8ECE2349858CF3747B /* TranscriptContextStore.swift */; };
 		E66DD877BDBA458E95E4347F /* TranscriptContextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */; };
@@ -847,6 +848,7 @@
 		BDFBDD16091E474E8A5067CF /* TranscriptContextStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextStoreTests.swift; sourceTree = "<group>"; };
 		871968A73E694CE1A7813792 /* DataManagerThreadsDeletionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataManagerThreadsDeletionTests.swift; sourceTree = "<group>"; };
 		D44E1DA26DB135B0837E447F /* ThreadStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadStoreTests.swift; sourceTree = "<group>"; };
+		25F8773000AC4CCC93F68DAF /* FieldGateReportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FieldGateReportTests.swift; sourceTree = "<group>"; };
 		5ABD94794DC646449548E6FE /* TranscriptContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContext.swift; sourceTree = "<group>"; };
 		21A9DB8ECE2349858CF3747B /* TranscriptContextStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextStore.swift; sourceTree = "<group>"; };
 		AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextAnalyzer.swift; sourceTree = "<group>"; };
@@ -1904,6 +1906,7 @@
 				F837FC0ECF4D4ED1BA756517 /* TranscriptContextAnalyzerTests.swift */,
 				871968A73E694CE1A7813792 /* DataManagerThreadsDeletionTests.swift */,
 				D44E1DA26DB135B0837E447F /* ThreadStoreTests.swift */,
+				25F8773000AC4CCC93F68DAF /* FieldGateReportTests.swift */,
 				3C6AF4CB2CDC4F6DA1162CEA /* ThreadsDossierTests.swift */,
 				C14640E393BDAEC8C4856281 /* PromptAssemblerLanguageTests.swift */,
 				cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */,
@@ -3269,6 +3272,7 @@
 				23795691640A42D0872CBC91 /* TranscriptContextAnalyzerTests.swift in Sources */,
 				9199078D805D40A087270BF5 /* DataManagerThreadsDeletionTests.swift in Sources */,
 				4A874B223DF94F32AE65A3B2 /* ThreadStoreTests.swift in Sources */,
+				AB27642252E24998A3ABFA3B /* FieldGateReportTests.swift in Sources */,
 				366617D2E2404425A7BB8E0F /* ThreadsDossierTests.swift in Sources */,
 				2161BB76D1D8B9E8BBB49B5A /* PromptAssemblerLanguageTests.swift in Sources */,
 				7ac8ee442a1ce6fcb926501a /* SharePayloadTourTests.swift in Sources */,
