@@ -129,9 +129,12 @@ struct PromptListView: View {
                 timestamp: recording.startDate,
                 startCoordinate: startCoord,
                 endCoordinate: endCoord,
-                wordsPerMinute: recording.wordsPerMinute
+                wordsPerMinute: recording.wordsPerMinute,
+                recordingUUID: uuid
             )
         }.sorted { $0.timestamp < $1.timestamp }
+
+        let threadsDossier = await buildThreadsDossier(recordings: recordings)
 
         let meditations = walk.activityIntervals
             .filter { $0.activityType == .meditation }
@@ -143,14 +146,6 @@ struct PromptListView: View {
                 label: wp.label, icon: wp.icon, timestamp: wp.timestamp,
                 coordinate: (lat: wp.latitude, lon: wp.longitude)
             )
-        }
-
-        let celestial: CelestialSnapshot?
-        if UserPreferences.celestialAwarenessEnabled.value {
-            let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
-            celestial = CelestialCalculator.snapshot(for: walk.startDate, system: system)
-        } else {
-            celestial = nil
         }
 
         let (photoEntries, narrativeArc) = buildPhotoContext()
@@ -168,7 +163,7 @@ struct PromptListView: View {
             waypoints: waypointContexts,
             weather: ContextFormatter.formatWeather(walk),
             lunarPhase: LunarPhase.current(date: walk.startDate),
-            celestial: celestial,
+            celestial: buildCelestial(),
             photoContexts: photoEntries,
             narrativeArc: narrativeArc,
             mode: practice.mode,
@@ -177,8 +172,21 @@ struct PromptListView: View {
                 PauseContext(startDate: $0.startDate, duration: $0.endDate.timeIntervalSince($0.startDate))
             },
             ascent: walk.ascend,
-            descent: walk.descend
+            descent: walk.descend,
+            threadsDossier: threadsDossier
         )
+    }
+
+    private func buildCelestial() -> CelestialSnapshot? {
+        guard UserPreferences.celestialAwarenessEnabled.value else { return nil }
+        let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+        return CelestialCalculator.snapshot(for: walk.startDate, system: system)
+    }
+
+    private func buildThreadsDossier(recordings: [RecordingContext]) async -> String? {
+        guard let walkUUID = walk.uuid else { return nil }
+        let walkIndex = await MainActor.run { DataManager.voiceRecordingWalkIndex() }
+        return ThreadsDossierBuilder.build(walkUUID: walkUUID, recordings: recordings, walkIndex: walkIndex)
     }
 
     private var practice: (mode: PracticeMode, seekStory: SeekStoryContext?) {

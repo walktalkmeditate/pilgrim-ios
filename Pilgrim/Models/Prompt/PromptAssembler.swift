@@ -29,7 +29,7 @@ enum PromptAssembler {
         }
 
         sections += "\n\n---\n\n\(fullInstruction)"
-        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech))"
+        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, hasThreadsDossier: context.threadsDossier != nil))"
         return sections
     }
 
@@ -102,6 +102,10 @@ enum PromptAssembler {
             sections += "\n\n\(recentWalks)"
         }
 
+        if let dossier = context.threadsDossier {
+            sections += "\n\n\(dossier)"
+        }
+
         let directives = AttentionDirectives.detect(context: context)
         if !directives.isEmpty {
             let bullets = directives.map { "- \($0)" }.joined(separator: "\n")
@@ -138,11 +142,14 @@ enum PromptAssembler {
     /// do (invent, flatten, switch language) plus the voice's own form
     /// constraints. This shapes the *reply's* quality — the part of the
     /// feature the walker actually experiences.
-    static func responseContract(voice: PromptVoice, hasSpeech: Bool) -> String {
+    static func responseContract(voice: PromptVoice, hasSpeech: Bool, hasThreadsDossier: Bool) -> String {
         var lines = voice.responseConstraints(hasSpeech: hasSpeech)
         if hasSpeech {
             lines.append("Respond in the language the walker speaks in the transcription.")
             lines.append("If more than one voice appears in the transcription, honor it as a conversation — attend to what happened between the speakers, and never guess at names.")
+        }
+        if hasThreadsDossier {
+            lines.append("The thought-thread marker profiles are descriptive on-device linguistic signals, not assessments — interpret them gently, never produce clinical or diagnostic language, and never treat a single walk's numbers as meaningful on their own.")
         }
         lines.append("Draw only on what this walk actually holds — never invent details, events, or memories that are not in the context above.")
         let bullets = lines.map { "- \($0)" }.joined(separator: "\n")
