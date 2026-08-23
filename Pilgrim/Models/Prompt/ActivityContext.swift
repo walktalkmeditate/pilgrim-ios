@@ -54,7 +54,7 @@ struct ActivityContext {
     let pauses: [PauseContext]
     let ascent: Double?
     let descent: Double?
-    let threadsDossier: String?
+    var threadsDossier: String?
 
     var hasSpeech: Bool { !recordings.isEmpty }
 }

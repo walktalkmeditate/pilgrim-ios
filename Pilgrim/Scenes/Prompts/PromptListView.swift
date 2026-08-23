@@ -104,12 +104,31 @@ struct PromptListView: View {
         .disabled(!customStyleStore.canAddMore)
     }
 
+    /// The dossier build (file I/O + NLP over every stored context) and
+    /// prompt assembly are too heavy for the main actor, which this View's
+    /// methods inherit. CoreStore reads happen here on main; the detached
+    /// task works on plain values only.
     private func generatePrompts() {
         guard prompts.isEmpty else { return }
         Task {
-            let context = await buildActivityContext()
+            let baseContext = await buildActivityContext()
+            let walkUUID = walk.uuid
+            let walkIndex = DataManager.voiceRecordingWalkIndex()
+
+            let (context, generated) = await Task.detached(priority: .userInitiated) {
+                var context = baseContext
+                context.threadsDossier = walkUUID.flatMap {
+                    ThreadsDossierBuilder.build(
+                        walkUUID: $0,
+                        recordings: baseContext.recordings,
+                        walkIndex: walkIndex
+                    )
+                }
+                return (context, PromptGenerator.generateAll(context: context))
+            }.value
+
             activityContext = context
-            prompts = PromptGenerator.generateAll(context: context)
+            prompts = generated
             regenerateCustomPrompts()
         }
     }
@@ -133,8 +152,6 @@ struct PromptListView: View {
                 recordingUUID: uuid
             )
         }.sorted { $0.timestamp < $1.timestamp }
-
-        let threadsDossier = await buildThreadsDossier(recordings: recordings)
 
         let meditations = walk.activityIntervals
             .filter { $0.activityType == .meditation }
@@ -173,7 +190,7 @@ struct PromptListView: View {
             },
             ascent: walk.ascend,
             descent: walk.descend,
-            threadsDossier: threadsDossier
+            threadsDossier: nil
         )
     }
 
@@ -181,12 +198,6 @@ struct PromptListView: View {
         guard UserPreferences.celestialAwarenessEnabled.value else { return nil }
         let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
         return CelestialCalculator.snapshot(for: walk.startDate, system: system)
-    }
-
-    private func buildThreadsDossier(recordings: [RecordingContext]) async -> String? {
-        guard let walkUUID = walk.uuid else { return nil }
-        let walkIndex = await MainActor.run { DataManager.voiceRecordingWalkIndex() }
-        return ThreadsDossierBuilder.build(walkUUID: walkUUID, recordings: recordings, walkIndex: walkIndex)
     }
 
     private var practice: (mode: PracticeMode, seekStory: SeekStoryContext?) {

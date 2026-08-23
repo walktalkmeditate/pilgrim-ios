@@ -2133,4 +2133,4 @@ git commit -m "feat(threads): field-gate harness — the analyzer must earn the 
 - [ ] Full suite: `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -5` — PASS.
 - [ ] Full-repo SwiftLint before pushing (pre-commit only checks staged files).
 - [ ] Grep gate: `grep -rn "TranscriptContext\|MarkerPack\|WalkThread" Pilgrim/Models/Share/ Pilgrim/Models/Data/PilgrimPackage/` returns nothing — derived data stays out of shares and exports.
-- [ ] Manual smoke on simulator: record → transcribe → open AI Prompts with the toggle on (dossier present) and off (prompt byte-identical to pre-feature output).
+- [ ] Manual smoke on simulator: record → transcribe → open AI Prompts with the toggle on (dossier present) and off (prompt byte-identical to the same build's output with no dossier — Stage 1's detected-language note and lemma directives are intentionally ungated).

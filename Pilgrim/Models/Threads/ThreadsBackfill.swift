@@ -8,6 +8,7 @@ enum ThreadsBackfill {
 
     static let completedKey = "threadsBackfillCompleted"
     private static var isRunning = false
+    private static var generation = 0
 
     static var isComplete: Bool {
         UserDefaults.standard.bool(forKey: completedKey)
@@ -16,7 +17,13 @@ enum ThreadsBackfill {
     /// Called from PilgrimPackageImporter's success path: imports bypass the
     /// transcription choke point, so the flag resets and the next launch
     /// sweeps the imported recordings (origin labels re-suppress meanwhile).
+    /// Bumping the generation keeps a backfill already in flight from
+    /// clobbering the reset when it completes — its snapshot predates the
+    /// import. Importer completions land on the main queue (CoreStore's
+    /// default), the only place the counter is touched.
     static func reset() {
+        dispatchPrecondition(condition: .onQueue(.main))
+        generation += 1
         UserDefaults.standard.set(false, forKey: completedKey)
     }
 
@@ -29,12 +36,15 @@ enum ThreadsBackfill {
     @MainActor
     static func runIfNeeded(store: TranscriptContextStore = .shared) {
         guard !isComplete, !isRunning else { return }
+        let wasMonitoring = UIDevice.current.isBatteryMonitoringEnabled
         UIDevice.current.isBatteryMonitoringEnabled = true
-        guard UIDevice.current.batteryLevel > 0.2
-            || UIDevice.current.batteryState == .charging
-            || UIDevice.current.batteryState == .full else { return }
+        let level = UIDevice.current.batteryLevel
+        let batteryState = UIDevice.current.batteryState
+        UIDevice.current.isBatteryMonitoringEnabled = wasMonitoring
+        guard level < 0 || level > 0.2 || batteryState == .charging || batteryState == .full else { return }
         isRunning = true
 
+        let startGeneration = generation
         let items = DataManager.transcribedRecordingsSnapshot()
         Task.detached(priority: .utility) {
             for item in items where !store.hasContext(for: item.uuid) {
@@ -45,7 +55,9 @@ enum ThreadsBackfill {
                 )
             }
             await MainActor.run {
-                UserDefaults.standard.set(true, forKey: completedKey)
+                if generation == startGeneration {
+                    UserDefaults.standard.set(true, forKey: completedKey)
+                }
                 isRunning = false
             }
         }

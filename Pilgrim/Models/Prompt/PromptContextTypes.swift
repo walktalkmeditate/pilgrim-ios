@@ -6,7 +6,7 @@ struct RecordingContext {
     let startCoordinate: (lat: Double, lon: Double)?
     let endCoordinate: (lat: Double, lon: Double)?
     let wordsPerMinute: Double?
-    var recordingUUID: UUID? = nil
+    var recordingUUID: UUID?
 }
 
 struct MeditationContext {

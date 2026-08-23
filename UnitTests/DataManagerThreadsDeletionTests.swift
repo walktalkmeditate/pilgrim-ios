@@ -96,4 +96,19 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
         wait(for: [deleted], timeout: 5)
         XCTAssertTrue(store.loadAll().isEmpty)
     }
+
+    func testDeleteAll_tombstonesRecordingsWithoutContextFiles() throws {
+        let (_, recordingUUID) = try seedWalkWithTranscribedRecording()
+
+        let deleted = expectation(description: "deleted all")
+        DataManager.deleteAll { success, _ in
+            XCTAssertTrue(success)
+            deleted.fulfill()
+        }
+        wait(for: [deleted], timeout: 5)
+
+        store.save(context(for: recordingUUID))
+        XCTAssertTrue(store.loadAll().isEmpty,
+                      "an analysis queued before Delete All must not write after the wipe")
+    }
 }

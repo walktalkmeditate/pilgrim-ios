@@ -822,7 +822,9 @@ struct DataManager {
      */
     public static func deleteAll(completion: @escaping (_ success: Bool, _ error: DataManager.DeleteError?) -> Void) {
 
-        let allRecordingPaths: [String] = (try? dataStack.fetchAll(From<VoiceRecording>()))?.compactMap { $0._fileRelativePath.value } ?? []
+        let allRecordings = (try? dataStack.fetchAll(From<VoiceRecording>())) ?? []
+        let allRecordingPaths = allRecordings.compactMap { $0._fileRelativePath.value }
+        let allRecordingUUIDs = allRecordings.compactMap { $0._uuid.value }
 
         dataStack.perform(asynchronous: { transaction in
 
@@ -842,6 +844,10 @@ struct DataManager {
             case .success:
                 cleanupRecordingFiles(relativePaths: allRecordingPaths)
                 cleanupEmptyRecordingsDirectory()
+                // Tombstone every known recording UUID explicitly: deleteAll()
+                // only tombstones files already on disk, so an in-flight
+                // analysis queued before the wipe could still write afterward.
+                transcriptContextStore.delete(recordingUUIDs: allRecordingUUIDs)
                 transcriptContextStore.deleteAll()
                 UserPreferences.clearArchivedRegistry()
                 completion(true, nil)

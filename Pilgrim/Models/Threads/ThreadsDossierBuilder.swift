@@ -8,6 +8,7 @@ import Foundation
 enum ThreadsDossierBuilder {
 
     private static var memo: (changeCount: Int, walkUUID: UUID, dossier: String?)?
+    private static let memoLock = NSLock()
 
     static func build(
         walkUUID: UUID,
@@ -16,8 +17,11 @@ enum ThreadsDossierBuilder {
         store: TranscriptContextStore = .shared
     ) -> String? {
         guard UserPreferences.threadsAfterWalks.value, !recordings.isEmpty else { return nil }
-        if let memo, memo.changeCount == store.changeCount, memo.walkUUID == walkUUID {
-            return memo.dossier
+        memoLock.lock()
+        let cached = memo
+        memoLock.unlock()
+        if let cached, cached.changeCount == store.changeCount, cached.walkUUID == walkUUID {
+            return cached.dossier
         }
 
         store.pruneOrphans(keeping: Set(walkIndex.keys))
@@ -44,7 +48,9 @@ enum ThreadsDossierBuilder {
             currentWalkUUID: walkUUID,
             backfillComplete: ThreadsBackfill.isComplete
         )
+        memoLock.lock()
         memo = (store.changeCount, walkUUID, dossier)
+        memoLock.unlock()
         return dossier
     }
 }
