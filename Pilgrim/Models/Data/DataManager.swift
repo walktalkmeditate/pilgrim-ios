@@ -25,9 +25,12 @@ import CoreLocation
 
 /// A structure holding static instances and methods for database management and manipulation
 struct DataManager {
-    
+
+    /// Injection seam for tests; production always uses the shared store.
+    static var transcriptContextStore: TranscriptContextStore = .shared
+
     // MARK: - Database setup
-    
+
     /// static optional instance of the local storage holding the walk data
     private static var storage: SQLiteStore?
     
@@ -783,20 +786,23 @@ struct DataManager {
 
         let walkUUID = (object as? Walk)?.uuid
 
-        dataStack.perform(asynchronous: { (transaction) -> [String] in
+        dataStack.perform(asynchronous: { (transaction) -> ([String], [UUID]) in
 
             var filePaths: [String] = []
+            var recordingUUIDs: [UUID] = []
             if let walk = object as? Walk,
                let editable = transaction.edit(walk) {
                 filePaths = editable._voiceRecordings.value.compactMap { $0._fileRelativePath.value }
+                recordingUUIDs = editable._voiceRecordings.value.compactMap { $0._uuid.value }
             }
             transaction.delete(object)
-            return filePaths
+            return (filePaths, recordingUUIDs)
 
         }) { (result) in
             switch result {
-            case .success(let filePaths):
+            case .success(let (filePaths, recordingUUIDs)):
                 cleanupRecordingFiles(relativePaths: filePaths)
+                transcriptContextStore.delete(recordingUUIDs: recordingUUIDs)
                 if let uuid = walkUUID {
                     UserPreferences.unmarkWalkArchived(uuid: uuid)
                 }
@@ -836,6 +842,7 @@ struct DataManager {
             case .success:
                 cleanupRecordingFiles(relativePaths: allRecordingPaths)
                 cleanupEmptyRecordingsDirectory()
+                transcriptContextStore.deleteAll()
                 UserPreferences.clearArchivedRegistry()
                 completion(true, nil)
             case .failure(let error):
