@@ -132,6 +132,24 @@ extension DataManager {
         }
     }
 
+    /// Recording UUID → owning walk, for thread aggregation. The walk
+    /// relationship on PilgrimV7.VoiceRecording is `_workout` — a frozen
+    /// SQL identifier ("workout", PilgrimV7.swift:244) from the OutRun era;
+    /// never rename the entity property to "fix" the name. Main-actor only:
+    /// `dataStack.fetchAll` asserts Thread.isMainThread.
+    @MainActor
+    public static func voiceRecordingWalkIndex() -> [UUID: (walkUUID: UUID, date: Date)] {
+        let recordings = (try? dataStack.fetchAll(From<VoiceRecording>())) ?? []
+        var index: [UUID: (walkUUID: UUID, date: Date)] = [:]
+        for recording in recordings {
+            guard let uuid = recording._uuid.value,
+                  let walk = recording._workout.value,
+                  let walkUUID = walk._uuid.value else { continue }
+            index[uuid] = (walkUUID, walk._startDate.value)
+        }
+        return index
+    }
+
     public static func updateVoiceRecordingWordsPerMinute(
         uuid: UUID,
         wordsPerMinute: Double,
