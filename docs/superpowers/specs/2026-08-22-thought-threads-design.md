@@ -192,11 +192,35 @@ same "informed by the field" standard already applied to Stage 4. Run the
 analyzer over a dogfood corpus (the creator's real walk transcripts plus the
 demo-mode Camino walks), human-rate surfaced themes against a stated bar (at
 least 3 of 4 themes judged recognizable and meaningful by the walker who
-spoke them), and tune the walking-domain suppression list there. In the same
-gate, paste representative dossiers — including elevated absolutist and
-self-focus profiles — into the major consumer LLMs and iterate the handling
-note until none respond with clinical or diagnostic language. Card
-thresholds and copy are finalized only after this gate passes.
+spoke them) — and, alongside them, intention-suggestion quality: do the
+`ThreadIntentionSuggestions` chips read as intentions the walker would
+actually choose to carry into a walk — and tune the walking-domain
+suppression list there. In the same gate, paste representative dossiers —
+including elevated absolutist and self-focus profiles — into the major
+consumer LLMs and iterate the handling note until none respond with
+clinical or diagnostic language. Card thresholds and copy are finalized
+only after this gate passes.
+
+### Intention suggestions from threads (any walk)
+
+Independent of the Stage 3 card, `ThreadIntentionSuggestions` offers, never
+claims, a small set of intention chips in `IntentionSettingView`, built from
+the same `ThreadStore` aggregation the dossier uses. A thread only qualifies
+once it has recurred across at least 2 distinct walks within the trailing 30
+days (the same guardrail `ThreadStore` uses for "recurring" status), ranked
+by distinct-walk count then alphabetically, and capped at 2 suggestions so
+the walker is offered a nudge, not a list. Gated on `threadsAfterWalks`: off
+means no chips, matching the toggle's "off means off everywhere" scope
+already established for the dossier and backfill.
+
+The surface works for any walk — a plain wander or a Seek alike. Seek seeds
+its ritual from the walker's chosen intention, so a thread carried into a
+Seek steers which clearings it can find: walk with what walks with you.
+The chips ship now rather than waiting on the Stage 3 card gate — they need
+no card UI to exist — but their quality (do they read as intentions worth
+carrying, not just words that recurred) is judged at the same field gate
+above, alongside the card's themes, and the selection window and copy are
+tuned there like everything else that gate touches.
 
 ### Stage 3 — "What walked with you" card + thread view
 

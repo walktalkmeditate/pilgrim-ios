@@ -12,6 +12,7 @@ struct IntentionSettingView: View {
 
     @State private var text = ""
     @State private var cachedSuggestions: [String] = []
+    @State private var threadSuggestions: [String] = []
     @State private var showMicDenied = false
     @StateObject private var recorder = IntentionVoiceRecorder()
     @FocusState private var isTextFieldFocused: Bool
@@ -36,6 +37,11 @@ struct IntentionSettingView: View {
                             .padding(.top, Constants.UI.Padding.big)
 
                         if text.isEmpty {
+                            if !threadSuggestions.isEmpty {
+                                threadSuggestionsSection
+                                    .padding(.top, Constants.UI.Padding.normal)
+                            }
+
                             if UserPreferences.celestialAwarenessEnabled.value {
                                 celestialSuggestions
                                     .padding(.top, Constants.UI.Padding.normal)
@@ -59,6 +65,11 @@ struct IntentionSettingView: View {
             if UserPreferences.celestialAwarenessEnabled.value {
                 cachedSuggestions = celestialIntentionSuggestions()
             }
+        }
+        .task {
+            // Reads the transcript-context store from disk — kept off the
+            // synchronous onAppear path so appearance never blocks on I/O.
+            threadSuggestions = await ThreadIntentionSuggestions.current()
         }
         .onChange(of: recorder.transcribedText) { _, transcribed in
             if let transcribed {
@@ -114,6 +125,37 @@ struct IntentionSettingView: View {
                 Text("\(text.count)/\(maxCharacters)")
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog.opacity(0.5))
+            }
+        }
+    }
+
+    // MARK: - Thread Suggestions
+
+    private var threadSuggestionsSection: some View {
+        VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+            Text("Recurring")
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog.opacity(0.5))
+
+            FlowLayout(spacing: Constants.UI.Padding.small) {
+                ForEach(threadSuggestions, id: \.self) { suggestion in
+                    Button {
+                        text = suggestion
+                    } label: {
+                        Text(suggestion)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.ink.opacity(0.7))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .frame(maxWidth: 250)
+                            .background(
+                                Capsule()
+                                    .fill(Color.moss.opacity(0.15))
+                            )
+                    }
+                }
             }
         }
     }
