@@ -228,13 +228,15 @@ excerpt tapping through to that walk's summary. The oldest entry is labeled
 "where it began."
 
 **Settings:** one toggle, "Thought threads after walks" (default on). Off
-means off everywhere: it hides the card and thread navigation AND suppresses
-the marker-profile and thread-trajectory sections of the prompt dossier, so
-prompts render exactly as today. The toggle's scope matches its label — a
-walker who declines thought threads declines the psychological analysis, not
-just its display. Baseline analysis still rides the existing transcription
-consent (transcription is user-initiated; `autoTranscribe` defaults off),
-but nothing derived from it surfaces anywhere while the toggle is off.
+means off everywhere: it hides the card and thread navigation, suppresses
+the marker-profile and thread-trajectory sections of the prompt dossier, AND
+stops new analysis — the backfill sweep and the per-transcription trigger
+both check the toggle before writing a context, so prompts render exactly as
+today. The toggle's scope matches its label — a walker who declines thought
+threads declines the psychological analysis, not just its display. Contexts
+written before the toggle was turned off remain on disk, but nothing reads
+or extends them while it's off; re-enabling resets the backfill so history
+missed during the gap gets swept.
 
 ## Data flow
 

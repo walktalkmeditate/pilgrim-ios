@@ -39,9 +39,12 @@ enum ThreadsBackfill {
     /// for — saved by this sweep, or already on disk after the attempt.
     /// A failed save (or the battery gate closing mid-sweep) leaves the flag
     /// false so the next launch retries just the missing ones.
+    ///
+    /// Off means no analysis at all, not just no surfacing — re-enabling the
+    /// toggle resweeps via the `ThreadsBackfill.reset()` call in VoiceCard.
     @MainActor
     static func runIfNeeded(store: TranscriptContextStore = .shared) {
-        guard !isComplete, !isRunning else { return }
+        guard !isComplete, !isRunning, UserPreferences.threadsAfterWalks.value else { return }
         guard BatteryGate.allowsBackgroundWork() else { return }
         isRunning = true
 

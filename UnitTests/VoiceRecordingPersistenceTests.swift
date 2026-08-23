@@ -114,6 +114,35 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
         )
     }
 
+    func test_updateTranscription_existingRecording_threadsToggleOff_doesNotAnalyze() throws {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = false
+
+        let uuid = UUID()
+        try seedRecording(uuid: uuid)
+        let contextStore = makeTranscriptContextStore()
+        let transcript = "walked beneath the cedars this morning, still thinking about the move"
+
+        let done = expectation(description: "completion")
+        DataManager.updateVoiceRecordingTranscription(
+            uuid: uuid, transcription: transcript, transcriptContextStore: contextStore, dataStack: stack
+        ) { success in
+            XCTAssertTrue(success)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+
+        // Analysis is dispatched asynchronously on success only; give a
+        // toggled-off update a beat to prove it never fires, rather than
+        // asserting immediately against a task that was never scheduled.
+        let notScheduled = expectation(description: "no analysis scheduled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { notScheduled.fulfill() }
+        wait(for: [notScheduled], timeout: 5)
+
+        XCTAssertFalse(contextStore.hasContext(for: uuid), "toggle off must never analyze")
+    }
+
     func test_updateTranscription_missingRecording_doesNotAnalyze() throws {
         let uuid = UUID()
         let contextStore = makeTranscriptContextStore()

@@ -54,6 +54,10 @@ struct VoiceCard: View {
                 isOn: $threadsAfterWalks
             ) { newValue in
                 UserPreferences.threadsAfterWalks.value = newValue
+                if newValue {
+                    ThreadsBackfill.reset()
+                    ThreadsBackfill.runIfNeeded()
+                }
             }
 
             if case .downloadingModel(let progress) = transcriptionService.state {

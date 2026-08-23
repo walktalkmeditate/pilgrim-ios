@@ -103,7 +103,7 @@ extension DataManager {
         completion: ((Bool) -> Void)? = nil
     ) {
         updateVoiceRecording(uuid: uuid, dataStack: dataStack, completion: { success in
-            if success {
+            if success, UserPreferences.threadsAfterWalks.value {
                 Task.detached(priority: .utility) {
                     TranscriptContextAnalyzer.analyzeAndStore(
                         recordingUUID: uuid,
