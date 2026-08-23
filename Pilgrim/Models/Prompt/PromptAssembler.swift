@@ -88,6 +88,12 @@ enum PromptAssembler {
             sections += "\n\n**Walking Transcription:**\n\n\(transcription)"
         }
 
+        if !transcription.isEmpty,
+           let code = TranscriptNLP.detectLanguage(context.recordings.map(\.text).joined(separator: " ")),
+           let name = Locale(identifier: "en").localizedString(forLanguageCode: code) {
+            sections += "\n\n**Detected language:** \(name)"
+        }
+
         if let meditations = ContextFormatter.formatMeditations(context.meditations) {
             sections += "\n\n**Meditation Sessions:**\n\n\(meditations)"
         }
