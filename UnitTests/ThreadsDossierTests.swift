@@ -154,6 +154,33 @@ final class ThreadsDossierTests: XCTestCase {
         XCTAssertTrue(open!.contains("Notably quiet this walk: 'father' — present in 2 of the walker's recent walks."))
     }
 
+    func testAbsenceLines_suppressedWhenCurrentWalkHasNoAppearances() {
+        let current = context(words: 200, absolutist: 2)
+        let walkA = UUID(), walkB = UUID(), currentWalk = UUID()
+        let quietDate1 = DateFactory.makeDate(2024, 6, 1, 9, 0, 0)
+        let quietDate2 = DateFactory.makeDate(2024, 6, 5, 9, 0, 0)
+        let quietThread = WalkThread(
+            lemma: "father", displayTerm: "father",
+            appearances: [
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: walkA, date: quietDate1,
+                                 mentionCount: 2, salience: 0.02),
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: walkB, date: quietDate2,
+                                 mentionCount: 2, salience: 0.02)
+            ]
+        )
+
+        let dossier = ThreadsDossierFormatter.dossier(
+            currentRecordings: [(current, nil)], allContexts: [current],
+            threads: [quietThread], currentWalkUUID: currentWalk, backfillComplete: true
+        )
+        XCTAssertNotNil(dossier)
+        XCTAssertFalse(
+            dossier!.contains("**Quiet this walk:**"),
+            "no derivable anchor on the current walk means no absence claim, not a fallback to unrelated walks"
+        )
+        XCTAssertTrue(dossier!.contains("Thought threads"), "marker profiles still render")
+    }
+
     func testPaceCorrelation_slowerThemeGroupNotedOnActiveThread() {
         let walkUUID = UUID()
         let date = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)

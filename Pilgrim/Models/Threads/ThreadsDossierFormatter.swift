@@ -103,7 +103,7 @@ enum ThreadsDossierFormatter {
     private static func quietLines(threads: [WalkThread], currentWalkUUID: UUID) -> String? {
         let allAppearances = threads.flatMap(\.appearances)
         let currentWalkDates = allAppearances.filter { $0.walkUUID == currentWalkUUID }.map(\.date)
-        guard let anchor = currentWalkDates.max() ?? allAppearances.map(\.date).max() else { return nil }
+        guard let anchor = currentWalkDates.max() else { return nil }
         let windowStart = anchor.addingTimeInterval(-absenceWindow)
 
         let absent = threads
