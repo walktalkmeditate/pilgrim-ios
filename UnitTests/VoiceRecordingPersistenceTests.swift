@@ -80,6 +80,64 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
         wait(for: [done], timeout: 5)
     }
 
+    // MARK: - Analysis trigger (Threads)
+
+    private func makeTranscriptContextStore() -> TranscriptContextStore {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("VoiceRecordingPersistenceTests-\(UUID().uuidString)")
+        return TranscriptContextStore(directory: directory)
+    }
+
+    func test_updateTranscription_existingRecording_analyzesAndPersistsContext() throws {
+        let uuid = UUID()
+        try seedRecording(uuid: uuid)
+        let contextStore = makeTranscriptContextStore()
+        let transcript = "walked beneath the cedars this morning, still thinking about the move"
+
+        let done = expectation(description: "completion")
+        DataManager.updateVoiceRecordingTranscription(
+            uuid: uuid, transcription: transcript, transcriptContextStore: contextStore, dataStack: stack
+        ) { success in
+            XCTAssertTrue(success)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+
+        let deadline = Date().addingTimeInterval(5)
+        while contextStore.context(for: uuid, matching: TranscriptContextStore.hash(of: transcript)) == nil,
+              Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        XCTAssertNotNil(
+            contextStore.context(for: uuid, matching: TranscriptContextStore.hash(of: transcript)),
+            "a successful, found update must analyze and persist a transcript context"
+        )
+    }
+
+    func test_updateTranscription_missingRecording_doesNotAnalyze() throws {
+        let uuid = UUID()
+        let contextStore = makeTranscriptContextStore()
+        let transcript = "orphaned transcription for a recording that no longer exists"
+
+        let done = expectation(description: "completion")
+        DataManager.updateVoiceRecordingTranscription(
+            uuid: uuid, transcription: transcript, transcriptContextStore: contextStore, dataStack: stack
+        ) { success in
+            XCTAssertFalse(success)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+
+        // Analysis is dispatched asynchronously on success only; give a
+        // vanished-row update a beat to prove it never fires, rather than
+        // asserting immediately against a task that was never scheduled.
+        let notScheduled = expectation(description: "no analysis scheduled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { notScheduled.fulfill() }
+        wait(for: [notScheduled], timeout: 5)
+
+        XCTAssertFalse(contextStore.hasContext(for: uuid), "found == false must never analyze")
+    }
+
     // MARK: - Words per minute (AF26)
 
     func test_updateWordsPerMinute_existingRecording_reportsSuccess_andPersists() throws {

@@ -49,6 +49,7 @@
 		2209E53924DD4A8F00BBFC2F /* AltitudeManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */; };
 		2213137D23B4110700881806 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2213137C23B4110700881806 /* PermissionManager.swift */; };
 		221436B924432B390010D82B /* DataManager+Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436B824432B390010D82B /* DataManager+Query.swift */; };
+		3EC386B8DD3E4E628FCAFF65 /* DataManager+VoiceRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08817DA83BA4FEFB5687950 /* DataManager+VoiceRecording.swift */; };
 		221436BB244356A90010D82B /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436BA244356A90010D82B /* Array.swift */; };
 		221436BF2443746B0010D82B /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436BE2443746B0010D82B /* Event.swift */; };
 		221436C12443960A0010D82B /* UnitCount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 221436C02443960A0010D82B /* UnitCount.swift */; };
@@ -213,6 +214,7 @@
 		CDAF7513E68142C58DC5C6A2 /* TranscriptContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABD94794DC646449548E6FE /* TranscriptContext.swift */; };
 		F68DAA11D2864EEF954B29D2 /* TranscriptContextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A9DB8ECE2349858CF3747B /* TranscriptContextStore.swift */; };
 		E66DD877BDBA458E95E4347F /* TranscriptContextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */; };
+		CF635D421DBD437A8A75B616 /* ThreadsBackfill.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0523495072F4F50ACDEF645 /* ThreadsBackfill.swift */; };
 		23795691640A42D0872CBC91 /* TranscriptContextAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F837FC0ECF4D4ED1BA756517 /* TranscriptContextAnalyzerTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		510A5ED79C24B905DDD597A7 /* ScrollHapticEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */; };
@@ -685,6 +687,7 @@
 		2209E53824DD4A8F00BBFC2F /* AltitudeManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AltitudeManagement.swift; sourceTree = "<group>"; };
 		2213137C23B4110700881806 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
 		221436B824432B390010D82B /* DataManager+Query.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataManager+Query.swift"; sourceTree = "<group>"; };
+		E08817DA83BA4FEFB5687950 /* DataManager+VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataManager+VoiceRecording.swift"; sourceTree = "<group>"; };
 		221436BA244356A90010D82B /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
 		221436BE2443746B0010D82B /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
 		221436C02443960A0010D82B /* UnitCount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitCount.swift; sourceTree = "<group>"; };
@@ -839,6 +842,7 @@
 		5ABD94794DC646449548E6FE /* TranscriptContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContext.swift; sourceTree = "<group>"; };
 		21A9DB8ECE2349858CF3747B /* TranscriptContextStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextStore.swift; sourceTree = "<group>"; };
 		AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextAnalyzer.swift; sourceTree = "<group>"; };
+		E0523495072F4F50ACDEF645 /* ThreadsBackfill.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsBackfill.swift; sourceTree = "<group>"; };
 		F837FC0ECF4D4ED1BA756517 /* TranscriptContextAnalyzerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextAnalyzerTests.swift; sourceTree = "<group>"; };
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
@@ -1823,6 +1827,7 @@
 				229D4C1E2544CBBA00427913 /* DataManager+Error.swift */,
 				221436B824432B390010D82B /* DataManager+Query.swift */,
 				LR00000100000000LRDMRP01 /* DataManager+Replace.swift */,
+				E08817DA83BA4FEFB5687950 /* DataManager+VoiceRecording.swift */,
 				222632AB24B24FF80017517E /* ExportManager.swift */,
 				222199802439F93C00ADAE24 /* UnitConversion.swift */,
 				22FD3252255F319E007719C9 /* Primitive.swift */,
@@ -2245,6 +2250,7 @@
 				5ABD94794DC646449548E6FE /* TranscriptContext.swift */,
 				21A9DB8ECE2349858CF3747B /* TranscriptContextStore.swift */,
 				AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */,
+				E0523495072F4F50ACDEF645 /* ThreadsBackfill.swift */,
 			);
 			path = Threads;
 			sourceTree = "<group>";
@@ -2850,6 +2856,7 @@
 				22834F772542236000057FEB /* WalkEventInterface.swift in Sources */,
 				22F0000B234A1DF8008CFAD2 /* SwitchSetting.swift in Sources */,
 				221436B924432B390010D82B /* DataManager+Query.swift in Sources */,
+				3EC386B8DD3E4E628FCAFF65 /* DataManager+VoiceRecording.swift in Sources */,
 				LR00000200000000LRDMRP01 /* DataManager+Replace.swift in Sources */,
 				224AF62A237624E80047CBDE /* CustomDateFormatting.swift in Sources */,
 				22C1108024532C69009ACE81 /* WalkMapImageRequest.swift in Sources */,
@@ -3216,6 +3223,7 @@
 				CDAF7513E68142C58DC5C6A2 /* TranscriptContext.swift in Sources */,
 				F68DAA11D2864EEF954B29D2 /* TranscriptContextStore.swift in Sources */,
 				E66DD877BDBA458E95E4347F /* TranscriptContextAnalyzer.swift in Sources */,
+				CF635D421DBD437A8A75B616 /* ThreadsBackfill.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

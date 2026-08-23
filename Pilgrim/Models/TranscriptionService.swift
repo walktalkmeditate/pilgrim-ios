@@ -7,6 +7,10 @@ import CoreStore
 struct TranscriptionOutput {
     let text: String
     let wordsPerMinute: Double?
+    /// Cleaned text of segments WhisperKit flagged as low-confidence — the
+    /// ASR quality gate feeding `TranscriptContextAnalyzer` (Threads). Empty
+    /// for every engine that doesn't produce segment-level quality signals.
+    let flaggedFragments: [String]
 }
 
 /// Seam over WhisperKit — the one surface through which the service
@@ -23,7 +27,8 @@ extension WhisperKit: TranscriptionEngine {
         let results = try await transcribe(audioPath: path)
         return TranscriptionOutput(
             text: results.map(\.text).joined(separator: " "),
-            wordsPerMinute: Self.wordsPerMinute(from: results)
+            wordsPerMinute: Self.wordsPerMinute(from: results),
+            flaggedFragments: Self.flaggedFragments(from: results)
         )
     }
 
@@ -42,6 +47,20 @@ extension WhisperKit: TranscriptionEngine {
         let durationMinutes = Double(last.end - first.start) / 60.0
         guard durationMinutes > 0 else { return nil }
         return Double(wordCount) / durationMinutes
+    }
+
+    /// WhisperKit's two segment-level ASR quality signals: a high
+    /// compression ratio is the classic repeating-hallucination shape, a
+    /// high no-speech probability means the model transcribed silence.
+    /// WhisperKit 0.16 hardcodes `noSpeechProb` to 0 (upstream TODO,
+    /// TextDecoder.swift:993), so compressionRatio is the effective signal
+    /// today — the branch stays for when that lands. Fragment text is
+    /// cleaned through the same helper as the persisted transcript so it
+    /// can actually be found inside it later.
+    private static func flaggedFragments(from results: [TranscriptionResult]) -> [String] {
+        results.flatMap { $0.segments }
+            .filter { $0.compressionRatio > 2.4 || $0.noSpeechProb > 0.6 }
+            .map { TranscriptionService.cleanTranscription($0.text) }
     }
 }
 
@@ -283,9 +302,9 @@ final class TranscriptionService: ObservableObject {
             attempted += 1
             do {
                 let output = try await pipe.transcribeAudio(atPath: audioURL.path)
-                let text = cleanTranscription(output.text)
+                let text = Self.cleanTranscription(output.text)
                 if !text.isEmpty {
-                    if await persistTranscription(uuid: uuid, text: text) {
+                    if await persistTranscription(uuid: uuid, text: text, flaggedFragments: output.flaggedFragments) {
                         results[uuid] = text
                         if let wpm = output.wordsPerMinute {
                             await persistWordsPerMinute(uuid: uuid, wordsPerMinute: wpm)
@@ -371,12 +390,12 @@ final class TranscriptionService: ObservableObject {
 
         do {
             let output = try await pipe.transcribeAudio(atPath: audioURL.path)
-            let text = cleanTranscription(output.text)
+            let text = Self.cleanTranscription(output.text)
             guard !text.isEmpty else {
                 await MainActor.run { state = .completed; isTranscribing = false }
                 return nil
             }
-            guard await persistTranscription(uuid: uuid, text: text) else {
+            guard await persistTranscription(uuid: uuid, text: text, flaggedFragments: output.flaggedFragments) else {
                 await MainActor.run { state = .failed("Transcription couldn't be saved"); isTranscribing = false }
                 return nil
             }
@@ -395,16 +414,18 @@ final class TranscriptionService: ObservableObject {
     /// Persists a transcription with one retry. Returns `false` when the
     /// write failed (or the recording row is gone) so callers can avoid
     /// reporting unsaved work as done.
-    private func persistTranscription(uuid: UUID, text: String) async -> Bool {
-        if await persistTranscriptionOnce(uuid: uuid, text: text) { return true }
-        if await persistTranscriptionOnce(uuid: uuid, text: text) { return true }
+    private func persistTranscription(uuid: UUID, text: String, flaggedFragments: [String]) async -> Bool {
+        if await persistTranscriptionOnce(uuid: uuid, text: text, flaggedFragments: flaggedFragments) { return true }
+        if await persistTranscriptionOnce(uuid: uuid, text: text, flaggedFragments: flaggedFragments) { return true }
         print("[TranscriptionService] Transcription for \(uuid) not saved after retry")
         return false
     }
 
-    private func persistTranscriptionOnce(uuid: UUID, text: String) async -> Bool {
+    private func persistTranscriptionOnce(uuid: UUID, text: String, flaggedFragments: [String]) async -> Bool {
         await withCheckedContinuation { continuation in
-            DataManager.updateVoiceRecordingTranscription(uuid: uuid, transcription: text) { success in
+            DataManager.updateVoiceRecordingTranscription(
+                uuid: uuid, transcription: text, flaggedFragments: flaggedFragments
+            ) { success in
                 continuation.resume(returning: success)
             }
         }
@@ -426,9 +447,12 @@ final class TranscriptionService: ObservableObject {
 
     private static let whisperArtifacts = ["[BLANK_AUDIO]", "[NO_SPEECH]", "(blank_audio)", "(no_speech)"]
 
-    private func cleanTranscription(_ text: String) -> String {
+    /// Shared by the transcript-cleaning call sites below and the WhisperKit
+    /// adapter's flagged-fragment collection, so a fragment's cleaned text
+    /// can actually be found inside the cleaned, persisted transcript.
+    fileprivate static func cleanTranscription(_ text: String) -> String {
         var cleaned = text
-        for artifact in Self.whisperArtifacts {
+        for artifact in whisperArtifacts {
             cleaned = cleaned.replacingOccurrences(of: artifact, with: "")
         }
         return cleaned
@@ -459,7 +483,7 @@ final class TranscriptionService: ObservableObject {
 
         do {
             let output = try await pipe.transcribeAudio(atPath: url.path)
-            let text = cleanTranscription(output.text)
+            let text = Self.cleanTranscription(output.text)
             await MainActor.run { isTranscribing = false; unloadModel() }
             return text.isEmpty ? nil : text
         } catch {

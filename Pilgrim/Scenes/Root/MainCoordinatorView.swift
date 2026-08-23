@@ -20,6 +20,10 @@ class MainCoordinator: ObservableObject {
 
     init() {
         checkForRecovery()
+        // `init()` isn't itself main-actor-isolated (see the `Task { @MainActor
+        // in ... }` hops elsewhere in this file) — hop over the same way to
+        // reach the backfill's guaranteed main-actor invocation.
+        Task { @MainActor in ThreadsBackfill.runIfNeeded() }
     }
 
     private func checkForRecovery() {

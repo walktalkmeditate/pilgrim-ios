@@ -66,17 +66,28 @@ enum PilgrimPackageImporter {
         completion: @escaping (Result<ImportSummary, PilgrimPackageError>) -> Void
     ) {
         let completion = safeClosure(from: completion)
+        // Imports write voice recordings via `persistVoiceRecordings`, not
+        // `updateVoiceRecordingTranscription` — they bypass the choke point
+        // that triggers per-recording analysis. Resetting here makes the
+        // next launch's idempotent backfill sweep the imported recordings;
+        // origin labels correctly re-suppress until it completes.
+        let reportResult: (Result<ImportSummary, PilgrimPackageError>) -> Void = { result in
+            if case .success = result {
+                ThreadsBackfill.reset()
+            }
+            completion(result)
+        }
 
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let package = try unpackAndDecode(from: url)
                 DispatchQueue.main.async {
-                    saveData(package: package, completion: completion)
+                    saveData(package: package, completion: reportResult)
                 }
             } catch let error as PilgrimPackageError {
-                completion(.failure(error))
+                reportResult(.failure(error))
             } catch {
-                completion(.failure(.fileSystemError(error)))
+                reportResult(.failure(.fileSystemError(error)))
             }
         }
     }
