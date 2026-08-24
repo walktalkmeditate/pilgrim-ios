@@ -21,7 +21,7 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    private func seedRecording(uuid: UUID) throws {
+    private func seedRecording(uuid: UUID, transcription: String? = nil, wordsPerMinute: Double? = nil) throws {
         try stack.perform(synchronous: { transaction in
             let walk = transaction.create(Into<Walk>())
             walk._uuid .= UUID()
@@ -44,6 +44,8 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
             recording._uuid .= uuid
             recording._fileRelativePath .= "Recordings/X/a.m4a"
             recording._workout .= walk
+            if let transcription { recording._transcription .= transcription }
+            if let wordsPerMinute { recording._wordsPerMinute .= wordsPerMinute }
         })
     }
 
@@ -248,5 +250,41 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
             done.fulfill()
         }
         wait(for: [done], timeout: 5)
+    }
+
+    // MARK: - Snapshot queries (Threads/Lunation) — dataStack is a static
+    // default on these, not an injectable parameter, so swap-and-restore
+    // DataManager.dataStack the way ThreadsCardModelTests/
+    // DataManagerThreadsDeletionTests do.
+
+    @MainActor
+    func test_transcribedRecordingsSnapshot_returnsTranscribedRecordings() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let uuid = UUID()
+        try seedRecording(uuid: uuid, transcription: "walked beneath the cedars")
+
+        let snapshot = DataManager.transcribedRecordingsSnapshot()
+
+        XCTAssertEqual(snapshot.count, 1, "queryAttributes stores \"id\" as a string — a raw `as? UUID` cast must not silently drop every row")
+        XCTAssertEqual(snapshot.first?.uuid, uuid)
+        XCTAssertEqual(snapshot.first?.transcript, "walked beneath the cedars")
+    }
+
+    @MainActor
+    func test_voiceRecordingPaceIndex_returnsWordsPerMinuteByRecording() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let uuid = UUID()
+        try seedRecording(uuid: uuid, wordsPerMinute: 132.5)
+
+        let index = DataManager.voiceRecordingPaceIndex()
+
+        XCTAssertEqual(index.count, 1, "queryAttributes stores \"id\" as a string — a raw `as? UUID` cast must not silently drop every row")
+        XCTAssertEqual(index[uuid] ?? -1, 132.5, accuracy: 0.001)
     }
 }

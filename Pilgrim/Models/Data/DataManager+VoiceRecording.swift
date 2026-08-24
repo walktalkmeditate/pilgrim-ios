@@ -130,7 +130,12 @@ extension DataManager {
     /// "transcription" — frozen SQL names) instead of `fetchAll`, which
     /// faulted in every recording row, one SQL round-trip each — mirroring
     /// `voiceRecordingWalkIndex` below. Main-actor only, like the other
-    /// snapshot queries here.
+    /// snapshot queries here. `queryAttributes` returns the raw stored value
+    /// for "id" — CoreStore's `UUID: QueryableAttributeType` declares
+    /// `cs_rawAttributeType = .stringAttributeType`, so the dictionary row
+    /// never carries a bridged `UUID`/`NSUUID`, only the string CoreStore
+    /// wrote. `rowUUID` undoes that encoding explicitly instead of relying
+    /// on a cast that can only ever fail.
     @MainActor
     public static func transcribedRecordingsSnapshot() -> [(uuid: UUID, transcript: String)] {
         guard let rows = try? dataStack.queryAttributes(
@@ -141,7 +146,7 @@ extension DataManager {
             )
         ) else { return [] }
         return rows.compactMap { row in
-            guard let uuid = row["id"] as? UUID,
+            guard let uuid = rowUUID(row["id"]),
                   let transcript = row["transcription"] as? String,
                   !transcript.isEmpty else { return nil }
             return (uuid, transcript)
@@ -205,7 +210,9 @@ extension DataManager {
 
     /// Recording UUID → words-per-minute, for the recap's pace texture. A
     /// two-column `queryAttributes` fetch mirroring the snapshot queries
-    /// above. Main-actor only, like its neighbors.
+    /// above. Main-actor only, like its neighbors. Same string-backed "id"
+    /// column as `transcribedRecordingsSnapshot` above — `rowUUID` undoes
+    /// CoreStore's `.stringAttributeType` encoding for `UUID` explicitly.
     @MainActor
     public static func voiceRecordingPaceIndex() -> [UUID: Double] {
         guard let rows = try? dataStack.queryAttributes(
@@ -217,7 +224,7 @@ extension DataManager {
         ) else { return [:] }
         var index: [UUID: Double] = [:]
         for row in rows {
-            guard let uuid = row["id"] as? UUID,
+            guard let uuid = rowUUID(row["id"]),
                   let wpm = row["wordsPerMinute"] as? Double else { continue }
             index[uuid] = wpm
         }
