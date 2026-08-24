@@ -1,7 +1,7 @@
 # Threads — Semantic Analysis of Walk Transcripts
 
-**Date:** 2026-08-22
-**Status:** Design approved, pending implementation planning
+**Date:** 2026-08-22 (Stage 3+4 addendum 2026-08-24)
+**Status:** Stages 1–2 shipped in v1.11.0 (PR #65). Field gate part 1 passed. Stage 3+4 design below, pending implementation planning.
 **Repos:** pilgrim-ios only (nothing leaves the device; worker/viewer untouched)
 
 ## Vision
@@ -327,8 +327,8 @@ or the schema.
 
 ## Out of scope (parked deliberately)
 
-- Moon-cycle / lunation recap (natural Stage 4; designed later, informed by
-  what threads actually look like in the field).
+- ~~Moon-cycle / lunation recap~~ — promoted into the Stage 3+4 addendum
+  below (2026-08-24), descriptive-only.
 - Any journal-page rendering of threads.
 - Foundation Models on-device generation (the clipboard-prompt flow already
   delegates generation to the walker's chosen AI; revisit only if that flow
@@ -364,5 +364,69 @@ clinical edge lives only in that hand-carried dossier.
   pack's composition at the field gate if dossier quality shows no lift.
 - Should the 30-day recurrence window adapt to walking cadence (a weekly
   walker's "recurring" is a daily walker's "fading")?
-- Per-theme forget control: should a walker be able to exclude a specific
-  thread (e.g. a person's name) from analysis, card, and dossier?
+- ~~Per-theme forget control~~ — resolved 2026-08-24: committed into Stage 3
+  as "Let this one go" (see addendum).
+
+## Stage 3+4 addendum (2026-08-24) — post-field-gate
+
+### Field gate outcomes
+
+- **Theme quality: PASSED** on real dogfood walks (v1.11.0 TestFlight) — the
+  walker judged surfaced themes recognizable and meaningful. Engine
+  thresholds stand as shipped (`minimumMentions = 2`, exact-lemma identity,
+  current suppression list).
+- **Chips: cleared to ship.** `ThreadIntentionSuggestions.pendingFieldGate`
+  flips to `false` in the Stage 3 release. Judge the section header copy
+  ("Recurring" vs. a softer variant) against real chip words during
+  implementation review.
+- **LLM-readback QA: PENDING — a RELEASE gate, not a build gate.** Before
+  the Stage 3 release (1.12.0) is submitted anywhere beyond internal
+  TestFlight: paste representative real dossiers (including elevated marker
+  profiles) into the major consumer LLMs and iterate the handling note until
+  no response contains clinical or diagnostic language.
+
+### Let this one go (committed — ships with the card)
+
+A walker can release a thread. Long-press a theme (on the card or in the
+thread view) → a gentle confirm ("Let 'my father' go? It will no longer be
+noticed.") → the lemma joins a persisted released set. Every surfacing path
+filters released lemmas — ThreadStore aggregation (which covers the card,
+thread view, dossier trajectories, and intention chips) plus the dossier's
+per-recording theme lines. Analysis and stored contexts are untouched, so
+release is reversible: a small "Released threads" list under the Thought
+Threads settings area lets the walker welcome one back. Releasing is
+wabi-sabi, not deletion — the words remain in their transcripts; the app
+simply stops noticing.
+
+### Return to where it began (committed — ships with the thread view)
+
+The thread view's oldest entry ("where it began") gains one quiet action:
+open the origin walk's map, focused on the recording's start coordinate.
+Viewing, not navigation — the walker sees the place a thread first found
+words. If the origin recording has no GPS, the action simply doesn't render.
+
+### The lunation recap (Stage 4, pulled forward — descriptive-only)
+
+When a lunation closes (existing `LunarPhase` boundaries), the first
+post-walk summary after the boundary shows one quiet invitation line —
+"The Sturgeon Moon has set — see what walked with you." — which opens the
+recap sheet (pulled, never pushed; the journal stays untouched; the
+invitation renders once per lunation and only when the closed moon held at
+least one analyzed walk).
+
+The recap holds: the moon's name and walk count; themes as plain counts
+("'the move' — walked with you in 6 of 9 walks"), each tappable to its
+thread view; *new this moon* firsts (backfill-gated, computed against full
+history like all origin claims); and one state-only texture line from the
+safe markers ("spoken slowly, with words of insight"). **No directional
+language** — the original Stage 4 sketch's rising/steady/faded labels are
+superseded by design principle 1; trajectory remains dossier-only. Released
+lemmas are filtered here too. Deterministic template copy; no generation.
+
+### Stage 3+4 release shape (v1.12.0)
+
+Card + thread view (as specified in Stage 3 above, unchanged) + Let this
+one go + Return to where it began + chips live + lunation recap. The
+accessibility requirements in Stage 3 (Dynamic Type wrapping, VoiceOver
+chip elements, 44-point targets) extend to the recap sheet and released
+list. LLM-readback QA gates external release.
