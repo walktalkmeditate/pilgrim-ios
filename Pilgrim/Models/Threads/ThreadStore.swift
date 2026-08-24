@@ -33,14 +33,15 @@ enum ThreadStore {
 
     static func build(
         contexts: [TranscriptContext],
-        walks: [UUID: (walkUUID: UUID, date: Date)]
+        walks: [UUID: (walkUUID: UUID, date: Date)],
+        released: Set<String> = []
     ) -> [WalkThread] {
         var appearancesByLemma: [String: [ThreadAppearance]] = [:]
         var displayCounts: [String: [String: Int]] = [:]
 
         for context in contexts {
             guard let walk = walks[context.recordingUUID] else { continue }
-            for theme in context.themes {
+            for theme in context.themes where !released.contains(theme.lemma) {
                 appearancesByLemma[theme.lemma, default: []].append(ThreadAppearance(
                     recordingUUID: context.recordingUUID,
                     walkUUID: walk.walkUUID,

@@ -10,6 +10,12 @@ final class AttentionDirectivesTests: XCTestCase {
 
     private let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
 
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.defaultsKey)
+        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.welcomedBackKey)
+    }
+
     private func recording(_ text: String, offset: TimeInterval = 300) -> RecordingContext {
         RecordingContext(
             text: text,

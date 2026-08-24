@@ -12,7 +12,14 @@ enum AttentionDirectives {
     /// `detectedLanguageCode` defaults to nil ("detect here") so direct
     /// callers stay unchanged; PromptGenerator.resolvedDerivations passes
     /// its precomputed code so the echo skips its own detection pass.
-    static func detect(context: ActivityContext, detectedLanguageCode: String? = nil) -> [String] {
+    /// `releasedLemmas` feeds only recurringWord — the one surfacing path
+    /// that bypasses ThreadStore; intentionEcho is deliberately exempt
+    /// because it quotes the walker's own stated intention.
+    static func detect(
+        context: ActivityContext,
+        detectedLanguageCode: String? = nil,
+        releasedLemmas: Set<String> = ReleasedThreadsStore.shared.releasedLemmas
+    ) -> [String] {
         // Lemmatizing the full transcript is the expensive step; do it once
         // here and share it between the two detectors that need it.
         let spokenMentions = context.hasSpeech
@@ -22,7 +29,7 @@ enum AttentionDirectives {
             stillness(context),
             paceShift(context),
             intentionEcho(context, spokenMentions: spokenMentions, detectedLanguageCode: detectedLanguageCode),
-            recurringWord(context, spokenMentions: spokenMentions),
+            recurringWord(context, spokenMentions: spokenMentions, releasedLemmas: releasedLemmas),
             firstVersusLast(context)
         ].compactMap { $0 }
         return Array(directives.prefix(maxDirectives))
@@ -105,16 +112,23 @@ enum AttentionDirectives {
     }
 
     /// The most-repeated content lemma across all recordings, excluding any
-    /// lemma the intention already claimed. Shown as its most frequent
-    /// surface form so the walker's own inflection is echoed back.
-    private static func recurringWord(_ context: ActivityContext, spokenMentions mentions: [TranscriptNLP.LemmaMention]) -> String? {
+    /// lemma the intention already claimed and any released lemma — the
+    /// next-ranked candidate is promoted, so a release never silences the
+    /// directive, only redirects it. Shown as its most frequent surface form
+    /// so the walker's own inflection is echoed back.
+    private static func recurringWord(
+        _ context: ActivityContext,
+        spokenMentions mentions: [TranscriptNLP.LemmaMention],
+        releasedLemmas: Set<String>
+    ) -> String? {
         guard context.hasSpeech else { return nil }
         let intentionLemmas = context.intention
             .map { Set(TranscriptNLP.contentLemmas(in: $0)) } ?? []
 
         var counts: [String: Int] = [:]
         var surfaces: [String: [String: Int]] = [:]
-        for mention in mentions where !intentionLemmas.contains(mention.lemma) {
+        for mention in mentions
+        where !intentionLemmas.contains(mention.lemma) && !releasedLemmas.contains(mention.lemma) {
             counts[mention.lemma, default: 0] += 1
             surfaces[mention.lemma, default: [:]][mention.surface, default: 0] += 1
         }
