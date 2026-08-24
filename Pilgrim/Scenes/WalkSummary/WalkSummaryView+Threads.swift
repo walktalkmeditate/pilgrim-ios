@@ -11,7 +11,10 @@ extension WalkSummaryView {
     @ViewBuilder
     var threadsCardSlot: some View {
         if showsThreadsCard, let threadsCardModel {
-            ThreadsCardSection(model: threadsCardModel)
+            ThreadsCardSection(
+                model: threadsCardModel,
+                onThemeTap: { selectedCardTheme = $0 }
+            )
         }
     }
 

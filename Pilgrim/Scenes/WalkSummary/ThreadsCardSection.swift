@@ -49,6 +49,7 @@ enum ThreadsCardLoader {
 struct ThreadsCardSection: View {
 
     let model: ThreadsCardModel
+    var onThemeTap: ((ThreadsCardTheme) -> Void)?
 
     @State private var showInsightWords = false
 
@@ -73,24 +74,31 @@ struct ThreadsCardSection: View {
     }
 
     private func chip(_ theme: ThreadsCardTheme) -> some View {
-        VStack(spacing: 2) {
-            Text(theme.displayTerm)
-                .font(Constants.Typography.body)
-                .foregroundColor(.ink)
-            if let note = theme.statusNote {
-                Text(note)
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
+        Button {
+            onThemeTap?(theme)
+        } label: {
+            VStack(spacing: 2) {
+                Text(theme.displayTerm)
+                    .font(Constants.Typography.body)
+                    .foregroundColor(.ink)
+                if let note = theme.statusNote {
+                    Text(note)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(minHeight: 44)
+            .background(Capsule().fill(Color.moss.opacity(0.1)))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .frame(minHeight: 44)
-        .background(Capsule().fill(Color.moss.opacity(0.1)))
+        .buttonStyle(.plain)
+        .disabled(onThemeTap == nil)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             theme.statusNote.map { "\(theme.displayTerm), \($0)" } ?? theme.displayTerm
         )
+        .accessibilityHint(onThemeTap == nil ? "" : "Double tap to view history")
     }
 
     private func textureLine(_ texture: String) -> some View {

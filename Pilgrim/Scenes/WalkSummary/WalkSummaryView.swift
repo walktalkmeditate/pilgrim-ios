@@ -29,6 +29,7 @@ struct WalkSummaryView: View {
     @State private var selectedFavicon: WalkFavicon?
     @State private var showPrompts = false
     @State var threadsCardModel: ThreadsCardModel?
+    @State var selectedCardTheme: ThreadsCardTheme?
     init(walk: WalkInterface, showsThreadsCard: Bool = true) {
         self.walk = walk
         self.showsThreadsCard = showsThreadsCard
@@ -196,6 +197,11 @@ struct WalkSummaryView: View {
             .sheet(isPresented: $showPrompts) {
                 NavigationStack {
                     PromptListView(walk: walk, transcriptions: transcriptions, recentWalkSnippets: recentWalkSnippets, intention: walk.comment, photoCandidates: photoCandidates)
+                }
+            }
+            .sheet(item: $selectedCardTheme) { theme in
+                NavigationStack {
+                    ThreadHistoryView(displayTerm: theme.displayTerm, cohortLemmas: theme.lemmas)
                 }
             }
         }
