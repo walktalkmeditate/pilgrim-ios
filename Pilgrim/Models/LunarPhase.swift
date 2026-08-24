@@ -15,8 +15,8 @@ struct LunarPhase {
 
     var isWaxing: Bool { age < Self.synodicMonth / 2 }
 
-    private static let synodicMonth = 29.53058770576
-    private static let knownNewMoon = DateComponents(
+    static let synodicMonth = 29.53058770576
+    static let knownNewMoon = DateComponents(
         calendar: .init(identifier: .gregorian),
         timeZone: TimeZone(identifier: "UTC"),
         year: 2000, month: 1, day: 6, hour: 18, minute: 14

@@ -77,6 +77,9 @@ struct ThreadsCardSection: View {
         .frame(maxWidth: .infinity)
         .background(Color.parchmentSecondary)
         .cornerRadius(Constants.UI.CornerRadius.normal)
+        .onAppear {
+            LunationRecapState.shared.markFirstCardShown()
+        }
         .alert(
             themeToRelease.map { ReleasedThreadsCopy.releaseTitle($0.displayTerm) } ?? "",
             isPresented: Binding(

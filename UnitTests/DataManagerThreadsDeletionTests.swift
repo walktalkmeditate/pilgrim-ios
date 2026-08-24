@@ -131,4 +131,25 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
         wait(for: [deleted], timeout: 5)
         XCTAssertTrue(released.isEmpty, "Delete All Data clears the released set with everything else")
     }
+
+    func testDeleteAll_clearsRecapStateAndCaptionFlag() {
+        let savedCaptionShown = UserPreferences.threadsReleaseCaptionShown.value
+        defer { UserPreferences.threadsReleaseCaptionShown.value = savedCaptionShown }
+
+        LunationRecapState.shared.clear()
+        LunationRecapState.shared.markFirstCardShown()
+        LunationRecapState.shared.markActedOn(LunationCalendar.lunation(at: 300))
+        UserPreferences.threadsReleaseCaptionShown.value = true
+
+        let deleted = expectation(description: "deleted all")
+        DataManager.deleteAll { success, _ in
+            XCTAssertTrue(success)
+            deleted.fulfill()
+        }
+        wait(for: [deleted], timeout: 5)
+        XCTAssertNil(LunationRecapState.shared.firstCardShownAt,
+                     "the first-card gate re-arms — a wipe is a fresh start, like a reinstall")
+        XCTAssertNil(LunationRecapState.shared.lastActedLunationIndex)
+        XCTAssertFalse(UserPreferences.threadsReleaseCaptionShown.value)
+    }
 }

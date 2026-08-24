@@ -856,6 +856,8 @@ struct DataManager {
                 transcriptContextStore.deleteAll()
                 UserPreferences.clearArchivedRegistry()
                 releasedThreadsStore.clear()
+                LunationRecapState.shared.clear()
+                UserPreferences.threadsReleaseCaptionShown.value = false
                 completion(true, nil)
             case .failure(let error):
                 completion(false, .databaseError(error: error))
