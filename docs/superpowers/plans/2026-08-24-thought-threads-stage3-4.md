@@ -4,22 +4,22 @@
 
 **Goal:** The engine earns its surfaces. Stage 3+4 ships the "What walked with you" card, the thread history view with excerpts and the origin map, "Let this one go" releases with a `.pilgrim` carve-out, the lunation recap with its walk-dated invitation, and flips the intention chips live — everything specified in `docs/superpowers/specs/2026-08-22-thought-threads-design.md` "### Stage 3 — card + thread view" and the whole "## Stage 3+4 addendum (2026-08-24)".
 
-**Architecture:** All new logic lives as pure model builders in `Pilgrim/Models/Threads/` (testable without UI), with thin SwiftUI files in `Pilgrim/Scenes/WalkSummary/` and `Pilgrim/Scenes/Settings/`. `ThreadStore.build` gains a released-lemma filter parameter — the single choke point covering card, thread view, dossier trajectories, quiet-this-walk lines, intention chips, and the recap; `AttentionDirectives.recurringWord` gets the one bypass-path skip. The released set is a new UserDefaults-backed store with its own change token, cleared by Delete All Data, and round-tripped through the `.pilgrim` preferences block (the sanctioned carve-out). Lunation machinery extends `LunarPhase`'s existing constants. Nothing touches the CoreStore schema, `SharePayload`, or the network.
+**Architecture:** All new logic lives as pure model builders in `Pilgrim/Models/Threads/` (testable without UI), with thin SwiftUI files in `Pilgrim/Scenes/WalkSummary/` and `Pilgrim/Scenes/Settings/`. `ThreadStore.build` gains a released-lemma filter parameter — the single choke point covering card, thread view, dossier trajectories, quiet-this-walk lines, intention chips, and the recap; `AttentionDirectives.recurringWord` gets the one bypass-path skip. The released set is a new UserDefaults-backed store with its own change token, cleared by Delete All Data, and round-tripped through the `.pilgrim` preferences block (the sanctioned carve-out); welcome-backs are recorded as decisions too, so import merge is latest-decision-wins per cohort and a stale backup can never silently override a walker's later reversal. Lunation machinery extends `LunarPhase`'s existing constants. Nothing touches the CoreStore schema, `SharePayload`, or the network.
 
 **Tech Stack:** Swift, SwiftUI, CoreStore (reads only, existing helpers), CoreLocation (route-sample lookup + reverse geocoding), Mapbox via the existing `PilgrimMapView`, XCTest.
 
 ## Global Constraints
 
 - iOS 18 minimum; no new dependencies; no CoreStore schema changes (`PilgrimV7` stays current). Frozen identifiers stay frozen: `_workout`, `"workout"`, `"Workout"` etc. are SQL names — never "fix" them.
-- Nothing leaves the device. The released set's ONLY egress is the `.pilgrim` preferences block (spec: scoped carve-out, `zodiacSystem` precedent — the lemmas already appear verbatim in exported transcripts). `TranscriptContext`, `MarkerPack`, and `WalkThread` never appear in `Pilgrim/Models/Share/` or `Pilgrim/Models/Data/PilgrimPackage/`; `ReleasedThread` appears in `PilgrimPackage` only in the three sanctioned carve-out sites (models field, converter mapping, importer merge). Task 9's grep gates enforce exactly this.
+- Nothing leaves the device. The released set's ONLY egress is the `.pilgrim` preferences block (spec: scoped carve-out, `zodiacSystem` precedent — the lemmas already appear verbatim in exported transcripts). `TranscriptContext`, `MarkerPack`, and `WalkThread` never appear in `Pilgrim/Models/Share/` or `Pilgrim/Models/Data/PilgrimPackage/`; `ReleasedThread`/`WelcomedBackThread` appear in `PilgrimPackage` only in the three sanctioned carve-out sites (models field, converter mapping, importer merge — the released list and the welcome-back list travel together so latest-decision-wins merge works across backups). Task 9's grep gates enforce exactly this.
 - The journal is untouched — no file under any Journal scene changes in this plan.
-- **No directional words in UI** ("rising", "fading", trend talk) and no metric digits in card/status copy. Ordinal words ("third walk now") and dates are fine. Digits are allowed ONLY where the spec sanctions them: the recap's "in N of M walks" counts and thread-view dates.
+- **No directional words in UI** ("rising", "fading", trend talk) and no metric digits in card/status copy. Ordinal words ("third walk now") and dates are fine. Digits are allowed ONLY where the spec sanctions them: the recap's "in N of M walks" counts, the recap headline's walks-with-recorded-words count ("3 walks with recorded words this moon" — scoped so it never reads as the journal's walk total disagreeing), and thread-view dates.
 - `threadsAfterWalks` off means off everywhere: card, thread navigation, chips, recap invitation, and both settings rows all gate on it.
 - Deterministic output everywhere: same inputs, same UI. Ties break by the existing `recurringWord` convention (highest count, then alphabetical).
 - **pbxproj, the 4-entries lesson:** every new Swift file needs FOUR entries in `Pilgrim.xcodeproj/project.pbxproj` — a `PBXBuildFile`, a `PBXFileReference`, a children entry in the right `PBXGroup`, and a `PBXSourcesBuildPhase` entry in the right target (app files → `Pilgrim` target, test files → `UnitTests` target). Copy the entry pattern of a sibling file in the same group. A file missing any one of the four compiles on your machine and breaks the build for everyone else.
 - Test command (per class): `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/<ClassName> 2>&1 | tail -20`
-- **Suite reconciliation:** the pre-plan full-suite baseline is **1269** "Test Case '...' started" lines. After each task, the delta must equal the tests you added (count via `grep -c "Test Case '" <log>` or `xcrun xcresulttool`). A test file that silently never joined the target is exactly the failure mode this reconciliation catches.
-- Comment policy: self-documenting code; comments only for constraints code can't show. SwiftLint errors at 750 lines/type and 60 lines/function — keep new SwiftUI in focused files; WalkSummary additions go in a `WalkSummaryView+Threads.swift` extension (the `+Map.swift` pattern), with only `@State` declarations added to the main struct.
+- **Suite reconciliation:** the pre-plan full-suite baseline is **1269** "Test Case '...' started" lines. After each task, the delta must equal the tests you added (count via `grep -c "Test Case '.*' started" <log>` — anchor on `started`; the unanchored form also matches the passed/failed lines and counts roughly double — or `xcrun xcresulttool`). A test file that silently never joined the target is exactly the failure mode this reconciliation catches.
+- Comment policy: self-documenting code; comments only for constraints code can't show. SwiftLint errors at 750 lines/type and 100 lines/function (60 lines/function is only a warning) — keep new SwiftUI in focused files; WalkSummary additions go in a `WalkSummaryView+Threads.swift` extension (the `+Map.swift` pattern), with only `@State` declarations and one-line slots added to the main struct. `WalkSummaryView`'s main struct already sits ~669 lines against the 750 error ceiling: Tasks 3, 4, and 7 each run `swiftlint lint Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` after touching it, so a crossing is caught in the task that caused it, not at Task 9.
 - The custom `ProgressView` shadows SwiftUI's — qualify as `SwiftUI.ProgressView` if ever needed.
 - Typography: `Constants.Typography.*` only. Spacing: `Constants.UI.Padding.*`. Colors: the wabi-sabi palette (ink, fog, moss, stone, parchment, dawn).
 - CoreStore fetches assert main-thread: every `DataManager.*Index()`/`*Snapshot()` call happens on the main actor; detached tasks receive plain values.
@@ -34,17 +34,19 @@
 - Modify: `Pilgrim/Models/Data/PilgrimPackage/PilgrimPackageConverter.swift` (`buildManifest` export + `releasedThreads(from:)` import mapping)
 - Modify: `Pilgrim/Models/Data/PilgrimPackage/PilgrimPackageImporter.swift` (`DecodedPackage` field + merge on import success)
 - Modify: `Pilgrim/Models/Data/DataManager.swift` (seam + `deleteAll` clearing hook)
-- Test: `UnitTests/ReleasedThreadsStoreTests.swift`, `UnitTests/ReleasedThreadsPackageTests.swift`, extend `UnitTests/DataManagerThreadsDeletionTests.swift`
+- Test: `UnitTests/ReleasedThreadsStoreTests.swift`, `UnitTests/ReleasedThreadsPackageTests.swift`, extend `UnitTests/DataManagerThreadsDeletionTests.swift`, extend `UnitTests/PilgrimPackageExporterArchivedTests.swift` (setUp clear only — the new buildManifest defaults read the test host's standard defaults)
 
 **Interfaces:**
 - Consumes: `UserDefaults`, `PilgrimDateCoding` (existing `.secondsSince1970` manifest coding), `DataManager.deleteAll` success path (DataManager.swift:842-859), `PilgrimPackageImporter.importPackage` success hook (PilgrimPackageImporter.swift:84-92).
 - Produces (used by Tasks 2, 3, 5, 7):
   - `struct ReleasedThread: Codable, Equatable` — `{ displayTerm: String, lemmas: [String], releasedAt: Date }`
-  - `final class ReleasedThreadsStore` — `static let shared`; `init(defaults: UserDefaults)`; `var changeCount: Int` (session memo token, bumps on every mutation); `var all: [ReleasedThread]` (releasedAt-descending, term-ascending); `var releasedLemmas: Set<String>`; `var isEmpty: Bool`; `func release(displayTerm:lemmas:releasedAt:)` (merges cohorts for an already-released term); `func welcomeBack(displayTerm:)` (removes the cohort atomically); `func merge(_:)` (import union, earliest date wins); `func clear()` (Delete All hook)
+  - `struct WelcomedBackThread: Codable, Equatable` — `{ displayTerm: String, welcomedBackAt: Date }` (a welcome-back is a decision too — recorded so import merge can apply latest-decision-wins; this is what makes the spec's reversibility promise survive backups)
+  - `final class ReleasedThreadsStore` — `static let shared`; `init(defaults: UserDefaults)`; `var changeCount: Int` (session memo token, bumps on every mutation); `var all: [ReleasedThread]` (releasedAt-descending, term-ascending); `var welcomedBack: [WelcomedBackThread]` (term-ascending, for export); `var releasedLemmas: Set<String>`; `var isEmpty: Bool` (released list only — the settings row keys off it); `func release(displayTerm:lemmas:releasedAt:)` (merges cohorts for an already-released term, clears the term's welcome-back record); `func welcomeBack(displayTerm:at:)` (removes the cohort atomically, records the decision with its date); `func merge(released:welcomedBack:)` (import merge, latest decision wins per cohort — an imported release older than a local welcome-back does NOT re-release, and vice versa; two releases union lemmas keeping the earlier date so repeated imports stay stable); `func clear()` (Delete All hook, clears both lists)
   - `struct PilgrimReleasedThread: Codable` — `{ term: String, lemmas: [String], releasedAt: Date }`
-  - `PilgrimPreferences.releasedThreads: [PilgrimReleasedThread]?` (nil-defaulted init parameter — every existing construction site compiles unchanged; old `.pilgrim` files decode nil; old importers ignore the unknown key)
-  - `PilgrimPackageConverter.releasedThreads(from: PilgrimPreferences) -> [ReleasedThread]`
-  - `DecodedPackage.releasedThreads: [ReleasedThread]`
+  - `struct PilgrimWelcomedBackThread: Codable` — `{ term: String, welcomedBackAt: Date }`
+  - `PilgrimPreferences.releasedThreads: [PilgrimReleasedThread]?` + `PilgrimPreferences.welcomedBackThreads: [PilgrimWelcomedBackThread]?` (nil-defaulted init parameters — every existing construction site compiles unchanged; old `.pilgrim` files decode nil; old importers ignore the unknown keys)
+  - `PilgrimPackageConverter.releasedThreads(from: PilgrimPreferences) -> [ReleasedThread]` + `.welcomedBackThreads(from:) -> [WelcomedBackThread]`
+  - `DecodedPackage.releasedThreads: [ReleasedThread]` + `.welcomedBackThreads: [WelcomedBackThread]`
   - `DataManager.releasedThreadsStore: ReleasedThreadsStore` (test seam, defaults `.shared`)
 
 - [ ] **Step 1: Write the failing tests**
@@ -120,21 +122,45 @@ final class ReleasedThreadsStoreTests: XCTestCase {
 
     func testMerge_unionsByTermKeepingEarliestDate() {
         store.release(displayTerm: "the move", lemmas: ["move"], releasedAt: released)
-        store.merge([
+        store.merge(released: [
             ReleasedThread(displayTerm: "the move", lemmas: ["moving"],
                            releasedAt: released.addingTimeInterval(-86400)),
             ReleasedThread(displayTerm: "father", lemmas: ["father"], releasedAt: released)
-        ])
+        ], welcomedBack: [])
         XCTAssertEqual(Set(store.all.map(\.displayTerm)), ["the move", "father"])
         let move = store.all.first { $0.displayTerm == "the move" }
         XCTAssertEqual(move?.lemmas, ["move", "moving"])
         XCTAssertEqual(move?.releasedAt, released.addingTimeInterval(-86400))
     }
 
+    func testMerge_staleImportedRelease_doesNotUndoWelcomeBack() {
+        store.release(displayTerm: "father", lemmas: ["father"], releasedAt: released)
+        store.welcomeBack(displayTerm: "father", at: released.addingTimeInterval(7 * 86400))
+        store.merge(released: [
+            ReleasedThread(displayTerm: "father", lemmas: ["father"], releasedAt: released)
+        ], welcomedBack: [])
+        XCTAssertTrue(store.all.isEmpty,
+                      "the walker's welcome-back is the later decision — importing an old backup never silently re-releases")
+        XCTAssertEqual(store.welcomedBack.map(\.displayTerm), ["father"])
+    }
+
+    func testMerge_staleImportedWelcomeBack_doesNotUndoRelease() {
+        store.release(displayTerm: "father", lemmas: ["father"], releasedAt: released)
+        store.merge(released: [], welcomedBack: [
+            WelcomedBackThread(displayTerm: "father",
+                               welcomedBackAt: released.addingTimeInterval(-86400))
+        ])
+        XCTAssertEqual(store.all.map(\.displayTerm), ["father"],
+                       "released again after that welcome-back — the newer local release stands")
+    }
+
     func testClear_emptiesEverything() {
         store.release(displayTerm: "a", lemmas: ["a"], releasedAt: released)
+        store.welcomeBack(displayTerm: "a")
+        store.release(displayTerm: "b", lemmas: ["b"], releasedAt: released)
         store.clear()
         XCTAssertTrue(store.isEmpty)
+        XCTAssertTrue(store.welcomedBack.isEmpty)
         XCTAssertTrue(ReleasedThreadsStore(defaults: defaults).isEmpty)
     }
 }
@@ -150,24 +176,35 @@ final class ReleasedThreadsPackageTests: XCTestCase {
 
     private let released = DateFactory.makeDate(2026, 8, 20, 9, 0, 0)
 
-    private func preferences(releasedThreads: [PilgrimReleasedThread]?) -> PilgrimPreferences {
+    private func preferences(
+        releasedThreads: [PilgrimReleasedThread]?,
+        welcomedBack: [PilgrimWelcomedBackThread]? = nil
+    ) -> PilgrimPreferences {
         PilgrimPreferences(
             distanceUnit: "km", altitudeUnit: "m", speedUnit: "km/h", energyUnit: "kJ",
             celestialAwareness: false, zodiacSystem: "tropical", beginWithIntention: false,
-            releasedThreads: releasedThreads
+            releasedThreads: releasedThreads,
+            welcomedBackThreads: welcomedBack
         )
     }
 
     func testPreferences_roundTripWithReleasedThreads() throws {
-        let original = preferences(releasedThreads: [
-            PilgrimReleasedThread(term: "the move", lemmas: ["move", "moving"], releasedAt: released)
-        ])
+        let original = preferences(
+            releasedThreads: [
+                PilgrimReleasedThread(term: "the move", lemmas: ["move", "moving"], releasedAt: released)
+            ],
+            welcomedBack: [
+                PilgrimWelcomedBackThread(term: "father", welcomedBackAt: released)
+            ]
+        )
         let data = try PilgrimDateCoding.makeEncoder().encode(original)
         let decoded = try PilgrimDateCoding.makeDecoder().decode(PilgrimPreferences.self, from: data)
         XCTAssertEqual(decoded.releasedThreads?.count, 1)
         XCTAssertEqual(decoded.releasedThreads?[0].term, "the move")
         XCTAssertEqual(decoded.releasedThreads?[0].lemmas, ["move", "moving"])
         XCTAssertEqual(decoded.releasedThreads?[0].releasedAt, released)
+        XCTAssertEqual(decoded.welcomedBackThreads?.map(\.term), ["father"])
+        XCTAssertEqual(decoded.welcomedBackThreads?.first?.welcomedBackAt, released)
     }
 
     func testPreferences_oldJSONWithoutKey_decodesNil() throws {
@@ -178,25 +215,30 @@ final class ReleasedThreadsPackageTests: XCTestCase {
         let decoded = try PilgrimDateCoding.makeDecoder()
             .decode(PilgrimPreferences.self, from: Data(old.utf8))
         XCTAssertNil(decoded.releasedThreads)
+        XCTAssertNil(decoded.welcomedBackThreads)
     }
 
     func testBuildManifest_mapsReleasedThreads() {
         let manifest = PilgrimPackageConverter.buildManifest(
             walkCount: 0, events: [],
-            releasedThreads: [ReleasedThread(displayTerm: "the move", lemmas: ["move"], releasedAt: released)]
+            releasedThreads: [ReleasedThread(displayTerm: "the move", lemmas: ["move"], releasedAt: released)],
+            welcomedBackThreads: [WelcomedBackThread(displayTerm: "father", welcomedBackAt: released)]
         )
         XCTAssertEqual(manifest.preferences.releasedThreads?.map(\.term), ["the move"])
         XCTAssertEqual(manifest.preferences.releasedThreads?.first?.releasedAt, released)
+        XCTAssertEqual(manifest.preferences.welcomedBackThreads?.map(\.term), ["father"])
     }
 
     func testBuildManifest_emptyReleasedSet_omitsKey() throws {
         let manifest = PilgrimPackageConverter.buildManifest(
-            walkCount: 0, events: [], releasedThreads: []
+            walkCount: 0, events: [], releasedThreads: [], welcomedBackThreads: []
         )
         XCTAssertNil(manifest.preferences.releasedThreads)
+        XCTAssertNil(manifest.preferences.welcomedBackThreads)
         let json = String(decoding: try PilgrimDateCoding.makeEncoder().encode(manifest), as: UTF8.self)
         XCTAssertFalse(json.contains("releasedThreads"),
                        "a walker who released nothing exports a byte-identical preferences block")
+        XCTAssertFalse(json.contains("welcomedBackThreads"))
     }
 
     func testImportMapping_fromPreferences() {
@@ -207,6 +249,14 @@ final class ReleasedThreadsPackageTests: XCTestCase {
             ReleasedThread(displayTerm: "father", lemmas: ["father"], releasedAt: released)
         ])
         XCTAssertEqual(PilgrimPackageConverter.releasedThreads(from: preferences(releasedThreads: nil)), [])
+        XCTAssertEqual(
+            PilgrimPackageConverter.welcomedBackThreads(from: preferences(
+                releasedThreads: nil,
+                welcomedBack: [PilgrimWelcomedBackThread(term: "father", welcomedBackAt: released)]
+            )),
+            [WelcomedBackThread(displayTerm: "father", welcomedBackAt: released)]
+        )
+        XCTAssertEqual(PilgrimPackageConverter.welcomedBackThreads(from: preferences(releasedThreads: nil)), [])
     }
 }
 ```
@@ -256,16 +306,26 @@ struct ReleasedThread: Codable, Equatable {
     let releasedAt: Date
 }
 
-/// UserDefaults-persisted released set. Releases are walker decisions, not
-/// derived analysis — they survive relaunch, ride in the `.pilgrim`
-/// preferences block (the sanctioned carve-out), and Delete All Data clears
-/// them with everything else. Analysis and stored contexts are untouched by
-/// release, so it is fully reversible.
+/// A welcome-back is a decision too, recorded with its date so import merge
+/// can honor whichever decision came last. Without the record, a stale
+/// backup's release would silently override the walker's later reversal —
+/// the spec's reversibility promise has to survive backups.
+struct WelcomedBackThread: Codable, Equatable {
+    let displayTerm: String
+    let welcomedBackAt: Date
+}
+
+/// UserDefaults-persisted released set. Releases and welcome-backs are
+/// walker decisions, not derived analysis — they survive relaunch, ride in
+/// the `.pilgrim` preferences block (the sanctioned carve-out), and Delete
+/// All Data clears them with everything else. Analysis and stored contexts
+/// are untouched by release, so it is fully reversible.
 final class ReleasedThreadsStore {
 
     static let shared = ReleasedThreadsStore(defaults: .standard)
 
     static let defaultsKey = "releasedThreads"
+    static let welcomedBackKey = "welcomedBackThreads"
 
     private let defaults: UserDefaults
     private let lock = NSLock()
@@ -288,7 +348,15 @@ final class ReleasedThreadsStore {
     var all: [ReleasedThread] {
         lock.lock()
         defer { lock.unlock() }
-        return load()
+        return loadReleased()
+    }
+
+    /// Welcome-back records, term-ascending — exported beside the released
+    /// list so import merge can compare decisions by date.
+    var welcomedBack: [WelcomedBackThread] {
+        lock.lock()
+        defer { lock.unlock() }
+        return loadWelcomedBack()
     }
 
     var releasedLemmas: Set<String> {
@@ -298,7 +366,8 @@ final class ReleasedThreadsStore {
     var isEmpty: Bool { all.isEmpty }
 
     func release(displayTerm: String, lemmas: [String], releasedAt: Date = Date()) {
-        mutate { entries in
+        mutate { entries, welcomes in
+            welcomes.removeAll { $0.displayTerm == displayTerm }
             if let index = entries.firstIndex(where: { $0.displayTerm == displayTerm }) {
                 entries[index] = ReleasedThread(
                     displayTerm: displayTerm,
@@ -313,19 +382,29 @@ final class ReleasedThreadsStore {
         }
     }
 
-    func welcomeBack(displayTerm: String) {
-        mutate { entries in
+    func welcomeBack(displayTerm: String, at date: Date = Date()) {
+        mutate { entries, welcomes in
             entries.removeAll { $0.displayTerm == displayTerm }
+            welcomes.removeAll { $0.displayTerm == displayTerm }
+            welcomes.append(WelcomedBackThread(displayTerm: displayTerm, welcomedBackAt: date))
         }
     }
 
-    /// Import merge: a union of decisions, never an overwrite — releases made
-    /// on this device and releases carried in the package both stand. The
-    /// earlier release date wins so repeated imports stay stable.
-    func merge(_ imported: [ReleasedThread]) {
-        guard !imported.isEmpty else { return }
-        mutate { entries in
-            for thread in imported {
+    /// Import merge: latest decision wins, per cohort. Two releases union
+    /// their lemmas and keep the earlier date so repeated imports stay
+    /// stable; a release and a welcome-back for the same term are compared
+    /// by date and the older decision yields. On a tie the local state
+    /// stands — re-importing the same package is a no-op.
+    func merge(released importedReleased: [ReleasedThread],
+               welcomedBack importedWelcomedBack: [WelcomedBackThread]) {
+        guard !importedReleased.isEmpty || !importedWelcomedBack.isEmpty else { return }
+        mutate { entries, welcomes in
+            for thread in importedReleased {
+                if let welcome = welcomes.first(where: { $0.displayTerm == thread.displayTerm }),
+                   welcome.welcomedBackAt >= thread.releasedAt {
+                    continue // the walker's welcome-back is the later decision — never silently re-release
+                }
+                welcomes.removeAll { $0.displayTerm == thread.displayTerm }
                 if let index = entries.firstIndex(where: { $0.displayTerm == thread.displayTerm }) {
                     entries[index] = ReleasedThread(
                         displayTerm: thread.displayTerm,
@@ -336,31 +415,58 @@ final class ReleasedThreadsStore {
                     entries.append(thread)
                 }
             }
+            for welcome in importedWelcomedBack {
+                if let entry = entries.first(where: { $0.displayTerm == welcome.displayTerm }),
+                   entry.releasedAt >= welcome.welcomedBackAt {
+                    continue // released again after that welcome-back — the newer release stands
+                }
+                entries.removeAll { $0.displayTerm == welcome.displayTerm }
+                if let index = welcomes.firstIndex(where: { $0.displayTerm == welcome.displayTerm }) {
+                    welcomes[index] = WelcomedBackThread(
+                        displayTerm: welcome.displayTerm,
+                        welcomedBackAt: max(welcomes[index].welcomedBackAt, welcome.welcomedBackAt)
+                    )
+                } else {
+                    welcomes.append(welcome)
+                }
+            }
         }
     }
 
     /// Delete All Data hook — walker decisions clear with everything else.
     func clear() {
-        mutate { entries in
+        mutate { entries, welcomes in
             entries.removeAll()
+            welcomes.removeAll()
         }
     }
 
-    private func mutate(_ body: (inout [ReleasedThread]) -> Void) {
+    private func mutate(_ body: (inout [ReleasedThread], inout [WelcomedBackThread]) -> Void) {
         lock.lock()
         defer { lock.unlock() }
-        var entries = load()
-        body(&entries)
+        var entries = loadReleased()
+        var welcomes = loadWelcomedBack()
+        body(&entries, &welcomes)
         entries.sort { ($0.releasedAt, $1.displayTerm) > ($1.releasedAt, $0.displayTerm) }
+        welcomes.sort { $0.displayTerm < $1.displayTerm }
         if let data = try? JSONEncoder().encode(entries) {
             defaults.set(data, forKey: Self.defaultsKey)
+        }
+        if let data = try? JSONEncoder().encode(welcomes) {
+            defaults.set(data, forKey: Self.welcomedBackKey)
         }
         _changeCount += 1
     }
 
-    private func load() -> [ReleasedThread] {
+    private func loadReleased() -> [ReleasedThread] {
         guard let data = defaults.data(forKey: Self.defaultsKey),
               let entries = try? JSONDecoder().decode([ReleasedThread].self, from: data) else { return [] }
+        return entries
+    }
+
+    private func loadWelcomedBack() -> [WelcomedBackThread] {
+        guard let data = defaults.data(forKey: Self.welcomedBackKey),
+              let entries = try? JSONDecoder().decode([WelcomedBackThread].self, from: data) else { return [] }
         return entries
     }
 }
@@ -381,9 +487,13 @@ struct PilgrimPreferences: Codable {
     let beginWithIntention: Bool
     /// Released thought threads — the one sanctioned derived-data carve-out
     /// (walker decisions, like zodiacSystem; the lemmas already appear
-    /// verbatim in the exported transcripts). Optional so pre-1.12 files
-    /// decode and pre-1.12 importers ignore the unknown key.
+    /// verbatim in the exported transcripts). Welcome-backs ride beside the
+    /// releases: both are decisions, and import merge compares them by date
+    /// so a stale backup's release can never override a later reversal.
+    /// Optional so pre-1.12 files decode and pre-1.12 importers ignore the
+    /// unknown keys.
     let releasedThreads: [PilgrimReleasedThread]?
+    let welcomedBackThreads: [PilgrimWelcomedBackThread]?
 
     init(
         distanceUnit: String,
@@ -393,7 +503,8 @@ struct PilgrimPreferences: Codable {
         celestialAwareness: Bool,
         zodiacSystem: String,
         beginWithIntention: Bool,
-        releasedThreads: [PilgrimReleasedThread]? = nil
+        releasedThreads: [PilgrimReleasedThread]? = nil,
+        welcomedBackThreads: [PilgrimWelcomedBackThread]? = nil
     ) {
         self.distanceUnit = distanceUnit
         self.altitudeUnit = altitudeUnit
@@ -403,6 +514,7 @@ struct PilgrimPreferences: Codable {
         self.zodiacSystem = zodiacSystem
         self.beginWithIntention = beginWithIntention
         self.releasedThreads = releasedThreads
+        self.welcomedBackThreads = welcomedBackThreads
     }
 }
 
@@ -411,16 +523,22 @@ struct PilgrimReleasedThread: Codable {
     let lemmas: [String]
     let releasedAt: Date
 }
+
+struct PilgrimWelcomedBackThread: Codable {
+    let term: String
+    let welcomedBackAt: Date
+}
 ```
 
-2. `PilgrimPackageConverter.swift` — in `buildManifest` (line 241), add a defaulted parameter and pass the mapped field into the `PilgrimPreferences(...)` construction (line 252):
+2. `PilgrimPackageConverter.swift` — in `buildManifest` (line 241), add two defaulted parameters and pass the mapped fields into the `PilgrimPreferences(...)` construction (line 252):
 
 ```swift
     static func buildManifest(
         walkCount: Int,
         events: [PilgrimEvent],
         archivedEntries: [PilgrimArchivedWalk] = [],
-        releasedThreads: [ReleasedThread] = ReleasedThreadsStore.shared.all
+        releasedThreads: [ReleasedThread] = ReleasedThreadsStore.shared.all,
+        welcomedBackThreads: [WelcomedBackThread] = ReleasedThreadsStore.shared.welcomedBack
     ) -> PilgrimManifest {
 ```
 
@@ -430,10 +548,13 @@ and inside, extend the existing `PilgrimPreferences(` construction with:
             beginWithIntention: UserPreferences.beginWithIntention.value,
             releasedThreads: releasedThreads.isEmpty ? nil : releasedThreads.map {
                 PilgrimReleasedThread(term: $0.displayTerm, lemmas: $0.lemmas, releasedAt: $0.releasedAt)
+            },
+            welcomedBackThreads: welcomedBackThreads.isEmpty ? nil : welcomedBackThreads.map {
+                PilgrimWelcomedBackThread(term: $0.displayTerm, welcomedBackAt: $0.welcomedBackAt)
             }
 ```
 
-Add the import mapping helper next to `convertEvents(_:)`:
+Add the import mapping helpers next to `convertEvents(_:)`:
 
 ```swift
     /// Import-side mapping for the released-threads carve-out. Pure, so the
@@ -443,19 +564,28 @@ Add the import mapping helper next to `convertEvents(_:)`:
             ReleasedThread(displayTerm: $0.term, lemmas: $0.lemmas, releasedAt: $0.releasedAt)
         }
     }
+
+    static func welcomedBackThreads(from preferences: PilgrimPreferences) -> [WelcomedBackThread] {
+        (preferences.welcomedBackThreads ?? []).map {
+            WelcomedBackThread(displayTerm: $0.term, welcomedBackAt: $0.welcomedBackAt)
+        }
+    }
 ```
 
-3. `PilgrimPackageImporter.swift` — add `let releasedThreads: [ReleasedThread]` to `DecodedPackage` (line 54), populate it in `unpackAndDecode`'s final `DecodedPackage(...)` construction with `releasedThreads: PilgrimPackageConverter.releasedThreads(from: manifest.preferences)`, and in the `importPackage` success hook (line 86) add the merge between the tombstone clear and the backfill reset:
+3. `PilgrimPackageImporter.swift` — add `let releasedThreads: [ReleasedThread]` and `let welcomedBackThreads: [WelcomedBackThread]` to `DecodedPackage` (line 54), populate them in `unpackAndDecode`'s final `DecodedPackage(...)` construction with `releasedThreads: PilgrimPackageConverter.releasedThreads(from: manifest.preferences)` and `welcomedBackThreads: PilgrimPackageConverter.welcomedBackThreads(from: manifest.preferences)`, and in the `importPackage` success hook (line 86) add the merge between the tombstone clear and the backfill reset:
 
 ```swift
                         if case .success = result {
                             TranscriptContextStore.shared.clearTombstones(for: importedRecordingUUIDs)
-                            ReleasedThreadsStore.shared.merge(package.releasedThreads)
+                            ReleasedThreadsStore.shared.merge(
+                                released: package.releasedThreads,
+                                welcomedBack: package.welcomedBackThreads
+                            )
                             ThreadsBackfill.reset()
                         }
 ```
 
-Any test fixture constructing `DecodedPackage` directly gains `releasedThreads: []`.
+Any test fixture constructing `DecodedPackage` directly gains `releasedThreads: [], welcomedBackThreads: []`.
 
 4. `DataManager.swift` — add the seam next to the existing `transcriptContextStore` seam:
 
@@ -472,16 +602,23 @@ and in `deleteAll`'s `.success` branch (line 844-855), after `UserPreferences.cl
 
 The call sits in the transaction-success completion, preserving the Data Safety rule: walker decisions are only cleared once the database wipe committed.
 
-- [ ] **Step 5: Run all three test classes — PASS**
+5. `UnitTests/PilgrimPackageExporterArchivedTests.swift` — `buildManifest`'s new defaults read `ReleasedThreadsStore.shared`, i.e. the test host's persistent standard defaults. Add (or extend) `setUpWithError` in that class so a simulator that dogfooded a release can't inject `releasedThreads` into these manifests:
 
-Run: `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/ReleasedThreadsStoreTests -only-testing:UnitTests/ReleasedThreadsPackageTests -only-testing:UnitTests/DataManagerThreadsDeletionTests 2>&1 | tail -20`
-Expected: PASS — 8 + 5 new tests, plus the existing DataManagerThreadsDeletionTests still green.
+```swift
+        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.defaultsKey)
+        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.welcomedBackKey)
+```
+
+- [ ] **Step 5: Run the test classes — PASS**
+
+Run: `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/ReleasedThreadsStoreTests -only-testing:UnitTests/ReleasedThreadsPackageTests -only-testing:UnitTests/DataManagerThreadsDeletionTests -only-testing:UnitTests/PilgrimPackageExporterArchivedTests 2>&1 | tail -20`
+Expected: PASS — 10 + 5 new tests plus the new deleteAll clearing test, and the existing DataManagerThreadsDeletionTests / PilgrimPackageExporterArchivedTests still green.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Pilgrim/Models/Threads/ReleasedThreadsStore.swift Pilgrim/Models/Data/PilgrimPackage/PilgrimPackageModels.swift Pilgrim/Models/Data/PilgrimPackage/PilgrimPackageConverter.swift Pilgrim/Models/Data/PilgrimPackage/PilgrimPackageImporter.swift Pilgrim/Models/Data/DataManager.swift UnitTests/ReleasedThreadsStoreTests.swift UnitTests/ReleasedThreadsPackageTests.swift UnitTests/DataManagerThreadsDeletionTests.swift Pilgrim.xcodeproj/project.pbxproj
-git commit -m "feat(threads): released set — cohort releases, Delete All clearing, .pilgrim carve-out"
+git add Pilgrim/Models/Threads/ReleasedThreadsStore.swift Pilgrim/Models/Data/PilgrimPackage/PilgrimPackageModels.swift Pilgrim/Models/Data/PilgrimPackage/PilgrimPackageConverter.swift Pilgrim/Models/Data/PilgrimPackage/PilgrimPackageImporter.swift Pilgrim/Models/Data/DataManager.swift UnitTests/ReleasedThreadsStoreTests.swift UnitTests/ReleasedThreadsPackageTests.swift UnitTests/DataManagerThreadsDeletionTests.swift UnitTests/PilgrimPackageExporterArchivedTests.swift Pilgrim.xcodeproj/project.pbxproj
+git commit -m "feat(threads): released set — cohort releases, latest-decision-wins merge, Delete All clearing, .pilgrim carve-out"
 ```
 
 ---
@@ -492,8 +629,8 @@ git commit -m "feat(threads): released set — cohort releases, Delete All clear
 - Modify: `Pilgrim/Models/Threads/ThreadStore.swift` (`build` gains `released` parameter)
 - Modify: `Pilgrim/Models/Prompt/AttentionDirectives.swift` (`detect` + `recurringWord` gain the released skip)
 - Modify: `Pilgrim/Models/Threads/ThreadsDossierBuilder.swift` (released filter + memo token)
-- Modify: `Pilgrim/Models/Threads/ThreadIntentionSuggestions.swift` (released filter + memo token)
-- Test: `UnitTests/ThreadsReleaseFilteringTests.swift`
+- Modify: `Pilgrim/Models/Threads/ThreadIntentionSuggestions.swift` (released filter + memo token + injectable walkIndex)
+- Test: `UnitTests/ThreadsReleaseFilteringTests.swift`, extend `UnitTests/AttentionDirectivesTests.swift` (setUp clear only — the new detect default reads the test host's standard defaults)
 
 **Interfaces:**
 - Consumes: `ReleasedThreadsStore` (Task 1); existing `ThreadStore` / `AttentionDirectives` / builder / suggestions surfaces.
@@ -501,7 +638,7 @@ git commit -m "feat(threads): released set — cohort releases, Delete All clear
   - `ThreadStore.build(contexts:walks:released:)` — `released: Set<String> = []`; a released lemma founds no thread, covering card, thread view, dossier trajectories, quiet-this-walk lines, chips, and the recap in one place.
   - `AttentionDirectives.detect(context:detectedLanguageCode:releasedLemmas:)` — `releasedLemmas: Set<String> = ReleasedThreadsStore.shared.releasedLemmas`; only `recurringWord` consumes it (the one surfacing path that bypasses ThreadStore); the next-ranked candidate is promoted. `intentionEcho` is deliberately exempt — it only quotes words from the walker's own stated intention.
   - `ThreadsDossierBuilder.build(walkUUID:recordings:walkIndex:store:releasedStore:)` — memo key now includes the released store's change token.
-  - `ThreadIntentionSuggestions.current(asOf:store:releasedStore:)` — same token in its memo key.
+  - `ThreadIntentionSuggestions.current(asOf:store:releasedStore:walkIndex:)` — same token in its memo key; `walkIndex` is injectable (nil = live CoreStore index) so Task 8's wiring test can drive `current()` end to end.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -633,7 +770,7 @@ final class ThreadsReleaseFilteringTests: XCTestCase {
         let filtered = ThreadStore.build(contexts: contexts, walks: walks, released: ["move"])
         XCTAssertTrue(ThreadIntentionSuggestions.select(
             threads: filtered, asOf: base.addingTimeInterval(6 * 86400)
-        ).isEmpty, "chips read the same filtered aggregation as everything else")
+        ).isEmpty, "select over release-filtered threads yields nothing — ranking only; the async current() wiring is pinned by Task 8's testCurrent_releaseVisibleOnNextCall")
     }
 }
 ```
@@ -798,11 +935,14 @@ In `ThreadIntentionSuggestions.swift`, replace the memo declaration and `current
     static func current(
         asOf: Date = Date(),
         store: TranscriptContextStore = .shared,
-        releasedStore: ReleasedThreadsStore = .shared
+        releasedStore: ReleasedThreadsStore = .shared,
+        walkIndex: [UUID: (walkUUID: UUID, date: Date)]? = nil
     ) async -> [String] {
         guard !pendingFieldGate else { return [] }
         guard UserPreferences.threadsAfterWalks.value else { return [] }
-        let walkIndex = DataManager.voiceRecordingWalkIndex()
+        // walkIndex is injectable for Task 8's wiring test; production
+        // callers pass nil and read the live CoreStore index on the main actor.
+        let walkIndex = walkIndex ?? DataManager.voiceRecordingWalkIndex()
         guard !walkIndex.isEmpty else { return [] }
 
         let day = Calendar.current.startOfDay(for: asOf)
@@ -830,13 +970,20 @@ In `ThreadIntentionSuggestions.swift`, replace the memo declaration and `current
 
 - [ ] **Step 6: Run the new class, then the neighbors it touched**
 
+First, in `UnitTests/AttentionDirectivesTests.swift`, add (or extend) `setUpWithError` with the same two-key clear as Task 1's exporter tests — `detect`'s new default reads `ReleasedThreadsStore.shared` from the test host's persistent standard defaults, and a simulator that dogfooded a release would otherwise flake the recurring-word assertions non-reproducibly:
+
+```swift
+        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.defaultsKey)
+        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.welcomedBackKey)
+```
+
 Run: `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/ThreadsReleaseFilteringTests -only-testing:UnitTests/ThreadStoreTests -only-testing:UnitTests/ThreadsDossierTests -only-testing:UnitTests/ThreadIntentionSuggestionsTests -only-testing:UnitTests/AttentionDirectivesTests 2>&1 | tail -20`
 Expected: PASS — 6 new tests; every pre-existing test in the four neighbor classes untouched by the defaulted parameters.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Pilgrim/Models/Threads/ThreadStore.swift Pilgrim/Models/Prompt/AttentionDirectives.swift Pilgrim/Models/Threads/ThreadsDossierBuilder.swift Pilgrim/Models/Threads/ThreadIntentionSuggestions.swift UnitTests/ThreadsReleaseFilteringTests.swift Pilgrim.xcodeproj/project.pbxproj
+git add Pilgrim/Models/Threads/ThreadStore.swift Pilgrim/Models/Prompt/AttentionDirectives.swift Pilgrim/Models/Threads/ThreadsDossierBuilder.swift Pilgrim/Models/Threads/ThreadIntentionSuggestions.swift UnitTests/ThreadsReleaseFilteringTests.swift UnitTests/AttentionDirectivesTests.swift Pilgrim.xcodeproj/project.pbxproj
 git commit -m "feat(threads): released cohorts vanish everywhere — one ThreadStore filter, one recurringWord skip, tokened memos"
 ```
 
@@ -849,7 +996,7 @@ git commit -m "feat(threads): released cohorts vanish everywhere — one ThreadS
 - Create: `Pilgrim/Models/Threads/ThreadsCardModel.swift`
 - Create: `Pilgrim/Scenes/WalkSummary/ThreadsCardSection.swift`
 - Create: `Pilgrim/Scenes/WalkSummary/WalkSummaryView+Threads.swift`
-- Modify: `Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` (one `@State`, one slot in the VStack, one `.task`, `transcriptions` drops `private`)
+- Modify: `Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` (one `@State`, one slot in the VStack, one `.task`, `transcriptions` drops `private`, init gains a `showsThreadsCard` recursion-cut flag)
 - Test: `UnitTests/ThreadsCardModelTests.swift`
 
 **Interfaces:**
@@ -929,11 +1076,15 @@ final class ThreadsCardModelTests: XCTestCase {
     func testModel_topFourBySalienceDeterministicTies() {
         let walk = UUID()
         let recordings = (0..<5).map { _ in UUID() }
-        let lemmas = ["alder", "birch", "cedar", "dawn", "elm"]
+        // "elm" is built BEFORE "dawn" and the two tie exactly on mentions
+        // and salience — the top-4 cut is decided by the alphabetical
+        // tie-break, not insertion order.
+        let lemmas = ["alder", "birch", "cedar", "elm", "dawn"]
+        let mentionCounts = [5, 4, 3, 2, 2]
         let threads = lemmas.enumerated().map { index, lemma in
             WalkThread(lemma: lemma, displayTerm: lemma, appearances: [
                 appearance(recording: recordings[index], walk: walk, date: base,
-                           mentions: 5 - index, salience: Double(5 - index) / 200)
+                           mentions: mentionCounts[index], salience: Double(mentionCounts[index]) / 200)
             ])
         }
         let contexts = Dictionary(uniqueKeysWithValues: recordings.map { ($0, context($0)) })
@@ -943,7 +1094,7 @@ final class ThreadsCardModelTests: XCTestCase {
             contextsByRecording: contexts, backfillComplete: true
         )
         XCTAssertEqual(model?.themes.map(\.displayTerm), ["alder", "birch", "cedar", "dawn"],
-                       "top four by salience; the fifth theme waits in the thread view")
+                       "top four by salience; 'dawn' and 'elm' tie exactly and the alphabetical tie-break keeps 'dawn'")
     }
 
     func testModel_cohortMergesSharedDisplayTerm() {
@@ -987,6 +1138,27 @@ final class ThreadsCardModelTests: XCTestCase {
         )
         XCTAssertEqual(model?.themes.first?.statusNote, "second walk now",
                        "a first-time claim is only true if NO lemma in the cohort appeared earlier")
+    }
+
+    func testCohortLemmas_includeSiblingsAbsentFromThisWalk() {
+        let walk = UUID()
+        let recNow = UUID()
+        let threads = [
+            WalkThread(lemma: "move", displayTerm: "the move", appearances: [
+                appearance(recording: recNow, walk: walk, date: base, mentions: 3, salience: 0.015)
+            ]),
+            WalkThread(lemma: "moving", displayTerm: "the move", appearances: [
+                appearance(recording: UUID(), walk: UUID(),
+                           date: base.addingTimeInterval(-10 * 86400), mentions: 2, salience: 0.01)
+            ])
+        ]
+        let model = ThreadsCardModelBuilder.model(
+            walkUUID: walk, threads: threads,
+            recordings: [(uuid: recNow, transcript: "w", wordsPerMinute: nil)],
+            contextsByRecording: [recNow: context(recNow)], backfillComplete: true
+        )
+        XCTAssertEqual(model?.themes.first?.lemmas, ["move", "moving"],
+                       "release acts on every lemma sharing the display term — including a sibling with no appearance in this walk")
     }
 
     func testModel_noActiveThreads_returnsNil() {
@@ -1165,15 +1337,16 @@ enum ThreadsCardModelBuilder {
         contextsByRecording: [UUID: TranscriptContext],
         backfillComplete: Bool
     ) -> ThreadsCardModel? {
-        let active = threads.filter { thread in
-            thread.appearances.contains { $0.walkUUID == walkUUID }
-        }
-        guard !active.isEmpty else { return nil }
-
         // Two lemmas can share a display term (move/moving → "the move"):
-        // one chip per term, and release later acts on the whole cohort,
-        // so the cohort is assembled here.
-        let cohorts = Dictionary(grouping: active, by: \.displayTerm)
+        // one chip per term, and release later acts on the whole cohort. The
+        // grouping runs over ALL threads first — a sibling lemma whose
+        // appearances are all in earlier walks still joins its cohort, so
+        // status history and release lemma sets stay cohort-complete — and
+        // only cohorts present in this walk keep a chip. mentions/salience
+        // below filter to walkUUID, so ranking is unaffected.
+        let cohorts = Dictionary(grouping: threads, by: \.displayTerm)
+            .filter { $0.value.contains { $0.appearances.contains { $0.walkUUID == walkUUID } } }
+        guard !cohorts.isEmpty else { return nil }
 
         let totalWords = recordings
             .compactMap { contextsByRecording[$0.uuid]?.wordCount }
@@ -1238,7 +1411,7 @@ enum ThreadsCardModelBuilder {
 }
 ```
 
-- [ ] **Step 5: Run the model tests — PASS** (`-only-testing:UnitTests/ThreadsCardModelTests`, expected 12 tests).
+- [ ] **Step 5: Run the model tests — PASS** (`-only-testing:UnitTests/ThreadsCardModelTests`, expected 13 tests).
 
 - [ ] **Step 6: Implement the card view and loader**
 
@@ -1383,12 +1556,13 @@ extension WalkSummaryView {
 
     @ViewBuilder
     var threadsCardSlot: some View {
-        if let threadsCardModel {
+        if showsThreadsCard, let threadsCardModel {
             ThreadsCardSection(model: threadsCardModel)
         }
     }
 
     func loadThreadsCard() async {
+        guard showsThreadsCard else { return }
         threadsCardModel = await ThreadsCardLoader.load(walk: walk, transcriptions: transcriptions)
     }
 }
@@ -1396,9 +1570,10 @@ extension WalkSummaryView {
 
 In `WalkSummaryView.swift`:
 1. The `@State private var transcriptions` declaration (line 18) drops `private` (the extension file needs it — same pattern as the camera state, see the comment at lines 36-38): `@State var transcriptions: [UUID: String] = [:]`
-2. Add below the other `@State` declarations: `@State var threadsCardModel: ThreadsCardModel?`
-3. In the body's `VStack`, directly below `intentionCard` (line 80): `threadsCardSlot`
-4. On the `ScrollView` modifier chain, after the `.onReceive(CollectiveRouteCatalogService.shared.$catalog)` block:
+2. The init gains a recursion-cut flag: `init(walk: WalkInterface, showsThreadsCard: Bool = true)`, storing `let showsThreadsCard: Bool` next to `let walk` and assigning it first in the init body. Every existing call site compiles unchanged via the default. Tap-through summaries presented from `ThreadHistoryView` pass `false` (Task 4): without it, summary → card chip → thread view → entry row → summary recurses unboundedly, and every stacked level is a full Mapbox-bearing `WalkSummaryView` with route caches — exactly the compounding-memory pattern the resource-safety doctrine forbids. The flag cuts the cycle at one level.
+3. Add below the other `@State` declarations: `@State var threadsCardModel: ThreadsCardModel?`
+4. In the body's `VStack`, directly below `intentionCard` (line 80): `threadsCardSlot`
+5. On the `ScrollView` modifier chain, after the `.onReceive(CollectiveRouteCatalogService.shared.$catalog)` block:
 
 ```swift
             .task(id: transcriptions.count) {
@@ -1411,7 +1586,8 @@ In `WalkSummaryView.swift`:
 - [ ] **Step 7: Build the app target, run the full UnitTests suite**
 
 Run: `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests 2>&1 | tail -5`
-Expected: PASS; "Test Case '" count = 1269 + 32 (Tasks 1-3 tests: 14 + 6 + 12).
+Expected: PASS; `grep -c "Test Case '.*' started"` count = 1269 + 35 (Tasks 1-3 tests: 16 + 6 + 13).
+Then: `swiftlint lint Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` — zero errors; the struct sits ~669/750 against type_body_length, so this task's additions to the main struct stay limited to the init flag, `@State` declarations, and one-line slots (everything else lives in the extension file).
 
 - [ ] **Step 8: Commit**
 
@@ -1433,10 +1609,10 @@ git commit -m "feat(threads): the card — what walked with you, in ordinal word
 - Test: `UnitTests/ThreadHistoryModelTests.swift`
 
 **Interfaces:**
-- Consumes: `ThreadStore.build(contexts:walks:released:)` (Task 2), `ThemeMention` character offsets (Character/grapheme counts, produced via `text.distance` in `TranscriptNLP`), `TranscriptContextStore.hash(of:)`, `DataManager.transcribedRecordingsSnapshot()` / `.voiceRecordingWalkIndex()` (both `@MainActor`), `DataManager.dataStack.fetchOne(From<Walk>().where(\._uuid == uuid))` (the WalkSummaryView idiom, line 325), `WalkSummaryView.computeSegments(for:)`, `PilgrimMapView` (all-defaults init, `initialCamera: MapCameraSeed.Seed`), `PilgrimAnnotation.Kind.voiceRecording(label:)`, `WalkSummaryView(walk:)` presented via `.sheet(item:)` (Walk is Identifiable — the RecordingsListView idiom, line 55).
+- Consumes: `ThreadStore.build(contexts:walks:released:)` (Task 2), `ThreadsBackfill.isComplete` (origin claims are suppressed pre-backfill, exactly like the card's first-time status), `ThemeMention` character offsets (Character/grapheme counts, produced via `text.distance` in `TranscriptNLP`), `TranscriptContextStore.hash(of:)`, `DataManager.transcribedRecordingsSnapshot()` / `.voiceRecordingWalkIndex()` (both `@MainActor`), `DataManager.dataStack.fetchOne(From<Walk>().where(\._uuid == uuid))` (the WalkSummaryView idiom, line 325), `WalkSummaryView.computeSegments(for:)`, `PilgrimMapView` (all-defaults init, `initialCamera: MapCameraSeed.Seed`), `PilgrimAnnotation.Kind.voiceRecording(label:)`, `WalkSummaryView(walk:showsThreadsCard:)` presented via `.sheet(item:)` (Walk is Identifiable — the RecordingsListView idiom, line 55; tap-through summaries pass `showsThreadsCard: false`, the Task 3 recursion cut).
 - Produces (used by Tasks 5, 7):
   - `struct ThreadHistoryEntry: Equatable` — `{ recordingUUID: UUID, walkUUID: UUID, date: Date, excerpt: String?, isOrigin: Bool }`
-  - `ThreadHistoryModelBuilder.entries(cohort:contextsByRecording:transcriptsByRecording:) -> [ThreadHistoryEntry]` (newest first, oldest flagged origin)
+  - `ThreadHistoryModelBuilder.entries(cohort:contextsByRecording:transcriptsByRecording:backfillComplete:) -> [ThreadHistoryEntry]` (newest first; oldest flagged origin ONLY when backfill is complete — no entry carries `isOrigin` pre-backfill, which hides both the footer and the origin-map action)
   - `ThreadHistoryModelBuilder.excerpt(for:context:transcript:)` / `.slice(_:around:radius:)` (grapheme-safe)
   - `ThreadOriginResolver.coordinate(recordingStart:samples:) -> CLLocationCoordinate2D?` (nearest route sample within `tolerance` = 120 s)
   - `ThreadHistoryView(displayTerm:cohortLemmas:)` (pushed inside a NavigationStack)
@@ -1464,11 +1640,26 @@ final class ThreadHistoryModelTests: XCTestCase {
             appearance(recording: $1, walk: UUID(), date: base.addingTimeInterval(Double($0) * 86400))
         })
         let entries = ThreadHistoryModelBuilder.entries(
-            cohort: [thread], contextsByRecording: [:], transcriptsByRecording: [:]
+            cohort: [thread], contextsByRecording: [:], transcriptsByRecording: [:],
+            backfillComplete: true
         )
         XCTAssertEqual(entries.map(\.recordingUUID), [recs[2], recs[1], recs[0]])
         XCTAssertEqual(entries.map(\.isOrigin), [false, false, true],
                        "the oldest entry carries 'where it began'")
+    }
+
+    func testEntries_backfillIncomplete_suppressesOrigin() {
+        let recs = [UUID(), UUID()]
+        let thread = WalkThread(lemma: "move", displayTerm: "the move", appearances: recs.enumerated().map {
+            appearance(recording: $1, walk: UUID(), date: base.addingTimeInterval(Double($0) * 86400))
+        })
+        let entries = ThreadHistoryModelBuilder.entries(
+            cohort: [thread], contextsByRecording: [:], transcriptsByRecording: [:],
+            backfillComplete: false
+        )
+        XCTAssertEqual(entries.count, 2)
+        XCTAssertTrue(entries.allSatisfy { !$0.isOrigin },
+                      "origin claims stay suppressed pre-backfill — no 'where it began' footer, no origin-map action")
     }
 
     func testEntries_onePerRecordingAcrossCohort() {
@@ -1480,7 +1671,8 @@ final class ThreadHistoryModelTests: XCTestCase {
                        appearances: [appearance(recording: rec, walk: walk, date: base, mentions: 2)])
         ]
         let entries = ThreadHistoryModelBuilder.entries(
-            cohort: cohort, contextsByRecording: [:], transcriptsByRecording: [:]
+            cohort: cohort, contextsByRecording: [:], transcriptsByRecording: [:],
+            backfillComplete: true
         )
         XCTAssertEqual(entries.count, 1, "two cohort lemmas in one recording is still one moment")
     }
@@ -1548,6 +1740,15 @@ final class ThreadHistoryModelTests: XCTestCase {
         XCTAssertFalse(atStart!.hasPrefix("…"), "no leading ellipsis when the slice reaches the start")
     }
 
+    func testSlice_noWhitespaceWindow_degeneratesToBareEllipsis() {
+        let transcript = String(repeating: "a", count: 200)
+        let excerpt = ThreadHistoryModelBuilder.slice(
+            transcript, around: ThemeMention(start: 100, length: 5), radius: 30
+        )
+        XCTAssertEqual(excerpt, "…",
+                       "a truncated window with no whitespace trims to a bare ellipsis — pinned so any future formatting change is deliberate, not accidental")
+    }
+
     func testOriginResolver_toleranceBoundary() {
         let start = base
         let sample: (Date) -> (timestamp: Date, latitude: Double, longitude: Double) = {
@@ -1599,13 +1800,18 @@ enum ThreadHistoryModelBuilder {
 
     static let excerptRadius = 60
 
-    /// Newest first; the oldest entry carries the origin label. One entry
-    /// per recording — when two cohort lemmas appear in the same recording,
-    /// the strongest theme (mention count, then lemma) provides the excerpt.
+    /// Newest first; the oldest entry carries the origin label — but only
+    /// once the one-time backfill has completed. Until then "where it began"
+    /// would be a claim about walks not yet analyzed, so origin flags are
+    /// suppressed rather than risked (spec), hiding both the footer and the
+    /// origin-map action. One entry per recording — when two cohort lemmas
+    /// appear in the same recording, the strongest theme (mention count,
+    /// then lemma) provides the excerpt.
     static func entries(
         cohort: [WalkThread],
         contextsByRecording: [UUID: TranscriptContext],
-        transcriptsByRecording: [UUID: String]
+        transcriptsByRecording: [UUID: String],
+        backfillComplete: Bool
     ) -> [ThreadHistoryEntry] {
         let lemmas = Set(cohort.map(\.lemma))
         let appearancesByRecording = Dictionary(
@@ -1632,6 +1838,7 @@ enum ThreadHistoryModelBuilder {
             .sorted { ($0.date, $0.recordingUUID.uuidString) > ($1.date, $1.recordingUUID.uuidString) }
 
         guard let oldest = sorted.last else { return [] }
+        guard backfillComplete else { return sorted }
         return Array(sorted.dropLast()) + [ThreadHistoryEntry(
             recordingUUID: oldest.recordingUUID,
             walkUUID: oldest.walkUUID,
@@ -1706,7 +1913,7 @@ enum ThreadOriginResolver {
 }
 ```
 
-- [ ] **Step 4: Run the model tests — PASS** (`-only-testing:UnitTests/ThreadHistoryModelTests`, expected 9 tests).
+- [ ] **Step 4: Run the model tests — PASS** (`-only-testing:UnitTests/ThreadHistoryModelTests`, expected 11 tests).
 
 - [ ] **Step 5: Implement the view**
 
@@ -1718,28 +1925,41 @@ import CoreStore
 import CoreLocation
 
 /// Best-effort reverse geocoding of each walk's starting point — resolved
-/// once per walk, capped per screen so a long history cannot hammer the
-/// geocoder; a missing place simply doesn't render.
+/// once per walk, capped per screen, and strictly serialized: CLGeocoder
+/// fails a pending request when a new one is submitted, so concurrent
+/// per-row requests would silently lose most place names. One FIFO Task
+/// awaits each lookup before starting the next; a missing place simply
+/// doesn't render. The Task handle is cancelled when the view disappears.
 @MainActor
 final class ThreadPlaceResolver: ObservableObject {
 
     @Published private(set) var places: [UUID: String] = [:]
-    private var requested: Set<UUID> = []
     private let geocoder = CLGeocoder()
+    private var resolveTask: Task<Void, Never>?
     private static let maxResolutions = 12
 
-    func resolve(walkUUID: UUID) {
-        guard !requested.contains(walkUUID), requested.count < Self.maxResolutions else { return }
-        requested.insert(walkUUID)
-        guard let walk = try? DataManager.dataStack.fetchOne(
-            From<Walk>().where(\._uuid == walkUUID)
-        ), let first = walk.routeData.first else { return }
-        let location = CLLocation(latitude: first.latitude, longitude: first.longitude)
-        Task {
-            guard let placemark = try? await geocoder.reverseGeocodeLocation(location).first,
-                  let name = placemark.locality ?? placemark.name else { return }
-            places[walkUUID] = name
+    /// Called exactly once, from load(), with the entries' distinct walk
+    /// UUIDs in display order — never per row.
+    func resolveAll(walkUUIDs: [UUID]) {
+        guard resolveTask == nil else { return }
+        let pending = walkUUIDs.prefix(Self.maxResolutions)
+        resolveTask = Task {
+            for walkUUID in pending {
+                guard !Task.isCancelled else { return }
+                guard let walk = try? DataManager.dataStack.fetchOne(
+                    From<Walk>().where(\._uuid == walkUUID)
+                ), let first = walk.routeData.first else { continue }
+                let location = CLLocation(latitude: first.latitude, longitude: first.longitude)
+                guard let placemark = try? await geocoder.reverseGeocodeLocation(location).first,
+                      let name = placemark.locality ?? placemark.name else { continue }
+                places[walkUUID] = name
+            }
         }
+    }
+
+    func cancel() {
+        resolveTask?.cancel()
+        resolveTask = nil
     }
 }
 
@@ -1788,12 +2008,17 @@ struct ThreadHistoryView: View {
             }
         }
         .sheet(item: $selectedWalk) { walk in
-            WalkSummaryView(walk: walk)
+            // showsThreadsCard: false is the Task 3 recursion cut — a
+            // tap-through summary must not offer another threads card, or
+            // summary → thread → summary stacks Mapbox-bearing views
+            // without bound.
+            WalkSummaryView(walk: walk, showsThreadsCard: false)
         }
         .sheet(item: $presentedOriginMap) { data in
             ThreadOriginMapView(displayTerm: displayTerm, data: data)
         }
         .task { await load() }
+        .onDisappear { placeResolver.cancel() }
     }
 
     private func entryRow(_ entry: ThreadHistoryEntry) -> some View {
@@ -1835,7 +2060,6 @@ struct ThreadHistoryView: View {
         .padding(Constants.UI.Padding.normal)
         .background(Color.parchmentSecondary)
         .cornerRadius(Constants.UI.CornerRadius.normal)
-        .task { placeResolver.resolve(walkUUID: entry.walkUUID) }
     }
 
     private var originFooter: some View {
@@ -1869,6 +2093,7 @@ struct ThreadHistoryView: View {
                 .map { ($0.uuid, $0.transcript) }
         )
         let released = ReleasedThreadsStore.shared.releasedLemmas
+        let backfillComplete = ThreadsBackfill.isComplete
         let lemmas = Set(cohortLemmas)
 
         entries = await Task.detached(priority: .userInitiated) { () -> [ThreadHistoryEntry] in
@@ -1880,10 +2105,15 @@ struct ThreadHistoryView: View {
             return ThreadHistoryModelBuilder.entries(
                 cohort: threads.filter { lemmas.contains($0.lemma) },
                 contextsByRecording: contextsByRecording,
-                transcriptsByRecording: transcripts
+                transcriptsByRecording: transcripts,
+                backfillComplete: backfillComplete
             )
         }.value
         origin = resolveOrigin()
+        var seenWalks: Set<UUID> = []
+        placeResolver.resolveAll(
+            walkUUIDs: entries.map(\.walkUUID).filter { seenWalks.insert($0).inserted }
+        )
     }
 
     /// Resolution happens when the view opens — never persisted, so a
@@ -1998,7 +2228,7 @@ struct ThreadOriginMapView: View {
 ```swift
     @ViewBuilder
     var threadsCardSlot: some View {
-        if let threadsCardModel {
+        if showsThreadsCard, let threadsCardModel {
             ThreadsCardSection(
                 model: threadsCardModel,
                 onThemeTap: { selectedCardTheme = $0 }
@@ -2007,7 +2237,7 @@ struct ThreadOriginMapView: View {
     }
 ```
 
-- [ ] **Step 7: Build + full UnitTests suite — PASS** (baseline 1269 + 41). Commit.
+- [ ] **Step 7: Build + full UnitTests suite — PASS** (baseline 1269 + 46). Then `swiftlint lint Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` — zero errors (the ~669/750 type_body_length headroom check, per Global Constraints). Commit.
 
 ```bash
 git add Pilgrim/Models/Threads/ThreadHistoryModel.swift Pilgrim/Scenes/WalkSummary/ThreadHistoryView.swift Pilgrim/Scenes/WalkSummary/ThreadsCardSection.swift Pilgrim/Scenes/WalkSummary/WalkSummaryView+Threads.swift Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift UnitTests/ThreadHistoryModelTests.swift Pilgrim.xcodeproj/project.pbxproj
@@ -2024,6 +2254,7 @@ git commit -m "feat(threads): thread view — the walker's own words, newest fir
 - Modify: `Pilgrim/Scenes/WalkSummary/ThreadsCardSection.swift` (long-press, VoiceOver action, confirm, caption)
 - Modify: `Pilgrim/Scenes/WalkSummary/ThreadHistoryView.swift` (term header with long-press + confirm, pops on release)
 - Modify: `Pilgrim/Scenes/WalkSummary/WalkSummaryView+Threads.swift` (release handler, card fade-out)
+- Modify: `Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` (`.onChange(of: selectedCardTheme)` reload — Step 6's parenthetical)
 - Modify: `Pilgrim/Models/Preferences/UserPreferences.swift` (caption-shown flag)
 - Modify: `Pilgrim/Models/Threads/ThreadsCardModel.swift` (`removing(displayTerm:from:)`)
 - Modify: `Pilgrim/Scenes/Settings/SettingsCards/VoiceCard.swift` (hidden-when-empty settings row)
@@ -2217,22 +2448,43 @@ struct ThreadsCardSection: View {
     }
 ```
 
-and `chip(_:)` gains, between `.buttonStyle(.plain)` and `.accessibilityElement`:
+and `chip(_:)` is replaced wholesale — the Task 4 `Button` wrapper goes away. A long-press gesture attached to a `Button` competes with the Button's own tap recognizer and one of the two stops firing reliably; no file in this repo combines them, and the house pattern for tap + long-press coexistence is `PhotoCarouselView.swift:122-128` — `.contentShape(Rectangle())` + `.onTapGesture` + `.onLongPressGesture(minimumDuration: 0.4)` on a plain view (`MeditationView.swift:62-69` is the other precedent). VoiceOver parity is unaffected: custom accessibility actions bypass gesture recognizers entirely, and `.isButton` restores the trait the `Button` used to convey:
 
 ```swift
-        .onLongPressGesture {
+    private func chip(_ theme: ThreadsCardTheme) -> some View {
+        VStack(spacing: 2) {
+            Text(theme.displayTerm)
+                .font(Constants.Typography.body)
+                .foregroundColor(.ink)
+            if let note = theme.statusNote {
+                Text(note)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(minHeight: 44)
+        .background(Capsule().fill(Color.moss.opacity(0.1)))
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onThemeTap?(theme)
+        }
+        .onLongPressGesture(minimumDuration: 0.4) {
             guard onRelease != nil else { return }
             themeToRelease = theme
         }
-```
-
-plus, after `.accessibilityHint(...)` — gesture parity, not gesture-only:
-
-```swift
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(
+            theme.statusNote.map { "\(theme.displayTerm), \($0)" } ?? theme.displayTerm
+        )
+        .accessibilityHint(onThemeTap == nil ? "" : "Double tap to view history")
         .accessibilityAction(named: ReleasedThreadsCopy.voiceOverActionName) {
             guard onRelease != nil else { return }
             themeToRelease = theme
         }
+    }
 ```
 
 `WalkSummaryView+Threads.swift` — the slot passes both handlers and the release fades/reflows:
@@ -2240,7 +2492,7 @@ plus, after `.accessibilityHint(...)` — gesture parity, not gesture-only:
 ```swift
     @ViewBuilder
     var threadsCardSlot: some View {
-        if let threadsCardModel {
+        if showsThreadsCard, let threadsCardModel {
             ThreadsCardSection(
                 model: threadsCardModel,
                 onThemeTap: { selectedCardTheme = $0 },
@@ -2273,13 +2525,16 @@ plus, after `.accessibilityHint(...)` — gesture parity, not gesture-only:
         Text(displayTerm)
             .font(Constants.Typography.displayMedium)
             .foregroundColor(.ink)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(Rectangle())
             .onLongPressGesture { showReleaseConfirm = true }
             .accessibilityAction(named: ReleasedThreadsCopy.voiceOverActionName) {
                 showReleaseConfirm = true
             }
     }
 ```
+
+(The `.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())` pair matches every other interactive row in this plan — a transparent `Text` alone hit-tests only its glyph bounding box, so without it the long-press target would be narrower and shorter than the visual row and under the 44 pt minimum.)
 
 and on the ScrollView's modifier chain, next to the existing sheets:
 
@@ -2298,7 +2553,7 @@ and on the ScrollView's modifier chain, next to the existing sheets:
         }
 ```
 
-(When the thread view was pushed from the summary card, the summary's card is stale after this pop — the `.task(id:)` reload doesn't refire on dismiss, so ALSO add `.onChange(of: selectedCardTheme) { _, newValue in if newValue == nil { Task { await loadThreadsCard() } } }` to the WalkSummaryView modifier chain, right after the Task 4 sheet. A release made inside the thread view is then reflected the moment the sheet closes.)
+(When the thread view was pushed from the summary card, the summary's card is stale after this pop — the `.task(id:)` reload doesn't refire on dismiss, so ALSO add `.onChange(of: selectedCardTheme) { _, newValue in if newValue == nil { Task { await loadThreadsCard() } } }` to the WalkSummaryView modifier chain, right after the Task 4 sheet. A release made inside the thread view is then reflected the moment the sheet closes. Task 7 extends this same pattern to the recap sheet path with `.onChange(of: recapSheet)`, and re-keys the recap view's own load on the released token — the release lifecycle stays consistent across all three surfaces.)
 
 - [ ] **Step 7: The settings list**
 
@@ -2387,7 +2642,7 @@ struct ReleasedThreadsListView: View {
             }
 ```
 
-- [ ] **Step 8: Build + full UnitTests suite — PASS** (baseline 1269 + 47). Commit.
+- [ ] **Step 8: Build + full UnitTests suite — PASS** (baseline 1269 + 52). Commit.
 
 ```bash
 git add Pilgrim/Models/Threads/ReleasedThreadsCopy.swift Pilgrim/Models/Threads/ThreadsCardModel.swift Pilgrim/Models/Preferences/UserPreferences.swift Pilgrim/Scenes/WalkSummary/ThreadsCardSection.swift Pilgrim/Scenes/WalkSummary/ThreadHistoryView.swift Pilgrim/Scenes/WalkSummary/WalkSummaryView+Threads.swift Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift Pilgrim/Scenes/Settings/ReleasedThreadsListView.swift Pilgrim/Scenes/Settings/SettingsCards/VoiceCard.swift UnitTests/ReleasedThreadsInteractionTests.swift Pilgrim.xcodeproj/project.pbxproj
@@ -2403,14 +2658,15 @@ git commit -m "feat(threads): let this one go — reversible releases with gestu
 - Create: `Pilgrim/Models/Threads/LunationCalendar.swift`
 - Create: `Pilgrim/Models/Threads/LunationRecapState.swift`
 - Modify: `Pilgrim/Scenes/WalkSummary/ThreadsCardSection.swift` (first-card-shown marker)
-- Test: `UnitTests/LunationCalendarTests.swift`, `UnitTests/LunationRecapStateTests.swift`
+- Modify: `Pilgrim/Models/Data/DataManager.swift` (`deleteAll` also clears the recap state and the caption flag — beside Task 1's `releasedThreadsStore.clear()`)
+- Test: `UnitTests/LunationCalendarTests.swift`, `UnitTests/LunationRecapStateTests.swift`, extend `UnitTests/DataManagerThreadsDeletionTests.swift`
 
 **Interfaces:**
 - Consumes: `LunarPhase.synodicMonth` / `LunarPhase.knownNewMoon` (internal after this task — the same reference the phase math uses, so phase and lunation arithmetic can never disagree), `UserPreferences.threadsAfterWalks`.
 - Produces (used by Task 7):
   - `struct Lunation: Equatable, Identifiable` — `{ index: Int, start: Date, end: Date, fullMoon: Date }`, `id == index`
   - `LunationCalendar.lunation(at:)` / `.lunation(containing:)` / `.mostRecentClosed(asOf:)` / `.moonName(for:in:)` (timezone-pinned month-moon name table)
-  - `final class LunationRecapState` — `static let shared`; `init(defaults:)`; `firstCardShownAt`; `markFirstCardShown(now:)` (set-once); `lastActedLunationIndex`; `markActedOn(_:)`; `invitation(forWalkDated:now:) -> Lunation?`
+  - `final class LunationRecapState` — `static let shared`; `init(defaults:)`; `firstCardShownAt`; `markFirstCardShown(now:)` (set-once); `lastActedLunationIndex`; `markActedOn(_:)` (monotonic — opening an older moon from Past recaps never regresses the index); `invitation(forWalkDated:now:) -> Lunation?` (ignores acted indices beyond the current lunation — a forward-set clock cannot silence months of real invitations); `clear()` (Delete All hook — the first-card gate re-arms exactly as a reinstall would)
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2574,7 +2830,43 @@ final class LunationRecapStateTests: XCTestCase {
         UserPreferences.threadsAfterWalks.value = false
         XCTAssertNil(state.invitation(forWalkDated: walkAfter, now: now))
     }
+
+    func testInvitation_futureActedIndexIsIgnored() {
+        showFirstCard(before: closed.end)
+        state.markActedOn(LunationCalendar.lunation(at: 305))
+        XCTAssertEqual(state.invitation(forWalkDated: walkAfter, now: now)?.index, 300,
+                       "an acted index from a forward-set clock is ignored — it cannot silence months of real invitations")
+    }
+
+    func testMarkActedOn_isMonotonic() {
+        state.markActedOn(closed)
+        state.markActedOn(LunationCalendar.lunation(at: 298))
+        XCTAssertEqual(state.lastActedLunationIndex, 300,
+                       "opening an older moon from Past recaps never regresses the acted index")
+    }
 }
+```
+
+Append to `UnitTests/DataManagerThreadsDeletionTests.swift` (beside Task 1's release-clearing test — Delete All must reset the recap bookkeeping exactly as a reinstall would; a surviving `firstCardShownAt` resurrects pre-wipe moons as ghost Past-recap rows and turns the first post-wipe walk into a junk "no recorded words" invitation):
+
+```swift
+    func testDeleteAll_clearsRecapStateAndCaptionFlag() {
+        LunationRecapState.shared.clear()
+        LunationRecapState.shared.markFirstCardShown()
+        LunationRecapState.shared.markActedOn(LunationCalendar.lunation(at: 300))
+        UserPreferences.threadsReleaseCaptionShown.value = true
+
+        let deleted = expectation(description: "deleted all")
+        DataManager.deleteAll { success, _ in
+            XCTAssertTrue(success)
+            deleted.fulfill()
+        }
+        wait(for: [deleted], timeout: 5)
+        XCTAssertNil(LunationRecapState.shared.firstCardShownAt,
+                     "the first-card gate re-arms — a wipe is a fresh start, like a reinstall")
+        XCTAssertNil(LunationRecapState.shared.lastActedLunationIndex)
+        XCTAssertFalse(UserPreferences.threadsReleaseCaptionShown.value)
+    }
 ```
 
 - [ ] **Step 2: Run to verify failure** (`-only-testing:UnitTests/LunationCalendarTests -only-testing:UnitTests/LunationRecapStateTests`). Expected: FAIL — types don't exist.
@@ -2703,8 +2995,11 @@ final class LunationRecapState {
         defaults.object(forKey: Self.lastActedKey) as? Int
     }
 
+    /// Monotonic: opening an older moon from Past recaps also marks it
+    /// acted-on, and must never regress the index and resurrect an
+    /// already-dismissed invitation.
     func markActedOn(_ lunation: Lunation) {
-        defaults.set(lunation.index, forKey: Self.lastActedKey)
+        defaults.set(max(lunation.index, lastActedLunationIndex ?? Int.min), forKey: Self.lastActedKey)
     }
 
     /// The lunation whose set moon may invite from this walk's summary, or
@@ -2715,11 +3010,33 @@ final class LunationRecapState {
         guard let firstShown = firstCardShownAt else { return nil }
         let closed = LunationCalendar.mostRecentClosed(asOf: now)
         guard closed.end > firstShown else { return nil }
-        guard closed.index > (lastActedLunationIndex ?? Int.min) else { return nil }
+        // An acted index beyond the current lunation can only come from a
+        // forward-set clock (the manual smoke does exactly this) — ignore
+        // it, so months of real invitations aren't silenced after the
+        // clock returns.
+        let currentIndex = LunationCalendar.lunation(containing: now).index
+        let lastActed = lastActedLunationIndex.flatMap { $0 > currentIndex ? nil : $0 }
+        guard closed.index > (lastActed ?? Int.min) else { return nil }
         guard walkDate >= closed.end else { return nil }
         return closed
     }
+
+    /// Delete All Data hook — the first-card gate re-arms exactly as a
+    /// reinstall would. Without this, a surviving firstCardShownAt
+    /// resurrects pre-wipe moons as ghost Past-recap rows and turns the
+    /// first post-wipe walk into a junk "no recorded words" invitation.
+    func clear() {
+        defaults.removeObject(forKey: Self.firstCardShownKey)
+        defaults.removeObject(forKey: Self.lastActedKey)
+    }
 }
+```
+
+`DataManager.swift` — in `deleteAll`'s `.success` branch, directly after Task 1's `releasedThreadsStore.clear()` line (same transaction-success discipline — recap bookkeeping resets only once the database wipe committed):
+
+```swift
+                LunationRecapState.shared.clear()
+                UserPreferences.threadsReleaseCaptionShown.value = false
 ```
 
 `ThreadsCardSection.swift` — the card records the walker's first contact. On the outermost VStack's modifier chain (after `.cornerRadius`):
@@ -2730,13 +3047,15 @@ final class LunationRecapState {
         }
 ```
 
-- [ ] **Step 4: Run both classes — PASS** (5 + 9 tests).
+- [ ] **Step 4: Run the three touched classes — PASS** (5 + 10 tests, plus the new deleteAll recap-clearing test)
+
+Run: `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/LunationCalendarTests -only-testing:UnitTests/LunationRecapStateTests -only-testing:UnitTests/DataManagerThreadsDeletionTests 2>&1 | tail -20`
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Pilgrim/Models/LunarPhase.swift Pilgrim/Models/Threads/LunationCalendar.swift Pilgrim/Models/Threads/LunationRecapState.swift Pilgrim/Scenes/WalkSummary/ThreadsCardSection.swift UnitTests/LunationCalendarTests.swift UnitTests/LunationRecapStateTests.swift Pilgrim.xcodeproj/project.pbxproj
-git commit -m "feat(threads): lunation machinery — timezone-named moons, first-card gate, acted-on invitations"
+git add Pilgrim/Models/LunarPhase.swift Pilgrim/Models/Threads/LunationCalendar.swift Pilgrim/Models/Threads/LunationRecapState.swift Pilgrim/Scenes/WalkSummary/ThreadsCardSection.swift Pilgrim/Models/Data/DataManager.swift UnitTests/LunationCalendarTests.swift UnitTests/LunationRecapStateTests.swift UnitTests/DataManagerThreadsDeletionTests.swift Pilgrim.xcodeproj/project.pbxproj
+git commit -m "feat(threads): lunation machinery — timezone-named moons, first-card gate, acted-on invitations, wipe re-arms the gate"
 ```
 
 ---
@@ -2747,7 +3066,7 @@ git commit -m "feat(threads): lunation machinery — timezone-named moons, first
 - Create: `Pilgrim/Models/Threads/LunationRecapModel.swift`
 - Create: `Pilgrim/Scenes/WalkSummary/LunationRecapView.swift`
 - Create: `Pilgrim/Scenes/Settings/PastRecapsListView.swift`
-- Modify: `Pilgrim/Models/Data/DataManager.swift` (`voiceRecordingPaceIndex()` next to `voiceRecordingWalkIndex()`)
+- Modify: `Pilgrim/Models/Data/DataManager+VoiceRecording.swift` (`voiceRecordingPaceIndex()` next to `voiceRecordingWalkIndex()` — that is the file the walk-index/snapshot helpers live in, NOT DataManager.swift)
 - Modify: `Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` (two `@State`s, one onAppear line, one `.sheet`)
 - Modify: `Pilgrim/Scenes/WalkSummary/WalkSummaryView+Threads.swift` (invitation row above the card)
 - Modify: `Pilgrim/Scenes/Settings/SettingsCards/VoiceCard.swift` (Past recaps row)
@@ -2758,9 +3077,9 @@ git commit -m "feat(threads): lunation machinery — timezone-named moons, first
 - Produces:
   - `struct LunationRecapTheme: Equatable, Identifiable, Hashable` — `{ displayTerm, lemmas, walkCount, isNewThisMoon }`
   - `struct LunationRecapModel: Equatable` — `{ moonName, walkCount, themes, textureLine, quietLine }`
-  - `LunationRecapCopy.themeLine(term:walkCount:totalWalks:)` ("in N of M walks" — structurally distinct from the card's ordinal copy by design), `.newThisMoon`, `.nothingHeld`, `.noWords`, `.invitation(moonName:)`
+  - `LunationRecapCopy.themeLine(term:walkCount:totalWalks:)` ("in N of M walks" — structurally distinct from the card's ordinal copy by design), `.headline(walkCount:)` ("N walks with recorded words this moon" — the claim is scoped to analyzed-transcript walks so it never reads as the journal's walk total disagreeing), `.newThisMoon`, `.nothingHeld`, `.noWords`, `.invitation(moonName:)`
   - `LunationRecapModelBuilder.model(lunation:moonName:contexts:walkIndex:paceByRecording:released:backfillComplete:)` (pure, live-computed at sheet open)
-  - `@MainActor DataManager.voiceRecordingPaceIndex() -> [UUID: Double]` (verify the attribute name `_wordsPerMinute` against PilgrimV7.swift:241 — it is `Value.Optional<Double>("wordsPerMinute")`)
+  - `@MainActor DataManager.voiceRecordingPaceIndex() -> [UUID: Double]` — a two-column `queryAttributes` fetch mirroring its neighbors in `DataManager+VoiceRecording.swift` (verify the attribute name `_wordsPerMinute` against PilgrimV7.swift:241 — it is `Value.Optional<Double>("wordsPerMinute")`)
   - `LunationRecapView(lunation:)` sheet; `PastRecapsListView` + `PastRecapsListView.closedLunations(now:state:)`
 
 - [ ] **Step 1: Write the failing tests**
@@ -2773,12 +3092,12 @@ final class LunationRecapModelTests: XCTestCase {
 
     private let lunation = LunationCalendar.lunation(at: 300)
 
-    private func context(_ uuid: UUID, lemma: String?, insight: Int = 0) -> TranscriptContext {
+    private func context(_ uuid: UUID, lemma: String?, displayTerm: String? = nil, insight: Int = 0) -> TranscriptContext {
         TranscriptContext(
             schemaVersion: 1, recordingUUID: uuid, transcriptHash: "h",
             languageCode: "en", wordCount: 200,
             themes: lemma.map { [Theme(
-                lemma: $0, displayTerm: $0, mentionCount: 3, salience: 0.015,
+                lemma: $0, displayTerm: displayTerm ?? $0, mentionCount: 3, salience: 0.015,
                 mentions: [ThemeMention(start: 0, length: 4)]
             )] } ?? [],
             markers: MarkerPack(
@@ -2868,12 +3187,31 @@ final class LunationRecapModelTests: XCTestCase {
         XCTAssertEqual(build(contexts: contexts, walkIndex: walkIndex).themes.first?.isNewThisMoon, false)
     }
 
+    func testNewThisMoon_falseWhenSiblingLemmaPredatesTheMoon() {
+        var (contexts, walkIndex) = fixture()
+        let earlierRec = UUID()
+        contexts.append(context(earlierRec, lemma: "moving", displayTerm: "move"))
+        walkIndex[earlierRec] = (UUID(), lunation.start.addingTimeInterval(-10 * 86400))
+        XCTAssertEqual(build(contexts: contexts, walkIndex: walkIndex).themes.first?.isNewThisMoon, false,
+                       "a sibling lemma of the same display term predating the moon makes the theme returning, not new — cohorts group over ALL threads")
+    }
+
     func testReleasedFiltering_leavesTheQuietLine() {
         let (contexts, walkIndex) = fixture()
         let model = build(contexts: contexts, walkIndex: walkIndex, released: ["move"])
         XCTAssertTrue(model.themes.isEmpty)
         XCTAssertEqual(model.walkCount, 3, "the moon's walk count stands even when nothing is named")
         XCTAssertEqual(model.quietLine, "nothing held on to name this time")
+    }
+
+    func testRecapPathRelease_rebuildDropsThemeAndLeavesQuietLine() {
+        let (contexts, walkIndex) = fixture()
+        XCTAssertEqual(build(contexts: contexts, walkIndex: walkIndex).themes.map(\.displayTerm), ["move"],
+                       "fixture sanity — the theme is present before the release")
+        let after = build(contexts: contexts, walkIndex: walkIndex, released: ["move"])
+        XCTAssertTrue(after.themes.isEmpty)
+        XCTAssertEqual(after.quietLine, "nothing held on to name this time",
+                       "the released-token re-key rebuilds the recap the moment the thread view pops — a released theme drops out instead of dead-ending")
     }
 
     func testZeroAnalyzedWalks_hasItsOwnQuietLine() {
@@ -2887,6 +3225,20 @@ final class LunationRecapModelTests: XCTestCase {
         let walkIndex = [rec: (walkUUID: UUID(), date: lunation.end.addingTimeInterval(3600))]
         let model = build(contexts: [context(rec, lemma: "move")], walkIndex: walkIndex)
         XCTAssertEqual(model.walkCount, 0, "the window is [start, end) — the close belongs to the next moon")
+    }
+
+    func testWalkCount_ignoresWalksWithoutAnalyzedWords() {
+        var (contexts, walkIndex) = fixture()
+        walkIndex[UUID()] = (UUID(), lunation.start.addingTimeInterval(5 * 86400))
+        let model = build(contexts: contexts, walkIndex: walkIndex)
+        XCTAssertEqual(model.walkCount, 3,
+                       "an untranscribed recording's walk doesn't count — the headline copy scopes the claim to walks with recorded words for exactly this reason")
+    }
+
+    func testHeadline_scopedToWalksWithRecordedWords() {
+        XCTAssertEqual(LunationRecapCopy.headline(walkCount: 3), "3 walks with recorded words this moon")
+        XCTAssertEqual(LunationRecapCopy.headline(walkCount: 1), "1 walk with recorded words this moon",
+                       "the qualifier keeps the count honest against a journal showing more walks this moon")
     }
 
     func testTexture_paceAndInsightFromTheMoonsRecordings() {
@@ -2931,6 +3283,20 @@ final class LunationRecapModelTests: XCTestCase {
             "every moon closed since first contact, newest first — a missed line never costs the month"
         )
     }
+
+    func testClosedLunations_boundaryEndEqualsFirstShown_excluded() {
+        let suiteName = "PastRecapsBoundary-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let state = LunationRecapState(defaults: defaults)
+        state.markFirstCardShown(now: LunationCalendar.lunation(at: 300).end)
+        let now = LunationCalendar.lunation(at: 302).start.addingTimeInterval(86400)
+        XCTAssertEqual(
+            PastRecapsListView.closedLunations(now: now, state: state).map(\.index),
+            [301],
+            "a moon closing at the exact first-shown instant belongs to backfilled history — the strict `>` is deliberate and pinned"
+        )
+    }
 }
 ```
 
@@ -2968,6 +3334,17 @@ enum LunationRecapCopy {
     /// "walks", even for one (spec sparse state: "in 1 of 1 walks").
     static func themeLine(term: String, walkCount: Int, totalWalks: Int) -> String {
         "'\(term)' — walked with you in \(walkCount) of \(totalWalks) walks"
+    }
+
+    /// The headline counts only walks with analyzed transcripts, so the
+    /// copy scopes the claim: a walker with fifteen journal walks and three
+    /// transcribed must never read "3 walks this moon" as the journal
+    /// disagreeing with itself. The zero state ("no recorded words walked
+    /// this moon") already carries the same frame.
+    static func headline(walkCount: Int) -> String {
+        walkCount == 1
+            ? "1 walk with recorded words this moon"
+            : "\(walkCount) walks with recorded words this moon"
     }
 
     static let newThisMoon = "new this moon"
@@ -3009,12 +3386,13 @@ enum LunationRecapModelBuilder {
         }
 
         let threads = ThreadStore.build(contexts: contexts, walks: walkIndex, released: released)
-        let cohorts = Dictionary(
-            grouping: threads.filter { thread in
-                thread.appearances.contains { inMoon($0.date) }
-            },
-            by: \.displayTerm
-        )
+        // Cohorts group over ALL threads first — a sibling lemma whose
+        // appearances all predate the moon still joins its cohort, so
+        // isNewThisMoon judges the cohort's full history (mirroring the
+        // card builder) — then only cohorts with at least one appearance
+        // inside the moon are named.
+        let cohorts = Dictionary(grouping: threads, by: \.displayTerm)
+            .filter { $0.value.contains { $0.appearances.contains { inMoon($0.date) } } }
 
         let themes = cohorts
             .map { term, cohort -> LunationRecapTheme in
@@ -3053,18 +3431,25 @@ enum LunationRecapModelBuilder {
 }
 ```
 
-In `DataManager.swift`, next to `voiceRecordingWalkIndex()`:
+In `Pilgrim/Models/Data/DataManager+VoiceRecording.swift`, next to `voiceRecordingWalkIndex()` (line 159 — the walk-index/snapshot helpers live in this extension file, not DataManager.swift; the Task 7 `git add` stages this file). Mirror the neighbors' two-column `queryAttributes` pattern — their own doc comments explain that `fetchAll` faulted in every recording row, one SQL round-trip each, and this function runs on every recap sheet open:
 
 ```swift
-    /// Recording UUID → words-per-minute, for the recap's pace texture.
-    /// Main-actor only: `dataStack.fetchAll` asserts Thread.isMainThread.
+    /// Recording UUID → words-per-minute, for the recap's pace texture. A
+    /// two-column `queryAttributes` fetch mirroring the snapshot queries
+    /// above. Main-actor only, like its neighbors.
     @MainActor
     public static func voiceRecordingPaceIndex() -> [UUID: Double] {
-        let recordings = (try? dataStack.fetchAll(From<VoiceRecording>())) ?? []
+        guard let rows = try? dataStack.queryAttributes(
+            From<VoiceRecording>().select(
+                NSDictionary.self,
+                .attribute(\._uuid),
+                .attribute(\._wordsPerMinute)
+            )
+        ) else { return [:] }
         var index: [UUID: Double] = [:]
-        for recording in recordings {
-            guard let uuid = recording._uuid.value,
-                  let wpm = recording._wordsPerMinute.value else { continue }
+        for row in rows {
+            guard let uuid = row["id"] as? UUID,
+                  let wpm = row["wordsPerMinute"] as? Double else { continue }
             index[uuid] = wpm
         }
         return index
@@ -3113,7 +3498,12 @@ struct LunationRecapView: View {
             .navigationDestination(item: $selectedTheme) { theme in
                 ThreadHistoryView(displayTerm: theme.displayTerm, cohortLemmas: theme.lemmas)
             }
-            .task { await load() }
+            // Re-keyed on the released token: a release made inside the
+            // pushed thread view pops back here, the pop re-evaluates this
+            // body, the id has changed, and load() reruns — the released
+            // theme drops out (the quiet line appears when emptied) and a
+            // re-tap can never open a dead-end empty history view.
+            .task(id: ReleasedThreadsStore.shared.changeCount) { await load() }
         }
     }
 
@@ -3122,7 +3512,7 @@ struct LunationRecapView: View {
             Image(systemName: "moon")
                 .font(.title2)
                 .foregroundColor(.fog)
-            Text(model.walkCount == 1 ? "1 walk this moon" : "\(model.walkCount) walks this moon")
+            Text(LunationRecapCopy.headline(walkCount: model.walkCount))
                 .font(Constants.Typography.body)
                 .foregroundColor(.ink)
 
@@ -3176,12 +3566,15 @@ struct LunationRecapView: View {
 
     @MainActor
     private func load() async {
+        // The local shadow must precede its first use — Swift resolves the
+        // unqualified name to the local for the WHOLE scope, so referencing
+        // it above its declaration is a compile error, not a property read.
+        let lunation = self.lunation
         let walkIndex = DataManager.voiceRecordingWalkIndex()
         let paces = DataManager.voiceRecordingPaceIndex()
         let released = ReleasedThreadsStore.shared.releasedLemmas
         let backfillComplete = ThreadsBackfill.isComplete
         let moonName = LunationCalendar.moonName(for: lunation)
-        let lunation = self.lunation
 
         model = await Task.detached(priority: .userInitiated) {
             LunationRecapModelBuilder.model(
@@ -3231,6 +3624,13 @@ struct PastRecapsListView: View {
         List {
             ForEach(lunations) { lunation in
                 Button {
+                    // Reading a recap here counts as acting on it — the
+                    // summary's invitation row stops nagging about a moon
+                    // the walker has already seen (spec-consistent: the
+                    // invitation exists to surface the recap, not to be
+                    // tapped for its own sake). markActedOn is monotonic,
+                    // so opening an OLDER moon never regresses the index.
+                    LunationRecapState.shared.markActedOn(lunation)
                     selected = lunation
                 } label: {
                     HStack {
@@ -3280,23 +3680,30 @@ and after the Task 4 `.sheet(item: $selectedCardTheme)` block:
             .sheet(item: $recapSheet) { lunation in
                 LunationRecapView(lunation: lunation)
             }
+            .onChange(of: recapSheet) { _, newValue in
+                if newValue == nil { Task { await loadThreadsCard() } }
+            }
 ```
+
+(The `.onChange(of: recapSheet)` is Task 5's `selectedCardTheme` pattern extended to the recap path: a release made inside the recap flow — recap → thread view → long-press release — reaches the summary card the moment the recap sheet closes, so the card can't keep offering to release an already-released cohort.)
 
 2. `WalkSummaryView+Threads.swift` — the invitation renders as its own row below the intention card, above the per-walk card; when the triggering walk has no analyzed transcript, `threadsCardModel` is nil and the row renders alone in the card's slot — placement falls out of the slot order:
 
 ```swift
     @ViewBuilder
     var threadsCardSlot: some View {
-        if let recapInvitation {
-            lunationInvitationRow(recapInvitation)
-        }
-        if let threadsCardModel {
-            ThreadsCardSection(
-                model: threadsCardModel,
-                onThemeTap: { selectedCardTheme = $0 },
-                onRelease: { releaseTheme($0) }
-            )
-            .transition(.opacity)
+        if showsThreadsCard {
+            if let recapInvitation {
+                lunationInvitationRow(recapInvitation)
+            }
+            if let threadsCardModel {
+                ThreadsCardSection(
+                    model: threadsCardModel,
+                    onThemeTap: { selectedCardTheme = $0 },
+                    onRelease: { releaseTheme($0) }
+                )
+                .transition(.opacity)
+            }
         }
     }
 
@@ -3341,12 +3748,12 @@ and after the Task 4 `.sheet(item: $selectedCardTheme)` block:
             }
 ```
 
-- [ ] **Step 6: Run `LunationRecapModelTests` (12 tests) then the full suite — PASS** (baseline 1269 + 73: Tasks 1-7 added 14 + 6 + 12 + 9 + 6 + 14 + 12).
+- [ ] **Step 6: Run `LunationRecapModelTests` (16 tests) then the full suite — PASS** (baseline 1269 + 84: Tasks 1-7 added 16 + 6 + 13 + 11 + 6 + 16 + 16). Then `swiftlint lint Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift` — zero errors (the ~669/750 type_body_length headroom check; this task added two `@State`s, one onAppear line, one sheet, and one onChange to the main struct).
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Pilgrim/Models/Threads/LunationRecapModel.swift Pilgrim/Scenes/WalkSummary/LunationRecapView.swift Pilgrim/Scenes/Settings/PastRecapsListView.swift Pilgrim/Models/Data/DataManager.swift Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift Pilgrim/Scenes/WalkSummary/WalkSummaryView+Threads.swift Pilgrim/Scenes/Settings/SettingsCards/VoiceCard.swift UnitTests/LunationRecapModelTests.swift Pilgrim.xcodeproj/project.pbxproj
+git add Pilgrim/Models/Threads/LunationRecapModel.swift Pilgrim/Scenes/WalkSummary/LunationRecapView.swift Pilgrim/Scenes/Settings/PastRecapsListView.swift Pilgrim/Models/Data/DataManager+VoiceRecording.swift Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift Pilgrim/Scenes/WalkSummary/WalkSummaryView+Threads.swift Pilgrim/Scenes/Settings/SettingsCards/VoiceCard.swift UnitTests/LunationRecapModelTests.swift Pilgrim.xcodeproj/project.pbxproj
 git commit -m "feat(threads): the lunation recap — the moon sets, the month speaks in counts, pulled never pushed"
 ```
 
@@ -3356,7 +3763,7 @@ git commit -m "feat(threads): the lunation recap — the moon sets, the month sp
 
 **Files:**
 - Modify: `Pilgrim/Models/Threads/ThreadIntentionSuggestions.swift` (flip `pendingFieldGate`)
-- Modify: `UnitTests/ThreadIntentionSuggestionsTests.swift` (update the pinning test)
+- Modify: `UnitTests/ThreadIntentionSuggestionsTests.swift` (replace the pinning test, add the `current()` release-wiring test — net +1)
 
 **Interfaces:**
 - Consumes: field gate outcome recorded in the spec addendum ("Chips: cleared to ship").
@@ -3371,7 +3778,58 @@ git commit -m "feat(threads): the lunation recap — the moon sets, the month sp
     }
 ```
 
-- [ ] **Step 2: Run to verify it fails** (`-only-testing:UnitTests/ThreadIntentionSuggestionsTests`). Expected: the new test FAILS against the still-true flag; `testCurrent_toggleOff_returnsEmptyWithoutTouchingTheStore` still passes (toggle-off is a separate guard and must survive the flip).
+and append the async wiring test the closed gate previously made impossible. Task 2's `testSuggestions_selectOverFilteredThreadsExcludesReleased` pins `select`'s ranking only — a bug in `current()`'s own wiring (omitting `released:` from its internal `ThreadStore.build` call, or a memo key that never sees the released token) would pass it. This test drives `current()` end to end through the Task 2 injection seams (mirroring `testDossierBuilder_releaseVisibleOnNextOpen`):
+
+```swift
+    @MainActor
+    func testCurrent_releaseVisibleOnNextCall() async {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SuggestionsWiring-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+
+        let suiteName = "SuggestionsWiring-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let releasedStore = ReleasedThreadsStore(defaults: defaults)
+
+        let base = DateFactory.makeDate(2024, 6, 1, 9, 0, 0)
+        let recA = UUID(), recB = UUID()
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [
+            recA: (UUID(), base),
+            recB: (UUID(), base.addingTimeInterval(5 * 86400))
+        ]
+        for rec in [recA, recB] {
+            _ = store.save(TranscriptContext(
+                schemaVersion: 1, recordingUUID: rec, transcriptHash: "h",
+                languageCode: "en", wordCount: 200,
+                themes: [Theme(lemma: "move", displayTerm: "the move", mentionCount: 3,
+                               salience: 0.015, mentions: [ThemeMention(start: 0, length: 4)])],
+                markers: nil
+            ))
+        }
+
+        let asOf = base.addingTimeInterval(6 * 86400)
+        let before = await ThreadIntentionSuggestions.current(
+            asOf: asOf, store: store, releasedStore: releasedStore, walkIndex: walkIndex
+        )
+        XCTAssertEqual(before, ["walk with 'the move'"],
+                       "fixture sanity — the suggestion is live before the release")
+
+        releasedStore.release(displayTerm: "the move", lemmas: ["move"])
+        let after = await ThreadIntentionSuggestions.current(
+            asOf: asOf, store: store, releasedStore: releasedStore, walkIndex: walkIndex
+        )
+        XCTAssertTrue(after.isEmpty,
+                      "current()'s own build path filters released lemmas and its memo re-keys on the released token — visible on the very next call")
+    }
+```
+
+- [ ] **Step 2: Run to verify both fail** (`-only-testing:UnitTests/ThreadIntentionSuggestionsTests`). Expected: `testFieldGate_passed_chipsAreLive` FAILS against the still-true flag, and `testCurrent_releaseVisibleOnNextCall` FAILS at its `before` assertion (the closed gate returns `[]`); `testCurrent_toggleOff_returnsEmptyWithoutTouchingTheStore` still passes (toggle-off is a separate guard and must survive the flip).
 
 - [ ] **Step 3: Flip the flag** — in `ThreadIntentionSuggestions.swift`, replace the `pendingFieldGate` declaration and its comment:
 
@@ -3401,18 +3859,18 @@ git commit -m "feat(threads): chips live — the field gate opens, walk with wha
 - [ ] **Step 1: Full suite reconciliation**
 
 Run: `xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tee /tmp/threads-stage34-suite.log | tail -5`
-Then: `grep -c "Test Case '" /tmp/threads-stage34-suite.log` (started lines count double if the log includes passed lines — reconcile with `xcrun xcresulttool` if in doubt).
-Expected: PASS, and the count reconciles to **1269 + 73 = 1342** started cases (Task 8 replaced one test, net zero). Any shortfall means a test file never joined the UnitTests target — go back to the pbxproj 4-entries check for that file.
+Then: `grep -c "Test Case '.*' started" /tmp/threads-stage34-suite.log` (anchor on `started` — the unanchored `Test Case '` also matches the passed/failed lines and counts roughly double; reconcile with `xcrun xcresulttool` if in doubt).
+Expected: PASS, and the count reconciles to **1269 + 85 = 1354** started cases (Tasks 1-7 added 16 + 6 + 13 + 11 + 6 + 16 + 16 = 84; Task 8 replaced one test and added the current() wiring test, net +1). Any shortfall means a test file never joined the UnitTests target — go back to the pbxproj 4-entries check for that file.
 
 - [ ] **Step 2: Privacy grep gates**
 
 ```bash
 grep -rn "TranscriptContext\|MarkerPack\|WalkThread" Pilgrim/Models/Share/ Pilgrim/Models/Data/PilgrimPackage/ | grep -v "TranscriptContextStore"
-grep -rn "ReleasedThread\|releasedThreads" Pilgrim/Models/Share/
-grep -rln "ReleasedThread" Pilgrim/Models/Data/PilgrimPackage/
+grep -rn "ReleasedThread\|releasedThreads\|WelcomedBack\|welcomedBack" Pilgrim/Models/Share/
+grep -rln "ReleasedThread\|WelcomedBack" Pilgrim/Models/Data/PilgrimPackage/
 ```
 
-Expected: line 1 and line 2 return **nothing** — derived analysis stays out of shares and exports, and the released set never enters `SharePayload` or the worker. (The `grep -v` allows the importer's pre-existing `TranscriptContextStore.shared.clearTombstones` call at PilgrimPackageImporter.swift:87 — store hygiene, not data egress; no other `TranscriptContext` reference may appear.) Line 3 returns **exactly three files** (`PilgrimPackageModels.swift`, `PilgrimPackageConverter.swift`, `PilgrimPackageImporter.swift`) — the sanctioned preferences-block carve-out and nothing else.
+Expected: line 1 and line 2 return **nothing** — derived analysis stays out of shares and exports, and neither the released set nor the welcome-back records ever enter `SharePayload` or the worker. (The `grep -v` allows the importer's pre-existing `TranscriptContextStore.shared.clearTombstones` call at PilgrimPackageImporter.swift:87 — store hygiene, not data egress; no other `TranscriptContext` reference may appear.) Line 3 returns **exactly three files** (`PilgrimPackageModels.swift`, `PilgrimPackageConverter.swift`, `PilgrimPackageImporter.swift`) — the sanctioned preferences-block carve-out and nothing else.
 
 - [ ] **Step 3: UI language gates**
 
@@ -3428,12 +3886,13 @@ Expected: both return nothing — no directional words anywhere in UI, and the j
 - [ ] **Step 5: Manual smoke on simulator (iPhone 17 Pro, demo mode)**
 
 1. Launch with `--demo-mode`, open a Camino walk summary with transcripts: the card appears below the intention card, chips carry ordinal statuses, no digits anywhere on the card.
-2. Tap a chip → thread view, newest first, "where it began" on the oldest, "open the map" opens the origin map centered on the pin.
-3. Long-press a chip → confirm reads exactly "Let 'X' go? / You can welcome it back anytime." → release → card reflows (or fades out entirely when it was the last theme); reopen the AI-prompts sheet → the released term is gone from the dossier on this very open.
+2. Tap a chip → thread view, newest first, "where it began" on the oldest, "open the map" opens the origin map centered on the pin; date rows resolve their place names one by one (serialized geocoding — no silently missing places on a long thread); tap an entry row → that walk's summary opens WITHOUT a threads card (the recursion cut — a tap-through summary never offers another chip to tap through).
+3. Long-press a chip → confirm reads exactly "Let 'X' go? / You can welcome it back anytime." → release → card reflows (or fades out entirely when it was the last theme); a plain tap on a chip still navigates reliably (tap and long-press share the plain-view gesture pattern — verify both on the same chip); reopen the AI-prompts sheet → the released term is gone from the dossier on this very open.
 4. Settings → Voice: "Released threads" row appeared; welcome the theme back; the row hides again once empty.
 5. Toggle Thought Threads off → summary is pixel-identical to a card-less build; intention sheet shows no chips; both settings rows hidden.
-6. VoiceOver pass: each chip is one element announcing "theme, status", hint "Double tap to view history", custom action "Let this go"; Dynamic Type at AX sizes wraps chips, never truncates.
-7. Lunation: temporarily set the device clock forward past the next new moon (or seed `threadsFirstCardShownAt` back one lunation via the debugger) → a summary for a walk dated after the boundary shows the invitation row; an older walk's summary does not; tapping opens the recap; the row never returns after acting; Settings → Voice → Past recaps reaches the same sheet.
+6. VoiceOver pass: each chip is one element announcing "theme, status", hint "Double tap to view history", custom action "Let this go"; Dynamic Type at AX sizes wraps chips, never truncates; the thread view's term header long-press target spans the full row width.
+7. Lunation: temporarily set the device clock forward past the next new moon (or seed `threadsFirstCardShownAt` back one lunation via the debugger) → a summary for a walk dated after the boundary shows the invitation row; an older walk's summary does not; tapping opens the recap (headline reads "N walks with recorded words this moon"); the row never returns after acting; Settings → Voice → Past recaps reaches the same sheet, and opening a moon there also stops the invitation nagging. (The acted-index clamp makes the clock-forward step safe to undo — restoring the clock cannot leave invitations silenced.)
+8. Recap-path release: from a recap, tap a theme → thread view → long-press the term header → release → the pop returns to a REFRESHED recap (the theme is gone; the quiet line appears if it was the last); re-tapping cannot open an empty history view; close the recap sheet → the summary card no longer shows the released theme.
 
 - [ ] **Step 6: RELEASE checklist — human checkpoints (STOP here; these gate distribution, not merge)**
 
@@ -3446,7 +3905,7 @@ Expected: both return nothing — no directional words anywhere in UI, and the j
 
 ## Verification (whole plan)
 
-- [ ] Full suite green at 1342 cases (Task 9 Step 1 evidence attached to the PR).
+- [ ] Full suite green at 1354 cases (Task 9 Step 1 evidence attached to the PR).
 - [ ] All grep gates clean (Task 9 Steps 2-3 output attached).
 - [ ] SwiftLint clean, full repo.
 - [ ] Manual smoke checklist completed on iPhone 17 Pro simulator.
@@ -3458,9 +3917,10 @@ Expected: both return nothing — no directional words anywhere in UI, and the j
 |---|---|
 | Filtering call graph: ThreadStore.build drops released; recurringWord skip promotes next; intentionEcho exempt | T2 |
 | Lemma-cohort release + atomic welcome-back | T1 (store) + T3 (cohort assembly) + T5 (UI) |
-| Released set's own change token folded into dossier + suggestions memo keys; release visible on next open | T1 + T2 |
+| Released set's own change token folded into dossier + suggestions memo keys; release visible on next open | T1 + T2 (+ T8 wiring test) |
 | `.pilgrim` preferences-block carve-out (export, import merge, old-file tolerance) | T1 |
-| Delete All Data clears releases | T1 |
+| Import merge is latest-decision-wins per cohort (welcome-backs recorded as decisions; a stale backup's release never silently overrides a later reversal — the reversibility promise survives backups) | T1 |
+| Delete All Data clears releases, welcome-back records, recap state, and the caption flag (the first-card gate re-arms like a reinstall) | T1 + T6 |
 | Confirm copy exact strings, leads with reversibility | T5 |
 | Mid-view transitions: card fades/reflows; thread view pops | T5 |
 | VoiceOver custom action "Let this go" (gesture parity, not gesture-only) | T5 |
@@ -3470,9 +3930,11 @@ Expected: both return nothing — no directional words anywhere in UI, and the j
 | Top-4 salience themes, first-time/nth-walk ordinal statuses, backfill-gated origin claims | T3 |
 | State-only texture line (pace mechanical from wpm; insight words traceable on tap) | T3 |
 | Card accessibility: wrap, single VoiceOver element per chip, 44 pt targets | T3 (+T4 hint, +T5 action) |
-| Thread view: full history newest-first, date/place/excerpt, tap-through to summary | T4 |
+| Thread view: full history newest-first, date/place/excerpt (serialized geocoding), tap-through to summary | T4 |
+| Tap-through summaries suppress the threads card (`showsThreadsCard: false` — the summary → thread → summary recursion cut) | T3 (flag) + T4 (sheet) |
 | Excerpt slicing from mention offsets, grapheme-safe, hash-guarded | T4 |
 | "Where it began" label + origin map (route-sample-nearest-timestamp, 120 s tolerance, hide on failure, resolve at open) | T4 |
+| Thread-view origin claims backfill-gated — no isOrigin entry, footer, or map action until the sweep completes (mirrors the card and recap) | T4 |
 | Deleted origin walk → earliest surviving appearance becomes the origin | T4 (record-derived, nothing persisted) |
 | Timezone moon naming (month of full-moon instant, device timezone) | T6 |
 | Lunation boundary index pinned to LunarPhase's reference | T6 |
@@ -3481,11 +3943,13 @@ Expected: both return nothing — no directional words anywhere in UI, and the j
 | Walk-dated invitations — never on historical summaries | T6 (eligibility) + T7 (row) |
 | Invitation row placement: own row below intention card, above per-walk card; renders alone when walk unanalyzed | T7 |
 | Recap live-computed at open; counts may exceed invitation moment's | T7 |
-| Recap content: moon name, walk count, "in N of M walks" themes tappable to thread view, new-this-moon firsts, texture line | T7 |
-| No directional language in recap; released filtered | T7 (via T2) + T9 grep |
+| Recap content: moon name, walks-with-recorded-words headline, "in N of M walks" themes tappable to thread view, new-this-moon firsts, texture line | T7 |
+| Recap headline scoped to walks with recorded words (analyzed-transcript denominator, pinned against an untranscribed-walk fixture) | T7 |
+| No directional language in recap; released filtered; release inside the recap flow refreshes recap (released-token re-key) and summary card (recapSheet onChange) | T7 (via T2) + T9 grep + smoke 8 |
 | Sparse states: "in 1 of 1 walks"; "nothing held on to name this time"; zero-walk moon | T7 |
 | Scope-divergence phrasing (lunation counts vs trailing-window ordinals, structurally distinct) | T7 (pinned test) |
-| Past recaps settings list, hidden-when-empty, missed line never costs the month | T7 |
+| Past recaps settings list, hidden-when-empty, missed line never costs the month; viewing a recap there also marks it acted-on (kills the invitation nag — spec-consistent, the invitation exists to surface the recap; markActedOn is monotonic so older moons never regress the index) | T7 |
+| Clock-forward safety: acted indices beyond the current lunation are ignored | T6 |
 | Accessibility extends to recap sheet + both settings lists | T7 (rows) + T5 (list) |
 | Chips live: pendingFieldGate → false; header ships "Recurring"; softer variant is a fast-follow | T8 |
 | Toggle off = off everywhere (card, thread nav, chips, invitation, settings rows) | T3/T4/T5/T6/T7 guards + T9 smoke |
