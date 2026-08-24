@@ -5,14 +5,17 @@ import Foundation
 /// once history is fully analyzed (spec: ThreadStore).
 enum ThreadsBackfill {
 
-    static let completedKey = "threadsBackfillCompletedV2"
+    static let completedKey = "threadsBackfillCompletedV3"
     /// v1.11.0 TestFlight devices could run the sweep, account for zero
-    /// recordings under a snapshot bug (fixed alongside this rename), and
+    /// recordings under a snapshot bug (fixed alongside the V2 rename), and
     /// still set the old flag — stranding those devices on a never-swept
-    /// history forever, since `runIfNeeded` guards on `!isComplete`. The
-    /// key rename re-arms them by construction: the new key is absent, so
-    /// `isComplete` reads false regardless of what the old key holds.
-    private static let legacyCompletedKey = "threadsBackfillCompleted"
+    /// history forever, since `runIfNeeded` guards on `!isComplete`. Build
+    /// 106 devices completed a real V2 sweep, but ThemeExtractor's raw
+    /// verb-inclusive filter let spoken scaffolding ("was", "have", "can",
+    /// "think") win every theme ranking — those stored themes are junk, not
+    /// stale. Each rename re-arms by construction: the new key is absent,
+    /// so `isComplete` reads false regardless of what any old key holds.
+    private static let legacyCompletedKeys = ["threadsBackfillCompleted", "threadsBackfillCompletedV2"]
     private static var isRunning = false
     private static var generation = 0
 
@@ -77,10 +80,10 @@ enum ThreadsBackfill {
         gate: @escaping @MainActor () -> Bool = { BatteryGate.allowsBackgroundWork() },
         onFinish: (@MainActor () -> Void)? = nil
     ) {
-        // One-time hygiene ahead of the isComplete check below: the pre-V2
-        // key no longer means anything, and removing an absent key is a
+        // One-time hygiene ahead of the isComplete check below: the pre-V3
+        // keys no longer mean anything, and removing an absent key is a
         // harmless no-op on every call after the first.
-        UserDefaults.standard.removeObject(forKey: legacyCompletedKey)
+        legacyCompletedKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
         guard !isComplete, !isRunning, UserPreferences.threadsAfterWalks.value, gate() else {
             onFinish?()
             return

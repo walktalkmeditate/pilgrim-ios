@@ -260,4 +260,15 @@ final class AttentionDirectivesTests: XCTestCase {
         )
         XCTAssertFalse(joined(context).contains("returns"))
     }
+
+    /// Field-confirmed bug: "think" is a light/modal verb NLTagger tags as
+    /// content — it dominated raw-frequency counts on real devices without
+    /// carrying any meaning. `SpokenStoplist.scaffoldLemmas` excludes it.
+    func testRecurringWord_scaffoldVerb_doesNotFire() {
+        let context = ActivityContext.make(
+            recordings: [recording("I think I think I think I think about it")],
+            startDate: start
+        )
+        XCTAssertFalse(joined(context).contains("returns"))
+    }
 }
