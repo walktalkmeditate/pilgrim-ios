@@ -240,6 +240,7 @@
 		7BFB56F11953470F8D5DF41A /* ThreadHistoryModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C642300D15AD44EA99B4FC6D /* ThreadHistoryModelTests.swift */; };
 		1BD1E96A084348F19A83EA07 /* LunationCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F0FCF0F88F406D8DECECA9 /* LunationCalendarTests.swift */; };
 		A250CB53C9A74F1184AE2F2D /* LunationRecapStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7CCD261729470B9FFFEB8D /* LunationRecapStateTests.swift */; };
+		9AD6FE386B1E4F5E8C9C9DC5 /* LunationRecapModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE20BA44E2734D3DBA0270CE /* LunationRecapModelTests.swift */; };
 		50A16B63C6F23E2D1E6210BA /* Pods_Pilgrim.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */; };
 		510A5ED79C24B905DDD597A7 /* ScrollHapticEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
@@ -467,6 +468,9 @@
 		CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRPH01 /* LunarPhase.swift */; };
 		6974E7EAF5A14C6CAA88085C /* LunationCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CAC84DBE9A24323906E2A32 /* LunationCalendar.swift */; };
 		D1E7C0F08C6D49B5BD8569CF /* LunationRecapState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BCF0EB1C954E0DB321DEE9 /* LunationRecapState.swift */; };
+		941FFDB60FFB4841897D0A88 /* LunationRecapModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F945A0A6043749C681A2A0EC /* LunationRecapModel.swift */; };
+		BDED6E0C048C42AABD18992C /* LunationRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 564348D4E1584021AFE338B6 /* LunationRecapView.swift */; };
+		175825FFE997434E87BC66C4 /* PastRecapsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D0BADFD98F423EBE90F92A /* PastRecapsListView.swift */; };
 		CC00000200000000LUNRTST1 /* LunarPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */; };
 		CC00000200000000MAINTB01 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MAINTB01 /* MainTabView.swift */; };
 		CC00000200000000MILEST01 /* MilestoneMarkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000MILEST01 /* MilestoneMarkerView.swift */; };
@@ -898,6 +902,7 @@
 		C642300D15AD44EA99B4FC6D /* ThreadHistoryModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadHistoryModelTests.swift; sourceTree = "<group>"; };
 		F5F0FCF0F88F406D8DECECA9 /* LunationCalendarTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunationCalendarTests.swift; sourceTree = "<group>"; };
 		8E7CCD261729470B9FFFEB8D /* LunationRecapStateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunationRecapStateTests.swift; sourceTree = "<group>"; };
+		FE20BA44E2734D3DBA0270CE /* LunationRecapModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunationRecapModelTests.swift; sourceTree = "<group>"; };
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
@@ -1138,6 +1143,9 @@
 		CC00000100000000LUNRPH01 /* LunarPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarPhase.swift; sourceTree = "<group>"; };
 		5CAC84DBE9A24323906E2A32 /* LunationCalendar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunationCalendar.swift; sourceTree = "<group>"; };
 		E0BCF0EB1C954E0DB321DEE9 /* LunationRecapState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunationRecapState.swift; sourceTree = "<group>"; };
+		F945A0A6043749C681A2A0EC /* LunationRecapModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunationRecapModel.swift; sourceTree = "<group>"; };
+		564348D4E1584021AFE338B6 /* LunationRecapView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunationRecapView.swift; sourceTree = "<group>"; };
+		24D0BADFD98F423EBE90F92A /* PastRecapsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PastRecapsListView.swift; sourceTree = "<group>"; };
 		CC00000100000000LUNRTST1 /* LunarPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LunarPhaseTests.swift; sourceTree = "<group>"; };
 		CC00000100000000MAINTB01 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		CC00000100000000MILEST01 /* MilestoneMarkerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneMarkerView.swift; sourceTree = "<group>"; };
@@ -1964,6 +1972,7 @@
 				C642300D15AD44EA99B4FC6D /* ThreadHistoryModelTests.swift */,
 				F5F0FCF0F88F406D8DECECA9 /* LunationCalendarTests.swift */,
 				8E7CCD261729470B9FFFEB8D /* LunationRecapStateTests.swift */,
+				FE20BA44E2734D3DBA0270CE /* LunationRecapModelTests.swift */,
 				77462A5F095C4E4CA47D91CF /* ReleasedThreadsInteractionTests.swift */,
 				C14640E393BDAEC8C4856281 /* PromptAssemblerLanguageTests.swift */,
 				cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */,
@@ -2337,6 +2346,7 @@
 				9493E7AD112D41C6B876DB33 /* ThreadIntentionSuggestions.swift */,
 				5CAC84DBE9A24323906E2A32 /* LunationCalendar.swift */,
 				E0BCF0EB1C954E0DB321DEE9 /* LunationRecapState.swift */,
+				F945A0A6043749C681A2A0EC /* LunationRecapModel.swift */,
 			);
 			path = Threads;
 			sourceTree = "<group>";
@@ -2390,6 +2400,7 @@
 				F1A525D381BA42798281A07F /* WalkSummaryView+Threads.swift */,
 				0901C4D1764F482982F54637 /* ThreadsCardSection.swift */,
 				7E4DA7EF8CEE45E1BFA114E9 /* ThreadHistoryView.swift */,
+				564348D4E1584021AFE338B6 /* LunationRecapView.swift */,
 				LR00000100000000LRWSRS01 /* WalkSummaryRecordingsSection.swift */,
 				AA00040100000000000001 /* VoiceRecordingRow.swift */,
 				AA00040100000000000003 /* AudioPlayerModel.swift */,
@@ -2504,6 +2515,7 @@
 				0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */,
 				7026624BD82447EA9317EC81 /* ReleasedThreadsListView.swift */,
+				24D0BADFD98F423EBE90F92A /* PastRecapsListView.swift */,
 				567070352F733CB000FD1910 /* JourneyViewerView.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* PermissionStatusViewModel.swift */,
 				B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */,
@@ -3071,6 +3083,7 @@
 				CC00000200000000LUNRPH01 /* LunarPhase.swift in Sources */,
 				6974E7EAF5A14C6CAA88085C /* LunationCalendar.swift in Sources */,
 				D1E7C0F08C6D49B5BD8569CF /* LunationRecapState.swift in Sources */,
+				941FFDB60FFB4841897D0A88 /* LunationRecapModel.swift in Sources */,
 				CC00000200000000SEEDRG01 /* SeededRNG.swift in Sources */,
 				CC00000200000000MOONPV01 /* MoonPhaseView.swift in Sources */,
 				CC00000200000000SETTVW01 /* SettingsView.swift in Sources */,
@@ -3109,6 +3122,7 @@
 				F52F97270EBD4F8688BC7D6C /* ThreadsCardSection.swift in Sources */,
 				8B992AFB3A134352AE353EF5 /* ThreadHistoryView.swift in Sources */,
 				75D65204CDD344D0847CE5AA /* WalkSummaryView+Threads.swift in Sources */,
+				BDED6E0C048C42AABD18992C /* LunationRecapView.swift in Sources */,
 				AA00040100000000000002 /* VoiceRecordingRow.swift in Sources */,
 				AA00040100000000000004 /* AudioPlayerModel.swift in Sources */,
 				AAAA00000000000000000EL1 /* ElevationProfileView.swift in Sources */,
@@ -3326,6 +3340,7 @@
 				DF1D856E510A4199B572A5E6 /* ThreadHistoryModel.swift in Sources */,
 				290FAD426253428DA5471752 /* ReleasedThreadsCopy.swift in Sources */,
 				FE227C2D76C04F1B853BA2DA /* ReleasedThreadsListView.swift in Sources */,
+				175825FFE997434E87BC66C4 /* PastRecapsListView.swift in Sources */,
 				3A9D73B10C5444B1AE84AAB6 /* ReleasedThreadsStore.swift in Sources */,
 				DDB1779FC0D3496A894799E5 /* ThreadsDossierFormatter.swift in Sources */,
 				4BCC1742561447DFBD59EF01 /* ThreadsDossierBuilder.swift in Sources */,
@@ -3365,6 +3380,7 @@
 				7BFB56F11953470F8D5DF41A /* ThreadHistoryModelTests.swift in Sources */,
 				1BD1E96A084348F19A83EA07 /* LunationCalendarTests.swift in Sources */,
 				A250CB53C9A74F1184AE2F2D /* LunationRecapStateTests.swift in Sources */,
+				9AD6FE386B1E4F5E8C9C9DC5 /* LunationRecapModelTests.swift in Sources */,
 				B4BB6C15735F478E9E296F6C /* ReleasedThreadsInteractionTests.swift in Sources */,
 				2161BB76D1D8B9E8BBB49B5A /* PromptAssemblerLanguageTests.swift in Sources */,
 				7ac8ee442a1ce6fcb926501a /* SharePayloadTourTests.swift in Sources */,

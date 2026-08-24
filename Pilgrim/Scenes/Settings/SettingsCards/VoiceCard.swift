@@ -7,6 +7,7 @@ struct VoiceCard: View {
     @State private var autoTranscribe = UserPreferences.autoTranscribe.value
     @State private var threadsAfterWalks = UserPreferences.threadsAfterWalks.value
     @State private var hasReleasedThreads = !ReleasedThreadsStore.shared.isEmpty
+    @State private var hasPastRecaps = !PastRecapsListView.closedLunations().isEmpty
     @State private var recordingCount = 0
     @State private var recordingSizeMB: Double = 0
     @ObservedObject private var transcriptionService = TranscriptionService.shared
@@ -65,6 +66,14 @@ struct VoiceCard: View {
                 }
             }
 
+            if threadsAfterWalks && hasPastRecaps {
+                NavigationLink {
+                    PastRecapsListView()
+                } label: {
+                    settingNavRow(label: "Past recaps")
+                }
+            }
+
             if case .downloadingModel(let progress) = transcriptionService.state {
                 HStack(spacing: 8) {
                     SwiftUI.ProgressView(value: progress)
@@ -94,6 +103,7 @@ struct VoiceCard: View {
         .onAppear {
             voiceGuideEnabled = UserPreferences.voiceGuideEnabled.value
             hasReleasedThreads = !ReleasedThreadsStore.shared.isEmpty
+            hasPastRecaps = !PastRecapsListView.closedLunations().isEmpty
             refreshStats()
         }
     }

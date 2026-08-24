@@ -30,6 +30,8 @@ struct WalkSummaryView: View {
     @State private var showPrompts = false
     @State var threadsCardModel: ThreadsCardModel?
     @State var selectedCardTheme: ThreadsCardTheme?
+    @State var recapInvitation: Lunation?
+    @State var recapSheet: Lunation?
     init(walk: WalkInterface, showsThreadsCard: Bool = true) {
         self.walk = walk
         self.showsThreadsCard = showsThreadsCard
@@ -175,6 +177,7 @@ struct WalkSummaryView: View {
                     hasRevealedLightReading = sharingTracker.hasShared(walkUUID: uuid)
                 }
                 loadReliquaryCandidates()
+                recapInvitation = LunationRecapState.shared.invitation(forWalkDated: walk.startDate)
             }
             .onDisappear {
                 pollingTask?.cancel()
@@ -205,6 +208,12 @@ struct WalkSummaryView: View {
                 }
             }
             .onChange(of: selectedCardTheme) { _, newValue in
+                if newValue == nil { Task { await loadThreadsCard() } }
+            }
+            .sheet(item: $recapSheet) { lunation in
+                LunationRecapView(lunation: lunation)
+            }
+            .onChange(of: recapSheet) { _, newValue in
                 if newValue == nil { Task { await loadThreadsCard() } }
             }
         }

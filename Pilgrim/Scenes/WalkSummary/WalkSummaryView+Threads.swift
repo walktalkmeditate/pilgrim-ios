@@ -10,14 +10,47 @@ extension WalkSummaryView {
 
     @ViewBuilder
     var threadsCardSlot: some View {
-        if showsThreadsCard, let threadsCardModel {
-            ThreadsCardSection(
-                model: threadsCardModel,
-                onThemeTap: { selectedCardTheme = $0 },
-                onRelease: { releaseTheme($0) }
-            )
-            .transition(.opacity)
+        if showsThreadsCard {
+            if let recapInvitation {
+                lunationInvitationRow(recapInvitation)
+            }
+            if let threadsCardModel {
+                ThreadsCardSection(
+                    model: threadsCardModel,
+                    onThemeTap: { selectedCardTheme = $0 },
+                    onRelease: { releaseTheme($0) }
+                )
+                .transition(.opacity)
+            }
         }
+    }
+
+    func lunationInvitationRow(_ lunation: Lunation) -> some View {
+        Button {
+            LunationRecapState.shared.markActedOn(lunation)
+            recapInvitation = nil
+            recapSheet = lunation
+        } label: {
+            HStack(spacing: Constants.UI.Padding.small) {
+                Image(systemName: "moon")
+                    .font(.caption)
+                    .foregroundColor(.fog)
+                Text(LunationRecapCopy.invitation(
+                    moonName: LunationCalendar.moonName(for: lunation)
+                ))
+                .font(Constants.Typography.caption)
+                .foregroundColor(.ink)
+                .multilineTextAlignment(.leading)
+                Spacer()
+            }
+            .padding(Constants.UI.Padding.normal)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(Color.parchmentSecondary)
+            .cornerRadius(Constants.UI.CornerRadius.normal)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Double tap to open the moon's recap")
     }
 
     func loadThreadsCard() async {

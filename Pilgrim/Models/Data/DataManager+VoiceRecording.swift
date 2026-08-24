@@ -193,6 +193,27 @@ extension DataManager {
         return index
     }
 
+    /// Recording UUID → words-per-minute, for the recap's pace texture. A
+    /// two-column `queryAttributes` fetch mirroring the snapshot queries
+    /// above. Main-actor only, like its neighbors.
+    @MainActor
+    public static func voiceRecordingPaceIndex() -> [UUID: Double] {
+        guard let rows = try? dataStack.queryAttributes(
+            From<VoiceRecording>().select(
+                NSDictionary.self,
+                .attribute(\._uuid),
+                .attribute(\._wordsPerMinute)
+            )
+        ) else { return [:] }
+        var index: [UUID: Double] = [:]
+        for row in rows {
+            guard let uuid = row["id"] as? UUID,
+                  let wpm = row["wordsPerMinute"] as? Double else { continue }
+            index[uuid] = wpm
+        }
+        return index
+    }
+
     public static func updateVoiceRecordingWordsPerMinute(
         uuid: UUID,
         wordsPerMinute: Double,
