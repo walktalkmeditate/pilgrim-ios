@@ -302,5 +302,12 @@ final class ThreadsCardModelTests: XCTestCase {
         )
 
         XCTAssertNil(model, "the edit removed the only theme — a stale reload must not still name 'the move'")
+
+        // The loader's inline re-analysis must stay in-memory: the transcription
+        // choke point is the sole persistent writer, because it alone carries the
+        // ASR flaggedFragments needed to filter hallucinated themes. The store on
+        // disk should still hold the pre-edit (stale) context, not the loader's.
+        let persisted = store.context(for: recordingUUID, matching: TranscriptContextStore.hash(of: staleTranscript))
+        XCTAssertNotNil(persisted, "a loader-triggered re-analysis must never persist — the stored context stays the stale one until the choke point writes fresh")
     }
 }

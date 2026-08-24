@@ -49,6 +49,7 @@ struct LunationRecapView: View {
             Image(systemName: "moon")
                 .font(.title2)
                 .foregroundColor(.fog)
+                .accessibilityHidden(true)
             Text(LunationRecapCopy.headline(walkCount: model.walkCount))
                 .font(Constants.Typography.body)
                 .foregroundColor(.ink)

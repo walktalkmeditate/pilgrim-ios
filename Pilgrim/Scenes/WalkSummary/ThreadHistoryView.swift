@@ -172,6 +172,7 @@ struct ThreadHistoryView: View {
             Image(systemName: "leaf")
                 .font(.caption)
                 .foregroundColor(.moss)
+                .accessibilityHidden(true)
             Text("where it began")
                 .font(Constants.Typography.caption)
                 .foregroundColor(.moss)
@@ -193,31 +194,41 @@ struct ThreadHistoryView: View {
         }
     }
 
+    /// The full-history snapshot query only ran here because this thread's
+    /// handful of appearances weren't known until after loading every stored
+    /// context — cheap off-actor work now split out so the main-actor
+    /// transcript fetch below can scope to just the recordings this cohort
+    /// touches, instead of every transcribed recording in the app.
     @MainActor
     private func load() async {
         guard UserPreferences.threadsAfterWalks.value else { return }
         let walkIndex = DataManager.voiceRecordingWalkIndex()
-        let transcripts = Dictionary(
-            uniqueKeysWithValues: DataManager.transcribedRecordingsSnapshot()
-                .map { ($0.uuid, $0.transcript) }
-        )
         let released = ReleasedThreadsStore.shared.releasedLemmas
         let backfillComplete = ThreadsBackfill.isComplete
         let lemmas = Set(cohortLemmas)
 
-        entries = await Task.detached(priority: .userInitiated) { () -> [ThreadHistoryEntry] in
+        let (cohort, contextsByRecording) = await Task.detached(priority: .userInitiated) {
+            () -> ([WalkThread], [UUID: TranscriptContext]) in
             let contexts = TranscriptContextStore.shared.loadAll()
             let contextsByRecording = Dictionary(
                 uniqueKeysWithValues: contexts.map { ($0.recordingUUID, $0) }
             )
             let threads = ThreadStore.build(contexts: contexts, walks: walkIndex, released: released)
-            return ThreadHistoryModelBuilder.entries(
-                cohort: threads.filter { lemmas.contains($0.lemma) },
-                contextsByRecording: contextsByRecording,
-                transcriptsByRecording: transcripts,
-                backfillComplete: backfillComplete
-            )
+            return (threads.filter { lemmas.contains($0.lemma) }, contextsByRecording)
         }.value
+
+        let neededRecordings = Set(cohort.flatMap(\.appearances).map(\.recordingUUID))
+        let transcripts = Dictionary(
+            uniqueKeysWithValues: DataManager.transcribedRecordingsSnapshot(uuids: neededRecordings)
+                .map { ($0.uuid, $0.transcript) }
+        )
+
+        entries = ThreadHistoryModelBuilder.entries(
+            cohort: cohort,
+            contextsByRecording: contextsByRecording,
+            transcriptsByRecording: transcripts,
+            backfillComplete: backfillComplete
+        )
         origin = resolveOrigin()
         var seenWalks: Set<UUID> = []
         placeResolver.resolveAll(

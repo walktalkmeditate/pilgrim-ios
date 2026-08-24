@@ -6,6 +6,16 @@ import SwiftUI
 // the main type body under SwiftLint's type_body_length limit. Stored
 // state stays in the struct; everything else lives here.
 
+/// The single `.task(id:)` key for the threads-card load — transcriptions
+/// changing and the reload generation bumping (sheet dismissals) are the
+/// only two reasons to reload, so folding both into one Equatable key lets
+/// SwiftUI's own `.task(id:)` cancellation replace three previously
+/// uncoordinated triggers.
+struct ThreadsCardReloadKey: Equatable {
+    let transcriptions: [UUID: String]
+    let generation: Int
+}
+
 extension WalkSummaryView {
 
     @ViewBuilder
@@ -53,9 +63,22 @@ extension WalkSummaryView {
         .accessibilityHint("Double tap to open the moon's recap")
     }
 
+    /// `.task(id:)` cancels a superseded call before it reaches the guards
+    /// below, closing the race between uncoordinated triggers. The
+    /// changeCount check closes a second race this cancellation can't: a
+    /// release or welcome-back (`releaseTheme`, Settings) landing on
+    /// `ReleasedThreadsStore` while THIS load's own await is in flight,
+    /// which isn't a superseding reload at all — nothing bumped
+    /// `threadsReloadGeneration` — just a decision that made this result
+    /// stale mid-flight. Applying it anyway would resurrect a chip the
+    /// walker just released as a zombie whose tap opens an empty history.
     func loadThreadsCard() async {
         guard showsThreadsCard else { return }
-        threadsCardModel = await ThreadsCardLoader.load(walk: walk, transcriptions: transcriptions)
+        let changeCountBefore = ReleasedThreadsStore.shared.changeCount
+        let result = await ThreadsCardLoader.load(walk: walk, transcriptions: transcriptions)
+        guard !Task.isCancelled else { return }
+        guard ReleasedThreadsStore.shared.changeCount == changeCountBefore else { return }
+        threadsCardModel = result
     }
 
     func releaseTheme(_ theme: ThreadsCardTheme) {

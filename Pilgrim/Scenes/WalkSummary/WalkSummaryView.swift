@@ -32,6 +32,13 @@ struct WalkSummaryView: View {
     @State var selectedCardTheme: ThreadsCardTheme?
     @State var recapInvitation: Lunation?
     @State var recapSheet: Lunation?
+    /// Bumped by the sheet-dismissal reload triggers below so the single
+    /// `.task(id:)` key changes and SwiftUI cancels any threads-card load
+    /// still in flight — the three triggers (initial transcriptions,
+    /// theme-history dismiss, recap-sheet dismiss) previously raced as
+    /// independent `Task { }` blocks with no cancellation, so whichever
+    /// finished last won even if it was answering a stale question.
+    @State private var threadsReloadGeneration = 0
     init(walk: WalkInterface, showsThreadsCard: Bool = true) {
         self.walk = walk
         self.showsThreadsCard = showsThreadsCard
@@ -194,7 +201,7 @@ struct WalkSummaryView: View {
             .onReceive(CollectiveRouteCatalogService.shared.$catalog) { catalog in
                 resolveCollectiveContributionLine(from: catalog)
             }
-            .task(id: transcriptions) {
+            .task(id: ThreadsCardReloadKey(transcriptions: transcriptions, generation: threadsReloadGeneration)) {
                 await loadThreadsCard()
             }
             .sheet(isPresented: $showPrompts) {
@@ -208,13 +215,13 @@ struct WalkSummaryView: View {
                 }
             }
             .onChange(of: selectedCardTheme) { _, newValue in
-                if newValue == nil { Task { await loadThreadsCard() } }
+                if newValue == nil { threadsReloadGeneration += 1 }
             }
             .sheet(item: $recapSheet) { lunation in
                 LunationRecapView(lunation: lunation)
             }
             .onChange(of: recapSheet) { _, newValue in
-                if newValue == nil { Task { await loadThreadsCard() } }
+                if newValue == nil { threadsReloadGeneration += 1 }
             }
         }
     }

@@ -87,4 +87,58 @@ final class ReleasedThreadsPackageTests: XCTestCase {
         )
         XCTAssertEqual(PilgrimPackageConverter.welcomedBackThreads(from: preferences(releasedThreads: nil)), [])
     }
+
+    func testImportMapping_futureDatedDecisions_clampToNow() {
+        let now = released
+        let future = released.addingTimeInterval(365 * 86400)
+
+        let mappedReleased = PilgrimPackageConverter.releasedThreads(
+            from: preferences(releasedThreads: [
+                PilgrimReleasedThread(term: "father", lemmas: ["father"], releasedAt: future)
+            ]),
+            now: now
+        )
+        XCTAssertEqual(mappedReleased, [
+            ReleasedThread(displayTerm: "father", lemmas: ["father"], releasedAt: now)
+        ], "a clock-skewed exporting device must not win every future merge — clamp to import time")
+
+        let mappedWelcomedBack = PilgrimPackageConverter.welcomedBackThreads(
+            from: preferences(
+                releasedThreads: nil,
+                welcomedBack: [PilgrimWelcomedBackThread(term: "father", welcomedBackAt: future)]
+            ),
+            now: now
+        )
+        XCTAssertEqual(mappedWelcomedBack, [
+            WelcomedBackThread(displayTerm: "father", welcomedBackAt: now)
+        ])
+    }
+
+    func testImportMapping_futureDatedRelease_laterLocalDecisionStillWins() throws {
+        let suiteName = "ReleasedThreadsPackageTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = ReleasedThreadsStore(defaults: defaults)
+
+        let now = released
+        let future = released.addingTimeInterval(365 * 86400)
+        let clampedImport = PilgrimPackageConverter.releasedThreads(
+            from: preferences(releasedThreads: [
+                PilgrimReleasedThread(term: "father", lemmas: ["father"], releasedAt: future)
+            ]),
+            now: now
+        )
+        store.merge(released: clampedImport, welcomedBack: [])
+
+        // A genuine later decision must still be able to win. Had the skewed
+        // future date been allowed to stand uncapped, this entirely ordinary
+        // later release would have lost to a date a year away, forever.
+        let later = now.addingTimeInterval(60)
+        store.merge(released: [
+            ReleasedThread(displayTerm: "father", lemmas: ["father"], releasedAt: later)
+        ], welcomedBack: [])
+
+        XCTAssertEqual(store.all.first?.releasedAt, later,
+                       "a later, unskewed decision must be able to win — the clamp keeps the earlier import from parking a permanent future date")
+    }
 }

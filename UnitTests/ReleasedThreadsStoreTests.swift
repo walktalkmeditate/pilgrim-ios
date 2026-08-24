@@ -64,17 +64,37 @@ final class ReleasedThreadsStoreTests: XCTestCase {
         XCTAssertEqual(store.all.map(\.displayTerm), ["c", "a", "b"])
     }
 
-    func testMerge_unionsByTermKeepingEarliestDate() {
+    func testMerge_unionsByTermKeepingLatestDate() {
         store.release(displayTerm: "the move", lemmas: ["move"], releasedAt: released)
         store.merge(released: [
             ReleasedThread(displayTerm: "the move", lemmas: ["moving"],
-                           releasedAt: released.addingTimeInterval(-86400)),
+                           releasedAt: released.addingTimeInterval(86400)),
             ReleasedThread(displayTerm: "father", lemmas: ["father"], releasedAt: released)
         ], welcomedBack: [])
         XCTAssertEqual(Set(store.all.map(\.displayTerm)), ["the move", "father"])
         let move = store.all.first { $0.displayTerm == "the move" }
         XCTAssertEqual(move?.lemmas, ["move", "moving"])
-        XCTAssertEqual(move?.releasedAt, released.addingTimeInterval(-86400))
+        XCTAssertEqual(move?.releasedAt, released.addingTimeInterval(86400),
+                       "latest-decision-wins: the union keeps the more recent release date")
+    }
+
+    func testMerge_multiBackupSequence_staleBackupNeverResurrectsAnOlderReleaseDate() {
+        let jan = DateFactory.makeDate(2026, 1, 15, 9, 0, 0)
+        let feb = DateFactory.makeDate(2026, 2, 15, 9, 0, 0)
+        let mar = DateFactory.makeDate(2026, 3, 15, 9, 0, 0)
+
+        store.release(displayTerm: "the move", lemmas: ["move"], releasedAt: jan)
+        store.welcomeBack(displayTerm: "the move", at: feb)
+        store.release(displayTerm: "the move", lemmas: ["move"], releasedAt: mar)
+
+        // A backup taken back in January, imported after all of the above.
+        store.merge(released: [
+            ReleasedThread(displayTerm: "the move", lemmas: ["move"], releasedAt: jan)
+        ], welcomedBack: [])
+
+        XCTAssertEqual(store.all.map(\.displayTerm), ["the move"])
+        XCTAssertEqual(store.all.first?.releasedAt, mar,
+                       "March's re-release is the latest decision — importing the January backup must not resurrect it")
     }
 
     func testMerge_staleImportedRelease_doesNotUndoWelcomeBack() {

@@ -96,10 +96,12 @@ final class ReleasedThreadsStore {
     }
 
     /// Import merge: latest decision wins, per cohort. Two releases union
-    /// their lemmas and keep the earlier date so repeated imports stay
-    /// stable; a release and a welcome-back for the same term are compared
-    /// by date and the older decision yields. On a tie the local state
-    /// stands — re-importing the same package is a no-op.
+    /// their lemmas and keep the later date, so a chain of backups — release,
+    /// then welcome back, then release again — never regresses to an earlier
+    /// release date when an older backup is imported afterward; a release and
+    /// a welcome-back for the same term are compared by date and the older
+    /// decision yields. On a tie the local state stands — re-importing the
+    /// same package is a no-op.
     func merge(released importedReleased: [ReleasedThread],
                welcomedBack importedWelcomedBack: [WelcomedBackThread]) {
         guard !importedReleased.isEmpty || !importedWelcomedBack.isEmpty else { return }
@@ -114,7 +116,7 @@ final class ReleasedThreadsStore {
                     entries[index] = ReleasedThread(
                         displayTerm: thread.displayTerm,
                         lemmas: Set(entries[index].lemmas).union(thread.lemmas).sorted(),
-                        releasedAt: min(entries[index].releasedAt, thread.releasedAt)
+                        releasedAt: max(entries[index].releasedAt, thread.releasedAt)
                     )
                 } else {
                     entries.append(thread)

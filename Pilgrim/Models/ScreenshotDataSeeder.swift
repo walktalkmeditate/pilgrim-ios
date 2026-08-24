@@ -11,9 +11,17 @@ enum ScreenshotDataSeeder {
         "Be present"
     ]
 
+    // Screenshot- and QA-facing: the first two share a repeated "river"
+    // mention (twice within each, ThemeExtractor's per-transcript floor) so
+    // demo mode actually forms a cross-walk thread — without it no theme can
+    // ever surface and the threads card, thread view, and chips are all
+    // unreachable in demo mode. See ThreadExtractorTests-adjacent coverage
+    // in SeekDemoSeedTests.
     private static let transcriptions = [
-        "The morning light through the trees was extraordinary. I stopped and just watched it move across the path for a while.",
-        "I keep coming back to this idea that walking is thinking. The rhythm of it loosens something in my mind.",
+        "The morning light through the trees was extraordinary. I stopped where the river bends and just " +
+            "watched it move past for a while, unhurried, the way a river carries only what it must and lets the rest go.",
+        "I keep coming back to this idea that walking is thinking. The rhythm of it loosens something in my " +
+            "mind, the same slow loosening I feel beside a river, the kind of stillness a river only offers once you stop asking it for anything.",
         "Heard a bird I couldn't identify. Something between a whistle and a question. Made me smile.",
         "The wind picked up and I felt completely alive. Not happy or sad, just... present.",
         "There's a bend in the trail where you can see the whole valley. Stood there until my breathing matched the clouds."

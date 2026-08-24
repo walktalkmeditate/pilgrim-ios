@@ -36,13 +36,19 @@ enum ThreadsCardLoader {
             // each current-walk recording against its stored context and
             // re-analyze inline on mismatch — the ThreadsDossierBuilder
             // discipline — so a stale context never reaches ThreadStore.build.
+            // In-memory only: `analyze`, never `analyzeAndStore`. The
+            // transcription choke point (DataManager
+            // .updateVoiceRecordingTranscription) is the sole persistent
+            // writer, because it alone carries the ASR flaggedFragments
+            // needed to filter hallucinated themes — a card rebuild racing
+            // that choke point must not persist an unfiltered context over
+            // it.
             for recording in recordings {
                 let hash = TranscriptContextStore.hash(of: recording.transcript)
                 if store.context(for: recording.uuid, matching: hash) == nil {
-                    let result = TranscriptContextAnalyzer.analyzeAndStore(
-                        recordingUUID: recording.uuid, transcript: recording.transcript, store: store
+                    contextsByRecording[recording.uuid] = TranscriptContextAnalyzer.analyze(
+                        recordingUUID: recording.uuid, transcript: recording.transcript
                     )
-                    contextsByRecording[recording.uuid] = result.context
                 }
             }
             let threads = ThreadStore.build(

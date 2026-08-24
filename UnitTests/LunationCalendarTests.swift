@@ -54,7 +54,7 @@ final class LunationCalendarTests: XCTestCase {
                 fullMoon: DateFactory.makeDate(2024, month, 15, 12, 0, 0)
             )
             let name = LunationCalendar.moonName(for: lunation, in: TimeZone(identifier: "UTC")!)
-            XCTAssertTrue(name.hasSuffix("Moon"))
+            XCTAssertEqual(name, LunationCalendar.monthMoonNames[month - 1])
         }
     }
 }
