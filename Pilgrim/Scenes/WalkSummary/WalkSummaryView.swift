@@ -6,6 +6,14 @@ import CoreLocation
 struct WalkSummaryView: View {
 
     let walk: WalkInterface
+    /// Recursion-cut flag: a summary presented from `ThreadHistoryView` (tap
+    /// through a card chip to a thread's entries and back into that walk's
+    /// summary) passes `false` here. Without it, summary → card chip →
+    /// thread view → entry row → summary recurses unboundedly, and every
+    /// stacked level is a full Mapbox-bearing `WalkSummaryView` with route
+    /// caches — the compounding-memory pattern the resource-safety doctrine
+    /// forbids. Every existing call site compiles unchanged via the default.
+    let showsThreadsCard: Bool
     /// Computed once per walk identity — `TurningDayService` runs Julian-day
     /// astro math, which must not re-run on every body evaluation.
     let walkTurning: SeasonalMarker?
@@ -15,11 +23,15 @@ struct WalkSummaryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var transcriptionService = TranscriptionService.shared
-    @State private var transcriptions: [UUID: String] = [:]
+    // Drops `private` so the `WalkSummaryView+Threads.swift` extension can read it —
+    // same pattern as the camera state below.
+    @State var transcriptions: [UUID: String] = [:]
     @State private var selectedFavicon: WalkFavicon?
     @State private var showPrompts = false
-    init(walk: WalkInterface) {
+    @State var threadsCardModel: ThreadsCardModel?
+    init(walk: WalkInterface, showsThreadsCard: Bool = true) {
         self.walk = walk
+        self.showsThreadsCard = showsThreadsCard
         self.walkTurning = TurningDayService.turning(for: walk.startDate, hemisphere: .current)
         self.cachedSeekSummary = SeekSummaryModel.summaryData(for: walk)
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
@@ -78,6 +90,7 @@ struct WalkSummaryView: View {
                         activePhotoID: $activePhotoID
                     )
                     intentionCard
+                    threadsCardSlot
                     if let seekSummary = cachedSeekSummary {
                         SeekSummarySection(data: seekSummary)
                     }
@@ -176,6 +189,9 @@ struct WalkSummaryView: View {
             // handing this whole view a second invalidation source.
             .onReceive(CollectiveRouteCatalogService.shared.$catalog) { catalog in
                 resolveCollectiveContributionLine(from: catalog)
+            }
+            .task(id: transcriptions.count) {
+                await loadThreadsCard()
             }
             .sheet(isPresented: $showPrompts) {
                 NavigationStack {
