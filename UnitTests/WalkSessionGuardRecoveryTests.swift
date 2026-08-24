@@ -4,14 +4,17 @@ import CoreStore
 
 final class WalkSessionGuardRecoveryTests: XCTestCase {
 
+    private var previousDataStack: DataStack!
+
     override func setUpWithError() throws {
         try super.setUpWithError()
+        previousDataStack = DataManager.dataStack
         try? FileManager.default.removeItem(at: WalkSessionGuard.checkpointFileURL())
     }
 
     override func tearDownWithError() throws {
         try? FileManager.default.removeItem(at: WalkSessionGuard.checkpointFileURL())
-        DataManager.dataStack = nil
+        DataManager.dataStack = previousDataStack
         try super.tearDownWithError()
     }
 

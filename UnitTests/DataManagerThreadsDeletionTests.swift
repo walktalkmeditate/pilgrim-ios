@@ -10,9 +10,11 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
     private var stack: DataStack!
     private var store: TranscriptContextStore!
     private var directory: URL!
+    private var previousDataStack: DataStack!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        previousDataStack = DataManager.dataStack
         stack = DataStack(PilgrimV7.schema)
         try stack.addStorageAndWait(InMemoryStore())
         DataManager.dataStack = stack
@@ -25,7 +27,7 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
 
     override func tearDownWithError() throws {
         DataManager.transcriptContextStore = .shared
-        DataManager.dataStack = nil
+        DataManager.dataStack = previousDataStack
         try? FileManager.default.removeItem(at: directory)
         try super.tearDownWithError()
     }
