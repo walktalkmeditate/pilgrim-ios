@@ -53,7 +53,9 @@ struct ThreadHistoryView: View {
     @State private var origin: OriginMapData?
     @State private var selectedWalk: Walk?
     @State private var presentedOriginMap: OriginMapData?
+    @State private var showReleaseConfirm = false
     @StateObject private var placeResolver = ThreadPlaceResolver()
+    @Environment(\.dismiss) private var dismiss
 
     struct OriginMapData: Identifiable {
         let id = UUID()
@@ -70,6 +72,7 @@ struct ThreadHistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Constants.UI.Padding.normal) {
+                termHeader
                 ForEach(entries, id: \.recordingUUID) { entry in
                     entryRow(entry)
                 }
@@ -95,8 +98,32 @@ struct ThreadHistoryView: View {
         .sheet(item: $presentedOriginMap) { data in
             ThreadOriginMapView(displayTerm: displayTerm, data: data)
         }
+        .alert(
+            ReleasedThreadsCopy.releaseTitle(displayTerm),
+            isPresented: $showReleaseConfirm
+        ) {
+            Button(ReleasedThreadsCopy.releaseConfirm) {
+                ReleasedThreadsStore.shared.release(displayTerm: displayTerm, lemmas: cohortLemmas)
+                dismiss()
+            }
+            Button(ReleasedThreadsCopy.releaseCancel, role: .cancel) {}
+        } message: {
+            Text(ReleasedThreadsCopy.releaseMessage)
+        }
         .task { await load() }
         .onDisappear { placeResolver.cancel() }
+    }
+
+    private var termHeader: some View {
+        Text(displayTerm)
+            .font(Constants.Typography.displayMedium)
+            .foregroundColor(.ink)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(Rectangle())
+            .onLongPressGesture { showReleaseConfirm = true }
+            .accessibilityAction(named: ReleasedThreadsCopy.voiceOverActionName) {
+                showReleaseConfirm = true
+            }
     }
 
     private func entryRow(_ entry: ThreadHistoryEntry) -> some View {

@@ -6,6 +6,7 @@ struct VoiceCard: View {
     @State private var dynamicVoiceEnabled = UserPreferences.dynamicVoiceEnabled.value
     @State private var autoTranscribe = UserPreferences.autoTranscribe.value
     @State private var threadsAfterWalks = UserPreferences.threadsAfterWalks.value
+    @State private var hasReleasedThreads = !ReleasedThreadsStore.shared.isEmpty
     @State private var recordingCount = 0
     @State private var recordingSizeMB: Double = 0
     @ObservedObject private var transcriptionService = TranscriptionService.shared
@@ -56,6 +57,14 @@ struct VoiceCard: View {
                 ThreadsBackfill.setEnabled(newValue)
             }
 
+            if threadsAfterWalks && hasReleasedThreads {
+                NavigationLink {
+                    ReleasedThreadsListView()
+                } label: {
+                    settingNavRow(label: "Released threads")
+                }
+            }
+
             if case .downloadingModel(let progress) = transcriptionService.state {
                 HStack(spacing: 8) {
                     SwiftUI.ProgressView(value: progress)
@@ -84,6 +93,7 @@ struct VoiceCard: View {
         .animation(.easeInOut(duration: 0.2), value: voiceGuideEnabled)
         .onAppear {
             voiceGuideEnabled = UserPreferences.voiceGuideEnabled.value
+            hasReleasedThreads = !ReleasedThreadsStore.shared.isEmpty
             refreshStats()
         }
     }

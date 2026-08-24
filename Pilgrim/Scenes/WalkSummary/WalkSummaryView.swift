@@ -204,6 +204,9 @@ struct WalkSummaryView: View {
                     ThreadHistoryView(displayTerm: theme.displayTerm, cohortLemmas: theme.lemmas)
                 }
             }
+            .onChange(of: selectedCardTheme) { _, newValue in
+                if newValue == nil { Task { await loadThreadsCard() } }
+            }
         }
     }
 

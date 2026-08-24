@@ -116,6 +116,20 @@ enum ThreadsCardModelBuilder {
         )
     }
 
+    /// Local, animatable card update after a release — the stores were
+    /// already told; this keeps the on-screen card honest without a reload.
+    static func removing(displayTerm: String, from model: ThreadsCardModel?) -> ThreadsCardModel? {
+        guard let model else { return nil }
+        let remaining = model.themes.filter { $0.displayTerm != displayTerm }
+        guard !remaining.isEmpty else { return nil }
+        return ThreadsCardModel(
+            themes: remaining,
+            textureLine: model.textureLine,
+            insightWords: model.insightWords,
+            hasInsight: model.hasInsight
+        )
+    }
+
     /// One pseudo-thread per cohort so ThreadStore.status sees the cohort's
     /// full history — a first-time claim is only true if NO lemma in the
     /// cohort appeared earlier.
