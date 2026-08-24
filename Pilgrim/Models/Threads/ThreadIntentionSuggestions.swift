@@ -7,6 +7,13 @@ import Foundation
 /// field gate alongside the card's themes.
 enum ThreadIntentionSuggestions {
 
+    /// Flipped to false when the human field gate passes. The gate judges
+    /// chip quality AND sensitivity — chips are the feature's first surface
+    /// to render derived words unprompted — alongside the card's themes.
+    /// While true, `current()` returns nothing and the chips section never
+    /// renders; the engine and `select` stay live and tested underneath.
+    static let pendingFieldGate = true
+
     static let recurrenceWindow: TimeInterval = 30 * 86400
     static let minimumDistinctWalks = 2
     static let maxSuggestions = 2
@@ -46,6 +53,7 @@ enum ThreadIntentionSuggestions {
     /// call rebuilds instead of absorbing the mutation unseen.
     @MainActor
     static func current(asOf: Date = Date(), store: TranscriptContextStore = .shared) async -> [String] {
+        guard !pendingFieldGate else { return [] }
         guard UserPreferences.threadsAfterWalks.value else { return [] }
         let walkIndex = DataManager.voiceRecordingWalkIndex()
         guard !walkIndex.isEmpty else { return [] }

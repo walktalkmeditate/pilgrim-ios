@@ -216,11 +216,16 @@ already established for the dossier and backfill.
 The surface works for any walk — a plain wander or a Seek alike. Seek seeds
 its ritual from the walker's chosen intention, so a thread carried into a
 Seek steers which clearings it can find: walk with what walks with you.
-The chips ship now rather than waiting on the Stage 3 card gate — they need
-no card UI to exist — but their quality (do they read as intentions worth
-carrying, not just words that recurred) is judged at the same field gate
-above, alongside the card's themes, and the selection window and copy are
-tuned there like everything else that gate touches.
+The engine ships live but the surface ships dark, behind the same field
+gate as the card: `ThreadIntentionSuggestions.pendingFieldGate` (true as
+shipped) is checked first in `current()`, so the chips section renders
+nothing in production. The sensitivity call is that chips would be the
+feature's first surface to render derived words unprompted — that, plus
+their quality (do they read as intentions worth carrying, not just words
+that recurred), is judged at the field gate above alongside the card's
+themes, and the selection window and copy are tuned there like everything
+else that gate touches. Enabling the surface after the gate passes means
+flipping `pendingFieldGate` to false.
 
 ### Stage 3 — "What walked with you" card + thread view
 

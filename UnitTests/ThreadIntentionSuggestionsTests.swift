@@ -116,6 +116,20 @@ final class ThreadIntentionSuggestionsTests: XCTestCase {
     }
 
     @MainActor
+    func testCurrent_pendingFieldGate_shipsDark() async {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+
+        XCTAssertTrue(ThreadIntentionSuggestions.pendingFieldGate,
+                      "chips wait for the human field gate — flip only after it passes")
+        let suggestions = await ThreadIntentionSuggestions.current()
+        XCTAssertTrue(suggestions.isEmpty,
+                      "while the gate is pending, current() returns nothing even with the toggle on — "
+                      + "the chips section never renders in production")
+    }
+
+    @MainActor
     func testCurrent_toggleOff_returnsEmptyWithoutTouchingTheStore() async {
         let saved = UserPreferences.threadsAfterWalks.value
         defer { UserPreferences.threadsAfterWalks.value = saved }
