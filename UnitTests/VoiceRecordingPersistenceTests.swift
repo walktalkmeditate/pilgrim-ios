@@ -287,4 +287,21 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
         XCTAssertEqual(index.count, 1, "queryAttributes stores \"id\" as a string — a raw `as? UUID` cast must not silently drop every row")
         XCTAssertEqual(index[uuid] ?? -1, 132.5, accuracy: 0.001)
     }
+
+    @MainActor
+    func test_voiceRecordingWalkIndex_returnsOwningWalkByRecording() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let uuid = UUID()
+        try seedRecording(uuid: uuid)
+        let walk = try XCTUnwrap(try stack.fetchOne(From<VoiceRecording>().where(\._uuid == uuid))?._workout.value)
+
+        let index = DataManager.voiceRecordingWalkIndex()
+
+        XCTAssertEqual(index.count, 1, "queryAttributes stores \"id\" as a string — a raw `as? UUID` cast must not silently drop every row")
+        XCTAssertEqual(index[uuid]?.walkUUID, walk._uuid.value)
+        XCTAssertEqual(index[uuid]?.date, walk._startDate.value)
+    }
 }

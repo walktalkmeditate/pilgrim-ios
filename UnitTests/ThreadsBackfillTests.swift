@@ -9,14 +9,22 @@ import XCTest
 @MainActor
 final class ThreadsBackfillTests: XCTestCase {
 
+    /// The pre-rename key (see ThreadsBackfill.legacyCompletedKey, which is
+    /// private) — hardcoded here deliberately, the same way the production
+    /// hygiene removal hardcodes it: this string is frozen, not a symbol
+    /// that can drift with a rename.
+    private static let legacyCompletedKey = "threadsBackfillCompleted"
+
     private var store: TranscriptContextStore!
     private var directory: URL!
     private var savedCompleted: Any?
+    private var savedLegacyCompleted: Any?
     private var savedToggle = true
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         savedCompleted = UserDefaults.standard.object(forKey: ThreadsBackfill.completedKey)
+        savedLegacyCompleted = UserDefaults.standard.object(forKey: Self.legacyCompletedKey)
         savedToggle = UserPreferences.threadsAfterWalks.value
         UserDefaults.standard.set(false, forKey: ThreadsBackfill.completedKey)
         UserPreferences.threadsAfterWalks.value = true
@@ -31,6 +39,11 @@ final class ThreadsBackfillTests: XCTestCase {
         } else {
             UserDefaults.standard.removeObject(forKey: ThreadsBackfill.completedKey)
         }
+        if let savedLegacyCompleted {
+            UserDefaults.standard.set(savedLegacyCompleted, forKey: Self.legacyCompletedKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKey)
+        }
         UserPreferences.threadsAfterWalks.value = savedToggle
         try? FileManager.default.removeItem(at: directory)
         try super.tearDownWithError()
@@ -38,6 +51,18 @@ final class ThreadsBackfillTests: XCTestCase {
 
     private func makeItems(_ count: Int) -> [(uuid: UUID, transcript: String)] {
         (0..<count).map { _ in (uuid: UUID(), transcript: "walking with the river again this morning") }
+    }
+
+    /// v1.11.0 TestFlight devices swept zero recordings under a snapshot bug
+    /// (fixed in 9529fff) yet still set the old flag true — `runIfNeeded`'s
+    /// `!isComplete` guard then never re-evaluates them. `completedKey` was
+    /// renamed to re-arm those devices: the new key is absent regardless of
+    /// what the old key holds, so `isComplete` must read false.
+    func testIsComplete_legacyKeyTrue_reArmsUnderNewKey() {
+        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKey)
+
+        XCTAssertFalse(ThreadsBackfill.isComplete,
+                       "a device that swept nothing under the old key must re-evaluate under the new key")
     }
 
     func testRunIfNeeded_processesEveryItemAcrossBatches() async {
