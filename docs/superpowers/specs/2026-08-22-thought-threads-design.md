@@ -388,45 +388,110 @@ clinical edge lives only in that hand-carried dossier.
 ### Let this one go (committed — ships with the card)
 
 A walker can release a thread. Long-press a theme (on the card or in the
-thread view) → a gentle confirm ("Let 'my father' go? It will no longer be
-noticed.") → the lemma joins a persisted released set. Every surfacing path
-filters released lemmas — ThreadStore aggregation (which covers the card,
-thread view, dossier trajectories, and intention chips) plus the dossier's
-per-recording theme lines. Analysis and stored contexts are untouched, so
-release is reversible: a small "Released threads" list under the Thought
-Threads settings area lets the walker welcome one back. Releasing is
-wabi-sabi, not deletion — the words remain in their transcripts; the app
-simply stops noticing.
+thread view) → a gentle confirm that leads with reversibility — "Let 'my
+father' go? You can welcome it back anytime." → the theme joins a persisted
+released set. Release acts on the display term's full lemma cohort (every
+lemma currently sharing that display term — two lemmas can share one, e.g.
+move/moving → "the move"), and welcome-back restores the cohort atomically.
+
+**Where filtering actually lives** (verified against the call graph):
+`ThreadStore.build` drops released lemmas — covering the card, thread view,
+dossier trajectories, quiet-this-walk lines, intention chips, and the recap
+— **plus** a released-lemma skip inside `AttentionDirectives.recurringWord`
+(the next-ranked candidate is promoted), which is the one surfacing path
+that bypasses ThreadStore. `intentionEcho` is deliberately exempt: it only
+quotes words from the walker's own stated intention — walker-authored, not
+app-noticed. The released set carries its own change token, folded into the
+dossier-builder and suggestions memo keys so a release is visible on the
+very next prompt or sheet open.
+
+Lifecycle: releases are walker decisions, not derived analysis — they ride
+in the `.pilgrim` preferences block (a scoped carve-out from the
+no-derived-data-in-exports rule, alongside `zodiacSystem` precedent; the
+lemmas already appear verbatim in exported transcripts) and Delete All Data
+clears the set with everything else. Analysis and stored contexts are
+untouched by release, so it is fully reversible.
+
+Interaction states: if a release empties the card while the summary is on
+screen, the card fades out and the summary reflows to its no-card state;
+the thread view pops to the previous screen if its own theme is released
+mid-view. Long-press gains a one-time dismissible caption on first card
+appearance ("long-press a theme to let it go") and each theme chip exposes
+a "Let this go" VoiceOver custom action — gesture parity, not
+gesture-only. The Settings "Released threads" row is hidden when empty;
+tapping an entry confirms "Welcome 'my father' back? Threads will notice
+it again." Releasing is wabi-sabi, not deletion — the words remain in
+their transcripts; the app simply stops noticing.
 
 ### Return to where it began (committed — ships with the thread view)
 
-The thread view's oldest entry ("where it began") gains one quiet action:
-open the origin walk's map, focused on the recording's start coordinate.
-Viewing, not navigation — the walker sees the place a thread first found
-words. If the origin recording has no GPS, the action simply doesn't render.
+The thread view's oldest entry gains one quiet action: open the origin
+walk's map — the existing historical summary map, static and read-only, no
+live-walk controls — centered on where the thread first found words. The
+walk and coordinate resolve at tap time (the route sample nearest the
+recording's start within a stated tolerance); on any failure — deleted
+walk, no route fix near that moment — the action simply doesn't render.
+Origin claims are claims about the record: if a walker deletes the origin
+walk, the record's earliest surviving appearance becomes "where it began,"
+because deletion is deliberate record-editing, consistent with how origin
+labels already work against analyzed history.
 
 ### The lunation recap (Stage 4, pulled forward — descriptive-only)
 
-When a lunation closes (existing `LunarPhase` boundaries), the first
-post-walk summary after the boundary shows one quiet invitation line —
-"The Sturgeon Moon has set — see what walked with you." — which opens the
-recap sheet (pulled, never pushed; the journal stays untouched; the
-invitation renders once per lunation and only when the closed moon held at
-least one analyzed walk).
+When a lunation closes (`LunarPhase` boundaries; the moon's name derives
+from the calendar month of its full-moon instant in the device's current
+timezone — implementation adds the month-moon name table `LunarPhase`
+lacks), summaries of walks **dated after the boundary** may carry one quiet
+invitation line — "The Sturgeon Moon has set — see what walked with you."
+— which opens the recap sheet. Pulled, never pushed; never on historical
+walk summaries (old summaries read the same whenever opened); the journal
+stays untouched.
 
-The recap holds: the moon's name and walk count; themes as plain counts
+**First-exposure gate:** recap eligibility begins only after the walker's
+first per-walk card has been shown (persisted marker). Lunation boundaries
+that closed inside backfilled history never invite — the recap must never
+be a walker's first contact with the feature; the card shows its work one
+walk at a time before any aggregate speaks.
+
+**Invitation semantics:** eligibility re-evaluates on every qualifying
+post-boundary summary until the invitation is tapped or the next lunation
+closes — the persisted flag records "acted on," not "first opportunity," so
+pending transcriptions don't cost the walker the month. The sheet computes
+live at open (its counts may exceed the invitation moment's). The
+last-acted lunation index lives in UserDefaults; loss on reinstall is
+accepted (ephemeral, unlike the released set). A "Past recaps" list under
+the Thought Threads settings area (mirroring "Released threads") keeps
+closed moons reachable, so a missed line never costs the month.
+
+**Content:** the moon's name and walk count; themes as plain counts
 ("'the move' — walked with you in 6 of 9 walks"), each tappable to its
-thread view; *new this moon* firsts (backfill-gated, computed against full
-history like all origin claims); and one state-only texture line from the
-safe markers ("spoken slowly, with words of insight"). **No directional
-language** — the original Stage 4 sketch's rising/steady/faded labels are
-superseded by design principle 1; trajectory remains dossier-only. Released
-lemmas are filtered here too. Deterministic template copy; no generation.
+thread view; *new this moon* firsts (full-history, backfill-gated, like
+all origin claims); one state-only texture line from the safe markers.
+**No directional language** — the original rising/steady/faded sketch is
+superseded by design principle 1; trajectory remains dossier-only.
+Released lemmas are filtered. Recap counts are lunation-scoped by design
+and will diverge from the card's trailing-30-day statuses — the phrasings
+stay structurally distinct ("in N of M walks" vs. ordinal "nth walk now")
+so they never read as the same metric disagreeing. Sparse states: a
+single-walk moon still uses count copy ("in 1 of 1 walks"); when release-
+filtering leaves no themes, the sheet shows moon name + walk count + a
+quiet line ("nothing held on to name this time"). Invitation placement:
+its own row below the intention card, above the per-walk card; when the
+triggering walk has no analyzed transcript it renders alone in the card's
+slot. Deterministic template copy; no generation.
 
 ### Stage 3+4 release shape (v1.12.0)
 
 Card + thread view (as specified in Stage 3 above, unchanged) + Let this
-one go + Return to where it began + chips live + lunation recap. The
-accessibility requirements in Stage 3 (Dynamic Type wrapping, VoiceOver
-chip elements, 44-point targets) extend to the recap sheet and released
-list. LLM-readback QA gates external release.
+one go + Return to where it began + chips live (header ships as
+"Recurring"; a softer-variant copy pass is a tracked fast-follow) + the
+lunation recap. Walker-facing exposure staggers by construction: the card
+appears with the first post-update analyzed walk; chips require a theme
+recurring across two walks; the recap requires a lunation to close after
+the first card — the bundle ships together but arrives gently, by design.
+Accessibility requirements from Stage 3 (Dynamic Type wrapping, VoiceOver
+elements incl. the release custom action, 44-point targets) extend to the
+recap sheet and both settings lists. Rollout: internal TestFlight first;
+the walker/product owner runs the LLM-readback QA pass (and a gentleness
+read of the release/welcome-back confirm strings) on that build, gating
+public TestFlight or App Store submission.
