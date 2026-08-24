@@ -7,12 +7,11 @@ import Foundation
 /// field gate alongside the card's themes.
 enum ThreadIntentionSuggestions {
 
-    /// Flipped to false when the human field gate passes. The gate judges
-    /// chip quality AND sensitivity — chips are the feature's first surface
-    /// to render derived words unprompted — alongside the card's themes.
-    /// While true, `current()` returns nothing and the chips section never
-    /// renders; the engine and `select` stay live and tested underneath.
-    static let pendingFieldGate = true
+    /// The human field gate passed 2026-08-24 (spec addendum: "Chips:
+    /// cleared to ship") — chips render in IntentionSettingView from 1.12.0.
+    /// The header ships as "Recurring"; a softer-variant copy pass is a
+    /// tracked fast-follow, judged against real chip words.
+    static let pendingFieldGate = false
 
     static let recurrenceWindow: TimeInterval = 30 * 86400
     static let minimumDistinctWalks = 2
