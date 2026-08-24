@@ -155,6 +155,12 @@ extension DataManager {
     /// queries joined by object ID instead of `fetchAll` — the old path
     /// faulted in every recording row plus its walk, one SQL round-trip
     /// each. Main-actor only, matching the other snapshot queries here.
+    /// `queryAttributes` returns the raw stored value for "id" — CoreStore's
+    /// `UUID: QueryableAttributeType` declares `cs_rawAttributeType =
+    /// .stringAttributeType`, so the dictionary row never carries a bridged
+    /// `UUID`/`NSUUID`, only the string CoreStore wrote. `rowUUID` undoes
+    /// that encoding explicitly instead of relying on a cast that can only
+    /// ever fail.
     @MainActor
     public static func voiceRecordingWalkIndex() -> [UUID: (walkUUID: UUID, date: Date)] {
         guard
@@ -178,19 +184,23 @@ extension DataManager {
         var walksByObjectID: [NSManagedObjectID: (walkUUID: UUID, date: Date)] = [:]
         for row in walkRows {
             guard let objectID = row["objectID"] as? NSManagedObjectID,
-                  let walkUUID = row["id"] as? UUID,
+                  let walkUUID = rowUUID(row["id"]),
                   let startDate = row["startDate"] as? Date else { continue }
             walksByObjectID[objectID] = (walkUUID, startDate)
         }
 
         var index: [UUID: (walkUUID: UUID, date: Date)] = [:]
         for row in recordingRows {
-            guard let uuid = row["id"] as? UUID,
+            guard let uuid = rowUUID(row["id"]),
                   let walkObjectID = row["workout"] as? NSManagedObjectID,
                   let walk = walksByObjectID[walkObjectID] else { continue }
             index[uuid] = walk
         }
         return index
+    }
+
+    private static func rowUUID(_ raw: Any?) -> UUID? {
+        (raw as? String).flatMap(UUID.init(uuidString:))
     }
 
     /// Recording UUID → words-per-minute, for the recap's pace texture. A

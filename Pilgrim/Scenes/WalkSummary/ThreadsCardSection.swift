@@ -28,10 +28,26 @@ enum ThreadsCardLoader {
 
         return await Task.detached(priority: .userInitiated) {
             let contexts = store.loadAll()
-            let contextsByRecording = Dictionary(
+            var contextsByRecording = Dictionary(
                 uniqueKeysWithValues: contexts.map { ($0.recordingUUID, $0) }
             )
-            let threads = ThreadStore.build(contexts: contexts, walks: walkIndex, released: released)
+            // An in-place edit lands via an async CoreStore write completion;
+            // this load can win the race and read the pre-edit context. Hash
+            // each current-walk recording against its stored context and
+            // re-analyze inline on mismatch — the ThreadsDossierBuilder
+            // discipline — so a stale context never reaches ThreadStore.build.
+            for recording in recordings {
+                let hash = TranscriptContextStore.hash(of: recording.transcript)
+                if store.context(for: recording.uuid, matching: hash) == nil {
+                    let result = TranscriptContextAnalyzer.analyzeAndStore(
+                        recordingUUID: recording.uuid, transcript: recording.transcript, store: store
+                    )
+                    contextsByRecording[recording.uuid] = result.context
+                }
+            }
+            let threads = ThreadStore.build(
+                contexts: Array(contextsByRecording.values), walks: walkIndex, released: released
+            )
             return ThreadsCardModelBuilder.model(
                 walkUUID: walkUUID,
                 threads: threads,

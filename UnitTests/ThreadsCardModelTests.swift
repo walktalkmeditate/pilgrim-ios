@@ -1,6 +1,8 @@
 import XCTest
+import CoreStore
 @testable import Pilgrim
 
+@MainActor
 final class ThreadsCardModelTests: XCTestCase {
 
     private let base = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
@@ -220,5 +222,85 @@ final class ThreadsCardModelTests: XCTestCase {
             XCTAssertNil(note.rangeOfCharacter(from: .decimalDigits),
                          "principle 1: ordinal words, never metric digits (failed at \(walks))")
         }
+    }
+
+    private func seedWalkWithVoiceRecording(
+        in stack: DataStack, walkUUID: UUID, recordingUUID: UUID
+    ) throws -> Walk {
+        try stack.perform(synchronous: { transaction in
+            let walk = transaction.create(Into<Walk>())
+            walk._uuid .= walkUUID
+            walk._workoutType .= .walking
+            walk._startDate .= Date(timeIntervalSince1970: 1_700_000_000)
+            walk._endDate .= Date(timeIntervalSince1970: 1_700_001_800)
+            walk._distance .= 1000
+            walk._activeDuration .= 1800
+            walk._pauseDuration .= 0
+            walk._talkDuration .= 0
+            walk._meditateDuration .= 0
+            walk._ascend .= 0
+            walk._descend .= 0
+            walk._isRace .= false
+            walk._isUserModified .= false
+            walk._finishedRecording .= true
+            walk._dayIdentifier .= "20231115"
+
+            let recording = transaction.create(Into<VoiceRecording>())
+            recording._uuid .= recordingUUID
+            recording._fileRelativePath .= "Recordings/X/a.m4a"
+            recording._workout .= walk
+        })
+        return try XCTUnwrap(stack.fetchOne(From<Walk>().where(\._uuid == walkUUID)))
+    }
+
+    /// I1 residual: `onTranscriptionSave`/`onRetranscribe` mutate the summary's
+    /// `transcriptions` dict synchronously, but `DataManager
+    /// .updateVoiceRecordingTranscription` only re-analyzes inside its async
+    /// CoreStore write completion — a reload triggered by the mutation can
+    /// win the race and read the pre-edit context. The loader must hash-check
+    /// and re-analyze inline, the ThreadsDossierBuilder discipline, so the
+    /// card never survives on a stale analysis.
+    func testLoader_staleStoredContext_reAnalyzesInlineAndDropsEditedAwayTheme() async throws {
+        let savedToggle = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = savedToggle }
+        UserPreferences.threadsAfterWalks.value = true
+
+        let previousDataStack = DataManager.dataStack
+        let stack = DataStack(PilgrimV7.schema)
+        try stack.addStorageAndWait(InMemoryStore())
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ThreadsCardLoaderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+
+        let releasedSuite = "ThreadsCardLoaderTests-\(UUID().uuidString)"
+        let releasedDefaults = try XCTUnwrap(UserDefaults(suiteName: releasedSuite))
+        defer { releasedDefaults.removePersistentDomain(forName: releasedSuite) }
+        let releasedStore = ReleasedThreadsStore(defaults: releasedDefaults)
+
+        let walkUUID = UUID(), recordingUUID = UUID()
+        let walk = try seedWalkWithVoiceRecording(in: stack, walkUUID: walkUUID, recordingUUID: recordingUUID)
+
+        // Analyzed and stored BEFORE the edit landed — "move" is baked into
+        // the stale context still sitting on disk.
+        let staleTranscript = String(repeating: "the move keeps returning to me today ", count: 6)
+        store.save(TranscriptContextAnalyzer.analyze(recordingUUID: recordingUUID, transcript: staleTranscript))
+
+        // The edit removed every mention of "move", and is too short to
+        // surface any theme of its own — the recomputed context should carry
+        // no themes at all.
+        let editedTranscript = "Just a quiet morning with nothing much on my mind."
+
+        let model = await ThreadsCardLoader.load(
+            walk: walk,
+            transcriptions: [recordingUUID: editedTranscript],
+            store: store,
+            releasedStore: releasedStore
+        )
+
+        XCTAssertNil(model, "the edit removed the only theme — a stale reload must not still name 'the move'")
     }
 }
