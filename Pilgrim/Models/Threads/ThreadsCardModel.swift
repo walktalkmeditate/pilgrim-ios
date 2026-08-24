@@ -12,6 +12,7 @@ struct ThreadsCardModel: Equatable {
     let themes: [ThreadsCardTheme]
     let textureLine: String?
     let insightWords: [String]
+    let hasInsight: Bool
 }
 
 enum ThreadsCardCopy {
@@ -99,6 +100,7 @@ enum ThreadsCardModelBuilder {
             .filter { contextsByRecording[$0.uuid]?.languageCode == "en" }
             .map(\.transcript)
         let insightWords = ThreadsTexture.insightWords(in: englishTranscripts)
+        let hasInsight = insightWords.count >= ThreadsTexture.insightFloor
 
         let wpms = recordings.compactMap(\.wordsPerMinute)
         let meanWPM = wpms.isEmpty ? nil : wpms.reduce(0, +) / Double(wpms.count)
@@ -107,9 +109,10 @@ enum ThreadsCardModelBuilder {
             themes: Array(ranked),
             textureLine: ThreadsTexture.line(
                 meanWordsPerMinute: meanWPM,
-                hasInsight: insightWords.count >= ThreadsTexture.insightFloor
+                hasInsight: hasInsight
             ),
-            insightWords: insightWords
+            insightWords: insightWords,
+            hasInsight: hasInsight
         )
     }
 

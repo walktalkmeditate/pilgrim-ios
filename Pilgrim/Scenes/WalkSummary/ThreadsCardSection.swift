@@ -95,7 +95,7 @@ struct ThreadsCardSection: View {
 
     private func textureLine(_ texture: String) -> some View {
         Button {
-            guard !model.insightWords.isEmpty else { return }
+            guard model.hasInsight else { return }
             showInsightWords.toggle()
         } label: {
             VStack(spacing: Constants.UI.Padding.xs) {
@@ -103,7 +103,7 @@ struct ThreadsCardSection: View {
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                     .multilineTextAlignment(.center)
-                if showInsightWords, !model.insightWords.isEmpty {
+                if showInsightWords, model.hasInsight {
                     Text(model.insightWords.map { "'\($0)'" }.joined(separator: ", "))
                         .font(Constants.Typography.caption)
                         .foregroundColor(.moss)
@@ -115,7 +115,7 @@ struct ThreadsCardSection: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint(
-            model.insightWords.isEmpty ? "" : "Double tap to see the words of insight"
+            model.hasInsight ? "Double tap to see the words of insight" : ""
         )
     }
 }

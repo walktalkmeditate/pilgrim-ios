@@ -184,6 +184,22 @@ final class ThreadsCardModelTests: XCTestCase {
                        "spoken order, deduplicated — the exact words the clause traces to")
     }
 
+    func testModel_belowFloorInsight_noClaimNoTap() {
+        let rec = UUID(), walk = UUID()
+        let thread = WalkThread(lemma: "move", displayTerm: "the move", appearances: [
+            appearance(recording: rec, walk: walk, date: base, mentions: 3, salience: 0.015)
+        ])
+        let model = ThreadsCardModelBuilder.model(
+            walkUUID: walk, threads: [thread],
+            recordings: [(uuid: rec, transcript: "I realize the move", wordsPerMinute: 80)],
+            contextsByRecording: [rec: context(rec)], backfillComplete: true
+        )
+        XCTAssertEqual(model?.textureLine, "Spoken slowly.",
+                       "a single insight word sits below the floor — the claim never appears in the line")
+        XCTAssertEqual(model?.hasInsight, false,
+                       "the model exposes the same floor decision the view must gate on")
+    }
+
     func testModel_nonEnglishRecordings_noInsightClause() {
         let rec = UUID(), walk = UUID()
         let thread = WalkThread(lemma: "mudanza", displayTerm: "mudanza", appearances: [
