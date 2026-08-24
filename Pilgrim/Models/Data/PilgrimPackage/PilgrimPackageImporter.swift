@@ -57,6 +57,8 @@ struct DecodedPackage {
     let archived: [PilgrimArchivedWalk]
     let isTended: Bool
     let skippedWalks: Int
+    let releasedThreads: [ReleasedThread]
+    let welcomedBackThreads: [WelcomedBackThread]
 }
 
 enum PilgrimPackageImporter {
@@ -85,6 +87,10 @@ enum PilgrimPackageImporter {
                     saveData(package: package) { result in
                         if case .success = result {
                             TranscriptContextStore.shared.clearTombstones(for: importedRecordingUUIDs)
+                            ReleasedThreadsStore.shared.merge(
+                                released: package.releasedThreads,
+                                welcomedBack: package.welcomedBackThreads
+                            )
                             ThreadsBackfill.reset()
                         }
                         completion(result)
@@ -149,7 +155,9 @@ enum PilgrimPackageImporter {
             events: tempEvents,
             archived: manifest.archivedOrEmpty,
             isTended: manifest.isTended,
-            skippedWalks: skippedWalks
+            skippedWalks: skippedWalks,
+            releasedThreads: PilgrimPackageConverter.releasedThreads(from: manifest.preferences),
+            welcomedBackThreads: PilgrimPackageConverter.welcomedBackThreads(from: manifest.preferences)
         )
     }
 

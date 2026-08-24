@@ -219,6 +219,9 @@
 		E66DD877BDBA458E95E4347F /* TranscriptContextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */; };
 		CF635D421DBD437A8A75B616 /* ThreadsBackfill.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0523495072F4F50ACDEF645 /* ThreadsBackfill.swift */; };
 		DFB954198A242EE69B14806B /* ThreadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2063941AD76F5A42ABCEB5D5 /* ThreadStore.swift */; };
+		3A9D73B10C5444B1AE84AAB6 /* ReleasedThreadsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2368779D0FD441D9871826F /* ReleasedThreadsStore.swift */; };
+		BC41523122F44D908CD01FF4 /* ReleasedThreadsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9665AA4903D4E27B8B2ED00 /* ReleasedThreadsStoreTests.swift */; };
+		1143DC90344F45EFAFDAAC23 /* ReleasedThreadsPackageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45EBA375CB284A57A169D5EC /* ReleasedThreadsPackageTests.swift */; };
 		23795691640A42D0872CBC91 /* TranscriptContextAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F837FC0ECF4D4ED1BA756517 /* TranscriptContextAnalyzerTests.swift */; };
 		DDB1779FC0D3496A894799E5 /* ThreadsDossierFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E3FC6223746420D820D537F /* ThreadsDossierFormatter.swift */; };
 		4BCC1742561447DFBD59EF01 /* ThreadsDossierBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1060C3B913FD4DA88015D30D /* ThreadsDossierBuilder.swift */; };
@@ -852,12 +855,15 @@
 		BDFBDD16091E474E8A5067CF /* TranscriptContextStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextStoreTests.swift; sourceTree = "<group>"; };
 		871968A73E694CE1A7813792 /* DataManagerThreadsDeletionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataManagerThreadsDeletionTests.swift; sourceTree = "<group>"; };
 		D44E1DA26DB135B0837E447F /* ThreadStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadStoreTests.swift; sourceTree = "<group>"; };
+		C9665AA4903D4E27B8B2ED00 /* ReleasedThreadsStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReleasedThreadsStoreTests.swift; sourceTree = "<group>"; };
+		45EBA375CB284A57A169D5EC /* ReleasedThreadsPackageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReleasedThreadsPackageTests.swift; sourceTree = "<group>"; };
 		25F8773000AC4CCC93F68DAF /* FieldGateReportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FieldGateReportTests.swift; sourceTree = "<group>"; };
 		5ABD94794DC646449548E6FE /* TranscriptContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContext.swift; sourceTree = "<group>"; };
 		21A9DB8ECE2349858CF3747B /* TranscriptContextStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextStore.swift; sourceTree = "<group>"; };
 		AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextAnalyzer.swift; sourceTree = "<group>"; };
 		E0523495072F4F50ACDEF645 /* ThreadsBackfill.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsBackfill.swift; sourceTree = "<group>"; };
 		2063941AD76F5A42ABCEB5D5 /* ThreadStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadStore.swift; sourceTree = "<group>"; };
+		A2368779D0FD441D9871826F /* ReleasedThreadsStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReleasedThreadsStore.swift; sourceTree = "<group>"; };
 		F837FC0ECF4D4ED1BA756517 /* TranscriptContextAnalyzerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextAnalyzerTests.swift; sourceTree = "<group>"; };
 		1E3FC6223746420D820D537F /* ThreadsDossierFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsDossierFormatter.swift; sourceTree = "<group>"; };
 		1060C3B913FD4DA88015D30D /* ThreadsDossierBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsDossierBuilder.swift; sourceTree = "<group>"; };
@@ -1915,6 +1921,8 @@
 				F837FC0ECF4D4ED1BA756517 /* TranscriptContextAnalyzerTests.swift */,
 				871968A73E694CE1A7813792 /* DataManagerThreadsDeletionTests.swift */,
 				D44E1DA26DB135B0837E447F /* ThreadStoreTests.swift */,
+				C9665AA4903D4E27B8B2ED00 /* ReleasedThreadsStoreTests.swift */,
+				45EBA375CB284A57A169D5EC /* ReleasedThreadsPackageTests.swift */,
 				25F8773000AC4CCC93F68DAF /* FieldGateReportTests.swift */,
 				3C6AF4CB2CDC4F6DA1162CEA /* ThreadsDossierTests.swift */,
 				1177FF093DBC4775929CC150 /* ThreadIntentionSuggestionsTests.swift */,
@@ -2281,6 +2289,7 @@
 				AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */,
 				E0523495072F4F50ACDEF645 /* ThreadsBackfill.swift */,
 				2063941AD76F5A42ABCEB5D5 /* ThreadStore.swift */,
+				A2368779D0FD441D9871826F /* ReleasedThreadsStore.swift */,
 				1E3FC6223746420D820D537F /* ThreadsDossierFormatter.swift */,
 				1060C3B913FD4DA88015D30D /* ThreadsDossierBuilder.swift */,
 				9493E7AD112D41C6B876DB33 /* ThreadIntentionSuggestions.swift */,
@@ -3259,6 +3268,7 @@
 				E66DD877BDBA458E95E4347F /* TranscriptContextAnalyzer.swift in Sources */,
 				CF635D421DBD437A8A75B616 /* ThreadsBackfill.swift in Sources */,
 				DFB954198A242EE69B14806B /* ThreadStore.swift in Sources */,
+				3A9D73B10C5444B1AE84AAB6 /* ReleasedThreadsStore.swift in Sources */,
 				DDB1779FC0D3496A894799E5 /* ThreadsDossierFormatter.swift in Sources */,
 				4BCC1742561447DFBD59EF01 /* ThreadsDossierBuilder.swift in Sources */,
 				77B84A5DD3344F7995B8F0FB /* ThreadIntentionSuggestions.swift in Sources */,
@@ -3286,6 +3296,8 @@
 				23795691640A42D0872CBC91 /* TranscriptContextAnalyzerTests.swift in Sources */,
 				9199078D805D40A087270BF5 /* DataManagerThreadsDeletionTests.swift in Sources */,
 				4A874B223DF94F32AE65A3B2 /* ThreadStoreTests.swift in Sources */,
+				BC41523122F44D908CD01FF4 /* ReleasedThreadsStoreTests.swift in Sources */,
+				1143DC90344F45EFAFDAAC23 /* ReleasedThreadsPackageTests.swift in Sources */,
 				AB27642252E24998A3ABFA3B /* FieldGateReportTests.swift in Sources */,
 				366617D2E2404425A7BB8E0F /* ThreadsDossierTests.swift in Sources */,
 				12B4814A464F4B33A4DFDF5E /* ThreadIntentionSuggestionsTests.swift in Sources */,

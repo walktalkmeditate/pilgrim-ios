@@ -22,6 +22,8 @@ final class PilgrimPackageExporterArchivedTests: XCTestCase {
     override func setUp() {
         super.setUp()
         UserPreferences.archivedWalkRegistry.value = [:]
+        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.defaultsKey)
+        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.welcomedBackKey)
     }
 
     override func tearDown() {

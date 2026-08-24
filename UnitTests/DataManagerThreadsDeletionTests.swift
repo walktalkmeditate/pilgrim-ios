@@ -113,4 +113,22 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
         XCTAssertTrue(store.loadAll().isEmpty,
                       "an analysis queued before Delete All must not write after the wipe")
     }
+
+    func testDeleteAll_clearsReleasedThreads() {
+        let suiteName = "ReleasedThreadsDeleteAll-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let released = ReleasedThreadsStore(defaults: defaults)
+        released.release(displayTerm: "the move", lemmas: ["move"])
+        DataManager.releasedThreadsStore = released
+        defer { DataManager.releasedThreadsStore = .shared }
+
+        let deleted = expectation(description: "deleted all")
+        DataManager.deleteAll { success, _ in
+            XCTAssertTrue(success)
+            deleted.fulfill()
+        }
+        wait(for: [deleted], timeout: 5)
+        XCTAssertTrue(released.isEmpty, "Delete All Data clears the released set with everything else")
+    }
 }
