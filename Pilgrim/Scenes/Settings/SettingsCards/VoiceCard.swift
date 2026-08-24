@@ -53,11 +53,7 @@ struct VoiceCard: View {
                 description: "Weave recurring themes from your recordings into AI prompts",
                 isOn: $threadsAfterWalks
             ) { newValue in
-                UserPreferences.threadsAfterWalks.value = newValue
-                if newValue {
-                    ThreadsBackfill.reset()
-                    ThreadsBackfill.runIfNeeded()
-                }
+                ThreadsBackfill.setEnabled(newValue)
             }
 
             if case .downloadingModel(let progress) = transcriptionService.state {

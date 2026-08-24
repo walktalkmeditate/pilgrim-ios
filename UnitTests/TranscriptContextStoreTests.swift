@@ -92,21 +92,34 @@ final class TranscriptContextStoreTests: XCTestCase {
                        "a context that never reached disk must not be reported as saved")
     }
 
-    func testClearAllTombstones_allowsSaveAfterDelete() {
-        let context = makeContext()
-        store.save(context)
-        store.delete(recordingUUIDs: [context.recordingUUID])
-        store.clearAllTombstones()
-        store.save(context)
-        XCTAssertEqual(store.loadAll().map(\.recordingUUID), [context.recordingUUID],
-                       "an import re-establishes recordings as live, analyzable data")
+    func testClearTombstones_scopedToGivenUUIDs() {
+        let imported = makeContext(), unrelated = makeContext()
+        store.save(imported); store.save(unrelated)
+        store.delete(recordingUUIDs: [imported.recordingUUID, unrelated.recordingUUID])
+        store.clearTombstones(for: [imported.recordingUUID])
+        store.save(imported)
+        store.save(unrelated)
+        XCTAssertEqual(store.loadAll().map(\.recordingUUID), [imported.recordingUUID],
+                       "an import re-establishes its own recordings as analyzable — "
+                       + "tombstones protecting unrelated pending deletions stay in force")
     }
 
-    func testPruneOrphans() {
+    func testRemoveContext_deletesWithoutTombstoning() {
+        let context = makeContext()
+        store.save(context)
+        store.removeContext(for: context.recordingUUID)
+        XCTAssertFalse(store.hasContext(for: context.recordingUUID))
+        store.save(context)
+        XCTAssertEqual(store.loadAll().map(\.recordingUUID), [context.recordingUUID],
+                       "no tombstone: the future backfill save must still succeed")
+    }
+
+    func testOrphans_pureSelectionOverLoadedContexts() {
         let keep = makeContext(), orphan = makeContext()
-        store.save(keep); store.save(orphan)
-        store.pruneOrphans(keeping: [keep.recordingUUID])
-        XCTAssertEqual(store.loadAll().map(\.recordingUUID), [keep.recordingUUID])
+        let orphans = TranscriptContextStore.orphans(
+            in: [keep, orphan], keeping: [keep.recordingUUID]
+        )
+        XCTAssertEqual(orphans, [orphan.recordingUUID])
     }
 
     func testDirectoryExcludedFromBackup() throws {

@@ -101,6 +101,20 @@ final class AttentionDirectivesTests: XCTestCase {
                        "'again' is only honest for an exact surface repeat")
     }
 
+    func testIntentionEcho_mixedInflections_prefersExactSurfaceAcrossMentions() {
+        let context = ActivityContext.make(
+            recordings: [recording("worrying on the way out, but the worry itself eased by the bridge")],
+            startDate: start,
+            intention: "worry less"
+        )
+        let text = joined(context)
+        XCTAssertTrue(text.contains("'worry' surfaces again"),
+                      "an exact surface repeat anywhere in the spoken mentions earns 'again', "
+                      + "even when an inflection appears first")
+        XCTAssertFalse(text.contains("'worrying' surfaces"),
+                       "the exact match outranks the earlier inflected mention")
+    }
+
     func testIntentionEcho_noOverlap_doesNotFire() {
         let context = ActivityContext.make(
             recordings: [recording("The bakery smelled wonderful this morning")],

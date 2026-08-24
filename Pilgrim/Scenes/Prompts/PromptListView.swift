@@ -17,6 +17,7 @@ struct PromptListView: View {
     @State private var customPrompts: [GeneratedPrompt] = []
     @State private var directives: [String]?
     @State private var detectedLanguageName: String?
+    @State private var derivationGeneration = 0
 
     var body: some View {
         List {
@@ -109,15 +110,19 @@ struct PromptListView: View {
     /// The dossier build (file I/O + NLP over every stored context) and
     /// prompt assembly are too heavy for the main actor, which this View's
     /// methods inherit. CoreStore reads happen here on main; the detached
-    /// task works on plain values only.
+    /// task works on plain values only. The generation counter drops stale
+    /// completions: a superseded invocation must never overwrite the @State
+    /// a newer one already assigned.
     private func generatePrompts() {
         guard prompts.isEmpty else { return }
+        derivationGeneration += 1
+        let generation = derivationGeneration
         Task {
             let baseContext = await buildActivityContext()
             let walkUUID = walk.uuid
             let walkIndex = DataManager.voiceRecordingWalkIndex()
 
-            let (context, generated, derivedDirectives, derivedLanguageName) = await Task.detached(priority: .userInitiated) {
+            let (context, generated, derived) = await Task.detached(priority: .userInitiated) {
                 var context = baseContext
                 context.threadsDossier = walkUUID.flatMap {
                     ThreadsDossierBuilder.build(
@@ -126,20 +131,20 @@ struct PromptListView: View {
                         walkIndex: walkIndex
                     )
                 }
-                let derivedDirectives = AttentionDirectives.detect(context: context)
-                let derivedLanguageName = PromptAssembler.detectedLanguageName(context: context)
+                let derived = PromptGenerator.resolvedDerivations(context: context)
                 let generated = PromptGenerator.generateAll(
                     context: context,
-                    directives: derivedDirectives,
-                    detectedLanguageName: derivedLanguageName
+                    directives: derived.directives,
+                    detectedLanguageName: derived.languageName
                 )
-                return (context, generated, derivedDirectives, derivedLanguageName)
+                return (context, generated, derived)
             }.value
 
+            guard generation == derivationGeneration else { return }
             activityContext = context
             prompts = generated
-            directives = derivedDirectives
-            detectedLanguageName = derivedLanguageName
+            directives = derived.directives
+            detectedLanguageName = derived.languageName
             regenerateCustomPrompts()
         }
     }
@@ -304,26 +309,29 @@ struct PromptListView: View {
     }
 
     /// Same shape as generatePrompts: main-actor inputs gathered first,
-    /// assembly detached, @State assigned back on main. The derivations
-    /// cached by generatePrompts are reused so both paths share one NLP pass.
+    /// assembly detached, @State assigned back on main, stale completions
+    /// dropped by the shared generation counter. The derivations were
+    /// resolved once by generatePrompts (via resolvedDerivations) and are
+    /// always populated here — a non-nil activityContext guarantees it.
     private func regenerateCustomPrompts() {
         guard let context = activityContext else { return }
+        derivationGeneration += 1
+        let generation = derivationGeneration
         let styles = customStyleStore.styles
         let cachedDirectives = directives
         let cachedLanguageName = detectedLanguageName
         Task {
             let generated = await Task.detached(priority: .userInitiated) {
-                let resolvedDirectives = cachedDirectives ?? AttentionDirectives.detect(context: context)
-                let resolvedLanguageName = cachedLanguageName ?? PromptAssembler.detectedLanguageName(context: context)
-                return styles.map { customStyle in
+                styles.map { customStyle in
                     PromptGenerator.generateCustom(
                         customStyle: customStyle,
                         context: context,
-                        directives: resolvedDirectives,
-                        detectedLanguageName: resolvedLanguageName
+                        directives: cachedDirectives,
+                        detectedLanguageName: cachedLanguageName
                     )
                 }
             }.value
+            guard generation == derivationGeneration else { return }
             customPrompts = generated
         }
     }

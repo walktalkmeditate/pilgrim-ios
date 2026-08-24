@@ -90,12 +90,25 @@ final class TranscriptContextStore {
         }
     }
 
-    /// Import success wipes the tombstones: any stale tombstone's writer no
-    /// longer exists (its recording was deleted before the import), and the
-    /// import re-establishes recordings as live data that must be analyzable.
-    func clearAllTombstones() {
+    /// Removes a stored context without tombstoning — for edits made while
+    /// the feature is off, where the old analysis must not linger stale. A
+    /// tombstone here would block the future backfill save for this
+    /// recording and corrupt its accounting (a blocked save reports
+    /// "accounted" while writing nothing).
+    func removeContext(for recordingUUID: UUID) {
         writeQueue.sync {
-            tombstones.removeAll()
+            try? FileManager.default.removeItem(at: fileURL(for: recordingUUID))
+            _changeCount += 1
+        }
+    }
+
+    /// Import success clears the imported recordings' tombstones only: the
+    /// import re-establishes those UUIDs as live data that must be
+    /// analyzable, while tombstones protecting unrelated pending deletions
+    /// stay in force.
+    func clearTombstones(for uuids: [UUID]) {
+        writeQueue.sync {
+            tombstones.subtract(uuids)
         }
     }
 
@@ -116,10 +129,11 @@ final class TranscriptContextStore {
         excludeFromBackup()
     }
 
-    func pruneOrphans(keeping valid: Set<UUID>) {
-        let orphans = loadAll().map(\.recordingUUID).filter { !valid.contains($0) }
-        guard !orphans.isEmpty else { return }
-        delete(recordingUUIDs: orphans)
+    /// Pure orphan selection over already-loaded contexts — the caller
+    /// (ThreadsDossierBuilder) feeds it the same load that builds the
+    /// dossier, so no second directory read happens here.
+    static func orphans(in contexts: [TranscriptContext], keeping valid: Set<UUID>) -> [UUID] {
+        contexts.map(\.recordingUUID).filter { !valid.contains($0) }
     }
 
     private func contextFileURLs() -> [URL] {

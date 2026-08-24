@@ -69,13 +69,60 @@ final class ThreadIntentionSuggestionsTests: XCTestCase {
         XCTAssertEqual(ThreadIntentionSuggestions.select(threads: [move], asOf: asOf), ["walk with 'the move'"])
     }
 
+    func testSelect_dedupesIdenticalPhrasesBeforeCap() {
+        let move = thread("the move", walkDates: [
+            (UUID(), asOf.addingTimeInterval(-1 * 86400)),
+            (UUID(), asOf.addingTimeInterval(-2 * 86400)),
+            (UUID(), asOf.addingTimeInterval(-3 * 86400))
+        ])
+        let moving = WalkThread(
+            lemma: "moving", displayTerm: "the move",
+            appearances: [
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: UUID(),
+                                 date: asOf.addingTimeInterval(-1 * 86400), mentionCount: 2, salience: 0.02),
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: UUID(),
+                                 date: asOf.addingTimeInterval(-2 * 86400), mentionCount: 2, salience: 0.02),
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: UUID(),
+                                 date: asOf.addingTimeInterval(-3 * 86400), mentionCount: 2, salience: 0.02)
+            ]
+        )
+        let river = thread("river", walkDates: [
+            (UUID(), asOf.addingTimeInterval(-1 * 86400)),
+            (UUID(), asOf.addingTimeInterval(-2 * 86400))
+        ])
+        XCTAssertEqual(
+            ThreadIntentionSuggestions.select(threads: [move, moving, river], asOf: asOf),
+            ["walk with 'the move'", "walk with 'river'"],
+            "two lemmas sharing a display term yield one chip, and the cap still fills from the next distinct phrase"
+        )
+    }
+
+    func testSelect_windowBoundary_exactlyThirtyDaysIsInclusive() {
+        let tide = thread("tide", walkDates: [
+            (UUID(), asOf.addingTimeInterval(-ThreadIntentionSuggestions.recurrenceWindow)),
+            (UUID(), asOf.addingTimeInterval(-1 * 86400))
+        ])
+        XCTAssertEqual(ThreadIntentionSuggestions.select(threads: [tide], asOf: asOf), ["walk with 'tide'"],
+                       "an appearance exactly at asOf − 30d is inside the window")
+    }
+
+    func testSelect_windowBoundary_oneSecondBeyondIsExcluded() {
+        let tide = thread("tide", walkDates: [
+            (UUID(), asOf.addingTimeInterval(-ThreadIntentionSuggestions.recurrenceWindow - 1)),
+            (UUID(), asOf.addingTimeInterval(-1 * 86400))
+        ])
+        XCTAssertTrue(ThreadIntentionSuggestions.select(threads: [tide], asOf: asOf).isEmpty,
+                      "one second beyond the window leaves a single distinct walk — below the floor")
+    }
+
     @MainActor
-    func testCurrent_toggleOff_returnsEmptyWithoutTouchingTheStore() {
+    func testCurrent_toggleOff_returnsEmptyWithoutTouchingTheStore() async {
         let saved = UserPreferences.threadsAfterWalks.value
         defer { UserPreferences.threadsAfterWalks.value = saved }
         UserPreferences.threadsAfterWalks.value = false
 
-        XCTAssertTrue(ThreadIntentionSuggestions.current().isEmpty,
+        let suggestions = await ThreadIntentionSuggestions.current()
+        XCTAssertTrue(suggestions.isEmpty,
                       "off means off — the guard fires before any walk index or store read")
     }
 }

@@ -91,13 +91,20 @@ enum PromptAssembler {
         return sections
     }
 
-    /// English display name of the transcript's dominant language, or nil
-    /// when no language clears the recognizer's confidence bar.
+    /// Language code of the transcript's dominant language, or nil when no
+    /// language clears the recognizer's confidence bar.
+    static func detectedLanguageCode(context: ActivityContext) -> String? {
+        guard context.hasSpeech else { return nil }
+        return TranscriptNLP.detectLanguage(context.recordings.map(\.text).joined(separator: " "))
+    }
+
+    /// English display name of the transcript's dominant language.
     static func detectedLanguageName(context: ActivityContext) -> String? {
-        guard context.hasSpeech,
-              let code = TranscriptNLP.detectLanguage(context.recordings.map(\.text).joined(separator: " "))
-        else { return nil }
-        return Locale(identifier: "en").localizedString(forLanguageCode: code)
+        languageName(forCode: detectedLanguageCode(context: context))
+    }
+
+    static func languageName(forCode code: String?) -> String? {
+        code.flatMap { Locale(identifier: "en").localizedString(forLanguageCode: $0) }
     }
 
     /// What the walk produced — words, stillness, continuity with recent

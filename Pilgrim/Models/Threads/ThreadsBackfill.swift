@@ -26,10 +26,22 @@ enum ThreadsBackfill {
         UserDefaults.standard.set(false, forKey: completedKey)
     }
 
-    private static let batchSize = 25
+    /// The one entry point for the settings toggle: the preference flip and
+    /// the enable-path resweep belong together. The resweep is scheduled as
+    /// a task so it lands after the caller's UI transaction commits instead
+    /// of running the CoreStore snapshot inside the toggle animation.
+    @MainActor
+    static func setEnabled(_ enabled: Bool) {
+        UserPreferences.threadsAfterWalks.value = enabled
+        guard enabled else { return }
+        reset()
+        Task { @MainActor in runIfNeeded() }
+    }
+
+    static let batchSize = 25
 
     /// Main-actor only: the CoreStore snapshot must be taken before
-    /// detaching — `dataStack.fetchAll` asserts main-thread. Single-flight,
+    /// detaching — `dataStack` queries assert main-thread. Single-flight,
     /// and battery-gated like MainCoordinator.triggerAutoTranscription.
     /// Fills MISSING contexts only: a hash-mismatched (edited) recording is
     /// owned by the edit trigger, and overwriting it here would race a
@@ -37,25 +49,41 @@ enum ThreadsBackfill {
     ///
     /// The completed flag is set only when every snapshot item is accounted
     /// for — saved by this sweep, or already on disk after the attempt.
-    /// A failed save (or the battery gate closing mid-sweep) leaves the flag
-    /// false so the next launch retries just the missing ones.
+    /// A failed save (or the battery gate / toggle closing mid-sweep) leaves
+    /// the flag false so the next launch retries just the missing ones.
     ///
-    /// Off means no analysis at all, not just no surfacing — re-enabling the
-    /// toggle resweeps via the `ThreadsBackfill.reset()` call in VoiceCard.
+    /// Off means no analysis at all, not just no surfacing — mid-sweep the
+    /// per-batch guard re-checks the toggle, and re-enabling resweeps via
+    /// `setEnabled(true)`. A reset landing mid-sweep (import, re-enable)
+    /// makes this sweep stale; its completion then schedules one follow-up
+    /// pass — a cheap hasContext-only resweep — so the session doesn't end
+    /// with the flag stuck false.
+    ///
+    /// `snapshotProvider`, `gate`, and `onFinish` are test seams; production
+    /// callers use the defaults, which preserve the shipped behavior exactly.
     @MainActor
-    static func runIfNeeded(store: TranscriptContextStore = .shared) {
-        guard !isComplete, !isRunning, UserPreferences.threadsAfterWalks.value else { return }
-        guard BatteryGate.allowsBackgroundWork() else { return }
+    static func runIfNeeded(
+        store: TranscriptContextStore = .shared,
+        snapshotProvider: @escaping @MainActor () -> [(uuid: UUID, transcript: String)] = {
+            DataManager.transcribedRecordingsSnapshot()
+        },
+        gate: @escaping @MainActor () -> Bool = { BatteryGate.allowsBackgroundWork() },
+        onFinish: (@MainActor () -> Void)? = nil
+    ) {
+        guard !isComplete, !isRunning, UserPreferences.threadsAfterWalks.value, gate() else {
+            onFinish?()
+            return
+        }
         isRunning = true
 
         let startGeneration = generation
-        let items = DataManager.transcribedRecordingsSnapshot()
+        let items = snapshotProvider()
         Task.detached(priority: .utility) {
             var allAccounted = true
             var gateClosed = false
             var batchStart = 0
             while batchStart < items.count {
-                guard await MainActor.run(body: { BatteryGate.allowsBackgroundWork() }) else {
+                guard await MainActor.run(body: { gate() && UserPreferences.threadsAfterWalks.value }) else {
                     gateClosed = true
                     break
                 }
@@ -74,10 +102,17 @@ enum ThreadsBackfill {
                 await Task.yield()
             }
             await MainActor.run {
-                if generation == startGeneration && allAccounted && !gateClosed {
+                let stale = generation != startGeneration
+                if !stale && allAccounted && !gateClosed {
                     UserDefaults.standard.set(true, forKey: completedKey)
                 }
                 isRunning = false
+                if stale {
+                    Task { @MainActor in
+                        runIfNeeded(store: store, snapshotProvider: snapshotProvider, gate: gate, onFinish: onFinish)
+                    }
+                }
+                onFinish?()
             }
         }
     }

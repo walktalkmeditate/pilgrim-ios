@@ -9,7 +9,10 @@ enum AttentionDirectives {
     private static let movingThreshold = 0.3
     private static let maxDirectives = 4
 
-    static func detect(context: ActivityContext) -> [String] {
+    /// `detectedLanguageCode` defaults to nil ("detect here") so direct
+    /// callers stay unchanged; PromptGenerator.resolvedDerivations passes
+    /// its precomputed code so the echo skips its own detection pass.
+    static func detect(context: ActivityContext, detectedLanguageCode: String? = nil) -> [String] {
         // Lemmatizing the full transcript is the expensive step; do it once
         // here and share it between the two detectors that need it.
         let spokenMentions = context.hasSpeech
@@ -18,7 +21,7 @@ enum AttentionDirectives {
         let directives = [
             stillness(context),
             paceShift(context),
-            intentionEcho(context, spokenMentions: spokenMentions),
+            intentionEcho(context, spokenMentions: spokenMentions, detectedLanguageCode: detectedLanguageCode),
             recurringWord(context, spokenMentions: spokenMentions),
             firstVersusLast(context)
         ].compactMap { $0 }
@@ -72,20 +75,26 @@ enum AttentionDirectives {
     }
 
     /// A word from the stated intention resurfacing in the walker's own
-    /// spoken words — by shared lemma first, by embedding nearness second.
-    /// "Again" is only honest when the walker repeated the exact surface;
-    /// an inflection ("worrying" for "worry") quotes what was actually said.
-    private static func intentionEcho(_ context: ActivityContext, spokenMentions spoken: [TranscriptNLP.LemmaMention]) -> String? {
+    /// spoken words — by exact surface first (searched across ALL spoken
+    /// mentions, so "worrying ... worry" still earns "again"), by shared
+    /// lemma second, by embedding nearness third. "Again" is only honest
+    /// when the walker repeated the exact surface; an inflection
+    /// ("worrying" for "worry") quotes what was actually said.
+    private static func intentionEcho(
+        _ context: ActivityContext,
+        spokenMentions spoken: [TranscriptNLP.LemmaMention],
+        detectedLanguageCode: String?
+    ) -> String? {
         guard let intention = context.intention, context.hasSpeech else { return nil }
         guard !spoken.isEmpty else { return nil }
         let spokenText = context.recordings.map(\.text).joined(separator: " ")
-        let language = TranscriptNLP.detectLanguage(spokenText) ?? "en"
+        let language = detectedLanguageCode ?? TranscriptNLP.detectLanguage(spokenText) ?? "en"
 
         for word in TranscriptNLP.contentLemmaMentions(in: intention) {
+            if spoken.contains(where: { $0.lemma == word.lemma && $0.surface == word.surface }) {
+                return "The walker's intention spoke of '\(word.surface)', and '\(word.surface)' surfaces again in their spoken words — trace how it traveled."
+            }
             if let match = spoken.first(where: { $0.lemma == word.lemma }) {
-                if match.surface == word.surface {
-                    return "The walker's intention spoke of '\(word.surface)', and '\(word.surface)' surfaces again in their spoken words — trace how it traveled."
-                }
                 return "The walker's intention spoke of '\(word.surface)', and '\(match.surface)' surfaces in their spoken words — trace how it traveled."
             }
             if let match = spoken.first(where: { TranscriptNLP.related(word.lemma, $0.lemma, languageCode: language) }) {

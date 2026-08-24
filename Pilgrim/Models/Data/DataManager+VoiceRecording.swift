@@ -103,14 +103,20 @@ extension DataManager {
         completion: ((Bool) -> Void)? = nil
     ) {
         updateVoiceRecording(uuid: uuid, dataStack: dataStack, completion: { success in
-            if success, UserPreferences.threadsAfterWalks.value {
-                Task.detached(priority: .utility) {
-                    TranscriptContextAnalyzer.analyzeAndStore(
-                        recordingUUID: uuid,
-                        transcript: transcription,
-                        flaggedFragments: flaggedFragments,
-                        store: transcriptContextStore
-                    )
+            if success {
+                if UserPreferences.threadsAfterWalks.value {
+                    Task.detached(priority: .utility) {
+                        TranscriptContextAnalyzer.analyzeAndStore(
+                            recordingUUID: uuid,
+                            transcript: transcription,
+                            flaggedFragments: flaggedFragments,
+                            store: transcriptContextStore
+                        )
+                    }
+                } else {
+                    // An edit saved while the feature is off must not leave
+                    // the pre-toggle analysis behind to go stale.
+                    transcriptContextStore.removeContext(for: uuid)
                 }
             }
             completion?(success)
@@ -120,14 +126,23 @@ extension DataManager {
     }
 
     /// Snapshot of every transcribed recording for the Threads backfill —
-    /// UUIDs and text only, fetched once, no live objects escape the stack.
-    /// Main-actor only: `dataStack.fetchAll` asserts Thread.isMainThread.
+    /// UUIDs and text only. A two-column `queryAttributes` fetch ("id" and
+    /// "transcription" — frozen SQL names) instead of `fetchAll`, which
+    /// faulted in every recording row, one SQL round-trip each — mirroring
+    /// `voiceRecordingWalkIndex` below. Main-actor only, like the other
+    /// snapshot queries here.
     @MainActor
     public static func transcribedRecordingsSnapshot() -> [(uuid: UUID, transcript: String)] {
-        let recordings = (try? dataStack.fetchAll(From<VoiceRecording>())) ?? []
-        return recordings.compactMap { recording in
-            guard let uuid = recording._uuid.value,
-                  let transcript = recording._transcription.value,
+        guard let rows = try? dataStack.queryAttributes(
+            From<VoiceRecording>().select(
+                NSDictionary.self,
+                .attribute(\._uuid),
+                .attribute(\._transcription)
+            )
+        ) else { return [] }
+        return rows.compactMap { row in
+            guard let uuid = row["id"] as? UUID,
+                  let transcript = row["transcription"] as? String,
                   !transcript.isEmpty else { return nil }
             return (uuid, transcript)
         }

@@ -32,9 +32,13 @@ enum ThreadsDossierBuilder {
 
         // Single directory decode per build: orphans come from the same load
         // that feeds the dossier, and fresh analyses are merged in by hand
-        // instead of re-reading the directory afterwards.
+        // instead of re-reading the directory afterwards. An empty walk index
+        // alongside non-empty contexts is a failed/empty CoreStore read, not
+        // proof of orphanhood — pruning then would delete every context.
         let all = store.loadAll()
-        let orphans = Set(all.map(\.recordingUUID)).subtracting(walkIndex.keys)
+        let orphans = walkIndex.isEmpty && !all.isEmpty
+            ? Set<UUID>()
+            : Set(TranscriptContextStore.orphans(in: all, keeping: Set(walkIndex.keys)))
         if !orphans.isEmpty {
             store.delete(recordingUUIDs: Array(orphans))
         }

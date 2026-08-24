@@ -211,6 +211,133 @@ final class ThreadsDossierTests: XCTestCase {
         XCTAssertTrue(dossier!.contains("spoken more slowly than the rest of this walk"))
     }
 
+    private func themedRecordings(themeWPM: Double, restWPMs: [Double]) -> (
+        recordings: [(context: TranscriptContext, wordsPerMinute: Double?)],
+        thread: WalkThread,
+        walkUUID: UUID
+    ) {
+        let walkUUID = UUID()
+        let date = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let themed = TranscriptContext(
+            schemaVersion: 1, recordingUUID: UUID(), transcriptHash: "h1",
+            languageCode: "en", wordCount: 200,
+            themes: [Theme(lemma: "move", displayTerm: "move", mentionCount: 3, salience: 0.03, mentions: [])],
+            markers: markers(words: 200, absolutist: 2)
+        )
+        var recordings: [(context: TranscriptContext, wordsPerMinute: Double?)] = [(themed, themeWPM)]
+        for (index, restWPM) in restWPMs.enumerated() {
+            let rest = TranscriptContext(
+                schemaVersion: 1, recordingUUID: UUID(), transcriptHash: "rest\(index)",
+                languageCode: "en", wordCount: 200, themes: [],
+                markers: markers(words: 200, absolutist: 2)
+            )
+            recordings.append((rest, restWPM))
+        }
+        let thread = WalkThread(
+            lemma: "move", displayTerm: "move",
+            appearances: [
+                ThreadAppearance(recordingUUID: themed.recordingUUID, walkUUID: walkUUID, date: date,
+                                 mentionCount: 3, salience: 0.03)
+            ]
+        )
+        return (recordings, thread, walkUUID)
+    }
+
+    func testPaceCorrelation_fasterThemeGroupNotedAsMoreQuickly() {
+        let (recordings, thread, walkUUID) = themedRecordings(themeWPM: 140, restWPMs: [80])
+        let dossier = ThreadsDossierFormatter.dossier(
+            currentRecordings: recordings, allContexts: recordings.map(\.context),
+            threads: [thread], currentWalkUUID: walkUUID, backfillComplete: false
+        )
+        XCTAssertTrue(dossier!.contains("spoken more quickly than the rest of this walk"))
+    }
+
+    func testPaceCorrelation_withinFifteenPercent_staysSilent() {
+        let (recordings, thread, walkUUID) = themedRecordings(themeWPM: 100, restWPMs: [95])
+        let dossier = ThreadsDossierFormatter.dossier(
+            currentRecordings: recordings, allContexts: recordings.map(\.context),
+            threads: [thread], currentWalkUUID: walkUUID, backfillComplete: false
+        )
+        XCTAssertFalse(dossier!.contains("spoken more"),
+                       "a gap inside ±15% is noise, not a correlation")
+    }
+
+    func testPaceCorrelation_emptyRestGroup_staysSilent() {
+        let (recordings, thread, walkUUID) = themedRecordings(themeWPM: 100, restWPMs: [])
+        let dossier = ThreadsDossierFormatter.dossier(
+            currentRecordings: recordings, allContexts: recordings.map(\.context),
+            threads: [thread], currentWalkUUID: walkUUID, backfillComplete: false
+        )
+        XCTAssertNotNil(dossier)
+        XCTAssertFalse(dossier!.contains("spoken more"),
+                       "with no rest group there is nothing to compare against")
+    }
+
+    private func absenceDossier(quietOffsetFromAnchor: TimeInterval) -> String? {
+        let current = context(words: 200, absolutist: 2)
+        let anchor = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let currentWalk = UUID()
+        let quietThread = WalkThread(
+            lemma: "father", displayTerm: "father",
+            appearances: [
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: UUID(),
+                                 date: anchor.addingTimeInterval(quietOffsetFromAnchor),
+                                 mentionCount: 2, salience: 0.02),
+                ThreadAppearance(recordingUUID: UUID(), walkUUID: UUID(),
+                                 date: anchor.addingTimeInterval(-5 * 86400),
+                                 mentionCount: 2, salience: 0.02)
+            ]
+        )
+        let activeThread = WalkThread(
+            lemma: "move", displayTerm: "move",
+            appearances: [
+                ThreadAppearance(recordingUUID: current.recordingUUID, walkUUID: currentWalk, date: anchor,
+                                 mentionCount: 3, salience: 0.03)
+            ]
+        )
+        return ThreadsDossierFormatter.dossier(
+            currentRecordings: [(current, nil)], allContexts: [current],
+            threads: [quietThread, activeThread], currentWalkUUID: currentWalk, backfillComplete: true
+        )
+    }
+
+    func testAbsenceWindowBoundary_exactlyThirtyDaysIsInclusive() {
+        let dossier = absenceDossier(quietOffsetFromAnchor: -ThreadsDossierFormatter.absenceWindow)
+        XCTAssertTrue(dossier!.contains("Notably quiet"),
+                      "an appearance exactly at anchor − 30d is inside the absence window")
+    }
+
+    func testAbsenceWindowBoundary_oneSecondBeyondIsExcluded() {
+        let dossier = absenceDossier(quietOffsetFromAnchor: -ThreadsDossierFormatter.absenceWindow - 1)
+        XCTAssertFalse(dossier!.contains("Notably quiet"),
+                       "one second beyond the window leaves a single distinct walk — below the floor")
+    }
+
+    func testBuilder_emptyWalkIndexWithStoredContexts_doesNotMassPrune() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierBuilderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+        let preExisting = context(words: 200, absolutist: 2)
+        store.save(preExisting)
+
+        let recording = RecordingContext(
+            text: String(repeating: "the move keeps returning to me today ", count: 6),
+            timestamp: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            startCoordinate: nil, endCoordinate: nil, wordsPerMinute: nil,
+            recordingUUID: UUID()
+        )
+        _ = ThreadsDossierBuilder.build(
+            walkUUID: UUID(), recordings: [recording], walkIndex: [:], store: store
+        )
+        XCTAssertTrue(store.hasContext(for: preExisting.recordingUUID),
+                      "a failed/empty CoreStore read must not delete every context")
+    }
+
     func testAssembler_omitsDossierWhenNil() {
         let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         let prompt = PromptAssembler.assemble(

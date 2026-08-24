@@ -143,6 +143,42 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
         XCTAssertFalse(contextStore.hasContext(for: uuid), "toggle off must never analyze")
     }
 
+    func test_updateTranscription_threadsToggleOff_removesStoredContext() throws {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = false
+
+        let uuid = UUID()
+        try seedRecording(uuid: uuid)
+        let contextStore = makeTranscriptContextStore()
+        contextStore.save(TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion,
+            recordingUUID: uuid,
+            transcriptHash: TranscriptContextStore.hash(of: "the words before the edit"),
+            languageCode: "en", wordCount: 5, themes: [], markers: nil
+        ))
+
+        let done = expectation(description: "completion")
+        DataManager.updateVoiceRecordingTranscription(
+            uuid: uuid, transcription: "edited while the feature was off",
+            transcriptContextStore: contextStore, dataStack: stack
+        ) { success in
+            XCTAssertTrue(success)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+
+        XCTAssertFalse(contextStore.hasContext(for: uuid),
+                       "an edit saved while the feature is off must not leave the old analysis to go stale")
+        XCTAssertTrue(contextStore.save(TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion,
+            recordingUUID: uuid,
+            transcriptHash: TranscriptContextStore.hash(of: "edited while the feature was off"),
+            languageCode: "en", wordCount: 6, themes: [], markers: nil
+        )), "removal must not tombstone — the future backfill save has to succeed")
+        XCTAssertTrue(contextStore.hasContext(for: uuid))
+    }
+
     func test_updateTranscription_missingRecording_doesNotAnalyze() throws {
         let uuid = UUID()
         let contextStore = makeTranscriptContextStore()

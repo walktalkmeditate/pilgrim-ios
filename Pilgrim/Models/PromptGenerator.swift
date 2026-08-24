@@ -41,19 +41,36 @@ struct PromptGenerator {
         return GeneratedPrompt(style: nil, customStyle: customStyle, text: text)
     }
 
+    /// The single resolution point for the derivations a prompt-list build
+    /// needs: one language detection feeds both the display name and the
+    /// echo detector (which then skips its own pass), and one directives
+    /// pass serves every style. PromptListView caches this result so the
+    /// custom-prompt path never re-derives.
+    static func resolvedDerivations(context: ActivityContext) -> (directives: [String], languageName: String?) {
+        let languageCode = PromptAssembler.detectedLanguageCode(context: context)
+        return (
+            directives: AttentionDirectives.detect(context: context, detectedLanguageCode: languageCode),
+            languageName: PromptAssembler.languageName(forCode: languageCode)
+        )
+    }
+
     static func generateAll(
         context: ActivityContext,
         directives: [String]? = nil,
         detectedLanguageName: String? = nil
     ) -> [GeneratedPrompt] {
-        let directives = directives ?? AttentionDirectives.detect(context: context)
-        let detectedLanguageName = detectedLanguageName ?? PromptAssembler.detectedLanguageName(context: context)
+        let resolved: (directives: [String], languageName: String?)
+        if let directives {
+            resolved = (directives, detectedLanguageName)
+        } else {
+            resolved = resolvedDerivations(context: context)
+        }
         return PromptStyle.allCases.map {
             generate(
                 style: $0,
                 context: context,
-                directives: directives,
-                detectedLanguageName: detectedLanguageName
+                directives: resolved.directives,
+                detectedLanguageName: resolved.languageName
             )
         }
     }

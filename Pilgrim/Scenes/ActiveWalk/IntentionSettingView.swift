@@ -67,8 +67,9 @@ struct IntentionSettingView: View {
             }
         }
         .task {
-            // Reads the transcript-context store from disk — kept off the
-            // synchronous onAppear path so appearance never blocks on I/O.
+            // current() reads CoreStore on the main actor, then detaches for
+            // the store read and thread aggregation — the sheet's appearance
+            // never blocks on disk I/O.
             threadSuggestions = await ThreadIntentionSuggestions.current()
         }
         .onChange(of: recorder.transcribedText) { _, transcribed in
