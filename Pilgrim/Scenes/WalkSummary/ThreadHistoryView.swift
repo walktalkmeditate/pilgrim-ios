@@ -149,9 +149,13 @@ struct ThreadHistoryView: View {
                 .font(Constants.Typography.caption)
                 .foregroundColor(.moss)
             Spacer()
-            if let origin {
+            if origin != nil {
                 Button {
-                    presentedOriginMap = origin
+                    guard let fresh = resolveOrigin() else {
+                        origin = nil
+                        return
+                    }
+                    presentedOriginMap = fresh
                 } label: {
                     Text("open the map")
                         .font(Constants.Typography.caption)
@@ -194,10 +198,14 @@ struct ThreadHistoryView: View {
         )
     }
 
-    /// Resolution happens when the view opens — never persisted, so a
-    /// deleted origin walk or a fix gap simply hides the action on the next
-    /// open, and the record's earliest surviving appearance becomes "where
-    /// it began" (spec: deletion is deliberate record-editing).
+    /// Called at load (to decide whether the footer's map button renders)
+    /// and again at tap (to fetch a fresh walk + coordinate right before
+    /// presenting) — never persisted, so a walk deleted in between is never
+    /// shown stale: the tap either presents fresh data or, finding nothing,
+    /// hides the action on the spot. A deleted origin walk or a fix gap
+    /// simply means the record's earliest surviving appearance becomes
+    /// "where it began" on the next open (spec: deletion is deliberate
+    /// record-editing).
     @MainActor
     private func resolveOrigin() -> OriginMapData? {
         guard let oldest = entries.last, oldest.isOrigin,
