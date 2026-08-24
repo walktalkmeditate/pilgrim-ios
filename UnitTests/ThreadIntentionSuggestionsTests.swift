@@ -115,18 +115,56 @@ final class ThreadIntentionSuggestionsTests: XCTestCase {
                       "one second beyond the window leaves a single distinct walk — below the floor")
     }
 
+    func testFieldGate_passed_chipsAreLive() {
+        XCTAssertFalse(ThreadIntentionSuggestions.pendingFieldGate,
+                       "field gate passed 2026-08-24 (spec addendum) — chips ship live in 1.12.0")
+    }
+
     @MainActor
-    func testCurrent_pendingFieldGate_shipsDark() async {
+    func testCurrent_releaseVisibleOnNextCall() async {
         let saved = UserPreferences.threadsAfterWalks.value
         defer { UserPreferences.threadsAfterWalks.value = saved }
         UserPreferences.threadsAfterWalks.value = true
 
-        XCTAssertTrue(ThreadIntentionSuggestions.pendingFieldGate,
-                      "chips wait for the human field gate — flip only after it passes")
-        let suggestions = await ThreadIntentionSuggestions.current()
-        XCTAssertTrue(suggestions.isEmpty,
-                      "while the gate is pending, current() returns nothing even with the toggle on — "
-                      + "the chips section never renders in production")
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SuggestionsWiring-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+
+        let suiteName = "SuggestionsWiring-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let releasedStore = ReleasedThreadsStore(defaults: defaults)
+
+        let base = DateFactory.makeDate(2024, 6, 1, 9, 0, 0)
+        let recA = UUID(), recB = UUID()
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [
+            recA: (UUID(), base),
+            recB: (UUID(), base.addingTimeInterval(5 * 86400))
+        ]
+        for rec in [recA, recB] {
+            _ = store.save(TranscriptContext(
+                schemaVersion: 1, recordingUUID: rec, transcriptHash: "h",
+                languageCode: "en", wordCount: 200,
+                themes: [Theme(lemma: "move", displayTerm: "the move", mentionCount: 3,
+                               salience: 0.015, mentions: [ThemeMention(start: 0, length: 4)])],
+                markers: nil
+            ))
+        }
+
+        let asOf = base.addingTimeInterval(6 * 86400)
+        let before = await ThreadIntentionSuggestions.current(
+            asOf: asOf, store: store, releasedStore: releasedStore, walkIndex: walkIndex
+        )
+        XCTAssertEqual(before, ["walk with 'the move'"],
+                       "fixture sanity — the suggestion is live before the release")
+
+        releasedStore.release(displayTerm: "the move", lemmas: ["move"])
+        let after = await ThreadIntentionSuggestions.current(
+            asOf: asOf, store: store, releasedStore: releasedStore, walkIndex: walkIndex
+        )
+        XCTAssertTrue(after.isEmpty,
+                      "current()'s own build path filters released lemmas and its memo re-keys on the released token — visible on the very next call")
     }
 
     @MainActor

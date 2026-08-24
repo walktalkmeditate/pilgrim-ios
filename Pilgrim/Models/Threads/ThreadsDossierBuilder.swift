@@ -7,25 +7,32 @@ import Foundation
 /// doesn't re-read the whole context directory.
 enum ThreadsDossierBuilder {
 
-    private static var memo: (changeCount: Int, walkUUID: UUID, backfillComplete: Bool, dossier: String?)?
+    private static var memo: (
+        changeCount: Int, releasedToken: Int, walkUUID: UUID,
+        backfillComplete: Bool, dossier: String?
+    )?
     private static let memoLock = NSLock()
 
     static func build(
         walkUUID: UUID,
         recordings: [RecordingContext],
         walkIndex: [UUID: (walkUUID: UUID, date: Date)],
-        store: TranscriptContextStore = .shared
+        store: TranscriptContextStore = .shared,
+        releasedStore: ReleasedThreadsStore = .shared
     ) -> String? {
         guard UserPreferences.threadsAfterWalks.value, !recordings.isEmpty else { return nil }
         // One consistent read each, captured before any store mutation: a
-        // mid-build mutation leaves the memoized changeCount stale, so the
-        // next call rebuilds instead of absorbing the mutation unseen.
+        // mid-build mutation leaves the memoized tokens stale, so the next
+        // call rebuilds instead of absorbing the mutation unseen.
         let backfillComplete = ThreadsBackfill.isComplete
         let preBuildChangeCount = store.changeCount
+        let releasedToken = releasedStore.changeCount
+        let released = releasedStore.releasedLemmas
         memoLock.lock()
         let cached = memo
         memoLock.unlock()
         if let cached, cached.changeCount == preBuildChangeCount,
+           cached.releasedToken == releasedToken,
            cached.walkUUID == walkUUID, cached.backfillComplete == backfillComplete {
             return cached.dossier
         }
@@ -73,7 +80,7 @@ enum ThreadsDossierBuilder {
         let allContexts = contextsByUUID.values
             .sorted { $0.recordingUUID.uuidString < $1.recordingUUID.uuidString }
 
-        let threads = ThreadStore.build(contexts: allContexts, walks: walkIndex)
+        let threads = ThreadStore.build(contexts: allContexts, walks: walkIndex, released: released)
         let dossier = ThreadsDossierFormatter.dossier(
             currentRecordings: current,
             allContexts: allContexts,
@@ -82,7 +89,7 @@ enum ThreadsDossierBuilder {
             backfillComplete: backfillComplete
         )
         memoLock.lock()
-        memo = (preBuildChangeCount, walkUUID, backfillComplete, dossier)
+        memo = (preBuildChangeCount, releasedToken, walkUUID, backfillComplete, dossier)
         memoLock.unlock()
         return dossier
     }

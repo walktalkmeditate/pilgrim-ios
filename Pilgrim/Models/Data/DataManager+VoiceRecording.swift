@@ -130,7 +130,12 @@ extension DataManager {
     /// "transcription" — frozen SQL names) instead of `fetchAll`, which
     /// faulted in every recording row, one SQL round-trip each — mirroring
     /// `voiceRecordingWalkIndex` below. Main-actor only, like the other
-    /// snapshot queries here.
+    /// snapshot queries here. `queryAttributes` returns the raw stored value
+    /// for "id" — CoreStore's `UUID: QueryableAttributeType` declares
+    /// `cs_rawAttributeType = .stringAttributeType`, so the dictionary row
+    /// never carries a bridged `UUID`/`NSUUID`, only the string CoreStore
+    /// wrote. `rowUUID` undoes that encoding explicitly instead of relying
+    /// on a cast that can only ever fail.
     @MainActor
     public static func transcribedRecordingsSnapshot() -> [(uuid: UUID, transcript: String)] {
         guard let rows = try? dataStack.queryAttributes(
@@ -141,7 +146,7 @@ extension DataManager {
             )
         ) else { return [] }
         return rows.compactMap { row in
-            guard let uuid = row["id"] as? UUID,
+            guard let uuid = rowUUID(row["id"]),
                   let transcript = row["transcription"] as? String,
                   !transcript.isEmpty else { return nil }
             return (uuid, transcript)
@@ -155,6 +160,12 @@ extension DataManager {
     /// queries joined by object ID instead of `fetchAll` — the old path
     /// faulted in every recording row plus its walk, one SQL round-trip
     /// each. Main-actor only, matching the other snapshot queries here.
+    /// `queryAttributes` returns the raw stored value for "id" — CoreStore's
+    /// `UUID: QueryableAttributeType` declares `cs_rawAttributeType =
+    /// .stringAttributeType`, so the dictionary row never carries a bridged
+    /// `UUID`/`NSUUID`, only the string CoreStore wrote. `rowUUID` undoes
+    /// that encoding explicitly instead of relying on a cast that can only
+    /// ever fail.
     @MainActor
     public static func voiceRecordingWalkIndex() -> [UUID: (walkUUID: UUID, date: Date)] {
         guard
@@ -178,17 +189,67 @@ extension DataManager {
         var walksByObjectID: [NSManagedObjectID: (walkUUID: UUID, date: Date)] = [:]
         for row in walkRows {
             guard let objectID = row["objectID"] as? NSManagedObjectID,
-                  let walkUUID = row["id"] as? UUID,
+                  let walkUUID = rowUUID(row["id"]),
                   let startDate = row["startDate"] as? Date else { continue }
             walksByObjectID[objectID] = (walkUUID, startDate)
         }
 
         var index: [UUID: (walkUUID: UUID, date: Date)] = [:]
         for row in recordingRows {
-            guard let uuid = row["id"] as? UUID,
+            guard let uuid = rowUUID(row["id"]),
                   let walkObjectID = row["workout"] as? NSManagedObjectID,
                   let walk = walksByObjectID[walkObjectID] else { continue }
             index[uuid] = walk
+        }
+        return index
+    }
+
+    /// Same shape as `transcribedRecordingsSnapshot()` above, scoped to the
+    /// given recordings — for callers (ThreadHistoryView) that already know
+    /// exactly which recordings they need and would otherwise pay for a
+    /// full-history fetch to excerpt a handful of entries. Empty input
+    /// short-circuits without a round trip.
+    @MainActor
+    public static func transcribedRecordingsSnapshot(uuids: Set<UUID>) -> [(uuid: UUID, transcript: String)] {
+        guard !uuids.isEmpty else { return [] }
+        guard let rows = try? dataStack.queryAttributes(
+            From<VoiceRecording>().select(
+                NSDictionary.self,
+                .attribute(\._uuid),
+                .attribute(\._transcription)
+            ).where(Where<VoiceRecording>(\._uuid, isMemberOf: uuids))
+        ) else { return [] }
+        return rows.compactMap { row in
+            guard let uuid = rowUUID(row["id"]),
+                  let transcript = row["transcription"] as? String,
+                  !transcript.isEmpty else { return nil }
+            return (uuid, transcript)
+        }
+    }
+
+    private static func rowUUID(_ raw: Any?) -> UUID? {
+        (raw as? String).flatMap(UUID.init(uuidString:))
+    }
+
+    /// Recording UUID → words-per-minute, for the recap's pace texture. A
+    /// two-column `queryAttributes` fetch mirroring the snapshot queries
+    /// above. Main-actor only, like its neighbors. Same string-backed "id"
+    /// column as `transcribedRecordingsSnapshot` above — `rowUUID` undoes
+    /// CoreStore's `.stringAttributeType` encoding for `UUID` explicitly.
+    @MainActor
+    public static func voiceRecordingPaceIndex() -> [UUID: Double] {
+        guard let rows = try? dataStack.queryAttributes(
+            From<VoiceRecording>().select(
+                NSDictionary.self,
+                .attribute(\._uuid),
+                .attribute(\._wordsPerMinute)
+            )
+        ) else { return [:] }
+        var index: [UUID: Double] = [:]
+        for row in rows {
+            guard let uuid = rowUUID(row["id"]),
+                  let wpm = row["wordsPerMinute"] as? Double else { continue }
+            index[uuid] = wpm
         }
         return index
     }
