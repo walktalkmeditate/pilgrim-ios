@@ -15,6 +15,9 @@ struct PromptListView: View {
     @State private var editingStyle: CustomPromptStyle?
     @State private var activityContext: ActivityContext?
     @State private var customPrompts: [GeneratedPrompt] = []
+    @State private var directives: [String]?
+    @State private var detectedLanguageName: String?
+    @State private var derivationGeneration = 0
 
     var body: some View {
         List {
@@ -104,12 +107,44 @@ struct PromptListView: View {
         .disabled(!customStyleStore.canAddMore)
     }
 
+    /// The dossier build (file I/O + NLP over every stored context) and
+    /// prompt assembly are too heavy for the main actor, which this View's
+    /// methods inherit. CoreStore reads happen here on main; the detached
+    /// task works on plain values only. The generation counter drops stale
+    /// completions: a superseded invocation must never overwrite the @State
+    /// a newer one already assigned.
     private func generatePrompts() {
         guard prompts.isEmpty else { return }
+        derivationGeneration += 1
+        let generation = derivationGeneration
         Task {
-            let context = await buildActivityContext()
+            let baseContext = await buildActivityContext()
+            let walkUUID = walk.uuid
+            let walkIndex = DataManager.voiceRecordingWalkIndex()
+
+            let (context, generated, derived) = await Task.detached(priority: .userInitiated) {
+                var context = baseContext
+                context.threadsDossier = walkUUID.flatMap {
+                    ThreadsDossierBuilder.build(
+                        walkUUID: $0,
+                        recordings: baseContext.recordings,
+                        walkIndex: walkIndex
+                    )
+                }
+                let derived = PromptGenerator.resolvedDerivations(context: context)
+                let generated = PromptGenerator.generateAll(
+                    context: context,
+                    directives: derived.directives,
+                    detectedLanguageName: derived.languageName
+                )
+                return (context, generated, derived)
+            }.value
+
+            guard generation == derivationGeneration else { return }
             activityContext = context
-            prompts = PromptGenerator.generateAll(context: context)
+            prompts = generated
+            directives = derived.directives
+            detectedLanguageName = derived.languageName
             regenerateCustomPrompts()
         }
     }
@@ -129,7 +164,8 @@ struct PromptListView: View {
                 timestamp: recording.startDate,
                 startCoordinate: startCoord,
                 endCoordinate: endCoord,
-                wordsPerMinute: recording.wordsPerMinute
+                wordsPerMinute: recording.wordsPerMinute,
+                recordingUUID: uuid
             )
         }.sorted { $0.timestamp < $1.timestamp }
 
@@ -143,14 +179,6 @@ struct PromptListView: View {
                 label: wp.label, icon: wp.icon, timestamp: wp.timestamp,
                 coordinate: (lat: wp.latitude, lon: wp.longitude)
             )
-        }
-
-        let celestial: CelestialSnapshot?
-        if UserPreferences.celestialAwarenessEnabled.value {
-            let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
-            celestial = CelestialCalculator.snapshot(for: walk.startDate, system: system)
-        } else {
-            celestial = nil
         }
 
         let (photoEntries, narrativeArc) = buildPhotoContext()
@@ -168,7 +196,7 @@ struct PromptListView: View {
             waypoints: waypointContexts,
             weather: ContextFormatter.formatWeather(walk),
             lunarPhase: LunarPhase.current(date: walk.startDate),
-            celestial: celestial,
+            celestial: buildCelestial(),
             photoContexts: photoEntries,
             narrativeArc: narrativeArc,
             mode: practice.mode,
@@ -177,8 +205,15 @@ struct PromptListView: View {
                 PauseContext(startDate: $0.startDate, duration: $0.endDate.timeIntervalSince($0.startDate))
             },
             ascent: walk.ascend,
-            descent: walk.descend
+            descent: walk.descend,
+            threadsDossier: nil
         )
+    }
+
+    private func buildCelestial() -> CelestialSnapshot? {
+        guard UserPreferences.celestialAwarenessEnabled.value else { return nil }
+        let system = ZodiacSystem(rawValue: UserPreferences.zodiacSystem.value) ?? .tropical
+        return CelestialCalculator.snapshot(for: walk.startDate, system: system)
     }
 
     private var practice: (mode: PracticeMode, seekStory: SeekStoryContext?) {
@@ -273,10 +308,31 @@ struct PromptListView: View {
         }
     }
 
+    /// Same shape as generatePrompts: main-actor inputs gathered first,
+    /// assembly detached, @State assigned back on main, stale completions
+    /// dropped by the shared generation counter. The derivations were
+    /// resolved once by generatePrompts (via resolvedDerivations) and are
+    /// always populated here — a non-nil activityContext guarantees it.
     private func regenerateCustomPrompts() {
         guard let context = activityContext else { return }
-        customPrompts = customStyleStore.styles.map { customStyle in
-            PromptGenerator.generateCustom(customStyle: customStyle, context: context)
+        derivationGeneration += 1
+        let generation = derivationGeneration
+        let styles = customStyleStore.styles
+        let cachedDirectives = directives
+        let cachedLanguageName = detectedLanguageName
+        Task {
+            let generated = await Task.detached(priority: .userInitiated) {
+                styles.map { customStyle in
+                    PromptGenerator.generateCustom(
+                        customStyle: customStyle,
+                        context: context,
+                        directives: cachedDirectives,
+                        detectedLanguageName: cachedLanguageName
+                    )
+                }
+            }.value
+            guard generation == derivationGeneration else { return }
+            customPrompts = generated
         }
     }
 

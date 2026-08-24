@@ -1,5 +1,6 @@
 import XCTest
 import ZIPFoundation
+import CoreStore
 @testable import Pilgrim
 
 /// Integration coverage for `PilgrimPackageImporter.unpackAndDecode`.
@@ -247,7 +248,10 @@ final class PilgrimPackageImporterTests: XCTestCase {
         return archiveURL
     }
 
-    private func makeMinimalPilgrimWalk(photos: [PilgrimPhoto]?) -> PilgrimWalk {
+    private func makeMinimalPilgrimWalk(
+        photos: [PilgrimPhoto]?,
+        voiceRecordings: [PilgrimVoiceRecording] = []
+    ) -> PilgrimWalk {
         PilgrimWalk(
             schemaVersion: "1.0",
             id: UUID(),
@@ -265,7 +269,7 @@ final class PilgrimPackageImporterTests: XCTestCase {
             route: GeoJSONFeatureCollection(features: []),
             pauses: [],
             activities: [],
-            voiceRecordings: [],
+            voiceRecordings: voiceRecordings,
             intention: nil,
             reflection: nil,
             heartRates: [],
@@ -275,6 +279,64 @@ final class PilgrimPackageImporterTests: XCTestCase {
             isUserModified: false,
             finishedRecording: true,
             photos: photos
+        )
+    }
+
+    // MARK: - Scoped tombstone clearing (import success)
+
+    /// Imported recording UUIDs are minted fresh by the converter during
+    /// decode, so a *pre*-tombstoned imported UUID cannot exist — the
+    /// invariant the scoped clearing must uphold at this level is the
+    /// complement: an unrelated tombstone (protecting a pending deletion)
+    /// survives the import instead of being wiped wholesale.
+    func testImportSuccess_leavesUnrelatedTombstonesInForce() throws {
+        let previousStack: DataStack? = DataManager.dataStack
+        let savedCompleted = UserDefaults.standard.object(forKey: ThreadsBackfill.completedKey)
+        let unrelated = UUID()
+        defer {
+            DataManager.dataStack = previousStack
+            if let savedCompleted {
+                UserDefaults.standard.set(savedCompleted, forKey: ThreadsBackfill.completedKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: ThreadsBackfill.completedKey)
+            }
+            TranscriptContextStore.shared.clearTombstones(for: [unrelated])
+            TranscriptContextStore.shared.removeContext(for: unrelated)
+        }
+        let stack = DataStack(PilgrimV7.schema)
+        try stack.addStorageAndWait(InMemoryStore())
+        DataManager.dataStack = stack
+
+        TranscriptContextStore.shared.insertTombstones(for: [unrelated])
+
+        let recording = PilgrimVoiceRecording(
+            startDate: Date(timeIntervalSince1970: 1710000300),
+            endDate: Date(timeIntervalSince1970: 1710000345),
+            duration: 45,
+            transcription: "still thinking about the move",
+            wordsPerMinute: nil,
+            isEnhanced: false
+        )
+        let walk = makeMinimalPilgrimWalk(photos: nil, voiceRecordings: [recording])
+        let archive = try buildFixtureArchive(walks: [walk], includePhotosDirectory: false)
+
+        let done = expectation(description: "import")
+        var summary: ImportSummary?
+        PilgrimPackageImporter.importPackage(from: archive) { result in
+            if case .success(let value) = result { summary = value }
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 10)
+
+        XCTAssertEqual(summary?.added, 1, "the fixture walk must import cleanly")
+        TranscriptContextStore.shared.save(TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion,
+            recordingUUID: unrelated, transcriptHash: "h", languageCode: "en",
+            wordCount: 1, themes: [], markers: nil
+        ))
+        XCTAssertFalse(
+            TranscriptContextStore.shared.hasContext(for: unrelated),
+            "import success clears only the imported recordings' tombstones — unrelated protection stays in force"
         )
     }
 }

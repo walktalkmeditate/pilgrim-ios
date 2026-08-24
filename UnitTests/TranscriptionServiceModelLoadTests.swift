@@ -5,7 +5,7 @@ import XCTest
 /// about lifecycle, never about transcription output.
 private final class FakeEngine: TranscriptionEngine {
     func transcribeAudio(atPath path: String) async throws -> TranscriptionOutput {
-        TranscriptionOutput(text: "", wordsPerMinute: nil)
+        TranscriptionOutput(text: "", wordsPerMinute: nil, flaggedFragments: [])
     }
     func unloadModels() async {}
 }

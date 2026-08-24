@@ -5,6 +5,7 @@ struct VoiceCard: View {
     @State private var voiceGuideEnabled = UserPreferences.voiceGuideEnabled.value
     @State private var dynamicVoiceEnabled = UserPreferences.dynamicVoiceEnabled.value
     @State private var autoTranscribe = UserPreferences.autoTranscribe.value
+    @State private var threadsAfterWalks = UserPreferences.threadsAfterWalks.value
     @State private var recordingCount = 0
     @State private var recordingSizeMB: Double = 0
     @ObservedObject private var transcriptionService = TranscriptionService.shared
@@ -45,6 +46,14 @@ struct VoiceCard: View {
                 isOn: $autoTranscribe
             ) { newValue in
                 handleAutoTranscribeChange(newValue)
+            }
+
+            settingToggle(
+                label: "Thought Threads",
+                description: "Weave recurring themes from your recordings into AI prompts",
+                isOn: $threadsAfterWalks
+            ) { newValue in
+                ThreadsBackfill.setEnabled(newValue)
             }
 
             if case .downloadingModel(let progress) = transcriptionService.state {

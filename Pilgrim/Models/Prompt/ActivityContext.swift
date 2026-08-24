@@ -54,6 +54,7 @@ struct ActivityContext {
     let pauses: [PauseContext]
     let ascent: Double?
     let descent: Double?
+    var threadsDossier: String?
 
     var hasSpeech: Bool { !recordings.isEmpty }
 }
@@ -79,7 +80,8 @@ extension ActivityContext {
         seekStory: SeekStoryContext? = nil,
         pauses: [PauseContext] = [],
         ascent: Double? = nil,
-        descent: Double? = nil
+        descent: Double? = nil,
+        threadsDossier: String? = nil
     ) -> ActivityContext {
         ActivityContext(
             recordings: recordings,
@@ -101,7 +103,8 @@ extension ActivityContext {
             seekStory: seekStory,
             pauses: pauses,
             ascent: ascent,
-            descent: descent
+            descent: descent,
+            threadsDossier: threadsDossier
         )
     }
 }

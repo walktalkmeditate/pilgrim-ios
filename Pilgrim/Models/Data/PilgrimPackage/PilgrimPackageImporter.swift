@@ -66,12 +66,29 @@ enum PilgrimPackageImporter {
         completion: @escaping (Result<ImportSummary, PilgrimPackageError>) -> Void
     ) {
         let completion = safeClosure(from: completion)
-
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let package = try unpackAndDecode(from: url)
+                // The converter mints these UUIDs during decode — the same
+                // ones `persistVoiceRecordings` writes — so the decoded
+                // package is where they are in hand. Clearing is scoped to
+                // exactly this import: a stale tombstone on an imported UUID
+                // would silently block its analysis, while tombstones
+                // protecting unrelated pending deletions must stay in force.
+                // The backfill reset makes the next launch sweep the imported
+                // recordings, which bypass the per-recording analysis choke
+                // point (`updateVoiceRecordingTranscription`); origin labels
+                // correctly re-suppress until the sweep completes.
+                let importedRecordingUUIDs = package.walks
+                    .flatMap { $0.voiceRecordings.compactMap(\.uuid) }
                 DispatchQueue.main.async {
-                    saveData(package: package, completion: completion)
+                    saveData(package: package) { result in
+                        if case .success = result {
+                            TranscriptContextStore.shared.clearTombstones(for: importedRecordingUUIDs)
+                            ThreadsBackfill.reset()
+                        }
+                        completion(result)
+                    }
                 }
             } catch let error as PilgrimPackageError {
                 completion(.failure(error))

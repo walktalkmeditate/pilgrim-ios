@@ -1,4 +1,5 @@
 import XCTest
+import NaturalLanguage
 @testable import Pilgrim
 
 /// The assembler injects a dossier of context; attention directives turn it
@@ -87,6 +88,33 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertTrue(joined(context).contains("surfaces again"))
     }
 
+    func testIntentionEcho_inflectedSurface_quotesSpokenFormWithoutAgain() {
+        let context = ActivityContext.make(
+            recordings: [recording("worrying through the pines")],
+            startDate: start,
+            intention: "worry less"
+        )
+        let text = joined(context)
+        XCTAssertTrue(text.contains("'worrying' surfaces in"),
+                      "the echo must quote what the walker actually said")
+        XCTAssertFalse(text.contains("surfaces again"),
+                       "'again' is only honest for an exact surface repeat")
+    }
+
+    func testIntentionEcho_mixedInflections_prefersExactSurfaceAcrossMentions() {
+        let context = ActivityContext.make(
+            recordings: [recording("worrying on the way out, but the worry itself eased by the bridge")],
+            startDate: start,
+            intention: "worry less"
+        )
+        let text = joined(context)
+        XCTAssertTrue(text.contains("'worry' surfaces again"),
+                      "an exact surface repeat anywhere in the spoken mentions earns 'again', "
+                      + "even when an inflection appears first")
+        XCTAssertFalse(text.contains("'worrying' surfaces"),
+                       "the exact match outranks the earlier inflected mention")
+    }
+
     func testIntentionEcho_noOverlap_doesNotFire() {
         let context = ActivityContext.make(
             recordings: [recording("The bakery smelled wonderful this morning")],
@@ -168,5 +196,43 @@ final class AttentionDirectivesTests: XCTestCase {
         )
         let tellingPrompt = PromptGenerator.generate(style: .reflective, context: telling)
         XCTAssertTrue(tellingPrompt.text.contains("**Attend to:**"))
+    }
+
+    // MARK: - Semantic upgrade (Thought Threads Stage 1)
+
+    func testIntentionEcho_lemmaVariantFires() throws {
+        try XCTSkipIf(NLEmbedding.wordEmbedding(for: .english) == nil,
+                      "word embeddings unavailable in this environment")
+        let context = ActivityContext.make(
+            recordings: [recording("I have been grieving all morning on this path")],
+            startDate: start,
+            intention: "sit with grief"
+        )
+        XCTAssertTrue(joined(context).contains("intention spoke of"))
+    }
+
+    func testIntentionEcho_sharedLemmaFires() {
+        let context = ActivityContext.make(
+            recordings: [recording("walking my worry out under the pines")],
+            startDate: start,
+            intention: "worry less"
+        )
+        XCTAssertTrue(joined(context).contains("intention spoke of"))
+    }
+
+    func testRecurringWord_countsAcrossInflections() {
+        let context = ActivityContext.make(
+            recordings: [recording("Moving is hard. We moved before. This move feels different.")],
+            startDate: start
+        )
+        XCTAssertTrue(joined(context).contains("returns 3 times"))
+    }
+
+    func testRecurringWord_ignoresFunctionWordsWithoutStoplist() {
+        let context = ActivityContext.make(
+            recordings: [recording("because because because because the the the the")],
+            startDate: start
+        )
+        XCTAssertFalse(joined(context).contains("returns"))
     }
 }

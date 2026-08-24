@@ -9,12 +9,20 @@ enum AttentionDirectives {
     private static let movingThreshold = 0.3
     private static let maxDirectives = 4
 
-    static func detect(context: ActivityContext) -> [String] {
+    /// `detectedLanguageCode` defaults to nil ("detect here") so direct
+    /// callers stay unchanged; PromptGenerator.resolvedDerivations passes
+    /// its precomputed code so the echo skips its own detection pass.
+    static func detect(context: ActivityContext, detectedLanguageCode: String? = nil) -> [String] {
+        // Lemmatizing the full transcript is the expensive step; do it once
+        // here and share it between the two detectors that need it.
+        let spokenMentions = context.hasSpeech
+            ? TranscriptNLP.contentLemmaMentions(in: context.recordings.map(\.text).joined(separator: " "))
+            : []
         let directives = [
             stillness(context),
             paceShift(context),
-            intentionEcho(context),
-            recurringWord(context),
+            intentionEcho(context, spokenMentions: spokenMentions, detectedLanguageCode: detectedLanguageCode),
+            recurringWord(context, spokenMentions: spokenMentions),
             firstVersusLast(context)
         ].compactMap { $0 }
         return Array(directives.prefix(maxDirectives))
@@ -67,51 +75,60 @@ enum AttentionDirectives {
     }
 
     /// A word from the stated intention resurfacing in the walker's own
-    /// spoken words.
-    private static func intentionEcho(_ context: ActivityContext) -> String? {
+    /// spoken words — by exact surface first (searched across ALL spoken
+    /// mentions, so "worrying ... worry" still earns "again"), by shared
+    /// lemma second, by embedding nearness third. "Again" is only honest
+    /// when the walker repeated the exact surface; an inflection
+    /// ("worrying" for "worry") quotes what was actually said.
+    private static func intentionEcho(
+        _ context: ActivityContext,
+        spokenMentions spoken: [TranscriptNLP.LemmaMention],
+        detectedLanguageCode: String?
+    ) -> String? {
         guard let intention = context.intention, context.hasSpeech else { return nil }
-        let spoken = contentWords(in: context.recordings.map(\.text).joined(separator: " "))
-        guard let echoed = contentWords(in: intention).first(where: { spoken.contains($0) }) else {
-            return nil
+        guard !spoken.isEmpty else { return nil }
+        let spokenText = context.recordings.map(\.text).joined(separator: " ")
+        let language = detectedLanguageCode ?? TranscriptNLP.detectLanguage(spokenText) ?? "en"
+
+        for word in TranscriptNLP.contentLemmaMentions(in: intention) {
+            if spoken.contains(where: { $0.lemma == word.lemma && $0.surface == word.surface }) {
+                return "The walker's intention spoke of '\(word.surface)', and '\(word.surface)' surfaces again in their spoken words — trace how it traveled."
+            }
+            if let match = spoken.first(where: { $0.lemma == word.lemma }) {
+                return "The walker's intention spoke of '\(word.surface)', and '\(match.surface)' surfaces in their spoken words — trace how it traveled."
+            }
+            if let match = spoken.first(where: { TranscriptNLP.related(word.lemma, $0.lemma, languageCode: language) }) {
+                return "The walker's intention spoke of '\(word.surface)', and '\(match.surface)' surfaces in their spoken words — trace how it traveled."
+            }
         }
-        return "The walker's intention spoke of '\(echoed)', and '\(echoed)' surfaces again in their spoken words — trace how it traveled."
+        return nil
     }
 
-    /// The most-repeated content word across all recordings, excluding any
-    /// word the intention-echo directive already claimed.
-    private static func recurringWord(_ context: ActivityContext) -> String? {
+    /// The most-repeated content lemma across all recordings, excluding any
+    /// lemma the intention already claimed. Shown as its most frequent
+    /// surface form so the walker's own inflection is echoed back.
+    private static func recurringWord(_ context: ActivityContext, spokenMentions mentions: [TranscriptNLP.LemmaMention]) -> String? {
         guard context.hasSpeech else { return nil }
-        let intentionWords = context.intention.map { Set(contentWords(in: $0)) } ?? []
+        let intentionLemmas = context.intention
+            .map { Set(TranscriptNLP.contentLemmas(in: $0)) } ?? []
 
         var counts: [String: Int] = [:]
-        for word in contentWords(in: context.recordings.map(\.text).joined(separator: " ")) where !intentionWords.contains(word) {
-            counts[word, default: 0] += 1
+        var surfaces: [String: [String: Int]] = [:]
+        for mention in mentions where !intentionLemmas.contains(mention.lemma) {
+            counts[mention.lemma, default: 0] += 1
+            surfaces[mention.lemma, default: [:]][mention.surface, default: 0] += 1
         }
 
-        guard let (word, count) = counts.filter({ $0.value >= 3 })
+        guard let (lemma, count) = counts.filter({ $0.value >= 3 })
             .min(by: { ($0.value, $1.key) > ($1.value, $0.key) }) else { return nil }
+        let display = surfaces[lemma]?
+            .min(by: { ($0.value, $1.key) > ($1.value, $0.key) })?.key ?? lemma
 
-        return "The word '\(word)' returns \(count) times across the recordings — it may be doing quiet work."
+        return "The word '\(display)' returns \(count) times across the recordings — it may be doing quiet work."
     }
 
     private static func firstVersusLast(_ context: ActivityContext) -> String? {
         guard context.recordings.count >= 2 else { return nil }
         return "Compare the first recording with the last — measure what changed in the walker between them."
-    }
-
-    // MARK: - Words
-
-    private static let stopwords: Set<String> = [
-        "the", "and", "that", "this", "with", "from", "have", "what", "your",
-        "them", "they", "been", "were", "will", "would", "could", "should",
-        "about", "into", "just", "like", "know", "then", "there", "when",
-        "where", "which", "while", "because", "again", "back", "keep",
-        "still", "very", "really", "today", "cannot", "something"
-    ]
-
-    private static func contentWords(in text: String) -> [String] {
-        text.lowercased()
-            .components(separatedBy: CharacterSet.letters.inverted)
-            .filter { $0.count > 3 && !stopwords.contains($0) }
     }
 }

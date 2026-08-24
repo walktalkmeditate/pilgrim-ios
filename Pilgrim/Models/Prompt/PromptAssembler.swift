@@ -2,7 +2,16 @@ import Foundation
 
 enum PromptAssembler {
 
-    static func assemble(context: ActivityContext, voice: PromptVoice) -> String {
+    /// `directives` and `detectedLanguageName` default to nil, meaning
+    /// "compute here" — single-style callers stay unchanged, while
+    /// `generateAll` computes both once and fans them out so a screen-open
+    /// pays for one NLP pass instead of one per style.
+    static func assemble(
+        context: ActivityContext,
+        voice: PromptVoice,
+        directives: [String]? = nil,
+        detectedLanguageName: String? = nil
+    ) -> String {
         let metadata = ContextFormatter.formatMetadata(
             duration: context.duration,
             distance: context.distance,
@@ -21,7 +30,11 @@ enum PromptAssembler {
             sections += " | \(weather)"
         }
         sections += contextDossier(context: context)
-        sections += walkRecord(context: context)
+        sections += walkRecord(
+            context: context,
+            directives: directives,
+            detectedLanguageName: detectedLanguageName
+        )
 
         var fullInstruction = voice.instruction(hasSpeech: context.hasSpeech)
         if let intention = context.intention {
@@ -29,7 +42,7 @@ enum PromptAssembler {
         }
 
         sections += "\n\n---\n\n\(fullInstruction)"
-        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech))"
+        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, hasThreadsDossier: context.threadsDossier != nil))"
         return sections
     }
 
@@ -78,14 +91,39 @@ enum PromptAssembler {
         return sections
     }
 
+    /// Language code of the transcript's dominant language, or nil when no
+    /// language clears the recognizer's confidence bar.
+    static func detectedLanguageCode(context: ActivityContext) -> String? {
+        guard context.hasSpeech else { return nil }
+        return TranscriptNLP.detectLanguage(context.recordings.map(\.text).joined(separator: " "))
+    }
+
+    /// English display name of the transcript's dominant language.
+    static func detectedLanguageName(context: ActivityContext) -> String? {
+        languageName(forCode: detectedLanguageCode(context: context))
+    }
+
+    static func languageName(forCode code: String?) -> String? {
+        code.flatMap { Locale(identifier: "en").localizedString(forLanguageCode: $0) }
+    }
+
     /// What the walk produced — words, stillness, continuity with recent
     /// walks — closed by the directives that point at its patterns.
-    private static func walkRecord(context: ActivityContext) -> String {
+    private static func walkRecord(
+        context: ActivityContext,
+        directives: [String]?,
+        detectedLanguageName: String?
+    ) -> String {
         var sections = ""
 
         let transcription = ContextFormatter.formatRecordings(context.recordings)
         if !transcription.isEmpty {
             sections += "\n\n**Walking Transcription:**\n\n\(transcription)"
+        }
+
+        if !transcription.isEmpty,
+           let name = detectedLanguageName ?? Self.detectedLanguageName(context: context) {
+            sections += "\n\n**Detected language:** \(name)"
         }
 
         if let meditations = ContextFormatter.formatMeditations(context.meditations) {
@@ -96,9 +134,13 @@ enum PromptAssembler {
             sections += "\n\n\(recentWalks)"
         }
 
-        let directives = AttentionDirectives.detect(context: context)
-        if !directives.isEmpty {
-            let bullets = directives.map { "- \($0)" }.joined(separator: "\n")
+        if let dossier = context.threadsDossier {
+            sections += "\n\n\(dossier)"
+        }
+
+        let resolvedDirectives = directives ?? AttentionDirectives.detect(context: context)
+        if !resolvedDirectives.isEmpty {
+            let bullets = resolvedDirectives.map { "- \($0)" }.joined(separator: "\n")
             sections += "\n\n**Attend to:**\n\(bullets)"
         }
 
@@ -132,11 +174,14 @@ enum PromptAssembler {
     /// do (invent, flatten, switch language) plus the voice's own form
     /// constraints. This shapes the *reply's* quality — the part of the
     /// feature the walker actually experiences.
-    static func responseContract(voice: PromptVoice, hasSpeech: Bool) -> String {
+    static func responseContract(voice: PromptVoice, hasSpeech: Bool, hasThreadsDossier: Bool) -> String {
         var lines = voice.responseConstraints(hasSpeech: hasSpeech)
         if hasSpeech {
             lines.append("Respond in the language the walker speaks in the transcription.")
             lines.append("If more than one voice appears in the transcription, honor it as a conversation — attend to what happened between the speakers, and never guess at names.")
+        }
+        if hasThreadsDossier {
+            lines.append("The thought-thread marker profiles are descriptive on-device linguistic signals, not assessments — interpret them gently, never produce clinical or diagnostic language, and never treat a single walk's numbers as meaningful on their own.")
         }
         lines.append("Draw only on what this walk actually holds — never invent details, events, or memories that are not in the context above.")
         let bullets = lines.map { "- \($0)" }.joined(separator: "\n")

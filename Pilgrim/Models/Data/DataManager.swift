@@ -25,9 +25,12 @@ import CoreLocation
 
 /// A structure holding static instances and methods for database management and manipulation
 struct DataManager {
-    
+
+    /// Injection seam for tests; production always uses the shared store.
+    static var transcriptContextStore: TranscriptContextStore = .shared
+
     // MARK: - Database setup
-    
+
     /// static optional instance of the local storage holding the walk data
     private static var storage: SQLiteStore?
     
@@ -508,126 +511,6 @@ struct DataManager {
         }
     }
     
-    // MARK: - Voice Recording
-
-    private static func cleanupRecordingFiles(relativePaths: [String]) {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        for path in relativePaths {
-            let url = docs.appendingPathComponent(path)
-            try? FileManager.default.removeItem(at: url)
-            let parent = url.deletingLastPathComponent()
-            let remaining = (try? FileManager.default.contentsOfDirectory(at: parent, includingPropertiesForKeys: nil)) ?? []
-            if remaining.isEmpty {
-                try? FileManager.default.removeItem(at: parent)
-            }
-        }
-    }
-
-    private static func cleanupEmptyRecordingsDirectory() {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let recordingsDir = docs.appendingPathComponent("Recordings")
-        let contents = (try? FileManager.default.contentsOfDirectory(at: recordingsDir, includingPropertiesForKeys: nil)) ?? []
-        if contents.isEmpty {
-            try? FileManager.default.removeItem(at: recordingsDir)
-        }
-    }
-
-    public static func deleteRecordingFile(relativePath: String) {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let fileURL = docs.appendingPathComponent(relativePath)
-        try? FileManager.default.removeItem(at: fileURL)
-        let parent = fileURL.deletingLastPathComponent()
-        let remaining = (try? FileManager.default.contentsOfDirectory(at: parent, includingPropertiesForKeys: nil)) ?? []
-        if remaining.isEmpty {
-            try? FileManager.default.removeItem(at: parent)
-        }
-        cleanupEmptyRecordingsDirectory()
-    }
-
-    public static func recordingFileCount() -> Int {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let recordingsDir = docs.appendingPathComponent("Recordings")
-        guard let enumerator = FileManager.default.enumerator(at: recordingsDir, includingPropertiesForKeys: nil) else { return 0 }
-        var count = 0
-        for case let url as URL in enumerator where url.pathExtension == "m4a" {
-            count += 1
-        }
-        return count
-    }
-
-    public static func deleteAllRecordingFiles() {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let recordingsDir = docs.appendingPathComponent("Recordings")
-        try? FileManager.default.removeItem(at: recordingsDir)
-    }
-
-    /// Completion reports `false` both when the transaction fails AND when
-    /// the recording row no longer exists (e.g. replaced by a concurrent
-    /// tended import) — callers must not treat either case as "saved".
-    /// The `dataStack` parameter exists so tests can supply an in-memory
-    /// stack; production call sites use the default.
-    public static func updateVoiceRecordingTranscription(
-        uuid: UUID,
-        transcription: String,
-        dataStack: DataStack = DataManager.dataStack,
-        completion: ((Bool) -> Void)? = nil
-    ) {
-        updateVoiceRecording(uuid: uuid, dataStack: dataStack, completion: completion, failureLabel: "transcription") {
-            $0._transcription .= transcription
-        }
-    }
-
-    public static func updateVoiceRecordingWordsPerMinute(
-        uuid: UUID,
-        wordsPerMinute: Double,
-        dataStack: DataStack = DataManager.dataStack,
-        completion: ((Bool) -> Void)? = nil
-    ) {
-        updateVoiceRecording(uuid: uuid, dataStack: dataStack, completion: completion, failureLabel: "WPM") {
-            $0._wordsPerMinute .= wordsPerMinute
-        }
-    }
-
-    public static func updateVoiceRecordingIsEnhanced(
-        uuid: UUID,
-        isEnhanced: Bool,
-        dataStack: DataStack = DataManager.dataStack,
-        completion: ((Bool) -> Void)? = nil
-    ) {
-        updateVoiceRecording(uuid: uuid, dataStack: dataStack, completion: completion, failureLabel: "isEnhanced") {
-            $0._isEnhanced .= isEnhanced
-        }
-    }
-
-    private static func updateVoiceRecording(
-        uuid: UUID,
-        dataStack: DataStack,
-        completion: ((Bool) -> Void)?,
-        failureLabel: String,
-        applyEdit: @escaping (VoiceRecording) -> Void
-    ) {
-        dataStack.perform(asynchronous: { transaction -> Bool in
-            guard let recording = transaction.edit(
-                queryObject(from: uuid, transaction: transaction) as VoiceRecording?
-            ) else {
-                return false
-            }
-            applyEdit(recording)
-            return true
-        }) { result in
-            switch result {
-            case .success(let found):
-                if !found {
-                    print("[DataManager] \(failureLabel) update skipped — recording \(uuid) no longer exists")
-                }
-                completion?(found)
-            case .failure(let error):
-                print("[DataManager] Failed to update \(failureLabel) for \(uuid): \(error)")
-                completion?(false)
-            }
-        }
-    }
-
     // MARK: - Favicon
 
     public static func setFavicon(walkID: UUID, favicon: WalkFavicon?) {
@@ -903,20 +786,23 @@ struct DataManager {
 
         let walkUUID = (object as? Walk)?.uuid
 
-        dataStack.perform(asynchronous: { (transaction) -> [String] in
+        dataStack.perform(asynchronous: { (transaction) -> ([String], [UUID]) in
 
             var filePaths: [String] = []
+            var recordingUUIDs: [UUID] = []
             if let walk = object as? Walk,
                let editable = transaction.edit(walk) {
                 filePaths = editable._voiceRecordings.value.compactMap { $0._fileRelativePath.value }
+                recordingUUIDs = editable._voiceRecordings.value.compactMap { $0._uuid.value }
             }
             transaction.delete(object)
-            return filePaths
+            return (filePaths, recordingUUIDs)
 
         }) { (result) in
             switch result {
-            case .success(let filePaths):
+            case .success(let (filePaths, recordingUUIDs)):
                 cleanupRecordingFiles(relativePaths: filePaths)
+                transcriptContextStore.delete(recordingUUIDs: recordingUUIDs)
                 if let uuid = walkUUID {
                     UserPreferences.unmarkWalkArchived(uuid: uuid)
                 }
@@ -936,7 +822,9 @@ struct DataManager {
      */
     public static func deleteAll(completion: @escaping (_ success: Bool, _ error: DataManager.DeleteError?) -> Void) {
 
-        let allRecordingPaths: [String] = (try? dataStack.fetchAll(From<VoiceRecording>()))?.compactMap { $0._fileRelativePath.value } ?? []
+        let allRecordings = (try? dataStack.fetchAll(From<VoiceRecording>())) ?? []
+        let allRecordingPaths = allRecordings.compactMap { $0._fileRelativePath.value }
+        let allRecordingUUIDs = allRecordings.compactMap { $0._uuid.value }
 
         dataStack.perform(asynchronous: { transaction in
 
@@ -956,6 +844,13 @@ struct DataManager {
             case .success:
                 cleanupRecordingFiles(relativePaths: allRecordingPaths)
                 cleanupEmptyRecordingsDirectory()
+                // Tombstone every known recording UUID explicitly BEFORE the
+                // wipe: deleteAll() only tombstones files already on disk, so
+                // an in-flight analysis queued before the wipe could still
+                // write afterward. Kept synchronous on purpose — ordering
+                // safety on this rare destructive op beats micro-latency.
+                transcriptContextStore.insertTombstones(for: allRecordingUUIDs)
+                transcriptContextStore.deleteAll()
                 UserPreferences.clearArchivedRegistry()
                 completion(true, nil)
             case .failure(let error):
