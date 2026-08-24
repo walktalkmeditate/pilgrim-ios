@@ -194,7 +194,7 @@ struct WalkSummaryView: View {
             .onReceive(CollectiveRouteCatalogService.shared.$catalog) { catalog in
                 resolveCollectiveContributionLine(from: catalog)
             }
-            .task(id: transcriptions.count) {
+            .task(id: transcriptions) {
                 await loadThreadsCard()
             }
             .sheet(isPresented: $showPrompts) {

@@ -32,6 +32,9 @@ struct DataManager {
     /// Injection seam for tests; production always uses the shared store.
     static var releasedThreadsStore: ReleasedThreadsStore = .shared
 
+    /// Injection seam for tests; production always uses the shared state.
+    static var lunationRecapState: LunationRecapState = .shared
+
     // MARK: - Database setup
 
     /// static optional instance of the local storage holding the walk data
@@ -856,7 +859,7 @@ struct DataManager {
                 transcriptContextStore.deleteAll()
                 UserPreferences.clearArchivedRegistry()
                 releasedThreadsStore.clear()
-                LunationRecapState.shared.clear()
+                lunationRecapState.clear()
                 UserPreferences.threadsReleaseCaptionShown.value = false
                 completion(true, nil)
             case .failure(let error):

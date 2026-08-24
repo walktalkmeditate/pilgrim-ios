@@ -11,6 +11,10 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
     private var store: TranscriptContextStore!
     private var directory: URL!
     private var previousDataStack: DataStack!
+    private var recapSuiteName: String!
+    private var recapDefaults: UserDefaults!
+    private var recapState: LunationRecapState!
+    private var savedCaptionShown: Bool!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -23,9 +27,19 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
             .appendingPathComponent("ThreadsDeletionTests-\(UUID().uuidString)")
         store = TranscriptContextStore(directory: directory)
         DataManager.transcriptContextStore = store
+
+        recapSuiteName = "DataManagerThreadsDeletionTests-\(UUID().uuidString)"
+        recapDefaults = UserDefaults(suiteName: recapSuiteName)
+        recapState = LunationRecapState(defaults: recapDefaults)
+        DataManager.lunationRecapState = recapState
+
+        savedCaptionShown = UserPreferences.threadsReleaseCaptionShown.value
     }
 
     override func tearDownWithError() throws {
+        UserPreferences.threadsReleaseCaptionShown.value = savedCaptionShown
+        DataManager.lunationRecapState = .shared
+        recapDefaults.removePersistentDomain(forName: recapSuiteName)
         DataManager.transcriptContextStore = .shared
         DataManager.dataStack = previousDataStack
         try? FileManager.default.removeItem(at: directory)
@@ -133,12 +147,8 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
     }
 
     func testDeleteAll_clearsRecapStateAndCaptionFlag() {
-        let savedCaptionShown = UserPreferences.threadsReleaseCaptionShown.value
-        defer { UserPreferences.threadsReleaseCaptionShown.value = savedCaptionShown }
-
-        LunationRecapState.shared.clear()
-        LunationRecapState.shared.markFirstCardShown()
-        LunationRecapState.shared.markActedOn(LunationCalendar.lunation(at: 300))
+        recapState.markFirstCardShown()
+        recapState.markActedOn(LunationCalendar.lunation(at: 300))
         UserPreferences.threadsReleaseCaptionShown.value = true
 
         let deleted = expectation(description: "deleted all")
@@ -147,9 +157,9 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
             deleted.fulfill()
         }
         wait(for: [deleted], timeout: 5)
-        XCTAssertNil(LunationRecapState.shared.firstCardShownAt,
+        XCTAssertNil(recapState.firstCardShownAt,
                      "the first-card gate re-arms — a wipe is a fresh start, like a reinstall")
-        XCTAssertNil(LunationRecapState.shared.lastActedLunationIndex)
+        XCTAssertNil(recapState.lastActedLunationIndex)
         XCTAssertFalse(UserPreferences.threadsReleaseCaptionShown.value)
     }
 }
