@@ -254,8 +254,7 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
 
     // MARK: - Snapshot queries (Threads/Lunation) — dataStack is a static
     // default on these, not an injectable parameter, so swap-and-restore
-    // DataManager.dataStack the way ThreadsCardModelTests/
-    // DataManagerThreadsDeletionTests do.
+    // DataManager.dataStack the way DataManagerThreadsDeletionTests does.
 
     @MainActor
     func test_transcribedRecordingsSnapshot_returnsTranscribedRecordings() throws {
