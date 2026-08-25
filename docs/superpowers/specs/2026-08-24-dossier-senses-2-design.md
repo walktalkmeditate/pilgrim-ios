@@ -45,6 +45,8 @@
 
 A recording participates in location claims only when its nearest `routeData` sample is within **90 seconds** of the recording's start AND the codebase's existing accuracy discipline holds (`horizontalAccuracy < 100 m`, matching `LocationManagement`). A recording that fails either check simply doesn't participate — same fallback as walks without route data. GPS-paused stretches, indoor starts, and cold-fix garbage never anchor a claim.
 
+> **Implementation note (added at plan review):** the accuracy floor (`horizontalAccuracy < 100 m`) reuses `LocationManagement`'s existing discipline verbatim. The 90-second recording↔sample gap is a **new threshold**, not previously precedented in the codebase — treat it as provisional, field-tunable at the ship gate like the priority order.
+
 ## The senses
 
 ### Track 1 — Place-theme resonance (cross-walk)
@@ -55,11 +57,11 @@ When a theme has mentions on ≥2 distinct walks whose recording coordinates fal
 
 (K = the cluster's actual mention count, substituted; "twice" only when K is literally 2.)
 
-- **Specificity guard (binding)**: for a walker whose recordings all cluster (a daily neighborhood loop), every theme trivially satisfies a 150 m radius and the claim means nothing. The sense emits only when the theme's cluster radius is **at most half** the walker's baseline in-window recording spread (median pairwise distance across ALL in-window mention recordings). Routine geography suppresses the sense; genuine place-theme affinity survives.
+- **Specificity guard (binding)**: for a walker whose recordings all cluster (a daily neighborhood loop), every theme trivially satisfies a 150 m radius and the claim means nothing. The sense emits only when the theme's cluster radius is **at most half** the walker's baseline in-window recording spread (median pairwise distance across ALL in-window mention recordings). Routine geography suppresses the sense; genuine place-theme affinity survives. **Implementation note (added at plan review):** implemented as strict `spread < baseline / 2`, so the degenerate case where every in-window recording shares one spot (baseline 0) suppresses outright rather than dividing by zero — an accepted refinement of "at most half."
 - Clustering: pairwise distance between mention-recording coordinates; a cluster is ≥2 mentions from ≥2 distinct walks within the radius. No geocoding, no place names in v1 (offline-safe, nothing to leak); "the same stretch of ground" is the whole location claim.
 - Coordinate resolution: per the Coordinate hygiene section — per-recording timestamps, bounded fetch, accuracy + time-gap gated.
 - Gates: `backfillComplete` (origin-class claim), ≥2 distinct walks in the standard 30-day window.
-- Cost bound: only themes already in the dossier's thread section are checked (≤4), only their mention recordings' coordinates are resolved.
+- Cost bound: only themes already in the dossier's thread section are checked (≤4), only their mention recordings' coordinates are resolved. **Implementation note (added at plan review):** the shipped thread section is uncapped in code — there's no existing ≤4 limit to "check." The plan introduces an explicit `placeCandidateThemeCap = 4`, checking only the first 4 active threads in the section's own (lemma-sorted) order. Adjudicated sound at plan review: it matches this bullet's cost-bound intent.
 
 ### Track 2 — The moon line (once per lunation)
 

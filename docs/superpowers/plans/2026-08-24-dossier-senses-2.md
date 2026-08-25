@@ -17,10 +17,10 @@
 **Binding thresholds and gates (verbatim from the spec — do not tune):**
 
 - **Place-theme resonance:** mentions on ≥2 distinct walks whose recording coordinates fall within a **150 m** great-circle radius of each other. **Specificity guard (binding):** emits only when the theme's cluster radius is **at most half** the walker's baseline in-window recording spread (median pairwise distance across ALL in-window mention recordings) — implemented as strict `spread < baseline / 2` so the all-points-identical degenerate case suppresses. Gates: `backfillComplete`, ≥2 distinct walks in the standard 30-day window. Cost bound: only themes already in the dossier's thread section are checked (≤4), only mention recordings' coordinates are resolved.
-- **Coordinate hygiene (applies wherever a recording is located):** a recording participates in location claims only when its nearest `routeData` sample is within **90 seconds** of the recording's start AND `horizontalAccuracy < 100` m (the exact discipline at `LocationManagement.swift:57`). Failing either → non-participation, same as walks without route data.
+- **Coordinate hygiene (applies wherever a recording is located):** a recording participates in location claims only when its nearest `routeData` sample is within **90 seconds** of the recording's start AND `horizontalAccuracy < 100` m. The accuracy floor reuses the existing discipline at `LocationManagement.swift:57` (`horizontalAccuracy < 100`); the 90-second recording↔sample gap is a new threshold introduced by this plan, not precedented there — field-tunable at the ship gate like the priority order. Failing either → non-participation, same as walks without route data.
 - **Photo adjacency:** photo within **75 m** of a theme mention's recording location, taken within **10 minutes** of that mention. Place first, time second. Nearest qualifying pair only; one line max.
 - **Weather weave climate guard (binding):** skip when the shared category is the walker's in-window *majority* condition (**>50%** of in-window walks with stored weather). Categories: rain, snow, clear, cloud, wind, fog, plus a named `unknown` bucket; a unit test asserts every condition string the app can store maps to some bucket. Walks with unknown/missing conditions are excluded, and a theme with any excluded walk emits nothing — the claim must be total.
-- **Theme-marker coloring:** ±15-word windows; emit only when window density **≥ 2×** overall AND **≥3** absolutist tokens in windows. **Placement + gate (binding):** the line renders inside the `Noticed:` block, counts against the 3-line cap, and emits ONLY when the full threads dossier is present — structurally guaranteed because the block is appended to a non-nil dossier, whose presence triggers the marker handling note via `PromptAssembler.responseContract(hasThreadsDossier:)` (verified: `PromptAssembler.swift:45,183-185`).
+- **Theme-marker coloring:** ±15-word windows; emit only when window density **≥ 2×** overall AND **≥3** absolutist tokens in windows. **Placement + gate (binding):** the line renders inside the `Noticed:` block, counts against the 3-line cap, and emits ONLY when the full threads dossier is present — structurally guaranteed because the block is appended to a non-nil dossier, whose presence triggers the marker handling note via `PromptAssembler.responseContract(hasThreadsDossier:)` (verified: `PromptAssembler.swift:45,183-184`; line 185 is the closing brace, not a further conditional line).
 - **Climb anchoring:** steepest sustained ascent = top decile of smoothed gradient, minimum **20 m** gain; skip entirely when total ascent < **50 m**.
 - **Question density:** ≥3 walks of history required; emit only when today ≥ **2× median**, **≥3** questions, AND today's count exceeds every other in-window walk's count. Counts computed at build time from stored transcripts (bounded in-window fetch) — no `TranscriptContext` schema change.
 - **Speech shape:** all recordings in the first third of the walk's duration AND wordless remainder exceeds **30 minutes**.
@@ -28,7 +28,7 @@
 - **Moon line:** once per lunation; state is one UserDefaults int `threadsMoonLineLastLunationIndex`, set when the line is emitted; Delete All Data clears it; device-backup only, never in `.pilgrim` exports (no PilgrimPackage change — absence is the policy). Gates: the closed lunation contains ≥1 walk with words; **the current walk itself has ≥1 recorded word**; `threadsAfterWalks` on. Only the single most-recently-closed lunation is ever eligible — no retroactive moon lines (accepted behavior).
 - **Prompt economy:** each sense emits **at most one line**; the whole block is capped at **3 lines**; silence is the default.
 - **One theme, one line:** once a sense has named a theme, lower-priority senses skip that theme (they may fall through to their next qualifying theme).
-- **Priority order (binding, field-tunable only at the ship gate):** 1 place-theme resonance, 2 the moon line, 3 theme-marker coloring, 4 intention lineage, 5 climb anchoring, 6 weather weave, 7 photo adjacency, 8 question density, 9 speech shape.
+- **Priority order (binding, provisional — field-tunable only at the ship gate):** 1 place-theme resonance, 2 the moon line, 3 theme-marker coloring, 4 intention lineage, 5 climb anchoring, 6 weather weave, 7 photo adjacency, 8 question density, 9 speech shape.
 - **Module purity (binding):** `DossierSenses.lines(...)` performs no DataManager, CoreStore, or singleton access itself. Every input is fetched by the caller (`ThreadsDossierBuilder`) and passed as an argument. A future sense that needs new data must widen the call signature — never reach out sideways.
 - **Descriptive-never-evaluative** in every emitted line; template counts and ordinals are always substituted from computed values, never hardcoded prose; raw coordinates never appear in prompt text — "near the same stretch of ground" is the whole location claim.
 - **Toggle sovereignty:** `threadsAfterWalks` off = none of this computes (no fetches, no senses, no moon state).
@@ -75,6 +75,7 @@ Block heading: `**Noticed:**`, appended to the dossier after the quiet-lines sec
 - Walk "duration" for speech shape and climb overlap = wall clock `startDate…endDate` (recording timestamps are wall-clock).
 - Question count = number of `?` characters in the transcript (Whisper terminates sentences; the ship gate judges this proxy).
 - Weather bucket mapping from the stored `WeatherCondition` rawValues: clear→clear; partlyCloudy/overcast/haze→cloud; lightRain/heavyRain/thunderstorm→rain; snow→snow; fog→fog; wind→wind; anything else→unknown.
+- Sky phrases: the spec's own example only gives "under rain." The other five (`under snow`, `under clear skies`, `under cloud`, `in wind`, `in fog`) are invented for this plan — flagged here so review can challenge the wording, not just the mapping.
 - Moon line's `asOf` is build-time `now` (spec-literal): an old walk's dossier may carry the current closed lunation's line, once, if that walk has words.
 - Memo (`changeCount, walkUUID, backfillComplete` + moon state): the memo stores the **post-write** moon state, so reopening the same walk's prompts returns the cached dossier with its moon line intact; any other walk or a store change rebuilds without it — once per lunation holds.
 
@@ -455,7 +456,7 @@ extension DossierSenses {
 
 ```
 
-And create `Pilgrim/Models/Threads/DossierSensesTracks.swift` with the stub set (Tasks 2-8 replace these one track at a time; a stub is honest silence):
+And create `Pilgrim/Models/Threads/DossierSensesTracks.swift` with the stub set (Tasks 2-8 replace these one track at a time). **A stub traps, it doesn't fake silence:** Task 1's own engine tests (above) exercise the cap/priority/dedup engine exclusively through the `evaluate:` seam with synthetic `stub(firing:)` closures — they never call `placeResonance`/`moonLine`/etc. directly, so nothing in this file's own suite depends on what these nine functions return. Every later task's tests DO call their two or three sense functions directly, including `doesNotFire`/suppression tests that assert `XCTAssertNil(...)`. If the stub simply returned `nil`, every one of those negative assertions would pass vacuously before the sense is implemented — a green bar that proves nothing. `preconditionFailure` makes that impossible: calling an unimplemented sense traps the process, so a negative assertion can only pass once the real implementation deliberately returns `nil`:
 
 ```swift
 import Foundation
@@ -463,19 +464,45 @@ import CoreLocation
 
 extension DossierSenses {
 
-    static func placeResonance(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
-    static func moonLine(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
-    static func markerColoring(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
-    static func intentionLineage(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
-    static func climbAnchoring(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
-    static func weatherWeave(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
-    static func photoAdjacency(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
-    static func questionDensity(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
-    static func speechShape(input: Input, suppressed: Set<String>) -> SenseLine? { nil }
+    static func placeResonance(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
+
+    static func moonLine(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
+
+    static func markerColoring(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
+
+    static func intentionLineage(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
+
+    static func climbAnchoring(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
+
+    static func weatherWeave(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
+
+    static func photoAdjacency(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
+
+    static func questionDensity(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
+
+    static func speechShape(input: Input, suppressed: Set<String>) -> SenseLine? {
+        preconditionFailure("unimplemented sense")
+    }
 }
 ```
 
-Register all three files in the pbxproj (4 entries each), `plutil -lint`, run the class: expected **TEST SUCCEEDED**, 9 tests.
+Register all three files in the pbxproj (4 entries each), `plutil -lint`, run the class: expected **TEST SUCCEEDED**, 9 tests (none of Task 1's own tests call the nine sense functions directly, so the trap never fires here).
 
 **Step 3 — verify + commit.** Full build; full suite (expect 1284 + 9 = 1293 via grep); `swiftlint 2>&1 | tail -3` (398/0, zero new).
 Commit: `feat(threads): the senses get a spine — cap, priority, one theme one line`
@@ -703,7 +730,7 @@ Commit: `feat(threads): the senses get a spine — cap, priority, one theme one 
     }
 ```
 
-Run the class: expected failures — climb/speech tests fail on the nil stubs (RED).
+Run the class: expected — the process traps on the first `climbAnchoring`/`speechShape` call via the `preconditionFailure("unimplemented sense")` stub (RED; every climb and speech test, including the `doesNotFire` ones, is genuinely red — none can pass against a stub that crashes instead of returning `nil`).
 
 **Step 2 — GREEN.** Replace the two stubs in `DossierSenses.swift`:
 
@@ -843,11 +870,35 @@ Commit: `feat(threads): the dossier feels the hill and hears the silence`
                        "two tokenizers means diverging denominators — offsets must ride the same split")
     }
 
+    func testWordTokenOffsets_matchesWordTokensExactly_combiningDiacritic() {
+        // "café" written as base "e" + a combining acute accent (U+0301) —
+        // one Swift `Character`, two Unicode scalars. A per-Character
+        // all-scalars-are-letters check would treat the whole grapheme as
+        // non-letter and drop it; a single shared tokenizer cannot.
+        let text = "walking near the cafe\u{0301} today"
+        XCTAssertEqual(TranscriptNLP.wordTokenOffsets(in: text).map(\.token),
+                       TranscriptNLP.wordTokens(in: text),
+                       "a combining-mark word must tokenize identically in both — one tokenizer, no exceptions")
+    }
+
     // MARK: - Theme-marker coloring
 
-    /// "move" at offsets with absolutist words packed around it, plain prose
-    /// elsewhere: window density far above the rest.
+    /// "move" at offsets with absolutist words packed around it; two more
+    /// absolutist words sit far outside the mention windows (the last two
+    /// repeats of the filler) so the "rest of the walk" has a nonzero
+    /// denominator — the ordinary vs-rest branch.
     private var coloredTranscript: String {
+        let prefix = "the move must always happen and everything about the move is completely certain now "
+        let neutralFiller = "walking along the river path watching herons drift over quiet water today "
+        let distantAbsolutist = "walking along the river path watching herons drift over quiet water always "
+        return prefix + String(repeating: neutralFiller, count: 4) + String(repeating: distantAbsolutist, count: 2)
+    }
+
+    /// Same clustering, but every absolutist word in the transcript sits
+    /// inside the mention windows — the rest of the walk holds none, so the
+    /// ratio falls back to vs-overall density (spec: an under-claim, never
+    /// an overstatement).
+    private var coloredTranscriptNoRestAbsolutist: String {
         "the move must always happen and everything about the move is completely certain now " +
         String(repeating: "walking along the river path watching herons drift over quiet water today ", count: 6)
     }
@@ -867,10 +918,21 @@ Commit: `feat(threads): the dossier feels the hill and hears the silence`
         let text = coloredTranscript
         let theme = Theme(lemma: "move", displayTerm: "the move", mentionCount: 2, salience: 0.05,
                           mentions: mentionOffsets(of: "move", in: text))
-        let line = DossierSenses.markerLine(theme: theme, displayTerm: "the move", text: text)
-        XCTAssertNotNil(line)
-        XCTAssertTrue(line!.hasPrefix("Absolutist words cluster around 'the move' — "))
-        XCTAssertTrue(line!.hasSuffix(" the density of the rest of the walk's speech."))
+        XCTAssertEqual(
+            DossierSenses.markerLine(theme: theme, displayTerm: "the move", text: text),
+            "Absolutist words cluster around 'the move' — four times the density of the rest of the walk's speech."
+        )
+    }
+
+    func testMarkerColoring_restHoldsNoAbsolutistWords_fallsBackToVsOverallRatio() {
+        let text = coloredTranscriptNoRestAbsolutist
+        let theme = Theme(lemma: "move", displayTerm: "the move", mentionCount: 2, salience: 0.05,
+                          mentions: mentionOffsets(of: "move", in: text))
+        XCTAssertEqual(
+            DossierSenses.markerLine(theme: theme, displayTerm: "the move", text: text),
+            "Absolutist words cluster around 'the move' — three times the density of the rest of the walk's speech.",
+            "the rest of the walk holds zero absolutist words — the ratio falls back to vs-overall density"
+        )
     }
 
     func testMarkerColoring_fewerThanThreeAbsolutistTokensInWindows_doesNotFire() {
@@ -1001,7 +1063,7 @@ Commit: `feat(threads): the dossier feels the hill and hears the silence`
     }
 ```
 
-Run: expected failures — `wordTokenOffsets` doesn't exist (compile RED), then sense tests fail on stubs.
+Run: expected build failure — `wordTokenOffsets` and `markerLine` don't exist yet (compile RED). (Once Step 2 adds them, `markerColoring`/`photoAdjacency` would still trap via `preconditionFailure("unimplemented sense")` until the same step replaces the stubs — compile failure is what RED looks like here, not a runtime nil.)
 
 **Step 2 — GREEN.** In `TranscriptNLP.swift`, below `wordCount(in:)`:
 
@@ -1011,27 +1073,27 @@ Run: expected failures — `wordTokenOffsets` doesn't exist (compile RED), then 
         let start: Int
     }
 
-    /// The same letters-only split as `wordTokens`, with character offsets
-    /// retained (the offsets `contentLemmaMentions` also measures in) — the
-    /// single-tokenizer rule extends to window math, or denominators diverge.
+    /// Offsets for `wordTokens`' own output — not a second tokenizer. A
+    /// separate letters-only scan (even a careful one) can still diverge from
+    /// `components(separatedBy:)` on a grapheme that mixes scalar classes
+    /// (a base letter plus a combining mark): the two would draw the split
+    /// in different places. Sourcing the token list directly from
+    /// `wordTokens` and locating each one by forward search makes the token
+    /// TEXT identical by construction — there is exactly one tokenizer, and
+    /// this just remembers where its output came from (the offsets
+    /// `contentLemmaMentions` also measures in: `String.distance`, Character
+    /// count).
     static func wordTokenOffsets(in text: String) -> [WordToken] {
+        let lowered = text.lowercased()
         var tokens: [WordToken] = []
-        var current = ""
-        var currentStart = 0
-        var offset = 0
-        for character in text {
-            let isLetter = character.unicodeScalars.allSatisfy { CharacterSet.letters.contains($0) }
-            if isLetter {
-                if current.isEmpty { currentStart = offset }
-                current.append(character)
-            } else if !current.isEmpty {
-                tokens.append(WordToken(token: current.lowercased(), start: currentStart))
-                current = ""
-            }
-            offset += 1
-        }
-        if !current.isEmpty {
-            tokens.append(WordToken(token: current.lowercased(), start: currentStart))
+        var cursor = lowered.startIndex
+        for token in wordTokens(in: text) {
+            guard let range = lowered.range(of: token, range: cursor..<lowered.endIndex) else { continue }
+            tokens.append(WordToken(
+                token: token,
+                start: lowered.distance(from: lowered.startIndex, to: range.lowerBound)
+            ))
+            cursor = range.upperBound
         }
         return tokens
     }
@@ -1126,9 +1188,9 @@ extension DossierSenses {
 }
 ```
 
-Run the class: **TEST SUCCEEDED** (28 tests).
+Run the class: **TEST SUCCEEDED** (30 tests).
 
-**Step 3 — verify + commit.** Full build; full suite (expect 1302 + 10 = 1312); lint (zero new; check `DossierSensesTracks.swift` stays under 500 lines).
+**Step 3 — verify + commit.** Full build; full suite (expect 1302 + 12 = 1314); lint (zero new; check `DossierSensesTracks.swift` stays under 500 lines).
 Commit: `feat(threads): absolutist words show their neighborhood; the camera meets the words`
 
 ---
@@ -1432,7 +1494,7 @@ In `DataManager+Query.swift` (new MARK section after the Walk Route section):
 
 Run the class: **TEST SUCCEEDED**.
 
-**Step 3 — verify + commit.** Full build; full suite (expect 1312 + 6 = 1318); lint.
+**Step 3 — verify + commit.** Full build; full suite (expect 1314 + 6 = 1320); lint.
 Commit: `feat(threads): the data layer learns when and where each recording stood`
 
 ---
@@ -1601,7 +1663,7 @@ Run: expected **build failure** — `bucket(forStoredCondition:)` / `.unknown` n
 
 extension DossierSenses {
 
-    enum WeatherBucket: Equatable {
+    enum WeatherBucket: Hashable {
         case rain, snow, clear, cloud, wind, fog, unknown
     }
 
@@ -1667,7 +1729,7 @@ extension DossierSenses {
 
 Remove the `weatherWeave` stub. Run both sense test classes: **TEST SUCCEEDED**.
 
-**Step 3 — verify + commit.** Full build; full suite (expect 1318 + 8 = 1326); lint.
+**Step 3 — verify + commit.** Full build; full suite (expect 1320 + 8 = 1328); lint.
 Commit: `feat(threads): the dossier weaves the sky — minority weather only, tautologies stay silent`
 
 ### Task 6: Place-theme resonance (clustering + specificity guard)
@@ -1820,7 +1882,7 @@ Commit: `feat(threads): the dossier weaves the sky — minority weather only, ta
     }
 ```
 
-Run: expected failures on the nil stub (RED).
+Run: expected — the process traps via `preconditionFailure("unimplemented sense")` inside `placeResonance` (RED; the `doesNotFire`/suppression tests are genuinely red, not vacuously green).
 
 **Step 2 — GREEN.** In `DossierSensesTracks.swift`:
 
@@ -1924,7 +1986,7 @@ extension DossierSenses {
 
 Remove the stub. Run both classes: **TEST SUCCEEDED**.
 
-**Step 3 — verify + commit.** Full build; full suite (expect 1326 + 7 = 1333); lint; check `DossierSensesTracks.swift` length (<500; if the warning fires, split the cross-walk tracks into a sanctioned continuation file — do NOT restructure types).
+**Step 3 — verify + commit.** Full build; full suite (expect 1328 + 7 = 1335); lint; check `DossierSensesTracks.swift` length (<500; if the warning fires, split the cross-walk tracks into a sanctioned continuation file — do NOT restructure types).
 Commit: `feat(threads): the ground remembers — place resonance with a specificity conscience`
 
 ### Task 7: Intention lineage + question density
@@ -2049,7 +2111,7 @@ Commit: `feat(threads): the ground remembers — place resonance with a specific
     }
 ```
 
-Run: RED on the stubs.
+Run: expected — the process traps via `preconditionFailure("unimplemented sense")` inside `intentionLineage`/`questionDensity` (RED; the `doesNotFire` tests are genuinely red, not vacuously green).
 
 **Step 2 — GREEN.**
 
@@ -2121,7 +2183,7 @@ extension DossierSenses {
 
 Remove both stubs. Run: **TEST SUCCEEDED**.
 
-**Step 3 — verify + commit.** Full build; full suite (expect 1333 + 8 = 1341); lint.
+**Step 3 — verify + commit.** Full build; full suite (expect 1335 + 8 = 1343); lint.
 Commit: `feat(threads): intentions show their lineage; questions find their walk`
 
 ### Task 8: The moon line (pure sense)
@@ -2202,6 +2264,27 @@ Commit: `feat(threads): intentions show their lineage; questions find their walk
         )
     }
 
+    func testMoon_topThemeSuppressed_secondThemeExists_fallsThroughInsteadOfDropping() {
+        let base = moonInput()
+        let lunationStart = DateFactory.makeDate(2024, 5, 8)
+        let secondThemeDate = lunationStart.addingTimeInterval(3 * 4 * 86400)
+        let augmented = makeInput(
+            currentWalkUUID: base.currentWalkUUID,
+            threads: base.threads + [thread(lemma: "art", appearances: [
+                appearance(walk: UUID(), date: secondThemeDate)
+            ])],
+            moon: base.moon
+        )
+        XCTAssertEqual(
+            DossierSenses.moonLine(input: augmented, suppressed: ["music"]),
+            DossierSenses.SenseLine(
+                text: "The Sturgeon Moon has set: 5 walks, 3 with recorded words; 'art' walked in 1 of them.",
+                lemma: "art"
+            ),
+            "suppressing the top theme falls through to the next theme that walked that moon, not to silence"
+        )
+    }
+
     func testMoon_singleWalkLunation_pluralizesHonestly() {
         XCTAssertEqual(
             DossierSenses.moonLine(input: moonInput(walkCount: 1, wordedCount: 1, themeWalksInLunation: 1),
@@ -2211,7 +2294,7 @@ Commit: `feat(threads): intentions show their lineage; questions find their walk
     }
 ```
 
-Run: RED on the stub.
+Run: expected — the process traps via `preconditionFailure("unimplemented sense")` inside `moonLine` (RED; the "stays silent" tests are genuinely red, not vacuously green).
 
 **Step 2 — GREEN.**
 
@@ -2251,7 +2334,7 @@ extension DossierSenses {
 
 Remove the stub (the stub extension in `DossierSensesTracks.swift` is now empty — delete it). Run: **TEST SUCCEEDED**.
 
-**Step 3 — verify + commit.** Full build; full suite (expect 1341 + 7 = 1348); lint.
+**Step 3 — verify + commit.** Full build; full suite (expect 1343 + 8 = 1351); lint.
 Commit: `feat(threads): the moon reports once, and only to a walk that spoke`
 
 ### Task 9: Builder integration — gather, resolve, append, remember
@@ -2262,7 +2345,7 @@ Commit: `feat(threads): the moon reports once, and only to a walk that spoke`
 - Modify: `Pilgrim/Scenes/Prompts/PromptListView.swift` — toggle-guarded gather + pass-through; `endTimestamp: recording.endDate` in `RecordingContext` construction.
 - Modify: `Pilgrim/Models/Data/DataManager.swift` — `deleteAll` success path clears `ThreadsDossierBuilder.moonLineDefaultsKey`.
 - Modify: `UnitTests/ThreadsDossierTests.swift` — integration tests.
-- Modify: `UnitTests/DataManagerThreadsDeletionTests.swift` — Delete All re-arm test.
+- Modify: `UnitTests/DataManagerThreadsDeletionTests.swift` — Delete All re-arm test, plus class-level `threadsMoonLineLastLunationIndex` save/restore in `setUpWithError`/`tearDownWithError` (house rule: every key a test mutates gets save/restore; `deleteAll` now touches this key on every call in this class, including the two pre-existing tests that call it).
 
 **Interfaces produced:**
 
@@ -2412,6 +2495,57 @@ extension ThreadsDossierBuilder {
                        "no bundle, no block — existing callers and tests see today's dossier")
     }
 
+    func testBuilder_recordingWithoutUUID_noDossierAtAll_firingSenseNeverLeaksThrough() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierSensesBuilderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+
+        // A recording with no `recordingUUID` can never enter `current` — the
+        // formatter's dossier is nil by the same guard the builder already
+        // short-circuits on. A senses bundle built to fire (a worded walk
+        // inside a closed lunation) must still leak nothing: the `if let
+        // senses, dossier != nil` gate holds even when a sense has something
+        // to say — the same structural guarantee the marker line's
+        // handling-note co-presence claim rests on, proven from the other
+        // direction.
+        let now = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let lunation = LunationCalendar.mostRecentClosed(asOf: now)
+        let walkStart = lunation.end.addingTimeInterval(3 * 86400)
+        let walkA = UUID()
+        let lunationWalk = UUID(), lunationRec = UUID()
+        let lunationDate = lunation.start.addingTimeInterval(5 * 86400)
+        _ = TranscriptContextAnalyzer.analyzeAndStore(
+            recordingUUID: lunationRec,
+            transcript: String(repeating: "the move keeps returning to me today ", count: 6),
+            store: store
+        )
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [lunationRec: (lunationWalk, lunationDate)]
+        let bundle = sensesBundle(
+            walkStart: walkStart, walkEnd: walkStart.addingTimeInterval(3600),
+            walkSnapshots: [
+                DossierSenses.WalkSnapshotRow(walkUUID: lunationWalk, startDate: lunationDate,
+                                              intention: nil, weatherCondition: nil)
+            ],
+            recordingTimestamps: [lunationRec: lunationDate.addingTimeInterval(300)],
+            lunationAnchor: now
+        )
+        let recordingWithoutUUID = RecordingContext(
+            text: "words that never earn a dossier", timestamp: walkStart,
+            startCoordinate: nil, endCoordinate: nil, wordsPerMinute: nil,
+            recordingUUID: nil, endTimestamp: walkStart.addingTimeInterval(120)
+        )
+
+        let dossier = ThreadsDossierBuilder.build(
+            walkUUID: walkA, recordings: [recordingWithoutUUID],
+            walkIndex: walkIndex, store: store, senses: bundle, resolveRouteFix: { _ in nil }
+        )
+        XCTAssertNil(dossier, "no thread-bearing recording — no dossier, and a firing sense cannot conjure one")
+    }
+
     func testAssembler_noticedBlockRidesInsideDossier_handlingNoteCoPresent() {
         let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         let dossier = "**Thought threads (on-device analysis):**\ntest\n\n**Noticed:**\n'music' has surfaced on 2 walks — twice near the same stretch of ground."
@@ -2423,17 +2557,48 @@ extension ThreadsDossierBuilder {
     }
 ```
 
-Add to `DataManagerThreadsDeletionTests`:
+`DataManager.deleteAll` now clears `ThreadsDossierBuilder.moonLineDefaultsKey` on every call — including inside the two PRE-EXISTING tests in this class that already call it (`testDeleteAll_removesEveryContextFile`, `testDeleteAll_tombstonesRecordingsWithoutContextFiles`), which today mutate real `UserDefaults.standard` with no save/restore. Move the save/restore to class level so it covers all three `deleteAll`-calling tests, not just the new one:
+
+```swift
+    private var stack: DataStack!
+    private var store: TranscriptContextStore!
+    private var directory: URL!
+    private var previousDataStack: DataStack!
+    private var savedMoonState: Any?
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        previousDataStack = DataManager.dataStack
+        stack = DataStack(PilgrimV7.schema)
+        try stack.addStorageAndWait(InMemoryStore())
+        DataManager.dataStack = stack
+
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ThreadsDeletionTests-\(UUID().uuidString)")
+        store = TranscriptContextStore(directory: directory)
+        DataManager.transcriptContextStore = store
+
+        savedMoonState = UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+    }
+
+    override func tearDownWithError() throws {
+        if let savedMoonState {
+            UserDefaults.standard.set(savedMoonState, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+        }
+        DataManager.transcriptContextStore = .shared
+        DataManager.dataStack = previousDataStack
+        try? FileManager.default.removeItem(at: directory)
+        try super.tearDownWithError()
+    }
+```
+
+(Mechanical edit: add the `savedMoonState` property and its two lines in each override; everything else in `setUpWithError`/`tearDownWithError` stays as shipped.) Add the new test — it needs no local save/restore of its own now that the class handles it:
 
 ```swift
     func testDeleteAll_clearsMoonLineState() throws {
-        let defaults = UserDefaults.standard
-        let savedMoon = defaults.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
-        defer {
-            if let savedMoon { defaults.set(savedMoon, forKey: ThreadsDossierBuilder.moonLineDefaultsKey) }
-            else { defaults.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey) }
-        }
-        defaults.set(300, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+        UserDefaults.standard.set(300, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
 
         let done = expectation(description: "deleteAll")
         DataManager.deleteAll { success, _ in
@@ -2441,7 +2606,7 @@ Add to `DataManagerThreadsDeletionTests`:
             done.fulfill()
         }
         wait(for: [done], timeout: 5)
-        XCTAssertNil(defaults.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey),
+        XCTAssertNil(UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey),
                      "Delete All Data re-arms the moon line with everything else")
     }
 ```
@@ -2695,7 +2860,7 @@ and in the detached call: `ThreadsDossierBuilder.build(walkUUID: $0, recordings:
 
 Run both test classes: **TEST SUCCEEDED**.
 
-**Step 3 — verify + commit.** Full build; full suite (expect 1348 + 4 = 1352 — reconcile; existing ThreadsDossierTests must all still pass against the widened signature); lint.
+**Step 3 — verify + commit.** Full build; full suite (expect 1351 + 5 = 1356 — reconcile; existing ThreadsDossierTests must all still pass against the widened signature); lint.
 Commit: `feat(threads): the dossier notices — three lines at most, silence by default`
 
 ---
@@ -2835,11 +3000,12 @@ enum DossierSensesFieldReport {
 ```
 
 **Step 3 — final verification.**
-- Full suite: `xcodebuild test ... 2>&1 | tee /tmp/senses-suite.log; grep -c "Test Case '.*' started" /tmp/senses-suite.log` — reconcile against the running tally (expected 1352 + 1 = 1353; macos-26 flake → retry once).
+- Full suite: `xcodebuild test ... 2>&1 | tee /tmp/senses-suite.log; grep -c "Test Case '.*' started" /tmp/senses-suite.log` — reconcile against the running tally (expected 1356 + 1 = 1357; macos-26 flake → retry once).
 - `swiftlint 2>&1 | tail -3` — record the closing baseline in this plan's Execution status; zero new findings.
 - `plutil -lint Pilgrim.xcodeproj/project.pbxproj`.
 - Full app build.
-- Grep sweeps: `grep -rn "Noticed:" Pilgrim/ | grep -v DossierSenses` (only ThreadsDossierBuilder's append); `grep -rn "threadsMoonLineLastLunationIndex" Pilgrim/` (builder + DataManager.deleteAll only — never PilgrimPackage); `grep -rn "Date()" Pilgrim/Models/Threads/DossierSenses.swift` (zero hits — purity).
+- Grep sweeps: `grep -rn "Noticed:" Pilgrim/ | grep -v DossierSenses` (only ThreadsDossierBuilder's append); `grep -rn "threadsMoonLineLastLunationIndex" Pilgrim/` (builder + DataManager.deleteAll only — never PilgrimPackage); `grep -rn "Date()" Pilgrim/Models/Threads/DossierSenses*.swift` (zero hits — purity, both files).
+- Descriptive-only sweep: read all nine emitted templates (the table under Global Constraints) against principle "descriptive-never-evaluative" — no trajectory language ("improving", "worsening", "more than usual" as judgment), no hardcoded prose where a computed value belongs; check each against its own row's substitution rule.
 - Update `docs/superpowers/specs/2026-08-24-dossier-senses-2-design.md` Status line: `implemented on feat/dossier-senses-2, pending ship gate`.
 
 Commit: `feat(threads): a field report for human eyes — the senses show their firing before they ship`
