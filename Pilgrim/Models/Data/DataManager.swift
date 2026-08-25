@@ -852,6 +852,7 @@ struct DataManager {
                 transcriptContextStore.insertTombstones(for: allRecordingUUIDs)
                 transcriptContextStore.deleteAll()
                 UserPreferences.clearArchivedRegistry()
+                UserDefaults.standard.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
                 completion(true, nil)
             case .failure(let error):
                 completion(false, .databaseError(error: error))

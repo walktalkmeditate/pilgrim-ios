@@ -11,6 +11,7 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
     private var store: TranscriptContextStore!
     private var directory: URL!
     private var previousDataStack: DataStack!
+    private var savedMoonState: Any?
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -23,9 +24,16 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
             .appendingPathComponent("ThreadsDeletionTests-\(UUID().uuidString)")
         store = TranscriptContextStore(directory: directory)
         DataManager.transcriptContextStore = store
+
+        savedMoonState = UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
     }
 
     override func tearDownWithError() throws {
+        if let savedMoonState {
+            UserDefaults.standard.set(savedMoonState, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+        }
         DataManager.transcriptContextStore = .shared
         DataManager.dataStack = previousDataStack
         try? FileManager.default.removeItem(at: directory)
@@ -112,5 +120,18 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
         store.save(context(for: recordingUUID))
         XCTAssertTrue(store.loadAll().isEmpty,
                       "an analysis queued before Delete All must not write after the wipe")
+    }
+
+    func testDeleteAll_clearsMoonLineState() throws {
+        UserDefaults.standard.set(300, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+
+        let done = expectation(description: "deleteAll")
+        DataManager.deleteAll { success, _ in
+            XCTAssertTrue(success)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+        XCTAssertNil(UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey),
+                     "Delete All Data re-arms the moon line with everything else")
     }
 }
