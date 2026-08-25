@@ -10,7 +10,7 @@
 3. **Traceable**: every line derives from enumerable, deterministic inputs — no line the walker couldn't verify against their own recordings. Template counts and ordinals are always substituted from computed values, never hardcoded prose.
 4. **Pulled-never-pushed**: senses render only inside the AI-prompt dossier the walker opens. No notifications, no journal changes, no summary-screen changes.
 5. **Toggle sovereignty**: `threadsAfterWalks` off = none of this computes.
-6. **No schema migration.** All new state is UserDefaults or derived-at-build-time from existing CoreStore fields + `TranscriptContext` files. (Question density deliberately counts from stored transcripts at build time rather than adding a context field — see Track 4 — because the backfill cannot retrofit context-schema changes.)
+6. **No schema migration.** All new state is UserDefaults or derived-at-build-time from existing CoreStore fields + `TranscriptContext` files.
 7. **Prompt economy**: the dossier must not bloat. Each sense emits **at most one line**, and the whole Senses II block is capped at **3 lines per prompt** — roughly a quarter of a typical dossier's existing line budget, enough to add texture without competing with the theme section itself. A sense with nothing true to say emits nothing — silence is the default.
 8. **Module purity (binding)**: `DossierSenses.lines(...)` performs no DataManager, CoreStore, or singleton access itself. Every input is fetched by the caller (`ThreadsDossierBuilder`) and passed as an argument. A future sense that needs new data must widen the call signature — never reach out sideways. This is the enforcement mechanism for principle 3.
 9. **One theme, one line**: within a single build, once a sense has named a theme, lower-priority senses skip that theme (naming the same word twice in three lines reads as fixation, not noticing).
@@ -33,7 +33,6 @@
 |---|---|---|
 | Themes + mention offsets, markers, word counts | `TranscriptContext` file cache (per recording) | already loaded by dossier build |
 | Recording timestamps (per-recording `_startDate`) | CoreStore `VoiceRecording` | at build — NOTE: per-recording times, not the owning walk's `startDate`; Track 1 needs a recording-timestamp index distinct from the existing walk-level `walkIndex` |
-| Transcripts (for question counts) | CoreStore `VoiceRecording` transcription field | at build, in-window walks only (bounded fetch) |
 | Recording coordinates | walk `routeData` sample nearest recording timestamp | at build, per needed recording only, via a bounded timestamp-predicate query (`fetchLimit`, `rowUUID` discipline — UUID columns are stored as strings), never full-array materialization |
 | Elevation series, speeds | walk `routeData` | at build, current walk only |
 | Weather (condition, temperature) | `Walk._weatherCondition` / `_weatherTemperature` (PilgrimV7, existing) | at build |
@@ -92,7 +91,7 @@ Skip entirely when total ascent < 50 m (flat walks make the claim meaningless).
 
 ### Track 4 — Small signatures (current walk unless noted)
 
-*(Scope note: the approved track named photo adjacency + theme-marker coloring; question density, speech shape, and intention lineage were added during design elaboration and approved in the same session.)*
+*(Scope note: the approved tracks named photo adjacency, theme-marker coloring, speech shape, and intention lineage were added during design elaboration and approved in the same session. Question density was cut at the ship gate.)*
 
 **Theme-marker coloring**: absolutist-marker density inside ±15-word windows around a theme's mentions vs the transcript's overall absolutist density. Emit only when window density ≥ 2× overall AND ≥3 absolutist tokens in windows:
 
@@ -138,7 +137,7 @@ The implementation plan stages along the pure/cross-walk boundary: current-walk 
 
 ## Testing
 
-- Pure fixtures per sense (RED first): geometry fixtures for clustering incl. the specificity guard's baseline comparison (tight cluster + tight baseline → suppressed; tight cluster + wide baseline → fires); coordinate-hygiene fixtures (stale sample, poor accuracy → non-participation); elevation series fixtures; weather category fixtures incl. climate guard, unknown bucket, map-every-string drift test, and the any-excluded-walk-emits-nothing rule; marker-window fixtures incl. the dossier-present gate; photo place-tie fixtures (near+soon fires, near+late and far+soon don't); question/speech-shape fixtures; intention-lineage scaffold fixtures (the "want"-only pair must not cluster); moon-line state machine (emit once, not twice; current-walk-words gate; Delete All re-arms).
+- Pure fixtures per sense (RED first): geometry fixtures for clustering incl. the specificity guard's baseline comparison (tight cluster + tight baseline → suppressed; tight cluster + wide baseline → fires); coordinate-hygiene fixtures (stale sample, poor accuracy → non-participation); elevation series fixtures; weather category fixtures incl. climate guard, unknown bucket, map-every-string drift test, and the any-excluded-walk-emits-nothing rule; marker-window fixtures incl. the dossier-present gate; photo place-tie fixtures (near+soon fires, near+late and far+soon don't); speech-shape fixtures; intention-lineage scaffold fixtures (the "want"-only pair must not cluster); moon-line state machine (emit once, not twice; current-walk-words gate; Delete All re-arms).
 - Cap + priority + dedup tests: 5 senses firing → exactly 3 lines in priority order; a theme named at rank 1 never reappears at rank 5.
 - String-pinning tests for every template with substituted counts; descriptive-only sweep is part of review.
 - No UI tests (no UI).

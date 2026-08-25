@@ -192,10 +192,6 @@ extension DossierSenses {
         return "\(n) times"
     }
 
-    static func capitalizedCount(_ n: Int) -> String {
-        spelledSmall[n]?.capitalized ?? "\(n)"
-    }
-
     static func ordinalWord(_ n: Int) -> String {
         if let word = ordinalWords[n] { return word }
         if (11...13).contains(n % 100) { return "\(n)th" }

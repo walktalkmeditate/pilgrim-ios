@@ -122,8 +122,6 @@ final class DossierSensesTests: XCTestCase {
         XCTAssertEqual(DossierSenses.timesPhrase(2), "twice")
         XCTAssertEqual(DossierSenses.timesPhrase(3), "three times")
         XCTAssertEqual(DossierSenses.timesPhrase(10), "10 times")
-        XCTAssertEqual(DossierSenses.capitalizedCount(4), "Four")
-        XCTAssertEqual(DossierSenses.capitalizedCount(11), "11")
         XCTAssertEqual(DossierSenses.ordinalWord(5), "Fifth")
         XCTAssertEqual(DossierSenses.ordinalWord(12), "Twelfth")
         XCTAssertEqual(DossierSenses.ordinalWord(13), "13th")
