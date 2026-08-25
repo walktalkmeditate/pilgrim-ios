@@ -18,7 +18,7 @@ extension ThreadsDossierTests {
         return DossierSensesFetchBundle(
             walkStart: walkStart, walkEnd: walkEnd, totalAscent: 0,
             elevationSeries: [], photos: [], walkSnapshots: walkSnapshots,
-            historyTranscripts: [], recordingTimestamps: recordingTimestamps,
+            recordingTimestamps: recordingTimestamps,
             closedLunation: lunation, moonName: LunationCalendar.moonName(for: lunation)
         )
     }

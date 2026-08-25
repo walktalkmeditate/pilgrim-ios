@@ -24,7 +24,7 @@
 5. **Climb anchoring** — embodied, current-walk, but only meaningful on hilly walks.
 6. **Weather weave** — evocative but weather is shared context, not personal signal.
 7. **Photo adjacency** — place-tied (below), but still a coincidence-class observation.
-8. **Question density** — interesting when true, generic in phrasing.
+8. ~~Question density~~ — **cut at the ship gate (2026-08-25)**: real-device history fired it once as a Whisper punctuation artifact ("151 of today's sentences were questions"), not genuine question density; removed entirely, per the contingency in its own Track 4 entry below.
 9. **Speech shape** — the most generic; cheap to compute, first to yield.
 
 ## Data sources (all existing)
@@ -87,7 +87,7 @@ Skip entirely when total ascent < 50 m (flat walks make the claim meaningless).
 
 > `All N walks where 'music' surfaced were under rain.` (N substituted; "Both" only when N is literally 2.)
 
-- **Climate guard (binding)**: skip when the shared category is also the walker's in-window *majority* condition (>50% of in-window walks with stored weather). In a place where it mostly rains, "both walks were under rain" is a tautology of geography, not a fact about the theme.
+- **Climate guard (binding)**: skip when the shared category is also the walker's in-window *majority* condition (>50% of in-window walks with stored weather). In a place where it mostly rains, "both walks were under rain" is a tautology of geography, not a fact about the theme. **Tightened at the ship gate (2026-08-25)**: majority proved insufficient — 4/4 real-device firings were a plurality tautology ("under cloud" without any condition holding a true majority) — so the guard now skips whenever the shared category is (or ties for) the window's most common known condition (mode), not only a strict majority.
 - Condition categories collapse WeatherKit strings to: rain, snow, clear, cloud, wind, fog, plus a named `unknown` bucket; a unit test asserts every WeatherKit condition string the app can store maps to some bucket (drift guard — WeatherKit's vocabulary has shifted before). Walks with unknown/missing conditions are excluded from the claim, and a theme with any excluded walk emits nothing — the claim must be total.
 
 ### Track 4 — Small signatures (current walk unless noted)
@@ -112,6 +112,7 @@ Skip entirely when total ascent < 50 m (flat walks make the claim meaningless).
 > `Four of today's sentences were questions — more than any walk in the last 30 days.`
 
 - **Known dependency**: Whisper's `?` placement is an ASR artifact, not prosody. The ship gate (below) measures real-transcript question-mark behavior before this sense ships; if punctuation proves unreliable, this sense is cut at the gate, not patched.
+- **Cut at the ship gate (2026-08-25)**: real-device history fired this sense exactly once, and the line read "151 of today's sentences were questions" — a Whisper punctuation artifact, exactly the contingency above. Cut entirely: the enum case, its track function and constants, its dispatch-table entry, its exclusive inputs (`historyTranscripts`, the in-window transcript fetch), and all of its tests.
 
 **Speech shape**: when all recordings fall in the first third of the walk's duration and the wordless remainder exceeds 30 minutes:
 

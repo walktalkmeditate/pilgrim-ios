@@ -22,9 +22,6 @@ enum DossierSenses {
     static let markerWindowRadius = 15
     static let markerMinWindowAbsolutist = 3
     static let markerMinDensityRatio = 2.0
-    static let questionMinCount = 3
-    static let questionMinHistoryWalks = 3
-    static let questionMedianRatio = 2.0
     static let speechShapeMinWordlessRemainder: TimeInterval = 30 * 60
     static let lineageMinWalks = 3
 
@@ -87,9 +84,7 @@ enum DossierSenses {
         let threads: [WalkThread]
         let backfillComplete: Bool
         let walkSnapshots: [WalkSnapshotRow]
-        let historyTranscripts: [(recordingUUID: UUID, transcript: String)]
         let recordingTimestamps: [UUID: Date]
-        let walkIndex: [UUID: (walkUUID: UUID, date: Date)]
         let fixes: [UUID: RouteFix]
         let moon: MoonInput?
     }
@@ -105,11 +100,14 @@ enum DossierSenses {
     }
 
     /// Declaration order IS the spec's binding priority order — reordering
-    /// cases reorders the block.
+    /// cases reorders the block. `questionDensity` was cut at the ship gate
+    /// (2026-08-25): real-device history fired it once, and the line was a
+    /// Whisper punctuation artifact ("151 of today's sentences were
+    /// questions"), not genuine question density — the spec's own
+    /// contingency was to cut at the gate, not patch.
     enum Sense: CaseIterable {
         case placeResonance, moonLine, markerColoring, intentionLineage,
-             climbAnchoring, weatherWeave, photoAdjacency, questionDensity,
-             speechShape
+             climbAnchoring, weatherWeave, photoAdjacency, speechShape
     }
 
     /// `evaluate` is a test seam (same style as ThreadsBackfill's
@@ -147,7 +145,6 @@ enum DossierSenses {
         case .climbAnchoring: return climbAnchoring(input: input, suppressed: suppressed)
         case .weatherWeave: return weatherWeave(input: input, suppressed: suppressed)
         case .photoAdjacency: return photoAdjacency(input: input, suppressed: suppressed)
-        case .questionDensity: return questionDensity(input: input, suppressed: suppressed)
         case .speechShape: return speechShape(input: input, suppressed: suppressed)
         }
     }

@@ -136,23 +136,15 @@ extension DataManager {
     /// never carries a bridged `UUID`/`NSUUID`, only the string CoreStore
     /// wrote. `rowUUID` undoes that encoding explicitly instead of relying
     /// on a cast that can only ever fail.
-    /// `range`, when supplied, bounds the fetch to recordings whose start
-    /// falls inside it — the senses' in-window transcript reads never pull
-    /// the whole table (spec: bounded fetch). `nil` preserves the original
-    /// all-recordings behavior for the existing backfill caller.
     @MainActor
-    public static func transcribedRecordingsSnapshot(
-        in range: ClosedRange<Date>? = nil
-    ) -> [(uuid: UUID, transcript: String)] {
-        var query = From<VoiceRecording>().select(
-            NSDictionary.self,
-            .attribute(\._uuid),
-            .attribute(\._transcription)
-        )
-        if let range {
-            query = query.where(\._startDate >= range.lowerBound && \._startDate <= range.upperBound)
-        }
-        guard let rows = try? dataStack.queryAttributes(query) else { return [] }
+    public static func transcribedRecordingsSnapshot() -> [(uuid: UUID, transcript: String)] {
+        guard let rows = try? dataStack.queryAttributes(
+            From<VoiceRecording>().select(
+                NSDictionary.self,
+                .attribute(\._uuid),
+                .attribute(\._transcription)
+            )
+        ) else { return [] }
         return rows.compactMap { row in
             guard let uuid = rowUUID(row["id"]),
                   let transcript = row["transcription"] as? String,

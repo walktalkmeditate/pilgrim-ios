@@ -51,4 +51,22 @@ final class ThemeExtractorTests: XCTestCase {
         let themes = ThemeExtractor.themes(in: text, languageCode: "en")
         XCTAssertEqual(themes.map(\.lemma), ["music"])
     }
+
+    // MARK: - lightNouns gate (ship gate, 2026-08-25): day/days/area
+
+    /// Field-confirmed: place resonance threaded 'day' (17 mentions near the
+    /// same ground) and photo adjacency threaded 'area' — generic nouns, the
+    /// same class as the already-stoplisted `thing`/`way`.
+    func testDayAndArea_stoplisted_yieldNoThemes() {
+        let text = "It was a long day, every day feels like the last day, and this whole area " +
+            "of the area near the area keeps repeating on me, day after day in this area"
+        XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
+    }
+
+    func testNounAmongDayAndArea_isTheOnlyTheme() {
+        let text = "Another long day thinking about the harbor, the harbor sits at the edge of the " +
+            "area, and the day always brings me back to the harbor whatever the area looks like"
+        let themes = ThemeExtractor.themes(in: text, languageCode: "en")
+        XCTAssertEqual(themes.map(\.lemma), ["harbor"])
+    }
 }

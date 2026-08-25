@@ -17,7 +17,12 @@ struct TranscriptContext: Codable, Equatable {
     /// stale-orphan sweep can still see it — but it carries no modal data,
     /// which would silently starve the modal-lean baseline of history; the
     /// bump forces those recordings to re-analyze.
-    static let currentSchemaVersion = 3
+    ///
+    /// v4 (ship gate, 2026-08-25): `SpokenStoplist.lightNouns` gained `day`,
+    /// `days`, `area` — a v3 file's stored themes may still carry one of
+    /// those as a generic noun rather than topical content, so the bump
+    /// forces re-analysis under `ThemeExtractor`'s tightened stoplist.
+    static let currentSchemaVersion = 4
 
     let schemaVersion: Int
     let recordingUUID: UUID

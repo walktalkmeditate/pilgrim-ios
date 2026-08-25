@@ -521,7 +521,11 @@ nouns ("thing", "way", "stuff", and similar) for theme extraction, and a
 separate scaffold-lemma set ("be", "have", "think", and similar) for the
 `AttentionDirectives` recurring-word directive, which shares the same
 spoken-filler exposure outside theme extraction entirely. That fix stands
-on its own, regardless of the surface question below.
+on its own, regardless of the surface question below. (Ship gate,
+2026-08-25: `day`, `days`, and `area` joined `lightNouns` after further
+real-device evidence — place resonance threaded 'day' from 17 mentions
+near the same ground, photo adjacency threaded 'area' — the same
+generic-noun class as `thing`/`way`.)
 
 The surface question did not survive contact. Once themes were correctly
 nouns-only and re-run against a real transcript, the walker's verdict was to

@@ -139,10 +139,15 @@ enum TranscriptNLP {
 /// this gap between lexical class and topical content.
 enum SpokenStoplist {
 
-    /// Filler nouns filtered out of THEME extraction (nouns only).
+    /// Filler nouns filtered out of THEME extraction (nouns only). `day`,
+    /// `days`, and `area` joined at the ship gate (2026-08-25): real-device
+    /// history showed place resonance threading 'day' (17 mentions near the
+    /// same ground) and photo adjacency threading 'area' — the same
+    /// generic-noun class as `thing`/`way`, not topical content.
     static let lightNouns: Set<String> = [
         "thing", "things", "stuff", "kind", "sort", "lot", "bit", "way", "ways",
-        "one", "ones", "something", "anything", "everything", "nothing"
+        "one", "ones", "something", "anything", "everything", "nothing",
+        "day", "days", "area"
     ]
 
     /// Light/auxiliary/modal verbs plus the filler nouns above, filtered out

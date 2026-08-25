@@ -364,25 +364,6 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
     }
 
     @MainActor
-    func test_transcribedRecordingsSnapshot_rangeBoundsTheFetch() throws {
-        let previousDataStack = DataManager.dataStack
-        DataManager.dataStack = stack
-        defer { DataManager.dataStack = previousDataStack }
-
-        let inside = UUID(), outside = UUID()
-        try seedRecording(uuid: inside, transcription: "inside the window",
-                          startDate: Date(timeIntervalSince1970: 1_700_000_000))
-        try seedRecording(uuid: outside, transcription: "outside the window",
-                          startDate: Date(timeIntervalSince1970: 1_600_000_000))
-
-        let range = Date(timeIntervalSince1970: 1_699_999_000)...Date(timeIntervalSince1970: 1_700_001_000)
-        let snapshot = DataManager.transcribedRecordingsSnapshot(in: range)
-        XCTAssertEqual(snapshot.map(\.uuid), [inside])
-        XCTAssertEqual(DataManager.transcribedRecordingsSnapshot().count, 2,
-                       "nil range preserves the existing all-recordings behavior")
-    }
-
-    @MainActor
     func test_routeFixNear_returnsNearestSampleWithinNinetySeconds() throws {
         let previousDataStack = DataManager.dataStack
         DataManager.dataStack = stack

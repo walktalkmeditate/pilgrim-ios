@@ -162,37 +162,6 @@ extension DossierSenses {
     }
 }
 
-// MARK: - Track 4: question density (cross-walk)
-
-extension DossierSenses {
-
-    static func questionCount(in text: String) -> Int {
-        text.filter { $0 == "?" }.count
-    }
-
-    static func questionDensity(input: Input, suppressed: Set<String>) -> SenseLine? {
-        let todayCount = input.currentRecordings.reduce(0) { $0 + questionCount(in: $1.text) }
-        guard todayCount >= questionMinCount else { return nil }
-        let windowStart = input.walkStart.addingTimeInterval(-ThreadStore.recurrenceWindow)
-        var countsByWalk: [UUID: Int] = [:]
-        for entry in input.historyTranscripts {
-            guard let walk = input.walkIndex[entry.recordingUUID],
-                  walk.walkUUID != input.currentWalkUUID,
-                  let instant = input.recordingTimestamps[entry.recordingUUID],
-                  instant >= windowStart, instant <= input.walkEnd else { continue }
-            countsByWalk[walk.walkUUID, default: 0] += questionCount(in: entry.transcript)
-        }
-        guard countsByWalk.count >= questionMinHistoryWalks else { return nil }
-        let history = countsByWalk.values.sorted()
-        guard Double(todayCount) >= questionMedianRatio * median(history.map(Double.init)),
-              todayCount > history.last ?? 0 else { return nil }
-        return SenseLine(
-            text: "\(capitalizedCount(todayCount)) of today's sentences were questions — more than any walk in the last 30 days.",
-            lemma: nil
-        )
-    }
-}
-
 // MARK: - Track 4: theme-marker coloring (current walk)
 
 extension DossierSenses {
@@ -416,7 +385,7 @@ extension DossierSenses {
         case .rain: return "under rain"
         case .snow: return "under snow"
         case .clear: return "under clear skies"
-        case .cloud: return "under cloud"
+        case .cloud: return "under clouds"
         case .wind: return "in wind"
         case .fog: return "in fog"
         case .unknown: return nil
@@ -432,8 +401,14 @@ extension DossierSenses {
         }
         let known = buckets.values.filter { $0 != .unknown }
         guard !known.isEmpty else { return nil }
-        let majority = Dictionary(grouping: known, by: { $0 })
-            .first { Double($0.value.count) / Double(known.count) > 0.5 }?.key
+        // Ship gate (2026-08-25): the guard tightened from "majority" (>50%)
+        // to "mode" — 4/4 real-device firings were a plurality tautology
+        // ("under cloud" without any condition holding a true majority). The
+        // shared category now fires only when its count is strictly below
+        // the window's highest condition count; a tie with the mode counts
+        // as the mode and still suppresses (conservative).
+        let conditionCounts = Dictionary(grouping: known, by: { $0 }).mapValues(\.count)
+        let modeCount = conditionCounts.values.max() ?? 0
         for thread in activeThreads(in: input) where !suppressed.contains(thread.lemma) {
             let walkUUIDs = Set(
                 thread.appearances
@@ -445,7 +420,7 @@ extension DossierSenses {
             guard let shared = themeBuckets.first,
                   shared != .unknown,
                   themeBuckets.allSatisfy({ $0 == shared }),
-                  shared != majority,
+                  conditionCounts[shared, default: 0] < modeCount,
                   let phrase = skyPhrase(shared) else { continue }
             let head = walkUUIDs.count == 2 ? "Both walks" : "All \(walkUUIDs.count) walks"
             return SenseLine(text: "\(head) where '\(thread.displayTerm)' surfaced were \(phrase).",
