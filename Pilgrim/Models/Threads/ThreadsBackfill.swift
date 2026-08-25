@@ -81,7 +81,17 @@ enum ThreadsBackfill {
     /// would otherwise linger on disk forever, invisible to every reader
     /// yet never pruned. `store.delete` tombstones them, matching the
     /// builder's own orphan-cleanup path.
+    ///
+    /// An empty `liveUUIDs` is skipped outright: `transcribedRecordingsSnapshot`
+    /// silently returns `[]` on any CoreStore failure (`try? queryAttributes`),
+    /// indistinguishable here from a genuinely empty history. Treating it as
+    /// proof of orphanhood would store-wide delete every stale-schema context
+    /// still on disk for recordings that are, in fact, live — mirroring the
+    /// sibling guard in `ThreadsDossierBuilder.build()`
+    /// (`walkIndex.isEmpty && !all.isEmpty`). A genuine zero-recording device
+    /// has nothing worth pruning anyway, so the skip costs nothing real.
     private static func pruneStaleOrphans(store: TranscriptContextStore, liveUUIDs: Set<UUID>) {
+        guard !liveUUIDs.isEmpty else { return }
         let staleOrphans = store.loadAllIncludingStaleVersions()
             .filter { $0.schemaVersion != TranscriptContext.currentSchemaVersion && !liveUUIDs.contains($0.recordingUUID) }
             .map(\.recordingUUID)

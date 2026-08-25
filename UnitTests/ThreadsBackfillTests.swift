@@ -168,6 +168,36 @@ final class ThreadsBackfillTests: XCTestCase {
                        "a stale-version context with no matching recording must be deleted, not merely hidden")
     }
 
+    /// `transcribedRecordingsSnapshot()`'s `try? queryAttributes` silently
+    /// returns `[]` on any CoreStore failure — indistinguishable here from a
+    /// genuinely empty history. Treating an empty snapshot as proof every
+    /// stale-schema context is orphaned would store-wide delete and
+    /// tombstone a still-live recording's context on a single bad read. The
+    /// dossier builder's sibling guard (`walkIndex.isEmpty && !all.isEmpty`,
+    /// see `testBuilder_emptyWalkIndexWithStoredContexts_doesNotMassPrune`)
+    /// defends the same hazard on its own read path.
+    func testRunIfNeeded_emptySnapshotWithStoredStaleContext_doesNotMassPrune() async {
+        let staleUUID = UUID()
+        let stillLive = TranscriptContext(
+            schemaVersion: 1, recordingUUID: staleUUID, transcriptHash: "still-live",
+            languageCode: "en", wordCount: 1, themes: [], markers: nil
+        )
+        store.save(stillLive)
+        let changeCountBeforeSweep = store.changeCount
+
+        let done = expectation(description: "sweep finished")
+        ThreadsBackfill.runIfNeeded(
+            store: store, snapshotProvider: { [] }, gate: { true },
+            onFinish: { done.fulfill() }
+        )
+        await fulfillment(of: [done], timeout: 60)
+
+        XCTAssertTrue(store.hasContext(for: staleUUID),
+                      "an empty/failed snapshot read must not be treated as proof every stale context is orphaned")
+        XCTAssertEqual(store.changeCount, changeCountBeforeSweep,
+                       "no delete/tombstone write must reach the store on an empty snapshot")
+    }
+
     /// The V3→V4 transition is the one moment the burned Buck Moon budget
     /// can be forgiven: the stale-theme era's re-analysis will change what
     /// the moon line has to say, so its last-reported lunation must clear

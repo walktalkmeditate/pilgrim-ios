@@ -417,7 +417,10 @@ enum DossierSensesFieldReport {
             report += "  \(sense): \(firing[sense] ?? 0)/\(eligible)\n"
         }
         let sortedDurations = buildDurations.sorted()
-        let medianSeconds = sortedDurations[sortedDurations.count / 2]
+        let midpoint = sortedDurations.count / 2
+        let medianSeconds = sortedDurations.count.isMultiple(of: 2)
+            ? (sortedDurations[midpoint - 1] + sortedDurations[midpoint]) / 2
+            : sortedDurations[midpoint]
         let maxSeconds = sortedDurations.last ?? 0
         report += String(format: "\nBuild time — median: %.3fs, max: %.3fs\n", medianSeconds, maxSeconds)
         report += "=======================================\n"
