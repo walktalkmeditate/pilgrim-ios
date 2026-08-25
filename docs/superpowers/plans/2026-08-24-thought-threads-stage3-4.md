@@ -1,5 +1,7 @@
 # Thought Threads — Stage 3+4 Implementation Plan
 
+> **Superseded (2026-08-24):** the card, thread history, releases, and lunation recap this plan shipped were removed the same day after real-device contact — see the Stage 3 field verdict in `docs/superpowers/specs/2026-08-22-thought-threads-design.md` and `docs/superpowers/plans/2026-08-24-threads-dossier-first.md`. The engine, dossier, and intention chips survive.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** The engine earns its surfaces. Stage 3+4 ships the "What walked with you" card, the thread history view with excerpts and the origin map, "Let this one go" releases with a `.pilgrim` carve-out, the lunation recap with its walk-dated invitation, and flips the intention chips live — everything specified in `docs/superpowers/specs/2026-08-22-thought-threads-design.md` "### Stage 3 — card + thread view" and the whole "## Stage 3+4 addendum (2026-08-24)".
