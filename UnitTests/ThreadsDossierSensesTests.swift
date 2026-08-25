@@ -183,6 +183,77 @@ extension ThreadsDossierTests {
         XCTAssertNil(dossier, "no thread-bearing recording — no dossier, and a firing sense cannot conjure one")
     }
 
+    /// The memo must count only the build's own writes, not whatever
+    /// `store.changeCount` happens to read as afterward. `resolveRouteFix`
+    /// is the one hook `build` calls mid-execution (inside
+    /// `appendSensesBlock`, after the pre-build changeCount is sampled and
+    /// before the memo is written) — using it to fire an external
+    /// `store.save` reproduces a background writer (ThreadsBackfill's
+    /// sweep, transcription-completion analysis) landing a context inside
+    /// that exact window, something a real timer/queue can do but a
+    /// same-thread test otherwise can't.
+    func testBuilder_externalWriteDuringBuildWindow_notFoldedIntoMemo_nextCallMisses() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+        let defaults = UserDefaults.standard
+        let savedMoon = defaults.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+        defer {
+            if let savedMoon { defaults.set(savedMoon, forKey: ThreadsDossierBuilder.moonLineDefaultsKey) }
+            else { defaults.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey) }
+        }
+        defaults.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierSensesBuilderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+
+        let walkStart = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let walkA = UUID(), recA = UUID()
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [recA: (walkA, walkStart)]
+        let bundle = sensesBundle(
+            walkStart: walkStart, walkEnd: walkStart.addingTimeInterval(3600),
+            recordingTimestamps: [recA: walkStart.addingTimeInterval(300)],
+            lunationAnchor: walkStart
+        )
+        // Never-before-stored, so build 1's lazy backfill fires and this
+        // build's own-write count is 1, not 0.
+        let recording = wordedRecording(uuid: recA, start: walkStart.addingTimeInterval(300))
+
+        // A UUID no walkIndex here ever claims — an orphan the moment it's
+        // seen by a fresh `store.loadAll()`.
+        let externalUUID = UUID()
+        let midBuildExternalWrite: (Date) -> DossierSenses.RouteFix? = { _ in
+            let context = TranscriptContextAnalyzer.analyze(
+                recordingUUID: externalUUID, transcript: "a note that belongs to no walk this build knows about"
+            )
+            store.save(context)
+            return nil
+        }
+
+        _ = ThreadsDossierBuilder.build(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: bundle, resolveRouteFix: midBuildExternalWrite
+        )
+        XCTAssertTrue(store.hasContext(for: externalUUID), "the external write must have actually landed mid-build")
+
+        // Same walk, same recordings, same index, no further external
+        // writes — the T9 reopen shape. Build 1's own `loadAll()` ran
+        // before the external write landed, so it never pruned
+        // `externalUUID` as the orphan it is. A memo that folded that
+        // external bump into its own baseline would cache-hit here and
+        // leave it stranded on disk forever (self-healing only on some
+        // unrelated future mutation). The correct memo misses, rebuilds,
+        // and prunes it.
+        _ = ThreadsDossierBuilder.build(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: bundle, resolveRouteFix: { _ in nil }
+        )
+        XCTAssertFalse(store.hasContext(for: externalUUID),
+                       "build 2 must re-read the store and prune the external write as an orphan")
+    }
+
     func testAssembler_noticedBlockRidesInsideDossier_handlingNoteCoPresent() {
         let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         let dossier = "**Thought threads (on-device analysis):**\ntest\n\n**Noticed:**\n'music' has surfaced on 2 walks — twice near the same stretch of ground."

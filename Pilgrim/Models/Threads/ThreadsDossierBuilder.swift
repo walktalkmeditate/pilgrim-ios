@@ -104,6 +104,12 @@ enum ThreadsDossierBuilder {
         if !orphans.isEmpty {
             store.delete(recordingUUIDs: Array(orphans))
         }
+        // The delete call above is one write regardless of orphan count
+        // (`TranscriptContextStore.delete` bumps `changeCount` once per
+        // call, not per UUID) — counted here so the memo baseline below can
+        // add exactly this build's own confirmed writes instead of
+        // re-sampling `store.changeCount` after the fact.
+        let ownDeleteWrite = orphans.isEmpty ? 0 : 1
         let live = all.filter { !orphans.contains($0.recordingUUID) }
 
         var freshlySaved: [UUID: TranscriptContext] = [:]
@@ -155,14 +161,23 @@ enum ThreadsDossierBuilder {
         )
 
         memoLock.lock()
-        // Post-write changeCount and moon state: this build's own lazy
-        // backfill can itself bump the store's changeCount, so memoizing the
-        // pre-build snapshot would make the very next identical call miss
-        // its own cache. Reading again here captures this build's mutations
-        // (if any) as the new baseline — reopening the same walk hits the
-        // memo and keeps its moon line; any other walk, or a change from
-        // elsewhere, still invalidates it.
-        memo = (store.changeCount, walkUUID, backfillComplete, postBuildMoonState, dossier)
+        // Baseline is `preBuildChangeCount` plus exactly this build's own
+        // confirmed writes (the orphan delete, if any, plus one save per
+        // `freshlySaved` entry — each of those is a write the build itself
+        // vouched for via `store.hasContext` above) — never a fresh read of
+        // `store.changeCount`. `changeCount` is a bare monotonic counter
+        // with no writer attribution: an external writer (ThreadsBackfill's
+        // sweep, transcription-completion analysis) landing a save inside
+        // this same call — after `loadAll()` above already ran, so this
+        // build never saw it — would otherwise get folded into the memo as
+        // if it were this build's own mutation, and the next call for this
+        // walk would then cache-hit a dossier that never saw it. Computing
+        // the baseline from only confirmed own-writes means any external
+        // change, including one landing inside this build's own window,
+        // still invalidates the memo on the next call. Reopening the same
+        // walk with no writes at all in between still hits the memo.
+        let ownWriteCount = ownDeleteWrite + freshlySaved.count
+        memo = (preBuildChangeCount + ownWriteCount, walkUUID, backfillComplete, postBuildMoonState, dossier)
         memoLock.unlock()
         return dossier
     }
