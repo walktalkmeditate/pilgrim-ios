@@ -121,6 +121,9 @@ struct PromptListView: View {
             let baseContext = await buildActivityContext()
             let walkUUID = walk.uuid
             let walkIndex = DataManager.voiceRecordingWalkIndex()
+            let sensesBundle = UserPreferences.threadsAfterWalks.value
+                ? ThreadsDossierBuilder.gatherSensesBundle(walk: walk)
+                : nil
 
             let (context, generated, derived) = await Task.detached(priority: .userInitiated) {
                 var context = baseContext
@@ -128,7 +131,8 @@ struct PromptListView: View {
                     ThreadsDossierBuilder.build(
                         walkUUID: $0,
                         recordings: baseContext.recordings,
-                        walkIndex: walkIndex
+                        walkIndex: walkIndex,
+                        senses: sensesBundle
                     )
                 }
                 let derived = PromptGenerator.resolvedDerivations(context: context)
@@ -165,7 +169,8 @@ struct PromptListView: View {
                 startCoordinate: startCoord,
                 endCoordinate: endCoord,
                 wordsPerMinute: recording.wordsPerMinute,
-                recordingUUID: uuid
+                recordingUUID: uuid,
+                endTimestamp: recording.endDate
             )
         }.sorted { $0.timestamp < $1.timestamp }
 

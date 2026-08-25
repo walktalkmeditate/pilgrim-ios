@@ -136,21 +136,50 @@ extension DataManager {
     /// never carries a bridged `UUID`/`NSUUID`, only the string CoreStore
     /// wrote. `rowUUID` undoes that encoding explicitly instead of relying
     /// on a cast that can only ever fail.
+    /// `range`, when supplied, bounds the fetch to recordings whose start
+    /// falls inside it — the senses' in-window transcript reads never pull
+    /// the whole table (spec: bounded fetch). `nil` preserves the original
+    /// all-recordings behavior for the existing backfill caller.
     @MainActor
-    public static func transcribedRecordingsSnapshot() -> [(uuid: UUID, transcript: String)] {
-        guard let rows = try? dataStack.queryAttributes(
-            From<VoiceRecording>().select(
-                NSDictionary.self,
-                .attribute(\._uuid),
-                .attribute(\._transcription)
-            )
-        ) else { return [] }
+    public static func transcribedRecordingsSnapshot(
+        in range: ClosedRange<Date>? = nil
+    ) -> [(uuid: UUID, transcript: String)] {
+        var query = From<VoiceRecording>().select(
+            NSDictionary.self,
+            .attribute(\._uuid),
+            .attribute(\._transcription)
+        )
+        if let range {
+            query = query.where(\._startDate >= range.lowerBound && \._startDate <= range.upperBound)
+        }
+        guard let rows = try? dataStack.queryAttributes(query) else { return [] }
         return rows.compactMap { row in
             guard let uuid = rowUUID(row["id"]),
                   let transcript = row["transcription"] as? String,
                   !transcript.isEmpty else { return nil }
             return (uuid, transcript)
         }
+    }
+
+    /// Recording UUID → the recording's own start instant. The walk-level
+    /// `voiceRecordingWalkIndex` above returns WALK dates; the senses' 30-day
+    /// windows and coordinate lookups need per-RECORDING times (spec Track 1).
+    @MainActor
+    public static func voiceRecordingTimestampIndex() -> [UUID: Date] {
+        guard let rows = try? dataStack.queryAttributes(
+            From<VoiceRecording>().select(
+                NSDictionary.self,
+                .attribute(\._uuid),
+                .attribute(\._startDate)
+            )
+        ) else { return [:] }
+        var index: [UUID: Date] = [:]
+        for row in rows {
+            guard let uuid = rowUUID(row["id"]),
+                  let start = row["startDate"] as? Date else { continue }
+            index[uuid] = start
+        }
+        return index
     }
 
     /// Recording UUID → owning walk, for thread aggregation. The walk
@@ -204,7 +233,12 @@ extension DataManager {
         return index
     }
 
-    private static func rowUUID(_ raw: Any?) -> UUID? {
+    /// UUID columns come back from `queryAttributes` as raw strings —
+    /// CoreStore's `UUID: QueryableAttributeType` declares
+    /// `cs_rawAttributeType = .stringAttributeType` — so every dictionary
+    /// snapshot query across DataManager decodes "id" through this helper
+    /// rather than a cast that can only ever fail.
+    static func rowUUID(_ raw: Any?) -> UUID? {
         (raw as? String).flatMap(UUID.init(uuidString:))
     }
 

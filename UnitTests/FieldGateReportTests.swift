@@ -42,4 +42,50 @@ final class FieldGateReportTests: XCTestCase {
         print(report)
         XCTAssertFalse(contexts.isEmpty)
     }
+
+    /// Senses over the same corpus, uncapped, with synthetic ground: a
+    /// printed rehearsal of the on-device report so template phrasing gets
+    /// human eyes before the real-history pass.
+    func testPrintSensesFieldGateReport() {
+        var contexts: [TranscriptContext] = []
+        var walks: [UUID: (walkUUID: UUID, date: Date)] = [:]
+        let base = DateFactory.makeDate(2024, 6, 1, 9, 0, 0)
+        for (index, transcript) in fixtures.enumerated() {
+            let context = TranscriptContextAnalyzer.analyze(
+                recordingUUID: UUID(), transcript: transcript, flaggedFragments: []
+            )
+            contexts.append(context)
+            walks[context.recordingUUID] = (UUID(), base.addingTimeInterval(Double(index) * 3 * 86400))
+        }
+        let threads = ThreadStore.build(contexts: contexts, walks: walks)
+        let current = contexts.last!
+        let currentWalk = walks[current.recordingUUID]!
+        let input = DossierSenses.Input(
+            currentWalkUUID: currentWalk.walkUUID,
+            walkStart: currentWalk.date,
+            walkEnd: currentWalk.date.addingTimeInterval(5400),
+            totalAscent: 60,
+            elevationSeries: [], photos: [],
+            currentRecordings: [DossierSenses.CurrentRecording(
+                uuid: current.recordingUUID, start: currentWalk.date.addingTimeInterval(300),
+                end: currentWalk.date.addingTimeInterval(600),
+                text: fixtures.last!, wordCount: current.wordCount, themes: current.themes
+            )],
+            threads: threads, backfillComplete: true,
+            walkSnapshots: walks.values.map {
+                DossierSenses.WalkSnapshotRow(walkUUID: $0.walkUUID, startDate: $0.date,
+                                              intention: nil, weatherCondition: nil)
+            },
+            historyTranscripts: [], recordingTimestamps: [:], walkIndex: walks,
+            fixes: [:], moon: nil
+        )
+        var report = "\n===== SENSES FIELD GATE REPORT (fixtures) =====\n"
+        for sense in DossierSenses.Sense.allCases {
+            let line = DossierSenses.evaluate(sense, input: input, suppressed: [])
+            report += "  \(sense): \(line?.text ?? "—")\n"
+        }
+        report += "===============================================\n"
+        print(report)
+        XCTAssertFalse(threads.isEmpty)
+    }
 }

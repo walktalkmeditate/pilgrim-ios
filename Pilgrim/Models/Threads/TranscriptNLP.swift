@@ -82,6 +82,36 @@ enum TranscriptNLP {
         wordTokens(in: text).count
     }
 
+    struct WordToken: Equatable {
+        let token: String
+        let start: Int
+    }
+
+    /// Offsets for `wordTokens`' own output — not a second tokenizer. A
+    /// separate letters-only scan (even a careful one) can still diverge from
+    /// `components(separatedBy:)` on a grapheme that mixes scalar classes
+    /// (a base letter plus a combining mark): the two would draw the split
+    /// in different places. Sourcing the token list directly from
+    /// `wordTokens` and locating each one by forward search makes the token
+    /// TEXT identical by construction — there is exactly one tokenizer, and
+    /// this just remembers where its output came from (the offsets
+    /// `contentLemmaMentions` also measures in: `String.distance`, Character
+    /// count).
+    static func wordTokenOffsets(in text: String) -> [WordToken] {
+        let lowered = text.lowercased()
+        var tokens: [WordToken] = []
+        var cursor = lowered.startIndex
+        for token in wordTokens(in: text) {
+            guard let range = lowered.range(of: token, range: cursor..<lowered.endIndex) else { continue }
+            tokens.append(WordToken(
+                token: token,
+                start: lowered.distance(from: lowered.startIndex, to: range.lowerBound)
+            ))
+            cursor = range.upperBound
+        }
+        return tokens
+    }
+
     static func related(_ a: String, _ b: String, languageCode: String) -> Bool {
         if a == b { return true }
         guard let embedding = embedding(for: languageCode),

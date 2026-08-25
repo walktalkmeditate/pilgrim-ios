@@ -167,4 +167,76 @@ extension DataManager {
             ) ?? []
         }
     }
+
+    // MARK: - Dossier Senses
+
+    /// Nearest route fix for one recording instant: a ±90 s timestamp-
+    /// predicate query with a fetch limit — never a full `walk.routeData`
+    /// materialization (spec: bounded fetch; the samples table is the
+    /// store's largest). 240 caps the read: ~1 Hz logging yields ≤181
+    /// samples inside ±90 s, so the ascending-order clip never bites in
+    /// practice. Callable off-main via `threadSafeSyncReturn`, matching
+    /// `queryExistingHealthUUIDs` — ThreadsDossierBuilder resolves fixes
+    /// lazily from its detached build.
+    public static func routeFixNear(timestamp: Date) -> DossierSenses.RouteFix? {
+        threadSafeSyncReturn {
+            let windowStart = timestamp.addingTimeInterval(-DossierSenses.hygieneMaxGap)
+            let windowEnd = timestamp.addingTimeInterval(DossierSenses.hygieneMaxGap)
+            guard let rows = try? dataStack.queryAttributes(
+                From<RouteDataSample>()
+                    .select(
+                        NSDictionary.self,
+                        .attribute(\._timestamp),
+                        .attribute(\._latitude),
+                        .attribute(\._longitude),
+                        .attribute(\._horizontalAccuracy)
+                    )
+                    .where(\._timestamp >= windowStart && \._timestamp <= windowEnd)
+                    .orderBy(.ascending(\._timestamp))
+                    .tweak { $0.fetchLimit = 240 }
+            ) else { return nil }
+            return rows
+                .compactMap { row -> DossierSenses.RouteFix? in
+                    guard let sampleTime = row["timestamp"] as? Date,
+                          let latitude = row["latitude"] as? Double,
+                          let longitude = row["longitude"] as? Double,
+                          let accuracy = row["horizontalAccuracy"] as? Double else { return nil }
+                    return DossierSenses.RouteFix(
+                        coordinate: DossierSenses.Coordinate(latitude: latitude, longitude: longitude),
+                        horizontalAccuracy: accuracy,
+                        gapSeconds: abs(sampleTime.timeIntervalSince(timestamp))
+                    )
+                }
+                .min { ($0.gapSeconds, $0.horizontalAccuracy) < ($1.gapSeconds, $1.horizontalAccuracy) }
+        }
+    }
+
+    /// One row per walk in range — intention (`comment`), stored weather,
+    /// start date — one bounded fetch serving intention lineage, weather
+    /// weave, and the moon line's walk counts.
+    @MainActor
+    public static func walkSensesSnapshot(from: Date, to: Date) -> [DossierSenses.WalkSnapshotRow] {
+        guard let rows = try? dataStack.queryAttributes(
+            From<Walk>()
+                .select(
+                    NSDictionary.self,
+                    .attribute(\._uuid),
+                    .attribute(\._startDate),
+                    .attribute(\._comment),
+                    .attribute(\._weatherCondition)
+                )
+                .where(\._startDate >= from && \._startDate <= to)
+                .orderBy(.ascending(\._startDate))
+        ) else { return [] }
+        return rows.compactMap { row in
+            guard let uuid = rowUUID(row["id"]),
+                  let start = row["startDate"] as? Date else { return nil }
+            return DossierSenses.WalkSnapshotRow(
+                walkUUID: uuid,
+                startDate: start,
+                intention: row["comment"] as? String,
+                weatherCondition: row["weatherCondition"] as? String
+            )
+        }
+    }
 }
