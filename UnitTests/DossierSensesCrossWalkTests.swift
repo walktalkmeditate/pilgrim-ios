@@ -147,4 +147,144 @@ final class DossierSensesCrossWalkTests: XCTestCase {
             DossierSenses.SenseLine(text: "Both walks where 'music' surfaced were under rain.", lemma: "music")
         )
     }
+
+    // MARK: - Place-theme resonance
+
+    /// Theme 'music' spoken at the river bend on two walks; theme 'work'
+    /// spoken kilometers apart — the wide baseline the guard divides by.
+    private func placeInput(
+        clusterOffsetMeters: Double = 40,
+        baselineSpreadDegrees: Double = 0.05,   // ~5.5 km — wide daily range
+        backfillComplete: Bool = true,
+        secondClusterFixGap: TimeInterval = 5
+    ) -> DossierSenses.Input {
+        let currentWalk = UUID(), otherWalk = UUID()
+        let recA = UUID(), recB = UUID(), farC = UUID(), farD = UUID()
+        let dayA = Self.walkStart, dayB = Self.walkStart.addingTimeInterval(-5 * 86400)
+        let timestamps: [UUID: Date] = [
+            recA: dayA.addingTimeInterval(600), recB: dayB.addingTimeInterval(600),
+            farC: dayA.addingTimeInterval(1200), farD: dayB.addingTimeInterval(1200)
+        ]
+        let latOffset = clusterOffsetMeters / 111_320
+        let fixes: [UUID: DossierSenses.RouteFix] = [
+            recA: fix(lat: 42.8782, lon: -8.5448),
+            recB: fix(lat: 42.8782 + latOffset, lon: -8.5448, gap: secondClusterFixGap),
+            farC: fix(lat: 42.8782 + baselineSpreadDegrees, lon: -8.5448),
+            farD: fix(lat: 42.8782 - baselineSpreadDegrees, lon: -8.5448)
+        ]
+        let threads = [
+            thread(lemma: "music", appearances: [
+                appearance(recording: recA, walk: currentWalk, date: dayA, mentions: 2),
+                appearance(recording: recB, walk: otherWalk, date: dayB, mentions: 1)
+            ]),
+            thread(lemma: "work", appearances: [
+                appearance(recording: farC, walk: currentWalk, date: dayA),
+                appearance(recording: farD, walk: otherWalk, date: dayB)
+            ])
+        ]
+        return makeInput(
+            currentWalkUUID: currentWalk,
+            threads: threads,
+            backfillComplete: backfillComplete,
+            recordingTimestamps: timestamps,
+            fixes: fixes
+        )
+    }
+
+    func testPlace_tightClusterWideBaseline_fires() {
+        XCTAssertEqual(
+            DossierSenses.placeResonance(input: placeInput(), suppressed: []),
+            DossierSenses.SenseLine(
+                text: "'music' has surfaced on 2 walks — 3 times near the same stretch of ground.",
+                lemma: "music"
+            )
+        )
+    }
+
+    func testPlace_twoMentionCluster_saysTwice() {
+        let currentWalk = UUID(), otherWalk = UUID()
+        let recA = UUID(), recB = UUID(), farC = UUID(), farD = UUID()
+        let dayA = Self.walkStart, dayB = Self.walkStart.addingTimeInterval(-5 * 86400)
+        let input = makeInput(
+            currentWalkUUID: currentWalk,
+            threads: [
+                thread(lemma: "music", appearances: [
+                    appearance(recording: recA, walk: currentWalk, date: dayA, mentions: 1),
+                    appearance(recording: recB, walk: otherWalk, date: dayB, mentions: 1)
+                ]),
+                thread(lemma: "work", appearances: [
+                    appearance(recording: farC, walk: currentWalk, date: dayA),
+                    appearance(recording: farD, walk: otherWalk, date: dayB)
+                ])
+            ],
+            recordingTimestamps: [
+                recA: dayA.addingTimeInterval(600), recB: dayB.addingTimeInterval(600),
+                farC: dayA.addingTimeInterval(1200), farD: dayB.addingTimeInterval(1200)
+            ],
+            fixes: [
+                recA: fix(lat: 42.8782, lon: -8.5448),
+                recB: fix(lat: 42.87824, lon: -8.5448),
+                farC: fix(lat: 42.93, lon: -8.5448),
+                farD: fix(lat: 42.82, lon: -8.5448)
+            ]
+        )
+        XCTAssertEqual(DossierSenses.placeResonance(input: input, suppressed: [])?.text,
+                       "'music' has surfaced on 2 walks — twice near the same stretch of ground.")
+    }
+
+    func testPlace_specificityGuard_tightBaselineSuppresses() {
+        let input = placeInput(baselineSpreadDegrees: 0.0005)  // ~55 m daily loop
+        XCTAssertNil(DossierSenses.placeResonance(input: input, suppressed: []),
+                     "when ALL recordings cluster, a 150 m match means nothing — routine geography suppresses")
+    }
+
+    func testPlace_backfillIncomplete_suppresses() {
+        XCTAssertNil(DossierSenses.placeResonance(input: placeInput(backfillComplete: false), suppressed: []),
+                     "an origin-class claim waits on the backfill gate")
+    }
+
+    func testPlace_hygieneFailedFix_dropsRecordingFromCluster() {
+        XCTAssertNotNil(DossierSenses.placeResonance(input: placeInput(), suppressed: []))
+        XCTAssertNil(DossierSenses.placeResonance(input: placeInput(secondClusterFixGap: 120), suppressed: []),
+                     "a stale fix drops its recording; one walk's mentions alone cannot cluster")
+    }
+
+    func testPlace_singleWalkCluster_doesNotFire() {
+        let currentWalk = UUID()
+        let recA = UUID(), recB = UUID(), farC = UUID()
+        let dayA = Self.walkStart
+        let input = makeInput(
+            currentWalkUUID: currentWalk,
+            threads: [
+                thread(lemma: "music", appearances: [
+                    appearance(recording: recA, walk: currentWalk, date: dayA, mentions: 2),
+                    appearance(recording: recB, walk: currentWalk, date: dayA, mentions: 2)
+                ]),
+                thread(lemma: "work", appearances: [appearance(recording: farC, walk: currentWalk, date: dayA)])
+            ],
+            recordingTimestamps: [recA: dayA.addingTimeInterval(60), recB: dayA.addingTimeInterval(900),
+                                  farC: dayA.addingTimeInterval(1500)],
+            fixes: [recA: fix(lat: 42.8782, lon: -8.5448), recB: fix(lat: 42.87824, lon: -8.5448),
+                    farC: fix(lat: 42.93, lon: -8.5448)]
+        )
+        XCTAssertNil(DossierSenses.placeResonance(input: input, suppressed: []),
+                     "≥2 distinct walks — one walk's cluster is a walk, not a resonance")
+    }
+
+    func testPlace_onlyFirstFourActiveThreadsChecked() {
+        let base = placeInput()
+        // Push 'music' past the candidate cap with four alphabetically-earlier
+        // active threads carrying no cluster of their own.
+        let fillers = ["alpha", "beta", "delta", "gamma"].map { name in
+            thread(lemma: name, appearances: [appearance(walk: base.currentWalkUUID, date: Self.walkStart)])
+        }
+        let input = makeInput(
+            currentWalkUUID: base.currentWalkUUID,
+            threads: (fillers + base.threads).sorted { $0.lemma < $1.lemma },
+            recordingTimestamps: base.recordingTimestamps,
+            fixes: base.fixes
+        )
+        XCTAssertNil(DossierSenses.placeResonance(input: input, suppressed: []),
+                     "cost bound: only the thread section's first 4 themes are checked")
+    }
 }

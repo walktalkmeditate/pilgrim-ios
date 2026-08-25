@@ -1,11 +1,103 @@
 import Foundation
 import CoreLocation
 
+// MARK: - Track 1: place-theme resonance (cross-walk)
+
 extension DossierSenses {
 
-    static func placeResonance(input: Input, suppressed: Set<String>) -> SenseLine? {
-        preconditionFailure("unimplemented sense")
+    struct PlaceCluster {
+        let mentionCount: Int
+        let walkCount: Int
+        let spread: CLLocationDistance
     }
+
+    static func placeResonance(input: Input, suppressed: Set<String>) -> SenseLine? {
+        guard input.backfillComplete else { return nil }
+        let windowStart = input.walkStart.addingTimeInterval(-ThreadStore.recurrenceWindow)
+        func inWindow(_ uuid: UUID) -> Bool {
+            guard let instant = input.recordingTimestamps[uuid] else { return false }
+            return instant >= windowStart && instant <= input.walkEnd
+        }
+        func qualifiedCoordinate(_ uuid: UUID) -> Coordinate? {
+            guard let fix = input.fixes[uuid], qualifies(fix) else { return nil }
+            return fix.coordinate
+        }
+        // Baseline spread: median pairwise distance across ALL in-window
+        // mention recordings, any theme — the specificity guard's denominator.
+        var mentionCoordinates: [UUID: Coordinate] = [:]
+        for thread in input.threads {
+            for appearance in thread.appearances where inWindow(appearance.recordingUUID) {
+                if let coordinate = qualifiedCoordinate(appearance.recordingUUID) {
+                    mentionCoordinates[appearance.recordingUUID] = coordinate
+                }
+            }
+        }
+        let ordered = mentionCoordinates.sorted { $0.key.uuidString < $1.key.uuidString }.map(\.value)
+        guard ordered.count >= 2 else { return nil }
+        var pairwise: [Double] = []
+        for i in 0..<(ordered.count - 1) {
+            for j in (i + 1)..<ordered.count {
+                pairwise.append(distance(ordered[i], ordered[j]))
+            }
+        }
+        let baseline = median(pairwise)
+
+        for thread in activeThreads(in: input).prefix(placeCandidateThemeCap)
+        where !suppressed.contains(thread.lemma) {
+            let distinctWalks = Set(
+                thread.appearances
+                    .filter { $0.date >= windowStart && $0.date <= input.walkEnd }
+                    .map(\.walkUUID)
+            )
+            guard distinctWalks.count >= 2 else { continue }
+            let members = thread.appearances
+                .filter { inWindow($0.recordingUUID) }
+                .compactMap { appearance in
+                    qualifiedCoordinate(appearance.recordingUUID).map { (appearance: appearance, coordinate: $0) }
+                }
+                .sorted { $0.appearance.recordingUUID.uuidString < $1.appearance.recordingUUID.uuidString }
+            guard let cluster = bestCluster(members: members),
+                  // Strict: a walker whose every recording shares one spot has
+                  // baseline 0 — nothing can be "more specific" than routine.
+                  cluster.spread < baseline / 2 else { continue }
+            let times = cluster.mentionCount == 2 ? "twice" : "\(cluster.mentionCount) times"
+            return SenseLine(
+                text: "'\(thread.displayTerm)' has surfaced on \(distinctWalks.count) walks — \(times) near the same stretch of ground.",
+                lemma: thread.lemma
+            )
+        }
+        return nil
+    }
+
+    /// Deterministic seed-centered clustering: for each member in UUID order,
+    /// the candidate cluster is everything within the radius of that seed;
+    /// best by mention count, then smallest spread, then seed order.
+    static func bestCluster(
+        members: [(appearance: ThreadAppearance, coordinate: Coordinate)]
+    ) -> PlaceCluster? {
+        var best: PlaceCluster?
+        for seed in members {
+            let near = members.filter { distance(seed.coordinate, $0.coordinate) <= placeClusterRadius }
+            let mentionCount = near.reduce(0) { $0 + $1.appearance.mentionCount }
+            let walkCount = Set(near.map(\.appearance.walkUUID)).count
+            guard mentionCount >= 2, walkCount >= 2 else { continue }
+            var spread: CLLocationDistance = 0
+            for i in 0..<near.count {
+                for j in (i + 1)..<near.count {
+                    spread = max(spread, distance(near[i].coordinate, near[j].coordinate))
+                }
+            }
+            if best == nil
+                || mentionCount > best!.mentionCount
+                || (mentionCount == best!.mentionCount && spread < best!.spread) {
+                best = PlaceCluster(mentionCount: mentionCount, walkCount: walkCount, spread: spread)
+            }
+        }
+        return best
+    }
+}
+
+extension DossierSenses {
 
     static func moonLine(input: Input, suppressed: Set<String>) -> SenseLine? {
         preconditionFailure("unimplemented sense")
