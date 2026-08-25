@@ -24,10 +24,17 @@ enum TranscriptNLP {
         return language.rawValue
     }
 
-    static func contentLemmaMentions(in text: String) -> [LemmaMention] {
+    /// `classes` defaults to the full content set so intention echo and
+    /// insight words — which need verbs like "worrying" and "grieving" to
+    /// stay untouched — see no behavior change. ThemeExtractor passes
+    /// `[.noun]` alone: raw-frequency ranking over verbs let spoken
+    /// scaffolding ("was", "have", "can", "think") win every theme.
+    static func contentLemmaMentions(
+        in text: String,
+        classes: Set<NLTag> = [.noun, .verb, .adjective]
+    ) -> [LemmaMention] {
         let tagger = NLTagger(tagSchemes: [.lemma, .lexicalClass])
         tagger.string = text
-        let contentClasses: Set<NLTag> = [.noun, .verb, .adjective]
         var mentions: [LemmaMention] = []
         // Running cursor: enumerateTags visits ranges in order, so advancing
         // the character offset from the previous mention keeps this linear
@@ -41,7 +48,7 @@ enum TranscriptNLP {
             scheme: .lexicalClass,
             options: [.omitPunctuation, .omitWhitespace, .omitOther]
         ) { tag, range in
-            guard let tag, contentClasses.contains(tag) else { return true }
+            guard let tag, classes.contains(tag) else { return true }
             let surface = String(text[range]).lowercased()
             guard surface.count > 2 else { return true }
             let lemma = tagger.tag(at: range.lowerBound, unit: .word, scheme: .lemma)
@@ -94,4 +101,26 @@ enum TranscriptNLP {
         if let loaded { embeddingCache[languageCode] = loaded }
         return loaded
     }
+}
+
+/// Spoken-English scaffolding NLTagger tags as content words even though a
+/// speaker reaches for them out of habit, not meaning — a field-confirmed
+/// bug ("was / have / can / think" as real-device themes) traced to exactly
+/// this gap between lexical class and topical content.
+enum SpokenStoplist {
+
+    /// Filler nouns filtered out of THEME extraction (nouns only).
+    static let lightNouns: Set<String> = [
+        "thing", "things", "stuff", "kind", "sort", "lot", "bit", "way", "ways",
+        "one", "ones", "something", "anything", "everything", "nothing"
+    ]
+
+    /// Light/auxiliary/modal verbs plus the filler nouns above, filtered out
+    /// of the recurring-word attention directive — which still scans verbs,
+    /// so it needs its own stoplist rather than the noun restriction above.
+    static let scaffoldLemmas: Set<String> = [
+        "be", "have", "do", "get", "go", "come", "make", "take", "know",
+        "think", "say", "see", "want", "mean", "feel", "need", "let", "put",
+        "keep", "kind", "thing", "stuff", "way", "lot", "bit"
+    ]
 }

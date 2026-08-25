@@ -32,4 +32,23 @@ final class ThemeExtractorTests: XCTestCase {
         let b = ThemeExtractor.themes(in: moveText, languageCode: "en")
         XCTAssertEqual(a, b)
     }
+
+    // MARK: - Noun-only + spoken stoplist (Dossier-First Refit Task 1)
+
+    /// Field-confirmed bug: real-device themes were "was / have / can /
+    /// think" — spoken-English scaffolding NLTagger tags as verbs, passing
+    /// the old [.noun, .verb, .adjective] filter and winning every
+    /// raw-frequency ranking. Pure scaffolding must yield zero themes.
+    func testPureScaffolding_yieldsNoThemes() {
+        let text = "I was thinking I have to see how it can go, I think I was going to have it " +
+            "done, I know I can get it, I think I have been thinking"
+        XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
+    }
+
+    func testNounAmongScaffolding_isTheOnlyTheme() {
+        let text = "I was thinking about the music, I have to hear the music, I know the music " +
+            "is what I can go back to, I think I was going to have it be the music again"
+        let themes = ThemeExtractor.themes(in: text, languageCode: "en")
+        XCTAssertEqual(themes.map(\.lemma), ["music"])
+    }
 }

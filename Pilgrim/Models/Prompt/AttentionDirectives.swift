@@ -12,13 +12,9 @@ enum AttentionDirectives {
     /// `detectedLanguageCode` defaults to nil ("detect here") so direct
     /// callers stay unchanged; PromptGenerator.resolvedDerivations passes
     /// its precomputed code so the echo skips its own detection pass.
-    /// `releasedLemmas` feeds only recurringWord — the one surfacing path
-    /// that bypasses ThreadStore; intentionEcho is deliberately exempt
-    /// because it quotes the walker's own stated intention.
     static func detect(
         context: ActivityContext,
-        detectedLanguageCode: String? = nil,
-        releasedLemmas: Set<String> = ReleasedThreadsStore.shared.releasedLemmas
+        detectedLanguageCode: String? = nil
     ) -> [String] {
         // Lemmatizing the full transcript is the expensive step; do it once
         // here and share it between the two detectors that need it.
@@ -29,7 +25,7 @@ enum AttentionDirectives {
             stillness(context),
             paceShift(context),
             intentionEcho(context, spokenMentions: spokenMentions, detectedLanguageCode: detectedLanguageCode),
-            recurringWord(context, spokenMentions: spokenMentions, releasedLemmas: releasedLemmas),
+            recurringWord(context, spokenMentions: spokenMentions),
             firstVersusLast(context)
         ].compactMap { $0 }
         return Array(directives.prefix(maxDirectives))
@@ -112,14 +108,15 @@ enum AttentionDirectives {
     }
 
     /// The most-repeated content lemma across all recordings, excluding any
-    /// lemma the intention already claimed and any released lemma — the
-    /// next-ranked candidate is promoted, so a release never silences the
-    /// directive, only redirects it. Shown as its most frequent surface form
-    /// so the walker's own inflection is echoed back.
+    /// lemma the intention already claimed and any spoken-scaffolding lemma
+    /// (`SpokenStoplist.scaffoldLemmas` — light verbs like "think" that
+    /// dominate raw-frequency counts without carrying meaning) — the
+    /// next-ranked candidate is promoted, so excluding a lemma never
+    /// silences the directive, only redirects it. Shown as its most
+    /// frequent surface form so the walker's own inflection is echoed back.
     private static func recurringWord(
         _ context: ActivityContext,
-        spokenMentions mentions: [TranscriptNLP.LemmaMention],
-        releasedLemmas: Set<String>
+        spokenMentions mentions: [TranscriptNLP.LemmaMention]
     ) -> String? {
         guard context.hasSpeech else { return nil }
         let intentionLemmas = context.intention
@@ -128,7 +125,8 @@ enum AttentionDirectives {
         var counts: [String: Int] = [:]
         var surfaces: [String: [String: Int]] = [:]
         for mention in mentions
-        where !intentionLemmas.contains(mention.lemma) && !releasedLemmas.contains(mention.lemma) {
+        where !intentionLemmas.contains(mention.lemma)
+            && !SpokenStoplist.scaffoldLemmas.contains(mention.lemma) {
             counts[mention.lemma, default: 0] += 1
             surfaces[mention.lemma, default: [:]][mention.surface, default: 0] += 1
         }

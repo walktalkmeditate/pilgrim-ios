@@ -10,31 +10,6 @@ final class AttentionDirectivesTests: XCTestCase {
 
     private let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
 
-    private var savedReleased: Any?
-    private var savedWelcomedBack: Any?
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        savedReleased = UserDefaults.standard.object(forKey: ReleasedThreadsStore.defaultsKey)
-        savedWelcomedBack = UserDefaults.standard.object(forKey: ReleasedThreadsStore.welcomedBackKey)
-        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.defaultsKey)
-        UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.welcomedBackKey)
-    }
-
-    override func tearDownWithError() throws {
-        if let savedReleased {
-            UserDefaults.standard.set(savedReleased, forKey: ReleasedThreadsStore.defaultsKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.defaultsKey)
-        }
-        if let savedWelcomedBack {
-            UserDefaults.standard.set(savedWelcomedBack, forKey: ReleasedThreadsStore.welcomedBackKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: ReleasedThreadsStore.welcomedBackKey)
-        }
-        try super.tearDownWithError()
-    }
-
     private func recording(_ text: String, offset: TimeInterval = 300) -> RecordingContext {
         RecordingContext(
             text: text,
@@ -256,6 +231,17 @@ final class AttentionDirectivesTests: XCTestCase {
     func testRecurringWord_ignoresFunctionWordsWithoutStoplist() {
         let context = ActivityContext.make(
             recordings: [recording("because because because because the the the the")],
+            startDate: start
+        )
+        XCTAssertFalse(joined(context).contains("returns"))
+    }
+
+    /// Field-confirmed bug: "think" is a light/modal verb NLTagger tags as
+    /// content — it dominated raw-frequency counts on real devices without
+    /// carrying any meaning. `SpokenStoplist.scaffoldLemmas` excludes it.
+    func testRecurringWord_scaffoldVerb_doesNotFire() {
+        let context = ActivityContext.make(
+            recordings: [recording("I think I think I think I think about it")],
             startDate: start
         )
         XCTAssertFalse(joined(context).contains("returns"))

@@ -49,10 +49,10 @@ final class SeekDemoSeedTests: XCTestCase {
 
     /// Without a shared, repeated lemma across at least two demo transcripts,
     /// ThemeExtractor's 25-word and 2-mention floors mean no theme can ever
-    /// form in demo mode — the threads card, thread view, and chips would be
+    /// form in demo mode — the intention chips and dossier would be
     /// permanently unreachable for screenshots and QA. Runs the real analysis
     /// + aggregation pipeline over the seeder's own transcripts, the same way
-    /// ThreadHistoryModelTests and ThreadsCardModelTests exercise it.
+    /// ThreadsDossierTests exercises it.
     func testDemoTranscripts_shareThemeAcrossTwoDistinctWalks() {
         var walksIndex: [UUID: (walkUUID: UUID, date: Date)] = [:]
         var contexts: [TranscriptContext] = []
@@ -70,8 +70,8 @@ final class SeekDemoSeedTests: XCTestCase {
         let spanningTwoWalks = threads.filter { Set($0.appearances.map(\.walkUUID)).count >= 2 }
 
         XCTAssertFalse(spanningTwoWalks.isEmpty,
-                       "demo transcripts must share a theme across at least two walks so the threads card, " +
-                       "thread view, and chips are reachable in demo mode")
+                       "demo transcripts must share a theme across at least two walks so the intention " +
+                       "chips and dossier are reachable in demo mode")
     }
 }
 #endif

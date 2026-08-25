@@ -14,9 +14,9 @@ enum ScreenshotDataSeeder {
     // Screenshot- and QA-facing: the first two share a repeated "river"
     // mention (twice within each, ThemeExtractor's per-transcript floor) so
     // demo mode actually forms a cross-walk thread — without it no theme can
-    // ever surface and the threads card, thread view, and chips are all
-    // unreachable in demo mode. See ThreadExtractorTests-adjacent coverage
-    // in SeekDemoSeedTests.
+    // ever surface and the intention chips and dossier lines are unreachable
+    // in demo mode. See ThreadExtractorTests-adjacent coverage in
+    // SeekDemoSeedTests.
     private static let transcriptions = [
         "The morning light through the trees was extraordinary. I stopped where the river bends and just " +
             "watched it move past for a while, unhurried, the way a river carries only what it must and lets the rest go.",

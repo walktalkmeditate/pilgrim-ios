@@ -296,6 +296,25 @@ final class PilgrimPackageModelTests: XCTestCase {
         XCTAssertNil(decoded.weather)
     }
 
+    // MARK: - Preferences
+
+    /// Build ≤106 exported `manifest.preferences` with `releasedThreads` and
+    /// `welcomedBackThreads` keys (the released-threads carve-out, since
+    /// removed). `PilgrimPreferences` no longer declares those fields, but
+    /// `JSONDecoder` ignores unrecognized keys by default — a device still
+    /// carrying an old export must decode its manifest without error.
+    func testPreferences_decodesOldExportWithReleasedThreadsKeys() throws {
+        let old = """
+        {"distanceUnit":"km","altitudeUnit":"m","speedUnit":"km/h","energyUnit":"kJ",
+        "celestialAwareness":false,"zodiacSystem":"tropical","beginWithIntention":false,
+        "releasedThreads":[{"term":"the move","lemmas":["move"],"releasedAt":1755680000}],
+        "welcomedBackThreads":[{"term":"father","welcomedBackAt":1755680000}]}
+        """
+        let decoded = try decoder.decode(PilgrimPreferences.self, from: Data(old.utf8))
+        XCTAssertEqual(decoded.distanceUnit, "km")
+        XCTAssertEqual(decoded.zodiacSystem, "tropical")
+    }
+
     // MARK: - Manifest
 
     func testManifest_roundTrip() throws {

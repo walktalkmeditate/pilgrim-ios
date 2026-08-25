@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 struct ThemeMention: Codable, Equatable {
     let start: Int
@@ -59,8 +60,11 @@ enum ThemeExtractor {
             .map { $0 }
     }
 
+    /// Nouns only — verbs and adjectives dominated raw-frequency ranking
+    /// with spoken scaffolding ("was", "have", "can", "think") on real
+    /// devices, never the topical content underneath it.
     private static func mentions(in text: String) -> [TranscriptNLP.LemmaMention] {
-        TranscriptNLP.contentLemmaMentions(in: text)
-            .filter { !walkingDomain.contains($0.lemma) }
+        TranscriptNLP.contentLemmaMentions(in: text, classes: [.noun])
+            .filter { !walkingDomain.contains($0.lemma) && !SpokenStoplist.lightNouns.contains($0.lemma) }
     }
 }

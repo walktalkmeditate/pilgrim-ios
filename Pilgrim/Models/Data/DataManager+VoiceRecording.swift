@@ -204,29 +204,6 @@ extension DataManager {
         return index
     }
 
-    /// Same shape as `transcribedRecordingsSnapshot()` above, scoped to the
-    /// given recordings — for callers (ThreadHistoryView) that already know
-    /// exactly which recordings they need and would otherwise pay for a
-    /// full-history fetch to excerpt a handful of entries. Empty input
-    /// short-circuits without a round trip.
-    @MainActor
-    public static func transcribedRecordingsSnapshot(uuids: Set<UUID>) -> [(uuid: UUID, transcript: String)] {
-        guard !uuids.isEmpty else { return [] }
-        guard let rows = try? dataStack.queryAttributes(
-            From<VoiceRecording>().select(
-                NSDictionary.self,
-                .attribute(\._uuid),
-                .attribute(\._transcription)
-            ).where(Where<VoiceRecording>(\._uuid, isMemberOf: uuids))
-        ) else { return [] }
-        return rows.compactMap { row in
-            guard let uuid = rowUUID(row["id"]),
-                  let transcript = row["transcription"] as? String,
-                  !transcript.isEmpty else { return nil }
-            return (uuid, transcript)
-        }
-    }
-
     private static func rowUUID(_ raw: Any?) -> UUID? {
         (raw as? String).flatMap(UUID.init(uuidString:))
     }

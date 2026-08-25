@@ -9,22 +9,25 @@ import XCTest
 @MainActor
 final class ThreadsBackfillTests: XCTestCase {
 
-    /// The pre-rename key (see ThreadsBackfill.legacyCompletedKey, which is
+    /// The pre-rename keys (see ThreadsBackfill.legacyCompletedKeys, which is
     /// private) — hardcoded here deliberately, the same way the production
-    /// hygiene removal hardcodes it: this string is frozen, not a symbol
+    /// hygiene removal hardcodes them: these strings are frozen, not symbols
     /// that can drift with a rename.
-    private static let legacyCompletedKey = "threadsBackfillCompleted"
+    private static let legacyCompletedKeyV1 = "threadsBackfillCompleted"
+    private static let legacyCompletedKeyV2 = "threadsBackfillCompletedV2"
 
     private var store: TranscriptContextStore!
     private var directory: URL!
     private var savedCompleted: Any?
-    private var savedLegacyCompleted: Any?
+    private var savedLegacyCompletedV1: Any?
+    private var savedLegacyCompletedV2: Any?
     private var savedToggle = true
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         savedCompleted = UserDefaults.standard.object(forKey: ThreadsBackfill.completedKey)
-        savedLegacyCompleted = UserDefaults.standard.object(forKey: Self.legacyCompletedKey)
+        savedLegacyCompletedV1 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV1)
+        savedLegacyCompletedV2 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV2)
         savedToggle = UserPreferences.threadsAfterWalks.value
         UserDefaults.standard.set(false, forKey: ThreadsBackfill.completedKey)
         UserPreferences.threadsAfterWalks.value = true
@@ -39,10 +42,15 @@ final class ThreadsBackfillTests: XCTestCase {
         } else {
             UserDefaults.standard.removeObject(forKey: ThreadsBackfill.completedKey)
         }
-        if let savedLegacyCompleted {
-            UserDefaults.standard.set(savedLegacyCompleted, forKey: Self.legacyCompletedKey)
+        if let savedLegacyCompletedV1 {
+            UserDefaults.standard.set(savedLegacyCompletedV1, forKey: Self.legacyCompletedKeyV1)
         } else {
-            UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKey)
+            UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV1)
+        }
+        if let savedLegacyCompletedV2 {
+            UserDefaults.standard.set(savedLegacyCompletedV2, forKey: Self.legacyCompletedKeyV2)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV2)
         }
         UserPreferences.threadsAfterWalks.value = savedToggle
         try? FileManager.default.removeItem(at: directory)
@@ -59,10 +67,24 @@ final class ThreadsBackfillTests: XCTestCase {
     /// renamed to re-arm those devices: the new key is absent regardless of
     /// what the old key holds, so `isComplete` must read false.
     func testIsComplete_legacyKeyTrue_reArmsUnderNewKey() {
-        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKey)
+        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKeyV1)
 
         XCTAssertFalse(ThreadsBackfill.isComplete,
                        "a device that swept nothing under the old key must re-evaluate under the new key")
+    }
+
+    /// Build 106 devices completed a real V2 sweep, but ThemeExtractor's raw
+    /// NLTagger verb filter let spoken scaffolding ("was", "have", "can",
+    /// "think") win every theme ranking — those stored themes are junk, not
+    /// stale. The V3 rename re-arms them the same way the V1 rename did:
+    /// the new key is absent, so `isComplete` reads false regardless of what
+    /// the V2 key holds, and the next sweep recomputes with the noun-only
+    /// extractor.
+    func testIsComplete_legacyV2KeyTrue_reArmsUnderNewKey() {
+        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKeyV2)
+
+        XCTAssertFalse(ThreadsBackfill.isComplete,
+                       "a device that completed the junk-theme V2 sweep must re-evaluate under the new key")
     }
 
     func testRunIfNeeded_processesEveryItemAcrossBatches() async {
