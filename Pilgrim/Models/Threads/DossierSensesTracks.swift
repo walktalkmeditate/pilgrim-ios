@@ -102,13 +102,69 @@ extension DossierSenses {
     static func moonLine(input: Input, suppressed: Set<String>) -> SenseLine? {
         preconditionFailure("unimplemented sense")
     }
+}
+
+// MARK: - Track 4: intention lineage (cross-walk)
+
+extension DossierSenses {
+
+    static func intentionLemmas(in intention: String) -> Set<String> {
+        Set(TranscriptNLP.contentLemmas(in: intention)).subtracting(SpokenStoplist.scaffoldLemmas)
+    }
 
     static func intentionLineage(input: Input, suppressed: Set<String>) -> SenseLine? {
-        preconditionFailure("unimplemented sense")
+        let windowStart = input.walkStart.addingTimeInterval(-ThreadStore.recurrenceWindow)
+        let inWindow = input.walkSnapshots.filter { $0.startDate >= windowStart && $0.startDate <= input.walkEnd }
+        guard let today = inWindow.first(where: { $0.walkUUID == input.currentWalkUUID }),
+              let todayIntention = today.intention, !todayIntention.isEmpty else { return nil }
+        let todayLemmas = intentionLemmas(in: todayIntention)
+        guard !todayLemmas.isEmpty else { return nil }
+        var familyWalks: [String: Set<UUID>] = [:]
+        for row in inWindow {
+            guard let intention = row.intention, !intention.isEmpty else { continue }
+            for lemma in intentionLemmas(in: intention) {
+                familyWalks[lemma, default: []].insert(row.walkUUID)
+            }
+        }
+        let candidate = familyWalks
+            .filter { todayLemmas.contains($0.key) && $0.value.count >= lineageMinWalks && !suppressed.contains($0.key) }
+            .min { ($0.value.count, $1.key) > ($1.value.count, $0.key) }
+        guard let candidate else { return nil }
+        return SenseLine(
+            text: "\(ordinalWord(candidate.value.count)) walk in the last 30 days carrying some form of '\(candidate.key)'.",
+            lemma: candidate.key
+        )
+    }
+}
+
+// MARK: - Track 4: question density (cross-walk)
+
+extension DossierSenses {
+
+    static func questionCount(in text: String) -> Int {
+        text.filter { $0 == "?" }.count
     }
 
     static func questionDensity(input: Input, suppressed: Set<String>) -> SenseLine? {
-        preconditionFailure("unimplemented sense")
+        let todayCount = input.currentRecordings.reduce(0) { $0 + questionCount(in: $1.text) }
+        guard todayCount >= questionMinCount else { return nil }
+        let windowStart = input.walkStart.addingTimeInterval(-ThreadStore.recurrenceWindow)
+        var countsByWalk: [UUID: Int] = [:]
+        for entry in input.historyTranscripts {
+            guard let walk = input.walkIndex[entry.recordingUUID],
+                  walk.walkUUID != input.currentWalkUUID,
+                  let instant = input.recordingTimestamps[entry.recordingUUID],
+                  instant >= windowStart, instant <= input.walkEnd else { continue }
+            countsByWalk[walk.walkUUID, default: 0] += questionCount(in: entry.transcript)
+        }
+        guard countsByWalk.count >= questionMinHistoryWalks else { return nil }
+        let history = countsByWalk.values.sorted()
+        guard Double(todayCount) >= questionMedianRatio * median(history.map(Double.init)),
+              todayCount > history.last ?? 0 else { return nil }
+        return SenseLine(
+            text: "\(capitalizedCount(todayCount)) of today's sentences were questions — more than any walk in the last 30 days.",
+            lemma: nil
+        )
     }
 }
 

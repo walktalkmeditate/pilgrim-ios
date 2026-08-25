@@ -287,4 +287,116 @@ final class DossierSensesCrossWalkTests: XCTestCase {
         XCTAssertNil(DossierSenses.placeResonance(input: input, suppressed: []),
                      "cost bound: only the thread section's first 4 themes are checked")
     }
+
+    // MARK: - Intention lineage
+
+    private func lineageInput(intentions: [String?], todayIntention: String?) -> DossierSenses.Input {
+        let currentWalk = UUID()
+        var snapshots = [snapshotRow(walk: currentWalk, date: Self.walkStart, intention: todayIntention)]
+        for (i, intention) in intentions.enumerated() {
+            snapshots.append(snapshotRow(
+                walk: UUID(), date: Self.walkStart.addingTimeInterval(Double(i + 1) * -3 * 86400),
+                intention: intention
+            ))
+        }
+        return makeInput(currentWalkUUID: currentWalk, walkSnapshots: snapshots)
+    }
+
+    func testLineage_sharedContentLemmaAcrossFiveWalks_firesWithOrdinal() {
+        let input = lineageInput(
+            intentions: ["release the day", "releasing my grip", "release what is done", "release again"],
+            todayIntention: "release what I cannot carry"
+        )
+        XCTAssertEqual(
+            DossierSenses.intentionLineage(input: input, suppressed: []),
+            DossierSenses.SenseLine(
+                text: "Fifth walk in the last 30 days carrying some form of 'release'.",
+                lemma: "release"
+            )
+        )
+    }
+
+    func testLineage_scaffoldOnlyOverlap_mustNotCluster() {
+        let input = lineageInput(
+            intentions: ["want to call my mother", "want less noise around meals"],
+            todayIntention: "want a slower morning"
+        )
+        XCTAssertNil(DossierSenses.intentionLineage(input: input, suppressed: []),
+                     "the spec's required fixture: unrelated intentions sharing only 'want' must NOT cluster")
+    }
+
+    func testLineage_twoPriorWalks_belowFloor() {
+        let input = lineageInput(intentions: ["release the day"], todayIntention: "release the morning")
+        XCTAssertNil(DossierSenses.intentionLineage(input: input, suppressed: []),
+                     "≥3 in-window walks carrying the family — two is coincidence")
+    }
+
+    func testLineage_todayWithoutIntentionInFamily_doesNotFire() {
+        let input = lineageInput(
+            intentions: ["release the day", "releasing my grip", "release what is done"],
+            todayIntention: "walk with the river"
+        )
+        XCTAssertNil(DossierSenses.intentionLineage(input: input, suppressed: []))
+    }
+
+    // MARK: - Question density
+
+    private func questionInput(today: String, history: [String]) -> DossierSenses.Input {
+        let currentWalk = UUID()
+        let recUUID = UUID()
+        var walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [:]
+        var timestamps: [UUID: Date] = [:]
+        var transcripts: [(recordingUUID: UUID, transcript: String)] = []
+        for (i, text) in history.enumerated() {
+            let historyRec = UUID()
+            let date = Self.walkStart.addingTimeInterval(Double(i + 1) * -3 * 86400)
+            walkIndex[historyRec] = (UUID(), date)
+            timestamps[historyRec] = date.addingTimeInterval(600)
+            transcripts.append((historyRec, text))
+        }
+        return makeInput(
+            currentWalkUUID: currentWalk,
+            currentRecordings: [DossierSenses.CurrentRecording(
+                uuid: recUUID, start: Self.walkStart, end: Self.walkStart.addingTimeInterval(300),
+                text: today, wordCount: TranscriptNLP.wordCount(in: today), themes: []
+            )],
+            historyTranscripts: transcripts,
+            recordingTimestamps: timestamps,
+            walkIndex: walkIndex
+        )
+    }
+
+    func testQuestionDensity_todayDoublesTheMedianAndTopsEveryWalk_fires() {
+        let input = questionInput(
+            today: "Who sits with him? What changes? Why now? What am I holding?",
+            history: ["A question? Another?", "One thing today?", "No questions today at all."]
+        )
+        XCTAssertEqual(
+            DossierSenses.questionDensity(input: input, suppressed: []),
+            DossierSenses.SenseLine(
+                text: "Four of today's sentences were questions — more than any walk in the last 30 days.",
+                lemma: nil
+            )
+        )
+    }
+
+    func testQuestionDensity_tiedWithAHistoryWalk_doesNotFire() {
+        let input = questionInput(
+            today: "Who? What? Why?",
+            history: ["One? Two? Three?", "Quiet.", "Still quiet."]
+        )
+        XCTAssertNil(DossierSenses.questionDensity(input: input, suppressed: []),
+                     "today must EXCEED every other in-window walk, not tie one")
+    }
+
+    func testQuestionDensity_underThreeQuestions_doesNotFire() {
+        let input = questionInput(today: "Why now? What next?", history: ["Quiet.", "Quiet.", "Quiet."])
+        XCTAssertNil(DossierSenses.questionDensity(input: input, suppressed: []))
+    }
+
+    func testQuestionDensity_underThreeHistoryWalks_doesNotFire() {
+        let input = questionInput(today: "Who? What? Why?", history: ["Quiet.", "Quiet."])
+        XCTAssertNil(DossierSenses.questionDensity(input: input, suppressed: []),
+                     "≥3 walks of history required before a median means anything")
+    }
 }
