@@ -138,4 +138,13 @@ final class DossierSensesCrossWalkTests: XCTestCase {
                                otherWalkWeather: ["clear", "clear"])
         XCTAssertNil(DossierSenses.weatherWeave(input: input, suppressed: []))
     }
+
+    func testWeatherWeave_pluralityWithoutMajority_doesNotSuppress() {
+        let input = weaveInput(themeWalkWeather: ["lightRain", "heavyRain"],
+                               otherWalkWeather: ["clear", "clear", "snow"])
+        XCTAssertEqual(
+            DossierSenses.weatherWeave(input: input, suppressed: []),
+            DossierSenses.SenseLine(text: "Both walks where 'music' surfaced were under rain.", lemma: "music")
+        )
+    }
 }
