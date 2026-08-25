@@ -400,3 +400,99 @@ final class DossierSensesCrossWalkTests: XCTestCase {
                      "≥3 walks of history required before a median means anything")
     }
 }
+
+// MARK: - Moon line
+extension DossierSensesCrossWalkTests {
+    private func moonInput(
+        lastReported: Int? = nil, currentWalkHasWords: Bool = true,
+        walkCount: Int = 5, wordedCount: Int = 3,
+        themeWalksInLunation: Int = 2
+    ) -> DossierSenses.Input {
+        let lunationStart = DateFactory.makeDate(2024, 5, 8)
+        let lunationEnd = DateFactory.makeDate(2024, 6, 6, 12, 0, 0)
+        let inLunation = { (i: Int) in lunationStart.addingTimeInterval(Double(i + 1) * 4 * 86400) }
+        let currentWalk = UUID()
+        var appearances: [ThreadAppearance] = [
+            appearance(walk: currentWalk, date: Self.walkStart)
+        ]
+        for i in 0..<themeWalksInLunation {
+            appearances.append(appearance(walk: UUID(), date: inLunation(i)))
+        }
+        return makeInput(
+            currentWalkUUID: currentWalk,
+            threads: [thread(lemma: "music", appearances: appearances)],
+            moon: DossierSenses.MoonInput(
+                lunationIndex: 300, moonName: "Sturgeon Moon",
+                start: lunationStart, end: lunationEnd,
+                lastReportedIndex: lastReported,
+                currentWalkHasWords: currentWalkHasWords,
+                allWalkDates: (0..<walkCount).map(inLunation),
+                wordedWalkDates: (0..<wordedCount).map(inLunation)
+            )
+        )
+    }
+
+    func testMoon_firstBuildAfterClose_firesWithCountsAndTopTheme() {
+        XCTAssertEqual(
+            DossierSenses.moonLine(input: moonInput(), suppressed: []),
+            DossierSenses.SenseLine(
+                text: "The Sturgeon Moon has set: 5 walks, 3 with recorded words; 'music' walked in 2 of them.",
+                lemma: "music"
+            )
+        )
+    }
+
+    func testMoon_alreadyReportedLunation_staysSilent() {
+        XCTAssertNil(DossierSenses.moonLine(input: moonInput(lastReported: 300), suppressed: []),
+                     "once per lunation — emit once, not twice")
+    }
+
+    func testMoon_earlierLunationReported_currentOneStillFires() {
+        XCTAssertNotNil(DossierSenses.moonLine(input: moonInput(lastReported: 299), suppressed: []))
+    }
+
+    func testMoon_silentCurrentWalk_neverCarriesTheLine() {
+        XCTAssertNil(DossierSenses.moonLine(input: moonInput(currentWalkHasWords: false), suppressed: []),
+                     "the line must never be a non-sequitur stapled to a silent walk")
+    }
+
+    func testMoon_lunationWithoutWordedWalks_staysSilent() {
+        XCTAssertNil(DossierSenses.moonLine(input: moonInput(wordedCount: 0), suppressed: []))
+    }
+
+    func testMoon_topThemeSuppressed_dropsClauseKeepsCounts() {
+        XCTAssertEqual(
+            DossierSenses.moonLine(input: moonInput(), suppressed: ["music"]),
+            DossierSenses.SenseLine(text: "The Sturgeon Moon has set: 5 walks, 3 with recorded words.", lemma: nil)
+        )
+    }
+
+    func testMoon_topThemeSuppressed_secondThemeExists_fallsThroughInsteadOfDropping() {
+        let base = moonInput()
+        let lunationStart = DateFactory.makeDate(2024, 5, 8)
+        let secondThemeDate = lunationStart.addingTimeInterval(3 * 4 * 86400)
+        let augmented = makeInput(
+            currentWalkUUID: base.currentWalkUUID,
+            threads: base.threads + [thread(lemma: "art", appearances: [
+                appearance(walk: UUID(), date: secondThemeDate)
+            ])],
+            moon: base.moon
+        )
+        XCTAssertEqual(
+            DossierSenses.moonLine(input: augmented, suppressed: ["music"]),
+            DossierSenses.SenseLine(
+                text: "The Sturgeon Moon has set: 5 walks, 3 with recorded words; 'art' walked in 1 of them.",
+                lemma: "art"
+            ),
+            "suppressing the top theme falls through to the next theme that walked that moon, not to silence"
+        )
+    }
+
+    func testMoon_singleWalkLunation_pluralizesHonestly() {
+        XCTAssertEqual(
+            DossierSenses.moonLine(input: moonInput(walkCount: 1, wordedCount: 1, themeWalksInLunation: 1),
+                                   suppressed: [])?.text,
+            "The Sturgeon Moon has set: 1 walk, 1 with recorded words; 'music' walked in 1 of them."
+        )
+    }
+}

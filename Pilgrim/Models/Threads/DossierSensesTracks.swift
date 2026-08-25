@@ -97,10 +97,35 @@ extension DossierSenses {
     }
 }
 
+// MARK: - Track 2: the moon line (once per lunation)
+
 extension DossierSenses {
 
     static func moonLine(input: Input, suppressed: Set<String>) -> SenseLine? {
-        preconditionFailure("unimplemented sense")
+        guard let moon = input.moon,
+              moon.lastReportedIndex != moon.lunationIndex,
+              moon.currentWalkHasWords else { return nil }
+        // Lunation membership is [start, end): LunationCalendar mints end ==
+        // next start, and the boundary instant belongs to the next moon.
+        func inLunation(_ date: Date) -> Bool { date >= moon.start && date < moon.end }
+        let walkCount = moon.allWalkDates.filter(inLunation).count
+        let wordedCount = moon.wordedWalkDates.filter(inLunation).count
+        guard wordedCount >= 1 else { return nil }
+        var text = "The \(moon.moonName) has set: \(walkCount) walk\(walkCount == 1 ? "" : "s"), " +
+            "\(wordedCount) with recorded words"
+        let topTheme = input.threads
+            .compactMap { thread -> (lemma: String, displayTerm: String, walks: Int)? in
+                guard !suppressed.contains(thread.lemma) else { return nil }
+                let walks = Set(thread.appearances.filter { inLunation($0.date) }.map(\.walkUUID)).count
+                guard walks >= 1 else { return nil }
+                return (thread.lemma, thread.displayTerm, walks)
+            }
+            .min { ($0.walks, $1.lemma) > ($1.walks, $0.lemma) }
+        guard let topTheme else {
+            return SenseLine(text: text + ".", lemma: nil)
+        }
+        text += "; '\(topTheme.displayTerm)' walked in \(topTheme.walks) of them."
+        return SenseLine(text: text, lemma: topTheme.lemma)
     }
 }
 
