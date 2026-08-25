@@ -3,19 +3,23 @@ import XCTest
 
 final class ThreadsDossierTests: XCTestCase {
 
-    private func markers(words: Int, absolutist: Int) -> MarkerPack {
+    /// Not `private`: `ThreadsDossierModalLeanTests.swift` (an `extension
+    /// ThreadsDossierTests` split into its own file to stay under the
+    /// file_length / type_body_length lint gates — same house rule as
+    /// `ThreadsDossierSensesTests.swift`) reuses these fixture builders.
+    func markers(words: Int, absolutist: Int, modalCounts: [String: Int] = [:]) -> MarkerPack {
         MarkerPack(
             wordCount: words, absolutistCount: absolutist, firstPersonCount: 5,
             insightCount: 2, causationCount: 1, discrepancyCount: 1,
-            futureCount: 4, pastCount: 1, sentiment: -0.2
+            futureCount: 4, pastCount: 1, sentiment: -0.2, modalCounts: modalCounts
         )
     }
 
-    private func context(words: Int, absolutist: Int) -> TranscriptContext {
+    func context(words: Int, absolutist: Int, modalCounts: [String: Int] = [:]) -> TranscriptContext {
         TranscriptContext(
             schemaVersion: 1, recordingUUID: UUID(), transcriptHash: "h",
             languageCode: "en", wordCount: words, themes: [],
-            markers: markers(words: words, absolutist: absolutist)
+            markers: markers(words: words, absolutist: absolutist, modalCounts: modalCounts)
         )
     }
 
@@ -46,6 +50,10 @@ final class ThreadsDossierTests: XCTestCase {
         let line = ThreadsDossierFormatter.markerLine(for: today, baseline: baseline)
         XCTAssertTrue(line.contains("your usual"))
     }
+
+    // Modal-lean coverage lives in ThreadsDossierModalLeanTests.swift (an
+    // `extension ThreadsDossierTests` split into its own file to stay under
+    // the file_length / type_body_length lint gates).
 
     func testBuilder_toggleOffReturnsNil() {
         let saved = UserPreferences.threadsAfterWalks.value

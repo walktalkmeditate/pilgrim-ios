@@ -5,7 +5,7 @@ import Foundation
 /// once history is fully analyzed (spec: ThreadStore).
 enum ThreadsBackfill {
 
-    static let completedKey = "threadsBackfillCompletedV4"
+    static let completedKey = "threadsBackfillCompletedV5"
     /// v1.11.0 TestFlight devices could run the sweep, account for zero
     /// recordings under a snapshot bug (fixed alongside the V2 rename), and
     /// still set the old flag — stranding those devices on a never-swept
@@ -21,10 +21,16 @@ enum ThreadsBackfill {
     /// Each rename re-arms by construction: the new key is absent, so
     /// `isComplete` reads false regardless of what any old key holds — V4
     /// additionally makes freshness itself schema-version-aware end to end
-    /// (see docs/solutions/derived-cache-semantics-are-schema.md).
+    /// (see docs/solutions/derived-cache-semantics-are-schema.md). V5 adds
+    /// `MarkerPack.modalCounts` (schema v2→v3) so the modal-lean dossier
+    /// clause has real word-identity history to build a baseline from —
+    /// unlike V3→V4, this rename touches no theme-extraction logic, so no
+    /// moon-line re-arm accompanies it (`performLegacyHygiene` still only
+    /// watches the V3 key for that).
     private static let legacyCompletedKeyV3 = "threadsBackfillCompletedV3"
+    private static let legacyCompletedKeyV4 = "threadsBackfillCompletedV4"
     private static let legacyCompletedKeys = [
-        "threadsBackfillCompleted", "threadsBackfillCompletedV2", legacyCompletedKeyV3
+        "threadsBackfillCompleted", "threadsBackfillCompletedV2", legacyCompletedKeyV3, legacyCompletedKeyV4
     ]
     private static var isRunning = false
     private static var generation = 0

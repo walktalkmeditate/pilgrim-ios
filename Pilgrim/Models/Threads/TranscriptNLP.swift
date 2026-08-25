@@ -148,9 +148,17 @@ enum SpokenStoplist {
     /// Light/auxiliary/modal verbs plus the filler nouns above, filtered out
     /// of the recurring-word attention directive — which still scans verbs,
     /// so it needs its own stoplist rather than the noun restriction above.
+    ///
+    /// Modal verbs (`can`, `could`, `should`, `would`, `must`, `might`,
+    /// `may`, `will`, `ought`, `wish` — `need`/`want` were already here) are
+    /// stoplisted by design: they're a STATE signal that belongs in the
+    /// markers channel with word identity (`MarkerLexicons.modalFamilies`),
+    /// never named as a recurring-word TOPIC — a flat walk's "can ×57" is
+    /// noise there, not a theme.
     static let scaffoldLemmas: Set<String> = [
         "be", "have", "do", "get", "go", "come", "make", "take", "know",
         "think", "say", "see", "want", "mean", "feel", "need", "let", "put",
-        "keep", "kind", "thing", "stuff", "way", "lot", "bit"
+        "keep", "kind", "thing", "stuff", "way", "lot", "bit",
+        "can", "could", "should", "would", "must", "might", "may", "will", "ought", "wish"
     ]
 }
