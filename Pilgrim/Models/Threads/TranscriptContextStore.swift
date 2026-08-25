@@ -64,7 +64,27 @@ final class TranscriptContextStore {
         FileManager.default.fileExists(atPath: fileURL(for: recordingUUID).path)
     }
 
+    /// Existence AND freshness — unlike `hasContext`, a stale-schema file on
+    /// disk answers false, so the backfill sweep re-analyzes it instead of
+    /// skipping it. `hasContext` stays a bare existence check for callers
+    /// that only care whether something was written (self-heal
+    /// confirmation, deletion assertions).
+    func hasCurrentContext(for recordingUUID: UUID) -> Bool {
+        load(recordingUUID: recordingUUID)?.schemaVersion == TranscriptContext.currentSchemaVersion
+    }
+
+    /// Every reader (threads/dossier/suggestions) sees only current-schema
+    /// contexts — a stale-derivation file left on disk by an older build
+    /// must be invisible, not merely outdated.
     func loadAll() -> [TranscriptContext] {
+        loadAllIncludingStaleVersions()
+            .filter { $0.schemaVersion == TranscriptContext.currentSchemaVersion }
+    }
+
+    /// Unfiltered by schema version — for the backfill sweep's stale-orphan
+    /// cleanup, which needs to see every stored version to find files
+    /// `loadAll` deliberately hides.
+    func loadAllIncludingStaleVersions() -> [TranscriptContext] {
         contextFileURLs()
             .compactMap { try? JSONDecoder().decode(TranscriptContext.self, from: Data(contentsOf: $0)) }
             .sorted { $0.recordingUUID.uuidString < $1.recordingUUID.uuidString }

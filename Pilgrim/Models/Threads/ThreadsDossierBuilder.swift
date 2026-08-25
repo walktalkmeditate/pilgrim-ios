@@ -26,10 +26,24 @@ enum ThreadsDossierBuilder {
 
     static let moonLineDefaultsKey = "threadsMoonLineLastLunationIndex"
 
-    private static var memo: (
-        changeCount: Int, walkUUID: UUID, backfillComplete: Bool,
-        moonState: Int?, dossier: String?
-    )?
+    /// `lunationIndex` and `intention` close two cache-miss gaps the other
+    /// four fields can't detect: a lunation closing while the app stays
+    /// resident (same walk, same store, same moon state — until the moon
+    /// line itself fires and writes it) and an in-session intention edit
+    /// (same walk, same store, nothing else moves). Both values already
+    /// reach `build` via `senses`/`gatherSensesBundle` — this only widens
+    /// what the memo compares. Bundled (like `SensesAssemblyState` below)
+    /// to keep `cachedDossier` under the function-parameter-count gate.
+    struct MemoKey: Equatable {
+        let changeCount: Int
+        let walkUUID: UUID
+        let backfillComplete: Bool
+        let moonState: Int?
+        let lunationIndex: Int?
+        let intention: String?
+    }
+
+    private static var memo: (key: MemoKey, dossier: String?)?
     private static let memoLock = NSLock()
 
     /// The one impure gather for the senses (spec architecture): cheap
@@ -88,8 +102,9 @@ enum ThreadsDossierBuilder {
         let backfillComplete = ThreadsBackfill.isComplete
         let preBuildChangeCount = store.changeCount
         let moonState = defaults.object(forKey: moonLineDefaultsKey) as? Int
-        if let cached = cachedDossier(walkUUID: walkUUID, changeCount: preBuildChangeCount,
-                                      backfillComplete: backfillComplete, moonState: moonState) {
+        let preBuildKey = memoKey(walkUUID: walkUUID, changeCount: preBuildChangeCount,
+                                  backfillComplete: backfillComplete, moonState: moonState, senses: senses)
+        if let cached = cachedDossier(key: preBuildKey) {
             return cached
         }
 
@@ -113,26 +128,7 @@ enum ThreadsDossierBuilder {
         let ownDeleteWrite = orphans.isEmpty ? 0 : 1
         let live = all.filter { !orphans.contains($0.recordingUUID) }
 
-        var freshlySaved: [UUID: TranscriptContext] = [:]
-        let current: [(context: TranscriptContext, wordsPerMinute: Double?)] = recordings.compactMap { recording in
-            guard let uuid = recording.recordingUUID else { return nil }
-            let hash = TranscriptContextStore.hash(of: recording.text)
-            if let stored = store.context(for: uuid, matching: hash) {
-                return (stored, recording.wordsPerMinute)
-            }
-            // Lazy-backfill fallback, persisted under the real UUID so the
-            // store self-heals instead of re-analyzing on every open. Also
-            // covers edited transcripts whose stored hash no longer matches.
-            let result = TranscriptContextAnalyzer.analyzeAndStore(
-                recordingUUID: uuid, transcript: recording.text, store: store
-            )
-            // Merge only what actually reached disk — a tombstone-blocked
-            // save reports true but writes nothing.
-            if result.saved && store.hasContext(for: uuid) {
-                freshlySaved[uuid] = result.context
-            }
-            return (result.context, recording.wordsPerMinute)
-        }
+        let (current, freshlySaved) = resolveCurrentContexts(recordings: recordings, store: store)
         guard !current.isEmpty else { return nil }
 
         var contextsByUUID = Dictionary(uniqueKeysWithValues: live.map { ($0.recordingUUID, $0) })
@@ -164,8 +160,8 @@ enum ThreadsDossierBuilder {
         memoLock.lock()
         // Baseline is `preBuildChangeCount` plus exactly this build's own
         // confirmed writes (the orphan delete, if any, plus one save per
-        // `freshlySaved` entry — each of those is a write the build itself
-        // vouched for via `store.hasContext` above) — never a fresh read of
+        // `freshlySaved` entry — each of those is a write `resolveCurrentContexts`
+        // vouched for via `store.hasContext`) — never a fresh read of
         // `store.changeCount`. `changeCount` is a bare monotonic counter
         // with no writer attribution: an external writer (ThreadsBackfill's
         // sweep, transcription-completion analysis) landing a save inside
@@ -178,7 +174,9 @@ enum ThreadsDossierBuilder {
         // still invalidates the memo on the next call. Reopening the same
         // walk with no writes at all in between still hits the memo.
         let ownWriteCount = ownDeleteWrite + freshlySaved.count
-        memo = (preBuildChangeCount + ownWriteCount, walkUUID, backfillComplete, postBuildMoonState, dossier)
+        let postBuildKey = memoKey(walkUUID: walkUUID, changeCount: preBuildChangeCount + ownWriteCount,
+                                   backfillComplete: backfillComplete, moonState: postBuildMoonState, senses: senses)
+        memo = (postBuildKey, dossier)
         memoLock.unlock()
         return dossier
     }
@@ -186,15 +184,52 @@ enum ThreadsDossierBuilder {
     /// `String??`: outer optional is cache presence, inner is the dossier
     /// itself — a memoized nil dossier is a valid, distinct cache hit from
     /// no cache at all.
-    private static func cachedDossier(
-        walkUUID: UUID, changeCount: Int, backfillComplete: Bool, moonState: Int?
-    ) -> String?? {
+    private static func cachedDossier(key: MemoKey) -> String?? {
         memoLock.lock()
         defer { memoLock.unlock() }
-        guard let cached = memo, cached.changeCount == changeCount,
-              cached.walkUUID == walkUUID, cached.backfillComplete == backfillComplete,
-              cached.moonState == moonState else { return nil }
+        guard let cached = memo, cached.key == key else { return nil }
         return cached.dossier
+    }
+
+    /// `lunationIndex`/`intention` both derive from `senses` the same way at
+    /// both call sites (pre-build lookup, post-build write) — factored here
+    /// so `build` states each `MemoKey` in one line.
+    private static func memoKey(
+        walkUUID: UUID, changeCount: Int, backfillComplete: Bool, moonState: Int?,
+        senses: DossierSensesFetchBundle?
+    ) -> MemoKey {
+        MemoKey(
+            changeCount: changeCount, walkUUID: walkUUID, backfillComplete: backfillComplete,
+            moonState: moonState, lunationIndex: senses?.closedLunation.index,
+            intention: senses?.walkSnapshots.first { $0.walkUUID == walkUUID }?.intention
+        )
+    }
+
+    /// Resolves each current recording's context — hash-matched cache hit,
+    /// or a lazy-backfill analysis persisted under the real UUID so the
+    /// store self-heals (also covers edited transcripts whose stored hash no
+    /// longer matches). `freshlySaved` collects only what actually reached
+    /// disk — a tombstone-blocked save reports success but writes nothing —
+    /// so the memo's own-write count in `build` stays honest.
+    private static func resolveCurrentContexts(
+        recordings: [RecordingContext], store: TranscriptContextStore
+    ) -> (current: [(context: TranscriptContext, wordsPerMinute: Double?)], freshlySaved: [UUID: TranscriptContext]) {
+        var freshlySaved: [UUID: TranscriptContext] = [:]
+        let current: [(context: TranscriptContext, wordsPerMinute: Double?)] = recordings.compactMap { recording in
+            guard let uuid = recording.recordingUUID else { return nil }
+            let hash = TranscriptContextStore.hash(of: recording.text)
+            if let stored = store.context(for: uuid, matching: hash) {
+                return (stored, recording.wordsPerMinute)
+            }
+            let result = TranscriptContextAnalyzer.analyzeAndStore(
+                recordingUUID: uuid, transcript: recording.text, store: store
+            )
+            if result.saved && store.hasContext(for: uuid) {
+                freshlySaved[uuid] = result.context
+            }
+            return (result.context, recording.wordsPerMinute)
+        }
+        return (current, freshlySaved)
     }
 
     /// Everything `makeSensesInput` needs beyond the senses bundle itself —
@@ -347,12 +382,15 @@ enum DossierSensesFieldReport {
             From<Walk>().orderBy(.ascending(\._startDate))
         ) else { return "senses field report: walk fetch failed" }
         let walkIndex = DataManager.voiceRecordingWalkIndex()
-        let store = TranscriptContextStore.shared
-        let all = store.loadAll()
-        let contextsByUUID = Dictionary(uniqueKeysWithValues: all.map { ($0.recordingUUID, $0) })
-        let threadsAll = ThreadStore.build(contexts: all, walks: walkIndex)
+        let all = TranscriptContextStore.shared.loadAll()
+        let context = FieldReportContext(
+            contextsByUUID: Dictionary(uniqueKeysWithValues: all.map { ($0.recordingUUID, $0) }),
+            threadsAll: ThreadStore.build(contexts: all, walks: walkIndex),
+            walkIndex: walkIndex
+        )
         var firing: [DossierSenses.Sense: Int] = [:]
         var eligible = 0
+        var buildDurations: [TimeInterval] = []
         var report = "\n===== DOSSIER SENSES FIELD REPORT =====\n"
         if walks.isEmpty {
             report += "\n(no walk history on this device — nothing to report)\n"
@@ -361,34 +399,13 @@ enum DossierSensesFieldReport {
         }
         for walk in walks {
             guard let walkUUID = walk._uuid.value else { continue }
-            let recordings: [RecordingContext] = walk._voiceRecordings.value.compactMap { recording in
-                guard let uuid = recording._uuid.value,
-                      let text = recording._transcription.value, !text.isEmpty else { return nil }
-                return RecordingContext(
-                    text: text, timestamp: recording._startDate.value,
-                    startCoordinate: nil, endCoordinate: nil,
-                    wordsPerMinute: recording._wordsPerMinute.value,
-                    recordingUUID: uuid, endTimestamp: recording._endDate.value
-                )
-            }
+            let recordings = transcribedRecordings(for: walk)
             guard !recordings.isEmpty else { continue }
             eligible += 1
-            let bundle = ThreadsDossierBuilder.gatherSensesBundle(walk: walk, now: now)
-            let input = ThreadsDossierBuilder.makeSensesInput(
-                senses: bundle,
-                state: ThreadsDossierBuilder.SensesAssemblyState(
-                    walkUUID: walkUUID, recordings: recordings, contextsByUUID: contextsByUUID,
-                    threads: threadsAll, walkIndex: walkIndex, backfillComplete: ThreadsBackfill.isComplete,
-                    moonState: nil
-                ),
-                resolveRouteFix: DataManager.routeFixNear
-            )
-            report += "\nWalk \(walk._startDate.value):\n"
-            for sense in DossierSenses.Sense.allCases {
-                guard let line = DossierSenses.evaluate(sense, input: input, suppressed: []) else { continue }
-                firing[sense, default: 0] += 1
-                report += "  [\(sense)] \(line.text)\n"
-            }
+            let result = evaluateWalk(walk, walkUUID: walkUUID, recordings: recordings, now: now, context: context)
+            report += result.text
+            for sense in result.firingSenses { firing[sense, default: 0] += 1 }
+            buildDurations.append(result.buildSeconds)
         }
         if eligible == 0 {
             report += "\n(no walk carries a transcribed recording — nothing to report)\n"
@@ -399,8 +416,74 @@ enum DossierSensesFieldReport {
         for sense in DossierSenses.Sense.allCases {
             report += "  \(sense): \(firing[sense] ?? 0)/\(eligible)\n"
         }
+        let sortedDurations = buildDurations.sorted()
+        let midpoint = sortedDurations.count / 2
+        let medianSeconds = sortedDurations.count.isMultiple(of: 2)
+            ? (sortedDurations[midpoint - 1] + sortedDurations[midpoint]) / 2
+            : sortedDurations[midpoint]
+        let maxSeconds = sortedDurations.last ?? 0
+        report += String(format: "\nBuild time — median: %.3fs, max: %.3fs\n", medianSeconds, maxSeconds)
         report += "=======================================\n"
         return report
+    }
+
+    /// Bundled so `evaluateWalk` stays under the function-parameter-count
+    /// lint gate — same rationale as `ThreadsDossierBuilder.SensesAssemblyState`.
+    private struct FieldReportContext {
+        let contextsByUUID: [UUID: TranscriptContext]
+        let threadsAll: [WalkThread]
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)]
+    }
+
+    private struct WalkSensesReport {
+        let text: String
+        let firingSenses: [DossierSenses.Sense]
+        let buildSeconds: TimeInterval
+    }
+
+    private static func transcribedRecordings(for walk: Walk) -> [RecordingContext] {
+        walk._voiceRecordings.value.compactMap { recording in
+            guard let uuid = recording._uuid.value,
+                  let text = recording._transcription.value, !text.isEmpty else { return nil }
+            return RecordingContext(
+                text: text, timestamp: recording._startDate.value,
+                startCoordinate: nil, endCoordinate: nil,
+                wordsPerMinute: recording._wordsPerMinute.value,
+                recordingUUID: uuid, endTimestamp: recording._endDate.value
+            )
+        }
+    }
+
+    /// Evaluates every sense for one walk and prints its per-walk build
+    /// wall-clock (ship-gate item: judge per-walk cost, not just firing
+    /// rates). Wall-clock, not ContinuousClock — this DEBUG harness prints a
+    /// human-facing diagnostic, not a pure-module measurement; the pure
+    /// senses functions themselves stay Date()-free.
+    @MainActor
+    private static func evaluateWalk(
+        _ walk: Walk, walkUUID: UUID, recordings: [RecordingContext], now: Date, context: FieldReportContext
+    ) -> WalkSensesReport {
+        let buildStart = Date()
+        let bundle = ThreadsDossierBuilder.gatherSensesBundle(walk: walk, now: now)
+        let input = ThreadsDossierBuilder.makeSensesInput(
+            senses: bundle,
+            state: ThreadsDossierBuilder.SensesAssemblyState(
+                walkUUID: walkUUID, recordings: recordings, contextsByUUID: context.contextsByUUID,
+                threads: context.threadsAll, walkIndex: context.walkIndex,
+                backfillComplete: ThreadsBackfill.isComplete, moonState: nil
+            ),
+            resolveRouteFix: DataManager.routeFixNear
+        )
+        var text = "\nWalk \(walk._startDate.value):\n"
+        var firingSenses: [DossierSenses.Sense] = []
+        for sense in DossierSenses.Sense.allCases {
+            guard let line = DossierSenses.evaluate(sense, input: input, suppressed: []) else { continue }
+            firingSenses.append(sense)
+            text += "  [\(sense)] \(line.text)\n"
+        }
+        let buildSeconds = Date().timeIntervalSince(buildStart)
+        text += String(format: "  build: %.3fs\n", buildSeconds)
+        return WalkSensesReport(text: text, firingSenses: firingSenses, buildSeconds: buildSeconds)
     }
 }
 #endif

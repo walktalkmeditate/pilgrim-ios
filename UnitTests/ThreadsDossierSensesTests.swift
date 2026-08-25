@@ -254,6 +254,138 @@ extension ThreadsDossierTests {
                        "build 2 must re-read the store and prune the external write as an orphan")
     }
 
+    /// The memo previously keyed on (changeCount, walkUUID, backfillComplete,
+    /// moonState) only — none of which necessarily change when a lunation
+    /// closes while the app stays resident. Same walk, same recordings, same
+    /// store contents (no new write on the second build — the recording is
+    /// already on disk), same backfillComplete, same (nil) moon state: the
+    /// only thing that changed between builds is which lunation just closed.
+    /// Pre-fix that's an undetected cache hit — the reopen silently misses
+    /// the moon line that just became true.
+    func testBuilder_memoKey_includesLunationIndex_closingBoundaryInvalidatesCache() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+        let defaults = UserDefaults.standard
+        let savedMoon = defaults.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+        defer {
+            if let savedMoon { defaults.set(savedMoon, forKey: ThreadsDossierBuilder.moonLineDefaultsKey) }
+            else { defaults.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey) }
+        }
+        defaults.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierSensesBuilderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+
+        let walkStart = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let walkA = UUID(), recA = UUID()
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [recA: (walkA, walkStart)]
+        let recording = wordedRecording(uuid: recA, start: walkStart.addingTimeInterval(300))
+
+        // `walkStart` sits just after its own most-recently-closed lunation
+        // (never inside it) — the first build's `now` is `walkStart` itself,
+        // so the moon stays quiet.
+        let firstBundle = sensesBundle(
+            walkStart: walkStart, walkEnd: walkStart.addingTimeInterval(3600),
+            recordingTimestamps: [recA: walkStart.addingTimeInterval(300)],
+            lunationAnchor: walkStart
+        )
+        let first = ThreadsDossierBuilder.build(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: firstBundle, resolveRouteFix: { _ in nil }
+        )
+        XCTAssertNotNil(first)
+        XCTAssertFalse(first!.contains("has set"), "the lunation containing this walk hasn't closed yet")
+
+        // A later `now` that has crossed into the NEXT lunation — the one
+        // that just closed is the one `walkStart` itself sits inside, and
+        // this recording (now on disk with words) makes that lunation
+        // worded. Same walk, same recordings, same walkIndex, same store —
+        // nothing else about the build's inputs changed.
+        let containingWalkStart = LunationCalendar.lunation(containing: walkStart)
+        let laterNow = containingWalkStart.end.addingTimeInterval(60)
+        let secondBundle = sensesBundle(
+            walkStart: walkStart, walkEnd: walkStart.addingTimeInterval(3600),
+            recordingTimestamps: [recA: walkStart.addingTimeInterval(300)],
+            lunationAnchor: laterNow
+        )
+        XCTAssertNotEqual(firstBundle.closedLunation.index, secondBundle.closedLunation.index,
+                          "the fixture must actually straddle a lunation boundary")
+
+        let second = ThreadsDossierBuilder.build(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: secondBundle, resolveRouteFix: { _ in nil }
+        )
+        XCTAssertNotNil(second)
+        XCTAssertTrue(second!.contains("has set"),
+                      "the memo must miss on a lunation it never saw close — a same-walk reopen after the " +
+                      "close must render the moon line, not silently replay the stale cached dossier")
+    }
+
+    /// Same isolation shape as the lunation-boundary test above, but for the
+    /// walk's own intention text: an in-session edit (Settings → intention
+    /// re-recorded, or the summary screen's text field) between two opens of
+    /// the same walk's prompt screen must not replay a dossier built before
+    /// the edit. `resolveRouteFix` call-counting (not content) proves a
+    /// rebuild happened — `intentionLineage` needs 3 co-occurring walks to
+    /// print a line, too heavy a fixture for this isolation test.
+    func testBuilder_memoKey_includesIntention_editInvalidatesCache() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierSensesBuilderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+
+        let walkStart = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let walkA = UUID(), recA = UUID()
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [recA: (walkA, walkStart)]
+        let recording = wordedRecording(uuid: recA, start: walkStart.addingTimeInterval(300))
+
+        var fixCalls = 0
+        let countingFix: (Date) -> DossierSenses.RouteFix? = { _ in
+            fixCalls += 1
+            return nil
+        }
+
+        let bundleNoIntention = sensesBundle(
+            walkStart: walkStart, walkEnd: walkStart.addingTimeInterval(3600),
+            walkSnapshots: [DossierSenses.WalkSnapshotRow(walkUUID: walkA, startDate: walkStart,
+                                                           intention: nil, weatherCondition: nil)],
+            recordingTimestamps: [recA: walkStart.addingTimeInterval(300)],
+            lunationAnchor: walkStart
+        )
+        _ = ThreadsDossierBuilder.build(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: bundleNoIntention, resolveRouteFix: countingFix
+        )
+        let callsAfterFirst = fixCalls
+        XCTAssertGreaterThan(callsAfterFirst, 0,
+                             "the themed current recording must resolve a fix — proves the first build was real")
+
+        // Same walk, same recordings, same store contents, same lunation,
+        // same backfillComplete, same (absent) moon state — only the walk's
+        // own intention text differs between builds.
+        let bundleWithIntention = sensesBundle(
+            walkStart: walkStart, walkEnd: walkStart.addingTimeInterval(3600),
+            walkSnapshots: [DossierSenses.WalkSnapshotRow(walkUUID: walkA, startDate: walkStart,
+                                                           intention: "find some quiet", weatherCondition: nil)],
+            recordingTimestamps: [recA: walkStart.addingTimeInterval(300)],
+            lunationAnchor: walkStart
+        )
+        _ = ThreadsDossierBuilder.build(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: bundleWithIntention, resolveRouteFix: countingFix
+        )
+
+        XCTAssertGreaterThan(fixCalls, callsAfterFirst,
+                             "an intention edited between builds must invalidate the cache and rebuild — " +
+                             "otherwise a same-session reopen after editing the intention shows the stale dossier")
+    }
+
     func testAssembler_noticedBlockRidesInsideDossier_handlingNoteCoPresent() {
         let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         let dossier = "**Thought threads (on-device analysis):**\ntest\n\n**Noticed:**\n'music' has surfaced on 2 walks — twice near the same stretch of ground."

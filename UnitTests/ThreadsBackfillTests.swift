@@ -15,12 +15,15 @@ final class ThreadsBackfillTests: XCTestCase {
     /// that can drift with a rename.
     private static let legacyCompletedKeyV1 = "threadsBackfillCompleted"
     private static let legacyCompletedKeyV2 = "threadsBackfillCompletedV2"
+    private static let legacyCompletedKeyV3 = "threadsBackfillCompletedV3"
 
     private var store: TranscriptContextStore!
     private var directory: URL!
     private var savedCompleted: Any?
     private var savedLegacyCompletedV1: Any?
     private var savedLegacyCompletedV2: Any?
+    private var savedLegacyCompletedV3: Any?
+    private var savedMoonState: Any?
     private var savedToggle = true
 
     override func setUpWithError() throws {
@@ -28,8 +31,13 @@ final class ThreadsBackfillTests: XCTestCase {
         savedCompleted = UserDefaults.standard.object(forKey: ThreadsBackfill.completedKey)
         savedLegacyCompletedV1 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV1)
         savedLegacyCompletedV2 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV2)
+        savedLegacyCompletedV3 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV3)
+        savedMoonState = UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
         savedToggle = UserPreferences.threadsAfterWalks.value
         UserDefaults.standard.set(false, forKey: ThreadsBackfill.completedKey)
+        UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV1)
+        UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV2)
+        UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV3)
         UserPreferences.threadsAfterWalks.value = true
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ThreadsBackfillTests-\(UUID().uuidString)")
@@ -51,6 +59,16 @@ final class ThreadsBackfillTests: XCTestCase {
             UserDefaults.standard.set(savedLegacyCompletedV2, forKey: Self.legacyCompletedKeyV2)
         } else {
             UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV2)
+        }
+        if let savedLegacyCompletedV3 {
+            UserDefaults.standard.set(savedLegacyCompletedV3, forKey: Self.legacyCompletedKeyV3)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV3)
+        }
+        if let savedMoonState {
+            UserDefaults.standard.set(savedMoonState, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
         }
         UserPreferences.threadsAfterWalks.value = savedToggle
         try? FileManager.default.removeItem(at: directory)
@@ -85,6 +103,135 @@ final class ThreadsBackfillTests: XCTestCase {
 
         XCTAssertFalse(ThreadsBackfill.isComplete,
                        "a device that completed the junk-theme V2 sweep must re-evaluate under the new key")
+    }
+
+    /// V3 devices completed a real sweep, but the noun-only extractor still
+    /// left verb/adjective scaffolding ("was", "can", "cool") and stoplisted
+    /// nouns ("thing", "way") in stored themes because nothing checked
+    /// `TranscriptContext.schemaVersion` — a bare `hasContext` skip treated
+    /// existence as freshness. The V4 rename (schema v2) re-arms them the
+    /// same way V1→V2 and V2→V3 did: the new key is absent regardless of
+    /// what the V3 key holds.
+    func testIsComplete_legacyV3KeyTrue_reArmsUnderNewKey() {
+        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKeyV3)
+
+        XCTAssertFalse(ThreadsBackfill.isComplete,
+                       "a device that completed the stale-schema V3 sweep must re-evaluate under the new key")
+    }
+
+    /// The where-clause skip (`!store.hasContext`) must become version-aware
+    /// (`!store.hasCurrentContext`) so a stale-schema file blocks nothing —
+    /// the item is re-analyzed and lands on disk with the current schema.
+    func testRunIfNeeded_staleSchemaContext_reAnalyzedToCurrentSchema() async {
+        let items = makeItems(1)
+        let item = items[0]
+        let stale = TranscriptContext(
+            schemaVersion: 1, recordingUUID: item.uuid, transcriptHash: "stale-hash",
+            languageCode: "en", wordCount: 1, themes: [], markers: nil
+        )
+        store.save(stale)
+
+        let done = expectation(description: "sweep finished")
+        ThreadsBackfill.runIfNeeded(
+            store: store, snapshotProvider: { items }, gate: { true },
+            onFinish: { done.fulfill() }
+        )
+        await fulfillment(of: [done], timeout: 60)
+
+        XCTAssertTrue(store.hasCurrentContext(for: item.uuid),
+                      "a stale-schema context must be re-analyzed into the current schema, not skipped")
+        XCTAssertTrue(ThreadsBackfill.isComplete)
+    }
+
+    /// A stale-version file whose recording no longer exists in the sweep's
+    /// snapshot must be deleted outright — `loadAll`/`ThreadsDossierBuilder`
+    /// only ever prune orphans among CURRENT-schema contexts, so a stale
+    /// orphan would otherwise linger on disk forever, invisible to every
+    /// reader yet never cleaned up.
+    func testRunIfNeeded_staleOrphan_deletedFromDisk() async {
+        let items = makeItems(1)
+        let orphanUUID = UUID()
+        let staleOrphan = TranscriptContext(
+            schemaVersion: 1, recordingUUID: orphanUUID, transcriptHash: "gone",
+            languageCode: "en", wordCount: 1, themes: [], markers: nil
+        )
+        store.save(staleOrphan)
+
+        let done = expectation(description: "sweep finished")
+        ThreadsBackfill.runIfNeeded(
+            store: store, snapshotProvider: { items }, gate: { true },
+            onFinish: { done.fulfill() }
+        )
+        await fulfillment(of: [done], timeout: 60)
+
+        XCTAssertFalse(store.hasContext(for: orphanUUID),
+                       "a stale-version context with no matching recording must be deleted, not merely hidden")
+    }
+
+    /// `transcribedRecordingsSnapshot()`'s `try? queryAttributes` silently
+    /// returns `[]` on any CoreStore failure — indistinguishable here from a
+    /// genuinely empty history. Treating an empty snapshot as proof every
+    /// stale-schema context is orphaned would store-wide delete and
+    /// tombstone a still-live recording's context on a single bad read. The
+    /// dossier builder's sibling guard (`walkIndex.isEmpty && !all.isEmpty`,
+    /// see `testBuilder_emptyWalkIndexWithStoredContexts_doesNotMassPrune`)
+    /// defends the same hazard on its own read path.
+    func testRunIfNeeded_emptySnapshotWithStoredStaleContext_doesNotMassPrune() async {
+        let staleUUID = UUID()
+        let stillLive = TranscriptContext(
+            schemaVersion: 1, recordingUUID: staleUUID, transcriptHash: "still-live",
+            languageCode: "en", wordCount: 1, themes: [], markers: nil
+        )
+        store.save(stillLive)
+        let changeCountBeforeSweep = store.changeCount
+
+        let done = expectation(description: "sweep finished")
+        ThreadsBackfill.runIfNeeded(
+            store: store, snapshotProvider: { [] }, gate: { true },
+            onFinish: { done.fulfill() }
+        )
+        await fulfillment(of: [done], timeout: 60)
+
+        XCTAssertTrue(store.hasContext(for: staleUUID),
+                      "an empty/failed snapshot read must not be treated as proof every stale context is orphaned")
+        XCTAssertEqual(store.changeCount, changeCountBeforeSweep,
+                       "no delete/tombstone write must reach the store on an empty snapshot")
+    }
+
+    /// The V3→V4 transition is the one moment the burned Buck Moon budget
+    /// can be forgiven: the stale-theme era's re-analysis will change what
+    /// the moon line has to say, so its last-reported lunation must clear
+    /// exactly once, gated on the V3 key's presence (not a separate marker).
+    func testRunIfNeeded_v3KeyPresent_removesMoonLineKeyOnce() async {
+        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKeyV3)
+        UserDefaults.standard.set(7, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+
+        let done = expectation(description: "sweep finished")
+        ThreadsBackfill.runIfNeeded(
+            store: store, snapshotProvider: { [] }, gate: { true },
+            onFinish: { done.fulfill() }
+        )
+        await fulfillment(of: [done], timeout: 10)
+
+        XCTAssertNil(UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey),
+                     "the V3→V4 transition burns the stale-theme era's moon budget so it can re-report honestly")
+    }
+
+    /// No V3 key means either a fresh install or an already-migrated device
+    /// — the moon key must be left alone in both cases.
+    func testRunIfNeeded_noV3Key_moonLineUntouched() async {
+        UserDefaults.standard.set(true, forKey: ThreadsBackfill.completedKey)
+        UserDefaults.standard.set(3, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+
+        let done = expectation(description: "sweep finished")
+        ThreadsBackfill.runIfNeeded(
+            store: store, snapshotProvider: { [] }, gate: { true },
+            onFinish: { done.fulfill() }
+        )
+        await fulfillment(of: [done], timeout: 10)
+
+        XCTAssertEqual(UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey) as? Int, 3,
+                       "no V3 key present — a fresh install or already-migrated device must not lose its moon budget")
     }
 
     func testRunIfNeeded_processesEveryItemAcrossBatches() async {

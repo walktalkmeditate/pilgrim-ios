@@ -127,4 +127,54 @@ final class TranscriptContextStoreTests: XCTestCase {
         let values = try directory.resourceValues(forKeys: [.isExcludedFromBackupKey])
         XCTAssertEqual(values.isExcludedFromBackup, true)
     }
+
+    private func makeStaleContext(uuid: UUID = UUID(), transcript: String = "stale analysis") -> TranscriptContext {
+        TranscriptContext(
+            schemaVersion: 1,
+            recordingUUID: uuid,
+            transcriptHash: TranscriptContextStore.hash(of: transcript),
+            languageCode: "en",
+            wordCount: 2,
+            themes: [],
+            markers: nil
+        )
+    }
+
+    func testLoadAll_excludesStaleSchemaVersion() {
+        let stale = makeStaleContext()
+        let fresh = makeContext()
+        store.save(stale)
+        store.save(fresh)
+        XCTAssertEqual(store.loadAll().map(\.recordingUUID), [fresh.recordingUUID],
+                       "a stale-schema context must be invisible to every reader — threads, dossier, suggestions")
+    }
+
+    func testLoadAllIncludingStaleVersions_includesEveryVersion() {
+        let stale = makeStaleContext()
+        let fresh = makeContext()
+        store.save(stale)
+        store.save(fresh)
+        XCTAssertEqual(Set(store.loadAllIncludingStaleVersions().map(\.recordingUUID)),
+                       Set([stale.recordingUUID, fresh.recordingUUID]),
+                       "the sweep's stale-orphan cleanup needs every stored version, not just current")
+    }
+
+    func testHasCurrentContext_falseForStaleSchemaVersion() {
+        let stale = makeStaleContext()
+        store.save(stale)
+        XCTAssertFalse(store.hasCurrentContext(for: stale.recordingUUID),
+                       "a stale-schema file on disk must not count as current")
+        XCTAssertTrue(store.hasContext(for: stale.recordingUUID),
+                      "existence still true — only freshness differs")
+    }
+
+    func testHasCurrentContext_trueForCurrentSchemaVersion() {
+        let fresh = makeContext()
+        store.save(fresh)
+        XCTAssertTrue(store.hasCurrentContext(for: fresh.recordingUUID))
+    }
+
+    func testHasCurrentContext_falseWhenMissing() {
+        XCTAssertFalse(store.hasCurrentContext(for: UUID()))
+    }
 }

@@ -5,7 +5,7 @@ import Foundation
 /// once history is fully analyzed (spec: ThreadStore).
 enum ThreadsBackfill {
 
-    static let completedKey = "threadsBackfillCompletedV3"
+    static let completedKey = "threadsBackfillCompletedV4"
     /// v1.11.0 TestFlight devices could run the sweep, account for zero
     /// recordings under a snapshot bug (fixed alongside the V2 rename), and
     /// still set the old flag — stranding those devices on a never-swept
@@ -13,9 +13,19 @@ enum ThreadsBackfill {
     /// 106 devices completed a real V2 sweep, but ThemeExtractor's raw
     /// verb-inclusive filter let spoken scaffolding ("was", "have", "can",
     /// "think") win every theme ranking — those stored themes are junk, not
-    /// stale. Each rename re-arms by construction: the new key is absent,
-    /// so `isComplete` reads false regardless of what any old key holds.
-    private static let legacyCompletedKeys = ["threadsBackfillCompleted", "threadsBackfillCompletedV2"]
+    /// stale. Build 108 devices completed a real V3 sweep with the
+    /// noun-only extractor, but nothing checked `TranscriptContext
+    /// .schemaVersion` — a bare `hasContext` skip treated existence as
+    /// freshness, so verb/adjective scaffolding and stoplisted nouns that
+    /// had already been stored under V2 survived the V3 "re-arm" untouched.
+    /// Each rename re-arms by construction: the new key is absent, so
+    /// `isComplete` reads false regardless of what any old key holds — V4
+    /// additionally makes freshness itself schema-version-aware end to end
+    /// (see docs/solutions/derived-cache-semantics-are-schema.md).
+    private static let legacyCompletedKeyV3 = "threadsBackfillCompletedV3"
+    private static let legacyCompletedKeys = [
+        "threadsBackfillCompleted", "threadsBackfillCompletedV2", legacyCompletedKeyV3
+    ]
     private static var isRunning = false
     private static var generation = 0
 
@@ -50,6 +60,45 @@ enum ThreadsBackfill {
 
     static let batchSize = 25
 
+    /// One-time hygiene ahead of the `isComplete` check below: the pre-V4
+    /// keys no longer mean anything, and removing an absent key is a
+    /// harmless no-op on every call after the first. The V3 key's presence
+    /// — captured before removal — is also the moon-line re-arm signal
+    /// (item 2): only a device that completed the stale-theme V3 sweep ever
+    /// had a moon line burned on junk themes, so only that device's budget
+    /// clears. A fresh install or an already-migrated device (V3 key
+    /// already gone) leaves the moon key untouched.
+    private static func performLegacyHygiene() {
+        let hadV3Key = UserDefaults.standard.object(forKey: legacyCompletedKeyV3) != nil
+        legacyCompletedKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        guard hadV3Key else { return }
+        UserDefaults.standard.removeObject(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
+    }
+
+    /// Stale-schema files whose recording isn't in this sweep's snapshot are
+    /// deleted outright: `loadAll`/`ThreadsDossierBuilder`'s own orphan
+    /// cleanup only ever sees current-schema contexts, so a stale orphan
+    /// would otherwise linger on disk forever, invisible to every reader
+    /// yet never pruned. `store.delete` tombstones them, matching the
+    /// builder's own orphan-cleanup path.
+    ///
+    /// An empty `liveUUIDs` is skipped outright: `transcribedRecordingsSnapshot`
+    /// silently returns `[]` on any CoreStore failure (`try? queryAttributes`),
+    /// indistinguishable here from a genuinely empty history. Treating it as
+    /// proof of orphanhood would store-wide delete every stale-schema context
+    /// still on disk for recordings that are, in fact, live — mirroring the
+    /// sibling guard in `ThreadsDossierBuilder.build()`
+    /// (`walkIndex.isEmpty && !all.isEmpty`). A genuine zero-recording device
+    /// has nothing worth pruning anyway, so the skip costs nothing real.
+    private static func pruneStaleOrphans(store: TranscriptContextStore, liveUUIDs: Set<UUID>) {
+        guard !liveUUIDs.isEmpty else { return }
+        let staleOrphans = store.loadAllIncludingStaleVersions()
+            .filter { $0.schemaVersion != TranscriptContext.currentSchemaVersion && !liveUUIDs.contains($0.recordingUUID) }
+            .map(\.recordingUUID)
+        guard !staleOrphans.isEmpty else { return }
+        store.delete(recordingUUIDs: staleOrphans)
+    }
+
     /// Main-actor only: the CoreStore snapshot must be taken before
     /// detaching — `dataStack` queries assert main-thread. Single-flight,
     /// and battery-gated like MainCoordinator.triggerAutoTranscription.
@@ -66,8 +115,8 @@ enum ThreadsBackfill {
     /// per-batch guard re-checks the toggle, and re-enabling resweeps via
     /// `setEnabled(true)`. A reset landing mid-sweep (import, re-enable)
     /// makes this sweep stale; its completion then schedules one follow-up
-    /// pass — a cheap hasContext-only resweep — so the session doesn't end
-    /// with the flag stuck false.
+    /// pass — a cheap hasCurrentContext-only resweep — so the session
+    /// doesn't end with the flag stuck false.
     ///
     /// `snapshotProvider`, `gate`, and `onFinish` are test seams; production
     /// callers use the defaults, which preserve the shipped behavior exactly.
@@ -80,10 +129,7 @@ enum ThreadsBackfill {
         gate: @escaping @MainActor () -> Bool = { BatteryGate.allowsBackgroundWork() },
         onFinish: (@MainActor () -> Void)? = nil
     ) {
-        // One-time hygiene ahead of the isComplete check below: the pre-V3
-        // keys no longer mean anything, and removing an absent key is a
-        // harmless no-op on every call after the first.
-        legacyCompletedKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        performLegacyHygiene()
         guard !isComplete, !isRunning, UserPreferences.threadsAfterWalks.value, gate() else {
             onFinish?()
             return
@@ -93,6 +139,7 @@ enum ThreadsBackfill {
         let startGeneration = generation
         let items = snapshotProvider()
         Task.detached(priority: .utility) {
+            pruneStaleOrphans(store: store, liveUUIDs: Set(items.map(\.uuid)))
             var allAccounted = true
             var gateClosed = false
             var batchStart = 0
@@ -102,13 +149,13 @@ enum ThreadsBackfill {
                     break
                 }
                 let batch = items[batchStart..<min(batchStart + batchSize, items.count)]
-                for item in batch where !store.hasContext(for: item.uuid) {
+                for item in batch where !store.hasCurrentContext(for: item.uuid) {
                     let saved = TranscriptContextAnalyzer.analyzeAndStore(
                         recordingUUID: item.uuid,
                         transcript: item.transcript,
                         store: store
                     ).saved
-                    if !saved && !store.hasContext(for: item.uuid) {
+                    if !saved && !store.hasCurrentContext(for: item.uuid) {
                         allAccounted = false
                     }
                 }
