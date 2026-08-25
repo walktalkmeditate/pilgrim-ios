@@ -3017,13 +3017,14 @@ Commit: `feat(threads): a field report for human eyes — the senses show their 
 
 ## Execution status
 
-- Task 1: pending
-- Task 2: pending
-- Task 3: pending
-- Task 4: pending
-- Task 5: pending
-- Task 6: pending
-- Task 7: pending
-- Task 8: pending
-- Task 9: pending
+- Task 1: complete
+- Task 2: complete
+- Task 3: complete (commit `cec4863`)
+- Task 4: complete
+- Task 5: complete
+- Task 6: complete
+- Task 7: complete
+- Task 8: complete
+- Task 9: complete (commit `f93fdec`)
+- Task 10: complete — ship-gate harness + fixture report test + full verification sweep. Suite 1361 (baseline 1360 + 1), swiftlint 398/0 (unchanged baseline), `plutil -lint` clean, purity/descriptive/`Noticed:`/moon-key grep sweeps all clean. Harness confirmed to print "no walk history on this device" gracefully against empty simulator data. Human ship gate (real-device firing pass + LLM-readback QA) remains outstanding before any external release.
 - Task 10: pending

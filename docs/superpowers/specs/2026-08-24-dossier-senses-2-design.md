@@ -1,6 +1,6 @@
 # Dossier Senses II — Design
 
-**Date:** 2026-08-24 · **Status:** reviewed (6-persona ce-doc-review, all findings resolved 2026-08-24)
+**Date:** 2026-08-24 · **Status:** implemented on feat/dossier-senses-2, pending ship gate
 **Origin:** the Stage 3 field verdict (see `2026-08-22-thought-threads-design.md`, "Stage 3 field verdict"). The card died; the dossier is the feature's home. These are the four approved upgrade tracks that deepen what the AI prompts can see — all on-device, all descriptive, no new UI.
 
 ## Binding principles (inherited, non-negotiable)

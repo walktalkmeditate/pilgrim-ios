@@ -1,4 +1,5 @@
 import Foundation
+import CoreStore
 
 /// Main-actor-fetched inputs for the senses block, gathered before the
 /// detached build. Route fixes are NOT here — the builder resolves them
@@ -321,3 +322,85 @@ enum ThreadsDossierBuilder {
         )
     }
 }
+
+#if DEBUG
+/// Ship-gate harness (spec Ship gate item 1): iterates every walk with
+/// transcribed recordings, evaluates every sense uncapped, and prints
+/// per-sense firing rates plus each emitted line, so a human can judge
+/// degeneration (fires on nearly every walk) and dead senses (nearly never)
+/// against a REAL device history. Launch the dev build on the team device
+/// with `--senses-field-report` and read the console. The report only
+/// EVALUATES senses (moon state passed as nil, no defaults write anywhere
+/// on this path) — it never consumes the real once-per-lunation budget.
+enum DossierSensesFieldReport {
+
+    @MainActor
+    static func runIfRequested() {
+        guard CommandLine.arguments.contains("--senses-field-report"),
+              NSClassFromString("XCTestCase") == nil else { return }
+        print(generate())
+    }
+
+    @MainActor
+    static func generate(now: Date = Date()) -> String {
+        guard let walks = try? DataManager.dataStack.fetchAll(
+            From<Walk>().orderBy(.ascending(\._startDate))
+        ) else { return "senses field report: walk fetch failed" }
+        let walkIndex = DataManager.voiceRecordingWalkIndex()
+        let store = TranscriptContextStore.shared
+        let all = store.loadAll()
+        let contextsByUUID = Dictionary(uniqueKeysWithValues: all.map { ($0.recordingUUID, $0) })
+        let threadsAll = ThreadStore.build(contexts: all, walks: walkIndex)
+        var firing: [DossierSenses.Sense: Int] = [:]
+        var eligible = 0
+        var report = "\n===== DOSSIER SENSES FIELD REPORT =====\n"
+        if walks.isEmpty {
+            report += "\n(no walk history on this device — nothing to report)\n"
+            report += "=======================================\n"
+            return report
+        }
+        for walk in walks {
+            guard let walkUUID = walk._uuid.value else { continue }
+            let recordings: [RecordingContext] = walk._voiceRecordings.value.compactMap { recording in
+                guard let uuid = recording._uuid.value,
+                      let text = recording._transcription.value, !text.isEmpty else { return nil }
+                return RecordingContext(
+                    text: text, timestamp: recording._startDate.value,
+                    startCoordinate: nil, endCoordinate: nil,
+                    wordsPerMinute: recording._wordsPerMinute.value,
+                    recordingUUID: uuid, endTimestamp: recording._endDate.value
+                )
+            }
+            guard !recordings.isEmpty else { continue }
+            eligible += 1
+            let bundle = ThreadsDossierBuilder.gatherSensesBundle(walk: walk, now: now)
+            let input = ThreadsDossierBuilder.makeSensesInput(
+                senses: bundle,
+                state: ThreadsDossierBuilder.SensesAssemblyState(
+                    walkUUID: walkUUID, recordings: recordings, contextsByUUID: contextsByUUID,
+                    threads: threadsAll, walkIndex: walkIndex, backfillComplete: ThreadsBackfill.isComplete,
+                    moonState: nil
+                ),
+                resolveRouteFix: DataManager.routeFixNear
+            )
+            report += "\nWalk \(walk._startDate.value):\n"
+            for sense in DossierSenses.Sense.allCases {
+                guard let line = DossierSenses.evaluate(sense, input: input, suppressed: []) else { continue }
+                firing[sense, default: 0] += 1
+                report += "  [\(sense)] \(line.text)\n"
+            }
+        }
+        if eligible == 0 {
+            report += "\n(no walk carries a transcribed recording — nothing to report)\n"
+            report += "=======================================\n"
+            return report
+        }
+        report += "\nFiring rates over \(eligible) walks with words:\n"
+        for sense in DossierSenses.Sense.allCases {
+            report += "  \(sense): \(firing[sense] ?? 0)/\(eligible)\n"
+        }
+        report += "=======================================\n"
+        return report
+    }
+}
+#endif

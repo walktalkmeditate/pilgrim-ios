@@ -117,7 +117,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 self.appLaunchState = .done
                 mark("appLaunchState = .done (WelcomeView can render)")
 
-                self.startLaunchRecordingCleanup()
+                self.runPostDoneLaunchTasks()
 
                 // Manifest-service init is intentionally cheap (issue #42):
                 // the first `.shared` touch used to burn ~880ms of
@@ -144,6 +144,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         )
         
         return true
+    }
+
+    /// Grouped so the `DataManager.setup` completion closure — already at
+    /// the `function_body_length` gate — gains one call site, not two.
+    private func runPostDoneLaunchTasks() {
+        #if DEBUG
+        // Ship-gate harness (Task 10): only ever produces output under
+        // `--senses-field-report` — `runIfRequested` carries that guard
+        // itself. The Task hop keeps the @MainActor call clean from this
+        // non-actor-annotated completion closure.
+        Task { @MainActor in DossierSensesFieldReport.runIfRequested() }
+        #endif
+        startLaunchRecordingCleanup()
     }
 
     /// Launch cleanup ordering (AF2): the orphan sweep runs only once BOTH
