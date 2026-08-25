@@ -19,9 +19,7 @@ final class DossierSensesTests: XCTestCase {
         threads: [WalkThread] = [],
         backfillComplete: Bool = true,
         walkSnapshots: [DossierSenses.WalkSnapshotRow] = [],
-        historyTranscripts: [(recordingUUID: UUID, transcript: String)] = [],
         recordingTimestamps: [UUID: Date] = [:],
-        walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [:],
         fixes: [UUID: DossierSenses.RouteFix] = [:],
         moon: DossierSenses.MoonInput? = nil
     ) -> DossierSenses.Input {
@@ -30,8 +28,7 @@ final class DossierSensesTests: XCTestCase {
             totalAscent: totalAscent, elevationSeries: elevationSeries, photos: photos,
             currentRecordings: currentRecordings, threads: threads,
             backfillComplete: backfillComplete, walkSnapshots: walkSnapshots,
-            historyTranscripts: historyTranscripts, recordingTimestamps: recordingTimestamps,
-            walkIndex: walkIndex, fixes: fixes, moon: moon
+            recordingTimestamps: recordingTimestamps, fixes: fixes, moon: moon
         )
     }
 
@@ -54,12 +51,13 @@ final class DossierSensesTests: XCTestCase {
             .speechShape: .init(text: "speech", lemma: nil),
             .climbAnchoring: .init(text: "climb", lemma: "river"),
             .placeResonance: .init(text: "place", lemma: "move"),
-            .questionDensity: .init(text: "question", lemma: nil),
+            .photoAdjacency: .init(text: "photo", lemma: "trail"),
             .weatherWeave: .init(text: "weather", lemma: "music")
         ]
         let output = DossierSenses.lines(input: makeInput(), evaluate: stub(firing))
         XCTAssertEqual(output.lines, ["place", "climb", "weather"],
-                       "cap 3, spec priority order: place(1) > climb(5) > weather(6) > question(8) > speech(9)")
+                       "cap 3, spec priority order: place(1) > climb(5) > weather(6) > photo(7) > speech(8) " +
+                       "(questionDensity cut at the ship gate — the enum now has 8 cases, not 9)")
     }
 
     func testEngine_themeNamedAtRankOne_neverReappearsAtLowerRank() {
@@ -124,8 +122,6 @@ final class DossierSensesTests: XCTestCase {
         XCTAssertEqual(DossierSenses.timesPhrase(2), "twice")
         XCTAssertEqual(DossierSenses.timesPhrase(3), "three times")
         XCTAssertEqual(DossierSenses.timesPhrase(10), "10 times")
-        XCTAssertEqual(DossierSenses.capitalizedCount(4), "Four")
-        XCTAssertEqual(DossierSenses.capitalizedCount(11), "11")
         XCTAssertEqual(DossierSenses.ordinalWord(5), "Fifth")
         XCTAssertEqual(DossierSenses.ordinalWord(12), "Twelfth")
         XCTAssertEqual(DossierSenses.ordinalWord(13), "13th")

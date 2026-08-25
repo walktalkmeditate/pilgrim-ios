@@ -11,7 +11,6 @@ struct DossierSensesFetchBundle {
     let elevationSeries: [DossierSenses.ElevationSample]
     let photos: [DossierSenses.PhotoPin]
     let walkSnapshots: [DossierSenses.WalkSnapshotRow]
-    let historyTranscripts: [(recordingUUID: UUID, transcript: String)]
     let recordingTimestamps: [UUID: Date]
     let closedLunation: Lunation
     let moonName: String
@@ -73,13 +72,6 @@ enum ThreadsDossierBuilder {
                 from: min(windowStart, lunation.start),
                 to: max(walk.endDate, lunation.end)
             ),
-            // Relabeled: `transcribedRecordingsSnapshot` returns `uuid:`,
-            // matching its other DataManager snapshot siblings; the senses
-            // bundle's tuple shape is `recordingUUID:`, matching
-            // `DossierSenses.Input` — the labels are structurally
-            // interchangeable but Swift does not convert them implicitly.
-            historyTranscripts: DataManager.transcribedRecordingsSnapshot(in: windowStart...walk.endDate)
-                .map { (recordingUUID: $0.uuid, transcript: $0.transcript) },
             recordingTimestamps: DataManager.voiceRecordingTimestampIndex(),
             closedLunation: lunation,
             moonName: LunationCalendar.moonName(for: lunation)
@@ -350,9 +342,7 @@ enum ThreadsDossierBuilder {
             threads: state.threads,
             backfillComplete: state.backfillComplete,
             walkSnapshots: senses.walkSnapshots,
-            historyTranscripts: senses.historyTranscripts,
             recordingTimestamps: senses.recordingTimestamps,
-            walkIndex: state.walkIndex,
             fixes: fixes,
             moon: moon
         )

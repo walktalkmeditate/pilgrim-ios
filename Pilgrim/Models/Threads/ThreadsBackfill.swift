@@ -5,7 +5,7 @@ import Foundation
 /// once history is fully analyzed (spec: ThreadStore).
 enum ThreadsBackfill {
 
-    static let completedKey = "threadsBackfillCompletedV5"
+    static let completedKey = "threadsBackfillCompletedV6"
     /// v1.11.0 TestFlight devices could run the sweep, account for zero
     /// recordings under a snapshot bug (fixed alongside the V2 rename), and
     /// still set the old flag — stranding those devices on a never-swept
@@ -26,11 +26,17 @@ enum ThreadsBackfill {
     /// clause has real word-identity history to build a baseline from —
     /// unlike V3→V4, this rename touches no theme-extraction logic, so no
     /// moon-line re-arm accompanies it (`performLegacyHygiene` still only
-    /// watches the V3 key for that).
+    /// watches the V3 key for that). V6 (ship gate, 2026-08-25) adds `day`,
+    /// `days`, `area` to `SpokenStoplist.lightNouns` (schema v3→v4), a
+    /// narrower theme-extraction change than V2→V3's — like V4→V5, no
+    /// moon-line re-arm accompanies it; `performLegacyHygiene` still only
+    /// watches the V3 key.
     private static let legacyCompletedKeyV3 = "threadsBackfillCompletedV3"
     private static let legacyCompletedKeyV4 = "threadsBackfillCompletedV4"
+    private static let legacyCompletedKeyV5 = "threadsBackfillCompletedV5"
     private static let legacyCompletedKeys = [
-        "threadsBackfillCompleted", "threadsBackfillCompletedV2", legacyCompletedKeyV3, legacyCompletedKeyV4
+        "threadsBackfillCompleted", "threadsBackfillCompletedV2",
+        legacyCompletedKeyV3, legacyCompletedKeyV4, legacyCompletedKeyV5
     ]
     private static var isRunning = false
     private static var generation = 0

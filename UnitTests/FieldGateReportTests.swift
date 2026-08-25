@@ -76,7 +76,7 @@ final class FieldGateReportTests: XCTestCase {
                 DossierSenses.WalkSnapshotRow(walkUUID: $0.walkUUID, startDate: $0.date,
                                               intention: nil, weatherCondition: nil)
             },
-            historyTranscripts: [], recordingTimestamps: [:], walkIndex: walks,
+            recordingTimestamps: [:],
             fixes: [:], moon: nil
         )
         var report = "\n===== SENSES FIELD GATE REPORT (fixtures) =====\n"

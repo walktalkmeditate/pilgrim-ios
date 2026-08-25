@@ -17,9 +17,7 @@ final class DossierSensesCrossWalkTests: XCTestCase {
         threads: [WalkThread] = [],
         backfillComplete: Bool = true,
         walkSnapshots: [DossierSenses.WalkSnapshotRow] = [],
-        historyTranscripts: [(recordingUUID: UUID, transcript: String)] = [],
         recordingTimestamps: [UUID: Date] = [:],
-        walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [:],
         fixes: [UUID: DossierSenses.RouteFix] = [:],
         moon: DossierSenses.MoonInput? = nil
     ) -> DossierSenses.Input {
@@ -28,8 +26,7 @@ final class DossierSensesCrossWalkTests: XCTestCase {
             totalAscent: totalAscent, elevationSeries: elevationSeries, photos: photos,
             currentRecordings: currentRecordings, threads: threads,
             backfillComplete: backfillComplete, walkSnapshots: walkSnapshots,
-            historyTranscripts: historyTranscripts, recordingTimestamps: recordingTimestamps,
-            walkIndex: walkIndex, fixes: fixes, moon: moon
+            recordingTimestamps: recordingTimestamps, fixes: fixes, moon: moon
         )
     }
 
@@ -139,13 +136,34 @@ final class DossierSensesCrossWalkTests: XCTestCase {
         XCTAssertNil(DossierSenses.weatherWeave(input: input, suppressed: []))
     }
 
-    func testWeatherWeave_pluralityWithoutMajority_doesNotSuppress() {
+    /// Ship gate (2026-08-25) tightened the climate guard from majority
+    /// (>50%) to mode: rain (2/5) ties clear (2/5, snow 1/5) for the
+    /// window's most common condition — no true majority exists, but the
+    /// tightened guard suppresses ties too (conservative). This deliberately
+    /// supersedes the prior design decision, which let this exact tie fire
+    /// (formerly `testWeatherWeave_pluralityWithoutMajority_doesNotSuppress`).
+    func testWeatherWeave_tiedForMode_suppresses() {
         let input = weaveInput(themeWalkWeather: ["lightRain", "heavyRain"],
                                otherWalkWeather: ["clear", "clear", "snow"])
+        XCTAssertNil(DossierSenses.weatherWeave(input: input, suppressed: []),
+                     "rain ties clear for the window's mode (2/5 each) — a tie suppresses under the tightened guard")
+    }
+
+    /// A genuine minority against a non-majority mode: cloud is the window's
+    /// most common condition (3/6) without holding a >50% majority — the old
+    /// guard would have missed this case entirely. Rain (2/6) is still
+    /// strictly rarer than the mode, so the tightened guard still fires.
+    func testWeatherWeave_minorityAgainstNonMajorityMode_fires() {
+        let input = weaveInput(themeWalkWeather: ["lightRain", "heavyRain"],
+                               otherWalkWeather: ["partlyCloudy", "overcast", "haze", "snow"])
         XCTAssertEqual(
             DossierSenses.weatherWeave(input: input, suppressed: []),
             DossierSenses.SenseLine(text: "Both walks where 'music' surfaced were under rain.", lemma: "music")
         )
+    }
+
+    func testSkyPhrase_cloud_pinnedText() {
+        XCTAssertEqual(DossierSenses.skyPhrase(.cloud), "under clouds")
     }
 
     // MARK: - Place-theme resonance
@@ -337,67 +355,6 @@ final class DossierSensesCrossWalkTests: XCTestCase {
             todayIntention: "walk with the river"
         )
         XCTAssertNil(DossierSenses.intentionLineage(input: input, suppressed: []))
-    }
-
-    // MARK: - Question density
-
-    private func questionInput(today: String, history: [String]) -> DossierSenses.Input {
-        let currentWalk = UUID()
-        let recUUID = UUID()
-        var walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [:]
-        var timestamps: [UUID: Date] = [:]
-        var transcripts: [(recordingUUID: UUID, transcript: String)] = []
-        for (i, text) in history.enumerated() {
-            let historyRec = UUID()
-            let date = Self.walkStart.addingTimeInterval(Double(i + 1) * -3 * 86400)
-            walkIndex[historyRec] = (UUID(), date)
-            timestamps[historyRec] = date.addingTimeInterval(600)
-            transcripts.append((historyRec, text))
-        }
-        return makeInput(
-            currentWalkUUID: currentWalk,
-            currentRecordings: [DossierSenses.CurrentRecording(
-                uuid: recUUID, start: Self.walkStart, end: Self.walkStart.addingTimeInterval(300),
-                text: today, wordCount: TranscriptNLP.wordCount(in: today), themes: []
-            )],
-            historyTranscripts: transcripts,
-            recordingTimestamps: timestamps,
-            walkIndex: walkIndex
-        )
-    }
-
-    func testQuestionDensity_todayDoublesTheMedianAndTopsEveryWalk_fires() {
-        let input = questionInput(
-            today: "Who sits with him? What changes? Why now? What am I holding?",
-            history: ["A question? Another?", "One thing today?", "No questions today at all."]
-        )
-        XCTAssertEqual(
-            DossierSenses.questionDensity(input: input, suppressed: []),
-            DossierSenses.SenseLine(
-                text: "Four of today's sentences were questions — more than any walk in the last 30 days.",
-                lemma: nil
-            )
-        )
-    }
-
-    func testQuestionDensity_tiedWithAHistoryWalk_doesNotFire() {
-        let input = questionInput(
-            today: "Who? What? Why?",
-            history: ["One? Two? Three?", "Quiet.", "Still quiet."]
-        )
-        XCTAssertNil(DossierSenses.questionDensity(input: input, suppressed: []),
-                     "today must EXCEED every other in-window walk, not tie one")
-    }
-
-    func testQuestionDensity_underThreeQuestions_doesNotFire() {
-        let input = questionInput(today: "Why now? What next?", history: ["Quiet.", "Quiet.", "Quiet."])
-        XCTAssertNil(DossierSenses.questionDensity(input: input, suppressed: []))
-    }
-
-    func testQuestionDensity_underThreeHistoryWalks_doesNotFire() {
-        let input = questionInput(today: "Who? What? Why?", history: ["Quiet.", "Quiet."])
-        XCTAssertNil(DossierSenses.questionDensity(input: input, suppressed: []),
-                     "≥3 walks of history required before a median means anything")
     }
 }
 
