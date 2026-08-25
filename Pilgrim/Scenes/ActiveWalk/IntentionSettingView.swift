@@ -159,6 +159,7 @@ struct IntentionSettingView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Celestial Suggestions
@@ -271,6 +272,7 @@ struct IntentionSettingView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Voice Recording

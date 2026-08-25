@@ -495,3 +495,69 @@ recap sheet and both settings lists. Rollout: internal TestFlight first;
 the walker/product owner runs the LLM-readback QA pass (and a gentleness
 read of the release/welcome-back confirm strings) on that build, gating
 public TestFlight or App Store submission.
+
+## Stage 3 field verdict (2026-08-24)
+
+### What broke
+
+Build 106 real-device contact — the first walk transcripts a human actually
+spoke into the shipped Stage 1–2 engine, rather than the dogfood corpus the
+field gate above was judged against — surfaced a blind spot the gate never
+tested: everyday spoken scaffolding ("was", "have", "can", "think") threaded
+as themes. The `[noun, verb, adjective]` part-of-speech filter admitted
+these lemmas as verbs, and raw-frequency ranking then let them win against
+sparser, more meaningful nouns — "was" appears more often in any recording
+than "grief" ever will. The dogfood corpus validated theme quality on
+curated transcripts; it never stress-tested the extractor against
+unscripted, filler-heavy speech, which is most of what a walker actually
+says aloud on a walk.
+
+### The verdict
+
+Themes move to nouns-only, filtered through a new `SpokenStoplist` — light
+nouns ("thing", "way", "stuff", and similar) for theme extraction, and a
+separate scaffold-lemma set ("be", "have", "think", and similar) for the
+`AttentionDirectives` recurring-word directive, which shares the same
+spoken-filler exposure outside theme extraction entirely. That fix stands
+on its own, regardless of the surface question below.
+
+The surface question did not survive contact. Once themes were correctly
+nouns-only and re-run against a real transcript, the walker's verdict was to
+remove the card, the cross-walk thread history view, the lunation recap, and
+the release ("let this one go") gesture — not gate them further, remove
+them. The reasoning: the AI prompt dossier already carries every theme the
+card would show, with a capable LLM to contextualize them in the walker's
+own words — the card was redundant at best against that dossier, and at
+worst the surface where the junk-theme bug was most visible and most
+damaging to trust. The engine underneath — `ThemeExtractor`, `ThreadStore`,
+`ThreadsDossierBuilder` — is untouched; only the surfaces built to display
+threads directly to the walker are gone.
+
+`ThreadIntentionSuggestions` chips are the one walker-facing surface that
+survives, unchanged in kind: they stay under the "Recurring" header in
+`IntentionSettingView`, now drawing from noun-only themes. A chip offers a
+word to carry into an intention; it asserts nothing about the walker's inner
+life, which is a materially smaller claim than the card made — the
+distinction the walker's verdict turned on.
+
+`LunationCalendar` is deliberately retained even though the lunation recap
+that consumed it is gone: it has no walker-facing surface left to serve
+today, but the moon line below is a committed consumer, not a hope.
+
+### Dossier-first direction (approved, unscheduled)
+
+Four upgrade tracks were approved for the AI-prompt dossier — the feature's
+one surviving surface — as follow-up work, none scheduled or designed in
+detail yet:
+
+- **Place-theme resonance** — correlating themes with where they were
+  spoken, the way the dossier already correlates them with pace.
+- **The moon line** — a dossier-only descendant of the lunation recap,
+  consuming `LunationCalendar` to give the AI the current lunar context
+  without any walker-facing recap surface.
+- **Body & sky** — climb anchoring (grade/elevation context) woven with
+  weather, giving the dossier physical and atmospheric texture alongside
+  the psychological markers it already carries.
+- **Small signatures** — photo adjacency (themes correlated with where
+  photos were taken) and theme-marker coloring, small touches that let the
+  dossier's supporting material feel richer without asserting new claims.
