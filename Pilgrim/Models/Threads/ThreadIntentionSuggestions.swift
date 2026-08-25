@@ -17,7 +17,7 @@ enum ThreadIntentionSuggestions {
     static let minimumDistinctWalks = 2
     static let maxSuggestions = 2
 
-    private static var memo: (changeCount: Int, releasedToken: Int, day: Date, suggestions: [String])?
+    private static var memo: (changeCount: Int, day: Date, suggestions: [String])?
     private static let memoLock = NSLock()
 
     /// Pure core (tested): threads → suggestion phrases. Two lemmas can
@@ -54,7 +54,6 @@ enum ThreadIntentionSuggestions {
     static func current(
         asOf: Date = Date(),
         store: TranscriptContextStore = .shared,
-        releasedStore: ReleasedThreadsStore = .shared,
         walkIndex: [UUID: (walkUUID: UUID, date: Date)]? = nil
     ) async -> [String] {
         guard !pendingFieldGate else { return [] }
@@ -66,21 +65,18 @@ enum ThreadIntentionSuggestions {
 
         let day = Calendar.current.startOfDay(for: asOf)
         let preLoadChangeCount = store.changeCount
-        let releasedToken = releasedStore.changeCount
-        let released = releasedStore.releasedLemmas
         memoLock.lock()
         let cached = memo
         memoLock.unlock()
-        if let cached, cached.changeCount == preLoadChangeCount,
-           cached.releasedToken == releasedToken, cached.day == day {
+        if let cached, cached.changeCount == preLoadChangeCount, cached.day == day {
             return cached.suggestions
         }
 
         return await Task.detached(priority: .userInitiated) {
-            let threads = ThreadStore.build(contexts: store.loadAll(), walks: walkIndex, released: released)
+            let threads = ThreadStore.build(contexts: store.loadAll(), walks: walkIndex)
             let suggestions = select(threads: threads, asOf: asOf)
             memoLock.lock()
-            memo = (preLoadChangeCount, releasedToken, day, suggestions)
+            memo = (preLoadChangeCount, day, suggestions)
             memoLock.unlock()
             return suggestions
         }.value

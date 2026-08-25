@@ -203,7 +203,6 @@ struct ThreadHistoryView: View {
     private func load() async {
         guard UserPreferences.threadsAfterWalks.value else { return }
         let walkIndex = DataManager.voiceRecordingWalkIndex()
-        let released = ReleasedThreadsStore.shared.releasedLemmas
         let backfillComplete = ThreadsBackfill.isComplete
         let lemmas = Set(cohortLemmas)
 
@@ -213,7 +212,7 @@ struct ThreadHistoryView: View {
             let contextsByRecording = Dictionary(
                 uniqueKeysWithValues: contexts.map { ($0.recordingUUID, $0) }
             )
-            let threads = ThreadStore.build(contexts: contexts, walks: walkIndex, released: released)
+            let threads = ThreadStore.build(contexts: contexts, walks: walkIndex)
             return (threads.filter { lemmas.contains($0.lemma) }, contextsByRecording)
         }.value
 

@@ -11,10 +11,6 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
     private var store: TranscriptContextStore!
     private var directory: URL!
     private var previousDataStack: DataStack!
-    private var recapSuiteName: String!
-    private var recapDefaults: UserDefaults!
-    private var recapState: LunationRecapState!
-    private var savedCaptionShown: Bool!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -27,19 +23,9 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
             .appendingPathComponent("ThreadsDeletionTests-\(UUID().uuidString)")
         store = TranscriptContextStore(directory: directory)
         DataManager.transcriptContextStore = store
-
-        recapSuiteName = "DataManagerThreadsDeletionTests-\(UUID().uuidString)"
-        recapDefaults = UserDefaults(suiteName: recapSuiteName)
-        recapState = LunationRecapState(defaults: recapDefaults)
-        DataManager.lunationRecapState = recapState
-
-        savedCaptionShown = UserPreferences.threadsReleaseCaptionShown.value
     }
 
     override func tearDownWithError() throws {
-        UserPreferences.threadsReleaseCaptionShown.value = savedCaptionShown
-        DataManager.lunationRecapState = .shared
-        recapDefaults.removePersistentDomain(forName: recapSuiteName)
         DataManager.transcriptContextStore = .shared
         DataManager.dataStack = previousDataStack
         try? FileManager.default.removeItem(at: directory)
@@ -126,40 +112,5 @@ final class DataManagerThreadsDeletionTests: XCTestCase {
         store.save(context(for: recordingUUID))
         XCTAssertTrue(store.loadAll().isEmpty,
                       "an analysis queued before Delete All must not write after the wipe")
-    }
-
-    func testDeleteAll_clearsReleasedThreads() {
-        let suiteName = "ReleasedThreadsDeleteAll-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-        let released = ReleasedThreadsStore(defaults: defaults)
-        released.release(displayTerm: "the move", lemmas: ["move"])
-        DataManager.releasedThreadsStore = released
-        defer { DataManager.releasedThreadsStore = .shared }
-
-        let deleted = expectation(description: "deleted all")
-        DataManager.deleteAll { success, _ in
-            XCTAssertTrue(success)
-            deleted.fulfill()
-        }
-        wait(for: [deleted], timeout: 5)
-        XCTAssertTrue(released.isEmpty, "Delete All Data clears the released set with everything else")
-    }
-
-    func testDeleteAll_clearsRecapStateAndCaptionFlag() {
-        recapState.markFirstCardShown()
-        recapState.markActedOn(LunationCalendar.lunation(at: 300))
-        UserPreferences.threadsReleaseCaptionShown.value = true
-
-        let deleted = expectation(description: "deleted all")
-        DataManager.deleteAll { success, _ in
-            XCTAssertTrue(success)
-            deleted.fulfill()
-        }
-        wait(for: [deleted], timeout: 5)
-        XCTAssertNil(recapState.firstCardShownAt,
-                     "the first-card gate re-arms — a wipe is a fresh start, like a reinstall")
-        XCTAssertNil(recapState.lastActedLunationIndex)
-        XCTAssertFalse(UserPreferences.threadsReleaseCaptionShown.value)
     }
 }

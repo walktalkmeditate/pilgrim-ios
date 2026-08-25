@@ -241,9 +241,7 @@ enum PilgrimPackageConverter {
     static func buildManifest(
         walkCount: Int,
         events: [PilgrimEvent],
-        archivedEntries: [PilgrimArchivedWalk] = [],
-        releasedThreads: [ReleasedThread] = ReleasedThreadsStore.shared.all,
-        welcomedBackThreads: [WelcomedBackThread] = ReleasedThreadsStore.shared.welcomedBack
+        archivedEntries: [PilgrimArchivedWalk] = []
     ) -> PilgrimManifest {
         let formatter = MeasurementFormatter()
         let distanceUnit = formatter.string(from: UserPreferences.distanceMeasurementType.safeValue)
@@ -258,13 +256,7 @@ enum PilgrimPackageConverter {
             energyUnit: energyUnit,
             celestialAwareness: UserPreferences.celestialAwarenessEnabled.value,
             zodiacSystem: UserPreferences.zodiacSystem.value,
-            beginWithIntention: UserPreferences.beginWithIntention.value,
-            releasedThreads: releasedThreads.isEmpty ? nil : releasedThreads.map {
-                PilgrimReleasedThread(term: $0.displayTerm, lemmas: $0.lemmas, releasedAt: $0.releasedAt)
-            },
-            welcomedBackThreads: welcomedBackThreads.isEmpty ? nil : welcomedBackThreads.map {
-                PilgrimWelcomedBackThread(term: $0.displayTerm, welcomedBackAt: $0.welcomedBackAt)
-            }
+            beginWithIntention: UserPreferences.beginWithIntention.value
         )
 
         let promptStore = CustomPromptStyleStore()
@@ -493,25 +485,6 @@ enum PilgrimPackageConverter {
                 endDate: event.endDate,
                 workouts: event.walkIds
             )
-        }
-    }
-
-    /// Import-side mapping for the released-threads carve-out. Pure, so the
-    /// importer's merge stays a one-liner and this stays testable. Clamped
-    /// to `now` here, the one boundary every imported decision crosses on
-    /// its way into the store's types — a clock-skewed exporting device
-    /// could otherwise stamp a future `releasedAt` that wins every merge
-    /// forever, since latest-decision-wins has no other way to recognize
-    /// a date that hasn't happened yet as untrustworthy.
-    static func releasedThreads(from preferences: PilgrimPreferences, now: Date = Date()) -> [ReleasedThread] {
-        (preferences.releasedThreads ?? []).map {
-            ReleasedThread(displayTerm: $0.term, lemmas: $0.lemmas, releasedAt: min($0.releasedAt, now))
-        }
-    }
-
-    static func welcomedBackThreads(from preferences: PilgrimPreferences, now: Date = Date()) -> [WelcomedBackThread] {
-        (preferences.welcomedBackThreads ?? []).map {
-            WelcomedBackThread(displayTerm: $0.term, welcomedBackAt: min($0.welcomedBackAt, now))
         }
     }
 

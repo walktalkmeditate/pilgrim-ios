@@ -93,7 +93,6 @@ struct UserPreferences {
     static let dynamicVoiceEnabled = UserPreference.Required<Bool>(key: "dynamicVoiceEnabled", defaultValue: true)
     static let autoTranscribe = UserPreference.Required<Bool>(key: "autoTranscribe", defaultValue: false)
     static let threadsAfterWalks = UserPreference.Required<Bool>(key: "threadsAfterWalks", defaultValue: true)
-    static let threadsReleaseCaptionShown = UserPreference.Required<Bool>(key: "threadsReleaseCaptionShown", defaultValue: false)
 
     static let podcastConsentGiven = UserPreference.Required<Bool>(key: "podcastConsentGiven", defaultValue: false)
     static let lastPodcastSubmissionDate = UserPreference.Optional<String>(key: "lastPodcastSubmissionDate")

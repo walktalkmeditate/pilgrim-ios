@@ -23,7 +23,6 @@ enum ThreadsCardLoader {
         guard !recordings.isEmpty else { return nil }
 
         let walkIndex = DataManager.voiceRecordingWalkIndex()
-        let released = releasedStore.releasedLemmas
         let backfillComplete = ThreadsBackfill.isComplete
 
         return await Task.detached(priority: .userInitiated) {
@@ -52,7 +51,7 @@ enum ThreadsCardLoader {
                 }
             }
             let threads = ThreadStore.build(
-                contexts: Array(contextsByRecording.values), walks: walkIndex, released: released
+                contexts: Array(contextsByRecording.values), walks: walkIndex
             )
             return ThreadsCardModelBuilder.model(
                 walkUUID: walkUUID,
@@ -76,7 +75,7 @@ struct ThreadsCardSection: View {
 
     @State private var showInsightWords = false
     @State private var themeToRelease: ThreadsCardTheme?
-    @State private var captionDismissed = UserPreferences.threadsReleaseCaptionShown.value
+    @State private var captionDismissed = false
 
     var body: some View {
         VStack(spacing: Constants.UI.Padding.small) {
@@ -128,7 +127,6 @@ struct ThreadsCardSection: View {
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog.opacity(0.7))
             Button {
-                UserPreferences.threadsReleaseCaptionShown.value = true
                 captionDismissed = true
             } label: {
                 Image(systemName: "xmark")

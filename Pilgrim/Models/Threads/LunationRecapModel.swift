@@ -76,7 +76,12 @@ enum LunationRecapModelBuilder {
             )
         }
 
-        let threads = ThreadStore.build(contexts: contexts, walks: walkIndex, released: released)
+        // ThreadStore no longer filters released lemmas (Task 2 unwired the
+        // engine seam); the filter moves here so the release gesture — still
+        // live in the UI until Task 3 — keeps dropping its theme from the
+        // recap the same walk it's released on.
+        let threads = ThreadStore.build(contexts: contexts, walks: walkIndex)
+            .filter { !released.contains($0.lemma) }
         // Cohorts group over ALL threads first — a sibling lemma whose
         // appearances all predate the moon still joins its cohort, so
         // isNewThisMoon judges the cohort's full history (mirroring the

@@ -65,48 +65,6 @@ struct PilgrimPreferences: Codable {
     let celestialAwareness: Bool
     let zodiacSystem: String
     let beginWithIntention: Bool
-    /// Released thought threads — the one sanctioned derived-data carve-out
-    /// (walker decisions, like zodiacSystem; the lemmas already appear
-    /// verbatim in the exported transcripts). Welcome-backs ride beside the
-    /// releases: both are decisions, and import merge compares them by date
-    /// so a stale backup's release can never override a later reversal.
-    /// Optional so pre-1.12 files decode and pre-1.12 importers ignore the
-    /// unknown keys.
-    let releasedThreads: [PilgrimReleasedThread]?
-    let welcomedBackThreads: [PilgrimWelcomedBackThread]?
-
-    init(
-        distanceUnit: String,
-        altitudeUnit: String,
-        speedUnit: String,
-        energyUnit: String,
-        celestialAwareness: Bool,
-        zodiacSystem: String,
-        beginWithIntention: Bool,
-        releasedThreads: [PilgrimReleasedThread]? = nil,
-        welcomedBackThreads: [PilgrimWelcomedBackThread]? = nil
-    ) {
-        self.distanceUnit = distanceUnit
-        self.altitudeUnit = altitudeUnit
-        self.speedUnit = speedUnit
-        self.energyUnit = energyUnit
-        self.celestialAwareness = celestialAwareness
-        self.zodiacSystem = zodiacSystem
-        self.beginWithIntention = beginWithIntention
-        self.releasedThreads = releasedThreads
-        self.welcomedBackThreads = welcomedBackThreads
-    }
-}
-
-struct PilgrimReleasedThread: Codable {
-    let term: String
-    let lemmas: [String]
-    let releasedAt: Date
-}
-
-struct PilgrimWelcomedBackThread: Codable {
-    let term: String
-    let welcomedBackAt: Date
 }
 
 struct PilgrimCustomPromptStyle: Codable {
