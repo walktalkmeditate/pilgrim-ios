@@ -193,6 +193,7 @@ struct IntentionSettingView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }

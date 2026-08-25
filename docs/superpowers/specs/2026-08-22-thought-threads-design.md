@@ -369,6 +369,8 @@ clinical edge lives only in that hand-carried dossier.
 
 ## Stage 3+4 addendum (2026-08-24) — post-field-gate
 
+*Superseded in part by the Stage 3 field verdict below (2026-08-24): the card, thread view, recap, and release surfaces described here were removed after real-device contact.*
+
 ### Field gate outcomes
 
 - **Theme quality: PASSED** on real dogfood walks (v1.11.0 TestFlight) — the
