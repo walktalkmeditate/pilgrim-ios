@@ -2,7 +2,7 @@ import Foundation
 import WeatherKit
 import CoreLocation
 
-enum WeatherCondition: String, Codable {
+enum WeatherCondition: String, Codable, CaseIterable {
     case clear, partlyCloudy, overcast
     case lightRain, heavyRain, thunderstorm
     case snow, fog, wind, haze

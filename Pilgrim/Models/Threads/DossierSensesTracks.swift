@@ -15,10 +15,6 @@ extension DossierSenses {
         preconditionFailure("unimplemented sense")
     }
 
-    static func weatherWeave(input: Input, suppressed: Set<String>) -> SenseLine? {
-        preconditionFailure("unimplemented sense")
-    }
-
     static func questionDensity(input: Input, suppressed: Set<String>) -> SenseLine? {
         preconditionFailure("unimplemented sense")
     }
@@ -216,5 +212,72 @@ extension DossierSenses {
             text: "All the words came in the first third; the last \(minutes) minutes were wordless.",
             lemma: nil
         )
+    }
+}
+
+// MARK: - Track 3: weather weave (cross-walk)
+
+extension DossierSenses {
+
+    enum WeatherBucket: Hashable {
+        case rain, snow, clear, cloud, wind, fog, unknown
+    }
+
+    /// Collapses the app's stored `WeatherCondition` rawValues. Anything
+    /// unrecognized lands in `unknown`, which excludes the walk from claims —
+    /// the drift test keeps this total over the storable vocabulary.
+    static func bucket(forStoredCondition raw: String) -> WeatherBucket {
+        switch raw {
+        case "clear": return .clear
+        case "partlyCloudy", "overcast", "haze": return .cloud
+        case "lightRain", "heavyRain", "thunderstorm": return .rain
+        case "snow": return .snow
+        case "fog": return .fog
+        case "wind": return .wind
+        default: return .unknown
+        }
+    }
+
+    static func skyPhrase(_ bucket: WeatherBucket) -> String? {
+        switch bucket {
+        case .rain: return "under rain"
+        case .snow: return "under snow"
+        case .clear: return "under clear skies"
+        case .cloud: return "under cloud"
+        case .wind: return "in wind"
+        case .fog: return "in fog"
+        case .unknown: return nil
+        }
+    }
+
+    static func weatherWeave(input: Input, suppressed: Set<String>) -> SenseLine? {
+        let windowStart = input.walkStart.addingTimeInterval(-ThreadStore.recurrenceWindow)
+        let inWindow = input.walkSnapshots.filter { $0.startDate >= windowStart && $0.startDate <= input.walkEnd }
+        var buckets: [UUID: WeatherBucket] = [:]
+        for row in inWindow {
+            buckets[row.walkUUID] = row.weatherCondition.map(bucket(forStoredCondition:)) ?? .unknown
+        }
+        let known = buckets.values.filter { $0 != .unknown }
+        guard !known.isEmpty else { return nil }
+        let majority = Dictionary(grouping: known, by: { $0 })
+            .first { Double($0.value.count) / Double(known.count) > 0.5 }?.key
+        for thread in activeThreads(in: input) where !suppressed.contains(thread.lemma) {
+            let walkUUIDs = Set(
+                thread.appearances
+                    .filter { $0.date >= windowStart && $0.date <= input.walkEnd }
+                    .map(\.walkUUID)
+            )
+            guard walkUUIDs.count >= 2 else { continue }
+            let themeBuckets = walkUUIDs.map { buckets[$0] ?? .unknown }
+            guard let shared = themeBuckets.first,
+                  shared != .unknown,
+                  themeBuckets.allSatisfy({ $0 == shared }),
+                  shared != majority,
+                  let phrase = skyPhrase(shared) else { continue }
+            let head = walkUUIDs.count == 2 ? "Both walks" : "All \(walkUUIDs.count) walks"
+            return SenseLine(text: "\(head) where '\(thread.displayTerm)' surfaced were \(phrase).",
+                             lemma: thread.lemma)
+        }
+        return nil
     }
 }
