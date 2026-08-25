@@ -8,6 +8,12 @@ enum ThreadsDossierFormatter {
     static let minimumAbsenceWalks = 2
     static let maxAbsenceLines = 2
     static let paceDifferenceThreshold = 0.15
+    /// Modal-lean baseline groups by WALK, not recording — a walker who
+    /// talks in three short bursts on one walk isn't three "prior" data
+    /// points for a per-walk state signal, unlike `baselineFloorRecordings`.
+    static let modalBaselineFloorWalks = 3
+    static let modalRemarkableMinCount = 10
+    static let modalRemarkableRateMultiple = 2.0
 
     static func markerLine(for context: TranscriptContext, baseline: (absolutist: Double, firstPerson: Double)?) -> String {
         guard let markers = context.markers else {
@@ -48,12 +54,129 @@ enum ThreadsDossierFormatter {
         )
     }
 
+    private struct ModalLeanSummary {
+        let family: MarkerLexicons.ModalFamily
+        let word: String
+        let count: Int
+        let familyCount: Int
+        let familyRate: Double
+    }
+
+    struct ModalBaselineEntry {
+        let rate: Double
+        let averagePerWalk: Double
+    }
+
+    /// Today's dominant modal family and its dominant surface word, summed
+    /// across the WALK's recordings (not one recording at a time — the
+    /// clause speaks once per walk). Deterministic ties: `ModalFamily
+    /// .allCases`/each family's word array are declaration-ordered, and only
+    /// a STRICTLY greater count replaces the running best.
+    private static func modalLeanSummary(for contexts: [TranscriptContext]) -> ModalLeanSummary? {
+        let totalWords = contexts.reduce(0) { $0 + $1.wordCount }
+        guard totalWords > 0 else { return nil }
+
+        var familyTotals: [MarkerLexicons.ModalFamily: Int] = [:]
+        var wordTotals: [String: Int] = [:]
+        for context in contexts {
+            guard let modalCounts = context.markers?.modalCounts else { continue }
+            for (word, count) in modalCounts {
+                wordTotals[word, default: 0] += count
+                if let family = MarkerLexicons.modalFamily(of: word) {
+                    familyTotals[family, default: 0] += count
+                }
+            }
+        }
+
+        var dominantFamily: (family: MarkerLexicons.ModalFamily, count: Int)?
+        for family in MarkerLexicons.ModalFamily.allCases {
+            let count = familyTotals[family] ?? 0
+            guard count > 0, dominantFamily == nil || count > dominantFamily!.count else { continue }
+            dominantFamily = (family, count)
+        }
+        guard let dominantFamily else { return nil }
+
+        var dominantWord: (word: String, count: Int)?
+        for word in MarkerLexicons.modalFamilies[dominantFamily.family] ?? [] {
+            let count = wordTotals[word] ?? 0
+            guard count > 0, dominantWord == nil || count > dominantWord!.count else { continue }
+            dominantWord = (word, count)
+        }
+        guard let dominantWord else { return nil }
+
+        return ModalLeanSummary(
+            family: dominantFamily.family, word: dominantWord.word, count: dominantWord.count,
+            familyCount: dominantFamily.count, familyRate: Double(dominantFamily.count) / Double(totalWords)
+        )
+    }
+
+    /// Per-family baseline, grouped by WALK (`modalBaselineFloorWalks`
+    /// prior, contexted walks required) rather than by recording — mirrors
+    /// `personalBaseline`'s density-floor qualification and its reuse of
+    /// already-persisted `MarkerPack` counts (never a fresh transcript
+    /// re-read), but the walk-grouping is this signal's own: a state lean is
+    /// a per-walk fact, not a per-recording one.
+    static func modalBaseline(
+        from contexts: [TranscriptContext],
+        walkIndex: [UUID: UUID],
+        excluding currentWalkUUID: UUID
+    ) -> [MarkerLexicons.ModalFamily: ModalBaselineEntry]? {
+        let qualifying = contexts.filter { context in
+            guard let markers = context.markers, markers.wordCount >= densityFloorWords,
+                  let walkUUID = walkIndex[context.recordingUUID], walkUUID != currentWalkUUID else { return false }
+            return true
+        }
+        let walksRepresented = Set(qualifying.compactMap { walkIndex[$0.recordingUUID] })
+        guard walksRepresented.count >= modalBaselineFloorWalks else { return nil }
+        let totalWords = qualifying.reduce(0) { $0 + $1.wordCount }
+        guard totalWords > 0 else { return nil }
+
+        var entries: [MarkerLexicons.ModalFamily: ModalBaselineEntry] = [:]
+        for family in MarkerLexicons.ModalFamily.allCases {
+            let words = MarkerLexicons.modalFamilies[family] ?? []
+            let total = qualifying.reduce(0) { sum, context in
+                sum + words.reduce(0) { $0 + (context.markers?.modalCounts[$1] ?? 0) }
+            }
+            entries[family] = ModalBaselineEntry(
+                rate: Double(total) / Double(totalWords),
+                averagePerWalk: Double(total) / Double(walksRepresented.count)
+            )
+        }
+        return entries
+    }
+
+    /// At most one clause, naming the dominant modal family and word — a
+    /// state signal, not a topic (design decision: modals live here with
+    /// word identity, never as a recurring-word theme). Silent by default:
+    /// fires only when the dominant family is both large on its own terms
+    /// (`modalRemarkableMinCount`) and elevated against the walker's own
+    /// per-walk baseline rate (`modalRemarkableRateMultiple`) — mirrors the
+    /// vs-baseline ratio shape `DossierSensesTracks.markerLine` already
+    /// uses (guard the baseline is nonzero before dividing by it). No
+    /// baseline at all means silence, not a fallback phrasing — first walks
+    /// never speak here, unlike the always-on absolutist line.
+    private static func modalLeanLine(
+        currentRecordings: [(context: TranscriptContext, wordsPerMinute: Double?)],
+        allContexts: [TranscriptContext],
+        walkIndex: [UUID: UUID],
+        currentWalkUUID: UUID
+    ) -> String? {
+        guard let summary = modalLeanSummary(for: currentRecordings.map(\.context)),
+              summary.familyCount >= modalRemarkableMinCount else { return nil }
+        guard let baseline = modalBaseline(from: allContexts, walkIndex: walkIndex, excluding: currentWalkUUID),
+              let entry = baseline[summary.family], entry.rate > 0,
+              summary.familyRate >= modalRemarkableRateMultiple * entry.rate else { return nil }
+        return "modal lean: \(summary.family.rawValue) — '\(summary.word)' ×\(summary.count)" +
+            " (your usual ~\(Int(entry.averagePerWalk.rounded())) per walk)"
+    }
+
     static func dossier(
         currentRecordings: [(context: TranscriptContext, wordsPerMinute: Double?)],
         allContexts: [TranscriptContext],
         threads: [WalkThread],
         currentWalkUUID: UUID,
-        backfillComplete: Bool
+        backfillComplete: Bool,
+        walkIndex: [UUID: UUID] = [:]
     ) -> String? {
         guard !currentRecordings.isEmpty else { return nil }
         let baseline = personalBaseline(from: allContexts)
@@ -61,6 +184,12 @@ enum ThreadsDossierFormatter {
         var section = "**Thought threads (on-device linguistic analysis):**"
         for (index, recording) in currentRecordings.enumerated() {
             section += "\nRecording \(index + 1): \(markerLine(for: recording.context, baseline: baseline))"
+        }
+        if let modalLine = modalLeanLine(
+            currentRecordings: currentRecordings, allContexts: allContexts,
+            walkIndex: walkIndex, currentWalkUUID: currentWalkUUID
+        ) {
+            section += "\n\(modalLine)"
         }
 
         let activeThreads = threads.filter { thread in

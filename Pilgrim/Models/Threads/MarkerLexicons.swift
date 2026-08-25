@@ -40,4 +40,34 @@ enum MarkerLexicons {
         "was", "were", "did", "had", "ago", "yesterday", "remember",
         "remembered", "used", "back", "once", "before"
     ]
+
+    /// Modal verbs are a STATE signal (design decision, modal-lean spec):
+    /// they stay in this markers channel with per-word identity, and are
+    /// explicitly excluded from the recurring-word TOPIC directive
+    /// (`SpokenStoplist.scaffoldLemmas`) — a flat walk's "can ×57" is noise
+    /// there, not a theme. Six families, each an ordered array (not a Set)
+    /// so a dominant-word tie always resolves to the same word.
+    ///
+    /// "have to" (obligation) is a multi-word phrase and DEFERRED — this
+    /// lexicon is single-token only.
+    enum ModalFamily: String, CaseIterable {
+        case possibility, obligation, counterfactual, tentative, intention, desire
+    }
+
+    static let modalFamilies: [ModalFamily: [String]] = [
+        .possibility: ["can", "could"],
+        .obligation: ["should", "must", "ought"],
+        .counterfactual: ["would"],
+        .tentative: ["might", "may"],
+        .intention: ["will"],
+        .desire: ["want", "need", "wish"]
+    ]
+
+    static let modalWords: Set<String> = Set(modalFamilies.values.flatMap { $0 })
+
+    /// Every modal word belongs to exactly one family, so the search order
+    /// never affects the result.
+    static func modalFamily(of word: String) -> ModalFamily? {
+        modalFamilies.first { $0.value.contains(word) }?.key
+    }
 }

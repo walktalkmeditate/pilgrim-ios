@@ -10,7 +10,14 @@ struct TranscriptContext: Codable, Equatable {
     /// answers false for it, so every reader (threads/dossier/suggestions)
     /// and the backfill sweep treat a stale-derivation file as absent
     /// (see docs/solutions/derived-cache-semantics-are-schema.md).
-    static let currentSchemaVersion = 2
+    ///
+    /// v3: `MarkerPack.modalCounts` (per-surface-word modal-verb counts,
+    /// feeding the dossier's modal-lean clause). A v2 file still decodes —
+    /// `MarkerPack` decodes `modalCounts` leniently (missing → empty) so the
+    /// stale-orphan sweep can still see it — but it carries no modal data,
+    /// which would silently starve the modal-lean baseline of history; the
+    /// bump forces those recordings to re-analyze.
+    static let currentSchemaVersion = 3
 
     let schemaVersion: Int
     let recordingUUID: UUID

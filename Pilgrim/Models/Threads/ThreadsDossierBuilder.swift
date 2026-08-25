@@ -145,7 +145,8 @@ enum ThreadsDossierBuilder {
             allContexts: allContexts,
             threads: threads,
             currentWalkUUID: walkUUID,
-            backfillComplete: backfillComplete
+            backfillComplete: backfillComplete,
+            walkIndex: walkIndex.mapValues(\.walkUUID)
         )
 
         let postBuildMoonState = appendSensesBlock(

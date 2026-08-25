@@ -246,4 +246,18 @@ final class AttentionDirectivesTests: XCTestCase {
         )
         XCTAssertFalse(joined(context).contains("returns"))
     }
+
+    /// Design decision (modal-lean spec): modal verbs are a STATE signal
+    /// that belongs in the markers channel with word identity, never in the
+    /// recurring-word TOPIC channel — a flat walk's "can ×57" is noise
+    /// there, not a theme ("the verb of the hollow" made it work once; it
+    /// doesn't generalize). `SpokenStoplist.scaffoldLemmas` now excludes all
+    /// six modal families.
+    func testRecurringWord_modalVerb_doesNotFire() {
+        let context = ActivityContext.make(
+            recordings: [recording("I can do it. You can too. We can go now. It can work.")],
+            startDate: start
+        )
+        XCTAssertFalse(joined(context).contains("returns"))
+    }
 }

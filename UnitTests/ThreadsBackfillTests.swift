@@ -16,6 +16,7 @@ final class ThreadsBackfillTests: XCTestCase {
     private static let legacyCompletedKeyV1 = "threadsBackfillCompleted"
     private static let legacyCompletedKeyV2 = "threadsBackfillCompletedV2"
     private static let legacyCompletedKeyV3 = "threadsBackfillCompletedV3"
+    private static let legacyCompletedKeyV4 = "threadsBackfillCompletedV4"
 
     private var store: TranscriptContextStore!
     private var directory: URL!
@@ -23,6 +24,7 @@ final class ThreadsBackfillTests: XCTestCase {
     private var savedLegacyCompletedV1: Any?
     private var savedLegacyCompletedV2: Any?
     private var savedLegacyCompletedV3: Any?
+    private var savedLegacyCompletedV4: Any?
     private var savedMoonState: Any?
     private var savedToggle = true
 
@@ -32,12 +34,14 @@ final class ThreadsBackfillTests: XCTestCase {
         savedLegacyCompletedV1 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV1)
         savedLegacyCompletedV2 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV2)
         savedLegacyCompletedV3 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV3)
+        savedLegacyCompletedV4 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV4)
         savedMoonState = UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
         savedToggle = UserPreferences.threadsAfterWalks.value
         UserDefaults.standard.set(false, forKey: ThreadsBackfill.completedKey)
         UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV1)
         UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV2)
         UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV3)
+        UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV4)
         UserPreferences.threadsAfterWalks.value = true
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ThreadsBackfillTests-\(UUID().uuidString)")
@@ -64,6 +68,11 @@ final class ThreadsBackfillTests: XCTestCase {
             UserDefaults.standard.set(savedLegacyCompletedV3, forKey: Self.legacyCompletedKeyV3)
         } else {
             UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV3)
+        }
+        if let savedLegacyCompletedV4 {
+            UserDefaults.standard.set(savedLegacyCompletedV4, forKey: Self.legacyCompletedKeyV4)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV4)
         }
         if let savedMoonState {
             UserDefaults.standard.set(savedMoonState, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
@@ -117,6 +126,20 @@ final class ThreadsBackfillTests: XCTestCase {
 
         XCTAssertFalse(ThreadsBackfill.isComplete,
                        "a device that completed the stale-schema V3 sweep must re-evaluate under the new key")
+    }
+
+    /// V4 devices completed a real sweep under schema v2, but that schema
+    /// carries no modal-lean word counts (`MarkerPack.modalCounts` didn't
+    /// exist yet) — schema v3 adds them. The V5 rename (completedKey) re-arms
+    /// them the same way every prior rename did: the new key is absent
+    /// regardless of what the V4 key holds. Unlike V3→V4, this rename
+    /// touches no theme-extraction logic, so no moon-line re-arm accompanies
+    /// it (see `performLegacyHygiene`).
+    func testIsComplete_legacyV4KeyTrue_reArmsUnderNewKey() {
+        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKeyV4)
+
+        XCTAssertFalse(ThreadsBackfill.isComplete,
+                       "a device that completed the pre-modal-lean V4 sweep must re-evaluate under the new key")
     }
 
     /// The where-clause skip (`!store.hasContext`) must become version-aware
