@@ -21,7 +21,10 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    private func seedRecording(uuid: UUID, transcription: String? = nil, wordsPerMinute: Double? = nil) throws {
+    private func seedRecording(
+        uuid: UUID, transcription: String? = nil, wordsPerMinute: Double? = nil,
+        startDate: Date = Date(timeIntervalSince1970: 1_700_000_000)
+    ) throws {
         try stack.perform(synchronous: { transaction in
             let walk = transaction.create(Into<Walk>())
             walk._uuid .= UUID()
@@ -44,8 +47,49 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
             recording._uuid .= uuid
             recording._fileRelativePath .= "Recordings/X/a.m4a"
             recording._workout .= walk
+            recording._startDate .= startDate
             if let transcription { recording._transcription .= transcription }
             if let wordsPerMinute { recording._wordsPerMinute .= wordsPerMinute }
+        })
+    }
+
+    private func seedWalk(
+        uuid: UUID = UUID(), startDate: Date, comment: String? = nil,
+        weatherCondition: String? = nil,
+        routeSamples: [(timestamp: Date, lat: Double, lon: Double, accuracy: Double)] = []
+    ) throws {
+        try stack.perform(synchronous: { transaction in
+            let walk = transaction.create(Into<Walk>())
+            walk._uuid .= uuid
+            walk._workoutType .= .walking
+            walk._startDate .= startDate
+            walk._endDate .= startDate.addingTimeInterval(1800)
+            walk._distance .= 1000
+            walk._activeDuration .= 1800
+            walk._pauseDuration .= 0
+            walk._talkDuration .= 0
+            walk._meditateDuration .= 0
+            walk._ascend .= 0
+            walk._descend .= 0
+            walk._isRace .= false
+            walk._isUserModified .= false
+            walk._finishedRecording .= true
+            walk._dayIdentifier .= "20240615"
+            if let comment { walk._comment .= comment }
+            if let weatherCondition { walk._weatherCondition .= weatherCondition }
+            for sample in routeSamples {
+                let row = transaction.create(Into<RouteDataSample>())
+                row._uuid .= UUID()
+                row._timestamp .= sample.timestamp
+                row._latitude .= sample.lat
+                row._longitude .= sample.lon
+                row._altitude .= 100
+                row._horizontalAccuracy .= sample.accuracy
+                row._verticalAccuracy .= 5
+                row._speed .= 1.2
+                row._direction .= 0
+                row._workout .= walk
+            }
         })
     }
 
@@ -302,5 +346,111 @@ final class VoiceRecordingPersistenceTests: XCTestCase {
         XCTAssertEqual(index.count, 1, "queryAttributes stores \"id\" as a string — a raw `as? UUID` cast must not silently drop every row")
         XCTAssertEqual(index[uuid]?.walkUUID, walk._uuid.value)
         XCTAssertEqual(index[uuid]?.date, walk._startDate.value)
+    }
+
+    @MainActor
+    func test_voiceRecordingTimestampIndex_returnsRecordingStartNotWalkStart() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let uuid = UUID()
+        let recordingStart = Date(timeIntervalSince1970: 1_700_000_600)
+        try seedRecording(uuid: uuid, startDate: recordingStart)
+
+        let index = DataManager.voiceRecordingTimestampIndex()
+        XCTAssertEqual(index[uuid], recordingStart,
+                       "per-RECORDING instants — voiceRecordingWalkIndex's WALK dates cannot serve Track 1")
+    }
+
+    @MainActor
+    func test_transcribedRecordingsSnapshot_rangeBoundsTheFetch() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let inside = UUID(), outside = UUID()
+        try seedRecording(uuid: inside, transcription: "inside the window",
+                          startDate: Date(timeIntervalSince1970: 1_700_000_000))
+        try seedRecording(uuid: outside, transcription: "outside the window",
+                          startDate: Date(timeIntervalSince1970: 1_600_000_000))
+
+        let range = Date(timeIntervalSince1970: 1_699_999_000)...Date(timeIntervalSince1970: 1_700_001_000)
+        let snapshot = DataManager.transcribedRecordingsSnapshot(in: range)
+        XCTAssertEqual(snapshot.map(\.uuid), [inside])
+        XCTAssertEqual(DataManager.transcribedRecordingsSnapshot().count, 2,
+                       "nil range preserves the existing all-recordings behavior")
+    }
+
+    @MainActor
+    func test_routeFixNear_returnsNearestSampleWithinNinetySeconds() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let target = Date(timeIntervalSince1970: 1_700_000_000)
+        try seedWalk(startDate: target.addingTimeInterval(-600), routeSamples: [
+            (target.addingTimeInterval(-80), 42.10, -8.50, 8),
+            (target.addingTimeInterval(20), 42.20, -8.50, 12),
+            (target.addingTimeInterval(70), 42.30, -8.50, 6)
+        ])
+
+        let fix = DataManager.routeFixNear(timestamp: target)
+        XCTAssertEqual(fix?.coordinate.latitude ?? 0, 42.20, accuracy: 0.0001)
+        XCTAssertEqual(fix?.gapSeconds ?? 0, 20, accuracy: 0.5)
+        XCTAssertEqual(fix?.horizontalAccuracy ?? 0, 12, accuracy: 0.5)
+    }
+
+    @MainActor
+    func test_routeFixNear_noSampleInWindow_returnsNil() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let target = Date(timeIntervalSince1970: 1_700_000_000)
+        try seedWalk(startDate: target.addingTimeInterval(-600), routeSamples: [
+            (target.addingTimeInterval(-120), 42.10, -8.50, 8)
+        ])
+        XCTAssertNil(DataManager.routeFixNear(timestamp: target),
+                     "GPS-paused stretches and indoor starts never anchor a claim")
+    }
+
+    func test_routeFixNear_callableOffMain() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let target = Date(timeIntervalSince1970: 1_700_000_000)
+        try seedWalk(startDate: target.addingTimeInterval(-600), routeSamples: [
+            (target.addingTimeInterval(10), 42.10, -8.50, 8)
+        ])
+        let done = expectation(description: "off-main fix")
+        DispatchQueue.global().async {
+            let fix = DataManager.routeFixNear(timestamp: target)
+            XCTAssertNotNil(fix, "the detached builder resolves fixes lazily — the main hop must hold")
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+    }
+
+    @MainActor
+    func test_walkSensesSnapshot_returnsIntentionWeatherAndBoundsRange() throws {
+        let previousDataStack = DataManager.dataStack
+        DataManager.dataStack = stack
+        defer { DataManager.dataStack = previousDataStack }
+
+        let inside = UUID()
+        try seedWalk(uuid: inside, startDate: Date(timeIntervalSince1970: 1_700_000_000),
+                     comment: "release what I cannot carry", weatherCondition: "lightRain")
+        try seedWalk(startDate: Date(timeIntervalSince1970: 1_600_000_000), comment: "old walk")
+
+        let rows = DataManager.walkSensesSnapshot(
+            from: Date(timeIntervalSince1970: 1_699_000_000),
+            to: Date(timeIntervalSince1970: 1_701_000_000)
+        )
+        XCTAssertEqual(rows.map(\.walkUUID), [inside],
+                       "queryAttributes stores \"id\" as a string — rowUUID must decode it")
+        XCTAssertEqual(rows.first?.intention, "release what I cannot carry")
+        XCTAssertEqual(rows.first?.weatherCondition, "lightRain")
     }
 }
