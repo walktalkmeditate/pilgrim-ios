@@ -125,7 +125,7 @@ final class PromptResponseContractTests: XCTestCase {
         XCTAssertFalse(contract.contains("absolutist-word share"))
     }
 
-    func testResponseContract_withThreadsDossier_addsExactlyOneLine() {
+    func testResponseContract_withThreadsDossier_addsExactlyTwoLines() {
         let with = PromptAssembler.responseContract(
             voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: true
         )
