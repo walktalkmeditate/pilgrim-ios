@@ -74,7 +74,8 @@ extension DossierSenses {
             return DossierSensesInvariance.unmovedReturn(input: input, suppressed: suppressed)
         case .frameConstancy:
             return DossierSensesInvariance.frameConstancy(input: input, suppressed: suppressed)
-        case .placeFrameLock: return nil
+        case .placeFrameLock:
+            return DossierSensesInvariance.placeFrameLock(input: input, suppressed: suppressed)
         case .unarrivedIntention: return nil
         }
     }
@@ -297,5 +298,88 @@ extension DossierSensesInvariance {
             best = (family, count)
         }
         return best?.family
+    }
+}
+
+extension DossierSensesInvariance {
+
+    /// The same theme spoken inside the same `DossierSenses.placeClusterRadius`
+    /// cluster on every walk it appears in — an invariant tied to ground
+    /// rather than to language. Reuses `DossierSenses.qualifies` so a
+    /// poor-accuracy or stale-gap fix is excluded on the same hygiene terms
+    /// as `placeResonance`: a 500m-accuracy fix would make any two points on
+    /// earth look like the same place.
+    ///
+    /// The rendered line claims "all N walks it appears in" — a claim over
+    /// the theme's ENTIRE appearance history, the same shape as
+    /// `frameConstancy`'s "every walk". That claim is only true if every
+    /// walk where the theme appears contributed at least one qualifying
+    /// fix to check. A walk whose only recording(s) have no fix, or a fix
+    /// too poor to qualify, is NOT silently dropped from the denominator —
+    /// dropping it would let N-1 walks that happen to cluster outvote a
+    /// walk the line never actually looked at, while still claiming to
+    /// speak for it (the exact shape of `frameConstancy`'s FIX 1). Instead
+    /// a single walk with no usable fix holds the whole signal silent —
+    /// full coverage is the price of the word "all". Grouped by distinct
+    /// WALK for the coverage check, mirroring `fusedThemes`,
+    /// `unmovedReturn`, and `frameConstancy`: a walk contributes to
+    /// coverage if ANY of its recordings has a qualifying fix, since the
+    /// claim is about ground the walker stood on, and one usable fix is
+    /// enough to place a walk on the map.
+    ///
+    /// Clustering is judged by SPREAD — the maximum pairwise distance
+    /// across every qualifying coordinate — never by distance from an
+    /// arbitrary anchor point such as the first coordinate encountered.
+    /// Two points can each sit within `placeClusterRadius` of a shared
+    /// anchor while sitting up to 2x that radius from each other; that is
+    /// not "the same place" by any reading a walker would recognize, and
+    /// an anchor-relative check would silently depend on appearance order
+    /// (which fix happens to come first). Requiring every pair to sit
+    /// within the radius of EACH OTHER is the stricter, order-independent
+    /// reading, and mirrors the compactness `placeResonance.bestCluster`
+    /// already measures via its own `spread`.
+    static func placeFrameLock(
+        input: DossierSenses.Input, suppressed: Set<String>
+    ) -> DossierSenses.SenseLine? {
+        for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
+        where !suppressed.contains(thread.lemma) {
+            let allWalks = Set(thread.appearances.map(\.walkUUID))
+            guard allWalks.count >= minimumInvariantWalks else { continue }
+
+            var coordinatesByWalk: [UUID: [DossierSenses.Coordinate]] = [:]
+            for appearance in thread.appearances {
+                guard let fix = input.fixes[appearance.recordingUUID],
+                      DossierSenses.qualifies(fix) else { continue }
+                coordinatesByWalk[appearance.walkUUID, default: []].append(fix.coordinate)
+            }
+            guard coordinatesByWalk.count == allWalks.count else { continue }
+
+            let coordinates = coordinatesByWalk.values.flatMap { $0 }
+            guard maxPairwiseSpread(coordinates) <= DossierSenses.placeClusterRadius else { continue }
+
+            return DossierSenses.SenseLine(
+                text: "'\(thread.displayTerm)' has been spoken in the same place "
+                    + "on all \(allWalks.count) walks it appears in.",
+                lemma: thread.lemma
+            )
+        }
+        return nil
+    }
+
+    /// The greatest distance between any two coordinates in the set —
+    /// order-independent, so which fix was recorded "first" cannot change
+    /// the answer. Mirrors the `spread` computation in
+    /// `DossierSenses.bestCluster`, minus the seed search: full coverage
+    /// above already fixes the one candidate set this function is asked
+    /// to judge, so there is nothing to search over.
+    private static func maxPairwiseSpread(_ coordinates: [DossierSenses.Coordinate]) -> CLLocationDistance {
+        guard coordinates.count >= 2 else { return 0 }
+        var spread: CLLocationDistance = 0
+        for i in 0..<(coordinates.count - 1) {
+            for j in (i + 1)..<coordinates.count {
+                spread = max(spread, DossierSenses.distance(coordinates[i], coordinates[j]))
+            }
+        }
+        return spread
     }
 }
