@@ -81,6 +81,11 @@ enum DossierSenses {
         let elevationSeries: [ElevationSample]
         let photos: [PhotoPin]
         let currentRecordings: [CurrentRecording]
+        /// Every TranscriptContext the builder loaded, current walk
+        /// included, so invariance signals can reach historical marker and
+        /// modal data by `recordingUUID`. Wired from the fetch the builder
+        /// already performs for ThreadsDossierFormatter — never a new query.
+        let historicalContexts: [TranscriptContext]
         let threads: [WalkThread]
         let backfillComplete: Bool
         let walkSnapshots: [WalkSnapshotRow]

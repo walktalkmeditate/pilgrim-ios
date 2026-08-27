@@ -339,6 +339,7 @@ enum ThreadsDossierBuilder {
             elevationSeries: senses.elevationSeries,
             photos: senses.photos,
             currentRecordings: currentRecordings,
+            historicalContexts: Array(state.contextsByUUID.values),
             threads: state.threads,
             backfillComplete: state.backfillComplete,
             walkSnapshots: senses.walkSnapshots,

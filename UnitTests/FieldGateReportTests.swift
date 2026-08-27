@@ -71,6 +71,7 @@ final class FieldGateReportTests: XCTestCase {
                 end: currentWalk.date.addingTimeInterval(600),
                 text: fixtures.last!, wordCount: current.wordCount, themes: current.themes
             )],
+            historicalContexts: contexts,
             threads: threads, backfillComplete: true,
             walkSnapshots: walks.values.map {
                 DossierSenses.WalkSnapshotRow(walkUUID: $0.walkUUID, startDate: $0.date,

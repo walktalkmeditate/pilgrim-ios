@@ -16,6 +16,7 @@ final class DossierSensesTests: XCTestCase {
         elevationSeries: [DossierSenses.ElevationSample] = [],
         photos: [DossierSenses.PhotoPin] = [],
         currentRecordings: [DossierSenses.CurrentRecording] = [],
+        historicalContexts: [TranscriptContext] = [],
         threads: [WalkThread] = [],
         backfillComplete: Bool = true,
         walkSnapshots: [DossierSenses.WalkSnapshotRow] = [],
@@ -26,7 +27,7 @@ final class DossierSensesTests: XCTestCase {
         DossierSenses.Input(
             currentWalkUUID: currentWalkUUID, walkStart: walkStart, walkEnd: walkEnd,
             totalAscent: totalAscent, elevationSeries: elevationSeries, photos: photos,
-            currentRecordings: currentRecordings, threads: threads,
+            currentRecordings: currentRecordings, historicalContexts: historicalContexts, threads: threads,
             backfillComplete: backfillComplete, walkSnapshots: walkSnapshots,
             recordingTimestamps: recordingTimestamps, fixes: fixes, moon: moon
         )
@@ -37,6 +38,22 @@ final class DossierSensesTests: XCTestCase {
             coordinate: DossierSenses.Coordinate(latitude: lat, longitude: lon),
             horizontalAccuracy: accuracy, gapSeconds: gap
         )
+    }
+
+    func testInput_carriesHistoricalContexts() {
+        let uuid = UUID()
+        let context = TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion,
+            recordingUUID: uuid,
+            transcriptHash: "hash",
+            languageCode: "en",
+            wordCount: 200,
+            themes: [],
+            markers: nil
+        )
+        let input = makeInput(historicalContexts: [context])
+        XCTAssertEqual(input.historicalContexts.count, 1)
+        XCTAssertEqual(input.historicalContexts.first?.recordingUUID, uuid)
     }
 
     // MARK: - Engine: cap, priority, dedup

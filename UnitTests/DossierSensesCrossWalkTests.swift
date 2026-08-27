@@ -14,6 +14,7 @@ final class DossierSensesCrossWalkTests: XCTestCase {
         elevationSeries: [DossierSenses.ElevationSample] = [],
         photos: [DossierSenses.PhotoPin] = [],
         currentRecordings: [DossierSenses.CurrentRecording] = [],
+        historicalContexts: [TranscriptContext] = [],
         threads: [WalkThread] = [],
         backfillComplete: Bool = true,
         walkSnapshots: [DossierSenses.WalkSnapshotRow] = [],
@@ -24,7 +25,7 @@ final class DossierSensesCrossWalkTests: XCTestCase {
         DossierSenses.Input(
             currentWalkUUID: currentWalkUUID, walkStart: walkStart, walkEnd: walkEnd,
             totalAscent: totalAscent, elevationSeries: elevationSeries, photos: photos,
-            currentRecordings: currentRecordings, threads: threads,
+            currentRecordings: currentRecordings, historicalContexts: historicalContexts, threads: threads,
             backfillComplete: backfillComplete, walkSnapshots: walkSnapshots,
             recordingTimestamps: recordingTimestamps, fixes: fixes, moon: moon
         )
