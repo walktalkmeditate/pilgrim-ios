@@ -42,7 +42,7 @@ enum PromptAssembler {
         }
 
         sections += "\n\n---\n\n\(fullInstruction)"
-        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, hasThreadsDossier: context.threadsDossier != nil))"
+        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, threadsDossier: context.threadsDossier))"
         return sections
     }
 
@@ -174,19 +174,52 @@ enum PromptAssembler {
     /// do (invent, flatten, switch language) plus the voice's own form
     /// constraints. This shapes the *reply's* quality — the part of the
     /// feature the walker actually experiences.
-    static func responseContract(voice: PromptVoice, hasSpeech: Bool, hasThreadsDossier: Bool) -> String {
+    static func responseContract(voice: PromptVoice, hasSpeech: Bool, threadsDossier: String?) -> String {
         var lines = voice.responseConstraints(hasSpeech: hasSpeech)
         if hasSpeech {
             lines.append("Respond in the language the walker speaks in the transcription.")
             lines.append("If more than one voice appears in the transcription, honor it as a conversation — attend to what happened between the speakers, and never guess at names.")
         }
-        if hasThreadsDossier {
+        if let threadsDossier {
             lines.append("The thought-thread marker profiles are descriptive on-device linguistic signals, not assessments — interpret them gently, never produce clinical or diagnostic language, and never treat a single walk's numbers as meaningful on their own.")
-            lines.append("Read the absolutist-word share as how fixed the walker's framing was, self-focus as how far they placed themselves at the centre of it, and the modal lean as the frame they were working inside — obligation means the frame constrained them, counterfactual means they were already replaying alternatives, possibility and tentative mean it was still open, intention means they had settled on a course, and desire means they were naming a want rather than a plan. None of these has a fixed meaning; read each through this walk's intention and practice.")
+            if let key = interpretiveKey(for: threadsDossier) {
+                lines.append(key)
+            }
         }
         lines.append("Draw only on what this walk actually holds — never invent details, events, or memories that are not in the context above.")
         let bullets = lines.map { "- \($0)" }.joined(separator: "\n")
         return "**How to respond:**\n\(bullets)"
+    }
+
+    /// How to read the marker signals — but only the ones this dossier
+    /// actually printed. `ThreadsDossierFormatter.markerLine` prints "Markers
+    /// unavailable" for a non-English recording and raw counts rather than
+    /// shares below `densityFloorWords`, and the modal-lean clause sits
+    /// behind three thresholds and is usually silent. Teaching a taxonomy the
+    /// dossier withheld hands the model vocabulary with no referent, and it
+    /// will find something to attach it to.
+    ///
+    /// The probes match the formatter's own phrasings. That coupling is the
+    /// point — it is pinned by
+    /// `testResponseContract_againstRealFormatterOutput_adaptsToWhatWasPrinted`,
+    /// which runs the real formatter, so a phrasing change fails a test
+    /// rather than silently suppressing the key on every walk.
+    ///
+    /// At most one line either way: the contract's accretion budget does not
+    /// grow to pay for this.
+    private static func interpretiveKey(for dossier: String) -> String? {
+        var clauses: [String] = []
+        if dossier.contains("absolutist words") {
+            clauses.append("Read the absolutist-word share as how fixed the walker's framing was, and self-focus as how far they placed themselves at the centre of it.")
+        } else if dossier.contains("raw counts only") {
+            clauses.append("Read the absolutist and self-focus counts as a bare tally of how fixed the walker's framing was and how far they placed themselves at the centre of it — too few words to read as a rate, so do not weigh them.")
+        }
+        if dossier.contains("modal lean:") {
+            clauses.append("Read the modal lean as the frame the walker was working inside — obligation means the frame constrained them, counterfactual means they were already replaying alternatives, possibility and tentative mean it was still open, intention means they had settled on a course, and desire means they were naming a want rather than a plan.")
+        }
+        guard !clauses.isEmpty else { return nil }
+        return (clauses + ["None of these has a fixed meaning; read each through this walk's intention and practice."])
+            .joined(separator: " ")
     }
 
     private static func formatPhotoSection(

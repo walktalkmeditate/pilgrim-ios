@@ -143,9 +143,13 @@ Per the approved context-scope decision, Oblique receives the **full** dossier w
 
 **Problem.** The dossier ships rich signals raw and the model guesses. `ThreadsDossierFormatter.markerLine` emits absolutist and first-person percentages; `modalLeanLine` emits `modal lean: obligation — 'should' ×31 (your usual ~8 per walk)`. A model's default read of "should ×31" is *this person is being hard on themselves*. The correct read is entirely different: obligation names the **shape of the frame they were thinking inside**.
 
-**Fix.** One line added to `PromptAssembler.responseContract`, in the `hasThreadsDossier` branch alongside the existing clinical-language guard:
+**Fix.** One line added to `PromptAssembler.responseContract`, in the threads-dossier branch alongside the existing clinical-language guard:
 
-> Read the absolutist-word share as how fixed the walker's framing was, self-focus as how far they placed themselves at the centre of it, and the modal lean as the frame they were working inside — obligation means the frame constrained them, counterfactual means they were already replaying alternatives, possibility and tentative mean it was still open, intention means they had settled on a course, and desire means they were naming a want rather than a plan. None of these has a fixed meaning; read each through this walk's intention and practice.
+> Read the absolutist-word share as how fixed the walker's framing was, and self-focus as how far they placed themselves at the centre of it. Read the modal lean as the frame the walker was working inside — obligation means the frame constrained them, counterfactual means they were already replaying alternatives, possibility and tentative mean it was still open, intention means they had settled on a course, and desire means they were naming a want rather than a plan. None of these has a fixed meaning; read each through this walk's intention and practice.
+
+**Emitted per clause, not per dossier — corrected at review, 2026-08-27.** The first draft fired the whole key whenever a dossier was present. But `markerLine` prints "Markers unavailable (non-English recording)" when the recording has no `MarkerPack`, prints raw counts rather than shares below `densityFloorWords` (100), and `modalLeanLine` is silent unless it clears three thresholds — so the key routinely taught a taxonomy the dossier had withheld, handing the model vocabulary with no referent. `responseContract` therefore takes the dossier **text** (`threadsDossier: String?`) rather than a `Bool`, and emits only the clauses whose referents were printed: the share clause when shares appear, a bare-tally variant when only raw counts do, the modal clause only when a modal lean was printed, and no interpretive line at all when the dossier withheld everything. The clinical guard stays unconditional on the dossier's presence — it is the safety line. Still at most one interpretive line, so the accretion budget is unchanged.
+
+The probes match `ThreadsDossierFormatter`'s own phrasings. That coupling is pinned by a test that runs the real formatter, so a phrasing change fails a test rather than silently suppressing the key on every walk.
 
 The labels ("absolutist-word share", "self-focus") match what `ThreadsDossierFormatter` actually prints, not a paraphrase of it. The key names all six `MarkerLexicons.ModalFamily` cases — `possibility`, `obligation`, `counterfactual`, `tentative`, `intention`, `desire` — not a subset: naming only four invites the model to back-fit an unnamed family (`intention`, `desire`) onto the nearest named one, and `desire` in particular is high-frequency in spoken reflection ("want", "need", "wish"), so an unnamed reading of it would surface often.
 
@@ -167,9 +171,11 @@ Both are unbounded. Per Principle 2 the model will always find connections and w
 
 **Fix.** Bind both to the walk's own evidence. Revised instruction:
 
-> Please analyze these walking reflections for patterns, recurring themes, and emotional undercurrents. Where the walk's own record supports it — the stated intention, a word that recurs, a shift in pace or marker profile — name what connects the moments. Where it does not, say less rather than reaching. Note any genuine tension the record shows, and do not manufacture one. Offer observations that help me understand myself better.
+> Please analyze these walking reflections for patterns, recurring themes, and emotional undercurrents. Where the walk's own record supports it — the stated intention, a word that recurs, a shift in pace — name what connects the moments. Where it does not, say less rather than reaching. Note any genuine tension the record shows, and do not manufacture one. Offer observations that help me understand myself better.
 
 The `hasSpeech: false` variant gets the parallel treatment for its "What patterns do you see?" clause.
+
+**"or marker profile" dropped at review, 2026-08-27.** The first draft's enumeration named the marker profile as licensed evidence. But the threads dossier reaches the prompt only when `UserPreferences.threadsAfterWalks` is on, and `instruction(hasSpeech:)` — unlike `responseContract` — has no way to know whether it did. The enumeration must name only evidence every spoken walk actually carries; the alternative is widening the `PromptVoice` protocol signature, which is a larger call than this fix warrants.
 
 **Cost.** No contract lines. Prose-only change to one voice.
 
@@ -194,10 +200,23 @@ Unconditional on ≥2 recordings, so it fires on nearly every spoken walk, and i
 
 Fire only when at least one clears its threshold between the **first** and **last** recording:
 
-- **Pace:** `wordsPerMinute` delta ≥ 15% relative. Free — `RecordingContext.wordsPerMinute` is already populated. Skipped when either value is `nil`.
-- **Subject:** overlap coefficient of content-lemma sets (`intersection.count / min(firstLemmas.count, lastLemmas.count)`) ≤ 0.20 — they are no longer talking about the same thing. Costs exactly two `TranscriptNLP.contentLemmas(in:)` passes (first and last recording only, never all N). Requires both recordings to yield ≥ 5 content lemmas, so a two-word recording cannot manufacture divergence.
+- **Pace:** `wordsPerMinute` delta ≥ 15% relative (`paceShiftThreshold`). Free — `RecordingContext.wordsPerMinute` is already populated. Skipped when either value is `nil`, and when either recording holds fewer than 25 words (`minimumWordsToJudgePace`).
+
+  **Word floor added at review, 2026-08-27.** The first draft gated pace on the relative delta alone. A short opening note ("Setting out heavy") has a `wordsPerMinute` fixed by the rounding of its own start and end timestamps, so a 15% relative change is trivially cleared and the directive fired on noise. The floor mirrors the subject branch's shape — a floor on each side, sized so the signal is measurable at all. At any plausible speaking rate, 25 words means at least ten seconds of continuous speech.
+
+- **Subject:** overlap coefficient of content-lemma sets (`intersection.count / min(firstLemmas.count, lastLemmas.count)`) ≤ 0.20 (`subjectOverlapCeiling`) — they are no longer talking about the same thing. Costs exactly two `TranscriptNLP.contentLemmas(in:)` passes (first and last recording only, never all N). Requires both recordings to yield ≥ 12 content lemmas (`minimumLemmasToJudgeSubject`), and the longer set to be no more than 3× the shorter (`subjectLengthRatioCeiling`).
 
   **Not Jaccard.** An earlier draft of this workstream specified Jaccard similarity (`intersection / union`). Jaccard collapses to `|smaller| / |larger|` whenever one lemma set is a subset of the other, which is exactly the shape of a long opening reflection followed by a short closing note on the *same* subject: ~32 unique lemmas in the opening, a 6-lemma closing note drawn entirely from that same vocabulary, Jaccard ≈ 6/32 ≈ 0.19 — under the 0.20 ceiling, so it would fire "shares little vocabulary" on a walk that never left its subject. The overlap coefficient is 1.0 for that same subset case (correctly silent) and still near 0 for genuinely divergent subjects, because it measures how much of the *smaller* recording's vocabulary is accounted for by the larger one, rather than penalizing a short recording for being short relative to a long one.
+
+  **Three subject guards added at review, 2026-08-27.** The first draft's gate was still loose enough to fire on walks that never changed subject:
+
+  1. **Scaffolding is filtered.** `SpokenStoplist.scaffoldLemmas` is subtracted from both sets before intersecting, as `recurringWord` already does. NLTagger tags "think", "know", "want", "keep" as content words; left in, a closing recording made entirely of spoken scaffolding counted eighteen "lemmas", cleared the floor, and shared nothing with the opening.
+  2. **The lemma floor rose from 5 to 12,** and now counts content lemmas only. Five sat far below where a lexical-overlap judgment carries information: a sign-off ("heading back down the hill, tired but glad") clears it and scores near-zero overlap. A genuinely divergent long pair measures around 0.06, so there is ample headroom above the higher floor.
+  3. **A length-ratio ceiling of 3.0.** Past it, the smaller recording is a thin sample of the walk rather than its second half, and its overlap against a much longer transcript says more about its length than about the subject.
+
+- **Language.** The subject branch runs only when `NLTagger.availableTagSchemes(for: .word, language:)` reports a `.lemma` model for the transcript's detected language, **and** the first and last recordings resolve to the same language. Asked of the OS at runtime rather than hardcoded, so the branch widens on its own as Apple adds lemma models.
+
+  **Added at review, 2026-08-27.** `TranscriptNLP.contentLemmas` falls back to the lowercased surface form when NLTagger has no lemma model, so an inflected language yields a distinct "lemma" per inflection and overlap is depressed systematically. Pilgrim's core audience walks the Camino: French, German, Italian, Portuguese, and Spanish transcripts are a primary case, and every one of them would have read as total divergence. A language switch between the first and last recording guaranteed a false fire outright. Silence is the correct answer when the measurement is not valid — the pace branch is unaffected and still speaks.
 
 When it fires, the directive names *which* signal moved, so the model is pointed at something real rather than asked to hunt:
 
