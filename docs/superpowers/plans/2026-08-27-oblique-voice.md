@@ -1021,11 +1021,17 @@ the N-1-agree boundary test. See Deviation 3 above and
 
 **Files:**
 - Modify: `Pilgrim/Models/Threads/DossierSensesInvariance.swift`
-- Modify: `UnitTests/DossierSensesInvarianceTests.swift`
+- New: `UnitTests/DossierSensesInvariancePlaceFrameLockTests.swift` (not an edit to `DossierSensesInvarianceTests.swift` — see Deviation 1)
 
 **Interfaces:**
 - Produces: `DossierSensesInvariance.placeFrameLock(input:suppressed:) -> DossierSenses.SenseLine?`
 - Consumes: `DossierSenses.Input.fixes`, `DossierSenses.qualifies(_:)`, `DossierSenses.distance(_:_:)`, `DossierSenses.placeClusterRadius`
+
+**Adjudicated deviations from the draft below** (shipped code differs from the original Step 1/3 draft in three ways; each is intentional, reviewed *before* ship — not a post-ship fix like Task 5's — and must not be "simplified" back to the draft):
+
+1. **New test file, not an edit to the parent.** `UnitTests/DossierSensesInvarianceTests.swift` was already at 458 lines against the `file_length` warning gate of 500 (`.swiftlint.yml`); this signal's fixture-heavy tests (each needs its own `fixes` dictionary) would have pushed it over. Filed as `UnitTests/DossierSensesInvariancePlaceFrameLockTests.swift`, an `extension DossierSensesInvarianceTests` reusing the parent's `steadyThread` fixture — same split pattern Task 5 used for `DossierSensesInvarianceFrameConstancyCoverageTests.swift`. Registered with 4 hand-added `project.pbxproj` entries (`PBXBuildFile`, `PBXFileReference`, group listing, `PBXSourcesBuildPhase` listing) — `UnitTests` uses explicit file references, not a synchronized group.
+2. **Full walk-coverage requirement, baked in from the start.** The rendered line says "has been spoken in the same place on all N walks it appears in" — a totalizing claim over the theme's entire appearance history, the same shape as `frameConstancy`'s "every walk" (Task 5's post-ship FIX 1). The draft below computed `walks` from `Set(thread.appearances.map(\.walkUUID)).count` — *every* appearance, regardless of whether its fix qualified — while the clustering check (`coordinates`) ran only over the subset that passed `DossierSenses.qualifies`. A theme in 5 walks where only 3 had usable fixes would have rendered "all 5 walks" on evidence from 3. Shipped code groups qualifying fixes by `walkUUID` first (`coordinatesByWalk: [UUID: [Coordinate]]`) and requires `coordinatesByWalk.count == allWalks.count` — every walk in the theme's walk-set must contribute at least one qualifying fix, or the whole signal stays silent — before rendering `allWalks.count` as the "all N" figure. This is the strong option (full coverage), the same choice Task 5 made for the identically-shaped problem, not the fallback of binding the text to a smaller, unqualified-of-"all" count. Pinned by `testPlaceFrameLock_oneWalkWithNoFixAtAll_staysSilent`.
+3. **Cluster membership by max pairwise spread, not distance from an arbitrary anchor.** The draft below picked `coordinates.first` as an anchor and checked every other point was within `placeClusterRadius` of *it*. With a 150m radius, two points can each sit within 150m of a shared anchor while sitting up to 300m from each other — and which fix happens to be "first" is an artifact of iteration order, not geography. Shipped code instead requires the maximum distance between *any two* qualifying coordinates to be `<= placeClusterRadius` (`maxPairwiseSpread`, order-independent), mirroring the compactness `DossierSenses.bestCluster` already measures via its own `spread` field for `placeResonance`. Pinned by `testPlaceFrameLock_pointsNearSharedAnchorButFarApart_staysSilent`: three points where two sit ~130m from a shared anchor (each individually within radius of it) but ~260m from each other — the anchor-based draft would fire here; shipped code stays silent.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1094,6 +1100,8 @@ the N-1-agree boundary test. See Deviation 3 above and
     }
 ```
 
+Superseded by Deviations 1-3 above — shipped tests additionally cover: full walk-coverage on a mixed fixture where one walk has no fix at all (`testPlaceFrameLock_oneWalkWithNoFixAtAll_staysSilent`), the anchor-arbitrariness boundary (`testPlaceFrameLock_pointsNearSharedAnchorButFarApart_staysSilent`), the exact rendered string (`testPlaceFrameLock_sameCluster_fires` asserts `line?.text ==`, not just `.contains`), below-minimum-walks, and suppressed-lemma. All seven tests live in `UnitTests/DossierSensesInvariancePlaceFrameLockTests.swift` (Deviation 1).
+
 - [ ] **Step 2: Run to verify it fails**
 
 Expected: COMPILE FAILURE — no `placeFrameLock`.
@@ -1103,38 +1111,84 @@ Expected: COMPILE FAILURE — no `placeFrameLock`.
 ```swift
 extension DossierSensesInvariance {
 
-    /// The same theme spoken inside the same `placeClusterRadius` cluster
-    /// every time. An invariant tied to ground rather than to language.
+    /// The same theme spoken inside the same `DossierSenses.placeClusterRadius`
+    /// cluster on every walk it appears in — an invariant tied to ground
+    /// rather than to language. Reuses `DossierSenses.qualifies` so a
+    /// poor-accuracy or stale-gap fix is excluded on the same hygiene terms
+    /// as `placeResonance`: a 500m-accuracy fix would make any two points on
+    /// earth look like the same place.
     ///
-    /// Reuses `DossierSenses.qualifies` so poor-accuracy and long-gap fixes
-    /// are excluded on the same terms as `placeResonance` — a 500m-accuracy
-    /// fix would make any two points look like the same place.
+    /// The rendered line claims "all N walks it appears in" — a claim over
+    /// the theme's ENTIRE appearance history, the same shape as
+    /// `frameConstancy`'s "every walk". That claim is only true if every
+    /// walk where the theme appears contributed at least one qualifying
+    /// fix to check. A walk whose only recording(s) have no fix, or a fix
+    /// too poor to qualify, is NOT silently dropped from the denominator —
+    /// dropping it would let N-1 walks that happen to cluster outvote a
+    /// walk the line never actually looked at, while still claiming to
+    /// speak for it (the exact shape of `frameConstancy`'s FIX 1). Instead
+    /// a single walk with no usable fix holds the whole signal silent —
+    /// full coverage is the price of the word "all". Grouped by distinct
+    /// WALK for the coverage check, mirroring `fusedThemes`,
+    /// `unmovedReturn`, and `frameConstancy`: a walk contributes to
+    /// coverage if ANY of its recordings has a qualifying fix, since the
+    /// claim is about ground the walker stood on, and one usable fix is
+    /// enough to place a walk on the map.
+    ///
+    /// Clustering is judged by SPREAD — the maximum pairwise distance
+    /// across every qualifying coordinate — never by distance from an
+    /// arbitrary anchor point such as the first coordinate encountered.
+    /// Two points can each sit within `placeClusterRadius` of a shared
+    /// anchor while sitting up to 2x that radius from each other; that is
+    /// not "the same place" by any reading a walker would recognize, and
+    /// an anchor-relative check would silently depend on appearance order
+    /// (which fix happens to come first). Requiring every pair to sit
+    /// within the radius of EACH OTHER is the stricter, order-independent
+    /// reading, and mirrors the compactness `placeResonance.bestCluster`
+    /// already measures via its own `spread`.
     static func placeFrameLock(
         input: DossierSenses.Input, suppressed: Set<String>
     ) -> DossierSenses.SenseLine? {
         for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
         where !suppressed.contains(thread.lemma) {
-            let coordinates = thread.appearances.compactMap { appearance -> DossierSenses.Coordinate? in
+            let allWalks = Set(thread.appearances.map(\.walkUUID))
+            guard allWalks.count >= minimumInvariantWalks else { continue }
+
+            var coordinatesByWalk: [UUID: [DossierSenses.Coordinate]] = [:]
+            for appearance in thread.appearances {
                 guard let fix = input.fixes[appearance.recordingUUID],
-                      DossierSenses.qualifies(fix) else { return nil }
-                return fix.coordinate
+                      DossierSenses.qualifies(fix) else { continue }
+                coordinatesByWalk[appearance.walkUUID, default: []].append(fix.coordinate)
             }
-            guard coordinates.count >= minimumInvariantWalks else { continue }
+            guard coordinatesByWalk.count == allWalks.count else { continue }
 
-            guard let anchor = coordinates.first else { continue }
-            let clustered = coordinates.allSatisfy {
-                DossierSenses.distance(anchor, $0) <= DossierSenses.placeClusterRadius
-            }
-            guard clustered else { continue }
+            let coordinates = coordinatesByWalk.values.flatMap { $0 }
+            guard maxPairwiseSpread(coordinates) <= DossierSenses.placeClusterRadius else { continue }
 
-            let walks = Set(thread.appearances.map(\.walkUUID)).count
             return DossierSenses.SenseLine(
                 text: "'\(thread.displayTerm)' has been spoken in the same place "
-                    + "on all \(walks) walks it appears in.",
+                    + "on all \(allWalks.count) walks it appears in.",
                 lemma: thread.lemma
             )
         }
         return nil
+    }
+
+    /// The greatest distance between any two coordinates in the set —
+    /// order-independent, so which fix was recorded "first" cannot change
+    /// the answer. Mirrors the `spread` computation in
+    /// `DossierSenses.bestCluster`, minus the seed search: full coverage
+    /// above already fixes the one candidate set this function is asked
+    /// to judge, so there is nothing to search over.
+    private static func maxPairwiseSpread(_ coordinates: [DossierSenses.Coordinate]) -> CLLocationDistance {
+        guard coordinates.count >= 2 else { return 0 }
+        var spread: CLLocationDistance = 0
+        for i in 0..<(coordinates.count - 1) {
+            for j in (i + 1)..<coordinates.count {
+                spread = max(spread, DossierSenses.distance(coordinates[i], coordinates[j]))
+            }
+        }
+        return spread
     }
 }
 ```
@@ -1153,15 +1207,28 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Pilgrim/Models/Threads/DossierSensesInvariance.swift UnitTests/DossierSensesInvarianceTests.swift
+git add Pilgrim/Models/Threads/DossierSensesInvariance.swift \
+  UnitTests/DossierSensesInvariancePlaceFrameLockTests.swift \
+  Pilgrim.xcodeproj/project.pbxproj
 git commit -m "feat(threads): place-frame lock — the same thought at the same bend
 
 An invariant tied to ground rather than language: the walker says this in
 this place, every time, and has never noticed. Reuses the placeResonance
 hygiene gate so a 500m-accuracy fix cannot make two points look like one.
 
+The \"on all N walks\" claim requires full walk coverage — a walk with no
+qualifying fix stays out of the denominator instead of being silently
+outvoted by walks that did cluster, the same shape as frameConstancy's
+review fix (T5). Clustering is judged by max pairwise spread across every
+qualifying fix, not distance from an arbitrary first coordinate, so two
+points can't each hide within radius of a shared anchor while sitting
+twice that radius apart from each other.
+
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```
+
+See `.superpowers/sdd/task-6-report.md` for the TDD sequence, actual test
+counts, and self-review.
 
 ---
 
