@@ -306,28 +306,37 @@ extension DossierSensesInvariance {
 extension DossierSensesInvariance {
 
     /// The same theme spoken inside the same `DossierSenses.placeClusterRadius`
-    /// cluster on every walk it appears in — an invariant tied to ground
-    /// rather than to language. Reuses `DossierSenses.qualifies` so a
-    /// poor-accuracy or stale-gap fix is excluded on the same hygiene terms
-    /// as `placeResonance`: a 500m-accuracy fix would make any two points on
-    /// earth look like the same place.
+    /// cluster on every walk that actually CONTRIBUTED a qualifying route
+    /// fix — an invariant tied to ground rather than to language. Reuses
+    /// `DossierSenses.qualifies` so a poor-accuracy or stale-gap fix is
+    /// excluded on the same hygiene terms as `placeResonance`: a
+    /// 500m-accuracy fix would make any two points on earth look like the
+    /// same place.
     ///
-    /// The rendered line claims "all N walks it appears in" — a claim over
-    /// the theme's ENTIRE appearance history, the same shape as
-    /// `frameConstancy`'s "every walk". That claim is only true if every
-    /// walk where the theme appears contributed at least one qualifying
-    /// fix to check. A walk whose only recording(s) have no fix, or a fix
-    /// too poor to qualify, is NOT silently dropped from the denominator —
-    /// dropping it would let N-1 walks that happen to cluster outvote a
-    /// walk the line never actually looked at, while still claiming to
-    /// speak for it (the exact shape of `frameConstancy`'s FIX 1). Instead
-    /// a single walk with no usable fix holds the whole signal silent —
-    /// full coverage is the price of the word "all". Grouped by distinct
-    /// WALK for the coverage check, mirroring `fusedThemes`,
-    /// `unmovedReturn`, and `frameConstancy`: a walk contributes to
-    /// coverage if ANY of its recordings has a qualifying fix, since the
-    /// claim is about ground the walker stood on, and one usable fix is
-    /// enough to place a walk on the map.
+    /// GATED ON THE MEASURED SET, deliberately, not on the theme's full
+    /// appearance history (product decision, 2026-08-27): this app is used
+    /// on rural pilgrimage routes where GPS coverage is uneven, and a full
+    /// coverage requirement meant one dead-zone walk with no fix at all
+    /// could permanently silence an otherwise genuinely place-locked theme
+    /// — too conservative to ship. `minimumInvariantWalks` now applies to
+    /// `coordinatesByWalk.count` (distinct walks that contributed at least
+    /// one qualifying fix), not `allWalks.count` (every walk the theme
+    /// appears on): a theme in 10 walks with only 1 usable fix still stays
+    /// silent — clustering over fewer than `minimumInvariantWalks` points
+    /// is not evidence of anything — but a theme in 5 walks with 3 usable
+    /// fixes that cluster tightly may now speak, naming exactly what was
+    /// measured. DO NOT reinstate the `coordinatesByWalk.count ==
+    /// allWalks.count` check this replaced; that regression is the whole
+    /// point of this comment.
+    ///
+    /// Two rendered variants, the same shape `fusedThemes` already sets for
+    /// identical-vs-nested walk-sets: when every appearance-walk measured
+    /// (full coverage), the line keeps the original "on all N walks it
+    /// appears in" wording. When only some walks measured (partial
+    /// coverage), the line names BOTH counts — "on every walk where its
+    /// location is known — M of N it appears in" — which states what was
+    /// measured without implying anything about the unmeasured walks; we do
+    /// not know where they were, only that we cannot say.
     ///
     /// Clustering is judged by SPREAD — the maximum pairwise distance
     /// across every qualifying coordinate — never by distance from an
@@ -339,14 +348,15 @@ extension DossierSensesInvariance {
     /// (which fix happens to come first). Requiring every pair to sit
     /// within the radius of EACH OTHER is the stricter, order-independent
     /// reading, and mirrors the compactness `placeResonance.bestCluster`
-    /// already measures via its own `spread`.
+    /// already measures via its own `spread`. UNCHANGED by the coverage
+    /// relaxation above — verified by haversine that anchor-relative
+    /// clustering lets points ~260m apart pass a 150m gate.
     static func placeFrameLock(
         input: DossierSenses.Input, suppressed: Set<String>
     ) -> DossierSenses.SenseLine? {
         for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
         where !suppressed.contains(thread.lemma) {
             let allWalks = Set(thread.appearances.map(\.walkUUID))
-            guard allWalks.count >= minimumInvariantWalks else { continue }
 
             var coordinatesByWalk: [UUID: [DossierSenses.Coordinate]] = [:]
             for appearance in thread.appearances {
@@ -354,14 +364,23 @@ extension DossierSensesInvariance {
                       DossierSenses.qualifies(fix) else { continue }
                 coordinatesByWalk[appearance.walkUUID, default: []].append(fix.coordinate)
             }
-            guard coordinatesByWalk.count == allWalks.count else { continue }
+            let measuredWalks = coordinatesByWalk.count
+            guard measuredWalks >= minimumInvariantWalks else { continue }
 
             let coordinates = coordinatesByWalk.values.flatMap { $0 }
             guard maxPairwiseSpread(coordinates) <= DossierSenses.placeClusterRadius else { continue }
 
+            guard measuredWalks < allWalks.count else {
+                return DossierSenses.SenseLine(
+                    text: "'\(thread.displayTerm)' has been spoken in the same place "
+                        + "on all \(allWalks.count) walks it appears in.",
+                    lemma: thread.lemma
+                )
+            }
+
             return DossierSenses.SenseLine(
-                text: "'\(thread.displayTerm)' has been spoken in the same place "
-                    + "on all \(allWalks.count) walks it appears in.",
+                text: "'\(thread.displayTerm)' has been spoken in the same place on every walk "
+                    + "where its location is known — \(measuredWalks) of the \(allWalks.count) it appears in.",
                 lemma: thread.lemma
             )
         }

@@ -113,16 +113,16 @@ extension DossierSensesInvarianceTests {
         )
     }
 
-    /// The overclaim this task was warned about, reproduced and pinned:
-    /// 4 walks total, 3 with qualifying fixes that cluster tightly, the
-    /// 4th walk's only recording has no fix at all (never attempted a
-    /// route fix). The brief's original draft counted `Set(appearances
-    /// .map(\.walkUUID)).count` over EVERY appearance regardless of fix
-    /// quality — it would have rendered "on all 4 walks" while the
-    /// clustering geometry only ever looked at 3. Shipped code requires
-    /// full coverage (every walk in the theme's walk-set must contribute
-    /// at least one qualifying fix) before it will speak at all.
-    func testPlaceFrameLock_oneWalkWithNoFixAtAll_staysSilent() {
+    /// The full-coverage requirement was relaxed (product decision,
+    /// 2026-08-27): this app runs on rural pilgrimage routes where GPS
+    /// coverage is uneven, and demanding every appearance-walk contribute a
+    /// fix meant one dead-zone walk could permanently silence an otherwise
+    /// genuinely place-locked theme. 4 walks total, 3 with qualifying fixes
+    /// that cluster tightly, the 4th walk's only recording has no fix at
+    /// all (never attempted a route fix) — the signal now speaks, but the
+    /// sentence must tell the truth about what was measured: "3 of the 4"
+    /// it appears in, not "all 4".
+    func testPlaceFrameLock_oneWalkWithNoFixAtAll_rendersMeasuredCoverage() {
         let recs = [UUID(), UUID(), UUID(), UUID()]
         let walks = [UUID(), UUID(), UUID(), UUID()]
         var fixes: [UUID: DossierSenses.RouteFix] = [:]
@@ -133,6 +133,33 @@ extension DossierSensesInvarianceTests {
         }
         // recs[3] / walks[3] intentionally has no entry in `fixes` — a
         // route fix that was never recorded, not merely a poor one.
+        let thread = steadyThread("river", recordings: recs, walks: walks)
+        let line = DossierSensesInvariance.placeFrameLock(
+            input: fixInput(threads: [thread], fixes: fixes), suppressed: []
+        )
+        XCTAssertEqual(
+            line?.text,
+            "'river' has been spoken in the same place on every walk where its location "
+                + "is known — 3 of the 4 it appears in."
+        )
+        XCTAssertEqual(line?.lemma, "river")
+    }
+
+    /// Below the `minimumInvariantWalks` floor is judged on the MEASURED
+    /// count, not the appearance count — a theme appearing on many walks
+    /// with only a couple of usable fixes must stay silent, because
+    /// clustering over fewer than 3 points is not evidence of anything,
+    /// no matter how large the theme's full walk-set is.
+    func testPlaceFrameLock_measuredWalksBelowMinimum_staysSilentDespiteManyAppearances() {
+        let recs = (0..<10).map { _ in UUID() }
+        let walks = (0..<10).map { _ in UUID() }
+        var fixes: [UUID: DossierSenses.RouteFix] = [:]
+        for offset in 0..<2 {
+            fixes[recs[offset]] = qualifyingFix(
+                .init(latitude: 51.5 + Double(offset) * 0.0001, longitude: -0.12)
+            )
+        }
+        // recs[2...9] intentionally have no entry in `fixes`.
         let thread = steadyThread("river", recordings: recs, walks: walks)
         XCTAssertNil(
             DossierSensesInvariance.placeFrameLock(

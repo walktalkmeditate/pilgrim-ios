@@ -1030,8 +1030,9 @@ the N-1-agree boundary test. See Deviation 3 above and
 **Adjudicated deviations from the draft below** (shipped code differs from the original Step 1/3 draft in three ways; each is intentional, reviewed *before* ship — not a post-ship fix like Task 5's — and must not be "simplified" back to the draft):
 
 1. **New test file, not an edit to the parent.** `UnitTests/DossierSensesInvarianceTests.swift` was already at 458 lines against the `file_length` warning gate of 500 (`.swiftlint.yml`); this signal's fixture-heavy tests (each needs its own `fixes` dictionary) would have pushed it over. Filed as `UnitTests/DossierSensesInvariancePlaceFrameLockTests.swift`, an `extension DossierSensesInvarianceTests` reusing the parent's `steadyThread` fixture — same split pattern Task 5 used for `DossierSensesInvarianceFrameConstancyCoverageTests.swift`. Registered with 4 hand-added `project.pbxproj` entries (`PBXBuildFile`, `PBXFileReference`, group listing, `PBXSourcesBuildPhase` listing) — `UnitTests` uses explicit file references, not a synchronized group.
-2. **Full walk-coverage requirement, baked in from the start.** The rendered line says "has been spoken in the same place on all N walks it appears in" — a totalizing claim over the theme's entire appearance history, the same shape as `frameConstancy`'s "every walk" (Task 5's post-ship FIX 1). The draft below computed `walks` from `Set(thread.appearances.map(\.walkUUID)).count` — *every* appearance, regardless of whether its fix qualified — while the clustering check (`coordinates`) ran only over the subset that passed `DossierSenses.qualifies`. A theme in 5 walks where only 3 had usable fixes would have rendered "all 5 walks" on evidence from 3. Shipped code groups qualifying fixes by `walkUUID` first (`coordinatesByWalk: [UUID: [Coordinate]]`) and requires `coordinatesByWalk.count == allWalks.count` — every walk in the theme's walk-set must contribute at least one qualifying fix, or the whole signal stays silent — before rendering `allWalks.count` as the "all N" figure. This is the strong option (full coverage), the same choice Task 5 made for the identically-shaped problem, not the fallback of binding the text to a smaller, unqualified-of-"all" count. Pinned by `testPlaceFrameLock_oneWalkWithNoFixAtAll_staysSilent`.
-3. **Cluster membership by max pairwise spread, not distance from an arbitrary anchor.** The draft below picked `coordinates.first` as an anchor and checked every other point was within `placeClusterRadius` of *it*. With a 150m radius, two points can each sit within 150m of a shared anchor while sitting up to 300m from each other — and which fix happens to be "first" is an artifact of iteration order, not geography. Shipped code instead requires the maximum distance between *any two* qualifying coordinates to be `<= placeClusterRadius` (`maxPairwiseSpread`, order-independent), mirroring the compactness `DossierSenses.bestCluster` already measures via its own `spread` field for `placeResonance`. Pinned by `testPlaceFrameLock_pointsNearSharedAnchorButFarApart_staysSilent`: three points where two sit ~130m from a shared anchor (each individually within radius of it) but ~260m from each other — the anchor-based draft would fire here; shipped code stays silent.
+2. **Full walk-coverage requirement, baked in from the start — SUPERSEDED by Deviation 4 below, kept here for the historical record.** The rendered line says "has been spoken in the same place on all N walks it appears in" — a totalizing claim over the theme's entire appearance history, the same shape as `frameConstancy`'s "every walk" (Task 5's post-ship FIX 1). The draft below computed `walks` from `Set(thread.appearances.map(\.walkUUID)).count` — *every* appearance, regardless of whether its fix qualified — while the clustering check (`coordinates`) ran only over the subset that passed `DossierSenses.qualifies`. A theme in 5 walks where only 3 had usable fixes would have rendered "all 5 walks" on evidence from 3. Shipped code (as of this commit) grouped qualifying fixes by `walkUUID` first (`coordinatesByWalk: [UUID: [Coordinate]]`) and required `coordinatesByWalk.count == allWalks.count` — every walk in the theme's walk-set had to contribute at least one qualifying fix, or the whole signal stayed silent — before rendering `allWalks.count` as the "all N" figure. This is the strong option (full coverage), the same choice Task 5 made for the identically-shaped problem, not the fallback of binding the text to a smaller, unqualified-of-"all" count. Originally pinned by `testPlaceFrameLock_oneWalkWithNoFixAtAll_staysSilent`, since renamed to `testPlaceFrameLock_oneWalkWithNoFixAtAll_rendersMeasuredCoverage` under Deviation 4 (same fixture, opposite assertion).
+3. **Cluster membership by max pairwise spread, not distance from an arbitrary anchor.** The draft below picked `coordinates.first` as an anchor and checked every other point was within `placeClusterRadius` of *it*. With a 150m radius, two points can each sit within 150m of a shared anchor while sitting up to 300m from each other — and which fix happens to be "first" is an artifact of iteration order, not geography. Shipped code instead requires the maximum distance between *any two* qualifying coordinates to be `<= placeClusterRadius` (`maxPairwiseSpread`, order-independent), mirroring the compactness `DossierSenses.bestCluster` already measures via its own `spread` field for `placeResonance`. Pinned by `testPlaceFrameLock_pointsNearSharedAnchorButFarApart_staysSilent`: three points where two sit ~130m from a shared anchor (each individually within radius of it) but ~260m from each other — the anchor-based draft would fire here; shipped code stays silent. **This check is UNCHANGED by Deviation 4 — do not touch it.**
+4. **Coverage relaxed to the MEASURED set (owner's product decision, post-ship, 2026-08-27) — do not revert this to Deviation 2's full-coverage gate.** This app runs on rural pilgrimage routes where GPS quality varies. Full coverage meant one dead-zone walk with no fix at all could permanently silence an otherwise genuinely place-locked theme, which was judged too conservative. Shipped code (current) now gates `minimumInvariantWalks` on `coordinatesByWalk.count` — the count of walks that actually contributed a qualifying fix — instead of `allWalks.count`. A theme in 10 walks with only 1 usable fix still stays silent (clustering over fewer than `minimumInvariantWalks` points is not evidence of anything); a theme in 5 walks with 3 usable fixes that cluster tightly may now speak. The max-pairwise-spread check (Deviation 3) is untouched — this only moves which count the walk-floor and the "all N" figure are measured against. Two rendered variants now exist, following the precedent `fusedThemes` already sets for identical-vs-nested walk-sets: full coverage (`coordinatesByWalk.count == allWalks.count`) keeps "on all N walks it appears in"; partial coverage renders "on every walk where its location is known — M of the N it appears in", naming both the measured count and the total without implying anything about the walks that were not measured (we do not know where they were, only that we cannot say). Pinned by `testPlaceFrameLock_oneWalkWithNoFixAtAll_rendersMeasuredCoverage` (partial-coverage sentence, exact `XCTAssertEqual`) and `testPlaceFrameLock_measuredWalksBelowMinimum_staysSilentDespiteManyAppearances` (a theme in 10 walks with only 2 measured stays silent). See `.superpowers/sdd/task-6-report.md` ("## Coverage relaxation") for the commit and test run.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1100,13 +1101,13 @@ the N-1-agree boundary test. See Deviation 3 above and
     }
 ```
 
-Superseded by Deviations 1-3 above — shipped tests additionally cover: full walk-coverage on a mixed fixture where one walk has no fix at all (`testPlaceFrameLock_oneWalkWithNoFixAtAll_staysSilent`), the anchor-arbitrariness boundary (`testPlaceFrameLock_pointsNearSharedAnchorButFarApart_staysSilent`), the exact rendered string (`testPlaceFrameLock_sameCluster_fires` asserts `line?.text ==`, not just `.contains`), below-minimum-walks, and suppressed-lemma. All seven tests live in `UnitTests/DossierSensesInvariancePlaceFrameLockTests.swift` (Deviation 1).
+Superseded by Deviations 1-3 above — shipped tests as of the original commit additionally covered: full walk-coverage on a mixed fixture where one walk has no fix at all (`testPlaceFrameLock_oneWalkWithNoFixAtAll_staysSilent`), the anchor-arbitrariness boundary (`testPlaceFrameLock_pointsNearSharedAnchorButFarApart_staysSilent`), the exact rendered string (`testPlaceFrameLock_sameCluster_fires` asserts `line?.text ==`, not just `.contains`), below-minimum-walks, and suppressed-lemma — seven tests total in `UnitTests/DossierSensesInvariancePlaceFrameLockTests.swift` (Deviation 1). Under Deviation 4 (coverage relaxation), `testPlaceFrameLock_oneWalkWithNoFixAtAll_staysSilent` was renamed to `testPlaceFrameLock_oneWalkWithNoFixAtAll_rendersMeasuredCoverage` and now asserts the partial-coverage sentence via `XCTAssertEqual` instead of silence, and one more test was added — `testPlaceFrameLock_measuredWalksBelowMinimum_staysSilentDespiteManyAppearances` — pinning that a theme appearing on many walks with fewer than `minimumInvariantWalks` *measured* walks stays silent regardless of appearance count. Nine tests live in the file today.
 
 - [ ] **Step 2: Run to verify it fails**
 
 Expected: COMPILE FAILURE — no `placeFrameLock`.
 
-- [ ] **Step 3: Implement**
+- [ ] **Step 3: Implement (superseded by Deviation 4 — see "As shipped, current" below for the code actually in the tree)**
 
 ```swift
 extension DossierSensesInvariance {
@@ -1229,6 +1230,65 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 See `.superpowers/sdd/task-6-report.md` for the TDD sequence, actual test
 counts, and self-review.
+
+**Coverage relaxation (post-ship, product decision, 2026-08-27) — the plan and code above are superseded; this is what actually ships.** Deviation 2's full-coverage requirement is deliberately relaxed. Reason: this app is used on rural pilgrimage routes where GPS quality varies, and requiring every appearance-walk to contribute a qualifying fix meant a single dead-zone walk could permanently silence an otherwise genuinely place-locked theme — too conservative. `minimumInvariantWalks` now gates on the MEASURED set (`coordinatesByWalk.count`), not the full appearance-walk set (`allWalks.count`). The max-pairwise-spread clustering check (Deviation 3) is completely unchanged — do not touch it, a reviewer verified by haversine that anchor-relative clustering lets points ~260m apart pass a 150m gate. As shipped, current:
+
+```swift
+static func placeFrameLock(
+    input: DossierSenses.Input, suppressed: Set<String>
+) -> DossierSenses.SenseLine? {
+    for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
+    where !suppressed.contains(thread.lemma) {
+        let allWalks = Set(thread.appearances.map(\.walkUUID))
+
+        var coordinatesByWalk: [UUID: [DossierSenses.Coordinate]] = [:]
+        for appearance in thread.appearances {
+            guard let fix = input.fixes[appearance.recordingUUID],
+                  DossierSenses.qualifies(fix) else { continue }
+            coordinatesByWalk[appearance.walkUUID, default: []].append(fix.coordinate)
+        }
+        // GATE ON THE MEASURED SET, not `allWalks.count` — a theme in 10
+        // walks with only 1 usable fix must stay silent (clustering over
+        // fewer than minimumInvariantWalks points is not evidence of
+        // anything), but a theme in 5 walks with 3 usable fixes that
+        // cluster tightly may now speak. Do not reinstate
+        // `coordinatesByWalk.count == allWalks.count` as a silence gate —
+        // that regression is the whole point of this comment.
+        let measuredWalks = coordinatesByWalk.count
+        guard measuredWalks >= minimumInvariantWalks else { continue }
+
+        let coordinates = coordinatesByWalk.values.flatMap { $0 }
+        guard maxPairwiseSpread(coordinates) <= DossierSenses.placeClusterRadius else { continue }
+
+        // Two rendered variants, the same shape `fusedThemes` already sets
+        // for identical-vs-nested walk-sets. Full coverage keeps the
+        // original wording; partial coverage names both counts and never
+        // implies anything about the unmeasured walks — we do not know
+        // where they were, only that we cannot say.
+        guard measuredWalks < allWalks.count else {
+            return DossierSenses.SenseLine(
+                text: "'\(thread.displayTerm)' has been spoken in the same place "
+                    + "on all \(allWalks.count) walks it appears in.",
+                lemma: thread.lemma
+            )
+        }
+
+        return DossierSenses.SenseLine(
+            text: "'\(thread.displayTerm)' has been spoken in the same place on every walk "
+                + "where its location is known — \(measuredWalks) of the \(allWalks.count) it appears in.",
+            lemma: thread.lemma
+        )
+    }
+    return nil
+}
+```
+
+Rendered wordings, both pinned by `XCTAssertEqual`:
+
+- Full coverage: `'river' has been spoken in the same place on all 3 walks it appears in.`
+- Partial coverage: `'river' has been spoken in the same place on every walk where its location is known — 3 of the 4 it appears in.`
+
+Tests: `testPlaceFrameLock_sameCluster_fires` (full coverage, unchanged), `testPlaceFrameLock_oneWalkWithNoFixAtAll_rendersMeasuredCoverage` (partial coverage — the exact regression this task was warned about, now the desired behavior instead of silence), `testPlaceFrameLock_measuredWalksBelowMinimum_staysSilentDespiteManyAppearances` (a theme in 10 walks with only 2 measured stays silent — the floor is measured-count, not appearance-count). See `.superpowers/sdd/task-6-report.md` ("## Coverage relaxation") for the commit and full test run.
 
 ---
 
