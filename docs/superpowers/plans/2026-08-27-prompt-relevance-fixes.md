@@ -362,7 +362,7 @@ final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
         XCTAssertFalse(lines.contains(where: isFirstVersusLast))
     }
 
-    func testFirstVersusLast_missingPace_fallsBackToSubjectOnly() {
+    func testFirstVersusLast_missingPaceAndSameSubject_staysSilent() {
         let text = "the garden hedge grows beside the stone wall near the orchard gate"
         let lines = directives([
             recording(text, wpm: nil, minutesIn: 0),
