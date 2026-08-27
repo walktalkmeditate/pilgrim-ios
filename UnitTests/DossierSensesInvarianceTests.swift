@@ -163,4 +163,180 @@ final class DossierSensesInvarianceTests: XCTestCase {
         ])
         XCTAssertNil(DossierSensesInvariance.fusedThemes(input: input, suppressed: ["father"]))
     }
+
+    private func markerContext(
+        _ uuid: UUID, absolutist: Int, firstPerson: Int, sentiment: Double, words: Int = 200
+    ) -> TranscriptContext {
+        TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion,
+            recordingUUID: uuid, transcriptHash: "h", languageCode: "en",
+            wordCount: words, themes: [],
+            markers: MarkerPack(
+                wordCount: words, absolutistCount: absolutist, firstPersonCount: firstPerson,
+                insightCount: 2, causationCount: 2, discrepancyCount: 1,
+                futureCount: 3, pastCount: 3, sentiment: sentiment, modalCounts: [:]
+            )
+        )
+    }
+
+    private func steadyThread(_ lemma: String, recordings: [UUID], walks: [UUID]) -> WalkThread {
+        WalkThread(
+            lemma: lemma, displayTerm: lemma,
+            appearances: zip(recordings, walks).map { rec, walk in
+                ThreadAppearance(
+                    recordingUUID: rec, walkUUID: walk,
+                    date: DateFactory.makeDate(2024, 6, 1, 9, 0, 0),
+                    mentionCount: 3, salience: 0.5
+                )
+            }
+        )
+    }
+
+    func testUnmovedReturn_steadySalienceFlatMarkers_fires() {
+        let recs = [UUID(), UUID(), UUID()]
+        let input = DossierSenses.Input(
+            currentWalkUUID: UUID(),
+            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            totalAscent: 0, elevationSeries: [], photos: [], currentRecordings: [],
+            historicalContexts: [
+                markerContext(recs[0], absolutist: 10, firstPerson: 20, sentiment: -0.2),
+                markerContext(recs[1], absolutist: 10, firstPerson: 21, sentiment: -0.2),
+                markerContext(recs[2], absolutist: 11, firstPerson: 20, sentiment: -0.21)
+            ],
+            threads: [steadyThread("work", recordings: recs, walks: [UUID(), UUID(), UUID()])],
+            backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
+            fixes: [:], moon: nil
+        )
+        let line = DossierSensesInvariance.unmovedReturn(input: input, suppressed: [])
+        XCTAssertNotNil(line)
+        XCTAssertTrue(line!.text.contains("work"))
+        XCTAssertTrue(line!.text.contains("3 walks"))
+    }
+
+    func testUnmovedReturn_markersVary_staysSilent() {
+        let recs = [UUID(), UUID(), UUID()]
+        let input = DossierSenses.Input(
+            currentWalkUUID: UUID(),
+            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            totalAscent: 0, elevationSeries: [], photos: [], currentRecordings: [],
+            historicalContexts: [
+                markerContext(recs[0], absolutist: 2, firstPerson: 5, sentiment: -0.8),
+                markerContext(recs[1], absolutist: 20, firstPerson: 40, sentiment: 0.7),
+                markerContext(recs[2], absolutist: 11, firstPerson: 20, sentiment: 0.0)
+            ],
+            threads: [steadyThread("work", recordings: recs, walks: [UUID(), UUID(), UUID()])],
+            backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
+            fixes: [:], moon: nil
+        )
+        XCTAssertNil(DossierSensesInvariance.unmovedReturn(input: input, suppressed: []))
+    }
+
+    func testUnmovedReturn_belowDensityFloor_staysSilent() {
+        let recs = [UUID(), UUID(), UUID()]
+        let input = DossierSenses.Input(
+            currentWalkUUID: UUID(),
+            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            totalAscent: 0, elevationSeries: [], photos: [], currentRecordings: [],
+            historicalContexts: recs.map {
+                markerContext($0, absolutist: 1, firstPerson: 2, sentiment: -0.2, words: 40)
+            },
+            threads: [steadyThread("work", recordings: recs, walks: [UUID(), UUID(), UUID()])],
+            backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
+            fixes: [:], moon: nil
+        )
+        XCTAssertNil(DossierSensesInvariance.unmovedReturn(input: input, suppressed: []))
+    }
+
+    /// A thread can gather multiple recordings within the same walk (two
+    /// voice memos on one outing), so appearance count and distinct-walk
+    /// count diverge. The rendered line reports a WALK count — pin the
+    /// exact wording so a future edit can't silently report appearances
+    /// instead (the Task 3 lesson: an unpinned rendered claim shipped
+    /// false because only non-nil was asserted).
+    func testUnmovedReturn_reportsDistinctWalkCount_notAppearanceCount() {
+        let recs = [UUID(), UUID(), UUID(), UUID()]
+        let walkA = UUID(), walkB = UUID(), walkC = UUID()
+        let input = DossierSenses.Input(
+            currentWalkUUID: UUID(),
+            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            totalAscent: 0, elevationSeries: [], photos: [], currentRecordings: [],
+            historicalContexts: [
+                markerContext(recs[0], absolutist: 10, firstPerson: 20, sentiment: -0.2),
+                markerContext(recs[1], absolutist: 10, firstPerson: 21, sentiment: -0.2),
+                markerContext(recs[2], absolutist: 11, firstPerson: 20, sentiment: -0.21),
+                markerContext(recs[3], absolutist: 10, firstPerson: 20, sentiment: -0.2)
+            ],
+            // Four appearances (two recordings on walkA), three distinct walks.
+            threads: [steadyThread("work", recordings: recs, walks: [walkA, walkA, walkB, walkC])],
+            backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
+            fixes: [:], moon: nil
+        )
+        let line = DossierSensesInvariance.unmovedReturn(input: input, suppressed: [])
+        XCTAssertEqual(
+            line?.text,
+            "'work' has returned across 3 walks; it sounds the same each time."
+        )
+    }
+
+    /// `minimumInvariantWalks` is a walk count (see `fusedThemes`, which
+    /// gates on `Set(appearances.map(\.walkUUID)).count`, and
+    /// `ThreadsDossierFormatter.modalBaselineFloorWalks`, whose comment
+    /// spells out exactly this: "a walker who talks in three short bursts
+    /// on one walk isn't three 'prior' data points"). Three recordings that
+    /// clear the density floor but land on only two walks must not satisfy
+    /// the floor — three bursts on one walk is not three returns.
+    func testUnmovedReturn_threeRecordingsOnTwoWalks_staysSilent() {
+        let recs = [UUID(), UUID(), UUID()]
+        let walkA = UUID(), walkB = UUID()
+        let input = DossierSenses.Input(
+            currentWalkUUID: UUID(),
+            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            totalAscent: 0, elevationSeries: [], photos: [], currentRecordings: [],
+            historicalContexts: [
+                markerContext(recs[0], absolutist: 10, firstPerson: 20, sentiment: -0.2),
+                markerContext(recs[1], absolutist: 10, firstPerson: 21, sentiment: -0.2),
+                markerContext(recs[2], absolutist: 11, firstPerson: 20, sentiment: -0.21)
+            ],
+            // Three qualifying recordings, but only two distinct walks.
+            threads: [steadyThread("work", recordings: recs, walks: [walkA, walkA, walkB])],
+            backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
+            fixes: [:], moon: nil
+        )
+        XCTAssertNil(DossierSensesInvariance.unmovedReturn(input: input, suppressed: []))
+    }
+
+    /// A walk whose only recording never clears the density floor
+    /// contributes no evidence toward "sounds the same" and must not
+    /// inflate the reported walk count — the count must match exactly the
+    /// walks the flatness claim can vouch for.
+    func testUnmovedReturn_unevidencedWalk_excludedFromReportedCount() {
+        let recs = [UUID(), UUID(), UUID(), UUID()]
+        let walkA = UUID(), walkB = UUID(), walkC = UUID(), walkD = UUID()
+        let input = DossierSenses.Input(
+            currentWalkUUID: UUID(),
+            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            totalAscent: 0, elevationSeries: [], photos: [], currentRecordings: [],
+            historicalContexts: [
+                markerContext(recs[0], absolutist: 10, firstPerson: 20, sentiment: -0.2),
+                markerContext(recs[1], absolutist: 10, firstPerson: 21, sentiment: -0.2),
+                markerContext(recs[2], absolutist: 11, firstPerson: 20, sentiment: -0.21),
+                // walkD's only recording is too short to be evidence of anything.
+                markerContext(recs[3], absolutist: 1, firstPerson: 1, sentiment: 0.9, words: 40)
+            ],
+            threads: [steadyThread("work", recordings: recs, walks: [walkA, walkB, walkC, walkD])],
+            backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
+            fixes: [:], moon: nil
+        )
+        let line = DossierSensesInvariance.unmovedReturn(input: input, suppressed: [])
+        XCTAssertEqual(
+            line?.text,
+            "'work' has returned across 3 walks; it sounds the same each time."
+        )
+    }
 }

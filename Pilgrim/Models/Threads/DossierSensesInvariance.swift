@@ -70,7 +70,8 @@ extension DossierSenses {
         switch invariant {
         case .fusedThemes:
             return DossierSensesInvariance.fusedThemes(input: input, suppressed: suppressed)
-        case .unmovedReturn: return nil
+        case .unmovedReturn:
+            return DossierSensesInvariance.unmovedReturn(input: input, suppressed: suppressed)
         case .frameConstancy: return nil
         case .placeFrameLock: return nil
         case .unarrivedIntention: return nil
@@ -141,5 +142,71 @@ extension DossierSensesInvariance {
                 + "'\(best.superset.displayTerm)' — which walked \(best.outer) in all.",
             lemma: best.subset.lemma
         )
+    }
+}
+
+extension DossierSensesInvariance {
+
+    /// A theme that recurs with steady salience AND a flat marker profile:
+    /// it has come back, and every time it sounds the same. That sameness
+    /// across returns is the invariant — the thing that did not budge while
+    /// the walker kept working at it.
+    ///
+    /// Appearances below `densityFloorWords` are EXCLUDED, never counted as
+    /// flat: a short recording is not evidence of sameness, it is absence
+    /// of evidence. At least `minimumInvariantWalks` must clear the floor —
+    /// counted by distinct WALK, not by recording, mirroring `fusedThemes`
+    /// and `ThreadsDossierFormatter.modalBaselineFloorWalks`: a walker who
+    /// talks about the same thing three times on one walk isn't three
+    /// returns, and the reported walk count must match the walks the
+    /// flatness claim actually has evidence for — never a bare appearance
+    /// count, which would let an unevidenced short recording inflate the
+    /// "each time" the line claims to speak for.
+    static func unmovedReturn(
+        input: DossierSenses.Input, suppressed: Set<String>
+    ) -> DossierSenses.SenseLine? {
+        let byRecording = Dictionary(
+            input.historicalContexts.map { ($0.recordingUUID, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
+        where !suppressed.contains(thread.lemma) {
+            guard ThreadStore.salienceDirection(of: thread) == .steady else { continue }
+
+            let qualifying = thread.appearances.compactMap { appearance -> (walkUUID: UUID, markers: MarkerPack)? in
+                guard let markers = byRecording[appearance.recordingUUID]?.markers,
+                      markers.wordCount >= ThreadsDossierFormatter.densityFloorWords else { return nil }
+                return (appearance.walkUUID, markers)
+            }
+            let walks = Set(qualifying.map(\.walkUUID))
+            guard walks.count >= minimumInvariantWalks else { continue }
+
+            let packs = qualifying.map(\.markers)
+            let absolutist = packs.map { Double($0.absolutistCount) / Double($0.wordCount) }
+            let firstPerson = packs.map { Double($0.firstPersonCount) / Double($0.wordCount) }
+            let sentiment = packs.compactMap { $0.sentiment }.map { $0 + sentimentShift }
+            guard sentiment.count == packs.count else { continue }
+
+            guard isFlat(absolutist), isFlat(firstPerson), isFlat(sentiment) else { continue }
+
+            return DossierSenses.SenseLine(
+                text: "'\(thread.displayTerm)' has returned across \(walks.count) walks; "
+                    + "it sounds the same each time.",
+                lemma: thread.lemma
+            )
+        }
+        return nil
+    }
+
+    /// Coefficient of variation at or under the flatness ceiling. A zero or
+    /// negative mean cannot be judged this way, so it is treated as not
+    /// flat rather than dividing by it.
+    static func isFlat(_ values: [Double]) -> Bool {
+        guard values.count >= 2 else { return false }
+        let mean = values.reduce(0, +) / Double(values.count)
+        guard mean > 0 else { return false }
+        let variance = values.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(values.count)
+        return (variance.squareRoot() / mean) <= markerFlatnessCeiling
     }
 }
