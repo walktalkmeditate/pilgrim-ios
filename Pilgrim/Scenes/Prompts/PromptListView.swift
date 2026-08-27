@@ -23,10 +23,19 @@ struct PromptListView: View {
         List {
             Section {
                 ForEach(prompts) { prompt in
-                    Button { selectedPrompt = prompt } label: {
-                        PromptStyleRow(prompt: prompt)
+                    let waiting = prompt.style.flatMap { style in
+                        style.isAvailable(unchangedBlockPresent: activityContext?.unchangedBlock != nil)
+                            ? nil : style.waitingCopy
                     }
-                    .listRowBackground(Color.parchment)
+                    if let waiting {
+                        PromptStyleRow(prompt: prompt, waitingCopy: waiting)
+                            .listRowBackground(Color.parchment)
+                    } else {
+                        Button { selectedPrompt = prompt } label: {
+                            PromptStyleRow(prompt: prompt)
+                        }
+                        .listRowBackground(Color.parchment)
+                    }
                 }
             }
 
@@ -355,6 +364,13 @@ struct PromptListView: View {
 
 struct PromptStyleRow: View {
     let prompt: GeneratedPrompt
+    /// Non-nil while the style is waiting on its gate (Oblique, before it
+    /// has anything honest to say). Dims the row, swaps in the waiting
+    /// copy, and hides the chevron — the caller also skips wrapping this
+    /// row in a `Button` so it stays non-tappable.
+    var waitingCopy: String?
+
+    private var isWaiting: Bool { waitingCopy != nil }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -367,7 +383,7 @@ struct PromptStyleRow: View {
                 Text(prompt.title)
                     .font(Constants.Typography.heading)
                     .foregroundColor(.ink)
-                Text(prompt.subtitle)
+                Text(waitingCopy ?? prompt.subtitle)
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                     .lineLimit(2)
@@ -375,10 +391,13 @@ struct PromptStyleRow: View {
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.fog)
+            if !isWaiting {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.fog)
+            }
         }
         .padding(.vertical, Constants.UI.Padding.small)
+        .opacity(isWaiting ? 0.45 : 1)
     }
 }

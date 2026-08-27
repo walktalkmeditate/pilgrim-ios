@@ -11,9 +11,10 @@ import Foundation
 struct PromptContextPolicy {
     let includesMarkerLines: Bool
     let includesThreadAnalysis: Bool
-    /// Reserved for the Oblique voice (a later task): whether the
-    /// `Unchanged:` invariance block is hoisted to the top of the prompt.
-    /// False for every voice this task introduces.
+    /// Whether the `Unchanged:` invariance block is hoisted to the top of
+    /// the prompt. True only for `ObliqueVoice`, which is built to read it;
+    /// every other voice — including `CustomPromptStyle` via the protocol
+    /// default — leaves it false.
     let hoistsUnchangedBlock: Bool
 
     static let full = PromptContextPolicy(

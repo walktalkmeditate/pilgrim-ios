@@ -2028,28 +2028,28 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ## Task 11: The picker gate — "Still listening"
 
-**Why:** Oblique needs ≥5 walks with transcripts *and* speech on the current walk. Below either, it would be inventing. It shows in the list from day one, unselectable, so the walker learns it exists.
+**Why:** `ObliqueVoice.preamble` and `.instruction` reference the invariants named under `Unchanged:` **unconditionally** — they do not branch on `hasSpeech`. `unchangedBlock` is nil whenever fewer than `DossierSensesInvariance.minimumInvariantWalks` (3) qualifying walks exist for any signal, which can be true even on a speech-bearing walk with deep history. A gate built from `walksWithTranscripts >= 5 && currentWalkHasSpeech` (the draft below) does not track that — it would let the picker offer Oblique on a walk where `unchangedBlock` is still nil, handing the model an instruction to read a block that is not in the prompt. **Corrected during implementation:** the gate must be `context.unchangedBlock != nil` directly. That single condition subsumes thin history, a silent current walk, and a history-deep walk where nothing has held still yet — all three already leave `unchangedBlock` nil, so checking it is the only gate that can't lie. `minimumWalksForOblique` and the `walksWithTranscripts` parameter below are dead once the block-presence check is used, so they were dropped rather than kept unread. It shows in the list from day one, unselectable, so the walker learns it exists.
 
 **Files:**
 - Modify: `Pilgrim/Models/Prompt/PromptStyle.swift` (availability helper)
 - Modify: `Pilgrim/Scenes/Prompts/PromptListView.swift`
 - Modify: `UnitTests/ObliqueVoiceTests.swift`
+- Modify: `Pilgrim/Models/Prompt/PromptContextPolicy.swift` (stale doc comment fix, carried from Task 10 review)
 
-**Interfaces:**
-- Produces: `PromptStyle.isAvailable(walksWithTranscripts:currentWalkHasSpeech:) -> Bool`, `PromptStyle.waitingCopy: String?`, `PromptStyle.minimumWalksForOblique`
+**Interfaces (as shipped):**
+- Produces: `PromptStyle.isAvailable(unchangedBlockPresent:) -> Bool`, `PromptStyle.waitingCopy: String?`
 
 - [ ] **Step 1: Write the failing tests**
 
 ```swift
-    func testAvailability_obliqueNeedsHistoryAndSpeech() {
-        XCTAssertFalse(PromptStyle.oblique.isAvailable(walksWithTranscripts: 4, currentWalkHasSpeech: true))
-        XCTAssertFalse(PromptStyle.oblique.isAvailable(walksWithTranscripts: 9, currentWalkHasSpeech: false))
-        XCTAssertTrue(PromptStyle.oblique.isAvailable(walksWithTranscripts: 5, currentWalkHasSpeech: true))
+    func testAvailability_obliqueGatedOnUnchangedBlockPresence() {
+        XCTAssertFalse(PromptStyle.oblique.isAvailable(unchangedBlockPresent: false))
+        XCTAssertTrue(PromptStyle.oblique.isAvailable(unchangedBlockPresent: true))
     }
 
     func testAvailability_otherStylesAlwaysAvailable() {
         for style in PromptStyle.allCases where style != .oblique {
-            XCTAssertTrue(style.isAvailable(walksWithTranscripts: 0, currentWalkHasSpeech: false))
+            XCTAssertTrue(style.isAvailable(unchangedBlockPresent: false))
         }
     }
 
@@ -2057,11 +2057,19 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
         XCTAssertEqual(PromptStyle.oblique.waitingCopy, "Still listening. A few more walks with your voice.")
         XCTAssertNil(PromptStyle.reflective.waitingCopy)
     }
+
+    func testPreambleAndInstruction_hasSpeechFalseMatchesHasSpeechTrue() {
+        let voice = ObliqueVoice()
+        XCTAssertEqual(voice.preamble(hasSpeech: false), voice.preamble(hasSpeech: true))
+        XCTAssertEqual(voice.instruction(hasSpeech: false), voice.instruction(hasSpeech: true))
+    }
 ```
+
+The fourth test is the Task 10 review Minor: the symmetry between `ObliqueVoice`'s `hasSpeech: false` and `hasSpeech: true` text is deliberate (the gate means Oblique is never assembled without speech) but was unguarded before this task.
 
 - [ ] **Step 2: Run to verify it fails**
 
-Expected: COMPILE FAILURE — no `isAvailable`.
+Expected: COMPILE FAILURE — no `isAvailable`, no `waitingCopy`.
 
 - [ ] **Step 3: Implement**
 
@@ -2070,32 +2078,36 @@ In `PromptStyle.swift`:
 ```swift
 extension PromptStyle {
 
-    static let minimumWalksForOblique = 5
-
-    /// Oblique needs both a deep enough record AND speech on this walk —
-    /// `ThreadsDossierFormatter.dossier` returns nil when the current walk
-    /// has no recordings, so a silent walk yields no Unchanged block to
-    /// read. Every other style is always available.
-    func isAvailable(walksWithTranscripts: Int, currentWalkHasSpeech: Bool) -> Bool {
+    /// Oblique is gated on whether the `Unchanged:` block actually exists
+    /// for this walk, not on a walk-count threshold — `unchangedBlock` is
+    /// already nil whenever the current walk is silent, history is thin,
+    /// `UserPreferences.threadsAfterWalks` is off, or history is deep but
+    /// nothing has held still yet. Checking the block directly is the only
+    /// gate that can't tell `ObliqueVoice` to read a block that isn't in
+    /// the prompt. Every other style is always available.
+    func isAvailable(unchangedBlockPresent: Bool) -> Bool {
         guard self == .oblique else { return true }
-        return walksWithTranscripts >= Self.minimumWalksForOblique && currentWalkHasSpeech
+        return unchangedBlockPresent
     }
 
-    /// Shown dimmed in the picker while unavailable. True for either failing
-    /// gate — thin history, or no voice on this walk — so one string covers
-    /// both without lying.
+    /// Shown dimmed in the picker while unavailable. True for every case
+    /// that fails the gate above, so one string covers all of them without
+    /// lying. It reads as the voice needing to hear more, not as a level to
+    /// grind.
     var waitingCopy: String? {
         self == .oblique ? "Still listening. A few more walks with your voice." : nil
     }
 }
 ```
 
-In `PromptListView.swift`, `PromptStyleRow` (line ~352) takes a `GeneratedPrompt` and renders `prompt.icon` / `prompt.title` / `prompt.subtitle`. Add a waiting state to it:
+No `minimumWalksForOblique` constant — nothing reads a walk count once the gate is the block's presence.
+
+In `PromptListView.swift`, `PromptStyleRow` (line ~356) takes a `GeneratedPrompt` and renders `prompt.icon` / `prompt.title` / `prompt.subtitle`. Add a waiting state to it:
 
 ```swift
 struct PromptStyleRow: View {
     let prompt: GeneratedPrompt
-    var waitingCopy: String? = nil
+    var waitingCopy: String?
 
     private var isWaiting: Bool { waitingCopy != nil }
 
@@ -2132,15 +2144,13 @@ struct PromptStyleRow: View {
 
 Keep `VStack(alignment: .leading)` — rows here vary in width and centring them misaligns the column.
 
-In the `ForEach(prompts)` body, suppress the button when the style is waiting:
+In the `ForEach(prompts)` body, suppress the button when the style is waiting. The gate reads `activityContext?.unchangedBlock` — the same `@State var activityContext: ActivityContext?` the view already assigns in `generatePrompts()` right before `prompts`, so no new fetch or derivation is needed:
 
 ```swift
                 ForEach(prompts) { prompt in
                     let waiting = prompt.style.flatMap { style in
-                        style.isAvailable(
-                            walksWithTranscripts: walksWithTranscripts,
-                            currentWalkHasSpeech: context.hasSpeech
-                        ) ? nil : style.waitingCopy
+                        style.isAvailable(unchangedBlockPresent: activityContext?.unchangedBlock != nil)
+                            ? nil : style.waitingCopy
                     }
                     if let waiting {
                         PromptStyleRow(prompt: prompt, waitingCopy: waiting)
@@ -2154,9 +2164,11 @@ In the `ForEach(prompts)` body, suppress the button when the style is waiting:
                 }
 ```
 
-`walksWithTranscripts` is a new `Int` the view needs. Source it the same way the view already obtains its `ActivityContext`; if that count is not already available, add it to the derivations `PromptGenerator.resolvedDerivations` returns rather than issuing a fetch from the view. Custom prompts have `style == nil` and so are never gated.
+Custom prompts have `style == nil`, so `prompt.style.flatMap` is nil for them and they are never gated. No `walksWithTranscripts` derivation was added to `PromptGenerator.resolvedDerivations` — the block-presence check made it unnecessary.
 
 Never use `.system()` fonts — `Constants.Typography.*` only.
+
+Also update `PromptContextPolicy.hoistsUnchangedBlock`'s doc comment, which still said "Reserved for the Oblique voice (a later task)... False for every voice this task introduces" — stale now that Oblique ships and sets it true.
 
 - [ ] **Step 4: Run to verify it passes**
 
@@ -2169,17 +2181,21 @@ Build and run. Confirm: with a fresh profile Oblique appears dimmed with the wai
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Pilgrim/Models/Prompt/PromptStyle.swift Pilgrim/Scenes/Prompts/PromptListView.swift UnitTests/ObliqueVoiceTests.swift
+git add Pilgrim/Models/Prompt/PromptStyle.swift Pilgrim/Scenes/Prompts/PromptListView.swift Pilgrim/Models/Prompt/PromptContextPolicy.swift UnitTests/ObliqueVoiceTests.swift
 git commit -m "feat(prompts): the Oblique gate — still listening
 
-Two gates, because both are real: five walks of record, and a voice on this
-walk. The dossier returns nil when the current walk has no recordings, so a
-silent walk has no Unchanged block to read.
+The block, not a walk count: unchangedBlock is nil whenever the current
+walk is silent, history is thin, or history is deep but nothing has held
+still yet. A gate built from a walk-count threshold plus speech could still
+pass while the block stayed nil, handing ObliqueVoice's unconditional
+'invariants named under Unchanged' reference to a prompt that never
+printed one — checking the block directly is the only gate that can't do
+that.
 
-One string covers both failures without lying, and it frames the voice as
-needing to hear more rather than as a level to grind. Every other gate in
-this app is silent; a style that vanished from a picker would be stranger
-than one that says what it is waiting for.
+One string covers every failing case without lying, and it frames the
+voice as needing to hear more rather than as a level to grind. Every other
+gate in this app is silent; a style that vanished from a picker would be
+stranger than one that says what it is waiting for.
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```

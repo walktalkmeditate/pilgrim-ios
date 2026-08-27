@@ -100,19 +100,25 @@ This is the most confronting line the app could produce — it says, in effect, 
 
 ### Availability
 
-Oblique requires **both**:
-- ≥5 walks with transcribed recordings (history depth), and
-- transcribed speech on the **current** walk
+**Corrected at implementation, 2026-08-27** — see below for what shipped and why this section's first draft was unsafe.
 
-The second gate follows from the architecture: `ThreadsDossierFormatter.dossier` returns `nil` when `currentRecordings.isEmpty`, so a silent walk produces no dossier and therefore no `Unchanged:` block. History-only Oblique on a silent walk is a **deferred open question** (§Deferred), not a v1 feature.
+Oblique's gate is a single condition: **`context.unchangedBlock != nil`.**
 
-In the picker Oblique is **visible but unselectable** until both gates pass, dimmed, with the copy:
+`ObliqueVoice.preamble` and `.instruction` both reference *"the invariants named under Unchanged"* **unconditionally** — neither branches on `hasSpeech`. A gate built from walk-count-plus-speech (the draft this section originally specified) cannot guarantee the block is actually present: `unchangedBlock` is nil whenever fewer than `DossierSensesInvariance.minimumInvariantWalks` (3) qualifying walks exist for *any* signal, which can be true even on a speech-bearing walk with five-plus walks of history. Shipping that gate would let the picker offer Oblique on a walk where the model is instructed to read a block that was never printed — precisely the hallucination risk the voice's response constraints exist to prevent.
+
+Checking `unchangedBlock` presence directly subsumes every case a two-part gate was trying to enumerate:
+- thin history (fewer than `minimumInvariantWalks` qualifying walks) → nil
+- a silent current walk (`ThreadsDossierBuilder.buildResult` returns `(nil, nil, nil, nil)` when `recordings.isEmpty`) → nil
+- `UserPreferences.threadsAfterWalks` off → nil
+- deep history where nothing has held still yet (no signal cleared its threshold) → nil
+
+In the picker Oblique is **visible but unselectable** until the block exists, dimmed, with the copy:
 
 > **Oblique** — *Still listening. A few more walks with your voice.*
 
-"Still listening" is true for either failing gate — insufficient history, or no voice on this walk — so one string covers both without lying. It reads as the voice needing to hear more, not as a level to grind, which keeps it clear of the streak-pressure mechanics the app deliberately refuses.
+"Still listening" is true for every one of the cases above — insufficient history, no voice on this walk, or history that simply hasn't produced an invariant — so one string covers all of them without lying. It reads as the voice needing to hear more, not as a level to grind, which keeps it clear of the streak-pressure mechanics the app deliberately refuses.
 
-If `hasInsight` is false (no invariant fires despite gates passing), Oblique remains selectable and the assembler omits the `Unchanged:` block; the voice then reads the walk without invariance material. This is the one case where Oblique degrades rather than hides, because the gates already promised availability.
+There is no "gates pass but no invariant fires, so Oblique degrades" case in the shipped design — that scenario **is** `unchangedBlock == nil`, and the gate above already covers it. The `PromptStyle.isAvailable(unchangedBlockPresent:)` / `PromptStyle.waitingCopy` API and the `walksWithTranscripts`/`minimumWalksForOblique` counting this section originally proposed were dropped as dead weight once the block-presence check replaced them.
 
 ### Voice text
 
@@ -277,7 +283,7 @@ extension PromptVoice {
 
 **Unit — `DossierSensesInvariance`.** Pure-module tests mirroring `DossierSensesTracks` coverage: one fires/does-not-fire pair per signal, threshold boundary cases, the density-floor exclusion in signal 2, cap-3 truncation, priority ordering, and lemma suppression across signals (a theme named by a higher-ranked invariant never reappears, matching the `used` set belt in `DossierSenses.lines`).
 
-**Unit — availability.** Both gates independently: history-deep + silent walk → unavailable; history-shallow + speech → unavailable; both pass → available; both pass but no invariant fires → available with no block.
+**Unit — availability.** `PromptStyle.isAvailable(unchangedBlockPresent:)` — `oblique` false when absent, true when present; every other style true regardless. `waitingCopy` non-nil only for `oblique`. A regression pins `ObliqueVoice`'s `hasSpeech: false` text as identical to `hasSpeech: true`, since the gate means the false branch is unreachable in practice but must not silently drift from the reachable one.
 
 **Unit — dark flag.** Signal 5 engine tested directly; `pendingFieldGate = true` verified to suppress it from assembled output.
 

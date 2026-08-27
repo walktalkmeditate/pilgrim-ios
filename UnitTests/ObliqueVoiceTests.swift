@@ -42,4 +42,40 @@ final class ObliqueVoiceTests: XCTestCase {
         XCTAssertNotNil(transcriptionIndex)
         XCTAssertLessThan(unchangedIndex!, transcriptionIndex!)
     }
+
+    // MARK: - Picker gate
+
+    /// The gate is the presence of the `Unchanged:` block itself, not a
+    /// walk-count threshold — `unchangedBlock` is already nil whenever the
+    /// current walk is silent, history is thin, or history is deep but
+    /// nothing has held still yet (`DossierSensesInvariance.minimumInvariantWalks`
+    /// qualifying walks are required before any signal can fire). Checking
+    /// the block directly is the only gate that cannot tell `ObliqueVoice`
+    /// to read a block that is not in the prompt.
+    func testAvailability_obliqueGatedOnUnchangedBlockPresence() {
+        XCTAssertFalse(PromptStyle.oblique.isAvailable(unchangedBlockPresent: false))
+        XCTAssertTrue(PromptStyle.oblique.isAvailable(unchangedBlockPresent: true))
+    }
+
+    func testAvailability_otherStylesAlwaysAvailable() {
+        for style in PromptStyle.allCases where style != .oblique {
+            XCTAssertTrue(style.isAvailable(unchangedBlockPresent: false))
+        }
+    }
+
+    func testWaitingCopy_onlyObliqueHasIt() {
+        XCTAssertEqual(PromptStyle.oblique.waitingCopy, "Still listening. A few more walks with your voice.")
+        XCTAssertNil(PromptStyle.reflective.waitingCopy)
+    }
+
+    /// Deliberate symmetry: the gate means Oblique is never assembled with
+    /// `hasSpeech: false` (a silent current walk yields no `unchangedBlock`,
+    /// which is the gate). The `hasSpeech: false` branch exists only for
+    /// protocol conformance and must read identically to the reachable
+    /// branch — pinned here so the two can never quietly drift apart.
+    func testPreambleAndInstruction_hasSpeechFalseMatchesHasSpeechTrue() {
+        let voice = ObliqueVoice()
+        XCTAssertEqual(voice.preamble(hasSpeech: false), voice.preamble(hasSpeech: true))
+        XCTAssertEqual(voice.instruction(hasSpeech: false), voice.instruction(hasSpeech: true))
+    }
 }
