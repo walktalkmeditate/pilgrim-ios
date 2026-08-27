@@ -11,7 +11,7 @@ final class PromptGeneratorTests: XCTestCase {
             distance: 2000,
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
         ))
-        XCTAssertEqual(prompts.count, 6)
+        XCTAssertEqual(prompts.count, 7)
         let styles = Set(prompts.compactMap { $0.style })
         XCTAssertEqual(styles.count, PromptStyle.allCases.count)
     }

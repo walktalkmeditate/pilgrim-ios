@@ -7,6 +7,7 @@ enum PromptStyle: String, CaseIterable, Identifiable {
     case gratitude
     case philosophical
     case journaling
+    case oblique
 
     var id: String { rawValue }
 
@@ -18,6 +19,7 @@ enum PromptStyle: String, CaseIterable, Identifiable {
         case .gratitude: return "Gratitude"
         case .philosophical: return "Philosophical"
         case .journaling: return "Journaling"
+        case .oblique: return "Oblique"
         }
     }
 
@@ -29,6 +31,7 @@ enum PromptStyle: String, CaseIterable, Identifiable {
         case .gratitude: return "heart.fill"
         case .philosophical: return "books.vertical.fill"
         case .journaling: return "pencil.and.scribble"
+        case .oblique: return "circle.dotted"
         }
     }
 
@@ -40,6 +43,7 @@ enum PromptStyle: String, CaseIterable, Identifiable {
         case .gratitude: return "Find thanksgiving in observations"
         case .philosophical: return "Explore deeper meaning and wisdom"
         case .journaling: return "Structure raw thoughts into a journal entry"
+        case .oblique: return "What has not moved"
         }
     }
 }

@@ -160,6 +160,40 @@ struct JournalingVoice: PromptVoice {
     }
 }
 
+/// Reads what has NOT moved across the walker's history and names the frame
+/// they have been looking through rather than at.
+///
+/// The governing constraint is Weber et al. 1981: subjects stuck on the
+/// nine-dot problem were told "think outside the box" and it helped nobody.
+/// A contentless instruction to reframe does not transfer. A specific,
+/// structurally-grounded alternative reading does — which is why constraint
+/// 3 bans the former and requires the latter.
+struct ObliqueVoice: PromptVoice {
+
+    var contextPolicy: PromptContextPolicy {
+        PromptContextPolicy(
+            includesMarkerLines: true, includesThreadAnalysis: true, hoistsUnchangedBlock: true
+        )
+    }
+
+    func preamble(hasSpeech: Bool) -> String {
+        "This walker keeps a record. Across many walks they have returned, without planning to, to the same few things. What follows includes what has not changed across those returns — patterns in their own language that they cannot see, because these are the terms they think in rather than the terms they think about."
+    }
+
+    func instruction(hasSpeech: Bool) -> String {
+        "Work from the invariants named under Unchanged. Name what the walker has been treating as fixed — the assumption they have been looking through rather than at — and offer one specific alternative reading of that structure. Be concrete about the shape, not about what it means for their life."
+    }
+
+    func responseConstraints(hasSpeech: Bool) -> [String] {
+        [
+            "Build only on the invariants named under Unchanged — never assert a pattern that block does not show.",
+            "Name one thing. An insight that can be carried is single, not a list.",
+            "Offer a specific alternative reading of the structure; never a contentless instruction to reframe. Do not write \"perhaps consider\", \"try seeing\", \"from another perspective\", or \"outside the box\".",
+            "End on the observation. Do not resolve it and do not prescribe an action — the walker does that part."
+        ]
+    }
+}
+
 extension PromptStyle {
     var voice: PromptVoice {
         switch self {
@@ -169,6 +203,7 @@ extension PromptStyle {
         case .gratitude: return GratitudeVoice()
         case .philosophical: return PhilosophicalVoice()
         case .journaling: return JournalingVoice()
+        case .oblique: return ObliqueVoice()
         }
     }
 }

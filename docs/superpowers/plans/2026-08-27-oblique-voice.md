@@ -1887,7 +1887,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Interfaces:**
 - Produces: `PromptStyle.oblique`, `struct ObliqueVoice: PromptVoice`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `UnitTests/ObliqueVoiceTests.swift`:
 
@@ -1939,11 +1939,11 @@ final class ObliqueVoiceTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
-Expected: COMPILE FAILURE — no `.oblique`, no `ObliqueVoice`.
+Expected: COMPILE FAILURE — no `.oblique`, no `ObliqueVoice`. Confirmed: `Type 'PromptStyle' has no member 'oblique'` / `Cannot find 'ObliqueVoice' in scope` (3 + 5 occurrences).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `PromptStyle.swift`, add `case oblique` to the enum and a branch to each of `title`, `icon`, and `description`:
 
@@ -1996,15 +1996,17 @@ struct ObliqueVoice: PromptVoice {
 
 Both `hasSpeech` branches return the same text: the availability gate in Task 11 means Oblique is never assembled without speech, and dead placeholder prose would be worse than an honest duplicate.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
-Expected: all PASS.
+Expected: all PASS. Confirmed: 5/5 `ObliqueVoiceTests` green.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Any test asserting `PromptStyle.allCases.count == 6` must become `7`. Any test iterating all styles will now include Oblique — confirm those still pass rather than weakening them.
 
-- [ ] **Step 6: Commit**
+Shipped exactly as anticipated: `PromptGeneratorTests.testGenerateAll_returnsOnePerStyle` was the one test hardcoding `6` and was updated to `7` (the `styles.count` line already read `PromptStyle.allCases.count` dynamically, so it needed no change). No other switch/count in the codebase pattern-matches `PromptStyle` cases individually or hardcodes a style total. Full suite: 1489 tests, 0 failures (baseline 1484 + 5 new).
+
+- [x] **Step 6: Commit**
 
 ```bash
 git add Pilgrim/Models/Prompt/ UnitTests/ObliqueVoiceTests.swift
