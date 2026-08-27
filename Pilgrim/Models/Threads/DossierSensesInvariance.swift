@@ -90,6 +90,14 @@ extension DossierSensesInvariance {
     /// reporting it would be the Goodman error (everything resembles
     /// everything if you pick the properties afterwards).
     ///
+    /// Identical and strictly-nested walk-sets are rendered differently:
+    /// "never apart" is a true, symmetric claim only when the sets are
+    /// equal. When one theme's walks are a strict subset of the other's,
+    /// the superset theme has walks the subset theme took no part in, so
+    /// the claim must be anchored — and worded — on the subset theme alone.
+    /// That is also why `lemma` is always the subset theme's: `best.subset`
+    /// on a strict nest, either theme when the sets are equal.
+    ///
     /// Deterministic: threads arrive lemma-sorted from `ThreadStore.build`,
     /// and only a STRICTLY larger shared-walk count replaces the best pair.
     static func fusedThemes(
@@ -102,25 +110,36 @@ extension DossierSensesInvariance {
 
         guard candidates.count >= 2 else { return nil }
 
-        var best: (a: WalkThread, b: WalkThread, shared: Int, outer: Int)?
+        var best: (subset: WalkThread, superset: WalkThread, shared: Int, outer: Int)?
         for i in candidates.indices {
             for j in candidates.indices where j > i {
                 let (first, second) = (candidates[i], candidates[j])
-                let isNested = first.walks.isSubset(of: second.walks)
-                    || second.walks.isSubset(of: first.walks)
-                guard isNested else { continue }
+                let firstIsSubset = first.walks.isSubset(of: second.walks)
+                let secondIsSubset = second.walks.isSubset(of: first.walks)
+                guard firstIsSubset || secondIsSubset else { continue }
                 let shared = first.walks.intersection(second.walks).count
                 let outer = max(first.walks.count, second.walks.count)
                 guard best == nil || shared > best!.shared else { continue }
-                best = (first.thread, second.thread, shared, outer)
+                best = firstIsSubset
+                    ? (first.thread, second.thread, shared, outer)
+                    : (second.thread, first.thread, shared, outer)
             }
         }
 
         guard let best else { return nil }
+
+        guard best.shared < best.outer else {
+            return DossierSenses.SenseLine(
+                text: "'\(best.subset.displayTerm)' and '\(best.superset.displayTerm)' have appeared in "
+                    + "\(best.shared) of \(best.outer) walks together, never apart.",
+                lemma: best.subset.lemma
+            )
+        }
+
         return DossierSenses.SenseLine(
-            text: "'\(best.a.displayTerm)' and '\(best.b.displayTerm)' have appeared in "
-                + "\(best.shared) of \(best.outer) walks together, never apart.",
-            lemma: best.a.lemma
+            text: "'\(best.subset.displayTerm)' has appeared in \(best.shared) walks, always alongside "
+                + "'\(best.superset.displayTerm)' — which walked \(best.outer) in all.",
+            lemma: best.subset.lemma
         )
     }
 }

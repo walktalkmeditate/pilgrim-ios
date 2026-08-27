@@ -104,19 +104,37 @@ final class DossierSensesInvarianceTests: XCTestCase {
             thread("money", walks: walks)
         ])
         let line = DossierSensesInvariance.fusedThemes(input: input, suppressed: [])
-        XCTAssertNotNil(line)
-        XCTAssertTrue(line!.text.contains("father"))
-        XCTAssertTrue(line!.text.contains("money"))
-        XCTAssertTrue(line!.text.contains("3 of 3"))
+        XCTAssertEqual(
+            line?.text,
+            "'father' and 'money' have appeared in 3 of 3 walks together, never apart."
+        )
+        XCTAssertEqual(line?.lemma, "father")
     }
 
     func testFusedThemes_nestedWalkSet_fires() {
-        let walks = [UUID(), UUID(), UUID(), UUID()]
+        let subsetWalks = [UUID(), UUID(), UUID()]
+        let supersetWalks = subsetWalks + [UUID(), UUID()]
         let input = inputWith(threads: [
-            thread("father", walks: Array(walks.prefix(3))),
-            thread("money", walks: walks)
+            thread("father", walks: subsetWalks),
+            thread("money", walks: supersetWalks)
         ])
-        XCTAssertNotNil(DossierSensesInvariance.fusedThemes(input: input, suppressed: []))
+        let line = DossierSensesInvariance.fusedThemes(input: input, suppressed: [])
+        XCTAssertEqual(
+            line?.text,
+            "'father' has appeared in 3 walks, always alongside 'money' — which walked 5 in all."
+        )
+        XCTAssertEqual(line?.lemma, "father")
+    }
+
+    func testFusedThemes_nestedWalkSet_doesNotClaimSymmetricNeverApart() {
+        let subsetWalks = [UUID(), UUID(), UUID()]
+        let supersetWalks = subsetWalks + [UUID(), UUID()]
+        let input = inputWith(threads: [
+            thread("father", walks: subsetWalks),
+            thread("money", walks: supersetWalks)
+        ])
+        let line = DossierSensesInvariance.fusedThemes(input: input, suppressed: [])
+        XCTAssertFalse(line?.text.contains("never apart") ?? true)
     }
 
     func testFusedThemes_belowMinimumWalks_staysSilent() {
