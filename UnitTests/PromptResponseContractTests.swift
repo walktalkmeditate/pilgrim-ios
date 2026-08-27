@@ -87,11 +87,28 @@ final class PromptResponseContractTests: XCTestCase {
         let contract = PromptAssembler.responseContract(
             voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: true
         )
-        XCTAssertTrue(contract.contains("absolutist density"))
-        XCTAssertTrue(contract.contains("first-person density"))
+        XCTAssertTrue(contract.contains("absolutist-word share"))
+        XCTAssertTrue(contract.contains("self-focus"))
         XCTAssertTrue(contract.contains("modal lean"))
         XCTAssertTrue(contract.contains("obligation"))
         XCTAssertTrue(contract.contains("counterfactual"))
+    }
+
+    /// The interpretive key must name every modal family the model can
+    /// encounter in a dossier — a family named in the enum but not here
+    /// invites the model to back-fit an unnamed family onto the nearest
+    /// named one. Reading straight from `ModalFamily.allCases` means a
+    /// future family added without updating the contract line fails this
+    /// test automatically, rather than relying on someone remembering to
+    /// keep a hardcoded list in sync.
+    func testResponseContract_withThreadsDossier_namesEveryModalFamily() {
+        let contract = PromptAssembler.responseContract(
+            voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: true
+        )
+        for family in MarkerLexicons.ModalFamily.allCases {
+            XCTAssertTrue(contract.contains(family.rawValue),
+                          "interpretive key omits modal family '\(family.rawValue)'")
+        }
     }
 
     func testResponseContract_withThreadsDossier_retainsClinicalGuard() {
@@ -105,7 +122,7 @@ final class PromptResponseContractTests: XCTestCase {
         let contract = PromptAssembler.responseContract(
             voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: false
         )
-        XCTAssertFalse(contract.contains("absolutist density"))
+        XCTAssertFalse(contract.contains("absolutist-word share"))
     }
 
     func testResponseContract_withThreadsDossier_addsExactlyOneLine() {

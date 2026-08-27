@@ -145,7 +145,9 @@ Per the approved context-scope decision, Oblique receives the **full** dossier w
 
 **Fix.** One line added to `PromptAssembler.responseContract`, in the `hasThreadsDossier` branch alongside the existing clinical-language guard:
 
-> Read absolutist density as how fixed the walker's framing was, first-person density as how far they placed themselves at the centre of it, and the modal lean as the frame they were working inside — obligation means the frame constrained them, counterfactual means they were already replaying alternatives, possibility and tentative mean it was still open. None of these has a fixed meaning; read each through this walk's intention and practice.
+> Read the absolutist-word share as how fixed the walker's framing was, self-focus as how far they placed themselves at the centre of it, and the modal lean as the frame they were working inside — obligation means the frame constrained them, counterfactual means they were already replaying alternatives, possibility and tentative mean it was still open, intention means they had settled on a course, and desire means they were naming a want rather than a plan. None of these has a fixed meaning; read each through this walk's intention and practice.
+
+The labels ("absolutist-word share", "self-focus") match what `ThreadsDossierFormatter` actually prints, not a paraphrase of it. The key names all six `MarkerLexicons.ModalFamily` cases — `possibility`, `obligation`, `counterfactual`, `tentative`, `intention`, `desire` — not a subset: naming only four invites the model to back-fit an unnamed family (`intention`, `desire`) onto the nearest named one, and `desire` in particular is high-frequency in spoken reflection ("want", "need", "wish"), so an unnamed reading of it would surface often.
 
 The closing clause is Fodor's point: "it will be windy tomorrow" holds its truth while its relevance shifts entirely depending on whether the walker is sailing, flying a kite, or staying in. A first-person spike on a grief walk and on a planning walk are not the same fact.
 
@@ -193,7 +195,9 @@ Unconditional on ≥2 recordings, so it fires on nearly every spoken walk, and i
 Fire only when at least one clears its threshold between the **first** and **last** recording:
 
 - **Pace:** `wordsPerMinute` delta ≥ 15% relative. Free — `RecordingContext.wordsPerMinute` is already populated. Skipped when either value is `nil`.
-- **Subject:** Jaccard similarity of content-lemma sets ≤ 0.20 — they are no longer talking about the same thing. Costs exactly two `TranscriptNLP.contentLemmas(in:)` passes (first and last recording only, never all N). Requires both recordings to yield ≥ 5 content lemmas, so a two-word recording cannot manufacture divergence.
+- **Subject:** overlap coefficient of content-lemma sets (`intersection.count / min(firstLemmas.count, lastLemmas.count)`) ≤ 0.20 — they are no longer talking about the same thing. Costs exactly two `TranscriptNLP.contentLemmas(in:)` passes (first and last recording only, never all N). Requires both recordings to yield ≥ 5 content lemmas, so a two-word recording cannot manufacture divergence.
+
+  **Not Jaccard.** An earlier draft of this workstream specified Jaccard similarity (`intersection / union`). Jaccard collapses to `|smaller| / |larger|` whenever one lemma set is a subset of the other, which is exactly the shape of a long opening reflection followed by a short closing note on the *same* subject: ~32 unique lemmas in the opening, a 6-lemma closing note drawn entirely from that same vocabulary, Jaccard ≈ 6/32 ≈ 0.19 — under the 0.20 ceiling, so it would fire "shares little vocabulary" on a walk that never left its subject. The overlap coefficient is 1.0 for that same subset case (correctly silent) and still near 0 for genuinely divergent subjects, because it measures how much of the *smaller* recording's vocabulary is accounted for by the larger one, rather than penalizing a short recording for being short relative to a long one.
 
 When it fires, the directive names *which* signal moved, so the model is pointed at something real rather than asked to hunt:
 

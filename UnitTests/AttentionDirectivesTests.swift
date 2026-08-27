@@ -367,4 +367,81 @@ final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
         ])
         XCTAssertFalse(lines.contains(where: isFirstVersusLast))
     }
+
+    /// Regression for the Jaccard length-asymmetry bug: when the last
+    /// recording's vocabulary is a strict subset of the first's — a short
+    /// closing note that only repeats words already spoken at length — the
+    /// subject has not diverged at all, but Jaccard (`intersection / union`)
+    /// collapses to `|smaller| / |larger|` and can cross the ceiling anyway.
+    /// Here the first recording carries 32 unique content lemmas and the
+    /// closing note's 6 are all drawn from that set: Jaccard would be
+    /// 6/32 ≈ 0.19 — under the 0.20 ceiling, so the old computation fired
+    /// "shares little vocabulary" on a walk that never left its subject. The
+    /// overlap coefficient (`intersection / min(|first|, |last|)`) is 1.0
+    /// here, correctly silent.
+    func testFirstVersusLast_lastRecordingSubsetOfFirst_staysSilent() {
+        let openingReflection = """
+        I started down the garden path early this morning, past the stone \
+        wall and under the old oak trees, thinking about my mother and the \
+        letters she used to write, the garden she tended for thirty years, \
+        the roses along the fence, the smell of rain on the hedges, and how \
+        the light falls differently now that autumn is coming, the leaves \
+        turning gold and copper along the orchard gate near the pond.
+        """
+        let closingNote = "The garden path, the stone wall, the orchard gate again."
+        let lines = directives([
+            recording(openingReflection, wpm: nil, minutesIn: 0),
+            recording(closingNote, wpm: nil, minutesIn: 45)
+        ])
+        XCTAssertFalse(lines.contains(where: isFirstVersusLast),
+                       "a closing note that only repeats the opening's own vocabulary is the same subject, not a divergent one")
+    }
+
+    // MARK: - Guard paths (firstPace == 0, asymmetric nil wordsPerMinute)
+
+    /// `firstPace > 0` guards the pace branch's division. Without it,
+    /// `firstPace == 0` would divide by zero (`(lastPace - 0) / 0`), which
+    /// in Swift's floating-point arithmetic produces `.infinity` rather than
+    /// trapping — `abs(change) >= paceShiftThreshold` would then be
+    /// trivially true and fire a bogus pace claim on every walk with a
+    /// zero-wpm first recording. Must fall through to the subject branch
+    /// instead, which — using the same divergent-subject fixture as
+    /// `testFirstVersusLast_subjectDiverged_fires` — genuinely fires here.
+    func testFirstVersusLast_firstPaceZero_fallsThroughToSubjectBranch() {
+        let lines = directives([
+            recording("the garden hedge grows beside the stone wall near the orchard gate",
+                      wpm: 0, minutesIn: 0),
+            recording("my brother telephoned about the mortgage payment and the lawyer's invoice",
+                      wpm: 101, minutesIn: 20)
+        ])
+        XCTAssertTrue(lines.contains { isFirstVersusLast($0) && $0.contains("shares little vocabulary") },
+                      "firstPace == 0 must not fire a pace claim from a divide-by-zero; it must fall through to subject")
+    }
+
+    /// `wordsPerMinute` is persisted asynchronously and is nil on the
+    /// walk-recovery path, so an asymmetric nil (one recording has a value,
+    /// the other doesn't) is a live production shape, not an edge case.
+    /// `if let firstPace = ..., let lastPace = ...` must fail closed on
+    /// either side and fall through to the subject branch.
+    func testFirstVersusLast_lastPaceMissing_fallsThroughToSubjectBranch() {
+        let lines = directives([
+            recording("the garden hedge grows beside the stone wall near the orchard gate",
+                      wpm: 100, minutesIn: 0),
+            recording("my brother telephoned about the mortgage payment and the lawyer's invoice",
+                      wpm: nil, minutesIn: 20)
+        ])
+        XCTAssertTrue(lines.contains { isFirstVersusLast($0) && $0.contains("shares little vocabulary") },
+                      "a missing last-recording pace must fall through to subject, not crash or stay silent")
+    }
+
+    func testFirstVersusLast_firstPaceMissing_fallsThroughToSubjectBranch() {
+        let lines = directives([
+            recording("the garden hedge grows beside the stone wall near the orchard gate",
+                      wpm: nil, minutesIn: 0),
+            recording("my brother telephoned about the mortgage payment and the lawyer's invoice",
+                      wpm: 100, minutesIn: 20)
+        ])
+        XCTAssertTrue(lines.contains { isFirstVersusLast($0) && $0.contains("shares little vocabulary") },
+                      "a missing first-recording pace must fall through to subject, not crash or stay silent")
+    }
 }

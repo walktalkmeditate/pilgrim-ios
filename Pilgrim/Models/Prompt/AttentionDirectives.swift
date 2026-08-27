@@ -173,10 +173,20 @@ enum AttentionDirectives {
         guard firstLemmas.count >= minimumLemmasToJudgeSubject,
               lastLemmas.count >= minimumLemmasToJudgeSubject else { return nil }
 
-        let union = firstLemmas.union(lastLemmas).count
-        guard union > 0 else { return nil }
-        let jaccard = Double(firstLemmas.intersection(lastLemmas).count) / Double(union)
-        guard jaccard <= subjectOverlapCeiling else { return nil }
+        // Overlap coefficient (intersection / smaller set), not Jaccard
+        // (intersection / union). Jaccard collapses to |smaller| / |larger|
+        // whenever one lemma set is a subset of the other — a long opening
+        // reflection (~30+ unique lemmas) followed by a short closing note
+        // on the SAME subject (~6 lemmas, all repeats) can then cross the
+        // ceiling on length alone, firing "shares little vocabulary" on a
+        // walk that never left its subject. The overlap coefficient is 1.0
+        // for that same subset case (correctly silent) and still near 0 for
+        // genuinely divergent subjects, because it measures how much of the
+        // SMALLER recording is accounted for by the larger one rather than
+        // penalizing a short recording for being short.
+        let smallerCount = min(firstLemmas.count, lastLemmas.count)
+        let overlap = Double(firstLemmas.intersection(lastLemmas).count) / Double(smallerCount)
+        guard overlap <= subjectOverlapCeiling else { return nil }
 
         return "The walker's last recording shares little vocabulary with the first — attend to what moved between them."
     }
