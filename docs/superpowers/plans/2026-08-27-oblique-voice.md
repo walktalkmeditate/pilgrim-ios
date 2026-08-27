@@ -725,13 +725,22 @@ extension DossierSensesInvariance {
         where !suppressed.contains(thread.lemma) {
             guard ThreadStore.salienceDirection(of: thread) == .steady else { continue }
 
-            let packs = thread.appearances.compactMap { appearance -> MarkerPack? in
+            // Key on distinct WALKS, not qualifying recordings. Counting
+            // recordings lets three short bursts on one walk clear a floor
+            // named `minimumInvariantWalks`, and lets a sub-floor walk
+            // inflate the rendered count — the line would then claim
+            // evidence from a walk excluded from the flatness computation.
+            // Same walk-keying `fusedThemes` uses, and the precedent
+            // `ThreadsDossierFormatter.modalBaselineFloorWalks` documents.
+            let qualifying = thread.appearances.compactMap { appearance -> (walkUUID: UUID, markers: MarkerPack)? in
                 guard let markers = byRecording[appearance.recordingUUID]?.markers,
                       markers.wordCount >= ThreadsDossierFormatter.densityFloorWords else { return nil }
-                return markers
+                return (appearance.walkUUID, markers)
             }
-            guard packs.count >= minimumInvariantWalks else { continue }
+            let walks = Set(qualifying.map(\.walkUUID))
+            guard walks.count >= minimumInvariantWalks else { continue }
 
+            let packs = qualifying.map(\.markers)
             let absolutist = packs.map { Double($0.absolutistCount) / Double($0.wordCount) }
             let firstPerson = packs.map { Double($0.firstPersonCount) / Double($0.wordCount) }
             let sentiment = packs.compactMap { $0.sentiment }.map { $0 + sentimentShift }
@@ -739,9 +748,8 @@ extension DossierSensesInvariance {
 
             guard isFlat(absolutist), isFlat(firstPerson), isFlat(sentiment) else { continue }
 
-            let walks = Set(thread.appearances.map(\.walkUUID)).count
             return DossierSenses.SenseLine(
-                text: "'\(thread.displayTerm)' has returned across \(walks) walks; "
+                text: "'\(thread.displayTerm)' has returned across \(walks.count) walks; "
                     + "it sounds the same each time.",
                 lemma: thread.lemma
             )
