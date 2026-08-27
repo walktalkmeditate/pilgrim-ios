@@ -70,4 +70,79 @@ final class DossierSensesInvarianceTests: XCTestCase {
     func testUnarrivedIntention_isDarkByDefault() {
         XCTAssertTrue(DossierSensesInvariance.pendingFieldGate)
     }
+
+    private func thread(_ lemma: String, walks: [UUID], salience: Double = 0.5) -> WalkThread {
+        WalkThread(
+            lemma: lemma,
+            displayTerm: lemma,
+            appearances: walks.map {
+                ThreadAppearance(
+                    recordingUUID: UUID(), walkUUID: $0,
+                    date: DateFactory.makeDate(2024, 6, 1, 9, 0, 0),
+                    mentionCount: 3, salience: salience
+                )
+            }
+        )
+    }
+
+    private func inputWith(threads: [WalkThread]) -> DossierSenses.Input {
+        DossierSenses.Input(
+            currentWalkUUID: threads.first?.appearances.first?.walkUUID ?? UUID(),
+            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            totalAscent: 0, elevationSeries: [], photos: [],
+            currentRecordings: [], historicalContexts: [], threads: threads,
+            backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
+            fixes: [:], moon: nil
+        )
+    }
+
+    func testFusedThemes_identicalWalkSets_fires() {
+        let walks = [UUID(), UUID(), UUID()]
+        let input = inputWith(threads: [
+            thread("father", walks: walks),
+            thread("money", walks: walks)
+        ])
+        let line = DossierSensesInvariance.fusedThemes(input: input, suppressed: [])
+        XCTAssertNotNil(line)
+        XCTAssertTrue(line!.text.contains("father"))
+        XCTAssertTrue(line!.text.contains("money"))
+        XCTAssertTrue(line!.text.contains("3 of 3"))
+    }
+
+    func testFusedThemes_nestedWalkSet_fires() {
+        let walks = [UUID(), UUID(), UUID(), UUID()]
+        let input = inputWith(threads: [
+            thread("father", walks: Array(walks.prefix(3))),
+            thread("money", walks: walks)
+        ])
+        XCTAssertNotNil(DossierSensesInvariance.fusedThemes(input: input, suppressed: []))
+    }
+
+    func testFusedThemes_belowMinimumWalks_staysSilent() {
+        let walks = [UUID(), UUID()]
+        let input = inputWith(threads: [
+            thread("father", walks: walks),
+            thread("money", walks: walks)
+        ])
+        XCTAssertNil(DossierSensesInvariance.fusedThemes(input: input, suppressed: []))
+    }
+
+    func testFusedThemes_partialOverlap_staysSilent() {
+        let a = UUID(), b = UUID(), c = UUID(), d = UUID()
+        let input = inputWith(threads: [
+            thread("father", walks: [a, b, c]),
+            thread("money", walks: [b, c, d])
+        ])
+        XCTAssertNil(DossierSensesInvariance.fusedThemes(input: input, suppressed: []))
+    }
+
+    func testFusedThemes_suppressedLemma_staysSilent() {
+        let walks = [UUID(), UUID(), UUID()]
+        let input = inputWith(threads: [
+            thread("father", walks: walks),
+            thread("money", walks: walks)
+        ])
+        XCTAssertNil(DossierSensesInvariance.fusedThemes(input: input, suppressed: ["father"]))
+    }
 }
