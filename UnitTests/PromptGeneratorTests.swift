@@ -419,4 +419,24 @@ final class PromptGeneratorTests: XCTestCase {
         XCTAssertNil(prompt.style)
         XCTAssertEqual(prompt.customStyle?.title, "Letter")
     }
+
+    // MARK: - Task 2: Reflective Voice Bound to the Walk's Own Evidence
+
+    func testReflectiveVoice_spoken_bindsConnectionsToTheRecord() {
+        let instruction = ReflectiveVoice().instruction(hasSpeech: true)
+        XCTAssertTrue(instruction.contains("Where the walk's own record supports it"))
+        XCTAssertTrue(instruction.contains("say less rather than reaching"))
+        XCTAssertTrue(instruction.contains("do not manufacture one"))
+    }
+
+    func testReflectiveVoice_silent_bindsPatternsToTheRecord() {
+        let instruction = ReflectiveVoice().instruction(hasSpeech: false)
+        XCTAssertTrue(instruction.contains("Where the walk's own record supports it"))
+        XCTAssertTrue(instruction.contains("say less rather than reaching"))
+    }
+
+    func testReflectiveVoice_bothModes_keepSelfUnderstandingGoal() {
+        XCTAssertTrue(ReflectiveVoice().instruction(hasSpeech: true).contains("understand"))
+        XCTAssertTrue(ReflectiveVoice().instruction(hasSpeech: false).contains("understand"))
+    }
 }

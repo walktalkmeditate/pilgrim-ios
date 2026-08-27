@@ -31,8 +31,8 @@ struct ReflectiveVoice: PromptVoice {
 
     func instruction(hasSpeech: Bool) -> String {
         hasSpeech
-            ? "Please analyze these walking reflections for patterns, recurring themes, and emotional undercurrents. What connections do you see between the different moments? What might I be processing or working through? What contradictions or tensions are present? Offer observations that help me understand myself better."
-            : "Read the shape of this walk — its pace, its pauses, its waypoints — as you would read a text. What patterns do you see? What might the walker have been processing? What does the choice of silence itself suggest? Offer observations that help them understand themselves."
+            ? "Please analyze these walking reflections for patterns, recurring themes, and emotional undercurrents. Where the walk's own record supports it — the stated intention, a word that recurs, a shift in pace or marker profile — name what connects the moments; where it does not, say less rather than reaching. Note any genuine tension the record shows, and do not manufacture one. Offer observations that help me understand myself better."
+            : "Read the shape of this walk — its pace, its pauses, its waypoints — as you would read a text. Where the walk's own record supports it, name the patterns you find; where it does not, say less rather than reaching. What might the walker have been processing? What does the choice of silence itself suggest? Offer observations that help them understand themselves."
     }
 
     func responseConstraints(hasSpeech: Bool) -> [String] {
