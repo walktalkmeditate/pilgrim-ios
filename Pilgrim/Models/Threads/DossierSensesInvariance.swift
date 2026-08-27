@@ -72,7 +72,8 @@ extension DossierSenses {
             return DossierSensesInvariance.fusedThemes(input: input, suppressed: suppressed)
         case .unmovedReturn:
             return DossierSensesInvariance.unmovedReturn(input: input, suppressed: suppressed)
-        case .frameConstancy: return nil
+        case .frameConstancy:
+            return DossierSensesInvariance.frameConstancy(input: input, suppressed: suppressed)
         case .placeFrameLock: return nil
         case .unarrivedIntention: return nil
         }
@@ -208,5 +209,78 @@ extension DossierSensesInvariance {
         guard mean > 0 else { return false }
         let variance = values.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(values.count)
         return (variance.squareRoot() / mean) <= markerFlatnessCeiling
+    }
+}
+
+extension DossierSensesInvariance {
+
+    /// One modal family dominant in EVERY walk where the theme appears.
+    /// Modals name the shape of the frame the walker was thinking inside —
+    /// obligation constrains, counterfactual replays alternatives,
+    /// possibility and tentative stay open. The same family every time is
+    /// a frame that never varied.
+    ///
+    /// Grouped and gated by distinct WALK, not by qualifying recording,
+    /// mirroring `fusedThemes` and `unmovedReturn`: a theme argued in three
+    /// bursts on one walk is one data point about one frame, not three.
+    /// When a walk carries more than one recording, their modal counts are
+    /// SUMMED into a single per-walk total before a dominant family is
+    /// picked — the same move `ThreadsDossierFormatter.modalLeanSummary`
+    /// makes for naming today's walk's dominant family — rather than
+    /// letting one recording's dominance silently stand for the walk, or
+    /// resolving a same-walk disagreement some other, unprincipled way.
+    ///
+    /// Per-walk dominance is a MODE, not a majority — the same fix PR #71
+    /// applied to weatherWeave to kill the cloud tautologies. A family can
+    /// dominate with 40% of the modals as long as nothing beats it.
+    /// Deterministic ties: `ModalFamily.allCases` is declaration-ordered
+    /// and only a STRICTLY greater count replaces the running best.
+    static func frameConstancy(
+        input: DossierSenses.Input, suppressed: Set<String>
+    ) -> DossierSenses.SenseLine? {
+        let byRecording = Dictionary(
+            input.historicalContexts.map { ($0.recordingUUID, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
+        where !suppressed.contains(thread.lemma) {
+            var modalsByWalk: [UUID: [String: Int]] = [:]
+            for appearance in thread.appearances {
+                guard let modals = byRecording[appearance.recordingUUID]?.markers?.modalCounts,
+                      !modals.isEmpty else { continue }
+                modalsByWalk[appearance.walkUUID, default: [:]].merge(modals, uniquingKeysWith: +)
+            }
+
+            let families = modalsByWalk.values.compactMap(dominantModalFamily)
+            guard families.count >= minimumInvariantWalks,
+                  let first = families.first,
+                  families.allSatisfy({ $0 == first }) else { continue }
+
+            return DossierSenses.SenseLine(
+                text: "Every walk where '\(thread.displayTerm)' appears is "
+                    + "\(first.rawValue)-dominant.",
+                lemma: thread.lemma
+            )
+        }
+        return nil
+    }
+
+    /// The dominant `ModalFamily` for one walk's summed modal counts, or
+    /// nil if none of the words present map to a known family. A mode over
+    /// family totals, not a majority share — see `frameConstancy`.
+    private static func dominantModalFamily(in modals: [String: Int]) -> MarkerLexicons.ModalFamily? {
+        var totals: [MarkerLexicons.ModalFamily: Int] = [:]
+        for (word, count) in modals {
+            guard let family = MarkerLexicons.modalFamily(of: word) else { continue }
+            totals[family, default: 0] += count
+        }
+        var best: (family: MarkerLexicons.ModalFamily, count: Int)?
+        for family in MarkerLexicons.ModalFamily.allCases {
+            let count = totals[family] ?? 0
+            guard count > 0, best == nil || count > best!.count else { continue }
+            best = (family, count)
+        }
+        return best?.family
     }
 }

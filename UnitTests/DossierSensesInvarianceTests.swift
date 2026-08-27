@@ -339,4 +339,120 @@ final class DossierSensesInvarianceTests: XCTestCase {
             "'work' has returned across 3 walks; it sounds the same each time."
         )
     }
+
+    private func modalContext(_ uuid: UUID, modals: [String: Int], words: Int = 200) -> TranscriptContext {
+        TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion,
+            recordingUUID: uuid, transcriptHash: "h", languageCode: "en",
+            wordCount: words, themes: [],
+            markers: MarkerPack(
+                wordCount: words, absolutistCount: 5, firstPersonCount: 10,
+                insightCount: 2, causationCount: 2, discrepancyCount: 1,
+                futureCount: 3, pastCount: 3, sentiment: -0.1, modalCounts: modals
+            )
+        )
+    }
+
+    private func modalInput(_ contexts: [TranscriptContext], _ thread: WalkThread) -> DossierSenses.Input {
+        DossierSenses.Input(
+            currentWalkUUID: UUID(),
+            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            totalAscent: 0, elevationSeries: [], photos: [], currentRecordings: [],
+            historicalContexts: contexts, threads: [thread],
+            backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
+            fixes: [:], moon: nil
+        )
+    }
+
+    func testFrameConstancy_sameFamilyEveryWalk_fires() {
+        let recs = [UUID(), UUID(), UUID()]
+        let input = modalInput(
+            [
+                modalContext(recs[0], modals: ["should": 12, "can": 2]),
+                modalContext(recs[1], modals: ["should": 9, "might": 1]),
+                modalContext(recs[2], modals: ["must": 7, "could": 2])
+            ],
+            steadyThread("money", recordings: recs, walks: [UUID(), UUID(), UUID()])
+        )
+        let line = DossierSensesInvariance.frameConstancy(input: input, suppressed: [])
+        XCTAssertEqual(
+            line?.text,
+            "Every walk where 'money' appears is obligation-dominant."
+        )
+        XCTAssertEqual(line?.lemma, "money")
+    }
+
+    func testFrameConstancy_familyVaries_staysSilent() {
+        let recs = [UUID(), UUID(), UUID()]
+        let input = modalInput(
+            [
+                modalContext(recs[0], modals: ["should": 12]),
+                modalContext(recs[1], modals: ["could": 11]),
+                modalContext(recs[2], modals: ["would": 9])
+            ],
+            steadyThread("money", recordings: recs, walks: [UUID(), UUID(), UUID()])
+        )
+        XCTAssertNil(DossierSensesInvariance.frameConstancy(input: input, suppressed: []))
+    }
+
+    func testFrameConstancy_noModalsAtAll_staysSilent() {
+        let recs = [UUID(), UUID(), UUID()]
+        let input = modalInput(
+            recs.map { modalContext($0, modals: [:]) },
+            steadyThread("money", recordings: recs, walks: [UUID(), UUID(), UUID()])
+        )
+        XCTAssertNil(DossierSensesInvariance.frameConstancy(input: input, suppressed: []))
+    }
+
+    /// The Task 4 lesson, replayed here: `families` must be keyed on
+    /// distinct WALKS, not qualifying recordings. Three obligation-dominant
+    /// recordings that all land on the SAME walk are one data point, not
+    /// three — below `minimumInvariantWalks`, this must stay silent even
+    /// though three recordings individually "qualify".
+    func testFrameConstancy_threeRecordingsOnOneWalk_staysSilent() {
+        let recs = [UUID(), UUID(), UUID()]
+        let walkA = UUID()
+        let input = modalInput(
+            [
+                modalContext(recs[0], modals: ["should": 5]),
+                modalContext(recs[1], modals: ["should": 4]),
+                modalContext(recs[2], modals: ["must": 3])
+            ],
+            steadyThread("money", recordings: recs, walks: [walkA, walkA, walkA])
+        )
+        XCTAssertNil(DossierSensesInvariance.frameConstancy(input: input, suppressed: []))
+    }
+
+    /// Design decision (documented on `frameConstancy` itself): when a walk
+    /// has two recordings, their modal counts are SUMMED into one combined
+    /// total before a dominant family is picked for that walk — mirroring
+    /// `ThreadsDossierFormatter.modalLeanSummary`, which sums a walk's
+    /// recordings before naming today's dominant family, rather than
+    /// picking one recording's dominance to represent the whole walk.
+    ///
+    /// Pinned here: walkA's two recordings disagree individually (rec0
+    /// alone is counterfactual-dominant 3-0, rec1 alone is
+    /// obligation-dominant 2-0), but summed ("would": 3, "should": 2) the
+    /// walk is counterfactual-dominant. Picking "last recording wins"
+    /// would report obligation for walkA and break the match with walkB
+    /// and walkC — this test fails under that alternative.
+    func testFrameConstancy_recordingsOnSameWalk_combineByModalCountSum() {
+        let walkA = UUID(), walkB = UUID(), walkC = UUID()
+        let recs = [UUID(), UUID(), UUID(), UUID()]
+        let input = modalInput(
+            [
+                modalContext(recs[0], modals: ["would": 3]),
+                modalContext(recs[1], modals: ["should": 2]),
+                modalContext(recs[2], modals: ["would": 5]),
+                modalContext(recs[3], modals: ["would": 4, "might": 1])
+            ],
+            steadyThread("worry", recordings: recs, walks: [walkA, walkA, walkB, walkC])
+        )
+        let line = DossierSensesInvariance.frameConstancy(input: input, suppressed: [])
+        XCTAssertEqual(
+            line?.text,
+            "Every walk where 'worry' appears is counterfactual-dominant."
+        )
+    }
 }
