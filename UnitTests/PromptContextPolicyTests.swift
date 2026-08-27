@@ -126,4 +126,74 @@ final class PromptContextPolicyTests: XCTestCase {
             XCTAssertFalse(prompt.contains("descriptive on-device linguistic signals"))
         }
     }
+
+    // MARK: - Review fix: Creative/Gratitude read Noticed:, not nothing
+
+    /// `threadsDossierSensesOnly` mirrors what `ThreadsDossierBuilder` would
+    /// actually hand it: just `**Noticed:**`, with a markerColoring line that
+    /// must never have been in there in the first place (pinned at the
+    /// builder level by `testMarkerColoring_neverReachesSensesOnlyVariant`) —
+    /// this fixture asserts the same absence survives all the way to the
+    /// assembled prompt.
+    private func contextWithSensesOnlyDossier() -> ActivityContext {
+        .make(
+            recordings: [RecordingContext(
+                text: "the river was loud today", timestamp: DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
+                startCoordinate: nil, endCoordinate: nil, wordsPerMinute: 100,
+                recordingUUID: UUID(), endTimestamp: nil
+            )],
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            threadsDossier: "**Thought threads (on-device linguistic analysis):**\nRecording 1: absolutist words 2.3%; self-focus 4.1%; sentiment 0.20\n\n**Threads across recent walks:**\n'river' — 3 walks\n\n**Noticed:**\n'river' has surfaced on 2 walks — twice near the same stretch of ground.",
+            threadsDossierWithoutMarkers: "**Thought threads (on-device linguistic analysis):**\n\n**Threads across recent walks:**\n'river' — 3 walks\n\n**Noticed:**\n'river' has surfaced on 2 walks — twice near the same stretch of ground.",
+            threadsDossierSensesOnly: "**Noticed:**\n'river' has surfaced on 2 walks — twice near the same stretch of ground."
+        )
+    }
+
+    func testAssembler_creative_receivesNoticedBlock() {
+        let prompt = PromptAssembler.assemble(context: contextWithSensesOnlyDossier(), voice: CreativeVoice())
+        XCTAssertTrue(prompt.contains("**Noticed:**"))
+        XCTAssertTrue(prompt.contains("'river' has surfaced on 2 walks"))
+    }
+
+    func testAssembler_creative_omitsMarkerAndSentimentFigures() {
+        let prompt = PromptAssembler.assemble(context: contextWithSensesOnlyDossier(), voice: CreativeVoice())
+        XCTAssertFalse(prompt.contains("absolutist words"))
+        XCTAssertFalse(prompt.contains("self-focus"))
+        XCTAssertFalse(prompt.contains("sentiment"))
+    }
+
+    func testAssembler_creative_omitsThreadSection() {
+        let prompt = PromptAssembler.assemble(context: contextWithSensesOnlyDossier(), voice: CreativeVoice())
+        XCTAssertFalse(prompt.contains("Threads across recent walks"))
+        XCTAssertFalse(prompt.contains("Quiet this walk"))
+    }
+
+    /// The builder guarantees `threadsDossierSensesOnly` never carries a
+    /// markerColoring line in the first place (pinned end-to-end at the
+    /// builder level by `testMarkerColoring_neverReachesSensesOnlyVariant`
+    /// in `ThreadsDossierSensesMarkerColoringLeakTests.swift`); this fixture
+    /// mirrors that real shape and checks the assembled Creative prompt
+    /// reflects it.
+    func testAssembler_creative_omitsMarkerColoringLine() {
+        let prompt = PromptAssembler.assemble(context: contextWithSensesOnlyDossier(), voice: CreativeVoice())
+        XCTAssertFalse(prompt.contains("Absolutist words cluster around"))
+    }
+
+    func testAssembler_gratitude_receivesNoticedBlockWithoutThreadAnalysis() {
+        let prompt = PromptAssembler.assemble(context: contextWithSensesOnlyDossier(), voice: GratitudeVoice())
+        XCTAssertTrue(prompt.contains("**Noticed:**"))
+        XCTAssertFalse(prompt.contains("absolutist words"))
+        XCTAssertFalse(prompt.contains("Threads across recent walks"))
+    }
+
+    func testAssembler_creativeAndGratitude_contractStillCarriesNoThreadsLanguage_withSensesOnlyDossier() {
+        for voice: PromptVoice in [CreativeVoice(), GratitudeVoice()] {
+            let prompt = PromptAssembler.assemble(context: contextWithSensesOnlyDossier(), voice: voice)
+            XCTAssertFalse(prompt.contains("Read the absolutist-word share"))
+            XCTAssertFalse(prompt.contains("Read the modal lean"))
+            XCTAssertFalse(prompt.contains("descriptive on-device linguistic signals"),
+                           "the senses-only dossier is now non-nil, but the response contract must still " +
+                           "treat these voices as carrying no thread-analysis dossier at all")
+        }
+    }
 }

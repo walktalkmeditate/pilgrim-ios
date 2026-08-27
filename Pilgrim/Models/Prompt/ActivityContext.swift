@@ -59,6 +59,13 @@ struct ActivityContext {
     /// policy excludes marker lines read this one. Both are built once —
     /// `generateAll` fans one context across every style.
     var threadsDossierWithoutMarkers: String?
+    /// Third pre-rendered variant, built in the same pass: just the
+    /// `**Noticed:**` block (place resonance, moon, weather, climb, photo
+    /// adjacency, speech shape — never markerColoring), with no marker
+    /// section and no thread section at all. Voices whose policy excludes
+    /// thread analysis entirely (Creative, Gratitude) read this one rather
+    /// than losing the dossier's sensory content outright.
+    var threadsDossierSensesOnly: String?
     /// The `Unchanged:` block, built once alongside the dossier and emitted
     /// only for voices whose context policy requests it. Built once because
     /// `PromptGenerator.generateAll` fans ONE context across every style —
@@ -92,6 +99,7 @@ extension ActivityContext {
         descent: Double? = nil,
         threadsDossier: String? = nil,
         threadsDossierWithoutMarkers: String? = nil,
+        threadsDossierSensesOnly: String? = nil,
         unchangedBlock: String? = nil
     ) -> ActivityContext {
         ActivityContext(
@@ -117,6 +125,7 @@ extension ActivityContext {
             descent: descent,
             threadsDossier: threadsDossier,
             threadsDossierWithoutMarkers: threadsDossierWithoutMarkers,
+            threadsDossierSensesOnly: threadsDossierSensesOnly,
             unchangedBlock: unchangedBlock
         )
     }

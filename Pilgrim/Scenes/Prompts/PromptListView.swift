@@ -137,6 +137,7 @@ struct PromptListView: View {
                     context.threadsDossier = dossierResult.dossier
                     context.unchangedBlock = dossierResult.unchangedBlock
                     context.threadsDossierWithoutMarkers = dossierResult.dossierWithoutMarkers
+                    context.threadsDossierSensesOnly = dossierResult.dossierSensesOnly
                 }
                 let derived = PromptGenerator.resolvedDerivations(context: context)
                 let generated = PromptGenerator.generateAll(

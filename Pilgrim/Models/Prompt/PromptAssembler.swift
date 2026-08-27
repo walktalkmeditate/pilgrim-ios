@@ -47,20 +47,27 @@ enum PromptAssembler {
         }
 
         sections += "\n\n---\n\n\(fullInstruction)"
-        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, threadsDossier: dossier))"
+        // Never the senses-only dossier: its content (weather, moon, place,
+        // climb) carries no marker or thread claim to interpret, so a voice
+        // reading only it (Creative, Gratitude) must not receive the
+        // clinical-language guard or an interpretive key either — both are
+        // about reading marker/thread numbers this voice was never shown.
+        let threadsDossierForContract = voice.contextPolicy.includesThreadAnalysis ? dossier : nil
+        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, threadsDossier: threadsDossierForContract))"
         return sections
     }
 
-    /// The dossier variant this voice's policy allows, drawn from the two
+    /// The dossier variant this voice's policy allows, drawn from the three
     /// already-rendered strings the builder carries on `ActivityContext` —
-    /// never re-rendered here. A voice that suppresses thread analysis sees
-    /// no dossier at all, regardless of its marker-lines setting: the brief's
-    /// original sketch branched on `includesMarkerLines` alone, which would
-    /// have hidden markers from Creative and Gratitude while still leaking
-    /// the "Threads across recent walks" / "Quiet this walk" sections their
-    /// policy asks to suppress.
+    /// never re-rendered here. A voice that suppresses thread analysis reads
+    /// the senses-only variant (place, moon, weather, climb, photo adjacency,
+    /// speech shape — never markerColoring) rather than losing the dossier's
+    /// sensory content outright: the brief's original sketch branched on
+    /// `includesMarkerLines` alone, which would have hidden markers from
+    /// Creative and Gratitude while still leaking the "Threads across recent
+    /// walks" / "Quiet this walk" sections their policy asks to suppress.
     private static func selectedDossier(context: ActivityContext, policy: PromptContextPolicy) -> String? {
-        guard policy.includesThreadAnalysis else { return nil }
+        guard policy.includesThreadAnalysis else { return context.threadsDossierSensesOnly }
         return policy.includesMarkerLines ? context.threadsDossier : context.threadsDossierWithoutMarkers
     }
 

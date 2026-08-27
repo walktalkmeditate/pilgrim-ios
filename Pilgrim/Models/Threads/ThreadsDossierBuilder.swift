@@ -42,7 +42,10 @@ enum ThreadsDossierBuilder {
         let intention: String?
     }
 
-    private static var memo: (key: MemoKey, dossier: String?, unchangedBlock: String?, dossierWithoutMarkers: String?)?
+    private static var memo: (
+        key: MemoKey, dossier: String?, unchangedBlock: String?,
+        dossierWithoutMarkers: String?, dossierSensesOnly: String?
+    )?
     private static let memoLock = NSLock()
 
     /// The one impure gather for the senses (spec architecture): cheap
@@ -96,10 +99,12 @@ enum ThreadsDossierBuilder {
     }
 
     /// Same computation as `build`, additionally surfacing the `Unchanged:`
-    /// block computed alongside the dossier, and a marker-free variant of the
-    /// dossier for voices whose context policy excludes marker lines — the
-    /// caller that needs any of these reads them here rather than triggering
-    /// a second, per-voice build.
+    /// block computed alongside the dossier, a marker-free variant of the
+    /// dossier for voices whose context policy excludes marker lines, and a
+    /// senses-only variant (just `**Noticed:**`, no marker or thread section
+    /// at all) for voices that exclude thread analysis entirely — the caller
+    /// that needs any of these reads them here rather than triggering a
+    /// second, per-voice build.
     static func buildResult(
         walkUUID: UUID,
         recordings: [RecordingContext],
@@ -108,8 +113,8 @@ enum ThreadsDossierBuilder {
         senses: DossierSensesFetchBundle? = nil,
         resolveRouteFix: (Date) -> DossierSenses.RouteFix? = DataManager.routeFixNear,
         defaults: UserDefaults = .standard
-    ) -> (dossier: String?, unchangedBlock: String?, dossierWithoutMarkers: String?) {
-        guard UserPreferences.threadsAfterWalks.value, !recordings.isEmpty else { return (nil, nil, nil) }
+    ) -> (dossier: String?, unchangedBlock: String?, dossierWithoutMarkers: String?, dossierSensesOnly: String?) {
+        guard UserPreferences.threadsAfterWalks.value, !recordings.isEmpty else { return (nil, nil, nil, nil) }
         // One consistent read each, captured before any store mutation: a
         // mid-build mutation leaves the memoized tokens stale, so the next
         // call rebuilds instead of absorbing the mutation unseen.
@@ -143,7 +148,7 @@ enum ThreadsDossierBuilder {
         let live = all.filter { !orphans.contains($0.recordingUUID) }
 
         let (current, freshlySaved) = resolveCurrentContexts(recordings: recordings, store: store)
-        guard !current.isEmpty else { return (nil, nil, nil) }
+        guard !current.isEmpty else { return (nil, nil, nil, nil) }
 
         var contextsByUUID = Dictionary(uniqueKeysWithValues: live.map { ($0.recordingUUID, $0) })
         for (uuid, context) in freshlySaved {
@@ -154,10 +159,12 @@ enum ThreadsDossierBuilder {
 
         let threads = ThreadStore.build(contexts: allContexts, walks: walkIndex)
 
-        var dossiers = renderDossierPair(DossierRenderInputs(
+        let pair = renderDossierPair(DossierRenderInputs(
             current: current, allContexts: allContexts, threads: threads, walkUUID: walkUUID,
             backfillComplete: backfillComplete, walkIndex: walkIndex.mapValues(\.walkUUID)
         ))
+        var dossiers: (dossier: String?, withoutMarkers: String?, sensesOnly: String?) =
+            (pair.dossier, pair.withoutMarkers, nil)
         let sensesResult = appendSensesBlock(
             to: &dossiers, senses: senses,
             state: SensesAssemblyState(
@@ -168,6 +175,7 @@ enum ThreadsDossierBuilder {
         )
         let dossier = dossiers.dossier
         let dossierWithoutMarkers = dossiers.withoutMarkers
+        let dossierSensesOnly = dossiers.sensesOnly
 
         memoLock.lock()
         // Baseline is `preBuildChangeCount` plus exactly this build's own
@@ -188,9 +196,9 @@ enum ThreadsDossierBuilder {
         let ownWriteCount = ownDeleteWrite + freshlySaved.count
         let postBuildKey = memoKey(walkUUID: walkUUID, changeCount: preBuildChangeCount + ownWriteCount,
                                    backfillComplete: backfillComplete, moonState: sensesResult.moonState, senses: senses)
-        memo = (postBuildKey, dossier, sensesResult.unchangedBlock, dossierWithoutMarkers)
+        memo = (postBuildKey, dossier, sensesResult.unchangedBlock, dossierWithoutMarkers, dossierSensesOnly)
         memoLock.unlock()
-        return (dossier, sensesResult.unchangedBlock, dossierWithoutMarkers)
+        return (dossier, sensesResult.unchangedBlock, dossierWithoutMarkers, dossierSensesOnly)
     }
 
     /// Outer optional is cache presence; the dossier field inside a hit can
@@ -198,11 +206,11 @@ enum ThreadsDossierBuilder {
     /// distinct cache hit from no cache at all.
     private static func cachedResult(
         key: MemoKey
-    ) -> (dossier: String?, unchangedBlock: String?, dossierWithoutMarkers: String?)? {
+    ) -> (dossier: String?, unchangedBlock: String?, dossierWithoutMarkers: String?, dossierSensesOnly: String?)? {
         memoLock.lock()
         defer { memoLock.unlock() }
         guard let cached = memo, cached.key == key else { return nil }
-        return (cached.dossier, cached.unchangedBlock, cached.dossierWithoutMarkers)
+        return (cached.dossier, cached.unchangedBlock, cached.dossierWithoutMarkers, cached.dossierSensesOnly)
     }
 
     /// `lunationIndex`/`intention` both derive from `senses` the same way at
@@ -288,15 +296,26 @@ enum ThreadsDossierBuilder {
         let moonState: Int?
     }
 
-    /// Appends the SAME `Noticed:` block to both dossier variants (it is
-    /// orthogonal to the marker/thread-analysis policy axes — Task 9 does
-    /// not scope a Noticed-block policy), renders `Unchanged:` from the SAME
-    /// `input` (never a second `DossierSenses.Input`), and records the
-    /// moon-line UserDefaults write. `moonState` carries forward unchanged
-    /// unless the moon line fired; `unchangedBlock` is nil when no
-    /// invariant fired or there is no dossier to attach it to.
+    /// Appends the `Noticed:` block to all three dossier variants, renders
+    /// `Unchanged:` from the SAME `input` (never a second `DossierSenses.Input`),
+    /// and records the moon-line UserDefaults write. `moonState` carries
+    /// forward unchanged unless the moon line fired; `unchangedBlock` is nil
+    /// when no invariant fired or there is no dossier to attach it to.
+    ///
+    /// `Noticed:` is NOT uniformly marker-free of its own accord: `markerColoring`
+    /// is itself a sense in this block (marker-derived commentary on the
+    /// current walk's speech), so it must be excluded from the SAME two
+    /// variants `ThreadsDossierFormatter.dossier`'s `includeMarkerLines: false`
+    /// already excludes its own marker section from — otherwise a
+    /// marker-suppressed voice (Journaling) would still read "Absolutist
+    /// words cluster around 'X'" by a side door, reopening the exact defect
+    /// this task fixes. `DossierSenses.lines(input:evaluate:)`'s test seam is
+    /// reused here (not a parameter on the sense engine) to drop just that
+    /// one case; a lower-priority sense may then legitimately take the freed
+    /// slot, so the two computations can differ in which senses appear —
+    /// that is intended, not a bug.
     private static func appendSensesBlock(
-        to dossiers: inout (dossier: String?, withoutMarkers: String?),
+        to dossiers: inout (dossier: String?, withoutMarkers: String?, sensesOnly: String?),
         senses: DossierSensesFetchBundle?,
         state: SensesAssemblyState,
         resolveRouteFix: (Date) -> DossierSenses.RouteFix?,
@@ -304,14 +323,23 @@ enum ThreadsDossierBuilder {
     ) -> (moonState: Int?, unchangedBlock: String?) {
         guard let senses, dossiers.dossier != nil else { return (state.moonState, nil) }
         let input = makeSensesInput(senses: senses, state: state, resolveRouteFix: resolveRouteFix)
+
         let output = DossierSenses.lines(input: input)
         if !output.lines.isEmpty {
-            let noticed = "\n\n**Noticed:**\n" + output.lines.joined(separator: "\n")
-            dossiers.dossier! += noticed
-            if dossiers.withoutMarkers != nil {
-                dossiers.withoutMarkers! += noticed
-            }
+            dossiers.dossier! += "\n\n**Noticed:**\n" + output.lines.joined(separator: "\n")
         }
+
+        let markerFree = DossierSenses.lines(input: input) { sense, input, used in
+            sense == .markerColoring ? nil : DossierSenses.evaluate(sense, input: input, suppressed: used)
+        }
+        if !markerFree.lines.isEmpty {
+            let noticed = "**Noticed:**\n" + markerFree.lines.joined(separator: "\n")
+            if dossiers.withoutMarkers != nil {
+                dossiers.withoutMarkers! += "\n\n" + noticed
+            }
+            dossiers.sensesOnly = noticed
+        }
+
         let unchangedBlock = renderUnchangedBlock(DossierSenses.invarianceLines(input: input))
         guard let reported = output.reportedLunationIndex else { return (state.moonState, unchangedBlock) }
         defaults.set(reported, forKey: moonLineDefaultsKey)
