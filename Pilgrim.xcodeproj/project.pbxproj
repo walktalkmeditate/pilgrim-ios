@@ -10,6 +10,7 @@
 		00897FB3A531A62A892EE9A6 /* PilgrimPackageConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA0FD7FD97115969FADF2C4 /* PilgrimPackageConverter.swift */; };
 		00E54B754C677E3CC38471D2 /* SeekStillnessDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D40461D0593348DADEA56E /* SeekStillnessDetector.swift */; };
 		016C147EEB766219648BE07F /* PromptVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD98EC76665031455843D5C /* PromptVoice.swift */; };
+		1000B53E41BA3BEA8103FBAC /* PromptContextPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32363FA7984D3C98C77B8211 /* PromptContextPolicy.swift */; };
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
 		0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
@@ -589,6 +590,7 @@
 		LR00000200000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */; };
 		LR00000200000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */; };
 		LR00000200000000LRPRCT01 /* PromptResponseContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPRCT01 /* PromptResponseContractTests.swift */; };
+		10107C318258A6CB886A987E /* PromptContextPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 322783D64DA7866CF0FDA994 /* PromptContextPolicyTests.swift */; };
 		LR00000200000000LRPRLX01 /* PracticeLexiconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */; };
 		LR00000200000000LRRPPT01 /* RoutePipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */; };
 		LR00000200000000LRRSPL01 /* RouteSourcePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */; };
@@ -1190,6 +1192,7 @@
 		DD2DDA53AB9BF3A478409478 /* whisper-play-9.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-9.aac"; sourceTree = "<group>"; };
 		DDD8506242AA6CD81468A74B /* PilgrimPackageModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageModelTests.swift; sourceTree = "<group>"; };
 		DDD98EC76665031455843D5C /* PromptVoice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptVoice.swift; sourceTree = "<group>"; };
+		32363FA7984D3C98C77B8211 /* PromptContextPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptContextPolicy.swift; sourceTree = "<group>"; };
 		E1825CBE5A81CE064675082D /* PromptStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptStyle.swift; sourceTree = "<group>"; };
 		E2851FE86E579A0EE4C0EB98 /* SeekWispVisibilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekWispVisibilityTests.swift; sourceTree = "<group>"; };
 		E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptContextTypes.swift; sourceTree = "<group>"; };
@@ -1260,6 +1263,7 @@
 		LR00000100000000LRPPBET1 /* PilgrimPackageBuilderErrorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageBuilderErrorTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPPITT1 /* PilgrimPackageImportTransactionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImportTransactionTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPRCT01 /* PromptResponseContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptResponseContractTests.swift; sourceTree = "<group>"; };
+		322783D64DA7866CF0FDA994 /* PromptContextPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptContextPolicyTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PracticeLexiconTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRRPPT01 /* RoutePipelineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RoutePipelineTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRRSPL01 /* RouteSourcePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSourcePlanner.swift; sourceTree = "<group>"; };
@@ -2034,6 +2038,7 @@
 				LR00000100000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift */,
 				LR00000100000000LRTSMV01 /* TranscriptionServiceModelVariantTests.swift */,
 				LR00000100000000LRPRCT01 /* PromptResponseContractTests.swift */,
+				322783D64DA7866CF0FDA994 /* PromptContextPolicyTests.swift */,
 				LR00000100000000LRATDR01 /* AttentionDirectivesTests.swift */,
 				LR00000100000000LRATDR02 /* AttentionDirectivesFirstVersusLastTests.swift */,
 				LR00000100000000LRWKCH01 /* WalkCharacterTests.swift */,
@@ -2265,6 +2270,7 @@
 				CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */,
 				2BD4237D6467ED96F4E54E50 /* ContextFormatter.swift */,
 				DDD98EC76665031455843D5C /* PromptVoice.swift */,
+				32363FA7984D3C98C77B8211 /* PromptContextPolicy.swift */,
 				862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */,
 				12245A2A15EE8E64818B6D3F /* ActivityContext.swift */,
 				C6EA04337299ABAFFB2644FC /* PromptAssembler.swift */,
@@ -3202,6 +3208,7 @@
 				37049E79926C85FEE92366A2 /* GeneratedPrompt.swift in Sources */,
 				EF5593C014B2591704A20D11 /* ContextFormatter.swift in Sources */,
 				016C147EEB766219648BE07F /* PromptVoice.swift in Sources */,
+				1000B53E41BA3BEA8103FBAC /* PromptContextPolicy.swift in Sources */,
 				8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */,
 				0AA343D1A7FB780905B6A20F /* ActivityContext.swift in Sources */,
 				0AF0FF1EDA75BDC6A3A3D2A6 /* PromptAssembler.swift in Sources */,
@@ -3430,6 +3437,7 @@
 				LR00000200000000LRTSBS01 /* TranscriptionServiceBatchStateTests.swift in Sources */,
 				LR00000200000000LRTSMV01 /* TranscriptionServiceModelVariantTests.swift in Sources */,
 				LR00000200000000LRPRCT01 /* PromptResponseContractTests.swift in Sources */,
+				10107C318258A6CB886A987E /* PromptContextPolicyTests.swift in Sources */,
 				LR00000200000000LRATDR01 /* AttentionDirectivesTests.swift in Sources */,
 				LR00000200000000LRATDR02 /* AttentionDirectivesFirstVersusLastTests.swift in Sources */,
 				LR00000200000000LRWKCH01 /* WalkCharacterTests.swift in Sources */,

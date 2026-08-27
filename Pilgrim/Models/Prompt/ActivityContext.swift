@@ -55,6 +55,10 @@ struct ActivityContext {
     let ascent: Double?
     let descent: Double?
     var threadsDossier: String?
+    /// Second pre-rendered variant, built in the same pass. Voices whose
+    /// policy excludes marker lines read this one. Both are built once —
+    /// `generateAll` fans one context across every style.
+    var threadsDossierWithoutMarkers: String?
     /// The `Unchanged:` block, built once alongside the dossier and emitted
     /// only for voices whose context policy requests it. Built once because
     /// `PromptGenerator.generateAll` fans ONE context across every style —
@@ -87,6 +91,7 @@ extension ActivityContext {
         ascent: Double? = nil,
         descent: Double? = nil,
         threadsDossier: String? = nil,
+        threadsDossierWithoutMarkers: String? = nil,
         unchangedBlock: String? = nil
     ) -> ActivityContext {
         ActivityContext(
@@ -111,6 +116,7 @@ extension ActivityContext {
             ascent: ascent,
             descent: descent,
             threadsDossier: threadsDossier,
+            threadsDossierWithoutMarkers: threadsDossierWithoutMarkers,
             unchangedBlock: unchangedBlock
         )
     }

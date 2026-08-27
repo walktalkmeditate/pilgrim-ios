@@ -1605,7 +1605,10 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Modify: `Pilgrim/Models/Prompt/PromptVoice.swift`
 - Modify: `Pilgrim/Models/Prompt/WalkPromptVoices.swift`
 - Modify: `Pilgrim/Models/Prompt/PromptAssembler.swift`
+- Modify: `Pilgrim/Models/Prompt/ActivityContext.swift` — not listed by the draft; needed the `threadsDossierWithoutMarkers` field alongside `threadsDossier`, the same way Task 8 added `unchangedBlock`
 - Modify: `Pilgrim/Models/Threads/ThreadsDossierFormatter.swift`
+- Modify: `Pilgrim/Models/Threads/ThreadsDossierBuilder.swift` — not listed by the draft; builds the second dossier variant and widens `buildResult`'s tuple (see Deviations 3–4)
+- Modify: `Pilgrim/Scenes/Prompts/PromptListView.swift` — not listed by the draft; the one production call site for `buildResult` needed to assign the new `threadsDossierWithoutMarkers` field, the same gap Task 8 hit (its Deviation 4)
 - Create: `UnitTests/PromptContextPolicyTests.swift`
 
 **Interfaces:**
@@ -1613,6 +1616,15 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   - `struct PromptContextPolicy { let includesMarkerLines: Bool; let includesThreadAnalysis: Bool; let hoistsUnchangedBlock: Bool; static let full: PromptContextPolicy }`
   - `PromptVoice.contextPolicy: PromptContextPolicy` with a `.full` default in the protocol extension
   - `ThreadsDossierFormatter.dossier(..., includeMarkerLines: Bool, includeThreadAnalysis: Bool)`
+
+**Adjudicated deviations from the draft below** (shipped code differs from the original Step 3 draft in four ways; each is intentional and must not be "simplified" back to the draft):
+
+1. **The assembler's dossier selection consults BOTH policy axes, not `includesMarkerLines` alone.** The draft's Step 3 sketch — `voice.contextPolicy.includesMarkerLines ? context.threadsDossier : context.threadsDossierWithoutMarkers` — branches only on markers. Applied literally, Creative and Gratitude (whose row suppresses thread analysis too) would receive `threadsDossierWithoutMarkers`, which is markers-off but thread-analysis-**on** (it's the Journaling variant) — leaking the "Threads across recent walks" / "Quiet this walk" sections their policy asks to suppress. Shipped code adds `PromptAssembler.selectedDossier(context:policy:)`: it returns `nil` outright when `includesThreadAnalysis` is false, and only then branches on `includesMarkerLines` for voices that do want thread content. No third pre-rendered string was needed — Creative/Gratitude's "nothing" is `nil`, not a new field. Pinned by `testAssembler_creative_omitsThreadAnalysisEntirely` and `testAssembler_gratitude_omitsThreadAnalysisEntirely`.
+2. **`responseContract` receives the voice's *selected* dossier, not `context.threadsDossier` unconditionally.** Read literally, the draft leaves the `responseContract(...)` call passing the raw full dossier for every voice; Journaling would then carry the interpretive key describing absolutist-word share and modal lean — referents it was never shown, which the task brief calls out as a worse defect than the one being fixed. Shipped code computes the selected dossier once in `assemble` and threads the same value into both `walkRecord` and `responseContract`. Pinned by `testAssembler_journaling_contractOmitsInterpretiveKey` and `testAssembler_creativeAndGratitude_contractCarriesNoThreadsLanguage`.
+3. **The `**Noticed:**` (senses) block is appended identically to both dossier variants**, not scoped by either policy axis. `DossierSenses` output (weather, moon, elevation, pace) is orthogonal to the marker/thread-analysis table this task scopes — Task 9 deliberately defers the full six-voice matrix. The draft's one-line instruction ("call `ThreadsDossierFormatter.dossier` a second time... assign to `threadsDossierWithoutMarkers`") never touches `appendSensesBlock`, which would have left Journaling's reduced variant silently missing sensory content the draft never intended to remove. Shipped code widens `appendSensesBlock` to take both dossier strings (`inout (dossier: String?, withoutMarkers: String?)`, keeping it at 5 parameters, the `function_parameter_count` warning threshold) and appends the same rendered `**Noticed:**` text to whichever of the two is non-nil.
+4. **`ThreadsDossierBuilder.buildResult`'s tuple widens to three fields, and a new `DossierRenderInputs`/`renderDossierPair` pair factors the now-duplicated formatter call.** Two calls to `ThreadsDossierFormatter.dossier` (full and `includeMarkerLines: false`) inline in `buildResult` pushed its body to 62 lines against the `function_body_length` warning threshold of 60. `renderDossierPair` states the shared-input call once; `DossierRenderInputs` bundles its six inputs to stay under the 5-parameter gate — the same bundling pattern `SensesAssemblyState` already uses. Pure extraction, no behavior change.
+
+Note also: the response-contract snippets throughout this section already use the current `responseContract(voice:hasSpeech:threadsDossier: String?)` signature (no `hasThreadsDossier: Bool`) — the signature drift flagged going into this task turned out to already match between this plan doc and the shipped source; the substantive gap was the selection logic (deviations 1–2 above), not the parameter list.
 
 - [ ] **Step 1: Write the failing tests**
 

@@ -176,55 +176,64 @@ enum ThreadsDossierFormatter {
         threads: [WalkThread],
         currentWalkUUID: UUID,
         backfillComplete: Bool,
-        walkIndex: [UUID: UUID] = [:]
+        walkIndex: [UUID: UUID] = [:],
+        includeMarkerLines: Bool = true,
+        includeThreadAnalysis: Bool = true
     ) -> String? {
         guard !currentRecordings.isEmpty else { return nil }
         let baseline = personalBaseline(from: allContexts)
 
         var section = "**Thought threads (on-device linguistic analysis):**"
-        for (index, recording) in currentRecordings.enumerated() {
-            section += "\nRecording \(index + 1): \(markerLine(for: recording.context, baseline: baseline))"
-        }
-        if let modalLine = modalLeanLine(
-            currentRecordings: currentRecordings, allContexts: allContexts,
-            walkIndex: walkIndex, currentWalkUUID: currentWalkUUID
-        ) {
-            section += "\n\(modalLine)"
-        }
+        let heading = section
 
-        let activeThreads = threads.filter { thread in
-            thread.appearances.contains { $0.walkUUID == currentWalkUUID }
-        }
-        if !activeThreads.isEmpty {
-            section += "\n\n**Threads across recent walks:**"
-            for thread in activeThreads {
-                var line = "\n'\(thread.displayTerm)'"
-                switch ThreadStore.status(of: thread, atWalk: currentWalkUUID, backfillComplete: backfillComplete) {
-                case .firstTime:
-                    line += " — first appearance in the record"
-                case .recurring(let walks):
-                    line += " — \(walks) walk\(walks == 1 ? "" : "s") in the last 30 days"
-                case nil:
-                    break
-                }
-                if let direction = ThreadStore.salienceDirection(of: thread) {
-                    line += ", \(direction.rawValue) across appearances"
-                }
-                if let origin = thread.appearances.first, backfillComplete {
-                    line += " (first spoken \(ContextFormatter.shortDateFormatter.string(from: origin.date)))"
-                }
-                if let paceNote = paceCorrelation(of: thread, in: currentRecordings) {
-                    line += paceNote
-                }
-                section += line
+        if includeMarkerLines {
+            for (index, recording) in currentRecordings.enumerated() {
+                section += "\nRecording \(index + 1): \(markerLine(for: recording.context, baseline: baseline))"
+            }
+            if let modalLine = modalLeanLine(
+                currentRecordings: currentRecordings, allContexts: allContexts,
+                walkIndex: walkIndex, currentWalkUUID: currentWalkUUID
+            ) {
+                section += "\n\(modalLine)"
             }
         }
 
-        if backfillComplete, let quiet = quietLines(threads: threads, currentWalkUUID: currentWalkUUID) {
-            section += "\n\n**Quiet this walk:**"
-            section += quiet
+        if includeThreadAnalysis {
+            let activeThreads = threads.filter { thread in
+                thread.appearances.contains { $0.walkUUID == currentWalkUUID }
+            }
+            if !activeThreads.isEmpty {
+                section += "\n\n**Threads across recent walks:**"
+                for thread in activeThreads {
+                    var line = "\n'\(thread.displayTerm)'"
+                    switch ThreadStore.status(of: thread, atWalk: currentWalkUUID, backfillComplete: backfillComplete) {
+                    case .firstTime:
+                        line += " — first appearance in the record"
+                    case .recurring(let walks):
+                        line += " — \(walks) walk\(walks == 1 ? "" : "s") in the last 30 days"
+                    case nil:
+                        break
+                    }
+                    if let direction = ThreadStore.salienceDirection(of: thread) {
+                        line += ", \(direction.rawValue) across appearances"
+                    }
+                    if let origin = thread.appearances.first, backfillComplete {
+                        line += " (first spoken \(ContextFormatter.shortDateFormatter.string(from: origin.date)))"
+                    }
+                    if let paceNote = paceCorrelation(of: thread, in: currentRecordings) {
+                        line += paceNote
+                    }
+                    section += line
+                }
+            }
+
+            if backfillComplete, let quiet = quietLines(threads: threads, currentWalkUUID: currentWalkUUID) {
+                section += "\n\n**Quiet this walk:**"
+                section += quiet
+            }
         }
-        return section
+
+        return section == heading ? nil : section
     }
 
     /// Absence is a history claim ("this recurred without you") — as risky

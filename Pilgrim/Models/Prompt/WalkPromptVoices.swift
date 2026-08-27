@@ -67,6 +67,14 @@ struct CreativeVoice: PromptVoice {
             "Let the walk's rhythm shape the form; brevity is welcome."
         ]
     }
+
+    /// A poem prompt holding a sentiment score, or a marker profile of the
+    /// words it's asked to elevate, is analysis dressed as raw material.
+    var contextPolicy: PromptContextPolicy {
+        PromptContextPolicy(
+            includesMarkerLines: false, includesThreadAnalysis: false, hoistsUnchangedBlock: false
+        )
+    }
 }
 
 struct GratitudeVoice: PromptVoice {
@@ -87,6 +95,14 @@ struct GratitudeVoice: PromptVoice {
             "Root every thanksgiving in something specific from this walk — no generic blessings.",
             "Warm but plain language, in prose; never saccharine."
         ]
+    }
+
+    /// Thanksgiving asked to hold an absolutist-word share or a recurring-
+    /// thread analysis is asked to grade the walk while giving thanks for it.
+    var contextPolicy: PromptContextPolicy {
+        PromptContextPolicy(
+            includesMarkerLines: false, includesThreadAnalysis: false, hoistsUnchangedBlock: false
+        )
     }
 }
 
@@ -131,6 +147,16 @@ struct JournalingVoice: PromptVoice {
                 : "Keep the entry in second person, as a witness would write it.",
             "No meta-commentary about what you are doing — only the entry itself, ready to be reread years from now."
         ]
+    }
+
+    /// An entry the walker rereads years from now must not carry absolutist-
+    /// word percentages or a sentiment score — but the recurring-thread
+    /// analysis (a word that keeps returning) is exactly the kind of pattern
+    /// a journal entry is meant to notice, so it stays.
+    var contextPolicy: PromptContextPolicy {
+        PromptContextPolicy(
+            includesMarkerLines: false, includesThreadAnalysis: true, hoistsUnchangedBlock: false
+        )
     }
 }
 

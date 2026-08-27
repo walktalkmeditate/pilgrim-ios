@@ -29,9 +29,14 @@ enum PromptAssembler {
         if let weather = context.weather {
             sections += " | \(weather)"
         }
+        if voice.contextPolicy.hoistsUnchangedBlock, let unchanged = context.unchangedBlock {
+            sections += "\n\n\(unchanged)"
+        }
         sections += contextDossier(context: context)
+        let dossier = selectedDossier(context: context, policy: voice.contextPolicy)
         sections += walkRecord(
             context: context,
+            dossier: dossier,
             directives: directives,
             detectedLanguageName: detectedLanguageName
         )
@@ -42,8 +47,21 @@ enum PromptAssembler {
         }
 
         sections += "\n\n---\n\n\(fullInstruction)"
-        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, threadsDossier: context.threadsDossier))"
+        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, threadsDossier: dossier))"
         return sections
+    }
+
+    /// The dossier variant this voice's policy allows, drawn from the two
+    /// already-rendered strings the builder carries on `ActivityContext` —
+    /// never re-rendered here. A voice that suppresses thread analysis sees
+    /// no dossier at all, regardless of its marker-lines setting: the brief's
+    /// original sketch branched on `includesMarkerLines` alone, which would
+    /// have hidden markers from Creative and Gratitude while still leaking
+    /// the "Threads across recent walks" / "Quiet this walk" sections their
+    /// policy asks to suppress.
+    private static func selectedDossier(context: ActivityContext, policy: PromptContextPolicy) -> String? {
+        guard policy.includesThreadAnalysis else { return nil }
+        return policy.includesMarkerLines ? context.threadsDossier : context.threadsDossierWithoutMarkers
     }
 
     /// The walk's circumstances: sky, practice, intention, place, and what
@@ -108,9 +126,11 @@ enum PromptAssembler {
     }
 
     /// What the walk produced — words, stillness, continuity with recent
-    /// walks — closed by the directives that point at its patterns.
+    /// walks — closed by the directives that point at its patterns. `dossier`
+    /// arrives pre-selected by `assemble` per the voice's context policy.
     private static func walkRecord(
         context: ActivityContext,
+        dossier: String?,
         directives: [String]?,
         detectedLanguageName: String?
     ) -> String {
@@ -134,7 +154,7 @@ enum PromptAssembler {
             sections += "\n\n\(recentWalks)"
         }
 
-        if let dossier = context.threadsDossier {
+        if let dossier {
             sections += "\n\n\(dossier)"
         }
 
