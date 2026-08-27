@@ -182,6 +182,7 @@ enum PromptAssembler {
         }
         if hasThreadsDossier {
             lines.append("The thought-thread marker profiles are descriptive on-device linguistic signals, not assessments — interpret them gently, never produce clinical or diagnostic language, and never treat a single walk's numbers as meaningful on their own.")
+            lines.append("Read absolutist density as how fixed the walker's framing was, first-person density as how far they placed themselves at the centre of it, and the modal lean as the frame they were working inside — obligation means the frame constrained them, counterfactual means they were already replaying alternatives, possibility and tentative mean it was still open. None of these has a fixed meaning; read each through this walk's intention and practice.")
         }
         lines.append("Draw only on what this walk actually holds — never invent details, events, or memories that are not in the context above.")
         let bullets = lines.map { "- \($0)" }.joined(separator: "\n")

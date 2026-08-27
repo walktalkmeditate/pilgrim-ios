@@ -82,4 +82,41 @@ final class PromptResponseContractTests: XCTestCase {
         XCTAssertTrue(prompt.text.contains("**How to respond:**"))
         XCTAssertTrue(prompt.text.contains("never invent"))
     }
+
+    func testResponseContract_withThreadsDossier_carriesInterpretiveKey() {
+        let contract = PromptAssembler.responseContract(
+            voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: true
+        )
+        XCTAssertTrue(contract.contains("absolutist density"))
+        XCTAssertTrue(contract.contains("first-person density"))
+        XCTAssertTrue(contract.contains("modal lean"))
+        XCTAssertTrue(contract.contains("obligation"))
+        XCTAssertTrue(contract.contains("counterfactual"))
+    }
+
+    func testResponseContract_withThreadsDossier_retainsClinicalGuard() {
+        let contract = PromptAssembler.responseContract(
+            voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: true
+        )
+        XCTAssertTrue(contract.contains("never produce clinical or diagnostic language"))
+    }
+
+    func testResponseContract_withoutThreadsDossier_hasNoInterpretiveKey() {
+        let contract = PromptAssembler.responseContract(
+            voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: false
+        )
+        XCTAssertFalse(contract.contains("absolutist density"))
+    }
+
+    func testResponseContract_withThreadsDossier_addsExactlyOneLine() {
+        let with = PromptAssembler.responseContract(
+            voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: true
+        )
+        let without = PromptAssembler.responseContract(
+            voice: ReflectiveVoice(), hasSpeech: true, hasThreadsDossier: false
+        )
+        let withLines = with.components(separatedBy: "\n- ").count
+        let withoutLines = without.components(separatedBy: "\n- ").count
+        XCTAssertEqual(withLines - withoutLines, 2, "clinical guard + interpretive key, no more")
+    }
 }
