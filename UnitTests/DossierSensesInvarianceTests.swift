@@ -179,7 +179,7 @@ final class DossierSensesInvarianceTests: XCTestCase {
         )
     }
 
-    private func steadyThread(_ lemma: String, recordings: [UUID], walks: [UUID]) -> WalkThread {
+    func steadyThread(_ lemma: String, recordings: [UUID], walks: [UUID]) -> WalkThread {
         WalkThread(
             lemma: lemma, displayTerm: lemma,
             appearances: zip(recordings, walks).map { rec, walk in
@@ -340,7 +340,7 @@ final class DossierSensesInvarianceTests: XCTestCase {
         )
     }
 
-    private func modalContext(_ uuid: UUID, modals: [String: Int], words: Int = 200) -> TranscriptContext {
+    func modalContext(_ uuid: UUID, modals: [String: Int], words: Int = 200) -> TranscriptContext {
         TranscriptContext(
             schemaVersion: TranscriptContext.currentSchemaVersion,
             recordingUUID: uuid, transcriptHash: "h", languageCode: "en",
@@ -353,7 +353,7 @@ final class DossierSensesInvarianceTests: XCTestCase {
         )
     }
 
-    private func modalInput(_ contexts: [TranscriptContext], _ thread: WalkThread) -> DossierSenses.Input {
+    func modalInput(_ contexts: [TranscriptContext], _ thread: WalkThread) -> DossierSenses.Input {
         DossierSenses.Input(
             currentWalkUUID: UUID(),
             walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),

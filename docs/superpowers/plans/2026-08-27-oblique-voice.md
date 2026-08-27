@@ -807,10 +807,19 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Modify: `Pilgrim/Models/Threads/DossierSensesInvariance.swift`
 - Modify: `UnitTests/DossierSensesInvarianceTests.swift`
+- New: `UnitTests/DossierSensesInvarianceFrameConstancyCoverageTests.swift` (split off when the review-fix pass pushed the parent test file toward the `file_length` gate — see Deviation 3)
 
 **Interfaces:**
 - Produces: `DossierSensesInvariance.frameConstancy(input:suppressed:) -> DossierSenses.SenseLine?`
 - Consumes: `MarkerPack.modalCounts`, `MarkerLexicons.modalFamily(of:)`, `MarkerLexicons.ModalFamily`
+
+**Adjudicated deviations from the draft below** (shipped code differs from the original Step 1/3 draft in three ways; each is intentional, reviewed, and must not be "simplified" back to the draft):
+
+1. **Walk-keying, not appearance-keying.** The draft's `families` mapped one `MarkerLexicons.ModalFamily?` per `thread.appearances` element (i.e. per recording) and gated `families.count >= minimumInvariantWalks` on that — so three recordings on a *single* walk could clear a floor named `minimumInvariantWalks`, contradicting its own name. Shipped code groups by `appearance.walkUUID` first (`modalsByWalk: [UUID: [String: Int]]`, then `allWalks = Set(thread.appearances.map(\.walkUUID))`), matching `fusedThemes` and `unmovedReturn`, which both gate on distinct walk count for the same reason (spelled out in `unmovedReturn`'s doc comment and `ThreadsDossierFormatter.modalBaselineFloorWalks`).
+2. **Same-walk summing.** When a walk carries more than one recording and their modal counts individually disagree, shipped code sums `modalCounts` across the walk into one total before picking a dominant family for that walk — mirroring `ThreadsDossierFormatter.modalLeanSummary`'s handling of today's walk. Picking one recording's dominance to stand for the whole walk (or "last recording wins") was rejected as an unprincipled way to resolve a same-walk disagreement. Pinned by `testFrameConstancy_recordingsOnSameWalk_combineByModalCountSum`.
+3. **Full walk-coverage requirement (review fix, post-ship).** The rendered line says "Every walk where '_' appears is X-dominant." The draft below computed `families` via `compactMap`, which *silently dropped* any walk whose only recording(s) had `markers == nil` (non-English) or empty `modalCounts` (no modal words spoken) — so a theme appearing in 4 walks, 3 agreeing and 1 with no modal evidence at all, would still render "every walk" while never having looked at the fourth. Shipped code requires **full coverage**: every walk in `allWalks` (not just the ones with evidence) must produce a non-nil dominant family, or the whole signal stays silent — `dominantFamilies.count == allWalks.count` before the `allSatisfy` check. This is the strong option, not the fallback ("bind the text to what was measured, e.g. name the count of walks that carried modal language") — full coverage did not make the signal unfirable on realistic fixtures (three agreeing walks with modal language is common speech, not a corner case), so the fallback wasn't needed. Silence is this feature's correct default when evidence is incomplete, per the type's doc comment. Pinned by `testFrameConstancy_oneWalkNonEnglish_holdsSignalSilent` and `testFrameConstancy_oneWalkNoModalWordsSpoken_holdsSignalSilent`.
+
+The near-miss boundary (two walks agree, one differs, all three with full modal coverage) is pinned separately by `testFrameConstancy_twoOfThreeAgree_oneDiffers_staysSilent` — the original draft only tested full three-way disagreement, which doesn't exercise `allSatisfy`'s N-1 case.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -879,6 +888,8 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
     }
 ```
 
+Superseded by Deviations 1-3 above — shipped tests additionally cover: three recordings landing on one walk (`testFrameConstancy_threeRecordingsOnOneWalk_staysSilent`), same-walk sum resolving a same-walk disagreement (`testFrameConstancy_recordingsOnSameWalk_combineByModalCountSum`), the exact rendered string (`testFrameConstancy_sameFamilyEveryWalk_fires` now asserts `line?.text ==`, not just `.contains`), one walk lacking modal evidence via non-English markers or empty modalCounts (both hold the signal silent), and the N-1-agree near-miss boundary. The evidence-coverage and near-miss tests live in `UnitTests/DossierSensesInvarianceFrameConstancyCoverageTests.swift`, an `extension DossierSensesInvarianceTests` in a separate file (parent file sits at the `file_length` gate; `modalContext`, `modalInput`, `steadyThread` were widened from `private` to internal so the extension file can share them — same pattern as `DossierSensesCrossWalkMoonTests.swift`).
+
 - [ ] **Step 2: Run to verify it fails**
 
 Expected: COMPILE FAILURE — no `frameConstancy`.
@@ -894,10 +905,27 @@ extension DossierSensesInvariance {
     /// possibility and tentative stay open. The same family every time is
     /// a frame that never varied.
     ///
-    /// Per-appearance dominance is a MODE, not a majority — the same fix
-    /// PR #71 applied to weatherWeave to kill the cloud tautologies. A
-    /// family can dominate with 40% of the modals as long as nothing beats
-    /// it. Deterministic ties: `ModalFamily.allCases` is declaration-ordered
+    /// Grouped and gated by distinct WALK, not by qualifying recording,
+    /// mirroring `fusedThemes` and `unmovedReturn` (Deviation 1 above): a
+    /// theme argued in three bursts on one walk is one data point about one
+    /// frame, not three. When a walk carries more than one recording, their
+    /// modal counts are SUMMED into a single per-walk total before a
+    /// dominant family is picked (Deviation 2), mirroring
+    /// `ThreadsDossierFormatter.modalLeanSummary`.
+    ///
+    /// The rendered line claims "every walk". That claim is only true if
+    /// EVERY walk where the theme appears has a dominant family — so a walk
+    /// with no modal evidence (its only recording(s) have `markers == nil`,
+    /// i.e. non-English, or an empty/unmapped `modalCounts`) is not
+    /// silently dropped from the pool. A single uncovered walk holds the
+    /// whole signal silent (Deviation 3) — full coverage is the price of
+    /// the word "every". Silence is the correct default; see the type's
+    /// doc comment.
+    ///
+    /// Per-walk dominance is a MODE, not a majority — the same fix PR #71
+    /// applied to weatherWeave to kill the cloud tautologies. A family can
+    /// dominate with 40% of the modals as long as nothing beats it.
+    /// Deterministic ties: `ModalFamily.allCases` is declaration-ordered
     /// and only a STRICTLY greater count replaces the running best.
     static func frameConstancy(
         input: DossierSenses.Input, suppressed: Set<String>
@@ -909,26 +937,20 @@ extension DossierSensesInvariance {
 
         for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
         where !suppressed.contains(thread.lemma) {
-            let families = thread.appearances.compactMap { appearance -> MarkerLexicons.ModalFamily? in
+            let allWalks = Set(thread.appearances.map(\.walkUUID))
+            guard allWalks.count >= minimumInvariantWalks else { continue }
+
+            var modalsByWalk: [UUID: [String: Int]] = [:]
+            for appearance in thread.appearances {
                 guard let modals = byRecording[appearance.recordingUUID]?.markers?.modalCounts,
-                      !modals.isEmpty else { return nil }
-                var totals: [MarkerLexicons.ModalFamily: Int] = [:]
-                for (word, count) in modals {
-                    guard let family = MarkerLexicons.modalFamily(of: word) else { continue }
-                    totals[family, default: 0] += count
-                }
-                var best: (family: MarkerLexicons.ModalFamily, count: Int)?
-                for family in MarkerLexicons.ModalFamily.allCases {
-                    let count = totals[family] ?? 0
-                    guard count > 0, best == nil || count > best!.count else { continue }
-                    best = (family, count)
-                }
-                return best?.family
+                      !modals.isEmpty else { continue }
+                modalsByWalk[appearance.walkUUID, default: [:]].merge(modals, uniquingKeysWith: +)
             }
 
-            guard families.count >= minimumInvariantWalks,
-                  let first = families.first,
-                  families.allSatisfy({ $0 == first }) else { continue }
+            let dominantFamilies = allWalks.compactMap { modalsByWalk[$0].flatMap(dominantModalFamily) }
+            guard dominantFamilies.count == allWalks.count,
+                  let first = dominantFamilies.first,
+                  dominantFamilies.allSatisfy({ $0 == first }) else { continue }
 
             return DossierSenses.SenseLine(
                 text: "Every walk where '\(thread.displayTerm)' appears is "
@@ -937,6 +959,24 @@ extension DossierSensesInvariance {
             )
         }
         return nil
+    }
+
+    /// The dominant `ModalFamily` for one walk's summed modal counts, or
+    /// nil if none of the words present map to a known family. A mode over
+    /// family totals, not a majority share — see `frameConstancy`.
+    private static func dominantModalFamily(in modals: [String: Int]) -> MarkerLexicons.ModalFamily? {
+        var totals: [MarkerLexicons.ModalFamily: Int] = [:]
+        for (word, count) in modals {
+            guard let family = MarkerLexicons.modalFamily(of: word) else { continue }
+            totals[family, default: 0] += count
+        }
+        var best: (family: MarkerLexicons.ModalFamily, count: Int)?
+        for family in MarkerLexicons.ModalFamily.allCases {
+            let count = totals[family] ?? 0
+            guard count > 0, best == nil || count > best!.count else { continue }
+            best = (family, count)
+        }
+        return best?.family
     }
 }
 ```
@@ -968,6 +1008,10 @@ after majority-voting produced cloud tautologies.
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```
+
+Review fix (post-ship, same task): full walk-coverage requirement plus
+the N-1-agree boundary test. See Deviation 3 above and
+`.superpowers/sdd/task-5-report.md` for the fix commit and test run.
 
 ---
 

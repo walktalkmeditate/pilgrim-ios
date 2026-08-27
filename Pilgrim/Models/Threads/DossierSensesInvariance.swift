@@ -230,6 +230,18 @@ extension DossierSensesInvariance {
     /// letting one recording's dominance silently stand for the walk, or
     /// resolving a same-walk disagreement some other, unprincipled way.
     ///
+    /// The rendered line claims "every walk". That claim is only true if
+    /// EVERY walk where the theme appears has a dominant family — so a
+    /// walk with no modal evidence (its only recording(s) have `markers ==
+    /// nil`, i.e. non-English, or an empty/unmapped `modalCounts`) is not
+    /// silently dropped from the pool the way `unmovedReturn` drops
+    /// sub-floor recordings. Dropping it here would let three walks that
+    /// happen to agree outvote a fourth the line never looked at, while
+    /// still claiming to speak for it. Instead a single uncovered walk
+    /// holds the whole signal silent — full coverage is the price of the
+    /// word "every". Silence is the correct default; see the type's doc
+    /// comment.
+    ///
     /// Per-walk dominance is a MODE, not a majority — the same fix PR #71
     /// applied to weatherWeave to kill the cloud tautologies. A family can
     /// dominate with 40% of the modals as long as nothing beats it.
@@ -245,6 +257,9 @@ extension DossierSensesInvariance {
 
         for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
         where !suppressed.contains(thread.lemma) {
+            let allWalks = Set(thread.appearances.map(\.walkUUID))
+            guard allWalks.count >= minimumInvariantWalks else { continue }
+
             var modalsByWalk: [UUID: [String: Int]] = [:]
             for appearance in thread.appearances {
                 guard let modals = byRecording[appearance.recordingUUID]?.markers?.modalCounts,
@@ -252,10 +267,10 @@ extension DossierSensesInvariance {
                 modalsByWalk[appearance.walkUUID, default: [:]].merge(modals, uniquingKeysWith: +)
             }
 
-            let families = modalsByWalk.values.compactMap(dominantModalFamily)
-            guard families.count >= minimumInvariantWalks,
-                  let first = families.first,
-                  families.allSatisfy({ $0 == first }) else { continue }
+            let dominantFamilies = allWalks.compactMap { modalsByWalk[$0].flatMap(dominantModalFamily) }
+            guard dominantFamilies.count == allWalks.count,
+                  let first = dominantFamilies.first,
+                  dominantFamilies.allSatisfy({ $0 == first }) else { continue }
 
             return DossierSenses.SenseLine(
                 text: "Every walk where '\(thread.displayTerm)' appears is "
