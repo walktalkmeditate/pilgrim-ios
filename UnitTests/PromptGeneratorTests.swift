@@ -419,4 +419,32 @@ final class PromptGeneratorTests: XCTestCase {
         XCTAssertNil(prompt.style)
         XCTAssertEqual(prompt.customStyle?.title, "Letter")
     }
+
+    // MARK: - Task 2: Reflective Voice Bound to the Walk's Own Evidence
+
+    /// The instruction enumerates the evidence the model may lean on, and
+    /// every item in that enumeration must be evidence a spoken walk
+    /// actually carries. The marker profile is not: it reaches the prompt
+    /// only when `UserPreferences.threadsAfterWalks` is on, and
+    /// `instruction(hasSpeech:)` — unlike `PromptAssembler.responseContract`
+    /// — has no way to know whether it did.
+    func testReflectiveVoice_spoken_bindsConnectionsToTheRecord() {
+        let instruction = ReflectiveVoice().instruction(hasSpeech: true)
+        XCTAssertTrue(instruction.contains("Where the walk's own record supports it"))
+        XCTAssertTrue(instruction.contains("say less rather than reaching"))
+        XCTAssertTrue(instruction.contains("do not manufacture one"))
+        XCTAssertTrue(instruction.contains("a shift in pace"))
+        XCTAssertFalse(instruction.contains("marker profile"), "the dossier is behind a preference")
+    }
+
+    func testReflectiveVoice_silent_bindsPatternsToTheRecord() {
+        let instruction = ReflectiveVoice().instruction(hasSpeech: false)
+        XCTAssertTrue(instruction.contains("Where the walk's own record supports it"))
+        XCTAssertTrue(instruction.contains("say less rather than reaching"))
+    }
+
+    func testReflectiveVoice_bothModes_keepSelfUnderstandingGoal() {
+        XCTAssertTrue(ReflectiveVoice().instruction(hasSpeech: true).contains("understand"))
+        XCTAssertTrue(ReflectiveVoice().instruction(hasSpeech: false).contains("understand"))
+    }
 }

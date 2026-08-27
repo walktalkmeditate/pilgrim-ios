@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 /// Deterministic pattern detection over a walk's context. The assembler
 /// hands the downstream model a dossier; these directives tell it what is
@@ -8,6 +9,28 @@ enum AttentionDirectives {
 
     private static let movingThreshold = 0.3
     private static let maxDirectives = 4
+    private static let paceShiftThreshold = 0.15
+    /// `wordsPerMinute` over a handful of words is noise, not a speaking
+    /// rate: a five-word note clears a 15% relative delta on the rounding of
+    /// its own start and end timestamps. At any plausible speaking rate this
+    /// floor means at least ten seconds of continuous speech on each side —
+    /// the pace branch's answer to the subject branch's lemma floor.
+    private static let minimumWordsToJudgePace = 25
+    private static let subjectOverlapCeiling = 0.20
+    /// Content lemmas, after `SpokenStoplist.scaffoldLemmas` is removed. The
+    /// original floor of 5 sat far below where a lexical-overlap judgment
+    /// carries any information: a sign-off ("heading back down the hill,
+    /// tired but glad") clears 5 comfortably and shares nothing with a long
+    /// opening, so the overlap coefficient reads zero and the directive fires
+    /// on a walk that never changed subject. A genuinely divergent long pair
+    /// measures around 0.06, so there is ample headroom above this floor.
+    private static let minimumLemmasToJudgeSubject = 12
+    /// Two recordings are only comparable as subjects when both carry
+    /// comparable amounts of it. Past this ratio the smaller recording is a
+    /// thin sample of the walk rather than its second half, and its overlap
+    /// against a much longer transcript says more about its length than about
+    /// what the walker was talking about.
+    private static let subjectLengthRatioCeiling = 3.0
 
     /// `detectedLanguageCode` defaults to nil ("detect here") so direct
     /// callers stay unchanged; PromptGenerator.resolvedDerivations passes
@@ -139,8 +162,102 @@ enum AttentionDirectives {
         return "The word '\(display)' returns \(count) times across the recordings — it may be doing quiet work."
     }
 
+    /// Fires only when something measurably moved between the first
+    /// recording and the last. The previous version fired on every walk
+    /// with two recordings and presupposed its own conclusion — told to
+    /// measure what changed, the model finds change, including on walks
+    /// where nothing did (the `questionDensity` failure mode, quieter).
+    ///
+    /// Marker and sentiment deltas are deliberately NOT used: they are
+    /// unreachable from `ActivityContext`, and computing them here would
+    /// mean a fresh analyzer pass per recording. Pace is free
+    /// (`wordsPerMinute` is already populated); subject costs exactly two
+    /// lemma passes, never N.
+    ///
+    /// Both branches fail closed. Each carries a floor sized so the signal
+    /// it reads is measurable at all — words for a speaking rate, content
+    /// lemmas for a subject — and the subject branch additionally refuses
+    /// languages this OS cannot lemmatize. Silence hands the `maxDirectives`
+    /// budget to a detector with something to say.
     private static func firstVersusLast(_ context: ActivityContext) -> String? {
-        guard context.recordings.count >= 2 else { return nil }
-        return "Compare the first recording with the last — measure what changed in the walker between them."
+        guard let first = context.recordings.first,
+              let last = context.recordings.last,
+              context.recordings.count >= 2 else { return nil }
+
+        if let paceLine = speakingRateShift(first: first, last: last) { return paceLine }
+        return subjectShift(first: first, last: last)
+    }
+
+    /// Speaking rate, not ground speed — `paceShift` above reads GPS.
+    private static func speakingRateShift(first: RecordingContext, last: RecordingContext) -> String? {
+        guard let firstPace = first.wordsPerMinute, let lastPace = last.wordsPerMinute, firstPace > 0,
+              TranscriptNLP.wordCount(in: first.text) >= minimumWordsToJudgePace,
+              TranscriptNLP.wordCount(in: last.text) >= minimumWordsToJudgePace else { return nil }
+
+        let change = (lastPace - firstPace) / firstPace
+        if change >= paceShiftThreshold {
+            return "The walker spoke faster by the last recording than the first — attend to what moved between them."
+        }
+        if change <= -paceShiftThreshold {
+            return "The walker spoke more slowly by the last recording than the first — attend to what moved between them."
+        }
+        return nil
+    }
+
+    /// Whether the walker's vocabulary moved between the two recordings.
+    ///
+    /// Both sides must be lemmatized by the SAME language model. Without a
+    /// lemma model `TranscriptNLP.contentLemmas` falls back to the lowercased
+    /// surface form, so an inflected language yields a distinct "lemma" per
+    /// inflection and depresses overlap systematically — every Camino walk in
+    /// Spanish, French, German, Italian, or Portuguese would read as total
+    /// divergence. A walker who switches languages mid-walk has not changed
+    /// subject either; the two sets are simply not comparable.
+    private static func subjectShift(first: RecordingContext, last: RecordingContext) -> String? {
+        guard let firstLanguage = lemmatizableLanguage(of: first.text),
+              let lastLanguage = lemmatizableLanguage(of: last.text),
+              firstLanguage == lastLanguage else { return nil }
+
+        let firstLemmas = subjectLemmas(in: first.text)
+        let lastLemmas = subjectLemmas(in: last.text)
+        let smallerCount = min(firstLemmas.count, lastLemmas.count)
+        let largerCount = max(firstLemmas.count, lastLemmas.count)
+        guard smallerCount >= minimumLemmasToJudgeSubject,
+              Double(largerCount) / Double(smallerCount) <= subjectLengthRatioCeiling else { return nil }
+
+        // Overlap coefficient (intersection / smaller set), not Jaccard
+        // (intersection / union). Jaccard collapses to |smaller| / |larger|
+        // whenever one lemma set is a subset of the other — a long opening
+        // reflection (~30+ unique lemmas) followed by a short closing note
+        // on the SAME subject (all repeats) can then cross the ceiling on
+        // length alone, firing "shares little vocabulary" on a walk that
+        // never left its subject. The overlap coefficient is 1.0 for that
+        // same subset case (correctly silent) and still near 0 for genuinely
+        // divergent subjects, because it measures how much of the SMALLER
+        // recording is accounted for by the larger one rather than
+        // penalizing a short recording for being short.
+        let overlap = Double(firstLemmas.intersection(lastLemmas).count) / Double(smallerCount)
+        guard overlap <= subjectOverlapCeiling else { return nil }
+
+        return "The walker's last recording shares little vocabulary with the first — attend to what moved between them."
+    }
+
+    /// The same `SpokenStoplist.scaffoldLemmas` filter `recurringWord`
+    /// applies: NLTagger tags "think", "know", "want", "keep" as content, but
+    /// a speaker reaches for them out of habit. Left in, a closing recording
+    /// made entirely of scaffolding clears the lemma floor on words that
+    /// carry no subject at all.
+    private static func subjectLemmas(in text: String) -> Set<String> {
+        Set(TranscriptNLP.contentLemmas(in: text)).subtracting(SpokenStoplist.scaffoldLemmas)
+    }
+
+    /// The transcript's language when this OS actually ships a lemma model
+    /// for it, nil otherwise — including when no language clears the
+    /// recognizer's confidence bar. Asked of the OS rather than hardcoded, so
+    /// the subject branch widens on its own as Apple adds lemma models.
+    static func lemmatizableLanguage(of text: String) -> String? {
+        guard let code = TranscriptNLP.detectLanguage(text) else { return nil }
+        return NLTagger.availableTagSchemes(for: .word, language: NLLanguage(rawValue: code))
+            .contains(.lemma) ? code : nil
     }
 }

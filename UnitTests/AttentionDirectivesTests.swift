@@ -10,13 +10,13 @@ final class AttentionDirectivesTests: XCTestCase {
 
     private let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
 
-    private func recording(_ text: String, offset: TimeInterval = 300) -> RecordingContext {
+    private func recording(_ text: String, offset: TimeInterval = 300, wpm: Double? = nil) -> RecordingContext {
         RecordingContext(
             text: text,
             timestamp: start.addingTimeInterval(offset),
             startCoordinate: nil,
             endCoordinate: nil,
-            wordsPerMinute: nil
+            wordsPerMinute: wpm
         )
     }
 
@@ -148,13 +148,22 @@ final class AttentionDirectivesTests: XCTestCase {
     }
 
     // MARK: - First vs last recording
+    //
+    // Full behavioural coverage (pace shift, subject divergence, and the
+    // silent cases) lives in AttentionDirectivesFirstVersusLastTests below —
+    // gated per PR (task 3 of the oblique-voice plan): the directive used to
+    // fire unconditionally on any walk with two recordings, presupposing
+    // its own conclusion. These two just confirm the assembler wiring.
 
-    func testFirstVersusLast_twoRecordings_fires() {
+    func testFirstVersusLast_paceShiftBetweenRecordings_fires() {
         let context = ActivityContext.make(
-            recordings: [recording("Setting out heavy"), recording("Coming home lighter", offset: 3000)],
+            recordings: [
+                recording(DirectiveFixtures.heavyOpening, wpm: 100),
+                recording(DirectiveFixtures.lighterClosing, offset: 3000, wpm: 140)
+            ],
             startDate: start
         )
-        XCTAssertTrue(joined(context).contains("first recording"))
+        XCTAssertTrue(joined(context).contains("attend to what moved between them"))
     }
 
     func testFirstVersusLast_singleRecording_doesNotFire() {
@@ -162,7 +171,7 @@ final class AttentionDirectivesTests: XCTestCase {
             recordings: [recording("Just one thought today")],
             startDate: start
         )
-        XCTAssertFalse(joined(context).contains("first recording"))
+        XCTAssertFalse(joined(context).contains("attend to what moved between them"))
     }
 
     // MARK: - Cap and assembly
@@ -173,15 +182,23 @@ final class AttentionDirectivesTests: XCTestCase {
             + Array(repeating: 0.8, count: 30)
         let context = ActivityContext.make(
             recordings: [
-                recording("Release the river from its banks"),
-                recording("The river again, release again", offset: 900),
-                recording("Still the river", offset: 1500)
+                recording("Release the river from its banks and let the water find its own way down "
+                          + "through the meadow, past the willows, toward the bridge I crossed yesterday.",
+                          wpm: 100),
+                recording("The river again, release again, the same water moving under the same bridge.",
+                          offset: 900),
+                recording("Still the river, still the release, and the meadow going gold in the late "
+                          + "light while the willows lean over the water and the bridge waits quietly ahead.",
+                          offset: 1500, wpm: 150)
             ],
             duration: 3600,
             startDate: start,
             routeSpeeds: speeds,
             intention: "Release what I cannot carry"
         )
+        // Five detectors have something to fire here (stillness, pace shift,
+        // intention echo, recurring word, and first-vs-last via the 50% wpm
+        // change) — the cap must still hold at four.
         XCTAssertLessThanOrEqual(AttentionDirectives.detect(context: context).count, 4)
     }
 
@@ -191,7 +208,10 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertFalse(quietPrompt.text.contains("**Attend to:**"))
 
         let telling = ActivityContext.make(
-            recordings: [recording("Setting out"), recording("Returning", offset: 3000)],
+            recordings: [
+                recording(DirectiveFixtures.heavyOpening, wpm: 100),
+                recording(DirectiveFixtures.lighterClosing, offset: 3000, wpm: 140)
+            ],
             startDate: start
         )
         let tellingPrompt = PromptGenerator.generate(style: .reflective, context: telling)
