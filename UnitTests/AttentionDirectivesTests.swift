@@ -10,13 +10,13 @@ final class AttentionDirectivesTests: XCTestCase {
 
     private let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
 
-    private func recording(_ text: String, offset: TimeInterval = 300) -> RecordingContext {
+    private func recording(_ text: String, offset: TimeInterval = 300, wpm: Double? = nil) -> RecordingContext {
         RecordingContext(
             text: text,
             timestamp: start.addingTimeInterval(offset),
             startCoordinate: nil,
             endCoordinate: nil,
-            wordsPerMinute: nil
+            wordsPerMinute: wpm
         )
     }
 
@@ -148,13 +148,22 @@ final class AttentionDirectivesTests: XCTestCase {
     }
 
     // MARK: - First vs last recording
+    //
+    // Full behavioural coverage (pace shift, subject divergence, and the
+    // silent cases) lives in AttentionDirectivesFirstVersusLastTests below —
+    // gated per PR (task 3 of the oblique-voice plan): the directive used to
+    // fire unconditionally on any walk with two recordings, presupposing
+    // its own conclusion. These two just confirm the assembler wiring.
 
-    func testFirstVersusLast_twoRecordings_fires() {
+    func testFirstVersusLast_paceShiftBetweenRecordings_fires() {
         let context = ActivityContext.make(
-            recordings: [recording("Setting out heavy"), recording("Coming home lighter", offset: 3000)],
+            recordings: [
+                recording("Setting out heavy", wpm: 100),
+                recording("Coming home lighter", offset: 3000, wpm: 140)
+            ],
             startDate: start
         )
-        XCTAssertTrue(joined(context).contains("first recording"))
+        XCTAssertTrue(joined(context).contains("attend to what moved between them"))
     }
 
     func testFirstVersusLast_singleRecording_doesNotFire() {
@@ -162,7 +171,7 @@ final class AttentionDirectivesTests: XCTestCase {
             recordings: [recording("Just one thought today")],
             startDate: start
         )
-        XCTAssertFalse(joined(context).contains("first recording"))
+        XCTAssertFalse(joined(context).contains("attend to what moved between them"))
     }
 
     // MARK: - Cap and assembly
@@ -173,15 +182,18 @@ final class AttentionDirectivesTests: XCTestCase {
             + Array(repeating: 0.8, count: 30)
         let context = ActivityContext.make(
             recordings: [
-                recording("Release the river from its banks"),
+                recording("Release the river from its banks", wpm: 100),
                 recording("The river again, release again", offset: 900),
-                recording("Still the river", offset: 1500)
+                recording("Still the river", offset: 1500, wpm: 150)
             ],
             duration: 3600,
             startDate: start,
             routeSpeeds: speeds,
             intention: "Release what I cannot carry"
         )
+        // Five detectors have something to fire here (stillness, pace shift,
+        // intention echo, recurring word, and first-vs-last via the 50% wpm
+        // change) — the cap must still hold at four.
         XCTAssertLessThanOrEqual(AttentionDirectives.detect(context: context).count, 4)
     }
 
@@ -191,7 +203,7 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertFalse(quietPrompt.text.contains("**Attend to:**"))
 
         let telling = ActivityContext.make(
-            recordings: [recording("Setting out"), recording("Returning", offset: 3000)],
+            recordings: [recording("Setting out", wpm: 100), recording("Returning", offset: 3000, wpm: 140)],
             startDate: start
         )
         let tellingPrompt = PromptGenerator.generate(style: .reflective, context: telling)
@@ -259,5 +271,100 @@ final class AttentionDirectivesTests: XCTestCase {
             startDate: start
         )
         XCTAssertFalse(joined(context).contains("returns"))
+    }
+}
+
+/// `firstVersusLast` used to fire on every walk with two recordings and
+/// presuppose its own conclusion — told to measure what changed, the model
+/// finds change, including on walks where nothing did. These tests pin the
+/// gated behaviour: it fires only on a pace shift (free from
+/// `wordsPerMinute`) or a subject that genuinely diverged (two bounded
+/// lemma passes, never one per recording).
+final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
+
+    private static let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+
+    private func recording(_ text: String, wpm: Double?, minutesIn: Int) -> RecordingContext {
+        RecordingContext(
+            text: text,
+            timestamp: Self.start.addingTimeInterval(TimeInterval(minutesIn * 60)),
+            startCoordinate: nil,
+            endCoordinate: nil,
+            wordsPerMinute: wpm,
+            recordingUUID: UUID(),
+            endTimestamp: nil
+        )
+    }
+
+    private func directives(_ recordings: [RecordingContext]) -> [String] {
+        AttentionDirectives.detect(
+            context: .make(recordings: recordings, startDate: Self.start),
+            detectedLanguageCode: "en"
+        )
+    }
+
+    private func isFirstVersusLast(_ line: String) -> Bool {
+        line.contains("attend to what moved between them")
+    }
+
+    func testFirstVersusLast_sameSubjectSamePace_staysSilent() {
+        let text = "the garden hedge grows beside the stone wall near the orchard gate"
+        let lines = directives([
+            recording(text, wpm: 100, minutesIn: 0),
+            recording(text, wpm: 102, minutesIn: 20)
+        ])
+        XCTAssertFalse(lines.contains(where: isFirstVersusLast))
+    }
+
+    func testFirstVersusLast_paceShift_fires() {
+        let text = "the garden hedge grows beside the stone wall near the orchard gate"
+        let lines = directives([
+            recording(text, wpm: 100, minutesIn: 0),
+            recording(text, wpm: 140, minutesIn: 20)
+        ])
+        XCTAssertTrue(lines.contains { isFirstVersusLast($0) && $0.contains("faster") })
+    }
+
+    func testFirstVersusLast_paceSlowed_namesSlower() {
+        let text = "the garden hedge grows beside the stone wall near the orchard gate"
+        let lines = directives([
+            recording(text, wpm: 140, minutesIn: 0),
+            recording(text, wpm: 100, minutesIn: 20)
+        ])
+        XCTAssertTrue(lines.contains { isFirstVersusLast($0) && $0.contains("more slowly") })
+    }
+
+    func testFirstVersusLast_subjectDiverged_fires() {
+        let lines = directives([
+            recording("the garden hedge grows beside the stone wall near the orchard gate",
+                      wpm: 100, minutesIn: 0),
+            recording("my brother telephoned about the mortgage payment and the lawyer's invoice",
+                      wpm: 101, minutesIn: 20)
+        ])
+        XCTAssertTrue(lines.contains { isFirstVersusLast($0) && $0.contains("shares little vocabulary") })
+    }
+
+    func testFirstVersusLast_tooFewLemmasToJudge_staysSilent() {
+        let lines = directives([
+            recording("yes", wpm: 100, minutesIn: 0),
+            recording("no", wpm: 101, minutesIn: 20)
+        ])
+        XCTAssertFalse(lines.contains(where: isFirstVersusLast))
+    }
+
+    func testFirstVersusLast_missingPaceAndSameSubject_staysSilent() {
+        let text = "the garden hedge grows beside the stone wall near the orchard gate"
+        let lines = directives([
+            recording(text, wpm: nil, minutesIn: 0),
+            recording(text, wpm: nil, minutesIn: 20)
+        ])
+        XCTAssertFalse(lines.contains(where: isFirstVersusLast))
+    }
+
+    func testFirstVersusLast_singleRecording_staysSilent() {
+        let lines = directives([
+            recording("the garden hedge grows beside the stone wall", wpm: 100, minutesIn: 0)
+        ])
+        XCTAssertFalse(lines.contains(where: isFirstVersusLast))
     }
 }

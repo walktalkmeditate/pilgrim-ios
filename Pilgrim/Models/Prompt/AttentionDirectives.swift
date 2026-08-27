@@ -8,6 +8,9 @@ enum AttentionDirectives {
 
     private static let movingThreshold = 0.3
     private static let maxDirectives = 4
+    private static let paceShiftThreshold = 0.15
+    private static let subjectOverlapCeiling = 0.20
+    private static let minimumLemmasToJudgeSubject = 5
 
     /// `detectedLanguageCode` defaults to nil ("detect here") so direct
     /// callers stay unchanged; PromptGenerator.resolvedDerivations passes
@@ -139,8 +142,42 @@ enum AttentionDirectives {
         return "The word '\(display)' returns \(count) times across the recordings — it may be doing quiet work."
     }
 
+    /// Fires only when something measurably moved between the first
+    /// recording and the last. The previous version fired on every walk
+    /// with two recordings and presupposed its own conclusion — told to
+    /// measure what changed, the model finds change, including on walks
+    /// where nothing did (the `questionDensity` failure mode, quieter).
+    ///
+    /// Marker and sentiment deltas are deliberately NOT used: they are
+    /// unreachable from `ActivityContext`, and computing them here would
+    /// mean a fresh analyzer pass per recording. Pace is free
+    /// (`wordsPerMinute` is already populated); subject costs exactly two
+    /// lemma passes, never N.
     private static func firstVersusLast(_ context: ActivityContext) -> String? {
-        guard context.recordings.count >= 2 else { return nil }
-        return "Compare the first recording with the last — measure what changed in the walker between them."
+        guard let first = context.recordings.first,
+              let last = context.recordings.last,
+              context.recordings.count >= 2 else { return nil }
+
+        if let firstPace = first.wordsPerMinute, let lastPace = last.wordsPerMinute, firstPace > 0 {
+            let change = (lastPace - firstPace) / firstPace
+            if change >= paceShiftThreshold {
+                return "The walker spoke faster by the last recording than the first — attend to what moved between them."
+            }
+            if change <= -paceShiftThreshold {
+                return "The walker spoke more slowly by the last recording than the first — attend to what moved between them."
+            }
+        }
+
+        let firstLemmas = Set(TranscriptNLP.contentLemmas(in: first.text))
+        let lastLemmas = Set(TranscriptNLP.contentLemmas(in: last.text))
+        guard firstLemmas.count >= minimumLemmasToJudgeSubject,
+              lastLemmas.count >= minimumLemmasToJudgeSubject else { return nil }
+
+        let union = firstLemmas.union(lastLemmas).count
+        guard union > 0 else { return nil }
+        let jaccard = Double(firstLemmas.intersection(lastLemmas).count) / Double(union)
+        guard jaccard <= subjectOverlapCeiling else { return nil }
+
+        return "The walker's last recording shares little vocabulary with the first — attend to what moved between them."
     }
 }
