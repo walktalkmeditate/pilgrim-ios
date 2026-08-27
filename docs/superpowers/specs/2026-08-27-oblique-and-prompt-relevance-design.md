@@ -186,17 +186,21 @@ private static func firstVersusLast(_ context: ActivityContext) -> String? {
 
 Unconditional on ≥2 recordings, so it fires on nearly every spoken walk, and it **presupposes its conclusion**. Told to measure what changed, the model finds change — including on walks where nothing did. This is the same defect that killed `questionDensity` at the 2026-08-25 gate: it fires plausibly and is wrong.
 
-**Fix.** Gate on a delta the system already computes. Fire only when at least one of the following clears its threshold between the first and last recording:
+**Fix.** Gate on a delta actually reachable from `ActivityContext`.
 
-- sentiment delta ≥ 0.3 (absolute)
-- absolutist rate delta ≥ 50% relative, both recordings clearing `densityFloorWords`
-- words-per-minute delta ≥ `paceDifferenceThreshold` (0.15)
+**Correction (found while planning, 2026-08-27):** an earlier draft of this section named sentiment and absolutist-rate deltas. Those are **not reachable** — `ActivityContext` carries no structured marker data, only `threadsDossier` as a pre-formatted string. Computing them inside `AttentionDirectives` would mean fresh `MarkerAnalyzer` passes per recording, undoing PR #65's single-NLP-pass work. The gate below uses only data already on the context plus two bounded lemma passes.
 
-When it fires, the directive names *which* signal moved rather than asking for an open-ended comparison, so the model is pointed at something real:
+Fire only when at least one clears its threshold between the **first** and **last** recording:
 
-> The walker's [signal] shifted between the first recording and the last — attend to what moved between them.
+- **Pace:** `wordsPerMinute` delta ≥ 15% relative. Free — `RecordingContext.wordsPerMinute` is already populated. Skipped when either value is `nil`.
+- **Subject:** Jaccard similarity of content-lemma sets ≤ 0.20 — they are no longer talking about the same thing. Costs exactly two `TranscriptNLP.contentLemmas(in:)` passes (first and last recording only, never all N). Requires both recordings to yield ≥ 5 content lemmas, so a two-word recording cannot manufacture divergence.
 
-When nothing cleared, the directive stays silent and `maxDirectives` budget goes to a detector with something to say.
+When it fires, the directive names *which* signal moved, so the model is pointed at something real rather than asked to hunt:
+
+- Pace: `The walker spoke [faster|more slowly] by the last recording than the first — attend to what moved between them.`
+- Subject: `The walker's last recording shares little vocabulary with the first — attend to what moved between them.`
+
+When both clear, pace is reported (declaration order). When neither clears, the directive stays silent and the `maxDirectives` budget goes to a detector with something to say.
 
 **Cost.** Removes one always-on firing rule. Net −1 against the accretion budget.
 
