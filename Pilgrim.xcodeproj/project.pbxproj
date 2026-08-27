@@ -232,6 +232,7 @@
 		8E25870380184CB5AFEA6E85 /* DossierSensesInvarianceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C8E639BEC04945B2806DFA /* DossierSensesInvarianceTests.swift */; };
 		7D48121AE74D4CE0B3DB47DF /* DossierSensesInvarianceFrameConstancyCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C77F053CF84D468A7EC8D9 /* DossierSensesInvarianceFrameConstancyCoverageTests.swift */; };
 		BAF3D7E93A264E71968DEA10 /* DossierSensesInvariancePlaceFrameLockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC736AD5707F43E29AF3DDC6 /* DossierSensesInvariancePlaceFrameLockTests.swift */; };
+		DBE841C686894B3C9631A348 /* DossierSensesInvarianceUnarrivedIntentionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E44511663254B48BE4E4DCC /* DossierSensesInvarianceUnarrivedIntentionTests.swift */; };
 		45ADCF5FB26E4696BC6F1FB2 /* DossierSensesMarkerPhotoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */; };
 		971D537B63FD4464A1BD7C08 /* DossierSensesCrossWalkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEFDF8E058F4DDEB49054A4 /* DossierSensesCrossWalkTests.swift */; };
 		597A53AB004C40C4A5E5F9A6 /* DossierSensesCrossWalkMoonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F47849F190C412386DF5E9C /* DossierSensesCrossWalkMoonTests.swift */; };
@@ -886,6 +887,7 @@
 		D6C8E639BEC04945B2806DFA /* DossierSensesInvarianceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvarianceTests.swift; sourceTree = "<group>"; };
 		57C77F053CF84D468A7EC8D9 /* DossierSensesInvarianceFrameConstancyCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvarianceFrameConstancyCoverageTests.swift; sourceTree = "<group>"; };
 		FC736AD5707F43E29AF3DDC6 /* DossierSensesInvariancePlaceFrameLockTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvariancePlaceFrameLockTests.swift; sourceTree = "<group>"; };
+		3E44511663254B48BE4E4DCC /* DossierSensesInvarianceUnarrivedIntentionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvarianceUnarrivedIntentionTests.swift; sourceTree = "<group>"; };
 		81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesMarkerPhotoTests.swift; sourceTree = "<group>"; };
 		4CEFDF8E058F4DDEB49054A4 /* DossierSensesCrossWalkTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesCrossWalkTests.swift; sourceTree = "<group>"; };
 		3F47849F190C412386DF5E9C /* DossierSensesCrossWalkMoonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesCrossWalkMoonTests.swift; sourceTree = "<group>"; };
@@ -1953,6 +1955,7 @@
 				D6C8E639BEC04945B2806DFA /* DossierSensesInvarianceTests.swift */,
 				57C77F053CF84D468A7EC8D9 /* DossierSensesInvarianceFrameConstancyCoverageTests.swift */,
 				FC736AD5707F43E29AF3DDC6 /* DossierSensesInvariancePlaceFrameLockTests.swift */,
+				3E44511663254B48BE4E4DCC /* DossierSensesInvarianceUnarrivedIntentionTests.swift */,
 				81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */,
 				4CEFDF8E058F4DDEB49054A4 /* DossierSensesCrossWalkTests.swift */,
 				3F47849F190C412386DF5E9C /* DossierSensesCrossWalkMoonTests.swift */,
@@ -3343,6 +3346,7 @@
 				8E25870380184CB5AFEA6E85 /* DossierSensesInvarianceTests.swift in Sources */,
 				7D48121AE74D4CE0B3DB47DF /* DossierSensesInvarianceFrameConstancyCoverageTests.swift in Sources */,
 				BAF3D7E93A264E71968DEA10 /* DossierSensesInvariancePlaceFrameLockTests.swift in Sources */,
+				DBE841C686894B3C9631A348 /* DossierSensesInvarianceUnarrivedIntentionTests.swift in Sources */,
 				45ADCF5FB26E4696BC6F1FB2 /* DossierSensesMarkerPhotoTests.swift in Sources */,
 				971D537B63FD4464A1BD7C08 /* DossierSensesCrossWalkTests.swift in Sources */,
 				597A53AB004C40C4A5E5F9A6 /* DossierSensesCrossWalkMoonTests.swift in Sources */,

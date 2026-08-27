@@ -1238,11 +1238,20 @@ counts, and self-review.
 
 **Files:**
 - Modify: `Pilgrim/Models/Threads/DossierSensesInvariance.swift`
-- Modify: `UnitTests/DossierSensesInvarianceTests.swift`
+- New: `UnitTests/DossierSensesInvarianceUnarrivedIntentionTests.swift` (deviation — see "As shipped" below)
+- Modify: `Pilgrim.xcodeproj/project.pbxproj` (4 hand-added entries for the new test file — `UnitTests` uses explicit file references)
 
 **Interfaces:**
 - Produces: `DossierSensesInvariance.unarrivedIntention(input:suppressed:) -> DossierSenses.SenseLine?`
-- Consumes: `DossierSenses.WalkSnapshotRow.intention`, `TranscriptNLP.contentLemmas(in:)`, `ThreadStore.salienceDirection(of:)`
+- Consumes: `DossierSenses.WalkSnapshotRow.intention`, `DossierSenses.intentionLemmas(in:)`, `ThreadStore.salienceDirection(of:)`
+
+**As shipped — deviations from the brief below, all found by interrogating the brief's own draft before trusting it (per this task's instructions, and the four-consecutive-tasks warning that preceded it):**
+
+1. **New test file, not an addition to `DossierSensesInvarianceTests.swift`.** The parent sat at 458 lines, close enough to the `file_length` gate of 500 that six tests (the brief's two plus four more) would have pushed it over. Same split pattern as `DossierSensesInvarianceFrameConstancyCoverageTests.swift` / `DossierSensesInvariancePlaceFrameLockTests.swift`: an `extension DossierSensesInvarianceTests` in its own file, reusing the parent's internal `steadyThread` fixture. Required 4 hand-added `project.pbxproj` entries (PBXBuildFile, PBXFileReference, group children, Sources build phase).
+2. **`intentionWalks` lemma extraction uses `DossierSenses.intentionLemmas(in:)`, not raw `TranscriptNLP.contentLemmas(in:)`.** `intentionLemmas` is the established helper `intentionLineage` already uses for this exact transformation (intention text → lemma set) — it subtracts `SpokenStoplist.scaffoldLemmas` so a filler verb in an intention sentence never masquerades as a carried topic. Reusing it avoids a second, subtly different lemma-extraction path for the same kind of text.
+3. **The rendered N is bound to the intersection of intention-text walks and the thread's own appearance walks — not the raw `intentionWalks[lemma].count` the brief's draft used.** `intentionWalks` comes from `WalkSnapshotRow.intention` text; `ThreadStore.salienceDirection` is computed over the thread's `appearances` — a different, independently-populated set. A walker can name a word as their intention on a walk where the topic is never actually discussed that day (no appearance), or a thread can appear on walks where the word was never the stated intention. The brief's draft would report `intentionWalks.count` while judging steadiness over the *entire* unfiltered thread — a claim the steadiness verdict never actually measured for the extra walks. Fixed: `boundWalks = Set(thread.appearances.filter { carried.contains($0.walkUUID) }.map(\.walkUUID))`, gated on `boundWalks.count >= minimumInvariantWalks`, and N in the rendered string is `boundWalks.count`.
+4. **`ThreadStore.salienceDirection` is now computed over a `boundThread` built from only the intersected appearances, not the full unfiltered thread.** This gives "has not shifted *since*" an actual temporal anchor: the direction verdict now covers exactly the walks the intention was carried on, in date order (appearances arrive pre-sorted from `ThreadStore.build`; `filter` preserves that order). Without this, unrelated flat history elsewhere in the thread's life could cancel out a real shift that happened specifically during the intention-carrying walks, and the full-thread verdict would read "steady" by coincidence — see `testUnarrivedIntention_judgesDirectionOverBoundWalksOnly_notFullUnrelatedHistory`, which pins exactly this failure mode (thirds of the full 6-walk history read flat by cancellation; thirds of the 3 bound walks read as a sharp, unmistakable rise).
+5. Because `minimumInvariantWalks == ThreadStore.directionFloor == 3`, gating on `boundWalks.count >= minimumInvariantWalks` before calling `salienceDirection` also guarantees the bound appearance count clears `directionFloor` by construction — the nil-safety the brief's draft relied on accidentally (checking the *full* thread's appearance count, which happened to be large enough) is now a structural guarantee on the *bound* set instead.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1315,36 +1324,51 @@ counts, and self-review.
 
 Expected: COMPILE FAILURE — no `unarrivedIntention`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement (as shipped — bound to the intersection, see deviations above)**
 
 ```swift
 extension DossierSensesInvariance {
 
     /// The walker deliberately set out carrying a word, on at least
     /// `minimumInvariantWalks` walks, and that word's thread is STILL
-    /// steady. They tried, on purpose, and nothing moved.
+    /// steady across those same walks. They tried, on purpose, and nothing
+    /// moved.
     ///
     /// SHIPS DARK behind `pendingFieldGate`. This is the most confronting
     /// line the app can produce; the engine and its tests exist so the
     /// judgement can be made on real history, not on a guess.
+    ///
+    /// Both the rendered N and the direction verdict are bound to the same
+    /// evidence: walks where the intention was set on this lemma AND the
+    /// thread has an appearance that walk — see deviations 3-5 above for
+    /// why the raw `intentionWalks[lemma].count` and the full unfiltered
+    /// thread were each, independently, an overclaim.
     static func unarrivedIntention(
         input: DossierSenses.Input, suppressed: Set<String>
     ) -> DossierSenses.SenseLine? {
         var intentionWalks: [String: Set<UUID>] = [:]
         for snapshot in input.walkSnapshots {
             guard let intention = snapshot.intention, !intention.isEmpty else { continue }
-            for lemma in TranscriptNLP.contentLemmas(in: intention) {
+            for lemma in DossierSenses.intentionLemmas(in: intention) {
                 intentionWalks[lemma, default: []].insert(snapshot.walkUUID)
             }
         }
 
         for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
         where !suppressed.contains(thread.lemma) {
-            guard let walks = intentionWalks[thread.lemma],
-                  walks.count >= minimumInvariantWalks,
-                  ThreadStore.salienceDirection(of: thread) == .steady else { continue }
+            guard let carried = intentionWalks[thread.lemma] else { continue }
+
+            let boundAppearances = thread.appearances.filter { carried.contains($0.walkUUID) }
+            let boundWalks = Set(boundAppearances.map(\.walkUUID))
+            guard boundWalks.count >= minimumInvariantWalks else { continue }
+
+            let boundThread = WalkThread(
+                lemma: thread.lemma, displayTerm: thread.displayTerm, appearances: boundAppearances
+            )
+            guard ThreadStore.salienceDirection(of: boundThread) == .steady else { continue }
+
             return DossierSenses.SenseLine(
-                text: "'\(thread.displayTerm)' was set as an intention on \(walks.count) walks; "
+                text: "'\(thread.displayTerm)' was set as an intention on \(boundWalks.count) walks; "
                     + "it has not shifted since.",
                 lemma: thread.lemma
             )
@@ -1362,14 +1386,17 @@ Wire the case **with the flag guard**:
             return DossierSensesInvariance.unarrivedIntention(input: input, suppressed: suppressed)
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
-Expected: both PASS — the engine computes it, the flag withholds it.
+Verified: `UnitTests/DossierSensesInvarianceTests` suite (parent class, includes the split file's tests) — 39/39 passed, including both brief-specified tests plus 4 more closing the overclaim holes above. Full `UnitTests` target: 1458 tests, 0 failures (baseline 1452 + 6 new).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
-git add Pilgrim/Models/Threads/DossierSensesInvariance.swift UnitTests/DossierSensesInvarianceTests.swift
+git add Pilgrim/Models/Threads/DossierSensesInvariance.swift \
+        UnitTests/DossierSensesInvarianceUnarrivedIntentionTests.swift \
+        Pilgrim.xcodeproj/project.pbxproj \
+        docs/superpowers/plans/2026-08-27-oblique-voice.md
 git commit -m "feat(threads): the unarrived intention, shipped dark
 
 The walker set out carrying a word, on purpose, three times or more, and
@@ -1378,6 +1405,11 @@ literal - and the hardest thing the app could say to someone on a bad day.
 
 Engine and tests ship so the call can be made on real history rather than
 on a guess. The flag stays true until the field gate says otherwise.
+
+N and the steadiness verdict are bound to the same walks (intention text
+intersected with thread appearances, judged in date order) rather than two
+different, unordered populations - the same overclaim shape this plan's
+own brief warned about, caught before it shipped.
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```
