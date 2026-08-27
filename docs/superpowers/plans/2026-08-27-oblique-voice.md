@@ -1424,9 +1424,19 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Modify: `Pilgrim/Models/Prompt/ActivityContext.swift` (add `var unchangedBlock: String?` and the `make` parameter)
 - Modify: `Pilgrim/Models/Threads/ThreadsDossierBuilder.swift` (build and assign)
 - Modify: `UnitTests/ThreadsDossierSensesTests.swift`
+- Modify: `Pilgrim/Scenes/Prompts/PromptListView.swift` — not anticipated by the draft below (see Deviation 4)
+- New: `Pilgrim/Models/Threads/ThreadsDossierFieldReport.swift` — file-length split, not new behavior (see Deviation 5)
 
 **Interfaces:**
 - Produces: `ActivityContext.unchangedBlock: String?` — the fully rendered block including its `**Unchanged:**` heading, or `nil` when no invariant fired.
+
+**Adjudicated deviations from the draft below** (shipped code differs from the original Step 3 draft in five ways; each is intentional and must not be "simplified" back to the draft):
+
+1. **`build` keeps its old signature; the dual computation lives in a new `buildResult`.** The draft's Step 3 snippet reads as if `build` itself grew a second output (`unchangedBlock = ThreadsDossierBuilder.renderUnchangedBlock(invariance)` inside its body), but `build(...) -> String?` has ~12 pre-existing call sites across `ThreadsDossierTests.swift`, `ThreadsDossierModalLeanTests.swift`, and `ThreadsDossierSensesTests.swift` that treat the return value as a bare `String?` (`XCTAssertNil(ThreadsDossierBuilder.build(...))`, `let dossier = ThreadsDossierBuilder.build(...)`). Changing `build`'s return type would have broken all of them for a task whose Files list names only one test file. Shipped code keeps `build` as a 3-line wrapper (unchanged signature and behavior, zero call sites touched) and moves the real logic into a new `static func buildResult(...) -> (dossier: String?, unchangedBlock: String?)`, which `PromptListView` calls instead.
+2. **`appendSensesBlock` changes its return type, not its parameter list.** The file's own doc comment on `SensesAssemblyState` records that it exists "to keep both it and `appendSensesBlock` under the function-parameter-count lint gate" — `appendSensesBlock` already sits at 5 non-default parameters, the default `function_parameter_count` warning threshold. Adding a 6th (`unchangedBlock: inout String?`, mirroring `dossier: inout String?`) would have tripped that gate. Shipped code instead changes the return type from `Int?` (moon state alone) to `(moonState: Int?, unchangedBlock: String?)` — zero new parameters, same `input` computed once inside the function body, per the invariance call site.
+3. **The memo now carries `unchangedBlock` too, not just the dossier.** `cachedDossier(key:) -> String??` (renamed `cachedResult`) returns early on a cache hit, before `appendSensesBlock` (and therefore the invariance computation) ever runs. Without widening `private static var memo` to `(key: MemoKey, dossier: String?, unchangedBlock: String?)`, a same-session reopen of the same walk's prompt screen (no writes in between) would cache-hit the dossier but silently return `nil` for `unchangedBlock` even when invariants exist — an under-claim bug, not just a missed optimization. Fixed by threading `unchangedBlock` through the memo alongside `dossier`.
+4. **`PromptListView.swift` needed a call-site change the Files list omitted.** `context.threadsDossier` is not assigned inside `ThreadsDossierBuilder` at all — it's assigned by the one production caller, `PromptListView.generatePrompts()`, at `context.threadsDossier = walkUUID.flatMap { ThreadsDossierBuilder.build(...) }`. "Assign it onto the `ActivityContext` at the same site the builder already assigns `threadsDossier`" is that call site. It now reads `ThreadsDossierBuilder.buildResult(...)` once and assigns both `context.threadsDossier` and `context.unchangedBlock` from the same tuple — never two builds, never a second `DossierSenses.Input`.
+5. **`ThreadsDossierBuilder.swift` crossed the file_length gate (500); the pre-existing DEBUG field-report harness moved out.** The dual-return plumbing (`buildResult`, widened memo, widened `appendSensesBlock`) pushed the file from 482 to 519 lines. Comment-trimming alone wasn't enough for a comfortable margin, so the already-self-contained `#if DEBUG ... enum DossierSensesFieldReport ... #endif` block (~130 lines, calling only non-private `ThreadsDossierBuilder` members — `gatherSensesBundle`, `makeSensesInput`, `SensesAssemblyState`) moved verbatim to a new file, `Pilgrim/Models/Threads/ThreadsDossierFieldReport.swift`. This is a pure move, no behavior change. It required 4 hand-added `project.pbxproj` entries (`PBXBuildFile`, `PBXFileReference`, the `Threads` group listing, the `Pilgrim` target's `PBXSourcesBuildPhase` listing) — the main `Pilgrim` target uses explicit file references for this directory, not a `PBXFileSystemSynchronizedRootGroup` (only `PilgrimWidget` and `ScreenshotTests` are synchronized roots in this project).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1512,7 +1522,9 @@ Expected: all PASS, full suite green.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Pilgrim/Models/Prompt/ActivityContext.swift Pilgrim/Models/Threads/ThreadsDossierBuilder.swift UnitTests/
+git add Pilgrim/Models/Prompt/ActivityContext.swift Pilgrim/Models/Threads/ThreadsDossierBuilder.swift \
+  Pilgrim/Models/Threads/ThreadsDossierFieldReport.swift Pilgrim/Scenes/Prompts/PromptListView.swift \
+  Pilgrim.xcodeproj/project.pbxproj UnitTests/
 git commit -m "feat(threads): build the Unchanged block once, carry it on the context
 
 generateAll fans one ActivityContext across every style, so the block is

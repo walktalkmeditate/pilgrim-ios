@@ -395,4 +395,31 @@ extension ThreadsDossierTests {
         XCTAssertTrue(prompt.contains("not assessments"),
                       "the dossier's presence triggers the marker handling note — the binding co-presence gate")
     }
+
+    func testUnchangedBlock_rendersHeadingAndLines() {
+        let block = ThreadsDossierBuilder.renderUnchangedBlock(
+            ["'father' and 'money' have appeared in 3 of 3 walks together, never apart.",
+             "'work' has returned across 4 walks; it sounds the same each time."]
+        )
+        XCTAssertEqual(
+            block,
+            """
+            **Unchanged:**
+            'father' and 'money' have appeared in 3 of 3 walks together, never apart.
+            'work' has returned across 4 walks; it sounds the same each time.
+            """
+        )
+    }
+
+    func testUnchangedBlock_emptyLines_isNil() {
+        XCTAssertNil(ThreadsDossierBuilder.renderUnchangedBlock([]))
+    }
+
+    func testActivityContext_carriesUnchangedBlock() {
+        let context = ActivityContext.make(
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            unchangedBlock: "**Unchanged:**\nline"
+        )
+        XCTAssertEqual(context.unchangedBlock, "**Unchanged:**\nline")
+    }
 }

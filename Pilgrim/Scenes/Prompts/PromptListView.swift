@@ -127,13 +127,15 @@ struct PromptListView: View {
 
             let (context, generated, derived) = await Task.detached(priority: .userInitiated) {
                 var context = baseContext
-                context.threadsDossier = walkUUID.flatMap {
-                    ThreadsDossierBuilder.build(
-                        walkUUID: $0,
+                if let walkUUID {
+                    let dossierResult = ThreadsDossierBuilder.buildResult(
+                        walkUUID: walkUUID,
                         recordings: baseContext.recordings,
                         walkIndex: walkIndex,
                         senses: sensesBundle
                     )
+                    context.threadsDossier = dossierResult.dossier
+                    context.unchangedBlock = dossierResult.unchangedBlock
                 }
                 let derived = PromptGenerator.resolvedDerivations(context: context)
                 let generated = PromptGenerator.generateAll(

@@ -55,6 +55,11 @@ struct ActivityContext {
     let ascent: Double?
     let descent: Double?
     var threadsDossier: String?
+    /// The `Unchanged:` block, built once alongside the dossier and emitted
+    /// only for voices whose context policy requests it. Built once because
+    /// `PromptGenerator.generateAll` fans ONE context across every style —
+    /// building per voice would undo PR #65's single-pass work.
+    var unchangedBlock: String?
 
     var hasSpeech: Bool { !recordings.isEmpty }
 }
@@ -81,7 +86,8 @@ extension ActivityContext {
         pauses: [PauseContext] = [],
         ascent: Double? = nil,
         descent: Double? = nil,
-        threadsDossier: String? = nil
+        threadsDossier: String? = nil,
+        unchangedBlock: String? = nil
     ) -> ActivityContext {
         ActivityContext(
             recordings: recordings,
@@ -104,7 +110,8 @@ extension ActivityContext {
             pauses: pauses,
             ascent: ascent,
             descent: descent,
-            threadsDossier: threadsDossier
+            threadsDossier: threadsDossier,
+            unchangedBlock: unchangedBlock
         )
     }
 }
