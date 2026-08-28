@@ -18,8 +18,9 @@ extension DossierSensesInvarianceTests {
         )
     }
 
-    /// FIX 1: the rendered claim is "Every walk where X appears is
-    /// Y-dominant". That is false the moment one walk in the theme's
+    /// FIX 1: the rendered claim covers every walk in the theme's walk-set
+    /// ("On every walk where X appears, the speech carrying it was
+    /// Y-dominant"). That is false the moment one walk in the theme's
     /// walk-set has no modal evidence to check against it. Three walks
     /// agree obligation-dominant; a fourth walk's only recording is
     /// non-English (`markers == nil`), so it can never be checked.

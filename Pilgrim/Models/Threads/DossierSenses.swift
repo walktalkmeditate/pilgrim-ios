@@ -96,7 +96,24 @@ enum DossierSenses {
 
     struct SenseLine: Equatable {
         let text: String
+        /// The theme the line is anchored on — the one a later line must not
+        /// speak about again.
         let lemma: String?
+        /// A second theme the line NAMES without anchoring on. `fusedThemes`
+        /// prints two display terms; reserving only the anchor let a
+        /// lower-ranked signal go on to make its own measured claim about the
+        /// other one, which a reader takes as covering both. Reserved, never
+        /// anchored: the anchor still decides which theme the line is about.
+        let secondaryLemma: String?
+
+        init(text: String, lemma: String?, secondaryLemma: String? = nil) {
+            self.text = text
+            self.lemma = lemma
+            self.secondaryLemma = secondaryLemma
+        }
+
+        /// Every theme this line names, so one pass over it reserves them all.
+        var claimedLemmas: [String] { [lemma, secondaryLemma].compactMap { $0 } }
     }
 
     struct Output: Equatable {
@@ -128,11 +145,11 @@ enum DossierSenses {
             guard lines.count < lineCap else { break }
             guard let line = evaluate(sense, input, used) else { continue }
             // Belt over the senses' own suppression: a theme named at a
-            // higher rank never reappears, whatever a sense returns.
-            if let lemma = line.lemma {
-                guard !used.contains(lemma) else { continue }
-                used.insert(lemma)
-            }
+            // higher rank never reappears, whatever a sense returns. Every
+            // theme the line names is reserved, not just the anchor.
+            let claimed = line.claimedLemmas
+            guard !claimed.contains(where: used.contains) else { continue }
+            used.formUnion(claimed)
             lines.append(line.text)
             if sense == .moonLine {
                 reportedLunationIndex = input.moon?.lunationIndex

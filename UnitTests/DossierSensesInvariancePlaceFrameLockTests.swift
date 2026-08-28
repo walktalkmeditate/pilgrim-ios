@@ -2,7 +2,8 @@ import XCTest
 @testable import Pilgrim
 
 /// Signal 4 (place-frame lock): the same theme spoken inside the same
-/// `DossierSenses.placeClusterRadius` cluster on every walk it appears in.
+/// `DossierSenses.placeClusterRadius` cluster every time its location was
+/// known, across the in-window walks the fixes themselves come from.
 /// New file, not an addition to `DossierSensesInvarianceTests.swift` — the
 /// parent sits at 458 lines, close enough to the `file_length` warning gate
 /// of 500 that this signal's fixture-heavy tests (each needs its own
@@ -13,16 +14,36 @@ import XCTest
 /// private, from the Task 5 split).
 extension DossierSensesInvarianceTests {
 
+    private static let walkStart = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+
+    /// Production shape, not a convenience: every appearance carries a
+    /// recording instant inside `ThreadStore.recurrenceWindow` and an
+    /// English-analyzed context. `ThreadsDossierBuilder.resolveFixes` only
+    /// resolves a route fix for an in-window recording, so an appearance with
+    /// no timestamp is one the locator was never offered — and a fixture that
+    /// left `recordingTimestamps` empty could not see the window gate at all.
+    /// Appearances are placed a day apart, newest first, unless a test hands
+    /// in its own `timestamps`.
     private func fixInput(
-        threads: [WalkThread], fixes: [UUID: DossierSenses.RouteFix]
+        threads: [WalkThread], fixes: [UUID: DossierSenses.RouteFix],
+        timestamps: [UUID: Date]? = nil, languageCode: String? = "en"
     ) -> DossierSenses.Input {
-        DossierSenses.Input(
+        let appearances = threads.flatMap(\.appearances)
+        let resolved = timestamps ?? Dictionary(
+            uniqueKeysWithValues: appearances.enumerated().map { offset, appearance in
+                (appearance.recordingUUID, Self.walkStart.addingTimeInterval(-Double(offset + 1) * 86400))
+            }
+        )
+        return DossierSenses.Input(
             currentWalkUUID: UUID(),
-            walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
-            walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
+            walkStart: Self.walkStart,
+            walkEnd: Self.walkStart.addingTimeInterval(5400),
             totalAscent: 0, elevationSeries: [], photos: [], currentRecordings: [],
-            historicalContexts: [], threads: threads, backfillComplete: true,
-            walkSnapshots: [], recordingTimestamps: [:], fixes: fixes, moon: nil
+            historicalContexts: appearances.map {
+                plainContext($0.recordingUUID, languageCode: languageCode)
+            },
+            threads: threads, backfillComplete: true,
+            walkSnapshots: [], recordingTimestamps: resolved, fixes: fixes, moon: nil
         )
     }
 
@@ -46,7 +67,7 @@ extension DossierSensesInvarianceTests {
         XCTAssertEqual(
             line?.text,
             "Every time 'river' was spoken with its location known, it was in the same place "
-                + "— on all 3 walks it appears in."
+                + "— on all 3 of its walks in the last 30 days."
         )
         XCTAssertEqual(line?.lemma, "river")
     }
@@ -121,8 +142,8 @@ extension DossierSensesInvarianceTests {
     /// genuinely place-locked theme. 4 walks total, 3 with qualifying fixes
     /// that cluster tightly, the 4th walk's only recording has no fix at
     /// all (never attempted a route fix) — the signal now speaks, but the
-    /// sentence must tell the truth about what was measured: "3 of the 4"
-    /// it appears in, not "all 4".
+    /// sentence must tell the truth about what was measured: "3 of its 4
+    /// walks in the last 30 days", not "all 4".
     func testPlaceFrameLock_oneWalkWithNoFixAtAll_rendersMeasuredCoverage() {
         let recs = [UUID(), UUID(), UUID(), UUID()]
         let walks = [UUID(), UUID(), UUID(), UUID()]
@@ -141,7 +162,7 @@ extension DossierSensesInvarianceTests {
         XCTAssertEqual(
             line?.text,
             "Every time 'river' was spoken with its location known, it was in the same place "
-                + "— on 3 of the 4 walks it appears in."
+                + "— on 3 of its 4 walks in the last 30 days."
         )
         XCTAssertEqual(line?.lemma, "river")
     }
@@ -173,7 +194,7 @@ extension DossierSensesInvarianceTests {
         XCTAssertEqual(
             line?.text,
             "Every time 'river' was spoken with its location known, it was in the same place "
-                + "— on all 3 walks it appears in."
+                + "— on all 3 of its walks in the last 30 days."
         )
         XCTAssertFalse(line?.text.contains("has been spoken in the same place on all") ?? true,
                        "the sentence must not vouch for an utterance nothing measured")
@@ -198,6 +219,72 @@ extension DossierSensesInvarianceTests {
         XCTAssertNil(
             DossierSensesInvariance.placeFrameLock(
                 input: fixInput(threads: [thread], fixes: fixes), suppressed: []
+            )
+        )
+    }
+
+    /// The claim's denominator must come from the same window the fixes come
+    /// from. `ThreadsDossierBuilder.resolveFixes` resolves a route fix only
+    /// for an appearance whose recording instant falls inside
+    /// `ThreadStore.recurrenceWindow`, so eleven appearances from six months
+    /// ago were never offered to the locator at all — counting them made the
+    /// sentence read "on 3 of the 14 walks it appears in" under an opening
+    /// clause that vouches for every located utterance. Three in-window
+    /// walks, all located, all clustered: the honest reading is "all 3 of its
+    /// walks in the last 30 days".
+    func testPlaceFrameLock_appearancesOutsideTheFixWindow_areNotInTheDenominator() {
+        let recent = [UUID(), UUID(), UUID()]
+        let ancient = (0..<11).map { _ in UUID() }
+        let recentWalks = [UUID(), UUID(), UUID()]
+        let ancientWalks = (0..<11).map { _ in UUID() }
+        var fixes: [UUID: DossierSenses.RouteFix] = [:]
+        for (offset, rec) in recent.enumerated() {
+            fixes[rec] = qualifyingFix(.init(latitude: 51.5 + Double(offset) * 0.0001, longitude: -0.12))
+        }
+        var timestamps: [UUID: Date] = [:]
+        for (offset, rec) in recent.enumerated() {
+            timestamps[rec] = Self.walkStart.addingTimeInterval(-Double(offset + 1) * 86400)
+        }
+        // Six months back: real walks at real logged places, but far outside
+        // the window `resolveFixes` will ever look in.
+        for (offset, rec) in ancient.enumerated() {
+            timestamps[rec] = Self.walkStart.addingTimeInterval(-Double(offset + 100) * 86400)
+        }
+        let thread = steadyThread(
+            "river", recordings: recent + ancient, walks: recentWalks + ancientWalks
+        )
+        let line = DossierSensesInvariance.placeFrameLock(
+            input: fixInput(threads: [thread], fixes: fixes, timestamps: timestamps), suppressed: []
+        )
+        XCTAssertEqual(
+            line?.text,
+            "Every time 'river' was spoken with its location known, it was in the same place "
+                + "— on all 3 of its walks in the last 30 days."
+        )
+        XCTAssertFalse(line?.text.contains("14") ?? true,
+                       "the unwindowed appearance history is not a denominator this signal can see")
+    }
+
+    /// `fusedThemes` and `placeFrameLock` read only themes and coordinates,
+    /// so nothing gated them by language the way a `MarkerPack` read gates
+    /// the other three. `TranscriptNLP.contentLemmaMentions` falls back to
+    /// the lowercased surface form wherever NLTagger has no lemma model, and
+    /// this app's walkers cross the Camino in French, German, Italian,
+    /// Portuguese and Spanish — where two inflections of one word become two
+    /// themes and a place-lock claim rests on a token that was never
+    /// lemmatized. Same fixture as `testPlaceFrameLock_sameCluster_fires`,
+    /// analyzed as French: silent.
+    func testPlaceFrameLock_nonEnglishRecordings_staySilent() {
+        let recs = [UUID(), UUID(), UUID()]
+        let walks = [UUID(), UUID(), UUID()]
+        var fixes: [UUID: DossierSenses.RouteFix] = [:]
+        for (offset, rec) in recs.enumerated() {
+            fixes[rec] = qualifyingFix(.init(latitude: 51.5 + Double(offset) * 0.0001, longitude: -0.12))
+        }
+        let thread = steadyThread("riviere", recordings: recs, walks: walks)
+        XCTAssertNil(
+            DossierSensesInvariance.placeFrameLock(
+                input: fixInput(threads: [thread], fixes: fixes, languageCode: "fr"), suppressed: []
             )
         )
     }

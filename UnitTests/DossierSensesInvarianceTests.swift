@@ -71,7 +71,9 @@ final class DossierSensesInvarianceTests: XCTestCase {
         XCTAssertTrue(DossierSensesInvariance.pendingFieldGate)
     }
 
-    private func thread(_ lemma: String, walks: [UUID], salience: Double = 0.5) -> WalkThread {
+    /// Internal, not private, so the split files that extend this class can
+    /// share it — same widening the other fixtures here already took.
+    func thread(_ lemma: String, walks: [UUID], salience: Double = 0.5) -> WalkThread {
         WalkThread(
             lemma: lemma,
             displayTerm: lemma,
@@ -85,13 +87,22 @@ final class DossierSensesInvarianceTests: XCTestCase {
         )
     }
 
-    private func inputWith(threads: [WalkThread]) -> DossierSenses.Input {
+    /// Every appearance gets an English-analyzed context, because production
+    /// always has one: `ThreadStore.build` derives threads from exactly the
+    /// contexts `DossierSensesInvariance.englishRecordings` scans. An empty
+    /// `historicalContexts` is not a realistic shape, and leaving it empty
+    /// would have hidden the language gate from every fixture here.
+    func inputWith(threads: [WalkThread], languageCode: String? = "en") -> DossierSenses.Input {
         DossierSenses.Input(
             currentWalkUUID: threads.first?.appearances.first?.walkUUID ?? UUID(),
             walkStart: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
             walkEnd: DateFactory.makeDate(2024, 6, 15, 10, 30, 0),
             totalAscent: 0, elevationSeries: [], photos: [],
-            currentRecordings: [], historicalContexts: [], threads: threads,
+            currentRecordings: [],
+            historicalContexts: threads.flatMap(\.appearances).map {
+                plainContext($0.recordingUUID, languageCode: languageCode)
+            },
+            threads: threads,
             backfillComplete: true, walkSnapshots: [], recordingTimestamps: [:],
             fixes: [:], moon: nil
         )
@@ -397,7 +408,7 @@ final class DossierSensesInvarianceTests: XCTestCase {
         let line = DossierSensesInvariance.frameConstancy(input: input, suppressed: [])
         XCTAssertEqual(
             line?.text,
-            "Every walk where 'money' appears is obligation-dominant."
+            "On every walk where 'money' appears, the speech carrying it was obligation-dominant."
         )
         XCTAssertEqual(line?.lemma, "money")
     }
@@ -471,7 +482,7 @@ final class DossierSensesInvarianceTests: XCTestCase {
         let line = DossierSensesInvariance.frameConstancy(input: input, suppressed: [])
         XCTAssertEqual(
             line?.text,
-            "Every walk where 'worry' appears is counterfactual-dominant."
+            "On every walk where 'worry' appears, the speech carrying it was counterfactual-dominant."
         )
     }
 }

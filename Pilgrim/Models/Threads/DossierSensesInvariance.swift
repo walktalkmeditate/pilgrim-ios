@@ -28,11 +28,46 @@ enum DossierSensesInvariance {
     static let minimumInvariantWalks = 3
 
     /// Coefficient-of-variation ceiling for calling a marker profile flat.
+    /// CV is the right instrument for the two count densities, which have a
+    /// meaningful zero to divide by. Sentiment does not — see
+    /// `sentimentFlatnessBand`.
     static let markerFlatnessCeiling = 0.20
 
-    /// NLTagger sentiment spans -1...1, so a theme whose mean sits near
-    /// zero would make raw CV explode. Shift into 0...2 before dividing.
-    static let sentimentShift = 1.0
+    /// Flatness band for sentiment: an absolute standard deviation on
+    /// NLTagger's raw -1...1 scale, not a coefficient of variation.
+    ///
+    /// CV over a signed scale shifted into 0...2 is ASYMMETRIC. `{0.9, 0.5,
+    /// 0.7}` and `{-0.9, -0.5, -0.7}` have an identical standard deviation,
+    /// but shifted CV reads 0.096 for the first (flat) and 0.544 for the
+    /// second (not flat) — a positive theme earned "it sounds the same each
+    /// time" while an identically-varying negative one was refused it, which
+    /// is the one direction this app must never get wrong. Sentiment's zero
+    /// is a midpoint, not an absence, so there is no denominator to divide
+    /// by; an absolute band is the honest instrument.
+    ///
+    /// 0.20 is exactly the spread the CV ceiling already granted at the
+    /// scale's midpoint (mean 0 → shifted mean 1.0 → allowed sd 0.20), so
+    /// this corrects the asymmetry without tightening or loosening the bar.
+    static let sentimentFlatnessBand = 0.20
+
+    /// Minimum modal tokens ONE walk's theme-carrying speech must hold
+    /// before `frameConstancy` will name a dominant family for that walk.
+    /// Without a floor a single "can" makes a walk possibility-dominant, and
+    /// `possibility` leads `MarkerLexicons.ModalFamily.allCases`, so it won
+    /// every tie — the same shape as `weatherWeave`'s plurality tautology
+    /// (fixed in PR #71) and `questionDensity`'s unfloored count (cut at the
+    /// 2026-08-25 ship gate).
+    ///
+    /// Deliberately BELOW `ThreadsDossierFormatter.modalRemarkableMinCount`
+    /// (10): that gate weighs a walk's ENTIRE speech and stands alone as a
+    /// single-walk claim, while this one weighs a strict subset — only the
+    /// recordings that carried the theme — and the sentence it guards
+    /// additionally requires the same family across at least
+    /// `minimumInvariantWalks` walks. The evidence behind one rendered line
+    /// is therefore at least 3 × 5 = 15 modal tokens, above the sibling's
+    /// single-walk bar, whereas a floor of 10 on a theme-scoped subset would
+    /// make the signal effectively unfirable.
+    static let frameConstancyMinModalsPerWalk = 5
 }
 
 extension DossierSenses {
@@ -70,10 +105,12 @@ extension DossierSenses {
         for invariant in Invariant.allCases {
             guard lines.count < lineCap else { break }
             guard let line = evaluate(invariant, input, used) else { continue }
-            if let lemma = line.lemma {
-                guard !used.contains(lemma) else { continue }
-                used.insert(lemma)
-            }
+            // Every theme the line names is reserved, not just the anchor —
+            // `fusedThemes` prints two, and a lower-ranked signal making its
+            // own measured claim about the second reads as covering both.
+            let claimed = line.claimedLemmas
+            guard !claimed.contains(where: used.contains) else { continue }
+            used.formUnion(claimed)
             lines.append(line.text)
         }
         return lines
@@ -100,6 +137,32 @@ extension DossierSenses {
 
 extension DossierSensesInvariance {
 
+    /// Recordings whose stored context was analyzed as English.
+    ///
+    /// `unmovedReturn` and `frameConstancy` are English-gated by accident:
+    /// both read `MarkerPack`, and `MarkerAnalyzer.compute` returns nil for
+    /// anything but `"en"`. `fusedThemes` and `placeFrameLock` read only
+    /// themes and coordinates, so nothing gated them at all — and
+    /// `TranscriptNLP.contentLemmaMentions` falls back to the LOWERCASED
+    /// SURFACE FORM wherever NLTagger has no lemma model for the language.
+    /// This app's walkers cross the Camino in French, German, Italian,
+    /// Portuguese and Spanish, where two inflections of one word become two
+    /// themes: "'marche' and 'marches' have appeared in the same 4 walks,
+    /// never apart" is a tautology about a single word dressed as a
+    /// discovered fusion. Gated explicitly here rather than left to accident,
+    /// so the whole track speaks under one stated language contract.
+    static func englishRecordings(in input: DossierSenses.Input) -> Set<UUID> {
+        Set(input.historicalContexts.filter { $0.languageCode == "en" }.map(\.recordingUUID))
+    }
+
+    /// Fail-closed: an appearance whose context is missing or non-English
+    /// disqualifies the whole thread. Every thread is built from the same
+    /// contexts `englishRecordings` scans (`ThreadStore.build`), so a missing
+    /// entry means the record disagrees with itself and silence is correct.
+    static func isEnglishThroughout(_ thread: WalkThread, english: Set<UUID>) -> Bool {
+        thread.appearances.allSatisfy { english.contains($0.recordingUUID) }
+    }
+
     /// Two themes whose walk-sets are identical, or where one nests wholly
     /// inside the other, across at least `minimumInvariantWalks` walks.
     ///
@@ -125,13 +188,19 @@ extension DossierSensesInvariance {
     /// whole history that neither theme's walk-set supports. The nested
     /// branch keeps its two counts because there they genuinely differ.
     ///
+    /// BOTH themes are reserved, not just the anchor (`secondaryLemma`): the
+    /// line prints two display terms, so a lower-ranked signal that went on
+    /// to make its own measured claim about the superset would read as a
+    /// second, independent finding about a theme this line already spoke for.
+    ///
     /// Deterministic: threads arrive lemma-sorted from `ThreadStore.build`,
     /// and only a STRICTLY larger shared-walk count replaces the best pair.
     static func fusedThemes(
         input: DossierSenses.Input, suppressed: Set<String>
     ) -> DossierSenses.SenseLine? {
+        let english = englishRecordings(in: input)
         let candidates = input.threads
-            .filter { !suppressed.contains($0.lemma) }
+            .filter { !suppressed.contains($0.lemma) && isEnglishThroughout($0, english: english) }
             .map { (thread: $0, walks: Set($0.appearances.map(\.walkUUID))) }
             .filter { $0.walks.count >= minimumInvariantWalks }
 
@@ -159,14 +228,16 @@ extension DossierSensesInvariance {
             return DossierSenses.SenseLine(
                 text: "'\(best.subset.displayTerm)' and '\(best.superset.displayTerm)' have appeared in "
                     + "the same \(best.shared) walks, never apart.",
-                lemma: best.subset.lemma
+                lemma: best.subset.lemma,
+                secondaryLemma: best.superset.lemma
             )
         }
 
         return DossierSenses.SenseLine(
             text: "'\(best.subset.displayTerm)' has appeared in \(best.shared) walks, always alongside "
                 + "'\(best.superset.displayTerm)' — which walked \(best.outer) in all.",
-            lemma: best.subset.lemma
+            lemma: best.subset.lemma,
+            secondaryLemma: best.superset.lemma
         )
     }
 }
@@ -229,9 +300,9 @@ extension DossierSensesInvariance {
 
             let absolutist = packsByWalk.map { average($0.map { Double($0.absolutistCount) / Double($0.wordCount) }) }
             let firstPerson = packsByWalk.map { average($0.map { Double($0.firstPersonCount) / Double($0.wordCount) }) }
-            let sentiment = packsByWalk.map { average($0.map { ($0.sentiment ?? 0) + sentimentShift }) }
+            let sentiment = packsByWalk.map { average($0.map { $0.sentiment ?? 0 }) }
 
-            guard isFlat(absolutist), isFlat(firstPerson), isFlat(sentiment) else { continue }
+            guard isFlat(absolutist), isFlat(firstPerson), isSentimentFlat(sentiment) else { continue }
 
             return DossierSenses.SenseLine(
                 text: "'\(thread.displayTerm)' has returned across \(packsByWalk.count) walks; "
@@ -242,7 +313,21 @@ extension DossierSensesInvariance {
         return nil
     }
 
-    /// Coefficient of variation at or under the flatness ceiling. A zero or
+    /// Standard deviation at or under `sentimentFlatnessBand`, measured on
+    /// the raw -1...1 scale. Sentiment is the one marker here whose zero is
+    /// a midpoint rather than an absence, so it has no denominator a ratio
+    /// measure could divide by — and dividing by a shifted one made the
+    /// verdict depend on the sign of the mood rather than on its steadiness.
+    /// See `sentimentFlatnessBand`.
+    static func isSentimentFlat(_ values: [Double]) -> Bool {
+        guard values.count >= 2 else { return false }
+        let mean = average(values)
+        let variance = values.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(values.count)
+        return variance.squareRoot() <= sentimentFlatnessBand
+    }
+
+    /// Coefficient of variation at or under the flatness ceiling — for the
+    /// two count densities only, which have a meaningful zero. A zero or
     /// negative mean cannot be judged this way, so it is treated as not
     /// flat rather than dividing by it.
     static func isFlat(_ values: [Double]) -> Bool {
@@ -269,15 +354,29 @@ extension DossierSensesInvariance {
     /// possibility and tentative stay open. The same family every time is
     /// a frame that never varied.
     ///
+    /// THE SENTENCE IS SCOPED TO THE SPEECH THAT CARRIED THE THEME, not to
+    /// the walk. The evidence is only the recordings the theme appears in —
+    /// `thread.appearances` — and multi-recording walks are ordinary, so a
+    /// walk can be, say, counterfactual-dominant overall while the two
+    /// recordings that mentioned 'money' are obligation-dominant. The old
+    /// wording ("Every walk where 'X' appears is Y-dominant") made a claim
+    /// about the WALK on evidence drawn from a subset of it. The rendered
+    /// line now says "the speech carrying it", which is exactly the set
+    /// summed below — the same re-scoping `placeFrameLock` took to "Every
+    /// time '_' was spoken with its location known", and the same precedent
+    /// `markerColoring` sets with its ±15-token window.
+    ///
+    /// `ThreadsDossierFormatter.modalLeanSummary` is NOT the same
+    /// computation, and this is not a mirror of it: that one sums ALL of a
+    /// walk's recordings to name the walk's own lean. Only the per-walk
+    /// summing MOVE is shared — when more than one theme-carrying recording
+    /// lands on one walk, their modal counts are added into a single total
+    /// before a dominant family is picked, rather than letting one
+    /// recording's dominance silently stand for the walk.
+    ///
     /// Grouped and gated by distinct WALK, not by qualifying recording,
     /// mirroring `fusedThemes` and `unmovedReturn`: a theme argued in three
     /// bursts on one walk is one data point about one frame, not three.
-    /// When a walk carries more than one recording, their modal counts are
-    /// SUMMED into a single per-walk total before a dominant family is
-    /// picked — the same move `ThreadsDossierFormatter.modalLeanSummary`
-    /// makes for naming today's walk's dominant family — rather than
-    /// letting one recording's dominance silently stand for the walk, or
-    /// resolving a same-walk disagreement some other, unprincipled way.
     ///
     /// The rendered line claims "every walk". That claim is only true if
     /// EVERY walk where the theme appears has a dominant family — so a
@@ -293,9 +392,9 @@ extension DossierSensesInvariance {
     ///
     /// Per-walk dominance is a MODE, not a majority — the same fix PR #71
     /// applied to weatherWeave to kill the cloud tautologies. A family can
-    /// dominate with 40% of the modals as long as nothing beats it.
-    /// Deterministic ties: `ModalFamily.allCases` is declaration-ordered
-    /// and only a STRICTLY greater count replaces the running best.
+    /// dominate with 40% of the modals as long as nothing beats it — but it
+    /// must beat something: see `dominantModalFamily` for the count floor
+    /// and the tie rule that keep the mode from being a coin toss.
     static func frameConstancy(
         input: DossierSenses.Input, suppressed: Set<String>
     ) -> DossierSenses.SenseLine? {
@@ -322,143 +421,49 @@ extension DossierSensesInvariance {
                   dominantFamilies.allSatisfy({ $0 == first }) else { continue }
 
             return DossierSenses.SenseLine(
-                text: "Every walk where '\(thread.displayTerm)' appears is "
-                    + "\(first.rawValue)-dominant.",
+                text: "On every walk where '\(thread.displayTerm)' appears, the speech carrying it "
+                    + "was \(first.rawValue)-dominant.",
                 lemma: thread.lemma
             )
         }
         return nil
     }
 
-    /// The dominant `ModalFamily` for one walk's summed modal counts, or
-    /// nil if none of the words present map to a known family. A mode over
-    /// family totals, not a majority share — see `frameConstancy`.
+    /// The dominant `ModalFamily` for one walk's summed theme-carrying modal
+    /// counts, or nil if there is no honest answer.
+    ///
+    /// Three ways to answer nil, and the last two are the point:
+    /// 1. No word present maps to a known family.
+    /// 2. Fewer than `frameConstancyMinModalsPerWalk` mapped tokens in all —
+    ///    a single "can" is not a frame.
+    /// 3. The top two families TIE. `modalLeanSummary` resolves a tie by
+    ///    declaration order over `ModalFamily.allCases`, which is safe there
+    ///    only because it also sits behind `modalRemarkableMinCount` (10)
+    ///    and a 2× baseline elevation. This function had neither, so
+    ///    `possibility` — first in `allCases` — won every tie silently. A
+    ///    tie means the walk had no dominant frame, so it holds the whole
+    ///    signal silent rather than electing one.
     private static func dominantModalFamily(in modals: [String: Int]) -> MarkerLexicons.ModalFamily? {
         var totals: [MarkerLexicons.ModalFamily: Int] = [:]
         for (word, count) in modals {
             guard let family = MarkerLexicons.modalFamily(of: word) else { continue }
             totals[family, default: 0] += count
         }
+        guard totals.values.reduce(0, +) >= frameConstancyMinModalsPerWalk else { return nil }
+
         var best: (family: MarkerLexicons.ModalFamily, count: Int)?
+        var runnerUp = 0
         for family in MarkerLexicons.ModalFamily.allCases {
             let count = totals[family] ?? 0
-            guard count > 0, best == nil || count > best!.count else { continue }
-            best = (family, count)
-        }
-        return best?.family
-    }
-}
-
-extension DossierSensesInvariance {
-
-    /// The same theme spoken inside the same `DossierSenses.placeClusterRadius`
-    /// cluster on every walk that actually CONTRIBUTED a qualifying route
-    /// fix — an invariant tied to ground rather than to language. Reuses
-    /// `DossierSenses.qualifies` so a poor-accuracy or stale-gap fix is
-    /// excluded on the same hygiene terms as `placeResonance`: a
-    /// 500m-accuracy fix would make any two points on earth look like the
-    /// same place.
-    ///
-    /// GATED ON THE MEASURED SET, deliberately, not on the theme's full
-    /// appearance history (product decision, 2026-08-27): this app is used
-    /// on rural pilgrimage routes where GPS coverage is uneven, and a full
-    /// coverage requirement meant one dead-zone walk with no fix at all
-    /// could permanently silence an otherwise genuinely place-locked theme
-    /// — too conservative to ship. `minimumInvariantWalks` now applies to
-    /// `coordinatesByWalk.count` (distinct walks that contributed at least
-    /// one qualifying fix), not `allWalks.count` (every walk the theme
-    /// appears on): a theme in 10 walks with only 1 usable fix still stays
-    /// silent — clustering over fewer than `minimumInvariantWalks` points
-    /// is not evidence of anything — but a theme in 5 walks with 3 usable
-    /// fixes that cluster tightly may now speak, naming exactly what was
-    /// measured. DO NOT reinstate the `coordinatesByWalk.count ==
-    /// allWalks.count` check this replaced; that regression is the whole
-    /// point of this comment.
-    ///
-    /// THE CLAIM IS SCOPED TO LOCATED UTTERANCES, not to whole walks. A walk
-    /// enters `coordinatesByWalk` on its FIRST qualifying fix, but a theme
-    /// can be spoken more than once on one walk, and the second utterance
-    /// may have no fix at all (or a poor one) — so "spoken in the same place
-    /// on all N walks" would vouch for an utterance nothing ever measured.
-    /// Both variants therefore open with "Every time '_' was spoken with its
-    /// location known", which is exactly the set `maxPairwiseSpread` judged,
-    /// and the walk counts that follow describe the reach of that set rather
-    /// than making a second, wider claim. The alternative — requiring every
-    /// appearance on a counted walk to carry a qualifying fix — was rejected:
-    /// it is *stricter* than the walk-level full-coverage check the product
-    /// decision above deliberately removed, and would silence the signal for
-    /// exactly the rural walkers that decision was made for.
-    ///
-    /// Two rendered variants, the same shape `fusedThemes` already sets for
-    /// identical-vs-nested walk-sets: full coverage says "on all N walks it
-    /// appears in"; partial coverage names BOTH counts — "on M of the N
-    /// walks it appears in" — stating what was measured without implying
-    /// anything about the unmeasured walks. We do not know where those were,
-    /// only that we cannot say.
-    ///
-    /// Clustering is judged by SPREAD — the maximum pairwise distance
-    /// across every qualifying coordinate — never by distance from an
-    /// arbitrary anchor point such as the first coordinate encountered.
-    /// Two points can each sit within `placeClusterRadius` of a shared
-    /// anchor while sitting up to 2x that radius from each other; that is
-    /// not "the same place" by any reading a walker would recognize, and
-    /// an anchor-relative check would silently depend on appearance order
-    /// (which fix happens to come first). Requiring every pair to sit
-    /// within the radius of EACH OTHER is the stricter, order-independent
-    /// reading, and mirrors the compactness `placeResonance.bestCluster`
-    /// already measures via its own `spread`. UNCHANGED by the coverage
-    /// relaxation above — verified by haversine that anchor-relative
-    /// clustering lets points ~260m apart pass a 150m gate.
-    static func placeFrameLock(
-        input: DossierSenses.Input, suppressed: Set<String>
-    ) -> DossierSenses.SenseLine? {
-        for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
-        where !suppressed.contains(thread.lemma) {
-            let allWalks = Set(thread.appearances.map(\.walkUUID))
-
-            var coordinatesByWalk: [UUID: [DossierSenses.Coordinate]] = [:]
-            for appearance in thread.appearances {
-                guard let fix = input.fixes[appearance.recordingUUID],
-                      DossierSenses.qualifies(fix) else { continue }
-                coordinatesByWalk[appearance.walkUUID, default: []].append(fix.coordinate)
-            }
-            let measuredWalks = coordinatesByWalk.count
-            guard measuredWalks >= minimumInvariantWalks else { continue }
-
-            let coordinates = coordinatesByWalk.values.flatMap { $0 }
-            guard maxPairwiseSpread(coordinates) <= DossierSenses.placeClusterRadius else { continue }
-
-            let opening = "Every time '\(thread.displayTerm)' was spoken with its location known, "
-                + "it was in the same place — on "
-            guard measuredWalks < allWalks.count else {
-                return DossierSenses.SenseLine(
-                    text: opening + "all \(allWalks.count) walks it appears in.",
-                    lemma: thread.lemma
-                )
-            }
-
-            return DossierSenses.SenseLine(
-                text: opening + "\(measuredWalks) of the \(allWalks.count) walks it appears in.",
-                lemma: thread.lemma
-            )
-        }
-        return nil
-    }
-
-    /// The greatest distance between any two coordinates in the set —
-    /// order-independent, so which fix was recorded "first" cannot change
-    /// the answer. Mirrors the `spread` computation in
-    /// `DossierSenses.bestCluster`, minus the seed search: full coverage
-    /// above already fixes the one candidate set this function is asked
-    /// to judge, so there is nothing to search over.
-    private static func maxPairwiseSpread(_ coordinates: [DossierSenses.Coordinate]) -> CLLocationDistance {
-        guard coordinates.count >= 2 else { return 0 }
-        var spread: CLLocationDistance = 0
-        for i in 0..<(coordinates.count - 1) {
-            for j in (i + 1)..<coordinates.count {
-                spread = max(spread, DossierSenses.distance(coordinates[i], coordinates[j]))
+            guard count > 0 else { continue }
+            if let current = best, count <= current.count {
+                runnerUp = max(runnerUp, count)
+            } else {
+                if let current = best { runnerUp = max(runnerUp, current.count) }
+                best = (family, count)
             }
         }
-        return spread
+        guard let best, best.count > runnerUp else { return nil }
+        return best.family
     }
 }
