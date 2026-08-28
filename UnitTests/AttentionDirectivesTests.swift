@@ -240,6 +240,23 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertTrue(joined(context).contains("intention spoke of"))
     }
 
+    /// A guard, not a fix. `recurringWord` filters `scaffoldLemmas`, which
+    /// covers light verbs but not conversational filler, and it reads verbs
+    /// and adjectives as well as nouns — so filler reaching the AI prompt
+    /// looked possible once the theme layer surfaced 'yeah' on real device
+    /// history. It is not reproducible: the tagger classes 'yeah' as an
+    /// interjection in both the bare and the period-glued position, so it
+    /// never enters the mention set. Pinned so that widening the class set,
+    /// or a tagger change, cannot quietly make it true.
+    func testRecurringWord_ignoresConversationalFiller() {
+        let context = ActivityContext.make(
+            recordings: [recording("yeah. the light was low yeah. the ridge went on yeah. the wind kept up yeah. it held")],
+            startDate: start
+        )
+        let text = joined(context)
+        XCTAssertFalse(text.contains("'yeah'"), "filler must never be named as a recurring word")
+    }
+
     func testRecurringWord_countsAcrossInflections() {
         let context = ActivityContext.make(
             recordings: [recording("Moving is hard. We moved before. This move feels different.")],
