@@ -69,4 +69,67 @@ final class ThemeExtractorTests: XCTestCase {
         let themes = ThemeExtractor.themes(in: text, languageCode: "en")
         XCTAssertEqual(themes.map(\.lemma), ["harbor"])
     }
+
+    // MARK: - Conversational filler (field bug, 2026-08-28)
+
+    /// Whisper's lowercase sentence runs make NLTagger class 'yeah' as a NOUN
+    /// (and swallow the following period into the token), so the noun-only
+    /// restriction does not stop it: the real device produced 'yeah' / 'yeah.'
+    /// as a recurring theme across three walks.
+    private let fillerText = "so i was walking. yeah. and then i stopped by the water. yeah. it was " +
+        "fine. yeah. and i kept on going for a while. yeah. and then home. yeah. that was it."
+
+    func testFillerRun_yieldsNoThemes() {
+        XCTAssertTrue(ThemeExtractor.themes(in: fillerText, languageCode: "en").isEmpty,
+                      "conversational filler is not what a walk was about")
+    }
+
+    func testHesitationRun_yieldsNoThemes() {
+        let text = "hmm. i was out again. hmm. the wind was up and the light was going. hmm. i " +
+            "turned back before dark. hmm. that was the whole of it really. hmm."
+        XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
+    }
+
+    func testNounAmongFiller_isTheOnlyTheme() {
+        let text = fillerText + " the river was high. the river was high again. i thought about the river."
+        XCTAssertEqual(ThemeExtractor.themes(in: text, languageCode: "en").map(\.lemma), ["river"])
+    }
+
+    /// The chip and the dossier both print `displayTerm`; a theme identity or
+    /// a printed term carrying a period is the punctuation defect one layer
+    /// out, whatever produced it.
+    func testThemeIdentityAndDisplayTerm_carryOnlyLetters() {
+        let text = fillerText + " the river was high. the river was high again. i thought about the river."
+        for theme in ThemeExtractor.themes(in: text, languageCode: "en") {
+            XCTAssertTrue(theme.lemma.allSatisfy(\.isLetter), "theme lemma '\(theme.lemma)'")
+            XCTAssertTrue(theme.displayTerm.allSatisfy(\.isLetter), "displayTerm '\(theme.displayTerm)'")
+        }
+    }
+
+    // MARK: - lightNouns gate: time/times/person/people/app/apps
+
+    /// Observed as live themes on the same real-device history one pass
+    /// before the filler ones surfaced. NLTagger folds `people` → `person`
+    /// and `times` → `time`, so the lemma forms are what the filter sees.
+    func testTimeAndPeople_stoplisted_yieldNoThemes() {
+        let text = "the people were kind and the people walked with me for a time. i met a person " +
+            "by the water and the person spoke of time. time after time the people came back. " +
+            "the times were strange."
+        XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
+    }
+
+    /// 'app' is the walker talking about Pilgrim itself — meta-noise, never a
+    /// life theme.
+    func testApp_stoplisted_yieldsNoThemes() {
+        let text = "i opened the app again and the app was slow. the apps on this phone are all " +
+            "slow. i keep opening the app when i should be looking at the water. apps and apps and apps."
+        XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
+    }
+
+    func testNounAmongGenericNouns_isTheOnlyTheme() {
+        let text = "i keep thinking about the harbor when the people are around. the harbor at that " +
+            "time of year. person after person passes the harbor and the app is open in my hand. " +
+            "the harbor. apps and time."
+        XCTAssertEqual(ThemeExtractor.themes(in: text, languageCode: "en").map(\.lemma), ["harbor"])
+    }
 }
