@@ -181,12 +181,15 @@ enum ThreadsDossierFormatter {
         includeThreadAnalysis: Bool = true
     ) -> String? {
         guard !currentRecordings.isEmpty else { return nil }
-        let baseline = personalBaseline(from: allContexts)
 
         var section = "**Thought threads (on-device linguistic analysis):**"
         let heading = section
 
         if includeMarkerLines {
+            // Scoped to this branch: the marker-free variant is rendered in
+            // the same pass, and computing a baseline it never reads means
+            // scanning every historical context twice per screen-open.
+            let baseline = personalBaseline(from: allContexts)
             for (index, recording) in currentRecordings.enumerated() {
                 section += "\nRecording \(index + 1): \(markerLine(for: recording.context, baseline: baseline))"
             }
