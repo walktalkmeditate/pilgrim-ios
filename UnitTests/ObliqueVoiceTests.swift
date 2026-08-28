@@ -175,8 +175,44 @@ final class ObliqueVoiceTests: XCTestCase {
     }
 
     func testWaitingCopy_onlyObliqueHasIt() {
-        XCTAssertEqual(PromptStyle.oblique.waitingCopy, "Still listening. A few more walks with your voice.")
-        XCTAssertNil(PromptStyle.reflective.waitingCopy)
+        XCTAssertEqual(PromptStyle.oblique.waitingCopy(threadsEnabled: true),
+                       "Still listening. A few more walks with your voice.")
+        XCTAssertNil(PromptStyle.reflective.waitingCopy(threadsEnabled: true))
+        XCTAssertNil(PromptStyle.reflective.waitingCopy(threadsEnabled: false))
+    }
+
+    /// "A few more walks with your voice" is a promise that walking helps.
+    /// With Thought Threads off, `ThreadsDossierBuilder.buildResult` returns
+    /// all-nil before it reads a single recording, so no amount of walking
+    /// will ever produce a block — the row would sit dimmed forever, telling
+    /// the walker to keep doing the one thing that cannot change it. The
+    /// copy names the setting instead.
+    func testWaitingCopy_threadsDisabled_pointsAtTheSettingNotAtMoreWalking() {
+        let copy = PromptStyle.oblique.waitingCopy(threadsEnabled: false)
+        XCTAssertEqual(copy, "Needs Thought Threads, switched on in Settings → Voice.")
+        XCTAssertFalse(copy?.contains("A few more walks") ?? true,
+                       "walking cannot satisfy a gate that never reads the walk")
+    }
+
+    /// The dimmed row's copy exists to be read. Dimming the whole row to
+    /// 0.45 put `.fog` at 1.6:1 and `.ink` at 2.6:1 against `parchment`,
+    /// both far under WCAG AA's 4.5:1. The text dim is now 0.7 on `.ink`
+    /// (5.4:1 light, 7.8:1 dark) and only the decorative icon keeps the
+    /// heavier 0.45.
+    func testWaitingRow_textDimStaysAboveTheAccessibleContrastFloor() {
+        XCTAssertGreaterThanOrEqual(PromptStyleRow.waitingTextOpacity, 0.7)
+        XCTAssertLessThan(PromptStyleRow.waitingIconOpacity, PromptStyleRow.waitingTextOpacity,
+                          "the icon is decorative and may carry the heavier dim; the copy may not")
+    }
+
+    /// `PromptAssembler.assemble` returns the empty string for a hoisting
+    /// voice with no block, and `GeneratedPrompt.text` is non-optional — so
+    /// the sentinel is invisible at the type level to every consumer that
+    /// copies, shares or renders it. `hasText` is the question they must ask.
+    func testGeneratedPrompt_refusedAssembly_reportsNoText() {
+        let refused = GeneratedPrompt(style: .oblique, customStyle: nil, text: "")
+        XCTAssertFalse(refused.hasText)
+        XCTAssertTrue(GeneratedPrompt(style: .oblique, customStyle: nil, text: "x").hasText)
     }
 
     /// Deliberate symmetry: the gate means Oblique is never assembled with

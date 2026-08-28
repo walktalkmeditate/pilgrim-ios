@@ -44,10 +44,16 @@ Thought Threads *is* that record — the same person returning to the same unres
 
 ```
 **Unchanged:**
-'father' and 'money' have appeared in 4 of 4 walks together, never apart.
-'work' has returned across 5 walks; salience steady, marker profile flat.
-Every walk where 'money' appears is obligation-dominant ('should' ×14 avg).
+'father' and 'money' have appeared in the same 4 walks, never apart.
+'work' has returned across 5 walks; it sounds the same each time.
+On every walk where 'money' appears, the speech carrying it was obligation-dominant.
 ```
+
+*(Shipped wording, after the two review passes. Each sentence names exactly the
+set it measured: the fused pair drops a denominator with nothing to contrast
+against, and the frame line says "the speech carrying it" because the modal
+counts come only from the recordings that carried the theme, never from the
+whole walk.)*
 
 **Layer 2 — the model, what the walker reads:**
 
@@ -120,7 +126,9 @@ In the picker Oblique is **visible but unselectable** until the block exists, di
 
 > **Oblique** — *Still listening. A few more walks with your voice.*
 
-"Still listening" is true for every one of the cases above — insufficient history, no voice on this walk, or history that simply hasn't produced an invariant — so one string covers all of them without lying. It reads as the voice needing to hear more, not as a level to grind, which keeps it clear of the streak-pressure mechanics the app deliberately refuses.
+"Still listening" is true for every one of the cases above — insufficient history, no voice on this walk, or history that simply hasn't produced an invariant — so one string covers all of them without lying.
+
+**One exception, found at second review (2026-08-28).** With `UserPreferences.threadsAfterWalks` off, `ThreadsDossierBuilder.buildResult` returns all-nil before it reads a single recording, so no amount of walking will ever produce a block and the row would sit dimmed forever promising otherwise. `waitingCopy` takes `threadsEnabled` and in that one case reads *"Needs Thought Threads, switched on in Settings → Voice."* — pointing at the thing that would actually change it. The dim itself was also re-measured: the row-wide 0.45 opacity put the copy at 1.6:1 against `parchment`, so the heavy dim now falls on the decorative icon and the text carries a 0.7 dim on `.ink` (5.4:1 light, 7.8:1 dark), over WCAG AA. It reads as the voice needing to hear more, not as a level to grind, which keeps it clear of the streak-pressure mechanics the app deliberately refuses.
 
 There is no "gates pass but no invariant fires, so Oblique degrades" case in the shipped design — that scenario **is** `unchangedBlock == nil`, and the gate above already covers it. The `PromptStyle.isAvailable(unchangedBlockPresent:)` / `PromptStyle.waitingCopy` API and the `walksWithTranscripts`/`minimumWalksForOblique` counting this section originally proposed were dropped as dead weight once the block-presence check replaced them.
 

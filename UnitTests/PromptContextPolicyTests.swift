@@ -186,14 +186,29 @@ final class PromptContextPolicyTests: XCTestCase {
         XCTAssertFalse(prompt.contains("Threads across recent walks"))
     }
 
-    func testAssembler_creativeAndGratitude_contractStillCarriesNoThreadsLanguage_withSensesOnlyDossier() {
+    /// The policy leak, pinned the right way round. `includesThreadAnalysis:
+    /// false` was read as "this voice receives no cross-walk thread claim",
+    /// and the senses-only dossier was handed over on that premise — but four
+    /// of the eight senses (`placeResonance`, `moonLine`, `weatherWeave`,
+    /// `intentionLineage`) name a theme and count the walks it surfaced in,
+    /// which is a cross-walk thread claim by any reading. Creative and
+    /// Gratitude received exactly those claims and, because the guard was
+    /// keyed on the policy rather than on the block actually selected, no
+    /// instruction at all on how not to read them. The guard now follows the
+    /// dossier.
+    ///
+    /// The interpretive key still teaches nothing: its probes look for marker
+    /// phrasings ("absolutist words", "raw counts only", "modal lean:") that
+    /// the senses-only variant never prints, so the accretion is the guard
+    /// alone — vocabulary with no referent stays out, exactly as before.
+    func testAssembler_creativeAndGratitude_sensesOnlyDossier_carriesTheClinicalGuard() {
         for voice: PromptVoice in [CreativeVoice(), GratitudeVoice()] {
             let prompt = PromptAssembler.assemble(context: contextWithSensesOnlyDossier(), voice: voice)
+            XCTAssertTrue(prompt.contains("never produce clinical or diagnostic language"),
+                          "a block that names a theme and counts walks is a thread claim, guard and all")
             XCTAssertFalse(prompt.contains("Read the absolutist-word share"))
-            XCTAssertFalse(prompt.contains("Read the modal lean"))
-            XCTAssertFalse(prompt.contains("descriptive on-device linguistic signals"),
-                           "the senses-only dossier is now non-nil, but the response contract must still " +
-                           "treat these voices as carrying no thread-analysis dossier at all")
+            XCTAssertFalse(prompt.contains("Read the modal lean"),
+                           "the senses-only variant prints no marker figures, so the key must stay silent")
         }
     }
 }

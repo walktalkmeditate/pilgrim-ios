@@ -25,7 +25,8 @@ struct PromptListView: View {
                 ForEach(prompts) { prompt in
                     let waiting = prompt.style.flatMap { style in
                         style.isAvailable(unchangedBlockPresent: activityContext?.unchangedBlock != nil)
-                            ? nil : style.waitingCopy
+                            ? nil
+                            : style.waitingCopy(threadsEnabled: UserPreferences.threadsAfterWalks.value)
                     }
                     if let waiting {
                         PromptStyleRow(prompt: prompt, waitingCopy: waiting)
@@ -382,6 +383,18 @@ struct PromptStyleRow: View {
         "\(title), not available yet"
     }
 
+    /// Contrast, measured against `parchment` in both appearances. The
+    /// previous treatment dimmed the WHOLE row to 0.45, which drove `.fog`
+    /// from 3.4:1 to 1.6:1 and `.ink` from 13.5:1 to 2.7:1 — both far under
+    /// WCAG AA's 4.5:1, on the one row whose copy exists to be read. The dim
+    /// now falls where it costs nothing: on the icon, which is decorative and
+    /// exempt, and on a softened `.ink` that still measures 5.4:1 in light
+    /// and 7.8:1 in dark. Unavailability is carried by the icon dim, the
+    /// missing chevron, the waiting copy itself and the accessibility label —
+    /// never by making the text hard to see.
+    static let waitingTextOpacity: Double = 0.7
+    static let waitingIconOpacity: Double = 0.45
+
     var body: some View {
         if let waitingCopy {
             row
@@ -400,14 +413,17 @@ struct PromptStyleRow: View {
                 .font(.title2)
                 .foregroundColor(.stone)
                 .frame(width: 40)
+                .opacity(isWaiting ? Self.waitingIconOpacity : 1)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(prompt.title)
                     .font(Constants.Typography.heading)
                     .foregroundColor(.ink)
+                    .opacity(isWaiting ? Self.waitingTextOpacity : 1)
                 Text(waitingCopy ?? prompt.subtitle)
                     .font(Constants.Typography.caption)
-                    .foregroundColor(.fog)
+                    .foregroundColor(isWaiting ? .ink : .fog)
+                    .opacity(isWaiting ? Self.waitingTextOpacity : 1)
                     .lineLimit(2)
             }
 
@@ -420,6 +436,5 @@ struct PromptStyleRow: View {
             }
         }
         .padding(.vertical, Constants.UI.Padding.small)
-        .opacity(isWaiting ? 0.45 : 1)
     }
 }

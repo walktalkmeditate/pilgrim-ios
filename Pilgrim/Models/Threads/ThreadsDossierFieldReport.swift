@@ -169,7 +169,9 @@ enum DossierSensesFieldReport {
         )
         var fired: [DossierSenses.Invariant: Int] = [:]
         var considered = 0
+        var buildDurations: [TimeInterval] = []
         var report = "\n===== DOSSIER INVARIANCE FIELD REPORT =====\n"
+        report += invarianceGateSummary(walkIndex: walkIndex, contexts: context.contextsByUUID)
         if walks.isEmpty {
             report += "\n(no walk history on this device — nothing to report)\n"
             report += "============================================\n"
@@ -185,6 +187,7 @@ enum DossierSensesFieldReport {
             )
             report += result.text
             for invariant in result.firingInvariants { fired[invariant, default: 0] += 1 }
+            buildDurations.append(result.buildSeconds)
         }
         if considered == 0 {
             report += "\n(no walk carries a transcribed recording — nothing to report)\n"
@@ -197,6 +200,7 @@ enum DossierSensesFieldReport {
             let rate = Double(count) / Double(considered) * 100
             report += String(format: "  %@: %d/%d (%.1f%%)\n", String(describing: invariant), count, considered, rate)
         }
+        report += timingLine(buildDurations)
         report += "\nNote: [\(DossierSenses.Invariant.unarrivedIntention)] above BYPASSES "
         report += "pendingFieldGate — called directly so this report can judge the one signal "
         report += "production dispatch keeps dark. pendingFieldGate itself is untouched by this "
@@ -208,6 +212,47 @@ enum DossierSensesFieldReport {
     private struct WalkInvarianceReport {
         let text: String
         let firingInvariants: [DossierSenses.Invariant]
+        let buildSeconds: TimeInterval
+    }
+
+    /// The gate values, printed before a single line. Firing rates alone
+    /// answer "what would each signal say across all walks" but never "why
+    /// did Oblique say nothing on this walk" — and every one of these can
+    /// hold the whole block silent on its own while every signal below
+    /// reports healthy rates, because this harness bypasses the production
+    /// dispatch (see `evaluateWalkInvariance`).
+    ///
+    /// `unanalyzed` is the honest read on `backfillComplete`, which certifies
+    /// ANALYSIS coverage of already-transcribed recordings, not transcription
+    /// coverage: `ThreadsBackfill` sweeps `transcribedRecordingsSnapshot()`
+    /// only, and `autoTranscribe` defaults off, so a device with 32 of 40
+    /// walks untranscribed still reads `isComplete == true`. That number is
+    /// the data the ship decision needs before anyone can judge whether the
+    /// gate should be strengthened.
+    @MainActor
+    private static func invarianceGateSummary(
+        walkIndex: [UUID: (walkUUID: UUID, date: Date)], contexts: [UUID: TranscriptContext]
+    ) -> String {
+        let unanalyzed = Set(walkIndex.keys).subtracting(contexts.keys)
+        let unanalyzedWalks = Set(unanalyzed.compactMap { walkIndex[$0]?.walkUUID })
+        var text = "\nGates:\n"
+        text += "  UserPreferences.threadsAfterWalks: \(UserPreferences.threadsAfterWalks.value)\n"
+        text += "  ThreadsBackfill.isComplete: \(ThreadsBackfill.isComplete)\n"
+        text += "  DossierSensesInvariance.pendingFieldGate: \(DossierSensesInvariance.pendingFieldGate)"
+        text += " (holds \(DossierSenses.Invariant.unarrivedIntention) dark in production)\n"
+        text += "  recordings with no stored context: \(unanalyzed.count)/\(walkIndex.count)"
+        text += " across \(unanalyzedWalks.count) walks\n"
+        return text
+    }
+
+    private static func timingLine(_ durations: [TimeInterval]) -> String {
+        guard !durations.isEmpty else { return "" }
+        let sorted = durations.sorted()
+        let midpoint = sorted.count / 2
+        let median = sorted.count.isMultiple(of: 2)
+            ? (sorted[midpoint - 1] + sorted[midpoint]) / 2
+            : sorted[midpoint]
+        return String(format: "\nPer-walk evaluation — median: %.3fs, max: %.3fs\n", median, sorted.last ?? 0)
     }
 
     /// Evaluates every invariant for one walk, uncapped: each call passes an
@@ -238,6 +283,7 @@ enum DossierSensesFieldReport {
     private static func evaluateWalkInvariance(
         _ walk: Walk, walkUUID: UUID, recordings: [RecordingContext], now: Date, context: FieldReportContext
     ) -> WalkInvarianceReport {
+        let buildStart = Date()
         let bundle = ThreadsDossierBuilder.gatherSensesBundle(walk: walk, now: now)
         let input = ThreadsDossierBuilder.makeSensesInput(
             senses: bundle,
@@ -258,7 +304,11 @@ enum DossierSensesFieldReport {
             firingInvariants.append(invariant)
             text += "  [\(invariant)] \(line.text)\n"
         }
-        return WalkInvarianceReport(text: text, firingInvariants: firingInvariants)
+        let buildSeconds = Date().timeIntervalSince(buildStart)
+        text += String(format: "  build: %.3fs\n", buildSeconds)
+        return WalkInvarianceReport(
+            text: text, firingInvariants: firingInvariants, buildSeconds: buildSeconds
+        )
     }
 }
 #endif

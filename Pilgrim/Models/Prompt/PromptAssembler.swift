@@ -64,13 +64,18 @@ enum PromptAssembler {
         }
 
         sections += "\n\n---\n\n\(fullInstruction)"
-        // Never the senses-only dossier: its content (weather, moon, place,
-        // climb) carries no marker or thread claim to interpret, so a voice
-        // reading only it (Creative, Gratitude) must not receive the
-        // clinical-language guard or an interpretive key either — both are
-        // about reading marker/thread numbers this voice was never shown.
-        let threadsDossierForContract = voice.contextPolicy.includesThreadAnalysis ? dossier : nil
-        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, threadsDossier: threadsDossierForContract))"
+        // The guard follows the dossier that was actually selected, whichever
+        // variant that is. The senses-only variant is NOT claim-free: four of
+        // its eight senses (`placeResonance`, `moonLine`, `weatherWeave`,
+        // `intentionLineage`) name a theme and count the walks it surfaced
+        // in, which is a cross-walk thread claim by any reading. Keying the
+        // guard on `includesThreadAnalysis` meant Creative and Gratitude
+        // received exactly those claims with no instruction on how not to
+        // read them — the policy said "no thread analysis" while the block
+        // underneath it counted walks. `interpretiveKey` still teaches
+        // nothing here: its probes read marker phrasings the senses-only
+        // variant never prints, so the accretion stays at the guard alone.
+        sections += "\n\n\(responseContract(voice: voice, hasSpeech: context.hasSpeech, threadsDossier: dossier))"
         return sections
     }
 

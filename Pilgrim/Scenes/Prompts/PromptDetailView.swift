@@ -24,7 +24,7 @@ struct PromptDetailView: View {
                                 .foregroundColor(.ink)
                         }
 
-                        Text(prompt.text)
+                        Text(prompt.hasText ? prompt.text : GeneratedPrompt.emptyBodyCopy)
                             .font(Constants.Typography.body)
                             .foregroundColor(.ink)
                             .textSelection(.enabled)
@@ -86,6 +86,10 @@ struct PromptDetailView: View {
                     .cornerRadius(Constants.UI.CornerRadius.normal)
                 }
                 .scaleEffect(copyScale)
+                // An empty prompt is a refusal, not content: copying it puts
+                // nothing on the pasteboard and sharing it opens an empty
+                // share sheet.
+                .disabled(!prompt.hasText)
 
                 Button {
                     showShareSheet = true
@@ -100,6 +104,7 @@ struct PromptDetailView: View {
                                 .stroke(Color.stone, lineWidth: 1.5)
                         )
                 }
+                .disabled(!prompt.hasText)
             }
 
             if showAIPills {

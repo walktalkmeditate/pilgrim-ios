@@ -415,6 +415,53 @@ extension ThreadsDossierTests {
         XCTAssertNil(ThreadsDossierBuilder.renderUnchangedBlock([]))
     }
 
+    /// The memo caches a four-field tuple but every existing test reads only
+    /// `.dossier` — through `build`, which discards the other three. A cache
+    /// hit that returned the dossier and dropped `unchangedBlock`,
+    /// `dossierWithoutMarkers` or `dossierSensesOnly` would show up as
+    /// Oblique silently disappearing from the picker on the second open of
+    /// the same walk, and no test would have failed. Same walk, same
+    /// recordings, same store, no writes in between: the hit must return
+    /// exactly what the miss built, field for field.
+    func testBuilder_cacheHit_replaysEveryFieldNotJustTheDossier() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierSensesBuilderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+
+        let walkStart = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let walkA = UUID(), recA = UUID()
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [recA: (walkA, walkStart)]
+        let bundle = sensesBundle(
+            walkStart: walkStart, walkEnd: walkStart.addingTimeInterval(3600),
+            recordingTimestamps: [recA: walkStart.addingTimeInterval(300)],
+            lunationAnchor: walkStart
+        )
+        let recording = wordedRecording(uuid: recA, start: walkStart.addingTimeInterval(300))
+
+        let first = ThreadsDossierBuilder.buildResult(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: bundle, resolveRouteFix: { _ in nil }
+        )
+        var secondBuildRan = false
+        let second = ThreadsDossierBuilder.buildResult(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: bundle, resolveRouteFix: { _ in
+                secondBuildRan = true
+                return nil
+            }
+        )
+        XCTAssertFalse(secondBuildRan, "the fixture must actually hit the memo, or this proves nothing")
+        XCTAssertEqual(first.dossier, second.dossier)
+        XCTAssertEqual(first.unchangedBlock, second.unchangedBlock)
+        XCTAssertEqual(first.dossierWithoutMarkers, second.dossierWithoutMarkers)
+        XCTAssertEqual(first.dossierSensesOnly, second.dossierSensesOnly)
+    }
+
     func testActivityContext_carriesUnchangedBlock() {
         let context = ActivityContext.make(
             startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),

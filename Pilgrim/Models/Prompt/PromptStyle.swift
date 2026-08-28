@@ -64,12 +64,21 @@ extension PromptStyle {
         return unchangedBlockPresent
     }
 
-    /// Shown dimmed in the picker while unavailable. True for every case
-    /// that fails the gate above — thin history, a silent walk, or a
-    /// history-deep walk where nothing has held still yet — so one string
-    /// covers all of them without lying. It reads as the voice needing to
-    /// hear more, not as a level to grind.
-    var waitingCopy: String? {
-        self == .oblique ? "Still listening. A few more walks with your voice." : nil
+    /// Shown dimmed in the picker while unavailable.
+    ///
+    /// Two strings, because one of them would be a lie. "Still listening"
+    /// promises that more walking helps — true for thin history, a silent
+    /// walk, or a history-deep walk where nothing has held still yet, which
+    /// is every case the gate can fail for WHILE Thought Threads is on. With
+    /// the preference off, `ThreadsDossierBuilder.buildResult` returns
+    /// all-nil before it reads a single recording, so no amount of walking
+    /// will ever produce a block and the row would sit there dimmed forever
+    /// promising otherwise. That case names the setting instead, so the row
+    /// points at the thing that would actually change it.
+    func waitingCopy(threadsEnabled: Bool) -> String? {
+        guard self == .oblique else { return nil }
+        return threadsEnabled
+            ? "Still listening. A few more walks with your voice."
+            : "Needs Thought Threads, switched on in Settings → Voice."
     }
 }
