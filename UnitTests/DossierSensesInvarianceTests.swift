@@ -97,6 +97,12 @@ final class DossierSensesInvarianceTests: XCTestCase {
         )
     }
 
+    /// "in the same 3 walks", never "in 3 of 3 walks": on the identical-set
+    /// branch `shared == outer` by construction, so the denominator has
+    /// nothing to contrast with and reads as "all of your walks" — a claim
+    /// about the walker's whole history that neither theme's walk-set
+    /// supports. The nested branch below keeps both counts, where they
+    /// genuinely differ.
     func testFusedThemes_identicalWalkSets_fires() {
         let walks = [UUID(), UUID(), UUID()]
         let input = inputWith(threads: [
@@ -106,9 +112,19 @@ final class DossierSensesInvarianceTests: XCTestCase {
         let line = DossierSensesInvariance.fusedThemes(input: input, suppressed: [])
         XCTAssertEqual(
             line?.text,
-            "'father' and 'money' have appeared in 3 of 3 walks together, never apart."
+            "'father' and 'money' have appeared in the same 3 walks, never apart."
         )
         XCTAssertEqual(line?.lemma, "father")
+    }
+
+    func testFusedThemes_identicalWalkSets_neverRendersAReferentFreeDenominator() {
+        let walks = [UUID(), UUID(), UUID()]
+        let input = inputWith(threads: [
+            thread("father", walks: walks),
+            thread("money", walks: walks)
+        ])
+        let line = DossierSensesInvariance.fusedThemes(input: input, suppressed: [])
+        XCTAssertFalse(line?.text.contains("3 of 3") ?? true)
     }
 
     func testFusedThemes_nestedWalkSet_fires() {
@@ -164,7 +180,10 @@ final class DossierSensesInvarianceTests: XCTestCase {
         XCTAssertNil(DossierSensesInvariance.fusedThemes(input: input, suppressed: ["father"]))
     }
 
-    private func markerContext(
+    /// Internal, not private, so the split files that extend this class can
+    /// share it — the same widening `steadyThread`/`modalContext`/`modalInput`
+    /// already took for `DossierSensesInvarianceFrameConstancyCoverageTests`.
+    func markerContext(
         _ uuid: UUID, absolutist: Int, firstPerson: Int, sentiment: Double, words: Int = 200
     ) -> TranscriptContext {
         TranscriptContext(

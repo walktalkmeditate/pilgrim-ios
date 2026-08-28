@@ -334,9 +334,17 @@ enum ThreadsDossierBuilder {
         }
         if !markerFree.lines.isEmpty {
             let noticed = "**Noticed:**\n" + markerFree.lines.joined(separator: "\n")
-            if dossiers.withoutMarkers != nil {
-                dossiers.withoutMarkers! += "\n\n" + noticed
-            }
+            // `withoutMarkers` is nil whenever the marker-free render had
+            // nothing to say — no thread active on this walk and no quiet
+            // line, so `ThreadsDossierFormatter.dossier` returned its
+            // `section == heading` nil. Appending only when it is already
+            // non-nil would then drop `Noticed:` on the floor for Journaling
+            // while Creative and Gratitude still received it through
+            // `sensesOnly` — a thread-analysis voice ending up with LESS
+            // sensory context than a thread-suppressed one. Same text, both
+            // variants, whether or not there was a thread section to hang
+            // it under.
+            dossiers.withoutMarkers = dossiers.withoutMarkers.map { $0 + "\n\n" + noticed } ?? noticed
             dossiers.sensesOnly = noticed
         }
 

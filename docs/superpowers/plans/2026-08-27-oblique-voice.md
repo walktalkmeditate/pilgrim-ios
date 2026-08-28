@@ -140,6 +140,8 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ## Task 2: The invariance engine — cap, priority, dedup
 
+> **Superseded in part by the final review pass (F2, see the section before *Done when*):** `invarianceLines` now opens with `guard input.backfillComplete else { return [] }`. The Step 3 snippet below predates it.
+
 **Why:** The engine shell must exist before any signal, and it must be testable independently via a stub, exactly as `DossierSenses.lines` is.
 
 **Files:**
@@ -362,6 +364,8 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ---
 
 ## Task 3: Signal 1 — fused themes
+
+> **Superseded in part by the final review pass (F7):** the identical-set line now reads "have appeared in the same 3 walks, never apart", not "in 3 of 3 walks together". Every "3 of 3" string in the snippets below is stale.
 
 **Why:** Two themes whose walk-sets are identical or nested are a **structural** invariant the walker cannot see, because it is a grouping they performed pre-categorically. Cheapest signal and the most arresting: *"you have not spoken about your father without also speaking about money."*
 
@@ -591,6 +595,8 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ---
 
 ## Task 4: Signal 2 — the unmoved return
+
+> **Superseded in part by the final review pass (F1):** flatness is computed over one value per WALK — each walk's qualifying recordings averaged first — not over one value per recording. The Step 3 snippet below shows the superseded recording-weighted form.
 
 **Why:** A theme that recurs with steady salience *and* a flat marker profile is the invariant across the walker's returns. `ThreadStore.salienceDirection` already computes `.steady` and `ThreadsDossierFormatter` already prints it as a throwaway clause — this gives it the weight it deserves.
 
@@ -1016,6 +1022,8 @@ the N-1-agree boundary test. See Deviation 3 above and
 ---
 
 ## Task 6: Signal 4 — place-frame lock
+
+> **Superseded in part by the final review pass (F8):** both rendered variants now open "Every time '_' was spoken with its location known, it was in the same place — on …", scoping the claim to located utterances rather than to whole walks. Every "has been spoken in the same place" string below is stale.
 
 **Why:** The same theme spoken within the same 150m cluster every time is an invariant tied to ground, not language. `placeResonance` already proves the clustering machinery works over `fixes`.
 
@@ -1598,6 +1606,8 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ## Task 9: The context policy, and the marker-in-a-journal-entry defect
 
+> **Extended by the final review pass (F4, F6):** `PromptContextPolicy` gains a fourth axis, `groundsInIntention`, false for Oblique alone; and `Noticed:` now reaches the marker-free variant even when the marker-free render had no thread section to return it under.
+
 **Why:** `JournalingVoice` currently receives absolutist percentages and sentiment scores, and they land in an entry the walker rereads years later. `CreativeVoice` is asked for a poem while holding a sentiment score. This is live, and fixing it needs the same mechanism Oblique needs for hoisting.
 
 **Files:**
@@ -1877,6 +1887,8 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ## Task 10: The Oblique voice
 
+> **Extended by the final review pass (F3, F4):** `PromptAssembler.assemble` refuses to build a block-hoisting voice without a block, and Oblique's policy sets `groundsInIntention: false`.
+
 **Why:** Everything above produces the block. This is the voice that reads it.
 
 **Files:**
@@ -2027,6 +2039,8 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ---
 
 ## Task 11: The picker gate — "Still listening"
+
+> **Extended by the final review pass (F3, F10):** the picker gate is now defence in depth behind the assembler's own refusal, and the waiting row carries `.disabled(true)` plus an accessibility label and hint.
 
 **Why:** `ObliqueVoice.preamble` and `.instruction` reference the invariants named under `Unchanged:` **unconditionally** — they do not branch on `hasSpeech`. `unchangedBlock` is nil whenever fewer than `DossierSensesInvariance.minimumInvariantWalks` (3) qualifying walks exist for any signal, which can be true even on a speech-bearing walk with deep history. A gate built from `walksWithTranscripts >= 5 && currentWalkHasSpeech` (the draft below) does not track that — it would let the picker offer Oblique on a walk where `unchangedBlock` is still nil, handing the model an instruction to read a block that is not in the prompt. **Corrected during implementation:** the gate must be `context.unchangedBlock != nil` directly. That single condition subsumes thin history, a silent current walk, and a history-deep walk where nothing has held still yet — all three already leave `unchangedBlock` nil, so checking it is the only gate that can't lie. `minimumWalksForOblique` and the `walksWithTranscripts` parameter below are dead once the block-presence check is used, so they were dropped rather than kept unread. It shows in the list from day one, unselectable, so the walker learns it exists.
 
@@ -2295,11 +2309,40 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ---
 
+## Final review pass — adjudicated fixes (2026-08-27)
+
+Eight findings from the whole-branch review, applied in one pass after Task 12. Each is live; each is recorded here rather than left as a silent commit, per the same house rule the per-task deviation blocks above follow. The tasks each fix belongs to are named so the drafts above are read through these, never instead of them.
+
+**F1 — `unmovedReturn`'s flatness is now weighted per WALK (Task 4).** The draft in Task 4, and the spec sentence it came from, computed the coefficient of variation over one value per qualifying RECORDING while the rendered claim is walk-scoped ("has returned across N walks; it sounds the same each time"). Concrete failure: a thread appearing 8× on walk A (absolutist share .020 each), 1× on walk B (.028) and 1× on walk C (.014) gives a recording-weighted CV of ~0.156 — under the 0.20 ceiling, so it fires — while walk B is genuinely 2x walk C. Walk-weighted, the CV over the three per-walk means is ~0.277 and it correctly stays silent. Shipped code groups qualifying appearances by `walkUUID`, averages each walk's marker ratios into one value, and runs `isFlat` over those; `packsByWalk.count` is then both the reported walk count and the value count `isFlat` judged, by construction rather than by coincidence. This is the sixth instance of the branch's recurring defect class and the last one live — `frameConstancy` already aggregated per walk (its own Deviation 1), `unarrivedIntention` already bound its verdict to its rendered evidence. Pinned by `testUnmovedReturn_lopsidedFixture_isFlatPerRecordingButNotPerWalk` (proves the fixture passes the pre-fix computation and fails the fixed one, so the test is about the aggregation and not about a fixture that fails every way), `testUnmovedReturn_eightRecordingsOnOneWalkOutvotingTwoOthers_staysSilent`, and `testUnmovedReturn_lopsidedButGenuinelyFlatAcrossWalks_stillFires` (the fix must not be a mute button).
+
+**F2 — the whole invariance track waits on `backfillComplete` (Task 2).** `DossierSenses.invarianceLines` now opens with `guard input.backfillComplete else { return [] }`. Every history claim in the dossier is already gated on it (`ThreadsDossierFormatter` lines 209, 220, 230) because a coverage claim over a partly-analyzed record is false, and `ThreadsBackfill` is battery-gated and single-flight, so the window is an ordinary state rather than a theoretical one: a walker importing 40 walks with 6 analyzed would have been told "Every walk where 'grief' appears is obligation-dominant" over 3 walks out of 40, with `frameConstancy`'s own full-coverage argument evaporating silently because the pool it is complete over is itself incomplete. The gate sits above the per-invariant dispatch, so a future signal cannot opt out of it by being added to `Invariant.allCases`. `ThreadsDossierFieldReport` bypasses it deliberately (it calls `evaluateInvariant` directly) — the field gate's job is to judge firing rates, and a report that returned nothing mid-sweep would look like a dead signal. Pinned by `testInvarianceLines_qualifyingFixture_firesWhenBackfillComplete`, `testInvarianceLines_sameFixture_staysSilentWhileBackfillIncomplete`, and `testInvarianceLines_backfillIncomplete_silencesEvenAStubThatAlwaysFires`.
+
+**F3 — the voice guards itself, not just the picker (Tasks 10 and 11).** `PromptGenerator.generateAll` assembles Oblique unconditionally for every walk. Without a block, that prompt still said *"What follows includes what has not changed across those returns"* and *"Work from the invariants named under Unchanged"* — an explicit invitation to invent an invariant, with only `PromptListView`'s `if let waiting {…} else { Button {…} }` between it and the model. `PromptAssembler.assemble` now refuses first: a voice whose policy hoists the block and has no block to hoist returns the empty string, before any section is built, so every present and future caller inherits the guarantee. **Chosen over filtering `.oblique` out of `generateAll`**, which would also have deleted the dimmed "Still listening" row from the picker — a UX regression traded for a safety fix. The picker gate stays, unchanged, as defence in depth. Four pre-existing "every style" test loops needed adjusting, and each was made to say something rather than merely skip: the two spoken-walk fixtures (`PromptResponseContractTests.spokenContext`, `WalkCharacterTests.testAssembler_weavesNoteIntoEveryStyle`) now carry an `unchangedBlock` so Oblique is genuinely covered, and the two silent-walk loops exclude it with a comment plus a new positive pin, `testSilentWalk_obliqueAloneProducesNothing`. Also pinned by `testAssembler_obliqueWithoutBlock_producesNothing`, `testGenerateAll_withoutBlock_obliqueCarriesNoPromptText`, and `testAssembler_nonHoistingVoiceWithoutBlock_assemblesNormally` (the refusal is keyed on the policy, not on the concrete type).
+
+**F4 — the intention rider is scoped off Oblique (Task 9).** `PromptContextPolicy` gains a fourth axis, `groundsInIntention`. When an intention exists the assembler appended *"Ground your response in the walker's stated intention… Help them see how their walk — its pace, its pauses, its moments — spoke to this purpose"* to the instruction and *"Let it be the lens through which you interpret everything below"* to the context dossier. Written for six voices that all produce a reading of THIS walk, never scoped when the seventh arrived, and contradicting Oblique clause for clause — a resolution where constraint 4 says "End on the observation. Do not resolve it", a this-walk summary where the instruction says "Be concrete about the shape, not about what it means for their life" over cross-walk invariants. It fired on the common case, since deep-history walkers are exactly the walkers who set intentions. Both halves are scoped together; scoping one would leave the contradiction half-standing. True for the other six voices and for `CustomPromptStyle` via `.full`. Pinned by `testAssembler_obliqueWithIntention_carriesNeitherRiderNorLens`, `testAssembler_obliqueWithIntention_stillCarriesItsOwnConstraints`, `testAssembler_everyOtherVoiceWithIntention_keepsRiderAndLens`, and `testPolicy_obliqueAloneDoesNotGroundInIntention`.
+
+**F6 — `Noticed:` reaches the marker-free variant even with no thread section (Task 9, fixes 5–6).** `ThreadsDossierFormatter.dossier` returns nil (`section == heading`) on a walk with no active thread and no quiet line, so `dossiers.withoutMarkers` can be nil while the full dossier still renders its marker lines. The `Noticed:` append was guarded on non-nil while `sensesOnly` was assigned unconditionally — so Journaling, a thread-analysis voice, lost the sensory block that Creative and Gratitude, the thread-suppressed voices, kept. Shipped code assigns the block outright when there is nothing to append it to. Pinned by `testNoticed_reachesMarkerFreeVariant_evenWhenThereIsNoThreadSection`.
+
+**F7 — `fusedThemes`' identical-set wording drops its referent-free denominator (Task 3).** "have appeared in 3 of 3 walks together, never apart" → "have appeared in the same 3 walks, never apart". On that branch `shared == outer` by construction, so "of 3" had no second quantity to contrast with and read as "all of your walks" — a claim about the walker's whole history neither theme's walk-set supports. The nested branch is already unambiguous and keeps both counts, where they genuinely differ. Pinned test updated; `testFusedThemes_identicalWalkSets_neverRendersAReferentFreeDenominator` added.
+
+**F8 — `placeFrameLock` claims only what it measured (Task 6).** A walk entered the measured set on its FIRST qualifying fix, but a theme can be spoken more than once on one walk and the second utterance may carry no fix at all — so "spoken in the same place on all N walks it appears in" vouched for an utterance nothing ever looked at. **Softened the claim rather than checking every appearance's coordinate:** requiring a qualifying fix for every appearance on a counted walk is *stricter* than the walk-level full-coverage check the 2026-08-27 product decision deliberately removed for rural GPS dead zones, and would silence the signal for exactly the walkers that decision was made for. Both variants now open "Every time '_' was spoken with its location known, it was in the same place — on …", which is precisely the set `maxPairwiseSpread` judged; the walk counts that follow describe the reach of that set rather than making a second, wider claim. Two pinned strings updated; `testPlaceFrameLock_secondUnlocatedUtteranceOnAMeasuredWalk_claimsOnlyWhatWasMeasured` added.
+
+**F10 — the waiting row is legible to VoiceOver (Task 11).** Every cue that the row was unselectable was visual: 0.45 opacity and a missing chevron. It now carries `.disabled(true)`, `.accessibilityElement(children: .combine)`, a label of "Oblique, not available yet" (state in the label, since hints are skippable and can be turned off), and the waiting copy as its hint — the same reason the sighted walker reads. Pinned by `testWaitingRow_accessibilityLabelNamesTheStyleAndItsUnavailability`.
+
+**File splits forced by the `file_length` gate.** `DossierSensesInvariance.swift` reached 531 lines once F1/F2/F8's rationale landed, so the self-contained signal-5 extension moved verbatim to `Pilgrim/Models/Threads/DossierSensesInvarianceIntention.swift` (pure move, no behaviour change). The F1/F2 tests went into a new `UnitTests/DossierSensesInvarianceEvidenceGatesTests.swift` rather than into `DossierSensesInvarianceTests.swift`, which sits at 477 lines. Both needed the usual 4 hand-added `project.pbxproj` entries each; `markerContext` was widened from `private` to internal so the split test file can share it, the same widening `steadyThread`/`modalContext`/`modalInput` already took.
+
+**Explicitly not fixed, by instruction.** F5 (no repetition guard — invariants do not move, so consecutive walks receive identical lines) needs a product decision on cadence, mirroring `moonLine`'s once-per-lunation budget, and is the owner's call. F9 (`ThreadsDossierFormatter`'s `includeThreadAnalysis` parameter is dead) was left alone.
+
+---
+
 ## Done when
 
 - [ ] `DossierSensesInvariance` is pure — no DataManager, no CoreStore, no `Date()`
 - [ ] Four signals live, fifth dark behind `pendingFieldGate`
 - [ ] `Unchanged:` built once, emitted only for Oblique, hoisted above the transcription
+- [ ] Oblique is never assembled without the block — the assembler refuses, the picker gate is defence in depth
+- [ ] The intention rider and its lens paragraph never reach Oblique
+- [ ] No invariant speaks while `ThreadsBackfill` is still sweeping
 - [ ] Marker percentages absent from Creative, Journaling, and Gratitude prompts
 - [ ] `CustomPromptStyle` still receives the full dossier via the protocol default
 - [ ] Oblique dimmed with "Still listening" until both gates pass, verified on device

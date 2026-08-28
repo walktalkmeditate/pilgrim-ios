@@ -354,8 +354,13 @@ final class PromptGeneratorTests: XCTestCase {
 
     // MARK: - Silent Walk Prompts
 
+    /// Oblique is excluded because a silent walk yields no `Unchanged:`
+    /// block, and `PromptAssembler.assemble` refuses to build a
+    /// block-reading voice without one — its whole preamble and instruction
+    /// point at a block that would not be in the prompt. Pinned positively
+    /// by `PromptResponseContractTests.testSilentWalk_obliqueAloneProducesNothing`.
     func testGenerate_silentWalk_usesSilentPreamble() {
-        for style in PromptStyle.allCases {
+        for style in PromptStyle.allCases where style != .oblique {
             let prompt = PromptGenerator.generate(
             style: style,
             context: ActivityContext.make(

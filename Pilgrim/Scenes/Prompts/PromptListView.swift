@@ -30,6 +30,7 @@ struct PromptListView: View {
                     if let waiting {
                         PromptStyleRow(prompt: prompt, waitingCopy: waiting)
                             .listRowBackground(Color.parchment)
+                            .disabled(true)
                     } else {
                         Button { selectedPrompt = prompt } label: {
                             PromptStyleRow(prompt: prompt)
@@ -372,7 +373,28 @@ struct PromptStyleRow: View {
 
     private var isWaiting: Bool { waitingCopy != nil }
 
+    /// Every cue that the row is unselectable was visual only — 0.45 opacity
+    /// and a missing chevron — so VoiceOver read it as an ordinary row and
+    /// gave no reason it could not be opened. The label carries the state and
+    /// the hint carries the reason, since a hint alone is skippable and a
+    /// user with hints turned off would learn nothing.
+    static func waitingAccessibilityLabel(title: String) -> String {
+        "\(title), not available yet"
+    }
+
     var body: some View {
+        if let waitingCopy {
+            row
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(Self.waitingAccessibilityLabel(title: prompt.title))
+                .accessibilityHint(waitingCopy)
+                .accessibilityRemoveTraits(.isButton)
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(spacing: 12) {
             Image(systemName: prompt.icon)
                 .font(.title2)

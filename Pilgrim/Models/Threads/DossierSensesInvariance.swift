@@ -44,12 +44,27 @@ extension DossierSenses {
     }
 
     /// `evaluate` is a test seam, same style as `lines(input:evaluate:)`.
+    ///
+    /// SILENT UNTIL THE BACKFILL SWEEP HAS FINISHED. Every invariant is a
+    /// coverage claim over the walker's whole record — "never apart", "each
+    /// time", "every walk". `ThreadsBackfill` is battery-gated and
+    /// single-flight, so a partly-analyzed record is an ordinary state, not
+    /// a theoretical one: a walker who imports 40 walks and has had 6
+    /// analyzed would otherwise be told "Every walk where 'grief' appears is
+    /// obligation-dominant" on the strength of 3 walks out of 40 —
+    /// `frameConstancy`'s whole "full coverage is the price of the word
+    /// every" argument evaporating silently, because the pool it is complete
+    /// over is itself incomplete. `ThreadsDossierFormatter` already gates
+    /// every one of its weaker history claims (thread origin dates, `Quiet
+    /// this walk`) on the same flag; the strongest claim in the app cannot
+    /// be gated more loosely than the weakest.
     static func invarianceLines(
         input: Input,
         evaluate: (Invariant, Input, Set<String>) -> SenseLine? = {
             DossierSenses.evaluateInvariant($0, input: $1, suppressed: $2)
         }
     ) -> [String] {
+        guard input.backfillComplete else { return [] }
         var used = Set<String>()
         var lines: [String] = []
         for invariant in Invariant.allCases {
@@ -103,6 +118,13 @@ extension DossierSensesInvariance {
     /// That is also why `lemma` is always the subset theme's: `best.subset`
     /// on a strict nest, either theme when the sets are equal.
     ///
+    /// The identical-set wording says "in the same N walks", never "in N of
+    /// N walks": on this branch `shared == outer` by construction, so the
+    /// denominator has no second quantity to contrast with and a walker
+    /// reads "3 of 3" as "all of your walks" — which is a claim about their
+    /// whole history that neither theme's walk-set supports. The nested
+    /// branch keeps its two counts because there they genuinely differ.
+    ///
     /// Deterministic: threads arrive lemma-sorted from `ThreadStore.build`,
     /// and only a STRICTLY larger shared-walk count replaces the best pair.
     static func fusedThemes(
@@ -136,7 +158,7 @@ extension DossierSensesInvariance {
         guard best.shared < best.outer else {
             return DossierSenses.SenseLine(
                 text: "'\(best.subset.displayTerm)' and '\(best.superset.displayTerm)' have appeared in "
-                    + "\(best.shared) of \(best.outer) walks together, never apart.",
+                    + "the same \(best.shared) walks, never apart.",
                 lemma: best.subset.lemma
             )
         }
@@ -166,6 +188,20 @@ extension DossierSensesInvariance {
     /// flatness claim actually has evidence for — never a bare appearance
     /// count, which would let an unevidenced short recording inflate the
     /// "each time" the line claims to speak for.
+    ///
+    /// FLATNESS IS MEASURED PER WALK, not per recording. The rendered claim
+    /// is walk-scoped ("returned across N walks; it sounds the same each
+    /// time"), so the coefficient of variation must run over one value per
+    /// walk — each walk's mean marker ratio — and never over the raw
+    /// recordings. A recording-weighted CV lets a walk that carried eight
+    /// recordings outvote two walks that carried one each: eight
+    /// near-identical appearances on walk A drag the spread down until walks
+    /// B and C differing by 2x still reads as flat. That is the same
+    /// per-walk aggregation `frameConstancy` already performs on modal
+    /// counts, and the same "bind the verdict to the evidence the sentence
+    /// names" rule `unarrivedIntention` follows. Grouping first also means
+    /// the walk count the line reports and the value count `isFlat` judges
+    /// are the same number by construction, not by coincidence.
     static func unmovedReturn(
         input: DossierSenses.Input, suppressed: Set<String>
     ) -> DossierSenses.SenseLine? {
@@ -183,19 +219,22 @@ extension DossierSensesInvariance {
                       markers.wordCount >= ThreadsDossierFormatter.densityFloorWords else { return nil }
                 return (appearance.walkUUID, markers)
             }
-            let walks = Set(qualifying.map(\.walkUUID))
-            guard walks.count >= minimumInvariantWalks else { continue }
+            guard qualifying.allSatisfy({ $0.markers.sentiment != nil }) else { continue }
+            // Sorted by UUID string only so the arithmetic is bit-identical
+            // run to run; CV itself is order-independent.
+            let packsByWalk = Dictionary(grouping: qualifying, by: \.walkUUID)
+                .sorted { $0.key.uuidString < $1.key.uuidString }
+                .map { $0.value.map(\.markers) }
+            guard packsByWalk.count >= minimumInvariantWalks else { continue }
 
-            let packs = qualifying.map(\.markers)
-            let absolutist = packs.map { Double($0.absolutistCount) / Double($0.wordCount) }
-            let firstPerson = packs.map { Double($0.firstPersonCount) / Double($0.wordCount) }
-            let sentiment = packs.compactMap { $0.sentiment }.map { $0 + sentimentShift }
-            guard sentiment.count == packs.count else { continue }
+            let absolutist = packsByWalk.map { average($0.map { Double($0.absolutistCount) / Double($0.wordCount) }) }
+            let firstPerson = packsByWalk.map { average($0.map { Double($0.firstPersonCount) / Double($0.wordCount) }) }
+            let sentiment = packsByWalk.map { average($0.map { ($0.sentiment ?? 0) + sentimentShift }) }
 
             guard isFlat(absolutist), isFlat(firstPerson), isFlat(sentiment) else { continue }
 
             return DossierSenses.SenseLine(
-                text: "'\(thread.displayTerm)' has returned across \(walks.count) walks; "
+                text: "'\(thread.displayTerm)' has returned across \(packsByWalk.count) walks; "
                     + "it sounds the same each time.",
                 lemma: thread.lemma
             )
@@ -208,10 +247,17 @@ extension DossierSensesInvariance {
     /// flat rather than dividing by it.
     static func isFlat(_ values: [Double]) -> Bool {
         guard values.count >= 2 else { return false }
-        let mean = values.reduce(0, +) / Double(values.count)
+        let mean = average(values)
         guard mean > 0 else { return false }
         let variance = values.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(values.count)
         return (variance.squareRoot() / mean) <= markerFlatnessCeiling
+    }
+
+    /// Arithmetic mean. Zero for an empty slice, which no caller here can
+    /// produce — `Dictionary(grouping:)` never yields an empty group.
+    private static func average(_ values: [Double]) -> Double {
+        guard !values.isEmpty else { return 0 }
+        return values.reduce(0, +) / Double(values.count)
     }
 }
 
@@ -329,14 +375,26 @@ extension DossierSensesInvariance {
     /// allWalks.count` check this replaced; that regression is the whole
     /// point of this comment.
     ///
+    /// THE CLAIM IS SCOPED TO LOCATED UTTERANCES, not to whole walks. A walk
+    /// enters `coordinatesByWalk` on its FIRST qualifying fix, but a theme
+    /// can be spoken more than once on one walk, and the second utterance
+    /// may have no fix at all (or a poor one) — so "spoken in the same place
+    /// on all N walks" would vouch for an utterance nothing ever measured.
+    /// Both variants therefore open with "Every time '_' was spoken with its
+    /// location known", which is exactly the set `maxPairwiseSpread` judged,
+    /// and the walk counts that follow describe the reach of that set rather
+    /// than making a second, wider claim. The alternative — requiring every
+    /// appearance on a counted walk to carry a qualifying fix — was rejected:
+    /// it is *stricter* than the walk-level full-coverage check the product
+    /// decision above deliberately removed, and would silence the signal for
+    /// exactly the rural walkers that decision was made for.
+    ///
     /// Two rendered variants, the same shape `fusedThemes` already sets for
-    /// identical-vs-nested walk-sets: when every appearance-walk measured
-    /// (full coverage), the line keeps the original "on all N walks it
-    /// appears in" wording. When only some walks measured (partial
-    /// coverage), the line names BOTH counts — "on every walk where its
-    /// location is known — M of N it appears in" — which states what was
-    /// measured without implying anything about the unmeasured walks; we do
-    /// not know where they were, only that we cannot say.
+    /// identical-vs-nested walk-sets: full coverage says "on all N walks it
+    /// appears in"; partial coverage names BOTH counts — "on M of the N
+    /// walks it appears in" — stating what was measured without implying
+    /// anything about the unmeasured walks. We do not know where those were,
+    /// only that we cannot say.
     ///
     /// Clustering is judged by SPREAD — the maximum pairwise distance
     /// across every qualifying coordinate — never by distance from an
@@ -370,17 +428,17 @@ extension DossierSensesInvariance {
             let coordinates = coordinatesByWalk.values.flatMap { $0 }
             guard maxPairwiseSpread(coordinates) <= DossierSenses.placeClusterRadius else { continue }
 
+            let opening = "Every time '\(thread.displayTerm)' was spoken with its location known, "
+                + "it was in the same place — on "
             guard measuredWalks < allWalks.count else {
                 return DossierSenses.SenseLine(
-                    text: "'\(thread.displayTerm)' has been spoken in the same place "
-                        + "on all \(allWalks.count) walks it appears in.",
+                    text: opening + "all \(allWalks.count) walks it appears in.",
                     lemma: thread.lemma
                 )
             }
 
             return DossierSenses.SenseLine(
-                text: "'\(thread.displayTerm)' has been spoken in the same place on every walk "
-                    + "where its location is known — \(measuredWalks) of the \(allWalks.count) it appears in.",
+                text: opening + "\(measuredWalks) of the \(allWalks.count) walks it appears in.",
                 lemma: thread.lemma
             )
         }
@@ -402,72 +460,5 @@ extension DossierSensesInvariance {
             }
         }
         return spread
-    }
-}
-
-extension DossierSensesInvariance {
-
-    /// The walker deliberately set out carrying a word, on at least
-    /// `minimumInvariantWalks` walks, and that word's thread is STILL
-    /// steady across those same walks. They tried, on purpose, and nothing
-    /// moved.
-    ///
-    /// SHIPS DARK behind `pendingFieldGate`. This is the most confronting
-    /// line the app can produce; the engine and its tests exist so the
-    /// judgement can be made on real history, not on a guess.
-    ///
-    /// `intentionWalks` is drawn from intention TEXT
-    /// (`WalkSnapshotRow.intention`, via `DossierSenses.intentionLemmas` —
-    /// the same scaffold-stripping helper `intentionLineage` already uses,
-    /// so a filler verb never masquerades as a carried topic).
-    /// `ThreadStore.salienceDirection` is drawn from the thread's
-    /// APPEARANCES — a different, independently dated set. Neither is a
-    /// subset of the other: a walker can name a word as intention on a
-    /// walk that never comes up again in speech (no appearance that walk),
-    /// and a thread can appear on walks where the word was never the
-    /// stated intention at all.
-    ///
-    /// Reporting the raw intention-text count while judging steadiness over
-    /// the FULL unfiltered thread would let the sentence (a) name a walk
-    /// count the steadiness verdict never actually covers, and (b) let flat
-    /// history on unrelated walks cancel out a real shift that happened
-    /// exactly during the walks the intention was carried — "has not
-    /// shifted SINCE" would have no temporal anchor for "since" to mean
-    /// anything. So both the rendered N and the direction verdict are bound
-    /// to the same evidence: walks where the intention was set on this
-    /// lemma AND the thread has an appearance that walk, filtered down and
-    /// judged in date order (appearances arrive pre-sorted from
-    /// `ThreadStore.build`, and `filter` preserves that order).
-    static func unarrivedIntention(
-        input: DossierSenses.Input, suppressed: Set<String>
-    ) -> DossierSenses.SenseLine? {
-        var intentionWalks: [String: Set<UUID>] = [:]
-        for snapshot in input.walkSnapshots {
-            guard let intention = snapshot.intention, !intention.isEmpty else { continue }
-            for lemma in DossierSenses.intentionLemmas(in: intention) {
-                intentionWalks[lemma, default: []].insert(snapshot.walkUUID)
-            }
-        }
-
-        for thread in input.threads.sorted(by: { $0.lemma < $1.lemma })
-        where !suppressed.contains(thread.lemma) {
-            guard let carried = intentionWalks[thread.lemma] else { continue }
-
-            let boundAppearances = thread.appearances.filter { carried.contains($0.walkUUID) }
-            let boundWalks = Set(boundAppearances.map(\.walkUUID))
-            guard boundWalks.count >= minimumInvariantWalks else { continue }
-
-            let boundThread = WalkThread(
-                lemma: thread.lemma, displayTerm: thread.displayTerm, appearances: boundAppearances
-            )
-            guard ThreadStore.salienceDirection(of: boundThread) == .steady else { continue }
-
-            return DossierSenses.SenseLine(
-                text: "'\(thread.displayTerm)' was set as an intention on \(boundWalks.count) walks; "
-                    + "it has not shifted since.",
-                lemma: thread.lemma
-            )
-        }
-        return nil
     }
 }

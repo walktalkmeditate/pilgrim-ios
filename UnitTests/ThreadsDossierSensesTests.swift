@@ -398,14 +398,14 @@ extension ThreadsDossierTests {
 
     func testUnchangedBlock_rendersHeadingAndLines() {
         let block = ThreadsDossierBuilder.renderUnchangedBlock(
-            ["'father' and 'money' have appeared in 3 of 3 walks together, never apart.",
+            ["'father' and 'money' have appeared in the same 3 walks, never apart.",
              "'work' has returned across 4 walks; it sounds the same each time."]
         )
         XCTAssertEqual(
             block,
             """
             **Unchanged:**
-            'father' and 'money' have appeared in 3 of 3 walks together, never apart.
+            'father' and 'money' have appeared in the same 3 walks, never apart.
             'work' has returned across 4 walks; it sounds the same each time.
             """
         )

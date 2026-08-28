@@ -1,4 +1,5 @@
 import XCTest
+import SwiftUI
 @testable import Pilgrim
 
 final class ObliqueVoiceTests: XCTestCase {
@@ -43,6 +44,116 @@ final class ObliqueVoiceTests: XCTestCase {
         XCTAssertLessThan(unchangedIndex!, transcriptionIndex!)
     }
 
+    // MARK: - The voice guards itself, not just the picker
+
+    private func contextWithoutBlock(intention: String? = nil) -> ActivityContext {
+        .make(
+            recordings: [RecordingContext(
+                text: "the river was loud today", timestamp: DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
+                startCoordinate: nil, endCoordinate: nil, wordsPerMinute: 100,
+                recordingUUID: UUID(), endTimestamp: nil
+            )],
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            intention: intention,
+            threadsDossier: "**Thought threads:**\nRecording 1: absolutist words 2.3%",
+            unchangedBlock: nil
+        )
+    }
+
+    /// The safety property cannot live only in `PromptListView`'s
+    /// `if let waiting {…} else { Button {…} }`. Without a block, Oblique's
+    /// preamble still says "What follows includes what has not changed
+    /// across those returns" and its instruction still says "Work from the
+    /// invariants named under Unchanged" — an explicit invitation to invent
+    /// one, handed to any future share affordance, copy button, widget, or
+    /// second prompt surface that bypasses the picker. The assembler refuses
+    /// instead, so every caller inherits the guarantee.
+    func testAssembler_obliqueWithoutBlock_producesNothing() {
+        XCTAssertEqual(PromptAssembler.assemble(context: contextWithoutBlock(), voice: ObliqueVoice()), "")
+    }
+
+    func testAssembler_obliqueWithoutBlock_neverInvitesAnInventedInvariant() {
+        let prompt = PromptAssembler.assemble(context: contextWithoutBlock(), voice: ObliqueVoice())
+        XCTAssertFalse(prompt.contains("Unchanged"))
+        XCTAssertFalse(prompt.contains("what has not changed"))
+        XCTAssertFalse(prompt.contains("invariants"))
+    }
+
+    func testGenerateAll_withoutBlock_obliqueCarriesNoPromptText() {
+        let prompts = PromptGenerator.generateAll(context: contextWithoutBlock())
+        let oblique = prompts.first { $0.style == .oblique }
+        XCTAssertNotNil(oblique, "the row still exists so the picker can show 'Still listening'")
+        XCTAssertEqual(oblique?.text, "")
+        for other in prompts where other.style != .oblique {
+            XCTAssertFalse(other.text.isEmpty, "no other voice is gated on the block")
+        }
+    }
+
+    /// The refusal is keyed on the policy, not on the concrete type, so a
+    /// future block-reading voice inherits it without remembering to.
+    func testAssembler_nonHoistingVoiceWithoutBlock_assemblesNormally() {
+        let prompt = PromptAssembler.assemble(context: contextWithoutBlock(), voice: ReflectiveVoice())
+        XCTAssertFalse(prompt.isEmpty)
+    }
+
+    // MARK: - The intention rider is scoped off Oblique
+
+    private func contextWithBlockAndIntention() -> ActivityContext {
+        .make(
+            recordings: [RecordingContext(
+                text: "the river was loud today", timestamp: DateFactory.makeDate(2024, 6, 15, 9, 5, 0),
+                startCoordinate: nil, endCoordinate: nil, wordsPerMinute: 100,
+                recordingUUID: UUID(), endTimestamp: nil
+            )],
+            startDate: DateFactory.makeDate(2024, 6, 15, 9, 0, 0),
+            intention: "let go of the move",
+            unchangedBlock: "**Unchanged:**\n'river' has returned across 4 walks."
+        )
+    }
+
+    /// The rider was written for six voices that all produce a reading of
+    /// THIS walk, and it fires on the common case — deep-history walkers are
+    /// exactly the walkers who set intentions. It asks for a resolution
+    /// ("how their walk spoke to this purpose") where Oblique's own
+    /// constraints say "End on the observation. Do not resolve it", and for
+    /// a this-walk summary where Oblique reads cross-walk invariants.
+    func testAssembler_obliqueWithIntention_carriesNeitherRiderNorLens() {
+        let prompt = PromptAssembler.assemble(context: contextWithBlockAndIntention(), voice: ObliqueVoice())
+        XCTAssertFalse(prompt.contains("Ground your response in the walker's stated intention"))
+        XCTAssertFalse(prompt.contains("spoke to this purpose"))
+        XCTAssertFalse(prompt.contains("Let it be the lens through which you interpret everything below"))
+        XCTAssertFalse(prompt.contains("**The walker's intention:**"))
+    }
+
+    func testAssembler_obliqueWithIntention_stillCarriesItsOwnConstraints() {
+        let prompt = PromptAssembler.assemble(context: contextWithBlockAndIntention(), voice: ObliqueVoice())
+        XCTAssertTrue(prompt.contains("**Unchanged:**"))
+        XCTAssertTrue(prompt.contains("End on the observation"))
+    }
+
+    /// The other six voices keep the rider unchanged — this is a scoping
+    /// fix, not a removal.
+    func testAssembler_everyOtherVoiceWithIntention_keepsRiderAndLens() {
+        for voice: PromptVoice in [
+            ContemplativeVoice(), ReflectiveVoice(), CreativeVoice(),
+            GratitudeVoice(), PhilosophicalVoice(), JournalingVoice()
+        ] {
+            let prompt = PromptAssembler.assemble(context: contextWithBlockAndIntention(), voice: voice)
+            XCTAssertTrue(prompt.contains("Ground your response in the walker's stated intention"))
+            XCTAssertTrue(prompt.contains("Let it be the lens through which you interpret everything below"))
+        }
+    }
+
+    func testPolicy_obliqueAloneDoesNotGroundInIntention() {
+        XCTAssertFalse(ObliqueVoice().contextPolicy.groundsInIntention)
+        for voice: PromptVoice in [
+            ContemplativeVoice(), ReflectiveVoice(), CreativeVoice(),
+            GratitudeVoice(), PhilosophicalVoice(), JournalingVoice()
+        ] {
+            XCTAssertTrue(voice.contextPolicy.groundsInIntention)
+        }
+    }
+
     // MARK: - Picker gate
 
     /// The gate is the presence of the `Unchanged:` block itself, not a
@@ -77,5 +188,18 @@ final class ObliqueVoiceTests: XCTestCase {
         let voice = ObliqueVoice()
         XCTAssertEqual(voice.preamble(hasSpeech: false), voice.preamble(hasSpeech: true))
         XCTAssertEqual(voice.instruction(hasSpeech: false), voice.instruction(hasSpeech: true))
+    }
+
+    /// Every cue that the waiting row is unselectable was visual — 0.45
+    /// opacity and a missing chevron — so VoiceOver announced an ordinary
+    /// row and gave no reason it could not be opened. The label carries the
+    /// state (a hint alone is skippable, and users can turn hints off) and
+    /// the row's hint carries the same "Still listening" reason the sighted
+    /// walker reads.
+    func testWaitingRow_accessibilityLabelNamesTheStyleAndItsUnavailability() {
+        XCTAssertEqual(
+            PromptStyleRow.waitingAccessibilityLabel(title: PromptStyle.oblique.title),
+            "Oblique, not available yet"
+        )
     }
 }

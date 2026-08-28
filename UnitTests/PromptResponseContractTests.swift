@@ -20,7 +20,12 @@ final class PromptResponseContractTests: XCTestCase {
                     wordsPerMinute: nil
                 )
             ],
-            startDate: start
+            startDate: start,
+            // Oblique refuses to assemble at all without the `Unchanged:`
+            // block (`PromptAssembler.assemble`'s first guard), so a
+            // fixture that means "every style" has to carry one. No other
+            // voice hoists it, so its presence changes nothing for them.
+            unchangedBlock: "**Unchanged:**\n'river' has returned across 4 walks."
         )
     }
 
@@ -35,11 +40,21 @@ final class PromptResponseContractTests: XCTestCase {
         }
     }
 
+    /// Oblique is excluded, not overlooked: a silent walk yields no
+    /// `Unchanged:` block, and without one the voice produces nothing at all
+    /// rather than a prompt whose preamble points at a block that was never
+    /// printed. `ObliqueVoiceTests.testAssembler_obliqueWithoutBlock_producesNothing`
+    /// pins that directly.
     func testAntiFabricationLine_presentEvenOnSilentWalks() {
-        for prompt in PromptGenerator.generateAll(context: silentContext()) {
+        for prompt in PromptGenerator.generateAll(context: silentContext()) where prompt.style != .oblique {
             XCTAssertTrue(prompt.text.contains("never invent"),
                           "\(prompt.title) must forbid fabricated details")
         }
+    }
+
+    func testSilentWalk_obliqueAloneProducesNothing() {
+        let prompts = PromptGenerator.generateAll(context: silentContext())
+        XCTAssertEqual(prompts.first { $0.style == .oblique }?.text, "")
     }
 
     func testLanguageLine_presentWithSpeech() {

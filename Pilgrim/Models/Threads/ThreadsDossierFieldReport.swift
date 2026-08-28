@@ -217,6 +217,16 @@ enum DossierSensesFieldReport {
     /// would say on its own, not what survives the cap and cross-signal
     /// dedup a walker actually reads.
     ///
+    /// Going through `evaluateInvariant` rather than `invarianceLines` also
+    /// means this report is NOT held silent by the incomplete-backfill gate
+    /// that guards the production block. That is deliberate and equally
+    /// local: the gate exists so a walker is never told a coverage claim
+    /// over a partly-analyzed record, while the field gate's whole job is to
+    /// judge firing rates, and a report that returns nothing because a sweep
+    /// was mid-flight would look like a dead signal. `backfillComplete` is
+    /// still passed through on the `Input` above, so any signal that reads
+    /// it directly still behaves exactly as it does in production.
+    ///
     /// `.unarrivedIntention` calls `DossierSensesInvariance.unarrivedIntention`
     /// DIRECTLY, BYPASSING `pendingFieldGate`, instead of going through
     /// `DossierSenses.evaluateInvariant` — which returns nil for that case

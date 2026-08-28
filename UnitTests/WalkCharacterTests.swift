@@ -61,8 +61,15 @@ final class WalkCharacterTests: XCTestCase {
         XCTAssertTrue(WalkCharacter.note(context: context)?.contains("stillness") == true)
     }
 
+    /// The `unchangedBlock` is here so Oblique is genuinely covered rather
+    /// than quietly skipped: without one it refuses to assemble at all
+    /// (`PromptAssembler.assemble`'s first guard). No other voice hoists the
+    /// block, so its presence changes nothing for the other six.
     func testAssembler_weavesNoteIntoEveryStyle() {
-        let context = ActivityContext.make(duration: 5400, startDate: night, lunarPhase: halfMoon)
+        let context = ActivityContext.make(
+            duration: 5400, startDate: night, lunarPhase: halfMoon,
+            unchangedBlock: "**Unchanged:**\n'river' has returned across 4 walks."
+        )
         for prompt in PromptGenerator.generateAll(context: context) {
             XCTAssertTrue(prompt.text.contains("long walk"),
                           "\(prompt.title) must carry the walk's character")

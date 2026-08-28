@@ -229,11 +229,13 @@
 		1777298B91F74F3BB7845E89 /* DossierSenses.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE45CFE80BF143578CE9AD0F /* DossierSenses.swift */; };
 		5A75182DEE57461AB02425A6 /* DossierSensesTracks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EF62C0258F4A5E9B1CB669 /* DossierSensesTracks.swift */; };
 		A7C39C0F362344AE891623EB /* DossierSensesInvariance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7BCA1AADBB46DB947AAE57 /* DossierSensesInvariance.swift */; };
+		B1D4A2F0C7E14A1D9F3B7C21 /* DossierSensesInvarianceIntention.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E8A15B36D24F0E8A7D5B93 /* DossierSensesInvarianceIntention.swift */; };
 		AC399675B5DE4881B4264425 /* ThreadsDossierFieldReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD8035E8B2141A0A487A8E8 /* ThreadsDossierFieldReport.swift */; };
 		DD4A23D5ECB4476E8D5D7137 /* DossierSensesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44C8743FE13846D2827B0B84 /* DossierSensesTests.swift */; };
 		8E25870380184CB5AFEA6E85 /* DossierSensesInvarianceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C8E639BEC04945B2806DFA /* DossierSensesInvarianceTests.swift */; };
 		7D48121AE74D4CE0B3DB47DF /* DossierSensesInvarianceFrameConstancyCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C77F053CF84D468A7EC8D9 /* DossierSensesInvarianceFrameConstancyCoverageTests.swift */; };
 		BAF3D7E93A264E71968DEA10 /* DossierSensesInvariancePlaceFrameLockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC736AD5707F43E29AF3DDC6 /* DossierSensesInvariancePlaceFrameLockTests.swift */; };
+		D2F7B3C40A1E4B6C8D5E9F17 /* DossierSensesInvarianceEvidenceGatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A3C6D18B2F44709C1D6E85 /* DossierSensesInvarianceEvidenceGatesTests.swift */; };
 		DBE841C686894B3C9631A348 /* DossierSensesInvarianceUnarrivedIntentionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E44511663254B48BE4E4DCC /* DossierSensesInvarianceUnarrivedIntentionTests.swift */; };
 		45ADCF5FB26E4696BC6F1FB2 /* DossierSensesMarkerPhotoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */; };
 		0D470536A6CD41EDB221D6C6 /* ThreadsDossierSensesMarkerColoringLeakTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4E583A0E6241FD931429BF /* ThreadsDossierSensesMarkerColoringLeakTests.swift */; };
@@ -888,11 +890,13 @@
 		EE45CFE80BF143578CE9AD0F /* DossierSenses.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSenses.swift; sourceTree = "<group>"; };
 		14EF62C0258F4A5E9B1CB669 /* DossierSensesTracks.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesTracks.swift; sourceTree = "<group>"; };
 		7F7BCA1AADBB46DB947AAE57 /* DossierSensesInvariance.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvariance.swift; sourceTree = "<group>"; };
+		C4E8A15B36D24F0E8A7D5B93 /* DossierSensesInvarianceIntention.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvarianceIntention.swift; sourceTree = "<group>"; };
 		CCD8035E8B2141A0A487A8E8 /* ThreadsDossierFieldReport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsDossierFieldReport.swift; sourceTree = "<group>"; };
 		44C8743FE13846D2827B0B84 /* DossierSensesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesTests.swift; sourceTree = "<group>"; };
 		D6C8E639BEC04945B2806DFA /* DossierSensesInvarianceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvarianceTests.swift; sourceTree = "<group>"; };
 		57C77F053CF84D468A7EC8D9 /* DossierSensesInvarianceFrameConstancyCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvarianceFrameConstancyCoverageTests.swift; sourceTree = "<group>"; };
 		FC736AD5707F43E29AF3DDC6 /* DossierSensesInvariancePlaceFrameLockTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvariancePlaceFrameLockTests.swift; sourceTree = "<group>"; };
+		E9A3C6D18B2F44709C1D6E85 /* DossierSensesInvarianceEvidenceGatesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvarianceEvidenceGatesTests.swift; sourceTree = "<group>"; };
 		3E44511663254B48BE4E4DCC /* DossierSensesInvarianceUnarrivedIntentionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesInvarianceUnarrivedIntentionTests.swift; sourceTree = "<group>"; };
 		81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesMarkerPhotoTests.swift; sourceTree = "<group>"; };
 		BE4E583A0E6241FD931429BF /* ThreadsDossierSensesMarkerColoringLeakTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsDossierSensesMarkerColoringLeakTests.swift; sourceTree = "<group>"; };
@@ -1966,6 +1970,7 @@
 				D6C8E639BEC04945B2806DFA /* DossierSensesInvarianceTests.swift */,
 				57C77F053CF84D468A7EC8D9 /* DossierSensesInvarianceFrameConstancyCoverageTests.swift */,
 				FC736AD5707F43E29AF3DDC6 /* DossierSensesInvariancePlaceFrameLockTests.swift */,
+				E9A3C6D18B2F44709C1D6E85 /* DossierSensesInvarianceEvidenceGatesTests.swift */,
 				3E44511663254B48BE4E4DCC /* DossierSensesInvarianceUnarrivedIntentionTests.swift */,
 				81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */,
 				4CEFDF8E058F4DDEB49054A4 /* DossierSensesCrossWalkTests.swift */,
@@ -2346,6 +2351,7 @@
 				EE45CFE80BF143578CE9AD0F /* DossierSenses.swift */,
 				14EF62C0258F4A5E9B1CB669 /* DossierSensesTracks.swift */,
 				7F7BCA1AADBB46DB947AAE57 /* DossierSensesInvariance.swift */,
+				C4E8A15B36D24F0E8A7D5B93 /* DossierSensesInvarianceIntention.swift */,
 				CCD8035E8B2141A0A487A8E8 /* ThreadsDossierFieldReport.swift */,
 			);
 			path = Threads;
@@ -3330,6 +3336,7 @@
 				1777298B91F74F3BB7845E89 /* DossierSenses.swift in Sources */,
 				5A75182DEE57461AB02425A6 /* DossierSensesTracks.swift in Sources */,
 				A7C39C0F362344AE891623EB /* DossierSensesInvariance.swift in Sources */,
+				B1D4A2F0C7E14A1D9F3B7C21 /* DossierSensesInvarianceIntention.swift in Sources */,
 				AC399675B5DE4881B4264425 /* ThreadsDossierFieldReport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3364,6 +3371,7 @@
 				8E25870380184CB5AFEA6E85 /* DossierSensesInvarianceTests.swift in Sources */,
 				7D48121AE74D4CE0B3DB47DF /* DossierSensesInvarianceFrameConstancyCoverageTests.swift in Sources */,
 				BAF3D7E93A264E71968DEA10 /* DossierSensesInvariancePlaceFrameLockTests.swift in Sources */,
+				D2F7B3C40A1E4B6C8D5E9F17 /* DossierSensesInvarianceEvidenceGatesTests.swift in Sources */,
 				DBE841C686894B3C9631A348 /* DossierSensesInvarianceUnarrivedIntentionTests.swift in Sources */,
 				45ADCF5FB26E4696BC6F1FB2 /* DossierSensesMarkerPhotoTests.swift in Sources */,
 				971D537B63FD4464A1BD7C08 /* DossierSensesCrossWalkTests.swift in Sources */,

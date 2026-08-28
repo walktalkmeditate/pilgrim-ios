@@ -72,7 +72,8 @@ struct CreativeVoice: PromptVoice {
     /// words it's asked to elevate, is analysis dressed as raw material.
     var contextPolicy: PromptContextPolicy {
         PromptContextPolicy(
-            includesMarkerLines: false, includesThreadAnalysis: false, hoistsUnchangedBlock: false
+            includesMarkerLines: false, includesThreadAnalysis: false,
+            hoistsUnchangedBlock: false, groundsInIntention: true
         )
     }
 }
@@ -101,7 +102,8 @@ struct GratitudeVoice: PromptVoice {
     /// thread analysis is asked to grade the walk while giving thanks for it.
     var contextPolicy: PromptContextPolicy {
         PromptContextPolicy(
-            includesMarkerLines: false, includesThreadAnalysis: false, hoistsUnchangedBlock: false
+            includesMarkerLines: false, includesThreadAnalysis: false,
+            hoistsUnchangedBlock: false, groundsInIntention: true
         )
     }
 }
@@ -155,7 +157,8 @@ struct JournalingVoice: PromptVoice {
     /// a journal entry is meant to notice, so it stays.
     var contextPolicy: PromptContextPolicy {
         PromptContextPolicy(
-            includesMarkerLines: false, includesThreadAnalysis: true, hoistsUnchangedBlock: false
+            includesMarkerLines: false, includesThreadAnalysis: true,
+            hoistsUnchangedBlock: false, groundsInIntention: true
         )
     }
 }
@@ -170,9 +173,15 @@ struct JournalingVoice: PromptVoice {
 /// 3 bans the former and requires the latter.
 struct ObliqueVoice: PromptVoice {
 
+    /// `groundsInIntention: false` is the one asymmetry with the other six
+    /// voices, and it is load-bearing — see `PromptContextPolicy
+    /// .groundsInIntention`. The intention rider asks for a this-walk
+    /// summary that resolves; every one of the four constraints below asks
+    /// for the opposite.
     var contextPolicy: PromptContextPolicy {
         PromptContextPolicy(
-            includesMarkerLines: true, includesThreadAnalysis: true, hoistsUnchangedBlock: true
+            includesMarkerLines: true, includesThreadAnalysis: true,
+            hoistsUnchangedBlock: true, groundsInIntention: false
         )
     }
 

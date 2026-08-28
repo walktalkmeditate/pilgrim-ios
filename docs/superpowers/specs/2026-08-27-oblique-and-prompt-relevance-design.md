@@ -86,7 +86,11 @@ All thresholds below are **starting values, subject to revision at the field gat
 
 Feasibility is confirmed: `ThreadAppearance` carries `recordingUUID`, `walkUUID`, `date`, `mentionCount`, and `salience`, so both the marker lookup (`historicalContexts` keyed by `recordingUUID`) and the place lookup (`fixes[recordingUUID]`) resolve. `ThreadsDossierBuilder.resolveFixes` already takes `threads:` and populates fixes for thread appearances, not just current recordings.
 
-Signal 2's "marker profile variance" is defined as: coefficient of variation across appearances of absolutist rate, first-person rate, and sentiment, **each ≤ 0.20** (starting value), computed only over appearances whose context clears `ThreadsDossierFormatter.densityFloorWords` (100). At least 3 appearances must clear that floor. Appearances below it are excluded, not counted as flat — a short recording is not evidence of sameness. Sentiment CV is computed on the shifted range `sentiment + 1.0` to keep the denominator away from zero, since NLTagger sentiment spans −1…1 and a mean near zero would make raw CV explode.
+Signal 2's "marker profile variance" is defined as: coefficient of variation **across walks** of absolutist rate, first-person rate, and sentiment, **each ≤ 0.20** (starting value), computed only over appearances whose context clears `ThreadsDossierFormatter.densityFloorWords` (100). At least 3 **walks** must clear that floor. Appearances below it are excluded, not counted as flat — a short recording is not evidence of sameness. Sentiment CV is computed on the shifted range `sentiment + 1.0` to keep the denominator away from zero, since NLTagger sentiment spans −1…1 and a mean near zero would make raw CV explode.
+
+**Per walk, not per appearance — corrected at final review, 2026-08-27.** This paragraph originally said "across appearances", and the first implementation followed it: one CV value per qualifying recording. The rendered claim is walk-scoped ("has returned across N walks; it sounds the same each time"), so a recording-weighted CV lets one talkative walk outvote the rest — eight near-identical recordings on walk A drag the spread down until walks B and C differing by 2x still read as flat. Each walk's qualifying recordings are now averaged into one value first, and the CV runs over those. Signal 3 already aggregated per walk for the same reason; this brings signal 2 into line.
+
+**Every signal waits on `backfillComplete` — added at final review, 2026-08-27.** `DossierSenses.invarianceLines` returns empty while `ThreadsBackfill` is still sweeping. Every invariant is a coverage claim over the walker's whole record ("never apart", "each time", "every walk"), and a coverage claim over a partly-analyzed record is false about the record it names — signal 3's "full coverage is the price of the word *every*" argument evaporates silently when the pool it is complete over is itself incomplete. `ThreadsDossierFormatter` already gates its weaker history claims (thread origin dates, `Quiet this walk`) on the same flag. The `--invariance-field-report` harness deliberately bypasses this gate, since a report that returns nothing mid-sweep would look like a dead signal.
 
 Signal 3 reuses `MarkerLexicons.ModalFamily` (`possibility`, `obligation`, `counterfactual`, `tentative`, `intention`, `desire`) and the existing per-context `markers.modalCounts`. Dominance is per-walk mode, mirroring the `weatherWeave` majority→mode fix from PR #71 that killed the cloud tautologies.
 
@@ -119,6 +123,10 @@ In the picker Oblique is **visible but unselectable** until the block exists, di
 "Still listening" is true for every one of the cases above — insufficient history, no voice on this walk, or history that simply hasn't produced an invariant — so one string covers all of them without lying. It reads as the voice needing to hear more, not as a level to grind, which keeps it clear of the streak-pressure mechanics the app deliberately refuses.
 
 There is no "gates pass but no invariant fires, so Oblique degrades" case in the shipped design — that scenario **is** `unchangedBlock == nil`, and the gate above already covers it. The `PromptStyle.isAvailable(unchangedBlockPresent:)` / `PromptStyle.waitingCopy` API and the `walksWithTranscripts`/`minimumWalksForOblique` counting this section originally proposed were dropped as dead weight once the block-presence check replaced them.
+
+**The voice guards itself too — added at final review, 2026-08-27.** The picker gate is one view. `PromptGenerator.generateAll` assembles every style unconditionally, so any future share affordance, copy button, widget, or second prompt surface that reads `GeneratedPrompt.text` directly would hand the model a preamble saying *"What follows includes what has not changed across those returns"* with no block beneath it — an explicit invitation to invent one. `PromptAssembler.assemble` therefore refuses first: a voice whose policy hoists the block and has no block to hoist produces the **empty string**, before any section is built. The picker gate stays as defence in depth and remains what the walker actually sees. Refusing in the assembler rather than filtering `.oblique` out of `generateAll` is deliberate — the filtered list would also delete the dimmed "Still listening" row the walker is meant to learn from.
+
+The waiting row's unavailability was visual only (0.45 opacity, no chevron). It now carries `.disabled(true)`, an accessibility label of "Oblique, not available yet", and the waiting copy as its hint, so a VoiceOver user learns both that the row is unselectable and why.
 
 ### Voice text
 
@@ -258,13 +266,15 @@ extension PromptVoice {
 
 | Voice | Policy |
 |---|---|
-| Oblique | `.full` + `unchangedBlock` hoisted |
+| Oblique | `.full` + `unchangedBlock` hoisted, **minus the intention rider** |
 | Creative | `.full` minus marker lines and thread analysis |
 | Journaling | `.full` minus marker lines |
 | Gratitude | `.full` minus marker lines and thread analysis |
 | Contemplative, Reflective, Philosophical | `.full` (unchanged) |
 
 "Minus marker lines" suppresses the per-recording marker line and the modal lean clause from `ThreadsDossierFormatter.dossier` output. The thread section, `Quiet this walk`, and `Noticed:` are governed separately so the suppression is legible rather than all-or-nothing.
+
+**A fourth policy axis, `groundsInIntention` — added at final review, 2026-08-27.** When an intention exists, `PromptAssembler` appends *"Ground your response in the walker's stated intention… Help them see how their walk — its pace, its pauses, its moments — spoke to this purpose"* to the instruction, and a *"Let it be the lens through which you interpret everything below"* paragraph to the context dossier. That rider was written for six voices that all produce a reading of THIS walk, and it was never scoped when the seventh arrived. It contradicts Oblique clause for clause: it asks for a resolution where constraint 4 says *"End on the observation. Do not resolve it"*, and for a this-walk summary where the instruction says *"Be concrete about the shape, not about what it means for their life"* over cross-walk invariants. It is not a corner case either — deep-history walkers are exactly the walkers who set intentions, so it fired on the common case. Both halves (rider and lens paragraph) are now scoped by `PromptContextPolicy.groundsInIntention`, true for the other six voices and for `CustomPromptStyle` via `.full`, false for Oblique alone. Scoping only one half would leave the contradiction half-standing, so both move together.
 
 **The full six-voice matrix is deferred** (§Deferred). It changes output for every voice and needs its own LLM-readback pass; folding it here would produce a spec that cannot be reviewed coherently.
 

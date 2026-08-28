@@ -1,7 +1,11 @@
 import XCTest
 @testable import Pilgrim
 
-/// Review-fix coverage for the markerColoring leak: `Noticed:`'s
+/// Review-fix coverage for how the `Noticed:` block is routed into the three
+/// dossier variants — which senses reach which voice, and whether the block
+/// reaches them at all.
+///
+/// The markerColoring leak: `Noticed:`'s
 /// markerColoring sense is marker-derived commentary on the current walk's
 /// speech, so it must be excluded from the same variants
 /// `ThreadsDossierFormatter.dossier`'s `includeMarkerLines: false` already
@@ -102,5 +106,71 @@ extension ThreadsDossierTests {
         XCTAssertFalse(result.dossierSensesOnly!.contains("Thought threads"))
         XCTAssertFalse(result.dossierSensesOnly!.contains("Threads across recent walks"))
         XCTAssertFalse(result.dossierSensesOnly!.contains("Quiet this walk"))
+    }
+
+    // MARK: - `Noticed:` must reach the marker-free variant even with no thread section
+
+    /// A walk whose speech carries no repeated noun produces no thread at
+    /// all, so `ThreadsDossierFormatter.dossier(includeMarkerLines: false)`
+    /// returns nil (`section == heading`) while the full dossier still
+    /// renders its marker lines. The moon line fires regardless — it is a
+    /// sense, not a thread claim — so `Noticed:` has real content to place.
+    private func threadlessMoonFixtureDossiers() -> (
+        dossier: String?, unchangedBlock: String?, dossierWithoutMarkers: String?, dossierSensesOnly: String?
+    ) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DossierNoticedRoutingTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptContextStore(directory: directory)
+        let defaults = UserDefaults(suiteName: "DossierNoticedRoutingTests-\(UUID().uuidString)")!
+
+        let anchor = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+        let lunation = LunationCalendar.mostRecentClosed(asOf: anchor)
+        let walkStart = lunation.start.addingTimeInterval(5 * 86400)
+        let walkA = UUID(), recA = UUID()
+        let walkIndex: [UUID: (walkUUID: UUID, date: Date)] = [recA: (walkA, walkStart)]
+        // No noun survives to `minimumMentions`, so ThreadStore builds nothing.
+        let recording = RecordingContext(
+            text: String(repeating: "it was quiet and it stayed that way and nothing shifted at all ", count: 4),
+            timestamp: walkStart.addingTimeInterval(300),
+            startCoordinate: nil, endCoordinate: nil, wordsPerMinute: nil,
+            recordingUUID: recA, endTimestamp: walkStart.addingTimeInterval(420)
+        )
+        let bundle = DossierSensesFetchBundle(
+            walkStart: walkStart, walkEnd: walkStart.addingTimeInterval(3600),
+            totalAscent: 0, elevationSeries: [], photos: [],
+            walkSnapshots: [DossierSenses.WalkSnapshotRow(
+                walkUUID: walkA, startDate: walkStart, intention: nil, weatherCondition: nil
+            )],
+            recordingTimestamps: [recA: walkStart.addingTimeInterval(300)],
+            closedLunation: lunation, moonName: LunationCalendar.moonName(for: lunation)
+        )
+
+        return ThreadsDossierBuilder.buildResult(
+            walkUUID: walkA, recordings: [recording], walkIndex: walkIndex,
+            store: store, senses: bundle, resolveRouteFix: { _ in nil }, defaults: defaults
+        )
+    }
+
+    /// Journaling reads `dossierWithoutMarkers`; Creative and Gratitude read
+    /// `dossierSensesOnly`. When the marker-free render had no thread section
+    /// to return, appending `Noticed:` only to an already-non-nil variant
+    /// dropped it for Journaling alone — leaving the thread-analysis voice
+    /// with LESS sensory context than the thread-suppressed ones.
+    func testNoticed_reachesMarkerFreeVariant_evenWhenThereIsNoThreadSection() {
+        let saved = UserPreferences.threadsAfterWalks.value
+        defer { UserPreferences.threadsAfterWalks.value = saved }
+        UserPreferences.threadsAfterWalks.value = true
+
+        let result = threadlessMoonFixtureDossiers()
+        XCTAssertNotNil(result.dossier)
+        XCTAssertFalse(result.dossier!.contains("Threads across recent walks"),
+                       "the fixture must produce no thread section, or it proves nothing")
+        XCTAssertNotNil(result.dossierSensesOnly)
+        XCTAssertTrue(result.dossierSensesOnly!.contains("has set"),
+                      "the fixture must actually fire a sense")
+        XCTAssertEqual(result.dossierWithoutMarkers, result.dossierSensesOnly,
+                       "with no thread section there is nothing to hang Noticed: under, so the " +
+                       "marker-free variant is the block itself — never nil")
     }
 }

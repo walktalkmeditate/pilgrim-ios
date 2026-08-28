@@ -45,7 +45,8 @@ extension DossierSensesInvarianceTests {
         )
         XCTAssertEqual(
             line?.text,
-            "'river' has been spoken in the same place on all 3 walks it appears in."
+            "Every time 'river' was spoken with its location known, it was in the same place "
+                + "— on all 3 walks it appears in."
         )
         XCTAssertEqual(line?.lemma, "river")
     }
@@ -139,10 +140,43 @@ extension DossierSensesInvarianceTests {
         )
         XCTAssertEqual(
             line?.text,
-            "'river' has been spoken in the same place on every walk where its location "
-                + "is known — 3 of the 4 it appears in."
+            "Every time 'river' was spoken with its location known, it was in the same place "
+                + "— on 3 of the 4 walks it appears in."
         )
         XCTAssertEqual(line?.lemma, "river")
+    }
+
+    /// A walk enters the measured set on its FIRST qualifying fix, but a
+    /// theme can be spoken twice on one walk — here walkA's second utterance
+    /// has no fix at all, 5km of nothing between what was measured and what
+    /// was claimed. The old wording ("spoken in the same place on all N
+    /// walks it appears in") vouched for that second utterance; the shipped
+    /// wording scopes itself to located utterances, which is exactly the set
+    /// `maxPairwiseSpread` judged. Requiring every appearance to carry a fix
+    /// instead would be stricter than the walk-level full-coverage check the
+    /// 2026-08-27 product decision deliberately removed for rural routes.
+    func testPlaceFrameLock_secondUnlocatedUtteranceOnAMeasuredWalk_claimsOnlyWhatWasMeasured() {
+        let recs = [UUID(), UUID(), UUID(), UUID()]
+        let walkA = UUID(), walkB = UUID(), walkC = UUID()
+        var fixes: [UUID: DossierSenses.RouteFix] = [:]
+        for offset in 0..<3 {
+            fixes[recs[offset]] = qualifyingFix(
+                .init(latitude: 51.5 + Double(offset) * 0.0001, longitude: -0.12)
+            )
+        }
+        // recs[3] is a second utterance on walkA with no fix at all — it
+        // could have been anywhere, and nothing here ever looked.
+        let thread = steadyThread("river", recordings: recs, walks: [walkA, walkB, walkC, walkA])
+        let line = DossierSensesInvariance.placeFrameLock(
+            input: fixInput(threads: [thread], fixes: fixes), suppressed: []
+        )
+        XCTAssertEqual(
+            line?.text,
+            "Every time 'river' was spoken with its location known, it was in the same place "
+                + "— on all 3 walks it appears in."
+        )
+        XCTAssertFalse(line?.text.contains("has been spoken in the same place on all") ?? true,
+                       "the sentence must not vouch for an utterance nothing measured")
     }
 
     /// Below the `minimumInvariantWalks` floor is judged on the MEASURED

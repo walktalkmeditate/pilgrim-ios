@@ -6,12 +6,29 @@ enum PromptAssembler {
     /// "compute here" — single-style callers stay unchanged, while
     /// `generateAll` computes both once and fans them out so a screen-open
     /// pays for one NLP pass instead of one per style.
+    ///
+    /// A voice that hoists the `Unchanged:` block and has no block to hoist
+    /// produces NOTHING — the empty string, checked first, before any
+    /// section is built. `ObliqueVoice`'s preamble and instruction both
+    /// reference "the invariants named under Unchanged" unconditionally, so
+    /// assembling it without the block hands the model an explicit
+    /// invitation to invent one, which is this feature's worst failure mode.
+    /// The picker's own gate (`PromptStyle.isAvailable(unchangedBlockPresent:)`)
+    /// still stands and is still the thing the walker sees, but it is one
+    /// view: any future share affordance, copy button, widget, or second
+    /// prompt surface would bypass it. Making the assembler refuse puts the
+    /// safety property where the prompt is actually built, so every present
+    /// and future caller inherits it. Refusing here rather than filtering
+    /// `.oblique` out of `PromptGenerator.generateAll` is deliberate — the
+    /// filtered list would also delete the dimmed "Still listening" row the
+    /// walker is meant to see, trading a safety fix for a UX regression.
     static func assemble(
         context: ActivityContext,
         voice: PromptVoice,
         directives: [String]? = nil,
         detectedLanguageName: String? = nil
     ) -> String {
+        guard !voice.contextPolicy.hoistsUnchangedBlock || context.unchangedBlock != nil else { return "" }
         let metadata = ContextFormatter.formatMetadata(
             duration: context.duration,
             distance: context.distance,
@@ -32,7 +49,7 @@ enum PromptAssembler {
         if voice.contextPolicy.hoistsUnchangedBlock, let unchanged = context.unchangedBlock {
             sections += "\n\n\(unchanged)"
         }
-        sections += contextDossier(context: context)
+        sections += contextDossier(context: context, policy: voice.contextPolicy)
         let dossier = selectedDossier(context: context, policy: voice.contextPolicy)
         sections += walkRecord(
             context: context,
@@ -42,7 +59,7 @@ enum PromptAssembler {
         )
 
         var fullInstruction = voice.instruction(hasSpeech: context.hasSpeech)
-        if let intention = context.intention {
+        if voice.contextPolicy.groundsInIntention, let intention = context.intention {
             fullInstruction += " Ground your response in the walker's stated intention: '\(intention)'. Return to it. Help them see how their walk — its pace, its pauses, its moments — spoke to this purpose."
         }
 
@@ -73,7 +90,12 @@ enum PromptAssembler {
 
     /// The walk's circumstances: sky, practice, intention, place, and what
     /// the body did — everything the walker brought to or met on the path.
-    private static func contextDossier(context: ActivityContext) -> String {
+    ///
+    /// The intention paragraph is scoped by `policy.groundsInIntention`
+    /// alongside the instruction rider in `assemble` — the two are one
+    /// instruction split across two places in the prompt, and scoping only
+    /// one of them would leave the contradiction half-standing.
+    private static func contextDossier(context: ActivityContext, policy: PromptContextPolicy) -> String {
         var sections = ""
 
         if let celestial = context.celestial {
@@ -82,7 +104,7 @@ enum PromptAssembler {
 
         sections += "\n\n\(practiceLexicon(context: context))"
 
-        if let intention = context.intention {
+        if policy.groundsInIntention, let intention = context.intention {
             sections += "\n\n**The walker's intention:** \"\(intention)\"\nThis intention was set deliberately before the walk began. It represents what the walker chose to carry with them. Let it be the lens through which you interpret everything below."
         }
 
