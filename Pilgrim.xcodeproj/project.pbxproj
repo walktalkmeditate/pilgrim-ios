@@ -565,6 +565,7 @@
 		LR00000200000000LRASCT01 /* AudioSessionCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRASCT01 /* AudioSessionCoordinatorTests.swift */; };
 		LR00000200000000LRATDR01 /* AttentionDirectivesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRATDR01 /* AttentionDirectivesTests.swift */; };
 		LR00000200000000LRATDR02 /* AttentionDirectivesFirstVersusLastTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRATDR02 /* AttentionDirectivesFirstVersusLastTests.swift */; };
+		LR00000200000000LRNLWU01 /* NLAssetWarmupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRNLWU01 /* NLAssetWarmupTests.swift */; };
 		LR00000200000000LRBDCT01 /* BodyDataContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRBDCT01 /* BodyDataContextTests.swift */; };
 		LR00000200000000LRCRTT01 /* CairnTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRCRTT01 /* CairnTierTests.swift */; };
 		LR00000200000000LRDMRP01 /* DataManager+Replace.swift in Sources */ = {isa = PBXBuildFile; fileRef = LR00000100000000LRDMRP01 /* DataManager+Replace.swift */; };
@@ -1230,6 +1231,7 @@
 		LR00000100000000LRASCT01 /* AudioSessionCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinatorTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRATDR01 /* AttentionDirectivesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AttentionDirectivesTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRATDR02 /* AttentionDirectivesFirstVersusLastTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AttentionDirectivesFirstVersusLastTests.swift; sourceTree = "<group>"; };
+		LR00000100000000LRNLWU01 /* NLAssetWarmupTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NLAssetWarmupTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRBDCT01 /* BodyDataContextTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BodyDataContextTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRCRTT01 /* CairnTierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnTierTests.swift; sourceTree = "<group>"; };
 		LR00000100000000LRDMRP01 /* DataManager+Replace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataManager+Replace.swift"; sourceTree = "<group>"; };
@@ -2020,6 +2022,7 @@
 				LR00000100000000LRPRCT01 /* PromptResponseContractTests.swift */,
 				LR00000100000000LRATDR01 /* AttentionDirectivesTests.swift */,
 				LR00000100000000LRATDR02 /* AttentionDirectivesFirstVersusLastTests.swift */,
+				LR00000100000000LRNLWU01 /* NLAssetWarmupTests.swift */,
 				LR00000100000000LRWKCH01 /* WalkCharacterTests.swift */,
 				LR00000100000000LRPRLX01 /* PracticeLexiconTests.swift */,
 				LR00000100000000LRBDCT01 /* BodyDataContextTests.swift */,
@@ -3408,6 +3411,7 @@
 				LR00000200000000LRPRCT01 /* PromptResponseContractTests.swift in Sources */,
 				LR00000200000000LRATDR01 /* AttentionDirectivesTests.swift in Sources */,
 				LR00000200000000LRATDR02 /* AttentionDirectivesFirstVersusLastTests.swift in Sources */,
+				LR00000200000000LRNLWU01 /* NLAssetWarmupTests.swift in Sources */,
 				LR00000200000000LRWKCH01 /* WalkCharacterTests.swift in Sources */,
 				LR00000200000000LRPRLX01 /* PracticeLexiconTests.swift in Sources */,
 				LR00000200000000LRBDCT01 /* BodyDataContextTests.swift in Sources */,

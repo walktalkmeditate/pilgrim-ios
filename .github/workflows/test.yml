@@ -48,6 +48,25 @@ jobs:
           xcrun simctl boot "iPhone 17 Pro" || true
           xcrun simctl bootstatus "iPhone 17 Pro" -b
 
+      - name: Warm NL Assets
+        run: |
+          # A fresh runner's simulator has no on-device Natural Language
+          # lemma/lexicalClass model — see UnitTests/NLAssetWarmupTests.swift.
+          # Run as its own xcodebuild invocation, in its own step, BEFORE the
+          # main suite: ordering is then guaranteed rather than dependent on
+          # test-execution order or parallelism, and if priming genuinely
+          # fails, the job stops right here with one clear failure instead of
+          # cascading into the ~27 confusing lemma-dependent failures the
+          # main run would otherwise produce.
+          xcodebuild test \
+            -workspace Pilgrim.xcworkspace \
+            -scheme Pilgrim \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -only-testing:UnitTests/NLAssetWarmupTests \
+            -resultBundlePath "TestResults-warmup-1.xcresult" \
+            CODE_SIGNING_ALLOWED=NO
+
       - name: Build and Test
         run: |
           # Retry once with a clean simulator re-boot in between: the
@@ -60,6 +79,7 @@ jobs:
               -sdk iphonesimulator \
               -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
               -skip-testing:ScreenshotTests \
+              -skip-testing:UnitTests/NLAssetWarmupTests \
               -resultBundlePath "TestResults-$1.xcresult" \
               CODE_SIGNING_ALLOWED=NO
           }
@@ -68,6 +88,23 @@ jobs:
           xcrun simctl shutdown "iPhone 17 Pro" || true
           xcrun simctl boot "iPhone 17 Pro" || true
           xcrun simctl bootstatus "iPhone 17 Pro" -b
+
+          # shutdown+boot is a restart, not an erase, so the NL assets primed
+          # above should still be on disk — but "should" isn't proof, and a
+          # retry that silently loses them would turn one clean warm-up
+          # failure back into 27 confusing lemma failures. Re-prime rather
+          # than assume.
+          if ! xcodebuild test \
+              -workspace Pilgrim.xcworkspace \
+              -scheme Pilgrim \
+              -sdk iphonesimulator \
+              -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+              -only-testing:UnitTests/NLAssetWarmupTests \
+              -resultBundlePath "TestResults-warmup-2.xcresult" \
+              CODE_SIGNING_ALLOWED=NO; then
+            echo "::error::NL asset re-priming failed after simulator reboot — aborting retry rather than running the main suite without a lemma model"
+            exit 1
+          fi
           run_tests 2
 
       - name: Upload test results
