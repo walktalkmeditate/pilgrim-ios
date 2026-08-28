@@ -2207,13 +2207,17 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Why:** Firing rate measures only the upside. The no-free-lunch theorem guarantees a matching downside that firing rate is structurally blind to — `questionDensity` escaped only because it was loud.
 
 **Files:**
-- Modify: `Pilgrim/Models/Threads/ThreadsDossierBuilder.swift` (the `#if DEBUG` harness block)
-- Modify: `docs/superpowers/specs/2026-08-27-oblique-and-prompt-relevance-design.md`
+- ~~Modify: `Pilgrim/Models/Threads/ThreadsDossierBuilder.swift` (the `#if DEBUG` harness block)~~ — **DEVIATION (implemented 2026-08-27):** that `#if DEBUG` block no longer lives in `ThreadsDossierBuilder.swift`; Task 8 already split it out into `Pilgrim/Models/Threads/ThreadsDossierFieldReport.swift` (the `DossierSensesFieldReport` enum). The invariance harness was added there instead, as a sibling `generateInvarianceReport()`/`evaluateWalkInvariance()` pair next to the existing `generate()`/`evaluateWalk()`, reusing the same `FieldReportContext`, `transcribedRecordings(for:)`, `ThreadsDossierBuilder.gatherSensesBundle`, and `ThreadsDossierBuilder.makeSensesInput` seams. `runIfRequested()` now checks both `--senses-field-report` and `--invariance-field-report` independently (not a literal `switch`, matching the pre-existing style). Also updated the `AppDelegate.swift` comment at the `runIfRequested()` call site to mention both flags.
+- Modify: `Pilgrim/Models/Threads/ThreadsDossierFieldReport.swift` (added the invariance harness)
+- Modify: `Pilgrim/AppDelegate.swift` (comment only — no wiring change needed, `runIfRequested()` already covers both flags)
+- Spec doc `docs/superpowers/specs/2026-08-27-oblique-and-prompt-relevance-design.md` needed no changes: its "DEBUG harness" and "Field gate" sections describe behavior, not the file path, and already match what was built.
+
+**Note on `makeSensesInputForReport`:** the brief's sketch below references a `makeSensesInputForReport` helper. No such symbol exists. The real senses harness assembles its `Input` via `ThreadsDossierBuilder.gatherSensesBundle(walk:now:)` + `ThreadsDossierBuilder.makeSensesInput(senses:state:resolveRouteFix:)` with a `ThreadsDossierBuilder.SensesAssemblyState`; the invariance harness reuses exactly that pair, per-walk, unchanged.
 
 **Interfaces:**
 - Produces: `--invariance-field-report` launch argument, mirroring `--senses-field-report`.
 
-- [ ] **Step 1: Add the harness**
+- [x] **Step 1: Add the harness** — done 2026-08-27 (see file deviation note above). Steps 2-6 are manual human QA on a real device and are explicitly out of scope for this implementation pass.
 
 Extend the existing `#if DEBUG` harness block at the bottom of `ThreadsDossierBuilder.swift`, mirroring how `--senses-field-report` is structured:
 

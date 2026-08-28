@@ -150,10 +150,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     /// the `function_body_length` gate — gains one call site, not two.
     private func runPostDoneLaunchTasks() {
         #if DEBUG
-        // Ship-gate harness (Task 10): only ever produces output under
-        // `--senses-field-report` — `runIfRequested` carries that guard
-        // itself. The Task hop keeps the @MainActor call clean from this
-        // non-actor-annotated completion closure.
+        // Ship-gate harnesses (Tasks 10 and 12): only ever produce output
+        // under `--senses-field-report` or `--invariance-field-report` —
+        // `runIfRequested` carries both guards itself. The Task hop keeps
+        // the @MainActor call clean from this non-actor-annotated
+        // completion closure.
         Task { @MainActor in DossierSensesFieldReport.runIfRequested() }
         #endif
         startLaunchRecordingCleanup()
