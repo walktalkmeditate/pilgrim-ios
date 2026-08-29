@@ -5,7 +5,7 @@ import Foundation
 /// once history is fully analyzed (spec: ThreadStore).
 enum ThreadsBackfill {
 
-    static let completedKey = "threadsBackfillCompletedV6"
+    static let completedKey = "threadsBackfillCompletedV7"
     /// v1.11.0 TestFlight devices could run the sweep, account for zero
     /// recordings under a snapshot bug (fixed alongside the V2 rename), and
     /// still set the old flag — stranding those devices on a never-swept
@@ -30,13 +30,20 @@ enum ThreadsBackfill {
     /// `days`, `area` to `SpokenStoplist.lightNouns` (schema v3→v4), a
     /// narrower theme-extraction change than V2→V3's — like V4→V5, no
     /// moon-line re-arm accompanies it; `performLegacyHygiene` still only
-    /// watches the V3 key.
+    /// watches the V3 key. V7 (field report, 2026-08-28) adds
+    /// `SpokenStoplist.filler` and `time`/`person`/`app`, and stops
+    /// punctuation from reaching a lemma at all (schema v4→v5) — a V6 sweep's
+    /// themes can name 'yeah' or print 'yeah.'. Same shape as V5→V6, so again
+    /// no moon-line re-arm; `performLegacyHygiene` still only watches the V3
+    /// key.
     private static let legacyCompletedKeyV3 = "threadsBackfillCompletedV3"
     private static let legacyCompletedKeyV4 = "threadsBackfillCompletedV4"
     private static let legacyCompletedKeyV5 = "threadsBackfillCompletedV5"
+    private static let legacyCompletedKeyV6 = "threadsBackfillCompletedV6"
     private static let legacyCompletedKeys = [
         "threadsBackfillCompleted", "threadsBackfillCompletedV2",
-        legacyCompletedKeyV3, legacyCompletedKeyV4, legacyCompletedKeyV5
+        legacyCompletedKeyV3, legacyCompletedKeyV4, legacyCompletedKeyV5,
+        legacyCompletedKeyV6
     ]
     private static var isRunning = false
     private static var generation = 0
@@ -72,8 +79,8 @@ enum ThreadsBackfill {
 
     static let batchSize = 25
 
-    /// One-time hygiene ahead of the `isComplete` check below: the pre-V4
-    /// keys no longer mean anything, and removing an absent key is a
+    /// One-time hygiene ahead of the `isComplete` check below: every
+    /// superseded key no longer means anything, and removing an absent key is a
     /// harmless no-op on every call after the first. The V3 key's presence
     /// — captured before removal — is also the moon-line re-arm signal
     /// (item 2): only a device that completed the stale-theme V3 sweep ever

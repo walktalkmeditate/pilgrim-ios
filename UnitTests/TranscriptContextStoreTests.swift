@@ -168,6 +168,22 @@ final class TranscriptContextStoreTests: XCTestCase {
                       "existence still true — only freshness differs")
     }
 
+    /// The v1.11 shipped schema. Its themes were computed by an extractor
+    /// that admitted conversational filler and let a swallowed sentence
+    /// period fork one word into two lemmas, so a v4 file on disk is stale by
+    /// derivation even though it decodes cleanly
+    /// (docs/solutions/derived-cache-semantics-are-schema.md).
+    func testHasCurrentContext_falseForSchemaVersionFour() {
+        let context = TranscriptContext(
+            schemaVersion: 4, recordingUUID: UUID(), transcriptHash: "v4",
+            languageCode: "en", wordCount: 2, themes: [], markers: nil
+        )
+        store.save(context)
+        XCTAssertFalse(store.hasCurrentContext(for: context.recordingUUID),
+                       "the filler/punctuation fix makes every v4-derived context stale")
+        XCTAssertTrue(store.loadAll().isEmpty)
+    }
+
     func testHasCurrentContext_trueForCurrentSchemaVersion() {
         let fresh = makeContext()
         store.save(fresh)

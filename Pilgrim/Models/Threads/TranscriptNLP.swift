@@ -49,21 +49,42 @@ enum TranscriptNLP {
             options: [.omitPunctuation, .omitWhitespace, .omitOther]
         ) { tag, range in
             guard let tag, classes.contains(tag) else { return true }
-            let surface = String(text[range]).lowercased()
-            guard surface.count > 2 else { return true }
-            let lemma = tagger.tag(at: range.lowerBound, unit: .word, scheme: .lemma)
-                .0?.rawValue.lowercased() ?? surface
+            let token = String(text[range])
+            let core = letterCore(token)
+            guard core.count > 2 else { return true }
+            let surface = core.lowercased()
+            let taggedLemma = tagger.tag(at: range.lowerBound, unit: .word, scheme: .lemma)
+                .0.map { letterCore($0.rawValue).lowercased() } ?? ""
             lastOffset += text.distance(from: lastIndex, to: range.lowerBound)
             lastIndex = range.lowerBound
             mentions.append(LemmaMention(
-                lemma: lemma,
+                lemma: taggedLemma.isEmpty ? surface : taggedLemma,
                 surface: surface,
-                start: lastOffset,
-                length: text.distance(from: range.lowerBound, to: range.upperBound)
+                start: lastOffset + token.prefix { !$0.isLetter }.count,
+                length: core.count
             ))
             return true
         }
         return mentions
+    }
+
+    /// The leading run of letters, skipping any non-letters before it.
+    ///
+    /// NLTagger's `.word` unit does not always end a token at the word: when
+    /// a sentence-final period is followed by a lowercase word — the shape
+    /// Whisper writes — the token range swallows the period ("yeah.",
+    /// "garden.", "mary.") and the token is classed as a content word, so
+    /// `.omitPunctuation` never sees it. Left alone, the tagger then has no
+    /// lemma for that glued form and the `?? surface` fallback stores the
+    /// punctuation as thread identity: 'yeah' and 'yeah.' become two lemmas
+    /// for one spoken word, and a real noun's mentions split across two
+    /// threads. Field-confirmed on device (2026-08-28) as a fabricated
+    /// "never apart" invariant and as a Recurring chip printing "yeah.".
+    ///
+    /// Reducing to the leading letter run also repairs the no-space case
+    /// ("garden.the" → "garden"), where the token glues two words together.
+    private static func letterCore(_ token: String) -> String {
+        String(token.drop { !$0.isLetter }.prefix { $0.isLetter })
     }
 
     static func contentLemmas(in text: String) -> [String] {
@@ -144,10 +165,41 @@ enum SpokenStoplist {
     /// history showed place resonance threading 'day' (17 mentions near the
     /// same ground) and photo adjacency threading 'area' — the same
     /// generic-noun class as `thing`/`way`, not topical content.
+    ///
+    /// `time`/`times`, `person`/`people`, `app`/`apps` joined on 2026-08-28,
+    /// all three observed as live themes on real-device history. `app` is the
+    /// walker narrating Pilgrim itself — meta-noise, never a life theme.
+    /// The filter reads LEMMAS, and NLTagger folds `people` → `person` and
+    /// `times` → `time`, so the singular forms are the ones that do the work;
+    /// the plurals are listed for the reader, and cost nothing.
     static let lightNouns: Set<String> = [
         "thing", "things", "stuff", "kind", "sort", "lot", "bit", "way", "ways",
         "one", "ones", "something", "anything", "everything", "nothing",
-        "day", "days", "area"
+        "day", "days", "area",
+        "time", "times", "person", "people", "app", "apps"
+    ]
+
+    /// Conversational filler filtered out of THEME extraction. The noun-only
+    /// restriction does not stop these: in Whisper's lowercase sentence runs
+    /// NLTagger classes 'yeah' as a NOUN, and the field report of 2026-08-28
+    /// found it threading three real walks.
+    ///
+    /// `ok` sits beside `okay` because NLTagger lemmatizes the surface
+    /// "okay" to "OK" in some positions and "okay" in others — the same fold
+    /// that makes `people` arrive as `person`. The two-letter spellings
+    /// (`um`, `uh`, `er`, `mm`) are absent because `contentLemmaMentions`
+    /// already drops any surface shorter than three characters; the doubled
+    /// spellings Whisper actually writes are what needs listing.
+    ///
+    /// Deliberately NOT here, because every word added blinds the feature to
+    /// that word forever: `right` (a direction on a walk — and already
+    /// covered by `ThemeExtractor.walkingDomain`), `sure`, `yes`, `no`,
+    /// `well`, `like`, `just`, `anyway`. Each can carry real weight in a
+    /// walker's speech; none has been seen misfiring.
+    static let filler: Set<String> = [
+        "yeah", "yep", "yup", "nah", "okay", "ok",
+        "uhh", "umm", "erm", "hmm", "mhm", "mmm", "huh",
+        "gonna", "gotta", "wanna"
     ]
 
     /// Light/auxiliary/modal verbs plus the filler nouns above, filtered out

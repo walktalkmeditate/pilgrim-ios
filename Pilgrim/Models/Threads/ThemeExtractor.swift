@@ -62,9 +62,15 @@ enum ThemeExtractor {
 
     /// Nouns only — verbs and adjectives dominated raw-frequency ranking
     /// with spoken scaffolding ("was", "have", "can", "think") on real
-    /// devices, never the topical content underneath it.
+    /// devices, never the topical content underneath it. The noun class is
+    /// necessary but not sufficient: NLTagger also calls 'yeah' a noun, so
+    /// `SpokenStoplist.filler` carries what lexical class cannot.
     private static func mentions(in text: String) -> [TranscriptNLP.LemmaMention] {
         TranscriptNLP.contentLemmaMentions(in: text, classes: [.noun])
-            .filter { !walkingDomain.contains($0.lemma) && !SpokenStoplist.lightNouns.contains($0.lemma) }
+            .filter {
+                !walkingDomain.contains($0.lemma)
+                    && !SpokenStoplist.lightNouns.contains($0.lemma)
+                    && !SpokenStoplist.filler.contains($0.lemma)
+            }
     }
 }

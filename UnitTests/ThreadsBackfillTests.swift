@@ -18,6 +18,7 @@ final class ThreadsBackfillTests: XCTestCase {
     private static let legacyCompletedKeyV3 = "threadsBackfillCompletedV3"
     private static let legacyCompletedKeyV4 = "threadsBackfillCompletedV4"
     private static let legacyCompletedKeyV5 = "threadsBackfillCompletedV5"
+    private static let legacyCompletedKeyV6 = "threadsBackfillCompletedV6"
 
     private var store: TranscriptContextStore!
     private var directory: URL!
@@ -27,6 +28,7 @@ final class ThreadsBackfillTests: XCTestCase {
     private var savedLegacyCompletedV3: Any?
     private var savedLegacyCompletedV4: Any?
     private var savedLegacyCompletedV5: Any?
+    private var savedLegacyCompletedV6: Any?
     private var savedMoonState: Any?
     private var savedToggle = true
 
@@ -38,6 +40,7 @@ final class ThreadsBackfillTests: XCTestCase {
         savedLegacyCompletedV3 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV3)
         savedLegacyCompletedV4 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV4)
         savedLegacyCompletedV5 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV5)
+        savedLegacyCompletedV6 = UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV6)
         savedMoonState = UserDefaults.standard.object(forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
         savedToggle = UserPreferences.threadsAfterWalks.value
         UserDefaults.standard.set(false, forKey: ThreadsBackfill.completedKey)
@@ -46,6 +49,7 @@ final class ThreadsBackfillTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV3)
         UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV4)
         UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV5)
+        UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV6)
         UserPreferences.threadsAfterWalks.value = true
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ThreadsBackfillTests-\(UUID().uuidString)")
@@ -82,6 +86,11 @@ final class ThreadsBackfillTests: XCTestCase {
             UserDefaults.standard.set(savedLegacyCompletedV5, forKey: Self.legacyCompletedKeyV5)
         } else {
             UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV5)
+        }
+        if let savedLegacyCompletedV6 {
+            UserDefaults.standard.set(savedLegacyCompletedV6, forKey: Self.legacyCompletedKeyV6)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.legacyCompletedKeyV6)
         }
         if let savedMoonState {
             UserDefaults.standard.set(savedMoonState, forKey: ThreadsDossierBuilder.moonLineDefaultsKey)
@@ -161,6 +170,32 @@ final class ThreadsBackfillTests: XCTestCase {
 
         XCTAssertFalse(ThreadsBackfill.isComplete,
                        "a device that completed the pre-lightNouns-gate V5 sweep must re-evaluate under the new key")
+    }
+
+    /// V6 devices completed a real sweep under schema v4, but that extractor
+    /// admitted conversational filler ('yeah') as a theme and let a swallowed
+    /// sentence period fork one word into two lemmas ('yeah' / 'yeah.'). The
+    /// V7 rename (schema v5) re-arms them the same way every prior rename
+    /// did: the new key is absent regardless of what the V6 key holds.
+    func testIsComplete_legacyV6KeyTrue_reArmsUnderNewKey() {
+        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKeyV6)
+
+        XCTAssertFalse(ThreadsBackfill.isComplete,
+                       "a device that completed the pre-filler-gate V6 sweep must re-evaluate under the new key")
+    }
+
+    /// Hygiene must reach the V6 key too — an unremoved key is a slow leak of
+    /// meaningless defaults, and the list is the record of every rename.
+    func testRunIfNeeded_removesLegacyV6Key() async {
+        UserDefaults.standard.set(true, forKey: Self.legacyCompletedKeyV6)
+
+        let done = expectation(description: "sweep finished")
+        ThreadsBackfill.runIfNeeded(
+            store: store, snapshotProvider: { [] }, gate: { true }, onFinish: { done.fulfill() }
+        )
+        await fulfillment(of: [done], timeout: 5)
+
+        XCTAssertNil(UserDefaults.standard.object(forKey: Self.legacyCompletedKeyV6))
     }
 
     /// The where-clause skip (`!store.hasContext`) must become version-aware
