@@ -9,7 +9,10 @@ final class ThemeExtractorTests: XCTestCase {
         morning is quiet enough for it to speak. Thirty words of worry now.
         """
 
-    func testRepeatedLemma_becomesTheme() {
+    func testRepeatedLemma_becomesTheme() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let themes = ThemeExtractor.themes(in: moveText, languageCode: "en")
         let move = themes.first { $0.lemma == "move" }
         XCTAssertNotNil(move)
