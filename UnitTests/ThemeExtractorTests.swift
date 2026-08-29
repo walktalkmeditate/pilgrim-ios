@@ -3,16 +3,28 @@ import XCTest
 
 final class ThemeExtractorTests: XCTestCase {
 
+    /// Every test in this class calls `ThemeExtractor.themes`, which cannot
+    /// produce anything without the word tagger — so the skip belongs at the
+    /// class, not on the handful of tests CI happened to catch failing.
+    ///
+    /// The ones asserting ABSENCE are why this matters. "Pure scaffolding
+    /// yields no themes" passes on a runner with no tagger for the wrong
+    /// reason: nothing yields anything there. Guarding only the positive
+    /// assertions would leave those reporting green while proving nothing,
+    /// which is the silent degradation this whole change exists to surface.
+    override func setUpWithError() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL word tagger is available on this runner; theme extraction is " +
+                          "unvalidated here — the device harness is the real gate for it")
+    }
+
     private let moveText = """
         Still circling the move today. If the move happens in fall we lose the garden, \
         and moving means telling her father. The move keeps returning whenever the \
         morning is quiet enough for it to speak. Thirty words of worry now.
         """
 
-    func testRepeatedLemma_becomesTheme() throws {
-        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
-                          "no NL lemma model is available on this runner; the lemma layer is " +
-                          "unvalidated here — the device harness is the real gate for it")
+    func testRepeatedLemma_becomesTheme() {
         let themes = ThemeExtractor.themes(in: moveText, languageCode: "en")
         let move = themes.first { $0.lemma == "move" }
         XCTAssertNotNil(move)
@@ -48,10 +60,7 @@ final class ThemeExtractorTests: XCTestCase {
         XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
     }
 
-    func testNounAmongScaffolding_isTheOnlyTheme() throws {
-        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
-                          "no NL lemma model is available on this runner; the lemma layer is " +
-                          "unvalidated here — the device harness is the real gate for it")
+    func testNounAmongScaffolding_isTheOnlyTheme() {
         let text = "I was thinking about the music, I have to hear the music, I know the music " +
             "is what I can go back to, I think I was going to have it be the music again"
         let themes = ThemeExtractor.themes(in: text, languageCode: "en")
@@ -69,10 +78,7 @@ final class ThemeExtractorTests: XCTestCase {
         XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
     }
 
-    func testNounAmongDayAndArea_isTheOnlyTheme() throws {
-        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
-                          "no NL lemma model is available on this runner; the lemma layer is " +
-                          "unvalidated here — the device harness is the real gate for it")
+    func testNounAmongDayAndArea_isTheOnlyTheme() {
         let text = "Another long day thinking about the harbor, the harbor sits at the edge of the " +
             "area, and the day always brings me back to the harbor whatever the area looks like"
         let themes = ThemeExtractor.themes(in: text, languageCode: "en")
@@ -99,10 +105,7 @@ final class ThemeExtractorTests: XCTestCase {
         XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
     }
 
-    func testNounAmongFiller_isTheOnlyTheme() throws {
-        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
-                          "no NL lemma model is available on this runner; the lemma layer is " +
-                          "unvalidated here — the device harness is the real gate for it")
+    func testNounAmongFiller_isTheOnlyTheme() {
         let text = fillerText + " the river was high. the river was high again. i thought about the river."
         XCTAssertEqual(ThemeExtractor.themes(in: text, languageCode: "en").map(\.lemma), ["river"])
     }
@@ -138,10 +141,7 @@ final class ThemeExtractorTests: XCTestCase {
         XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
     }
 
-    func testNounAmongGenericNouns_isTheOnlyTheme() throws {
-        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
-                          "no NL lemma model is available on this runner; the lemma layer is " +
-                          "unvalidated here — the device harness is the real gate for it")
+    func testNounAmongGenericNouns_isTheOnlyTheme() {
         let text = "i keep thinking about the harbor when the people are around. the harbor at that " +
             "time of year. person after person passes the harbor and the app is open in my hand. " +
             "the harbor. apps and time."
