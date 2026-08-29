@@ -98,7 +98,10 @@ final class TranscriptNLPTests: XCTestCase {
     /// Here the first "garden." is the glued token and the other two are
     /// bare — under the old fallback that read as 'garden.' ×1 and 'garden'
     /// ×2, two threads where the walker said one word.
-    func testContentLemmaMentions_trailingPeriodDoesNotForkTheLemma() {
+    func testContentLemmaMentions_trailingPeriodDoesNotForkTheLemma() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let text = "i walked for a while. and then the garden. and i sat in the garden and the garden was quiet."
         let lemmas = TranscriptNLP.contentLemmaMentions(in: text).map(\.lemma)
         XCTAssertEqual(lemmas.filter { $0 == "garden" }.count, 3)

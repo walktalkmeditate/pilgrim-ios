@@ -96,7 +96,10 @@ final class ThemeExtractorTests: XCTestCase {
         XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
     }
 
-    func testNounAmongFiller_isTheOnlyTheme() {
+    func testNounAmongFiller_isTheOnlyTheme() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let text = fillerText + " the river was high. the river was high again. i thought about the river."
         XCTAssertEqual(ThemeExtractor.themes(in: text, languageCode: "en").map(\.lemma), ["river"])
     }
@@ -132,7 +135,10 @@ final class ThemeExtractorTests: XCTestCase {
         XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
     }
 
-    func testNounAmongGenericNouns_isTheOnlyTheme() {
+    func testNounAmongGenericNouns_isTheOnlyTheme() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let text = "i keep thinking about the harbor when the people are around. the harbor at that " +
             "time of year. person after person passes the harbor and the app is open in my hand. " +
             "the harbor. apps and time."
