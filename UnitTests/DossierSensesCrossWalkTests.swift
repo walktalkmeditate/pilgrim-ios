@@ -320,7 +320,10 @@ final class DossierSensesCrossWalkTests: XCTestCase {
         return makeInput(currentWalkUUID: currentWalk, walkSnapshots: snapshots)
     }
 
-    func testLineage_sharedContentLemmaAcrossFiveWalks_firesWithOrdinal() {
+    func testLineage_sharedContentLemmaAcrossFiveWalks_firesWithOrdinal() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let input = lineageInput(
             intentions: ["release the day", "releasing my grip", "release what is done", "release again"],
             todayIntention: "release what I cannot carry"

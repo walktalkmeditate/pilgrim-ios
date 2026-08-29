@@ -45,7 +45,10 @@ final class ThemeExtractorTests: XCTestCase {
         XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
     }
 
-    func testNounAmongScaffolding_isTheOnlyTheme() {
+    func testNounAmongScaffolding_isTheOnlyTheme() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let text = "I was thinking about the music, I have to hear the music, I know the music " +
             "is what I can go back to, I think I was going to have it be the music again"
         let themes = ThemeExtractor.themes(in: text, languageCode: "en")
@@ -63,7 +66,10 @@ final class ThemeExtractorTests: XCTestCase {
         XCTAssertTrue(ThemeExtractor.themes(in: text, languageCode: "en").isEmpty)
     }
 
-    func testNounAmongDayAndArea_isTheOnlyTheme() {
+    func testNounAmongDayAndArea_isTheOnlyTheme() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let text = "Another long day thinking about the harbor, the harbor sits at the edge of the " +
             "area, and the day always brings me back to the harbor whatever the area looks like"
         let themes = ThemeExtractor.themes(in: text, languageCode: "en")

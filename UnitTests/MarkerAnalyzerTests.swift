@@ -50,7 +50,10 @@ final class MarkerAnalyzerTests: XCTestCase {
     /// actual valence. These fixtures are long enough (220+ words) to land
     /// past that threshold, so a regression back to whole-transcript tagging
     /// collapses both to the same score.
-    func testSentiment_opposingValence_longTranscripts_produceDifferentScores() {
+    func testSentiment_opposingValence_longTranscripts_produceDifferentScores() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let happy = String(repeating: "I am so happy today. The sun is out and everything feels "
             + "wonderful. I love this walk and feel grateful and joyful. ", count: 10)
         let sad = String(repeating: "I am so sad today. Everything feels heavy and I am grieving. "

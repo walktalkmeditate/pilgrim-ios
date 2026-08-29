@@ -9,7 +9,10 @@ final class TranscriptContextAnalyzerTests: XCTestCase {
         always feel it will never settle until we decide something real.
         """
 
-    func testAnalyze_producesThemesMarkersAndHash() {
+    func testAnalyze_producesThemesMarkersAndHash() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let uuid = UUID()
         let context = TranscriptContextAnalyzer.analyze(
             recordingUUID: uuid, transcript: transcript, flaggedFragments: []
@@ -41,7 +44,10 @@ final class TranscriptContextAnalyzerTests: XCTestCase {
         XCTAssertFalse(context.themes.contains { ["watch", "thank", "thanks"].contains($0.lemma) })
     }
 
-    func testPartiallyFlaggedTheme_survives() {
+    func testPartiallyFlaggedTheme_survives() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let flagged = "the move the move the move"
         let text = "Still circling the move today and what the move would cost us, more than twenty-five honest words about the whole question spoken here. " + flagged
         let context = TranscriptContextAnalyzer.analyze(

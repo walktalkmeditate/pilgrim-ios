@@ -79,7 +79,10 @@ final class AttentionDirectivesTests: XCTestCase {
 
     // MARK: - Intention echo
 
-    func testIntentionEcho_intentionWordSpoken_fires() {
+    func testIntentionEcho_intentionWordSpoken_fires() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let context = ActivityContext.make(
             recordings: [recording("I keep coming back to release, letting the grip soften")],
             startDate: start,
@@ -88,7 +91,10 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertTrue(joined(context).contains("surfaces again"))
     }
 
-    func testIntentionEcho_inflectedSurface_quotesSpokenFormWithoutAgain() {
+    func testIntentionEcho_inflectedSurface_quotesSpokenFormWithoutAgain() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let context = ActivityContext.make(
             recordings: [recording("worrying through the pines")],
             startDate: start,
@@ -101,7 +107,10 @@ final class AttentionDirectivesTests: XCTestCase {
                        "'again' is only honest for an exact surface repeat")
     }
 
-    func testIntentionEcho_mixedInflections_prefersExactSurfaceAcrossMentions() {
+    func testIntentionEcho_mixedInflections_prefersExactSurfaceAcrossMentions() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let context = ActivityContext.make(
             recordings: [recording("worrying on the way out, but the worry itself eased by the bridge")],
             startDate: start,
@@ -126,7 +135,10 @@ final class AttentionDirectivesTests: XCTestCase {
 
     // MARK: - Recurring word
 
-    func testRecurringWord_wordReturnsThreeTimes_fires() {
+    func testRecurringWord_wordReturnsThreeTimes_fires() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let context = ActivityContext.make(
             recordings: [
                 recording("The river was high today"),
@@ -221,6 +233,9 @@ final class AttentionDirectivesTests: XCTestCase {
     // MARK: - Semantic upgrade (Thought Threads Stage 1)
 
     func testIntentionEcho_lemmaVariantFires() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         try XCTSkipIf(NLEmbedding.wordEmbedding(for: .english) == nil,
                       "word embeddings unavailable in this environment")
         let context = ActivityContext.make(
@@ -231,7 +246,10 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertTrue(joined(context).contains("intention spoke of"))
     }
 
-    func testIntentionEcho_sharedLemmaFires() {
+    func testIntentionEcho_sharedLemmaFires() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let context = ActivityContext.make(
             recordings: [recording("walking my worry out under the pines")],
             startDate: start,
@@ -248,7 +266,13 @@ final class AttentionDirectivesTests: XCTestCase {
     /// interjection in both the bare and the period-glued position, so it
     /// never enters the mention set. Pinned so that widening the class set,
     /// or a tagger change, cannot quietly make it true.
-    func testRecurringWord_ignoresConversationalFiller() {
+    ///
+    /// Skipped without a lemma model: the assertion is negative, so it would
+    /// pass vacuously rather than prove anything.
+    func testRecurringWord_ignoresConversationalFiller() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let context = ActivityContext.make(
             recordings: [recording("yeah. the light was low yeah. the ridge went on yeah. the wind kept up yeah. it held")],
             startDate: start
@@ -257,7 +281,10 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertFalse(text.contains("'yeah'"), "filler must never be named as a recurring word")
     }
 
-    func testRecurringWord_countsAcrossInflections() {
+    func testRecurringWord_countsAcrossInflections() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let context = ActivityContext.make(
             recordings: [recording("Moving is hard. We moved before. This move feels different.")],
             startDate: start

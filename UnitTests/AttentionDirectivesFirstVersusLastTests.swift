@@ -99,7 +99,10 @@ final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
                        "two three-word notes cannot carry a speaking-rate claim")
     }
 
-    func testFirstVersusLast_subjectDiverged_fires() {
+    func testFirstVersusLast_subjectDiverged_fires() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let lines = directives([
             recording(DirectiveFixtures.gardenWall, wpm: 100, minutesIn: 0),
             recording(DirectiveFixtures.familyDebt, wpm: 101, minutesIn: 20)
@@ -160,7 +163,10 @@ final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
     /// lowercased surface form, so every inflection of the same word counts
     /// as a distinct lemma and overlap is depressed systematically — an
     /// inflected language would read as permanent divergence.
-    func testLemmatizableLanguage_englishTranscript_resolves() {
+    func testLemmatizableLanguage_englishTranscript_resolves() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         XCTAssertEqual(AttentionDirectives.lemmatizableLanguage(of: DirectiveFixtures.gardenWall), "en")
     }
 
@@ -233,7 +239,10 @@ final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
     /// zero-wpm first recording. Must fall through to the subject branch
     /// instead, which — using the same divergent-subject fixture as
     /// `testFirstVersusLast_subjectDiverged_fires` — genuinely fires here.
-    func testFirstVersusLast_firstPaceZero_fallsThroughToSubjectBranch() {
+    func testFirstVersusLast_firstPaceZero_fallsThroughToSubjectBranch() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let lines = directives([
             recording(DirectiveFixtures.gardenWall, wpm: 0, minutesIn: 0),
             recording(DirectiveFixtures.familyDebt, wpm: 101, minutesIn: 20)
@@ -247,7 +256,10 @@ final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
     /// the other doesn't) is a live production shape, not an edge case.
     /// `if let firstPace = ..., let lastPace = ...` must fail closed on
     /// either side and fall through to the subject branch.
-    func testFirstVersusLast_lastPaceMissing_fallsThroughToSubjectBranch() {
+    func testFirstVersusLast_lastPaceMissing_fallsThroughToSubjectBranch() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let lines = directives([
             recording(DirectiveFixtures.gardenWall, wpm: 100, minutesIn: 0),
             recording(DirectiveFixtures.familyDebt, wpm: nil, minutesIn: 20)
@@ -256,7 +268,10 @@ final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
                       "a missing last-recording pace must fall through to subject, not crash or stay silent")
     }
 
-    func testFirstVersusLast_firstPaceMissing_fallsThroughToSubjectBranch() {
+    func testFirstVersusLast_firstPaceMissing_fallsThroughToSubjectBranch() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let lines = directives([
             recording(DirectiveFixtures.gardenWall, wpm: nil, minutesIn: 0),
             recording(DirectiveFixtures.familyDebt, wpm: 100, minutesIn: 20)
