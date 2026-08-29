@@ -192,7 +192,10 @@ extension ThreadsDossierTests {
     /// sweep, transcription-completion analysis) landing a context inside
     /// that exact window, something a real timer/queue can do but a
     /// same-thread test otherwise can't.
-    func testBuilder_externalWriteDuringBuildWindow_notFoldedIntoMemo_nextCallMisses() {
+    func testBuilder_externalWriteDuringBuildWindow_notFoldedIntoMemo_nextCallMisses() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let saved = UserPreferences.threadsAfterWalks.value
         defer { UserPreferences.threadsAfterWalks.value = saved }
         UserPreferences.threadsAfterWalks.value = true
@@ -331,7 +334,10 @@ extension ThreadsDossierTests {
     /// the edit. `resolveRouteFix` call-counting (not content) proves a
     /// rebuild happened — `intentionLineage` needs 3 co-occurring walks to
     /// print a line, too heavy a fixture for this isolation test.
-    func testBuilder_memoKey_includesIntention_editInvalidatesCache() {
+    func testBuilder_memoKey_includesIntention_editInvalidatesCache() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         let saved = UserPreferences.threadsAfterWalks.value
         defer { UserPreferences.threadsAfterWalks.value = saved }
         UserPreferences.threadsAfterWalks.value = true

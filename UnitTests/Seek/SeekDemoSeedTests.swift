@@ -53,7 +53,10 @@ final class SeekDemoSeedTests: XCTestCase {
     /// permanently unreachable for screenshots and QA. Runs the real analysis
     /// + aggregation pipeline over the seeder's own transcripts, the same way
     /// ThreadsDossierTests exercises it.
-    func testDemoTranscripts_shareThemeAcrossTwoDistinctWalks() {
+    func testDemoTranscripts_shareThemeAcrossTwoDistinctWalks() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         var walksIndex: [UUID: (walkUUID: UUID, date: Date)] = [:]
         var contexts: [TranscriptContext] = []
 

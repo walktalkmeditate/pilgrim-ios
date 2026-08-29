@@ -46,7 +46,10 @@ final class FieldGateReportTests: XCTestCase {
     /// Senses over the same corpus, uncapped, with synthetic ground: a
     /// printed rehearsal of the on-device report so template phrasing gets
     /// human eyes before the real-history pass.
-    func testPrintSensesFieldGateReport() {
+    func testPrintSensesFieldGateReport() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
         var contexts: [TranscriptContext] = []
         var walks: [UUID: (walkUUID: UUID, date: Date)] = [:]
         let base = DateFactory.makeDate(2024, 6, 1, 9, 0, 0)

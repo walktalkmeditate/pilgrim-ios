@@ -48,6 +48,39 @@ jobs:
           xcrun simctl boot "iPhone 17 Pro" || true
           xcrun simctl bootstatus "iPhone 17 Pro" -b
 
+      - name: Probe NL Asset Availability (non-blocking)
+        continue-on-error: true
+        run: |
+          # A fresh runner's simulator has no on-device Natural Language
+          # lemma/lexicalClass model — see UnitTests/NLAssetWarmupTests.swift.
+          # This step is informational only. Direct observation on macos-26
+          # showed NLTagger.requestAssets's completion handler never firing
+          # at all (300s timeout, zero fulfillments) — that is an asset path
+          # this runner cannot reach, not a slow download to wait out, so the
+          # probe itself now uses a short timeout and never fails. It must
+          # never gate "Build and Test": the 27 lemma-dependent tests each
+          # guard themselves individually with `try XCTSkipUnless(NLAssetAvailability.lemmaAvailable, ...)`
+          # and report as SKIPPED rather than PASSED or FAILED when no model
+          # is present — honest, not green-washed.
+          set +e
+          xcodebuild test \
+            -workspace Pilgrim.xcworkspace \
+            -scheme Pilgrim \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -only-testing:UnitTests/NLAssetWarmupTests \
+            -resultBundlePath "TestResults-nlprobe.xcresult" \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee nlprobe.log
+          set -e
+
+          if grep -q "English lemma model IS available" nlprobe.log; then
+            echo "::notice::NL lemma model IS available on this runner — the 27 lemma-dependent UnitTests will run and be asserted, not skipped."
+          elif grep -q "No English lemma model is available" nlprobe.log; then
+            echo "::warning::No NL lemma model is available on this runner — 27 lemma-dependent UnitTests will report as SKIPPED below, not passed. Expected on macos-26 hosted runners; the device test harness is the real gate for that layer, not CI."
+          else
+            echo "::warning::NL asset probe did not complete cleanly (see nlprobe.log) — non-blocking, Build and Test proceeds regardless."
+          fi
+
       - name: Build and Test
         run: |
           # Retry once with a clean simulator re-boot in between: the
@@ -60,6 +93,7 @@ jobs:
               -sdk iphonesimulator \
               -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
               -skip-testing:ScreenshotTests \
+              -skip-testing:UnitTests/NLAssetWarmupTests \
               -resultBundlePath "TestResults-$1.xcresult" \
               CODE_SIGNING_ALLOWED=NO
           }

@@ -3,6 +3,21 @@ import XCTest
 
 final class ThemeExtractorTests: XCTestCase {
 
+    /// Every test in this class calls `ThemeExtractor.themes`, which cannot
+    /// produce anything without the word tagger — so the skip belongs at the
+    /// class, not on the handful of tests CI happened to catch failing.
+    ///
+    /// The ones asserting ABSENCE are why this matters. "Pure scaffolding
+    /// yields no themes" passes on a runner with no tagger for the wrong
+    /// reason: nothing yields anything there. Guarding only the positive
+    /// assertions would leave those reporting green while proving nothing,
+    /// which is the silent degradation this whole change exists to surface.
+    override func setUpWithError() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL word tagger is available on this runner; theme extraction is " +
+                          "unvalidated here — the device harness is the real gate for it")
+    }
+
     private let moveText = """
         Still circling the move today. If the move happens in fall we lose the garden, \
         and moving means telling her father. The move keeps returning whenever the \
