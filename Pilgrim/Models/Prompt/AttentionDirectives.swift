@@ -131,12 +131,15 @@ enum AttentionDirectives {
     }
 
     /// The most-repeated content lemma across all recordings, excluding any
-    /// lemma the intention already claimed and any spoken-scaffolding lemma
-    /// (`SpokenStoplist.scaffoldLemmas` — light verbs like "think" that
-    /// dominate raw-frequency counts without carrying meaning) — the
-    /// next-ranked candidate is promoted, so excluding a lemma never
-    /// silences the directive, only redirects it. Shown as its most
-    /// frequent surface form so the walker's own inflection is echoed back.
+    /// lemma the intention already claimed and any lemma that carries no
+    /// content (`SpokenStoplist.nonContentLemmas` — light verbs like "think"
+    /// that dominate raw-frequency counts without carrying meaning, plus the
+    /// filler and light nouns the theme layer discards; 'okay' is exactly
+    /// the word a speaker repeats most, and NLTagger calls it a noun in
+    /// Whisper's lowercase sentence runs) — the next-ranked candidate is
+    /// promoted, so excluding a lemma never silences the directive, only
+    /// redirects it. Shown as its most frequent surface form so the walker's
+    /// own inflection is echoed back.
     private static func recurringWord(
         _ context: ActivityContext,
         spokenMentions mentions: [TranscriptNLP.LemmaMention]
@@ -149,7 +152,7 @@ enum AttentionDirectives {
         var surfaces: [String: [String: Int]] = [:]
         for mention in mentions
         where !intentionLemmas.contains(mention.lemma)
-            && !SpokenStoplist.scaffoldLemmas.contains(mention.lemma) {
+            && !SpokenStoplist.nonContentLemmas.contains(mention.lemma) {
             counts[mention.lemma, default: 0] += 1
             surfaces[mention.lemma, default: [:]][mention.surface, default: 0] += 1
         }
@@ -242,13 +245,21 @@ enum AttentionDirectives {
         return "The walker's last recording shares little vocabulary with the first — attend to what moved between them."
     }
 
-    /// The same `SpokenStoplist.scaffoldLemmas` filter `recurringWord`
+    /// The same `SpokenStoplist.nonContentLemmas` filter `recurringWord`
     /// applies: NLTagger tags "think", "know", "want", "keep" as content, but
-    /// a speaker reaches for them out of habit. Left in, a closing recording
-    /// made entirely of scaffolding clears the lemma floor on words that
-    /// carry no subject at all.
+    /// a speaker reaches for them out of habit — and so are 'okay', 'yeah',
+    /// 'people', 'area' and 'app'. Left in, a closing recording made entirely
+    /// of scaffolding and filler clears the lemma floor on words that carry
+    /// no subject at all, and pads the overlap coefficient's denominator with
+    /// them.
+    ///
+    /// This raises the bar `minimumLemmasToJudgeSubject` represents: twelve
+    /// REAL content lemmas, not twelve tokens NLTagger happened to call
+    /// content. The floor is deliberately not lowered to compensate — the
+    /// branch failing closed on a thin closing note is the behaviour the
+    /// floor was introduced for.
     private static func subjectLemmas(in text: String) -> Set<String> {
-        Set(TranscriptNLP.contentLemmas(in: text)).subtracting(SpokenStoplist.scaffoldLemmas)
+        Set(TranscriptNLP.contentLemmas(in: text)).subtracting(SpokenStoplist.nonContentLemmas)
     }
 
     /// The transcript's language when this OS actually ships a lemma model

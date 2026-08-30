@@ -147,4 +147,28 @@ final class ThemeExtractorTests: XCTestCase {
             "the harbor. apps and time."
         XCTAssertEqual(ThemeExtractor.themes(in: text, languageCode: "en").map(\.lemma), ["harbor"])
     }
+
+    /// The drift #78 named: `filler` was wired into this extractor and stopped
+    /// there, so `recurringWord` could still emit "the word 'okay' returns 6
+    /// times — it may be doing quiet work" months after the theme layer had
+    /// declared that word meaningless.
+    ///
+    /// This pins the relationship rather than the membership. A fourth
+    /// stoplist added to `sharedStoplists` without reaching
+    /// `nonContentLemmas` fails here, which is the only automatic defence
+    /// against the same drift recurring — a doc comment is not one.
+    ///
+    /// `walkingDomain` is excluded by design: "path" and "trail" are this
+    /// feature's own vocabulary, not general noise.
+    func testSharedStoplists_reachEveryPromptTimeConsumer() {
+        XCTAssertTrue(
+            ThemeExtractor.sharedStoplists.isSubset(of: SpokenStoplist.nonContentLemmas),
+            "a stoplist the theme layer discards must also reach recurringWord and subjectShift, "
+            + "or the two halves disagree about what a content word is"
+        )
+        XCTAssertFalse(
+            ThemeExtractor.sharedStoplists.isSubset(of: ThemeExtractor.walkingDomain),
+            "guards against sharedStoplists being emptied and the assertion above passing vacuously"
+        )
+    }
 }

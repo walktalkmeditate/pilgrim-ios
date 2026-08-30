@@ -24,6 +24,14 @@ enum DirectiveFixtures {
     /// despite clearing a raw-lemma count of eighteen.
     static let scaffoldingOnly = "I think I know what you mean, and I want to go and see. Let me take it. "
         + "I feel we should keep it. I could say it might be the kind of thing we would need."
+    /// A closing note padded with the words the theme layer already calls
+    /// meaningless. Nine carry real subject; the rest are `filler` and
+    /// `lightNouns` — 'okay', 'yeah', 'nothing', 'people', 'area', 'one',
+    /// 'time', 'app'. Under `scaffoldLemmas` alone it counts fifteen and
+    /// clears `minimumLemmasToJudgeSubject`; under the shared content-word
+    /// definition it counts ten and does not.
+    static let paddedClosing = "Okay. Nothing much today, yeah. People pass by in this area, one at a "
+        + "time. The app pinged. Anyway, my brother telephoned about the mortgage payment and the lawyer's invoice."
     /// Long enough to be detected as Spanish, short of nothing else.
     static let spanishOpening = "Esta mañana caminé por el sendero del huerto, junto al muro de piedra, "
         + "mirando los manzanos viejos y la hierba mojada bajo la valla torcida del jardín."
@@ -143,6 +151,23 @@ final class AttentionDirectivesFirstVersusLastTests: XCTestCase {
         ])
         XCTAssertFalse(lines.contains(where: isFirstVersusLast),
                        "spoken scaffolding is not vocabulary the subject can diverge from")
+    }
+
+    /// The same shape as `scaffoldingOnlyClosing`, one release later. PR #74
+    /// declared conversational filler and a handful of light nouns to be
+    /// noise and wired that into theme extraction alone; the subject branch
+    /// kept subtracting `scaffoldLemmas` only, so those same words still
+    /// counted toward the lemma floor and still sat in the overlap
+    /// coefficient's denominator. A padded closing note reached fifteen
+    /// "content" lemmas on ten words of subject and fired "shares little
+    /// vocabulary" on a walk whose closing note said almost nothing.
+    func testFirstVersusLast_closingPaddedWithFillerAndLightNouns_staysSilent() {
+        let lines = directives([
+            recording(DirectiveFixtures.gardenWall, wpm: nil, minutesIn: 0),
+            recording(DirectiveFixtures.paddedClosing, wpm: nil, minutesIn: 40)
+        ])
+        XCTAssertFalse(lines.contains(where: isFirstVersusLast),
+                       "'okay', 'yeah', 'people', 'area' and 'app' are not vocabulary a subject can diverge from")
     }
 
     /// A walker who opens in one language and closes in another has not

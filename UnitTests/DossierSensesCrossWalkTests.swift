@@ -346,6 +346,24 @@ final class DossierSensesCrossWalkTests: XCTestCase {
                      "the spec's required fixture: unrelated intentions sharing only 'want' must NOT cluster")
     }
 
+    /// `intentionLemmas` subtracted `scaffoldLemmas` only, so a light noun the
+    /// theme layer already discards could still carry a lineage claim. 'day'
+    /// is in `SpokenStoplist.lightNouns` precisely because real-device history
+    /// showed it threading seventeen mentions without being about anything —
+    /// "Fourth walk in the last 30 days carrying some form of 'day'" is that
+    /// same emptiness, promoted to a cross-walk observation.
+    func testLineage_lightNounSharedAcrossWalks_mustNotCluster() throws {
+        try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
+                          "no NL lemma model is available on this runner; the lemma layer is " +
+                          "unvalidated here — the device harness is the real gate for it")
+        let input = lineageInput(
+            intentions: ["a slower day", "the long day", "one more day"],
+            todayIntention: "give the day some room"
+        )
+        XCTAssertNil(DossierSenses.intentionLineage(input: input, suppressed: []),
+                     "four walks that share only 'day' share nothing")
+    }
+
     func testLineage_twoPriorWalks_belowFloor() {
         let input = lineageInput(intentions: ["release the day"], todayIntention: "release the morning")
         XCTAssertNil(DossierSenses.intentionLineage(input: input, suppressed: []),

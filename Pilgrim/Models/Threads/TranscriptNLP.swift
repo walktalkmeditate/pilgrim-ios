@@ -218,4 +218,31 @@ enum SpokenStoplist {
         "keep", "kind", "thing", "stuff", "way", "lot", "bit",
         "can", "could", "should", "would", "must", "might", "may", "will", "ought", "wish"
     ]
+
+    /// The one definition of "not a content word" for every consumer of
+    /// `TranscriptNLP.contentLemmaMentions` that reads all three lexical
+    /// classes — the recurring-word directive, the subject-shift lemma sets,
+    /// and intention lineage.
+    ///
+    /// It exists because the three sets above were each wired into whichever
+    /// consumer motivated them, and the halves then disagreed about what a
+    /// content word is: `filler` and the light nouns `time`/`person`/`app`
+    /// reached theme extraction alone, so 'okay' could still win the
+    /// recurring-word directive and a closing note padded with 'yeah',
+    /// 'people' and 'area' could still clear the subject branch's lemma
+    /// floor. Adding a word to any of the three sets now reaches every one of
+    /// those consumers at once. Add new stoplists to one of the three sets
+    /// above rather than beside them, or the same drift returns.
+    ///
+    /// `ThemeExtractor` deliberately does NOT read this union. It is
+    /// noun-only and additionally suppresses its own `walkingDomain`, so its
+    /// filter is a differently-shaped set built from the same pieces — and it
+    /// feeds a persisted derived cache pinned to
+    /// `TranscriptContext.currentSchemaVersion`, where changing what is
+    /// discarded is a schema change (see
+    /// `docs/solutions/derived-cache-semantics-are-schema.md`). The
+    /// consumers here compute live per prompt and cache nothing.
+    static let nonContentLemmas: Set<String> = scaffoldLemmas
+        .union(lightNouns)
+        .union(filler)
 }

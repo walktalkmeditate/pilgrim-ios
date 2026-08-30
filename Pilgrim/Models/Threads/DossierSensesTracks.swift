@@ -133,8 +133,11 @@ extension DossierSenses {
 
 extension DossierSenses {
 
+    /// The shared content-word definition, so a lineage claim cannot rest on
+    /// a word the theme layer already discards — "fourth walk carrying some
+    /// form of 'day'" is a sentence about nothing.
     static func intentionLemmas(in intention: String) -> Set<String> {
-        Set(TranscriptNLP.contentLemmas(in: intention)).subtracting(SpokenStoplist.scaffoldLemmas)
+        Set(TranscriptNLP.contentLemmas(in: intention)).subtracting(SpokenStoplist.nonContentLemmas)
     }
 
     static func intentionLineage(input: Input, suppressed: Set<String>) -> SenseLine? {
