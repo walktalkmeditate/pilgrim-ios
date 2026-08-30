@@ -258,27 +258,38 @@ final class AttentionDirectivesTests: XCTestCase {
         XCTAssertTrue(joined(context).contains("intention spoke of"))
     }
 
-    /// A guard, not a fix. `recurringWord` filters `scaffoldLemmas`, which
-    /// covers light verbs but not conversational filler, and it reads verbs
-    /// and adjectives as well as nouns — so filler reaching the AI prompt
-    /// looked possible once the theme layer surfaced 'yeah' on real device
-    /// history. It is not reproducible: the tagger classes 'yeah' as an
-    /// interjection in both the bare and the period-glued position, so it
-    /// never enters the mention set. Pinned so that widening the class set,
-    /// or a tagger change, cannot quietly make it true.
+    /// Regression, not a guard. An earlier version of this test used 'yeah'
+    /// and concluded filler in `recurringWord` "is not reproducible" — the
+    /// tagger classes 'yeah' as an interjection, so it never entered the
+    /// mention set. That generalised from one word to the whole class and was
+    /// wrong: 'okay' in Whisper's period-glued lowercase shape ("okay. so the
+    /// plan") IS tagged as content and DOES reach the mention stream. It
+    /// failed to fire only because `recurringWord` needs three repetitions;
+    /// a longer transcript crosses that floor. This fixture does.
     ///
-    /// Skipped without a lemma model: the assertion is negative, so it would
-    /// pass vacuously rather than prove anything.
-    func testRecurringWord_ignoresConversationalFiller() throws {
+    /// `SpokenStoplist.nonContentLemmas` — the same exclusion every consumer
+    /// of the lemma stream now shares — is what actually stops it. And
+    /// because excluding a lemma promotes the next-ranked candidate rather
+    /// than silencing the detector, 'rain' (also three) takes the slot.
+    ///
+    /// Skipped without a lemma model: the surfaced word depends on real
+    /// lemmatization, so it would prove nothing on the fallback path.
+    func testRecurringWord_conversationalFillerNeverWins() throws {
         try XCTSkipUnless(NLAssetAvailability.lemmaAvailable,
                           "no NL lemma model is available on this runner; the lemma layer is " +
                           "unvalidated here — the device harness is the real gate for it")
         let context = ActivityContext.make(
-            recordings: [recording("yeah. the light was low yeah. the ridge went on yeah. the wind kept up yeah. it held")],
+            recordings: [recording(
+                "okay. so the plan for today okay. and then the rain came okay. we walked the ridge okay. "
+                    + "it rained again okay. we stopped by the river okay. the rain kept on okay. we turned back okay. done"
+            )],
             startDate: start
         )
         let text = joined(context)
-        XCTAssertFalse(text.contains("'yeah'"), "filler must never be named as a recurring word")
+        XCTAssertFalse(text.contains("'okay'"),
+                       "filler must never be named as a recurring word, whatever the tagger calls it")
+        XCTAssertTrue(text.contains("The word 'rain' returns 3 times"),
+                      "excluding filler promotes the next-ranked candidate; the directive is not silenced")
     }
 
     func testRecurringWord_countsAcrossInflections() throws {

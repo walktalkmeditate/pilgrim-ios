@@ -65,6 +65,15 @@ enum ThemeExtractor {
     /// devices, never the topical content underneath it. The noun class is
     /// necessary but not sufficient: NLTagger also calls 'yeah' a noun, so
     /// `SpokenStoplist.filler` carries what lexical class cannot.
+    ///
+    /// Deliberately not `SpokenStoplist.nonContentLemmas`, which the live
+    /// prompt-time consumers share: that union also carries
+    /// `scaffoldLemmas`, whose light verbs ("will", "feel", "need") NLTagger
+    /// does sometimes call nouns — adding it would change which lemmas this
+    /// extractor discards. Themes are persisted and pinned to
+    /// `TranscriptContext.currentSchemaVersion`, so that is a schema change
+    /// requiring a version bump and a re-analysis sweep on every device
+    /// (`docs/solutions/derived-cache-semantics-are-schema.md`).
     private static func mentions(in text: String) -> [TranscriptNLP.LemmaMention] {
         TranscriptNLP.contentLemmaMentions(in: text, classes: [.noun])
             .filter {
