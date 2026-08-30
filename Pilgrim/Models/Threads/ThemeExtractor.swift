@@ -74,12 +74,21 @@ enum ThemeExtractor {
     /// `TranscriptContext.currentSchemaVersion`, so that is a schema change
     /// requiring a version bump and a re-analysis sweep on every device
     /// (`docs/solutions/derived-cache-semantics-are-schema.md`).
+    /// The general-purpose stoplists this extractor discards, named so the
+    /// relationship to `SpokenStoplist.nonContentLemmas` can be asserted
+    /// rather than trusted. `walkingDomain` is deliberately absent: it is
+    /// this feature's own vocabulary ("path", "trail"), meaningless to a
+    /// prompt-time consumer, and belongs to the extractor alone.
+    ///
+    /// `ThemeExtractorTests.testSharedStoplists_reachEveryPromptTimeConsumer`
+    /// pins that everything here also reaches the shared set, so a fourth
+    /// stoplist added to this filter cannot silently stop short of
+    /// `recurringWord` and `subjectShift` the way `filler` did.
+    static let sharedStoplists: Set<String> = SpokenStoplist.lightNouns
+        .union(SpokenStoplist.filler)
+
     private static func mentions(in text: String) -> [TranscriptNLP.LemmaMention] {
         TranscriptNLP.contentLemmaMentions(in: text, classes: [.noun])
-            .filter {
-                !walkingDomain.contains($0.lemma)
-                    && !SpokenStoplist.lightNouns.contains($0.lemma)
-                    && !SpokenStoplist.filler.contains($0.lemma)
-            }
+            .filter { !walkingDomain.contains($0.lemma) && !sharedStoplists.contains($0.lemma) }
     }
 }
