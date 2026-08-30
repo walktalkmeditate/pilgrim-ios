@@ -205,14 +205,29 @@ enum PromptAssembler {
     /// which runs the real formatter, so a phrasing change fails a test
     /// rather than silently suppressing the key on every walk.
     ///
-    /// At most one line either way: the contract's accretion budget does not
-    /// grow to pay for this.
+    /// The share and tally probes are independent, not `if / else if`.
+    /// `markerLine` decides share-vs-tally PER RECORDING, so a walk with a
+    /// long opening reflection and a short closing note — an ordinary shape —
+    /// prints both forms, and a precedence rule silently drops one. It dropped
+    /// the tally clause, which is the one carrying "do not weigh them"; the
+    /// model then read a 2-in-40-words count as a rate.
+    ///
+    /// At most one line either way: the contract's accretion budget is counted
+    /// in LINES, and every clause here joins into the same one — the modal
+    /// clause already shares it. When both marker forms printed, the tally
+    /// clause narrows to the recordings it applies to rather than restating
+    /// the taxonomy the share clause just gave.
     private static func interpretiveKey(for dossier: String) -> String? {
         var clauses: [String] = []
-        if dossier.contains("absolutist words") {
+        let printedShares = dossier.contains("absolutist words")
+        let printedRawCounts = dossier.contains("raw counts only")
+        if printedShares {
             clauses.append("Read the absolutist-word share as how fixed the walker's framing was, and self-focus as how far they placed themselves at the centre of it.")
-        } else if dossier.contains("raw counts only") {
-            clauses.append("Read the absolutist and self-focus counts as a bare tally of how fixed the walker's framing was and how far they placed themselves at the centre of it — too few words to read as a rate, so do not weigh them.")
+        }
+        if printedRawCounts {
+            clauses.append(printedShares
+                ? "Where a recording gave raw counts instead of a share, read them as a bare tally — too few words to read as a rate, so do not weigh them."
+                : "Read the absolutist and self-focus counts as a bare tally of how fixed the walker's framing was and how far they placed themselves at the centre of it — too few words to read as a rate, so do not weigh them.")
         }
         if dossier.contains("modal lean:") {
             clauses.append("Read the modal lean as the frame the walker was working inside — obligation means the frame constrained them, counterfactual means they were already replaying alternatives, possibility and tentative mean it was still open, intention means they had settled on a course, and desire means they were naming a want rather than a plan.")

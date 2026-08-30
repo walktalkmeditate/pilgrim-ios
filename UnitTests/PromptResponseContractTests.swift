@@ -116,6 +116,40 @@ final class PromptResponseContractTests: XCTestCase {
             + "insight 1, causation 0, discrepancy 0; temporal lean: present (coarse heuristic)"
     }
 
+    /// A long opening reflection plus a short closing note — an ordinary walk
+    /// shape, and the one the single-recording fixtures above cannot express.
+    /// `markerLine` decides share-vs-tally PER RECORDING, so this dossier
+    /// prints both forms in one string.
+    private func mixedDensityDossier() -> String {
+        "**Thought threads (on-device linguistic analysis):**"
+            + "\nRecording 1: " + ThreadsDossierFormatter.markerLine(for: denseContext(), baseline: nil)
+            + "\nRecording 2: " + ThreadsDossierFormatter.markerLine(for: sparseContext(), baseline: nil)
+    }
+
+    private func denseContext() -> TranscriptContext {
+        TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion, recordingUUID: UUID(),
+            transcriptHash: "h", languageCode: "en", wordCount: 320, themes: [],
+            markers: MarkerPack(
+                wordCount: 320, absolutistCount: 8, firstPersonCount: 20,
+                insightCount: 2, causationCount: 1, discrepancyCount: 1,
+                futureCount: 4, pastCount: 1, sentiment: -0.2, modalCounts: [:]
+            )
+        )
+    }
+
+    private func sparseContext() -> TranscriptContext {
+        TranscriptContext(
+            schemaVersion: TranscriptContext.currentSchemaVersion, recordingUUID: UUID(),
+            transcriptHash: "h", languageCode: "en", wordCount: 40, themes: [],
+            markers: MarkerPack(
+                wordCount: 40, absolutistCount: 2, firstPersonCount: 5,
+                insightCount: 1, causationCount: 0, discrepancyCount: 0,
+                futureCount: 1, pastCount: 0, sentiment: nil, modalCounts: [:]
+            )
+        )
+    }
+
     func testResponseContract_withThreadsDossier_carriesInterpretiveKey() {
         let contract = PromptAssembler.responseContract(
             voice: ReflectiveVoice(), hasSpeech: true, threadsDossier: fullDossier()
@@ -206,34 +240,16 @@ final class PromptResponseContractTests: XCTestCase {
     /// formatter's phrasing moves, this fails rather than silently
     /// suppressing the key on every walk.
     func testResponseContract_againstRealFormatterOutput_adaptsToWhatWasPrinted() {
-        let markers = MarkerPack(
-            wordCount: 320, absolutistCount: 8, firstPersonCount: 20,
-            insightCount: 2, causationCount: 1, discrepancyCount: 1,
-            futureCount: 4, pastCount: 1, sentiment: -0.2, modalCounts: [:]
-        )
-        let dense = TranscriptContext(
-            schemaVersion: TranscriptContext.currentSchemaVersion, recordingUUID: UUID(),
-            transcriptHash: "h", languageCode: "en", wordCount: 320, themes: [], markers: markers
-        )
-        let denseLine = ThreadsDossierFormatter.markerLine(for: dense, baseline: nil)
+        let denseLine = ThreadsDossierFormatter.markerLine(for: denseContext(), baseline: nil)
         XCTAssertTrue(
             PromptAssembler.responseContract(
                 voice: ReflectiveVoice(), hasSpeech: true, threadsDossier: denseLine
             ).contains("absolutist-word share")
         )
 
-        let sparse = TranscriptContext(
-            schemaVersion: TranscriptContext.currentSchemaVersion, recordingUUID: UUID(),
-            transcriptHash: "h", languageCode: "en", wordCount: 40, themes: [],
-            markers: MarkerPack(
-                wordCount: 40, absolutistCount: 2, firstPersonCount: 5,
-                insightCount: 1, causationCount: 0, discrepancyCount: 0,
-                futureCount: 1, pastCount: 0, sentiment: nil, modalCounts: [:]
-            )
-        )
         let sparseContract = PromptAssembler.responseContract(
             voice: ReflectiveVoice(), hasSpeech: true,
-            threadsDossier: ThreadsDossierFormatter.markerLine(for: sparse, baseline: nil)
+            threadsDossier: ThreadsDossierFormatter.markerLine(for: sparseContext(), baseline: nil)
         )
         XCTAssertFalse(sparseContract.contains("absolutist-word share"))
         XCTAssertTrue(sparseContract.contains("too few words to read as a rate"))
@@ -250,9 +266,30 @@ final class PromptResponseContractTests: XCTestCase {
         XCTAssertFalse(absentContract.contains("too few words to read as a rate"))
     }
 
+    /// Regression: the two marker readings were chosen by `if / else if` over
+    /// the whole dossier, but `markerLine` decides share-vs-tally per
+    /// recording. A walk with one recording above `densityFloorWords` and one
+    /// below prints both forms, and the share probe won — dropping the only
+    /// clause that tells the model NOT to weigh a small sample's counts. The
+    /// model then reads "2 absolutist in 40 words" as a rate, the precise
+    /// misreading the tally form exists to prevent.
+    func testResponseContract_mixedDensityDossier_keepsBothReadings() {
+        let contract = PromptAssembler.responseContract(
+            voice: ReflectiveVoice(), hasSpeech: true, threadsDossier: mixedDensityDossier()
+        )
+        XCTAssertTrue(contract.contains("absolutist-word share"),
+                      "recording 1 printed shares, so the share reading must survive")
+        XCTAssertTrue(contract.contains("too few words to read as a rate"),
+                      "recording 2 printed raw counts, so the small-sample caveat must survive")
+        XCTAssertTrue(contract.contains("do not weigh them"),
+                      "the caveat's operative instruction is the clause that was being dropped")
+    }
+
     /// The accretion budget: a dossier may add the clinical guard plus at
     /// most one interpretive line, never more. When the dossier withheld
-    /// every referent the key shrinks to the guard alone.
+    /// every referent the key shrinks to the guard alone. The mixed-density
+    /// shape carries two clauses inside that one line — the budget is
+    /// counted in contract lines, exactly as the modal clause already is.
     func testResponseContract_withThreadsDossier_neverAddsMoreThanTwoLines() {
         let without = PromptAssembler.responseContract(
             voice: ReflectiveVoice(), hasSpeech: true, threadsDossier: nil
@@ -261,7 +298,8 @@ final class PromptResponseContractTests: XCTestCase {
 
         for (dossier, expected) in [
             (fullDossier(), 2), (sharesOnlyDossier(), 2),
-            (smallSampleDossier(), 2), (nonEnglishDossier(), 1)
+            (smallSampleDossier(), 2), (nonEnglishDossier(), 1),
+            (mixedDensityDossier(), 2)
         ] {
             let with = PromptAssembler.responseContract(
                 voice: ReflectiveVoice(), hasSpeech: true, threadsDossier: dossier
