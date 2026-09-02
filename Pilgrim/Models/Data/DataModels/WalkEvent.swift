@@ -27,7 +27,7 @@ public typealias WalkEvent = PilgrimV7.WalkEvent
 extension PilgrimV2.WorkoutEvent {
 
     public enum EventType: CustomStringConvertible, CustomDebugStringConvertible, RawRepresentable, ImportableAttributeType, Codable {
-        case lap, marker, segment, seekMode, seekArrival, unknown
+        case lap, marker, segment, seekMode, seekArrival, honorMode, honorArrival, unknown
 
         public init(rawValue: Int) {
             switch rawValue {
@@ -41,6 +41,10 @@ extension PilgrimV2.WorkoutEvent {
                 self = .seekMode
             case 4:
                 self = .seekArrival
+            case 5:
+                self = .honorMode
+            case 6:
+                self = .honorArrival
             default:
                 self = .unknown
             }
@@ -58,6 +62,10 @@ extension PilgrimV2.WorkoutEvent {
                 return 3
             case .seekArrival:
                 return 4
+            case .honorMode:
+                return 5
+            case .honorArrival:
+                return 6
             case .unknown:
                 return -1
             }
@@ -75,6 +83,10 @@ extension PilgrimV2.WorkoutEvent {
                 return SeekPersistence.seekModeEventName
             case .seekArrival:
                 return SeekPersistence.seekArrivalEventName
+            case .honorMode:
+                return HonorPersistence.honorModeEventName
+            case .honorArrival:
+                return HonorPersistence.honorArrivalEventName
             case .unknown:
                 return LS["WalkEvent.Type.Unknown"]
             }
@@ -92,6 +104,10 @@ extension PilgrimV2.WorkoutEvent {
                 return "SeekMode"
             case .seekArrival:
                 return "SeekArrival"
+            case .honorMode:
+                return "HonorMode"
+            case .honorArrival:
+                return "HonorArrival"
             case .unknown:
                 return "Unknown"
             }
