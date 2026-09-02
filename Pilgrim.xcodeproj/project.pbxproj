@@ -444,6 +444,7 @@
 		C20E0DFA8CDB82064EEBB6C3 /* CollectiveRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84222C86D32DD5651B365FE4 /* CollectiveRoute.swift */; };
 		C2CF7F7376ACA1F2A6981E4D /* SeekStillnessDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE2429C168EC1EF14EC99CD /* SeekStillnessDetectorTests.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
+		C59696CB45F182DF81E8EC97 /* AudioPriorityQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10DFF0205EDFD489A5BFC491 /* AudioPriorityQueueTests.swift */; };
 		C5D6E7F8A9B0C1D2E3F4A5B6 /* SealColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */; };
 		C5DF3101E0A3BF214B2FE127 /* CanvasBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F75E3F362FAF3F2F9D174C7 /* CanvasBackground.swift */; };
 		C5E89C7DAA3D5CBB80866CE3 /* WalkModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B000626F7A2E74A9F0CFB8E /* WalkModeTests.swift */; };
@@ -706,6 +707,7 @@
 		0FFEFA24B7A952A033F823BF /* SeekChainGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekChainGenerator.swift; sourceTree = "<group>"; };
 		105159E380C21159A15B02E6 /* SeekSummarySection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSummarySection.swift; sourceTree = "<group>"; };
 		1060C3B913FD4DA88015D30D /* ThreadsDossierBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsDossierBuilder.swift; sourceTree = "<group>"; };
+		10DFF0205EDFD489A5BFC491 /* AudioPriorityQueueTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioPriorityQueueTests.swift; sourceTree = "<group>"; };
 		1177FF093DBC4775929CC150 /* ThreadIntentionSuggestionsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadIntentionSuggestionsTests.swift; sourceTree = "<group>"; };
 		119C8CECDB3E592FD5E40D38 /* LaunchLoadingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LaunchLoadingView.swift; sourceTree = "<group>"; };
 		12245A2A15EE8E64818B6D3F /* ActivityContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityContext.swift; sourceTree = "<group>"; };
@@ -2085,6 +2087,7 @@
 				C7AE2E45E3D1892209D4CA15 /* CollectiveCounterServiceTests.swift */,
 				14E8AB91D2FEEE6CBBA235C6 /* CollectiveRouteBundledArtifactTests.swift */,
 				F5DA9377F2D838797758AC46 /* Honor */,
+				10DFF0205EDFD489A5BFC491 /* AudioPriorityQueueTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -3539,6 +3542,7 @@
 				DFEDCC6CB71A195FED057944 /* HonorEngineTests.swift in Sources */,
 				47B51B337DB4D7CEA15ADB11 /* HonorMomentTrackerTests.swift in Sources */,
 				517F9A56063F5C659EC3A010 /* WayVoicePlayerTests.swift in Sources */,
+				C59696CB45F182DF81E8EC97 /* AudioPriorityQueueTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

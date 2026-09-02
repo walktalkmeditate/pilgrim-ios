@@ -27,7 +27,6 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     private var pending: (url: URL, volume: Float)?
     private var preDuckVolume: Float?
     private var elapsedTimer: Timer?
-    private var generation = 0
     private var cancellables: [AnyCancellable] = []
     private let coordinator = AudioSessionCoordinator.shared
     private let soundscape = SoundscapePlayer.shared
@@ -64,15 +63,23 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
 
     func stop() {
         pending = nil
-        generation += 1
         player?.stop()
         finish(notify: false)
     }
 
+    /// The delegate hands back the exact `AVAudioPlayer` it was invoked on;
+    /// `stop()`/`start()` always nil or replace `player` first, so a callback
+    /// that lands after either is guaranteed to fail the identity check.
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        let finishedGeneration = generation
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.generation == finishedGeneration else { return }
+            guard let self, player === self.player else { return }
+            self.finish(notify: true)
+        }
+    }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, player === self.player else { return }
             self.finish(notify: true)
         }
     }
@@ -81,17 +88,20 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
 
     private func start(url: URL, volume: Float) {
         stop()
+        AudioPriorityQueue.shared.interruptForWayVoice()
         let current = soundscape.currentTargetVolume
         preDuckVolume = current
-        soundscape.setVolume(current * Float(UserPreferences.voiceGuideDuckLevel.value), animated: true)
+        soundscape.setVolume(Float(UserPreferences.voiceGuideDuckLevel.value), animated: true)
         coordinator.activate(for: .playbackOnly, consumer: "honor-voice")
-        AudioPriorityQueue.shared.interruptForVoiceGuide()
         do {
             let p = try AVAudioPlayer(contentsOf: url)
             p.delegate = self
             p.volume = volume
             p.prepareToPlay()
-            p.play()
+            guard p.play() else {
+                finish(notify: true)
+                return
+            }
             player = p
             isPlayingWayVoice = true
             elapsedSeconds = 0
@@ -110,16 +120,19 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
 
     private func startElapsedTimer() {
         elapsedTimer?.invalidate()
-        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             guard let self, let player = self.player else { return }
             self.elapsedSeconds = player.currentTime
         }
+        RunLoop.main.add(timer, forMode: .common)
+        elapsedTimer = timer
     }
 
     private func finish(notify: Bool) {
         elapsedTimer?.invalidate()
         elapsedTimer = nil
         player = nil
+        elapsedSeconds = 0
         isPlayingWayVoice = false
         if let volume = preDuckVolume {
             soundscape.setVolume(volume, animated: true)
