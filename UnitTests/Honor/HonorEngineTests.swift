@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 import CoreLocation
 @testable import Pilgrim
 
@@ -144,5 +145,67 @@ final class HonorEngineTests: XCTestCase {
         engine.processLocation(fix(lon: 0.000898 * 4, at: 140))
         XCTAssertEqual(engine.progressFrac, 0.4, accuracy: 0.02, "global re-acquire takes the lowest frac within 60 m")
         XCTAssertTrue(engine.isOnWay)
+    }
+
+    func testInaccurateFixesAreIgnored() {
+        let engine = makeEngine()
+        engine.processLocation(fix(lon: 0.000898, accuracy: 60, at: 0))
+        XCTAssertNil(engine.startFrac, "a 60 m fix must not anchor")
+        engine.processLocation(fix(lon: 0.000898, accuracy: 20, at: 1))
+        XCTAssertEqual(engine.startFrac ?? -1, 0.1, accuracy: 0.02)
+    }
+
+    func testProgressNeverMovesBackBeyondTheTolerance() {
+        let engine = makeEngine()
+        engine.processLocation(fix(lon: 0, at: 0))
+        for i in 1...4 { engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i) * 60)) }
+        XCTAssertEqual(engine.progressFrac, 0.4, accuracy: 0.02)
+        engine.processLocation(fix(lon: 0.000898 * 3.5, at: 270))   // 50 m back along the outbound leg
+        XCTAssertGreaterThanOrEqual(engine.progressFrac, 0.4 - HonorTuning.backwardTolerance - 0.001)
+    }
+
+    func testSoftTapDisabledNeverFires() {
+        let engine = HonorEngine(way: outAndBackWay(), softTapEnabled: false, voicesEnabled: true, now: { self.clock })
+        var taps = 0
+        let sub = engine.events.sink { if case .softTap = $0 { taps += 1 } }
+        defer { sub.cancel() }
+        engine.processLocation(fix(lon: 0.000898, at: 0))
+        for s in stride(from: 10.0, through: 300, by: 10) {
+            clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.processLocation(fix(lon: 0.000898, lat: 0.0036, at: s))
+        }
+        XCTAssertEqual(taps, 0)
+    }
+
+    func testStationaryJitterDoesNotCountTowardArrival() {
+        let engine = makeEngine()
+        var arrived = 0
+        let sub = engine.events.sink { if case .arrived = $0 { arrived += 1 } }
+        defer { sub.cancel() }
+        // Begin near the end (frac 0.95) and stand still with jittering fixes for ten minutes.
+        engine.processLocation(fix(lon: 0.000898 * 0.5, at: 0))
+        for s in stride(from: 1.0, through: 600, by: 1) {
+            let jitter = (s.truncatingRemainder(dividingBy: 2) == 0) ? 0.0003 : -0.0003   // ~33 m either side
+            engine.processLocation(fix(lon: 0.000898 * 0.5 + jitter, speed: 0, at: s))
+        }
+        XCTAssertLessThan(engine.distanceWalkedMeters, 50)
+        XCTAssertEqual(arrived, 0)
+    }
+
+    func testStopCancelsTheBoundStreams() {
+        let engine = makeEngine()
+        let locations = PassthroughSubject<CLLocation, Never>()
+        let duration = PassthroughSubject<TimeInterval, Never>()
+        let flag = PassthroughSubject<Bool, Never>()
+        engine.bind(locations: locations.eraseToAnyPublisher(), activeDuration: duration.eraseToAnyPublisher(),
+                    isPaused: flag.eraseToAnyPublisher(), isMeditating: flag.eraseToAnyPublisher(),
+                    isRecordingVoice: flag.eraseToAnyPublisher(), externalAudio: flag.eraseToAnyPublisher())
+        locations.send(fix(lon: 0.000898, at: 0))
+        settleCombineSchedulers()
+        XCTAssertEqual(engine.startFrac ?? -1, 0.1, accuracy: 0.02)
+        engine.stop()
+        locations.send(fix(lon: 0.000898 * 3, at: 60))
+        settleCombineSchedulers()
+        XCTAssertEqual(engine.progressFrac, 0.1, accuracy: 0.02, "nothing moves after stop()")
     }
 }

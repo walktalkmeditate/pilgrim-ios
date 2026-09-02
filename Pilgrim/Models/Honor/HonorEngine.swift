@@ -77,6 +77,8 @@ final class HonorEngine: ObservableObject {
             .sink { [weak self] in self?.processLocation($0) }.store(in: &cancellables)
         activeDuration.receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.updateActiveDuration($0) }.store(in: &cancellables)
+        // combineLatest waits for all four inputs; callers bind @Published
+        // projections, which emit on subscribe, so the gates are live at once.
         isPaused.combineLatest(isMeditating, isRecordingVoice, externalAudio)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] paused, meditating, recording, audio in
@@ -111,9 +113,12 @@ final class HonorEngine: ObservableObject {
         let accuracy = location.horizontalAccuracy
         guard accuracy >= 0, accuracy <= HonorTuning.fixAccuracyMeters else { return }
         let coordinate = location.coordinate
-        if let last = lastAcceptedCoordinate {
-            distanceWalkedMeters += CLLocation(latitude: last.latitude, longitude: last.longitude)
-                .distance(from: location)
+        // Only moving fixes count toward the arrival distance gate: a
+        // stationary phone's 30-50 m jitter would otherwise fabricate
+        // kilometres during a long sitting. Teleports are ignored too.
+        if let last = lastAcceptedCoordinate, location.speed >= HonorTuning.stationarySpeed {
+            let step = CLLocation(latitude: last.latitude, longitude: last.longitude).distance(from: location)
+            if step <= HonorTuning.maxStepMeters { distanceWalkedMeters += step }
         }
         lastAcceptedCoordinate = coordinate
 
@@ -180,7 +185,7 @@ final class HonorEngine: ObservableObject {
     // MARK: - Soft tap
 
     private func evaluateSoftTap() {
-        guard softTapEnabled else { return }
+        guard phase == .walking, softTapEnabled else { return }
         if offWayMeters <= HonorTuning.onWayMeters {
             softTapSince = nil
             softTapArmed = true
@@ -230,6 +235,9 @@ final class HonorEngine: ObservableObject {
     }
 }
 
+// PLACEHOLDER: replaced by Pilgrim/Models/Honor/HonorMomentTracker.swift in
+// Task 8. Every method is a no-op until then, so no moment fires and no
+// voice plays. Delete this stub when the real tracker lands.
 struct HonorMomentTracker {
     enum Action: Equatable {
         case reached(WayMoment), voiceStart(WayMoment), voicePause, voiceResume, voiceDropped(WayMoment)

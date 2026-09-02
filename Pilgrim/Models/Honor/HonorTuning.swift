@@ -4,6 +4,7 @@ import Foundation
 /// tuning candidates, not commitments.
 enum HonorTuning {
     static let fixAccuracyMeters = 50.0
+    static let maxStepMeters = 100.0
     static let onWayMeters = 60.0
     static let windowMeters = 300.0
     static let backwardTolerance = 0.02

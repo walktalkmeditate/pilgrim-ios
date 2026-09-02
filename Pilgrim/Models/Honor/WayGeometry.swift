@@ -150,25 +150,28 @@ struct WayGeometry {
 
     /// The smallest frac at or beyond `minFrac` whose segment passes within
     /// `meters` of the coordinate: the anchor for a walker who starts mid-Way,
-    /// and the re-acquire target after sustained drift. The first hit is
-    /// refined against its successor so a walker standing just past a vertex
-    /// anchors on the segment they are on, not the one whose far end is in
-    /// range. Nil when nothing is near.
+    /// and the re-acquire target after sustained drift. The first contiguous
+    /// run of segments within range is scanned and its closest point
+    /// returned, so a walker standing mid-Way anchors where they stand on
+    /// finely sampled routes too. Nil when nothing is near.
     func lowestFrac(within meters: Double, of coordinate: CLLocationCoordinate2D, from minFrac: Double = 0) -> Double? {
         guard points.count > 1, totalMeters > 0 else {
             return nearest(to: coordinate, within: nil).meters <= meters ? 0 : nil
         }
+        // Walk the first contiguous run of segments within `meters` and take
+        // its closest point. Strict `<` keeps the lower frac on a tie, which
+        // is what protects the outbound leg of an out-and-back.
+        var best: (frac: Double, meters: Double)?
         for i in 0..<(points.count - 1) {
             let fa = cumulative[i] / totalMeters, fb = cumulative[i + 1] / totalMeters
             if fb < minFrac { continue }
-            var hit = nearest(to: coordinate, within: max(fa, minFrac)...fb)
-            guard hit.meters <= meters else { continue }
-            if i + 1 < points.count - 1 {
-                let next = nearest(to: coordinate, within: (cumulative[i + 1] / totalMeters)...(cumulative[i + 2] / totalMeters))
-                if next.meters < hit.meters { hit = next }
+            let hit = nearest(to: coordinate, within: max(fa, minFrac)...fb)
+            if hit.meters <= meters {
+                if best == nil || hit.meters < best!.meters { best = hit }
+            } else if best != nil {
+                break
             }
-            return hit.frac
         }
-        return nil
+        return best?.frac
     }
 }
