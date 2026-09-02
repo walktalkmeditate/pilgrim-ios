@@ -20,6 +20,12 @@ struct PilgrimAnnotation: Identifiable {
         case whisper(categoryColor: UIColor, isNearby: Bool)
         case cairn(stoneCount: Int, tier: CairnTier)
         case photo(localIdentifier: String)
+        /// Moments of a Way being honored: faded versions of the walker's own marks.
+        case wayVoice(id: String, heard: Bool)
+        case wayPhoto(id: String)
+        case wayRest(id: String, minutes: Int)
+        case waySit(id: String, minutes: Int)
+        case wayWaypoint(id: String, label: String, icon: String)
     }
 }
 

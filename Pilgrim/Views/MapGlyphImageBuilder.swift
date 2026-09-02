@@ -5,6 +5,9 @@ enum MapGlyph {
     case whisper(tint: UIColor)
     case cairn(tier: CairnTier)
     case seekClearing(tint: UIColor)
+    /// A moment of a Way being honored: an SF Symbol rendered faded, so it
+    /// reads next to a live pin as someone else's mark, not the walker's own.
+    case wayMark(symbol: String, tint: UIColor)
 }
 
 /// Rasterizes the catalog's vector glyph art into Mapbox-ready
@@ -43,6 +46,8 @@ enum MapGlyphImageBuilder {
             rendered = self.rendered(assetNamed: tier.glyphAssetName, tint: nil, size: size)
         case .seekClearing(let tint):
             rendered = self.rendered(assetNamed: seekClearingAssetName, tint: tint, size: size)
+        case .wayMark(let symbol, let tint):
+            rendered = self.renderedWayMark(symbol: symbol, tint: tint, size: size)
         }
         if let rendered {
             cache[key] = rendered
@@ -58,6 +63,8 @@ enum MapGlyphImageBuilder {
             return "cairn-\(tier.rawValue)"
         case .seekClearing(let tint):
             return "clearing-\(rgbKey(for: tint))"
+        case .wayMark(let symbol, let tint):
+            return "way-\(symbol)-\(rgbKey(for: tint))"
         }
     }
 
@@ -87,6 +94,29 @@ enum MapGlyphImageBuilder {
         format.opaque = false
         return UIGraphicsImageRenderer(size: target, format: format).image { _ in
             asset.draw(in: CGRect(origin: .zero, size: target))
+        }
+    }
+
+    /// A faded SF Symbol over a parchment disc — way pins read as someone
+    /// else's mark, not the walker's own, next to a live pin of the same shape.
+    /// The symbol is centered at its intrinsic size rather than stretched to
+    /// fill the square, so wide glyphs (e.g. "waveform") don't distort.
+    private static func renderedWayMark(symbol: String, tint: UIColor, size: CGFloat) -> UIImage? {
+        let config = UIImage.SymbolConfiguration(pointSize: size, weight: .medium)
+        guard let symbolImage = UIImage(systemName: symbol, withConfiguration: config)?
+            .withTintColor(tint, renderingMode: .alwaysOriginal) else { return nil }
+        let target = CGSize(width: size, height: size)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = false
+        return UIGraphicsImageRenderer(size: target, format: format).image { _ in
+            UIColor.parchment.withAlphaComponent(0.9).setFill()
+            UIBezierPath(ovalIn: CGRect(origin: .zero, size: target)).fill()
+            let origin = CGPoint(
+                x: (target.width - symbolImage.size.width) / 2,
+                y: (target.height - symbolImage.size.height) / 2
+            )
+            symbolImage.draw(at: origin, blendMode: .normal, alpha: 0.55)
         }
     }
 

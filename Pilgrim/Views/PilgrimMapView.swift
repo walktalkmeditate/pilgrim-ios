@@ -25,6 +25,11 @@ struct PilgrimMapView: UIViewRepresentable {
     /// PilgrimMapView+SeekFog.swift; the wisp in PilgrimMapView+SeekWisp.swift.
     var seekFog: SeekFogState?
     var seekPulse: SeekPulseVisual = .none
+    /// Honor-only inputs: the ghost line for the Way being honored and the
+    /// companion dot's current position. `nil` way means no honor path is
+    /// active. All rendering lives in PilgrimMapView+HonorWay.swift.
+    var honorWay: HonorWayState?
+    var companion: CLLocationCoordinate2D?
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     @Binding var isMeditating: Bool
@@ -69,7 +74,9 @@ struct PilgrimMapView: UIViewRepresentable {
         initialCamera: MapCameraSeed.Seed? = nil,
         fadesInOnStyleLoad: Bool = false,
         walkingColor: UIColor = .moss,
-        isMeditating: Binding<Bool> = .constant(false)
+        isMeditating: Binding<Bool> = .constant(false),
+        honorWay: HonorWayState? = nil,
+        companion: CLLocationCoordinate2D? = nil
     ) {
         self.isInteractive = isInteractive
         self.showsUserLocation = showsUserLocation
@@ -89,6 +96,8 @@ struct PilgrimMapView: UIViewRepresentable {
         self.initialCamera = initialCamera
         self.fadesInOnStyleLoad = fadesInOnStyleLoad
         self.walkingColor = walkingColor
+        self.honorWay = honorWay
+        self.companion = companion
     }
 
     func makeCoordinator() -> Coordinator {
@@ -161,6 +170,7 @@ struct PilgrimMapView: UIViewRepresentable {
             Self.applyRouteSource(coordinator.pendingSegments, walkingColor: coordinator.walkingColor, on: mapView, coordinator: coordinator)
             Self.applyAnnotations(coordinator.pendingAnnotations, activePhotoID: coordinator.pendingActivePhotoID, on: mapView, coordinator: coordinator)
             Self.reinstallSeekFog(on: mapView, coordinator: coordinator)
+            Self.reinstallHonorWay(on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
         Self.installSeekWispCameraObservers(on: mapView, coordinator: context.coordinator)
@@ -206,6 +216,7 @@ struct PilgrimMapView: UIViewRepresentable {
         }
         Self.applyAnnotations(pinAnnotations, activePhotoID: activePhotoID, on: mapView, coordinator: context.coordinator)
         Self.applySeekFog(seekFog, pulse: seekPulse, on: mapView, coordinator: context.coordinator)
+        Self.applyHonorWay(honorWay, companion: companion, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
             let padding = UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
@@ -396,6 +407,10 @@ struct PilgrimMapView: UIViewRepresentable {
                 // in `buildPoints`; the halo above still carries the hour's
                 // light, so the two-part reading survives the glyph swap.
                 continue
+            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
+                // Way moments render as faded PointAnnotations in `buildPoints`
+                // (via MapGlyph.wayMark) — no filled circle underneath.
+                continue
             }
             circles.append(circle)
         }
@@ -506,6 +521,12 @@ struct PilgrimMapView: UIViewRepresentable {
                 }
                 point.iconSize = 1.0
                 points.append(point)
+            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
+                // Branching on the specific way* kind, and the shared
+                // wayPoint() builder, both live in PilgrimMapView+HonorWay.swift
+                // — keeps this switch (and SwiftLint's cyclomatic-complexity
+                // count for it) from growing with every new moment kind.
+                points.append(wayAnnotationPoint(for: pin, coordinator: coordinator))
             default:
                 break
             }
@@ -588,6 +609,10 @@ struct PilgrimMapView: UIViewRepresentable {
         /// Seek fog/ring bookkeeping — state and logic live in
         /// PilgrimMapView+SeekFog.swift; only the storage lives here.
         let seekFogRenderer = SeekFogRenderer()
+
+        /// Honor ghost line / companion bookkeeping — state and logic live in
+        /// PilgrimMapView+HonorWay.swift; only the storage lives here.
+        let honorWayRenderer = HonorWayRenderer()
 
         fileprivate var isAppInBackground: Bool = false
         fileprivate var walkingColor: UIColor = .moss
@@ -672,6 +697,7 @@ struct PilgrimMapView: UIViewRepresentable {
             }
             if shouldRender && !wasRendering {
                 PilgrimMapView.flushDeferredSeekFog(on: mapView, coordinator: self)
+                PilgrimMapView.reinstallHonorWay(on: mapView, coordinator: self)
             }
         }
 
@@ -684,7 +710,7 @@ struct PilgrimMapView: UIViewRepresentable {
             var closest: (annotation: PilgrimAnnotation, distance: CLLocationDistance)?
             for pin in currentPinAnnotations {
                 switch pin.kind {
-                case .whisper, .cairn, .photo:
+                case .whisper, .cairn, .photo, .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
                     let pinLoc = CLLocation(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude)
                     let dist = tapLoc.distance(from: pinLoc)
                     if dist < 25, closest == nil || dist < closest!.distance {
