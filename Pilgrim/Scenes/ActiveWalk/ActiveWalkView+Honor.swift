@@ -6,9 +6,12 @@ extension ActiveWalkView {
     /// states: it is the walker's turn to answer, not ambience to be covered.
     /// Nothing at all in the other two modes.
     @ViewBuilder
-    func honorCardLayer(bottomInset: CGFloat) -> some View {
-        if viewModel.mode == .honor {
-            HonorCardHost(viewModel: viewModel)
+    func honorCardLayer(bottomInset: CGFloat, onSit: @escaping (Int) -> Void) -> some View {
+        // Gated on the walk being active, like the ambient overlay and the
+        // turning watermark: a pin tap before Begin must not open a card
+        // whose play button would mark a voice heard with no player behind it.
+        if viewModel.mode == .honor && viewModel.status.isActiveStatus {
+            HonorCardHost(viewModel: viewModel, onSit: onSit)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, bottomInset + Constants.UI.Padding.small)
                 // The layer spans the screen; with no card on it, every touch
@@ -43,6 +46,11 @@ struct HonorCardHost: View {
 
     @ObservedObject var viewModel: ActiveWalkViewModel
     @ObservedObject private var voicePlayer = WayVoicePlayer.shared
+    /// Owned by `ActiveWalkView`: starts the engine's meditation AND presents
+    /// `MeditationView` via its own `@State showMeditation`, which lives on
+    /// the parent, not here — a card-only `startMeditation(minutes:)` call
+    /// starts the session headless, with no view ever clearing `isMeditating`.
+    let onSit: (Int) -> Void
     @State private var mediaURL: URL?
     @State private var existingReply: URL?
 
@@ -53,22 +61,25 @@ struct HonorCardHost: View {
             // walk is saved, which may be long after this tap.
             if let card = viewModel.honorArrival, !viewModel.honorArrivalCardDismissed {
                 HonorArrivalCardView(card: card) { viewModel.honorArrivalCardDismissed = true }
-            } else if let moment = viewModel.honorCards.first, let way = viewModel.way {
+            } else if let moment = viewModel.honorCards.first {
+                let isPlaying = viewModel.activeVoice == moment
                 WayPlaceCard(
                     moment: moment,
-                    way: way,
                     mediaURL: mediaURL,
-                    isPlaying: viewModel.activeVoice == moment,
+                    isPlaying: isPlaying,
                     isPaused: viewModel.isVoicePaused,
-                    elapsed: voicePlayer.elapsedSeconds,
+                    // The player's clock is shared across every voice; a card
+                    // whose voice isn't the one playing must not show its tick.
+                    elapsed: isPlaying ? voicePlayer.elapsedSeconds : 0,
                     pendingCount: max(0, viewModel.honorCards.count - 1),
                     existingReply: existingReply,
                     onPlayPause: { viewModel.togglePlayback(of: moment) },
                     onPlayReply: { url in viewModel.playReply(url: url) },
                     onReply: { viewModel.replyHere(to: moment) },
-                    onSit: { minutes in viewModel.startMeditation(minutes: minutes) },
+                    onSit: onSit,
                     onDismiss: { viewModel.dismissTopCard() }
                 )
+                .id(moment.id)
                 .task(id: lookupKey(for: moment)) { resolveFiles(for: moment) }
             }
         }

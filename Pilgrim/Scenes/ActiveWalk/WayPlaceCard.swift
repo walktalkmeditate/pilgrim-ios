@@ -4,7 +4,6 @@ import SwiftUI
 /// One card, four bodies. Lives in the bottom sheet; never a modal.
 struct WayPlaceCard: View {
     let moment: WayMoment
-    let way: Way
     let mediaURL: URL?
     let isPlaying: Bool
     let isPaused: Bool
@@ -53,7 +52,7 @@ struct WayPlaceCard: View {
             HStack(spacing: Constants.UI.Padding.normal) {
                 Button(action: onPlayPause) {
                     Image(systemName: isPlaying && !isPaused ? "pause.circle" : "play.circle")
-                        .font(.title).foregroundColor(.stone)
+                        .font(Constants.Typography.displayMedium).foregroundColor(.stone)
                 }
                 .accessibilityLabel(isPlaying && !isPaused ? "Pause their voice" : "Play their voice")
                 Text("\(Int(elapsed) / 60):\(String(format: "%02d", Int(elapsed) % 60)) / \(Int(duration) / 60):\(String(format: "%02d", Int(duration) % 60))")
@@ -115,14 +114,22 @@ struct WayPhotoPlate: View {
                     .frame(maxHeight: 160).cornerRadius(4)
                     .padding(6).background(Color.parchment).cornerRadius(6)
                     .onTapGesture { enlarged = true }
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityLabel("Enlarge photo")
             } else {
                 RoundedRectangle(cornerRadius: 6).fill(Color.parchment).frame(height: 120)
             }
         }
-        .onAppear(perform: load)
+        // `fileURL` for a `.file` photo is nil on the first frame and filled
+        // in by the host's own `.task(id:)` once the disk lookup resolves;
+        // `.onAppear` alone would fire before that value ever arrives and
+        // never re-fire when it does.
+        .task(id: fileURL) { load() }
         .fullScreenCover(isPresented: $enlarged) {
             ZStack { Color.black.ignoresSafeArea(); if let image { Image(uiImage: image).resizable().scaledToFit() } }
                 .onTapGesture { enlarged = false }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel("Close photo")
         }
     }
 
@@ -150,7 +157,6 @@ struct WayPhotoPlate: View {
 }
 
 struct HonorListeningChip: View {
-    let voice: WayMoment
     let elapsed: TimeInterval
     let isPaused: Bool
     let onPauseResume: () -> Void

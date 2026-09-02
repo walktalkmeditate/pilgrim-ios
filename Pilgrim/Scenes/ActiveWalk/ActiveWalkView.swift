@@ -146,7 +146,13 @@ struct ActiveWalkView: View {
                 .padding(.bottom, minimizedSheetHeight + 16)
                 .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
 
-            honorCardLayer(bottomInset: mapBottomInset)
+            // "Sit?" must open the same MeditationView the bottom sheet's own
+            // start-meditation path does — the card can start the engine's
+            // meditation but only this view can present the UI that clears it.
+            honorCardLayer(bottomInset: mapBottomInset) { minutes in
+                viewModel.startMeditation(minutes: minutes)
+                showMeditation = true
+            }
 
             // Bottom sheet with stats and controls
             bottomSheet

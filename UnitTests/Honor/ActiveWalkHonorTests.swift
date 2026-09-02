@@ -142,6 +142,13 @@ final class ActiveWalkHonorTests: XCTestCase {
         XCTAssertNil(vm.activeVoice)
     }
 
+    func testTogglePlaybackBeforeTheEngineStartsMarksNothingHeard() {
+        let voice = vm.way!.moments.first { $0.id == "voice-1" }!
+        vm.togglePlayback(of: voice)
+        XCTAssertTrue(vm.heardVoiceIDs.isEmpty)
+        XCTAssertNil(vm.activeVoice)
+    }
+
     func testMissingRecordingFileIsNeitherPlayedNorHeard() throws {
         try FileManager.default.removeItem(at: recordingURL)
         vm.cancel()

@@ -294,20 +294,24 @@ extension ActiveWalkViewModel {
     }
 
     /// From the card or the chip: pause or resume the active voice, or replay
-    /// another voice outside the engine's queue.
+    /// another voice outside the engine's queue. A heard voice must mean a
+    /// played voice, so this is a no-op before the walk has a player at all —
+    /// otherwise a pin tap before Begin could mark a voice heard with
+    /// nothing behind it to play.
     func togglePlayback(of moment: WayMoment) {
+        guard let player = wayVoicePlayer else { return }
         if moment == activeVoice {
-            if isVoicePaused { wayVoicePlayer?.resume() } else { wayVoicePlayer?.pause() }
+            if isVoicePaused { player.resume() } else { player.pause() }
             isVoicePaused.toggle()
             return
         }
         guard case .voice(_, _, let kind, let media) = moment.kind, let url = mediaURL(for: media) else { return }
-        wayVoicePlayer?.stop()
+        player.stop()
         activeVoice = moment
         isVoicePaused = false
         heardVoiceIDs.insert(moment.id)
         refreshHonorPins()
-        wayVoicePlayer?.play(url: url, volume: Self.voiceVolume(for: kind))
+        player.play(url: url, volume: Self.voiceVolume(for: kind))
     }
 
     func skipVoice() {

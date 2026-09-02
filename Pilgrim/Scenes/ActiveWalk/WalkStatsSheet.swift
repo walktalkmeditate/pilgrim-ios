@@ -333,7 +333,6 @@ struct WalkStatsSheet: View {
             // pause and skip buttons stay reachable.
             if let voice = viewModel.activeVoice {
                 HonorListeningChip(
-                    voice: voice,
                     elapsed: voicePlayer.elapsedSeconds,
                     isPaused: viewModel.isVoicePaused,
                     onPauseResume: { viewModel.togglePlayback(of: voice) },
@@ -347,6 +346,13 @@ struct WalkStatsSheet: View {
         .padding(.top, Constants.UI.Padding.small)
         .padding(.bottom, Constants.UI.Padding.small)
         .frame(maxWidth: .infinity)
+        // The wander tap-to-expand target: on the padded container, not the
+        // inner glance row, so the full minimized bar — including its
+        // padding — is tappable, matching the pre-honor target.
+        .contentShape(Rectangle())
+        .onTapGesture {
+            state = .expanded
+        }
     }
 
     private var glanceRow: some View {
@@ -369,10 +375,6 @@ struct WalkStatsSheet: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            state = .expanded
-        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Walk stats")
         .accessibilityValue(minimizedAccessibilityValue)
