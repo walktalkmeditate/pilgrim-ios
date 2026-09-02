@@ -94,6 +94,8 @@ enum HapticPattern {
     case seekArrival
     case seekBreathIn
     case seekBreathOut
+    case honorOffWay
+    case honorArrival
 
     func fire() {
         switch self {
@@ -144,6 +146,9 @@ enum HapticPattern {
 
         case .seekTick, .seekAligned, .seekArrival, .seekBreathIn, .seekBreathOut:
             fireSeek()
+
+        case .honorOffWay, .honorArrival:
+            fireHonor()
         }
     }
 
@@ -184,6 +189,28 @@ enum HapticPattern {
                 let generator = UIImpactFeedbackGenerator(style: .soft)
                 generator.prepare()
                 generator.impactOccurred()
+            }
+
+        default:
+            break
+        }
+    }
+
+    /// Split from `fire()` for the same reason as `fireSeek()`.
+    private func fireHonor() {
+        switch self {
+        case .honorOffWay:
+            let generator = UIImpactFeedbackGenerator(style: .soft)
+            generator.prepare()
+            generator.impactOccurred()
+
+        case .honorArrival:
+            // The bowl is the same bowl: arriving at the end of someone's
+            // Way shares Seek's arrival pattern deliberately.
+            if !Self.playSeekArrival() {
+                let generator = UINotificationFeedbackGenerator()
+                generator.prepare()
+                generator.notificationOccurred(.success)
             }
 
         default:

@@ -74,6 +74,9 @@ struct UserPreferences {
     static let seekLastDurationMinutes = UserPreference.Required<Int>(key: "seekLastDurationMinutes", defaultValue: 60)
     static let seekSafetyShown = UserPreference.Required<Bool>(key: "seekSafetyShown", defaultValue: false)
 
+    static let honorVoicesEnabled = UserPreference.Required<Bool>(key: "honorVoicesEnabled", defaultValue: true)
+    static let honorSoftTapEnabled = UserPreference.Required<Bool>(key: "honorSoftTapEnabled", defaultValue: false)
+
     static let celestialAwarenessEnabled = UserPreference.Required<Bool>(key: "celestialAwarenessEnabled", defaultValue: false)
 
     static let walkReliquaryEnabled = UserPreference.Required<Bool>(key: "walkReliquaryEnabled", defaultValue: false)
