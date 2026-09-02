@@ -6,9 +6,10 @@ struct HonorWayState: Equatable {
     let id: String
     let routeCoordinates: [CLLocationCoordinate2D]
 
-    /// A Way's geometry never changes after acceptance, so comparing by id
-    /// and point count (not every coordinate) keeps `updateUIView` from
-    /// re-diffing thousands of coordinates on every SwiftUI body evaluation.
+    /// `CLLocationCoordinate2D` isn't `Equatable`, so `routeCoordinates` can't
+    /// be compared directly — nor does it need to be, since `id` already
+    /// identifies a Way's geometry (fixed after acceptance). The count is a
+    /// cheap extra guard, not a per-coordinate diff.
     static func == (lhs: HonorWayState, rhs: HonorWayState) -> Bool {
         lhs.id == rhs.id && lhs.routeCoordinates.count == rhs.routeCoordinates.count
     }
@@ -87,6 +88,11 @@ extension PilgrimMapView {
             renderer.appliedWayID = nil
         }
         guard let way else {
+            // Nothing installed: non-honor maps (summary, journal, wander
+            // walks) hit this branch on every updateUIView pass at up to
+            // 20 Hz, so skip the remove call rather than issuing throwing
+            // style calls for layers that were never added.
+            guard renderer.appliedWayID != nil else { return }
             removeGhostLine(from: mapView)
             renderer.appliedWayID = nil
             return
@@ -103,22 +109,35 @@ extension PilgrimMapView {
             layer.lineJoin = .constant(.round)
             layer.lineOpacity = .constant(HonorWayRendering.lineOpacity)
             layer.lineColor = .constant(StyleColor(HonorWayRendering.lineColor))
-            // Positioned below the live route line (not the casing — see
-            // task-12-resolutions.md #1): a re-added route layer always lands
-            // with no explicit position, i.e. at the top of the stack, so it
-            // stays above the ghost line even after a walking-color change
-            // tears down and recreates "pilgrim-route-layer".
-            let position: LayerPosition? = mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer")
-                ? .below("pilgrim-route-layer") : nil
-            try mapView.mapboxMap.addLayer(layer, layerPosition: position)
+            try mapView.mapboxMap.addLayer(layer, layerPosition: ghostLinePosition(on: mapView))
             renderer.appliedWayID = way.id
         } catch {
             print("[PilgrimMapView] honor way install failed: \(error)")
         }
     }
 
+    /// Ghost line sits under the casing (and, transitively, the colored
+    /// route line on top of it) so the walker's own live route stays the
+    /// legible one — same fallback chain as seek fog's `fogLayerPosition`.
+    /// Casing and route layer are always torn down and recreated together
+    /// (see `PilgrimMapView+RouteSource.swift`), both landing with no
+    /// explicit position — i.e. at the top of the stack — so the ghost line
+    /// stays below both even after a walking-color change rebuilds them.
+    private static func ghostLinePosition(on mapView: MBMapView) -> LayerPosition? {
+        if mapView.mapboxMap.layerExists(withId: "pilgrim-route-casing") {
+            return .below("pilgrim-route-casing")
+        }
+        if mapView.mapboxMap.layerExists(withId: "pilgrim-route-layer") {
+            return .below("pilgrim-route-layer")
+        }
+        return nil
+    }
+
     private static func applyCompanion(_ companion: CLLocationCoordinate2D?, on mapView: MBMapView, renderer: HonorWayRenderer) {
         guard let companion else {
+            // Nothing installed: same non-honor-map reasoning as the ghost
+            // line's nil branch above — skip the remove call entirely.
+            guard renderer.companionInstalled else { return }
             removeCompanion(from: mapView)
             renderer.companionInstalled = false
             return
@@ -154,13 +173,29 @@ extension PilgrimMapView {
     }
 
     private static func removeGhostLine(from mapView: MBMapView) {
-        try? mapView.mapboxMap.removeLayer(withId: HonorWayRendering.lineLayerID)
-        try? mapView.mapboxMap.removeSource(withId: HonorWayRendering.sourceID)
+        do {
+            if mapView.mapboxMap.layerExists(withId: HonorWayRendering.lineLayerID) {
+                try mapView.mapboxMap.removeLayer(withId: HonorWayRendering.lineLayerID)
+            }
+            if mapView.mapboxMap.sourceExists(withId: HonorWayRendering.sourceID) {
+                try mapView.mapboxMap.removeSource(withId: HonorWayRendering.sourceID)
+            }
+        } catch {
+            print("[PilgrimMapView] honor way removal failed: \(error)")
+        }
     }
 
     private static func removeCompanion(from mapView: MBMapView) {
-        try? mapView.mapboxMap.removeLayer(withId: HonorWayRendering.companionLayerID)
-        try? mapView.mapboxMap.removeSource(withId: HonorWayRendering.companionSourceID)
+        do {
+            if mapView.mapboxMap.layerExists(withId: HonorWayRendering.companionLayerID) {
+                try mapView.mapboxMap.removeLayer(withId: HonorWayRendering.companionLayerID)
+            }
+            if mapView.mapboxMap.sourceExists(withId: HonorWayRendering.companionSourceID) {
+                try mapView.mapboxMap.removeSource(withId: HonorWayRendering.companionSourceID)
+            }
+        } catch {
+            print("[PilgrimMapView] companion removal failed: \(error)")
+        }
     }
 
     /// Maps a way* annotation kind to its faded `PointAnnotation`. Lives here

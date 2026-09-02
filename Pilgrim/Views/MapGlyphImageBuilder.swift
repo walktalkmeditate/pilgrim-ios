@@ -12,9 +12,13 @@ enum MapGlyph {
 
 /// Rasterizes the catalog's vector glyph art into Mapbox-ready
 /// `PointAnnotation` images. Mapbox stores raster sprites, so everything
-/// is drawn at display scale (R11) and cached — the key space is small
-/// and fixed: 8 whisper mood colors, 7 cairn tiers, and the 6 daypart
-/// hexes a clearing can be found under.
+/// is drawn at display scale (R11) and cached. Most of the key space is
+/// small and fixed — 8 whisper mood colors, 7 cairn tiers, the 6 daypart
+/// hexes a clearing can be found under — but `wayMark` isn't: its symbol
+/// name comes from a shared Way's waypoint icons, not a closed set. The
+/// cache still never needs to evict, because entries are keyed one per
+/// distinct symbol+tint actually seen on screen, which tracks the moments
+/// in the Ways currently loaded rather than growing per frame or gesture.
 ///
 /// Cache keys deliberately match the formats the annotation managers
 /// already use as image names (`whisper-RRGGBB`, `cairn-<tier>`), so the
@@ -98,12 +102,17 @@ enum MapGlyphImageBuilder {
     }
 
     /// A faded SF Symbol over a parchment disc — way pins read as someone
-    /// else's mark, not the walker's own, next to a live pin of the same shape.
-    /// The symbol is centered at its intrinsic size rather than stretched to
-    /// fill the square, so wide glyphs (e.g. "waveform") don't distort.
+    /// else's mark, not the walker's own, next to a live pin of the same
+    /// shape. The symbol renders at roughly half the disc's point size and
+    /// is centered rather than stretched to fill the square, so wide glyphs
+    /// (e.g. "waveform") stay inside the disc instead of overrunning it. An
+    /// unknown SF Symbol name — a shared Way's waypoint icon isn't
+    /// validated at write time — falls back to "mappin" rather than
+    /// rendering an invisible but still-tappable pin.
     private static func renderedWayMark(symbol: String, tint: UIColor, size: CGFloat) -> UIImage? {
-        let config = UIImage.SymbolConfiguration(pointSize: size, weight: .medium)
-        guard let symbolImage = UIImage(systemName: symbol, withConfiguration: config)?
+        let resolvedSymbol = UIImage(systemName: symbol) == nil ? "mappin" : symbol
+        let config = UIImage.SymbolConfiguration(pointSize: size * 0.55, weight: .medium)
+        guard let symbolImage = UIImage(systemName: resolvedSymbol, withConfiguration: config)?
             .withTintColor(tint, renderingMode: .alwaysOriginal) else { return nil }
         let target = CGSize(width: size, height: size)
         let format = UIGraphicsImageRendererFormat()

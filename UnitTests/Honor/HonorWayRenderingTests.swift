@@ -25,4 +25,16 @@ final class HonorWayRenderingTests: XCTestCase {
         XCTAssertEqual(pins[4].kind, .wayWaypoint(id: "waypoint-1", label: "Oak", icon: "leaf"))
         XCTAssertEqual(pins[4].coordinate.longitude, 0.0005, accuracy: 0.00001, "frac fallback when `at` is nil")
     }
+
+    func testWayPinsMarkVoiceUnheardWhenIDMissingFromHeardSet() {
+        let at = WayCoordinate(lat: 42.1, lon: -8.2)
+        let moments = [
+            WayMoment(id: "voice-1", frac: 0.1, at: at, kind: .voice(endFrac: 0.2, duration: 5, kind: .spoken, media: .file("audio/1.m4a")))
+        ]
+        let route = [WayPoint(lat: 0, lon: 0, alt: nil, t: 0), WayPoint(lat: 0, lon: 0.001, alt: nil, t: 60)]
+        let way = Way(id: "walk:t", source: .ownWalk(UUID()), title: "t", departedAt: Date(), tzIdentifier: nil, expires: nil,
+                      route: route, totalDistanceMeters: 111, theirActiveSeconds: 60, moments: moments, weather: nil)
+        let pins = PilgrimMapView.wayPins(for: way, heardVoiceIDs: [])
+        XCTAssertEqual(pins[0].kind, .wayVoice(id: "voice-1", heard: false))
+    }
 }
