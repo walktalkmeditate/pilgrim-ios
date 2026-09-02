@@ -95,6 +95,15 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var activeVoice: WayMoment?
     @Published var isVoicePaused = false
     @Published var honorArrival: HonorArrivalCard?
+    /// The arrival card is retired by its own flag, never by clearing
+    /// `honorArrival` — `MainCoordinatorView` reads the companion delta off
+    /// that card when the walk is saved, which can be long after the walker
+    /// tapped "continue".
+    @Published var honorArrivalCardDismissed = false
+    /// The soft tap's only mark on screen, in place of the minimized bar's
+    /// third stat. Nil whenever the walker is on the Way — or always, when
+    /// the soft-tap preference is off.
+    @Published var softTapCaption: String?
     @Published var heardVoiceIDs: Set<String> = []
     /// Non-voice moments actually reached (`.momentReached`), not every
     /// non-voice moment on the Way — the arrival card's `placesPassed`
@@ -104,6 +113,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     /// MeditationView, never a countdown.
     @Published var suggestedMeditationMinutes: Int?
     var pendingReplyOrigin: WayMoment?
+    /// The Way's pins and its ghost line, memoized like `proximityPins`
+    /// (AF43): both cost a `WayGeometry` build or a whole-route map, and the
+    /// walk map's body runs at up to 20 Hz. `refreshHonorPins()` is the only
+    /// writer (setters stay internal for the same reason the seek state's do:
+    /// the extension that writes them lives in another file).
+    @Published var honorPins: [PilgrimAnnotation] = []
+    var honorWayState: HonorWayState?
     let honorSenses: HonorSenses
     var wayVoicePlayer: WayVoicePlaying?
     /// Invalidates a finished-voice callback that lands after teardown.
@@ -187,6 +203,9 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         if mode == .seek {
             bindSeekLifecycle()
         }
+        // The Way is drawn from the moment the walk screen appears, not from
+        // the moment the engine starts at Begin.
+        if mode == .honor { refreshHonorPins() }
 
         let guard_ = WalkSessionGuard()
         guard_.builder = builder

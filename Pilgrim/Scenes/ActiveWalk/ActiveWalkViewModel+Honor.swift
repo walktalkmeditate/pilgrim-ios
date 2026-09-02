@@ -66,6 +66,27 @@ extension ActiveWalkViewModel {
             .sink { [weak self] event in self?.handleHonorEvent(event) }
             .store(in: &honorCancellables)
         honorEngine = engine
+        refreshHonorPins()
+    }
+
+    /// Rebuilds the map's Way inputs. The ghost line's geometry is fixed once
+    /// the Way is accepted, so it is built once; the pins carry the heard
+    /// state, which changes as voices play.
+    func refreshHonorPins() {
+        guard let way else { return }
+        if honorWayState == nil {
+            honorWayState = HonorWayState(
+                id: way.id,
+                routeCoordinates: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) })
+        }
+        honorPins = PilgrimMapView.wayPins(for: way, heardVoiceIDs: heardVoiceIDs)
+    }
+
+    /// Where the companion is now: a binary search over the route on the
+    /// engine's published frac, cheap enough for the map's per-frame read.
+    /// The map itself throttles the dot to one move every two seconds.
+    var companionCoordinate: CLLocationCoordinate2D? {
+        honorEngine.map { $0.geometry.coordinate(atFrac: $0.companionFrac) }
     }
 
     /// Runs from both `stop()` and `cancel()`; the second call is a no-op.
@@ -88,6 +109,7 @@ extension ActiveWalkViewModel {
         reachedMomentIDs.removeAll()
         suggestedMeditationMinutes = nil
         pendingReplyOrigin = nil
+        softTapCaption = nil
     }
 
     // MARK: - Events
@@ -117,7 +139,8 @@ extension ActiveWalkViewModel {
                 isVoicePaused = false
             }
 
-        case .softTap:
+        case .softTap(let meters):
+            showSoftTapCaption(meters: meters)
             fireHonorHaptic(.honorOffWay)
 
         case .arrived(let theirSeconds, let yourSeconds):
@@ -136,7 +159,21 @@ extension ActiveWalkViewModel {
         activeVoice = moment
         isVoicePaused = false
         heardVoiceIDs.insert(moment.id)
+        refreshHonorPins()
         wayVoicePlayer?.play(url: url, volume: Self.voiceVolume(for: kind))
+    }
+
+    /// The caption retires itself, so a walker who rejoins the Way is never
+    /// left reading a distance they have already closed. Generation-guarded
+    /// like every other honor `asyncAfter`: teardown bumps the generation and
+    /// this write becomes a no-op.
+    private func showSoftTapCaption(meters: Double) {
+        softTapCaption = "off the way · \(Int(meters)) m"
+        let generation = honorGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.softTapCaptionSeconds) { [weak self] in
+            guard let self, self.honorGeneration == generation else { return }
+            self.softTapCaption = nil
+        }
     }
 
     /// The persistence commit happens before any ritual effect, as in Seek.
@@ -151,6 +188,13 @@ extension ActiveWalkViewModel {
     }
 
     // MARK: - Cards, media, replies
+
+    /// Whether a card is on screen at all — the walk screen's card layer
+    /// spans the screen and must not take taps meant for the map when it
+    /// carries nothing.
+    var isShowingHonorCard: Bool {
+        (honorArrival != nil && !honorArrivalCardDismissed) || !honorCards.isEmpty
+    }
 
     func dismissTopCard() {
         if !honorCards.isEmpty { honorCards.removeFirst() }
@@ -218,11 +262,30 @@ extension ActiveWalkViewModel {
     /// the `voice-n` ids `OwnWalkWayBuilder` writes — never its position in
     /// `moments`, which mixes every kind of moment together.
     func recordReplyIfPending(latestRecording: TempVoiceRecording) {
-        guard let way, let origin = pendingReplyOrigin,
-              origin.id.hasPrefix(Self.voiceIDPrefix),
-              let n = Int(origin.id.dropFirst(Self.voiceIDPrefix.count)) else { return }
+        guard let way, let origin = pendingReplyOrigin, let n = Self.originIndex(of: origin) else { return }
         pendingReplyOrigin = nil
         try? honorSenses.store().setReply(wayId: way.id, originN: n, relativePath: latestRecording.fileRelativePath)
+    }
+
+    /// The walker's earlier reply to `voice`, from a previous honoring of the
+    /// same Way. A mapping whose recording is gone reads as no reply at all —
+    /// `mediaURL(for:)` returns nil for a file that isn't there.
+    func existingReplyURL(for voice: WayMoment) -> URL? {
+        guard let way, let n = Self.originIndex(of: voice),
+              let relative = honorSenses.store().replies(for: way.id)[n] else { return nil }
+        return mediaURL(for: .recording(relativePath: relative))
+    }
+
+    /// The card's "your reply" button comes through here rather than touching
+    /// the player directly: one voice plays at a time, so a Way voice must be
+    /// given up rather than silently replaced under a chip that still claims
+    /// it is playing. The engine gets its turn back when the reply ends,
+    /// through the player's `onFinished`.
+    func playReply(url: URL) {
+        wayVoicePlayer?.stop()
+        activeVoice = nil
+        isVoicePaused = false
+        wayVoicePlayer?.play(url: url, volume: Float(UserPreferences.voiceGuideVolume.value))
     }
 
     func startMeditation(minutes: Int) {
@@ -243,6 +306,7 @@ extension ActiveWalkViewModel {
         activeVoice = moment
         isVoicePaused = false
         heardVoiceIDs.insert(moment.id)
+        refreshHonorPins()
         wayVoicePlayer?.play(url: url, volume: Self.voiceVolume(for: kind))
     }
 
@@ -257,6 +321,14 @@ extension ActiveWalkViewModel {
     // MARK: - Private
 
     private static let voiceIDPrefix = "voice-"
+    private static let softTapCaptionSeconds: TimeInterval = 20
+
+    /// The `n` in the `voice-n` ids `OwnWalkWayBuilder` writes — the index a
+    /// reply is filed under. Nil for any other moment id.
+    private static func originIndex(of moment: WayMoment) -> Int? {
+        guard moment.id.hasPrefix(voiceIDPrefix) else { return nil }
+        return Int(moment.id.dropFirst(voiceIDPrefix.count))
+    }
 
     private func fireHonorHaptic(_ pattern: HapticPattern) {
         guard honorSenses.isAppActive() else { return }

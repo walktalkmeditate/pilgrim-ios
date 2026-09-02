@@ -324,6 +324,63 @@ final class ActiveWalkHonorTests: XCTestCase {
         XCTAssertEqual(vm.honorArrival?.placesPassed, 1)
     }
 
+    func testExistingReplyURLResolvesFromTheStore() throws {
+        let storeDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let store = WayStore(baseDirectory: storeDir)
+        defer { try? FileManager.default.removeItem(at: storeDir) }
+        let testWay = way(id: "walk:\(UUID().uuidString)")
+        try store.save(testWay)
+
+        var senses = HonorSenses()
+        senses.makeVoicePlayer = { [player] in player! }
+        senses.isAppActive = { false }
+        senses.store = { store }
+        vm.cancel()
+        vm = ActiveWalkViewModel(mode: .honor, way: testWay, honorSenses: senses)
+        settleCombineSchedulers()
+
+        let voice = testWay.moments.first { $0.id == "voice-1" }!
+        XCTAssertNil(vm.existingReplyURL(for: voice))
+
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let replyURL = docs.appendingPathComponent("Recordings/honor-reply.m4a")
+        defer { try? FileManager.default.removeItem(at: replyURL) }
+        try FileManager.default.createDirectory(at: replyURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        _ = try TestAudioFile.writeSilentAudioFile(to: replyURL)
+        try store.setReply(wayId: testWay.id, originN: 1, relativePath: "Recordings/honor-reply.m4a")
+
+        XCTAssertEqual(vm.existingReplyURL(for: voice), replyURL.standardizedFileURL)
+
+        // A mapping whose recording has since been deleted must read as no
+        // reply at all, not as a URL with nothing behind it: the card would
+        // otherwise offer "record again" over a reply that can't be played.
+        try FileManager.default.removeItem(at: replyURL)
+        XCTAssertNil(vm.existingReplyURL(for: voice))
+    }
+
+    func testSoftTapSetsTheCaption() {
+        XCTAssertNil(vm.softTapCaption)
+        vm.handleHonorEvent(.softTap(offWayMeters: 250))
+        XCTAssertEqual(vm.softTapCaption, "off the way · 250 m")
+    }
+
+    func testDismissingTheArrivalCardKeepsTheDelta() {
+        begin(startedSecondsAgo: 500)
+        vm.honorEngine?.updateActiveDuration(500)
+        for i in 0...10 { drive(fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60)) }
+        for i in 0..<3 { drive(fix(lon: 10 * 0.000898, seconds: 700 + Double(i))) }
+        XCTAssertNotNil(vm.honorArrival)
+
+        // Tapping "continue" only retires the card. `MainCoordinatorView`
+        // reads the companion delta off `honorArrival` at save time, so
+        // clearing it here would lose the delta on every walk whose walker
+        // dismisses the card before ending the walk.
+        vm.honorArrivalCardDismissed = true
+        XCTAssertTrue(vm.honorArrivalCardDismissed)
+        XCTAssertEqual(vm.honorArrival?.theirSeconds ?? 0, 600, accuracy: 1)
+        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? 0, 500, accuracy: 1)
+    }
+
     func testMediaURLForWayFileResolvesInsideTheStoreAndRejectsTraversal() throws {
         let storeDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let store = WayStore(baseDirectory: storeDir)
