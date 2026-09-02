@@ -91,4 +91,44 @@ final class HonorMomentTrackerTests: XCTestCase {
         XCTAssertEqual(actions, [.reached(sit1)])
         XCTAssertNil(t.playing)
     }
+
+    func testPausedVoiceIsDroppedWhenTheWalkerMovesOnAndTheNextStartsLater() {
+        var t = tracker()
+        _ = t.update(location: coord(300), progressFrac: 0.3, gates: .init(), isStationary: false)   // voice 1 plays
+        XCTAssertEqual(t.gatesDidChange(.init(meditating: true)), [.voicePause])
+        _ = t.update(location: coord(500), progressFrac: 0.5, gates: .init(meditating: true), isStationary: false)   // voice 2 waits
+        // Standing still 320 m past voice 1: the paused voice is exempt from the drop.
+        XCTAssertEqual(t.update(location: coord(620), progressFrac: 0.62, gates: .init(meditating: true), isStationary: true), [])
+        XCTAssertTrue(t.isVoicePaused)
+        // Moving on: voice 1 is dropped; voice 2 (130 m back) keeps waiting for the gate.
+        XCTAssertEqual(t.update(location: coord(630), progressFrac: 0.63, gates: .init(meditating: true), isStationary: false),
+                       [.voiceDropped(voice1)])
+        XCTAssertNil(t.playing)
+        XCTAssertFalse(t.isVoicePaused)
+        XCTAssertEqual(t.gatesDidChange(.init()), [.voiceStart(voice2)])
+    }
+
+    func testMomentWithoutCoordinateFallsBackToItsFrac() {
+        let rest = WayMoment(id: "rest-1", frac: 0.4, at: nil, kind: .rest(minutes: 3))
+        var t = HonorMomentTracker(moments: [rest], geometry: geometry, voicesEnabled: true)
+        XCTAssertEqual(t.update(location: coord(330), progressFrac: 0.4, gates: .init(), isStationary: false), [], "70 m short of the frac's place")
+        XCTAssertEqual(t.update(location: coord(400), progressFrac: 0.4, gates: .init(), isStationary: false), [.reached(rest)])
+    }
+
+    func testFracToleranceIsFivePercent() {
+        var t = HonorMomentTracker(moments: [sit1], geometry: geometry, voicesEnabled: true)
+        XCTAssertEqual(t.update(location: coord(300), progressFrac: 0.24, gates: .init(), isStationary: false), [])
+        XCTAssertEqual(t.update(location: coord(300), progressFrac: 0.26, gates: .init(), isStationary: false), [.reached(sit1)])
+    }
+
+    func testEveryGateHoldsAVoice() {
+        let closed: [HonorMomentTracker.Gates] = [
+            .init(paused: true), .init(meditating: true), .init(recording: true), .init(externalAudio: true),
+        ]
+        for gates in closed {
+            var t = HonorMomentTracker(moments: [voice1], geometry: geometry, voicesEnabled: true)
+            XCTAssertEqual(t.update(location: coord(300), progressFrac: 0.3, gates: gates, isStationary: false), [], "\(gates)")
+            XCTAssertEqual(t.gatesDidChange(.init()), [.voiceStart(voice1)], "\(gates)")
+        }
+    }
 }
