@@ -63,7 +63,10 @@ final class SeekEngine: ObservableObject {
     private var graceDeadline: Date?
     private var suspendedGraceRemaining: TimeInterval?
     private var isSuspended = false
-    private var consecutiveInsideCount = 0
+    private var arrivalDebounce = ArrivalDebounce(
+        requiredFixes: SeekEngineTuning.arrivalFixCount,
+        accuracyMeters: SeekEngineTuning.arrivalAccuracyMeters
+    )
     private var lastCoordinate: CLLocationCoordinate2D?
     private var courseSamples: [(timestamp: Date, course: Double)] = []
     /// Deliberately stale: carries the pre-reroll distance so the sonar
@@ -147,7 +150,7 @@ final class SeekEngine: ObservableObject {
             var rng = SystemRandomNumberGenerator()
             regenerateRemainder(current: currentLocation, budgetMeters: remainingBudget, using: &rng)
         }
-        consecutiveInsideCount = 0
+        arrivalDebounce.reset()
         rerollPulseDistance = distanceToActiveMeters
         distanceToActiveMeters = nil
         invalidatePulseTimer()
@@ -281,17 +284,8 @@ final class SeekEngine: ObservableObject {
         evaluateStillness(at: now())
     }
 
-    /// Fixes worse than the accuracy gate neither advance nor reset the
-    /// consecutive count — a momentary multipath fix must not erase honest
-    /// progress toward arrival, and must never fake it either.
     private func updateArrivalDebounce(location: CLLocation, distance: Double, radius: Double) {
-        let accuracy = location.horizontalAccuracy
-        guard accuracy >= 0, accuracy <= SeekEngineTuning.arrivalAccuracyMeters else {
-            ensurePulseScheduled()
-            return
-        }
-        consecutiveInsideCount = distance <= radius ? consecutiveInsideCount + 1 : 0
-        if consecutiveInsideCount >= SeekEngineTuning.arrivalFixCount {
+        if arrivalDebounce.register(distance: distance, radius: radius, accuracy: location.horizontalAccuracy) {
             transitionToArrived()
         } else {
             ensurePulseScheduled()
@@ -300,7 +294,7 @@ final class SeekEngine: ObservableObject {
 
     private func transitionToArrived() {
         phase = .arrived
-        consecutiveInsideCount = 0
+        arrivalDebounce.reset()
         invalidatePulseTimer()
         let baseWindow = stillnessWindowOverride
             ?? Double.random(in: SeekEngineTuning.stillnessWindowRange)
@@ -343,7 +337,7 @@ final class SeekEngine: ObservableObject {
         phase = .guiding
         distanceToActiveMeters = nil
         rerollPulseDistance = nil
-        consecutiveInsideCount = 0
+        arrivalDebounce.reset()
         eventsSubject.send(.revealedNext(activeIndex: nextIndex))
     }
 
