@@ -5,7 +5,7 @@ enum ScenerySide {
 }
 
 enum SceneryType: CaseIterable {
-    case tree, lantern, butterfly, mountain, grass, torii, moon, cairn, drift
+    case tree, lantern, butterfly, mountain, grass, torii, moon, cairn, drift, staffs
 
     var shape: AnyShape {
         switch self {
@@ -18,6 +18,7 @@ enum SceneryType: CaseIterable {
         case .moon: AnyShape(MoonShape())
         case .cairn: AnyShape(CairnStonesShape())
         case .drift: AnyShape(ButterflyShape())
+        case .staffs: AnyShape(StaffsShape())
         }
     }
 
@@ -32,6 +33,7 @@ enum SceneryType: CaseIterable {
         case .moon: "fog"
         case .cairn: "stone"
         case .drift: "fog"
+        case .staffs: "stone"
         }
     }
 
@@ -46,6 +48,7 @@ enum SceneryType: CaseIterable {
         case .tree: 8
         case .lantern: 9
         case .cairn: 9
+        case .staffs: 9
         case .grass: 12
         case .butterfly: 14
         case .drift: 16
@@ -97,8 +100,9 @@ struct SceneryGenerator {
         let roll4 = seededRandom(seed: seed, salt: 4)
         let offset = CGFloat(roll4 * 15 - 7.5)
 
-        // Meaning outranks the lottery: threshold walks stand at a gate,
-        // and a seek that found places raises a cairn.
+        // Meaning outranks the lottery: threshold walks stand at a gate, a
+        // seek that found places raises a cairn, and a Way walked to its end
+        // raises two staffs.
         if let threshold = snapshot.threshold {
             return SceneryPlacement(type: .torii, side: side, offset: offset, gateKind: threshold)
         }
@@ -109,6 +113,9 @@ struct SceneryGenerator {
                 offset: offset,
                 stones: min(2 + snapshot.foundPlaces, 5)
             )
+        }
+        if snapshot.isHonor && snapshot.honorArrivals > 0 {
+            return SceneryPlacement(type: .staffs, side: side, offset: offset)
         }
 
         let roll1 = seededRandom(seed: seed, salt: 1)

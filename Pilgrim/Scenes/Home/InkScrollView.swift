@@ -352,7 +352,7 @@ struct InkScrollView: View {
                                 .frame(width: 12, height: 18)
                         } else {
                             WalkModeFootprints(
-                                isSeek: snapshot.isSeek,
+                                mode: snapshot.isHonor ? .honor : (snapshot.isSeek ? .seek : .wander),
                                 color: seasonColor.opacity(0.3)
                             )
                         }
@@ -692,6 +692,7 @@ struct InkScrollView: View {
         hapticState.dotKinds = snapshots.map { snap in
             if snap.threshold != nil { return .gate }
             if snap.isSeek && snap.foundPlaces > 0 { return .cairn }
+            if snap.isHonor && snap.honorArrivals > 0 { return .cairn }
             return .plain
         }
 
