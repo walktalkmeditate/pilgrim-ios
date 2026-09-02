@@ -21,8 +21,6 @@ struct WalkStartView: View {
     @State private var collectivePulse = false
     @ObservedObject private var counterService = CollectiveCounterService.shared
     @State private var footprintBreathScale: CGFloat = 1.0
-    @State private var togetherDriftOffset: CGSize = .zero
-    @State private var togetherCompanionsVisible = false
 
     @State private var lunarPhase = LunarPhase.current()
 
@@ -75,8 +73,6 @@ struct WalkStartView: View {
             activeMode = .wander
             seekFloatOffset = 0
             footprintBreathScale = 1.0
-            togetherDriftOffset = .zero
-            togetherCompanionsVisible = false
             collectivePulse = false
         }
     }
@@ -127,8 +123,8 @@ struct WalkStartView: View {
             switch selectedMode {
             case .wander:
                 Color.clear
-            case .together:
-                Color.dawn.opacity(0.01)
+            case .honor:
+                Color.stone.opacity(0.015)
             case .seek:
                 Color.fog.opacity(0.01)
             }
@@ -230,7 +226,7 @@ struct WalkStartView: View {
         Group {
             switch mode {
             case .wander: wanderFootprints
-            case .together: togetherFootprints
+            case .honor: honorFootprints
             case .seek: seekFootprints
             }
         }
@@ -254,70 +250,17 @@ struct WalkStartView: View {
         }
     }
 
-    private var togetherFootprints: some View {
-        ZStack {
-            HStack(spacing: 2) {
-                FootprintShape()
-                    .fill(Color.ink.opacity(0.06))
-                    .frame(width: 14, height: 22)
-                    .scaleEffect(x: -1)
-                    .rotationEffect(.degrees(-18))
-                FootprintShape()
-                    .fill(Color.ink.opacity(0.05))
-                    .frame(width: 14, height: 22)
-                    .rotationEffect(.degrees(6))
-            }
-            .offset(
-                x: -14 + togetherDriftOffset.width,
-                y: -10 + togetherDriftOffset.height
-            )
-            .opacity(togetherCompanionsVisible ? 1 : 0)
-
-            HStack(spacing: 2) {
-                FootprintShape()
-                    .fill(Color.ink.opacity(0.05))
-                    .frame(width: 14, height: 22)
-                    .scaleEffect(x: -1)
-                    .rotationEffect(.degrees(8))
-                FootprintShape()
-                    .fill(Color.ink.opacity(0.04))
-                    .frame(width: 14, height: 22)
-                    .rotationEffect(.degrees(-16))
-            }
-            .offset(
-                x: 12 - togetherDriftOffset.width,
-                y: -8 - togetherDriftOffset.height
-            )
-            .opacity(togetherCompanionsVisible ? 1 : 0)
-
-            HStack(spacing: 2) {
-                FootprintShape()
-                    .fill(Color.ink.opacity(0.10))
-                    .frame(width: 16, height: 26)
-                    .scaleEffect(x: -1)
-                    .rotationEffect(.degrees(-12))
-                FootprintShape()
-                    .fill(Color.ink.opacity(0.08))
-                    .frame(width: 16, height: 26)
-                    .rotationEffect(.degrees(12))
-            }
-        }
-        .frame(width: 60, height: 50)
-        .onAppear {
-            if UIAccessibility.isReduceMotionEnabled {
-                togetherCompanionsVisible = true
-                return
-            }
-            withAnimation(.easeOut(duration: 0.3).delay(0.1)) {
-                togetherCompanionsVisible = true
-            }
-            withAnimation(.easeInOut(duration: 6.0).repeatForever(autoreverses: true)) {
-                togetherDriftOffset = CGSize(width: 1, height: 0.5)
-            }
-        }
-        .onDisappear {
-            togetherDriftOffset = .zero
-            togetherCompanionsVisible = false
+    /// One print and a staff beside it: dōgyō ninin, two traveling together.
+    private var honorFootprints: some View {
+        HStack(alignment: .bottom, spacing: 4) {
+            FootprintShape()
+                .fill(Color.ink.opacity(0.08))
+                .frame(width: 16, height: 26)
+                .scaleEffect(x: -1)
+                .rotationEffect(.degrees(-12))
+            StaffGlyph()
+                .stroke(Color.ink.opacity(0.10), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .frame(width: 10, height: 34)
         }
     }
 
@@ -417,7 +360,7 @@ struct WalkStartView: View {
                     startPoint: .leading,
                     endPoint: .trailing
                 )
-            case .together:
+            case .honor:
                 LinearGradient(
                     colors: [.stone.opacity(0.3), .stone, .stone.opacity(0.3)],
                     startPoint: .leading,
@@ -467,5 +410,18 @@ struct WalkStartView: View {
                 footprintBreathScale = 1.01
             }
         }
+    }
+}
+
+/// A walking staff: one leaning stroke with a short crossbar near the top.
+struct StaffGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + rect.width * 0.65, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.35, y: rect.maxY))
+        let barY = rect.minY + rect.height * 0.18
+        path.move(to: CGPoint(x: rect.minX, y: barY + 2))
+        path.addLine(to: CGPoint(x: rect.maxX, y: barY - 2))
+        return path
     }
 }
