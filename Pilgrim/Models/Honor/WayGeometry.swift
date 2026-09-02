@@ -149,18 +149,19 @@ struct WayGeometry {
     }
 
     /// The smallest frac at or beyond `minFrac` whose segment passes within
-    /// `meters` of the coordinate: the anchor for a walker who starts mid-Way,
-    /// and the re-acquire target after sustained drift. The first contiguous
-    /// run of segments within range is scanned and its closest point
-    /// returned, so a walker standing mid-Way anchors where they stand on
-    /// finely sampled routes too. Nil when nothing is near. On a switchback
-    /// where the leg the walker is on is separated from a lower-frac leg by
-    /// a gap wider than `meters`, the lower leg wins; that is the
-    /// conservative direction, and the forward window recovers within a few
-    /// fixes.
-    func lowestFrac(within meters: Double, of coordinate: CLLocationCoordinate2D, from minFrac: Double = 0) -> Double? {
+    /// `meters` of the coordinate, and the distance to it: the anchor for a
+    /// walker who starts mid-Way, and the re-acquire target after sustained
+    /// drift. The first contiguous run of segments within range is scanned
+    /// and its closest point returned, so a walker standing mid-Way anchors
+    /// where they stand on finely sampled routes too. Nil when nothing is
+    /// near. On a switchback where the leg the walker is on is separated
+    /// from a lower-frac leg by a gap wider than `meters`, the lower leg
+    /// wins; that is the conservative direction, and the forward window
+    /// recovers within a few fixes.
+    func lowestFrac(within meters: Double, of coordinate: CLLocationCoordinate2D, from minFrac: Double = 0) -> (frac: Double, meters: Double)? {
         guard points.count > 1, totalMeters > 0 else {
-            return nearest(to: coordinate, within: nil).meters <= meters ? 0 : nil
+            let hit = nearest(to: coordinate, within: nil)
+            return hit.meters <= meters ? (0, hit.meters) : nil
         }
         // Walk the first contiguous run of segments within `meters` and take
         // its closest point. Strict `<` keeps the lower frac on a tie, which
@@ -177,6 +178,6 @@ struct WayGeometry {
                 break
             }
         }
-        return best?.frac
+        return best
     }
 }

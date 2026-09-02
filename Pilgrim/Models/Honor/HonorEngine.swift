@@ -39,6 +39,9 @@ final class HonorEngine: ObservableObject {
     var distanceWalkedMeters: Double {
         walkedFrac * geometry.totalMeters
     }
+    /// Position high-water mark: the baseline credit is measured against. A
+    /// re-acquire may move it for free; only on-Way fixes (and pace-bounded
+    /// re-acquire credit) add to walkedFrac.
     private var progressHighWater: Double = 0
     /// Along-Way progress earned on the Way: increments of the high-water
     /// mark from windowed on-Way fixes only. A re-acquire moves position
@@ -138,7 +141,7 @@ final class HonorEngine: ObservableObject {
     // MARK: - Position
 
     private func anchor(at coordinate: CLLocationCoordinate2D) {
-        let hit = geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate)
+        let hit = geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate)?.frac
         anchoredByFallback = hit == nil
         let frac = hit ?? 0
         startFrac = frac
@@ -189,13 +192,21 @@ final class HonorEngine: ObservableObject {
             // progress back to the outbound leg with arrival then impossible.
             let ahead = geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate, from: lower)
             if let found = ahead ?? geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate) {
-                progressFrac = found
+                // Credit the jump, but no faster than the Way was walked:
+                // an honest walker off-signal through a corner earns the
+                // stretch; a car cannot outrun the Way's own pace.
+                if let since = offWaySince, geometry.totalSeconds > 0 {
+                    let jump = max(0, found.frac - progressHighWater)
+                    let paceFrac = time.timeIntervalSince(since) / geometry.totalSeconds
+                    walkedFrac += min(jump, paceFrac)
+                }
+                progressFrac = found.frac
                 progressHighWater = max(progressHighWater, progressFrac)
-                offWayMeters = geometry.nearest(to: coordinate, within: found...found).meters
+                offWayMeters = found.meters
                 isOnWay = true
                 offWaySince = nil
                 lastReacquireAttempt = nil
-                if anchoredByFallback { reanchor(at: found) }
+                if anchoredByFallback { reanchor(at: found.frac) }
             }
             // A failed re-acquire retries every 10 s, not on every fix:
             // lowestFrac is a linear scan of the whole Way (up to 4,000 points).

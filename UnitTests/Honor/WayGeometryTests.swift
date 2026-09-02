@@ -89,6 +89,6 @@ final class WayGeometryTests: XCTestCase {
         let points = (0...500).map { i in WayPoint(lat: 0, lon: Double(i) * 2 / 111_320, alt: nil, t: Double(i)) }
         let geo = WayGeometry(route: points)
         let probe = CLLocationCoordinate2D(latitude: 0, longitude: 500 / 111_320)
-        XCTAssertEqual(geo.lowestFrac(within: 60, of: probe) ?? -1, 0.5, accuracy: 0.003)
+        XCTAssertEqual(geo.lowestFrac(within: 60, of: probe)?.frac ?? -1, 0.5, accuracy: 0.003)
     }
 }

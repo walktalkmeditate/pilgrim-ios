@@ -110,8 +110,8 @@ final class HonorEngineTests: XCTestCase {
     func testLowestFracFromRespectsTheFloor() {
         let geo = WayGeometry(route: outAndBackWay().route)
         let probe = CLLocationCoordinate2D(latitude: 0, longitude: 0.000898 * 2.5)
-        XCTAssertEqual(geo.lowestFrac(within: 60, of: probe) ?? -1, 0.25, accuracy: 0.01)
-        XCTAssertEqual(geo.lowestFrac(within: 60, of: probe, from: 0.5) ?? -1, 0.75, accuracy: 0.01)
+        XCTAssertEqual(geo.lowestFrac(within: 60, of: probe)?.frac ?? -1, 0.25, accuracy: 0.01)
+        XCTAssertEqual(geo.lowestFrac(within: 60, of: probe, from: 0.5)?.frac ?? -1, 0.75, accuracy: 0.01)
     }
 
     func testReacquireOnTheReturnLegNeverFallsBackToTheOutboundLeg() {
@@ -220,7 +220,7 @@ final class HonorEngineTests: XCTestCase {
         XCTAssertEqual(arrived, 1, "half of what lay ahead at Begin is enough")
     }
 
-    func testReacquireCorrectsPositionWithoutCreditingDistance() {
+    func testReacquireIsCreditedAtTheWaysOwnPace() {
         let engine = makeEngine(way: straightWay())
         var arrived = 0
         let sub = engine.events.sink { if case .arrived = $0 { arrived += 1 } }
@@ -236,10 +236,33 @@ final class HonorEngineTests: XCTestCase {
         clock = Date(timeIntervalSince1970: 1_000_000 + 270)
         engine.processLocation(fix(lon: 0.000898 * 8, at: 270))
         XCTAssertEqual(engine.progressFrac, 0.8, accuracy: 0.02, "position corrected")
-        XCTAssertEqual(engine.distanceWalkedMeters, 200, accuracy: 10, "the jump earned nothing")
+        XCTAssertEqual(engine.distanceWalkedMeters, 200 + 233, accuracy: 15, "credited at the Way's pace, not the 600 m jump")
+        clock = Date(timeIntervalSince1970: 1_000_000 + 400)
         for i in 0..<4 { engine.processLocation(fix(lon: 0.000898 * 10, at: 400 + Double(i))) }
-        XCTAssertEqual(engine.distanceWalkedMeters, 400, accuracy: 20)
-        XCTAssertEqual(arrived, 0, "400 m walked of 1000 ahead is under the half required")
+        XCTAssertEqual(engine.distanceWalkedMeters, 633, accuracy: 25)
+        XCTAssertEqual(arrived, 1, "an honest walker who lost signal still arrives")
+    }
+
+    func testReacquireCannotOutrunTheWaysPace() {
+        let engine = makeEngine(way: straightWay())
+        var arrived = 0
+        let sub = engine.events.sink { if case .arrived = $0 { arrived += 1 } }
+        defer { sub.cancel() }
+        engine.processLocation(fix(lon: 0, at: 0))
+        engine.processLocation(fix(lon: 0.000898, at: 60))
+        XCTAssertEqual(engine.distanceWalkedMeters, 100, accuracy: 10)
+        // Drive 800 m in a car: off the line from 70 s, back on it at 900 m at 210 s.
+        for s in stride(from: 70.0, through: 200, by: 10) {
+            clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.processLocation(fix(lon: 0.000898 * 5, lat: 0.0036, at: s))
+        }
+        clock = Date(timeIntervalSince1970: 1_000_000 + 210)
+        engine.processLocation(fix(lon: 0.000898 * 9, at: 210))
+        XCTAssertEqual(engine.progressFrac, 0.9, accuracy: 0.02)
+        XCTAssertEqual(engine.distanceWalkedMeters, 100 + 233, accuracy: 15, "140 s off the Way earns 140 s of the Way's pace, not 800 m")
+        clock = Date(timeIntervalSince1970: 1_000_000 + 300)
+        for i in 0..<4 { engine.processLocation(fix(lon: 0.000898 * 10, at: 300 + Double(i))) }
+        XCTAssertEqual(arrived, 0, "433 m earned of 1000 ahead is under the half required")
     }
 
     func testSoftTapStopsAfterArrival() {
