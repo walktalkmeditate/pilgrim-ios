@@ -84,25 +84,43 @@ struct WayGeometry {
             return (0, Self.distanceMeters(from: first, to: WayPoint(lat: coordinate.latitude, lon: coordinate.longitude, alt: nil, t: 0)))
         }
         var best: (frac: Double, meters: Double) = (0, .infinity)
-        let cosLat = cos(coordinate.latitude * .pi / 180)
         for i in 0..<(points.count - 1) {
             let fa = cumulative[i] / totalMeters, fb = cumulative[i + 1] / totalMeters
             if let window, fb < window.lowerBound || fa > window.upperBound { continue }
-            let a = points[i], b = points[i + 1]
-            // Local equirectangular projection (meters) is accurate enough
-            // for the tens-of-meters decisions the engine makes.
-            let ax = (a.lon - coordinate.longitude) * cosLat, ay = a.lat - coordinate.latitude
-            let bx = (b.lon - coordinate.longitude) * cosLat, by = b.lat - coordinate.latitude
-            let dx = bx - ax, dy = by - ay
-            let lengthSq = dx * dx + dy * dy
-            let u = lengthSq > 0 ? min(max(-(ax * dx + ay * dy) / lengthSq, 0), 1) : 0
-            let px = ax + dx * u, py = ay + dy * u
-            let meters = sqrt(px * px + py * py) * 111_320
-            if meters < best.meters {
-                best = (fa + (fb - fa) * u, meters)
+            // Restrict the projection to the part of this segment inside the
+            // window, so a window never leaks into a neighbouring segment
+            // through a shared endpoint.
+            var uRange: ClosedRange<Double> = 0...1
+            if let window, fb > fa {
+                let lo = max(0, (window.lowerBound - fa) / (fb - fa))
+                let hi = min(1, (window.upperBound - fa) / (fb - fa))
+                if lo > hi { continue }
+                uRange = lo...hi
+            }
+            let hit = nearest(onSegment: i, to: coordinate, uRange: uRange)
+            if hit.meters < best.meters {
+                best = hit
             }
         }
         return best
+    }
+
+    /// Closest point to `coordinate` on segment `i`, with the projection
+    /// parameter clamped into `uRange`. Local equirectangular projection
+    /// (meters) is accurate enough for the tens-of-meters decisions the
+    /// engine makes.
+    private func nearest(onSegment i: Int, to coordinate: CLLocationCoordinate2D, uRange: ClosedRange<Double>) -> (frac: Double, meters: Double) {
+        let fa = cumulative[i] / totalMeters, fb = cumulative[i + 1] / totalMeters
+        let cosLat = cos(coordinate.latitude * .pi / 180)
+        let a = points[i], b = points[i + 1]
+        let ax = (a.lon - coordinate.longitude) * cosLat, ay = a.lat - coordinate.latitude
+        let bx = (b.lon - coordinate.longitude) * cosLat, by = b.lat - coordinate.latitude
+        let dx = bx - ax, dy = by - ay
+        let lengthSq = dx * dx + dy * dy
+        let raw = lengthSq > 0 ? -(ax * dx + ay * dy) / lengthSq : 0
+        let u = min(max(raw, uRange.lowerBound), uRange.upperBound)
+        let px = ax + dx * u, py = ay + dy * u
+        return (fa + (fb - fa) * u, sqrt(px * px + py * py) * 111_320)
     }
 
     // MARK: - Helpers
@@ -128,5 +146,29 @@ struct WayGeometry {
         let h = sin(dLat / 2) * sin(dLat / 2)
             + cos(a.lat * .pi / 180) * cos(b.lat * .pi / 180) * sin(dLon / 2) * sin(dLon / 2)
         return 2 * r * atan2(sqrt(h), sqrt(1 - h))
+    }
+
+    /// The smallest frac at or beyond `minFrac` whose segment passes within
+    /// `meters` of the coordinate: the anchor for a walker who starts mid-Way,
+    /// and the re-acquire target after sustained drift. The first hit is
+    /// refined against its successor so a walker standing just past a vertex
+    /// anchors on the segment they are on, not the one whose far end is in
+    /// range. Nil when nothing is near.
+    func lowestFrac(within meters: Double, of coordinate: CLLocationCoordinate2D, from minFrac: Double = 0) -> Double? {
+        guard points.count > 1, totalMeters > 0 else {
+            return nearest(to: coordinate, within: nil).meters <= meters ? 0 : nil
+        }
+        for i in 0..<(points.count - 1) {
+            let fa = cumulative[i] / totalMeters, fb = cumulative[i + 1] / totalMeters
+            if fb < minFrac { continue }
+            var hit = nearest(to: coordinate, within: max(fa, minFrac)...fb)
+            guard hit.meters <= meters else { continue }
+            if i + 1 < points.count - 1 {
+                let next = nearest(to: coordinate, within: (cumulative[i + 1] / totalMeters)...(cumulative[i + 2] / totalMeters))
+                if next.meters < hit.meters { hit = next }
+            }
+            return hit.frac
+        }
+        return nil
     }
 }

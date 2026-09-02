@@ -49,6 +49,14 @@ final class WayGeometryTests: XCTestCase {
         XCTAssertEqual(returnLeg.frac, 0.75, accuracy: 0.01)
     }
 
+    func testWindowedNearestNeverLeaksPastTheWindow() {
+        let geo = outAndBack()
+        let probe = CLLocationCoordinate2D(latitude: 0, longitude: 0.000898 * 2.5)
+        let hit = geo.nearest(to: probe, within: 0.0...0.1)
+        XCTAssertEqual(hit.frac, 0.1, accuracy: 0.001, "clamped to the window's edge")
+        XCTAssertEqual(hit.meters, 150, accuracy: 3)
+    }
+
     func testDegenerateRoutes() {
         let single = WayGeometry(route: [WayPoint(lat: 1, lon: 1, alt: nil, t: 0)])
         XCTAssertEqual(single.totalMeters, 0)
