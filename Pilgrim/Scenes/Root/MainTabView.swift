@@ -20,7 +20,11 @@ struct MainTabView: View {
         return TabView(selection: $selectedTab) {
             Tab("Path", systemImage: "figure.walk", value: .path) {
                 WalkStartView(onStartWalk: { mode in
-                    coordinator.startWalk(mode: mode)
+                    if mode == .honor {
+                        coordinator.chooseWay()
+                    } else {
+                        coordinator.startWalk(mode: mode)
+                    }
                 })
             }
             .accessibilityIdentifier("tab_path")
@@ -45,8 +49,24 @@ struct MainTabView: View {
         .sheet(item: $coordinator.completedSnapshot, onDismiss: {
             coordinator.handleSummaryDismiss()
         }) { snapshot in
-            WalkSummaryView(walk: snapshot)
+            WalkSummaryView(walk: snapshot, onWalkAgain: { coordinator.walkAgain($0) })
                 .constellationDecorated(nebulae: false)
+        }
+        .sheet(isPresented: $coordinator.honorWaysPresented, onDismiss: coordinator.promotePendingHonorWay) {
+            HonorWaysSheet(
+                ownWalks: coordinator.homeViewModel.walks,
+                onChoose: { coordinator.openOverview(for: $0) },
+                onPaste: { _ in }   // Phase B, Task 19
+            )
+        }
+        .sheet(item: $coordinator.honorOverviewWay, onDismiss: coordinator.handleOverviewDismiss) { way in
+            NavigationStack {
+                HonorOverviewView(
+                    way: way,
+                    onBegin: { coordinator.startHonor(way: way) },
+                    onClose: { coordinator.honorOverviewWay = nil }
+                )
+            }
         }
         .alert("Save Failed", isPresented: $coordinator.showSaveError) {
             Button("Dismiss") {

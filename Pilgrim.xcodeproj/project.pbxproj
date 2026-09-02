@@ -206,6 +206,7 @@
 		3F0FA8A403AAC29DE24EB134 /* SeekSeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBACFFF80A407D7E01411E8 /* SeekSeedTests.swift */; };
 		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
 		40B873B0CAA240F6B032214F /* TranscriptNLP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5565804A282944E2A6E82504 /* TranscriptNLP.swift */; };
+		40F2FC48F0769A2D5B08DAE1 /* HonorWaysSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A312457000654189A0B40D7 /* HonorWaysSheet.swift */; };
 		44B04EE19F844EACEBD0DB0F /* CelestialCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */; };
 		45ADCF5FB26E4696BC6F1FB2 /* DossierSensesMarkerPhotoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */; };
 		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
@@ -264,6 +265,7 @@
 		6518B11255647EACE0249B10 /* whisper-compassion-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = A8159CD04A05F3887CFD27E5 /* whisper-compassion-3.aac */; };
 		65C728BC01058D8D9A777D2E /* SeekEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D927024992021199976C22 /* SeekEngine.swift */; };
 		6974E7EAF5A14C6CAA88085C /* LunationCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CAC84DBE9A24323906E2A32 /* LunationCalendar.swift */; };
+		69C78B00BAD71C64783279F7 /* HonorOverviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE1BFEB94806A03D2E5BBF1 /* HonorOverviewModelTests.swift */; };
 		69DA4490041B15E3D1973DD4 /* HonorPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F27E3942F3A3506303C87B7 /* HonorPersistence.swift */; };
 		6AA104266A1EB53C62C020D7 /* WhisperDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4614D1D6F2BC24176FEAC8 /* WhisperDefinition.swift */; };
 		6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */; };
@@ -444,6 +446,7 @@
 		BDB714154D009674AFA2740C /* SeekDurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73047DFD603DBB9F9380AF47 /* SeekDurationView.swift */; };
 		BEE439A39C813D1103AF3642 /* RecordingPathRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB131AA891217FA1F675DD54 /* RecordingPathRecovery.swift */; };
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
+		BF61749EA6478D2B779C1C89 /* HonorOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2883311D4280C8C5D8E025E /* HonorOverviewView.swift */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
 		C20E0DFA8CDB82064EEBB6C3 /* CollectiveRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84222C86D32DD5651B365FE4 /* CollectiveRoute.swift */; };
 		C2CF7F7376ACA1F2A6981E4D /* SeekStillnessDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE2429C168EC1EF14EC99CD /* SeekStillnessDetectorTests.swift */; };
@@ -542,6 +545,7 @@
 		E66DD877BDBA458E95E4347F /* TranscriptContextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */; };
 		E68F52E5A8F0C2714A4F2390 /* PromptStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1825CBE5A81CE064675082D /* PromptStyle.swift */; };
 		E7A047A98B7EBFBD29C2640D /* SeekPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93906AE2C0546C8D298FEF51 /* SeekPersistenceTests.swift */; };
+		E803E93430DEAED6BF200042 /* MainCoordinatorHonorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95877AA2EC5E5FA0446D18E /* MainCoordinatorHonorTests.swift */; };
 		E9764940E4CB98309B26AE52 /* StonePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A677576F283F65E658EB774 /* StonePlayer.swift */; };
 		E9FD884A3895457CBF231700 /* SealHashComputer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC0595CA15C420FA33BFD87 /* SealHashComputer.swift */; };
 		EB188038273C1DE46706312C /* CachedCairn.swift in Sources */ = {isa = PBXBuildFile; fileRef = E68D73742DD9900454DF9A06 /* CachedCairn.swift */; };
@@ -709,6 +713,7 @@
 		0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifestTests.swift; sourceTree = "<group>"; };
 		0BEFB40EDD8525B65D45062C /* CairnTier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnTier.swift; sourceTree = "<group>"; };
 		0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculator.swift; sourceTree = "<group>"; };
+		0DE1BFEB94806A03D2E5BBF1 /* HonorOverviewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorOverviewModelTests.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		0FFEFA24B7A952A033F823BF /* SeekChainGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekChainGenerator.swift; sourceTree = "<group>"; };
 		105159E380C21159A15B02E6 /* SeekSummarySection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSummarySection.swift; sourceTree = "<group>"; };
@@ -879,6 +884,7 @@
 		2722224F049B455DB473E7C9 /* PilgrimV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV2.swift; sourceTree = "<group>"; };
 		2737896863F22401CF29A1B4 /* CairnDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnDetailView.swift; sourceTree = "<group>"; };
 		27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-5.aac"; sourceTree = "<group>"; };
+		2A312457000654189A0B40D7 /* HonorWaysSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorWaysSheet.swift; sourceTree = "<group>"; };
 		2A677576F283F65E658EB774 /* StonePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StonePlayer.swift; sourceTree = "<group>"; };
 		2B0CF7513A498758721A98B4 /* WayStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayStoreTests.swift; sourceTree = "<group>"; };
 		2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourBuilderTests.swift; sourceTree = "<group>"; };
@@ -1223,6 +1229,7 @@
 		E08817DA83BA4FEFB5687950 /* DataManager+VoiceRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataManager+VoiceRecording.swift"; sourceTree = "<group>"; };
 		E1825CBE5A81CE064675082D /* PromptStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptStyle.swift; sourceTree = "<group>"; };
 		E2851FE86E579A0EE4C0EB98 /* SeekWispVisibilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekWispVisibilityTests.swift; sourceTree = "<group>"; };
+		E2883311D4280C8C5D8E025E /* HonorOverviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorOverviewView.swift; sourceTree = "<group>"; };
 		E3E6ADC967A625A65E935F52 /* PromptContextTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptContextTypes.swift; sourceTree = "<group>"; };
 		E4102471AC572B099189FB03 /* WalkBuilderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkBuilderStatusTests.swift; sourceTree = "<group>"; };
 		E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealHashComputerTests.swift; sourceTree = "<group>"; };
@@ -1233,6 +1240,7 @@
 		E6E1B5A537C865F5416F6EF2 /* RouteDownsampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteDownsampler.swift; sourceTree = "<group>"; };
 		E8F12E1FE28A875629DBD34C /* ScrollHapticEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrollHapticEngineTests.swift; sourceTree = "<group>"; };
 		E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometry.swift; sourceTree = "<group>"; };
+		E95877AA2EC5E5FA0446D18E /* MainCoordinatorHonorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MainCoordinatorHonorTests.swift; sourceTree = "<group>"; };
 		E9A26ACCEA7556F8C3E98DF4 /* HonorEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorEngineTests.swift; sourceTree = "<group>"; };
 		EA5D982D293545FCB5E56CE9 /* MarkerLexicons.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkerLexicons.swift; sourceTree = "<group>"; };
 		EB9E58CB5C426052DB335181 /* seek-ping.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "seek-ping.aac"; sourceTree = "<group>"; };
@@ -1484,6 +1492,7 @@
 				5F0241D04FDB88FFB08D690B /* WalkShare */,
 				SEALRVL000000000000003 /* SealReveal */,
 				GOSHUIN0000000000000007 /* Goshuin */,
+				C2B25B26DD8D017B6CE48139 /* Honor */,
 			);
 			path = Scenes;
 			sourceTree = "<group>";
@@ -2533,6 +2542,16 @@
 			path = Honor;
 			sourceTree = "<group>";
 		};
+		C2B25B26DD8D017B6CE48139 /* Honor */ = {
+			isa = PBXGroup;
+			children = (
+				E2883311D4280C8C5D8E025E /* HonorOverviewView.swift */,
+				2A312457000654189A0B40D7 /* HonorWaysSheet.swift */,
+			);
+			name = Honor;
+			path = Honor;
+			sourceTree = "<group>";
+		};
 		CC00000100000000SCGRP001 /* Scenery */ = {
 			isa = PBXGroup;
 			children = (
@@ -2620,6 +2639,8 @@
 				2B0CF7513A498758721A98B4 /* WayStoreTests.swift */,
 				D678D33B10C6C0D65BB789A2 /* ActiveWalkHonorTests.swift */,
 				924A47522862E75E51EB234B /* HonorWayRenderingTests.swift */,
+				0DE1BFEB94806A03D2E5BBF1 /* HonorOverviewModelTests.swift */,
+				E95877AA2EC5E5FA0446D18E /* MainCoordinatorHonorTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3406,6 +3427,8 @@
 				3B39C39F53480BE58EE4BBD1 /* WayStore.swift in Sources */,
 				E65BB078BB0FCDC6365ACCCD /* ActiveWalkViewModel+Honor.swift in Sources */,
 				45FC4B3F013CF3603F423878 /* PilgrimMapView+HonorWay.swift in Sources */,
+				BF61749EA6478D2B779C1C89 /* HonorOverviewView.swift in Sources */,
+				40F2FC48F0769A2D5B08DAE1 /* HonorWaysSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3567,6 +3590,8 @@
 				F75E671F22630FDA9350D56E /* WayStoreTests.swift in Sources */,
 				0354ECB1683CCE4A2966CB06 /* ActiveWalkHonorTests.swift in Sources */,
 				28A24681B91C654A187E8F1D /* HonorWayRenderingTests.swift in Sources */,
+				69C78B00BAD71C64783279F7 /* HonorOverviewModelTests.swift in Sources */,
+				E803E93430DEAED6BF200042 /* MainCoordinatorHonorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

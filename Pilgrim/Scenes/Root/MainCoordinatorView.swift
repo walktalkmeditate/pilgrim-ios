@@ -14,6 +14,14 @@ class MainCoordinator: ObservableObject {
     @Published var showSaveError = false
     @Published var showLocationDenied = false
     @Published var recoveredWalkDate: Date?
+    @Published var honorWaysPresented = false
+    @Published var honorOverviewWay: Way?
+
+    /// A Way waiting for the sheet in front of it to finish closing, and a Way
+    /// waiting for the overview to finish closing before its walk begins.
+    /// Both exist because of AF60 — see `openOverview(for:)`.
+    var pendingHonorWay: Way?
+    var pendingStartWay: Way?
 
     private var pendingSnapshot: TempWalk?
     private var bannerDismissWork: DispatchWorkItem?
@@ -52,7 +60,7 @@ class MainCoordinator: ObservableObject {
         }
     }
 
-    func startWalk(mode: WalkMode = .wander) {
+    func startWalk(mode: WalkMode = .wander, way: Way? = nil) {
         guard activeWalkViewModel == nil else { return }
         let locationStatus = CLLocationManager().authorizationStatus
         if locationStatus == .denied || locationStatus == .restricted {
@@ -60,7 +68,7 @@ class MainCoordinator: ObservableObject {
             return
         }
         Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
-        let vm = ActiveWalkViewModel(mode: mode)
+        let vm = ActiveWalkViewModel(mode: mode, way: way)
         vm.onWalkCompleted = { [weak self, weak vm] snapshot in
             snapshot.comment = vm?.intention
             DataManager.saveWalk(object: snapshot) { success, _, walk in
@@ -74,6 +82,14 @@ class MainCoordinator: ObservableObject {
                 guard let self else { return }
                 if success {
                     snapshot.uuid = walk?.uuid
+                    // The only place a walk is bound to its Way: `save` is
+                    // idempotent (an own-walk Way is first written here), and
+                    // `link` overwrites, so it must not run again elsewhere.
+                    if let way, let uuid = walk?.uuid {
+                        try? WayStore.shared.save(way)
+                        let arrival = vm?.honorArrival.map { (theirSeconds: $0.theirSeconds, yourSeconds: $0.yourSeconds) }
+                        try? WayStore.shared.link(walkUUID: uuid, to: way.id, arrival: arrival)
+                    }
                     self.pendingSnapshot = snapshot
                     self.activeWalkViewModel = nil
                     self.triggerAutoTranscription(for: snapshot)
@@ -140,6 +156,49 @@ class MainCoordinator: ObservableObject {
     func handleSummaryDismiss() {
         Task { @MainActor in TranscriptionService.shared.autoTranscriptionSkippedReason = nil }
         homeViewModel.loadWalks()
+        promotePendingHonorWay()
+    }
+
+    // MARK: - Honor
+
+    func chooseWay() {
+        honorWaysPresented = true
+    }
+
+    /// From the Ways sheet: park the Way, close the sheet, promote on dismiss.
+    /// From a link with no sheet open: present directly (one change).
+    func openOverview(for way: Way) {
+        if honorWaysPresented {
+            pendingHonorWay = way
+            honorWaysPresented = false
+        } else {
+            honorOverviewWay = way
+        }
+    }
+
+    /// Called from a summary's "walk this again": hold the Way, let the
+    /// summary sheet close, then present (AF60: never two sheets at once).
+    func walkAgain(_ walk: WalkInterface) {
+        pendingHonorWay = OwnWalkWayBuilder.make(from: walk)
+    }
+
+    func promotePendingHonorWay() {
+        if let way = pendingHonorWay {
+            pendingHonorWay = nil
+            honorOverviewWay = way
+        }
+    }
+
+    func startHonor(way: Way) {
+        pendingStartWay = way
+        honorOverviewWay = nil
+    }
+
+    func handleOverviewDismiss() {
+        if let way = pendingStartWay {
+            pendingStartWay = nil
+            startWalk(mode: .honor, way: way)
+        }
     }
 
     private func requestReviewIfAppropriate() {
@@ -180,7 +239,11 @@ struct MainCoordinatorView: View {
     @ObservedObject var coordinator: MainCoordinator
 
     var body: some View {
-        HomeView(viewModel: coordinator.homeViewModel)
+        HomeView(
+            viewModel: coordinator.homeViewModel,
+            onWalkAgain: coordinator.walkAgain,
+            onSummaryDismiss: coordinator.promotePendingHonorWay
+        )
     }
 }
 

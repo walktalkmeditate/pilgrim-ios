@@ -76,3 +76,7 @@ struct Way: Codable, Equatable {
         moments.filter { if case .photo = $0.kind { return true } else { return false } }.count
     }
 }
+
+/// `id` is already the store's folder name, so `.sheet(item:)` can key the
+/// overview off the Way itself.
+extension Way: Identifiable {}

@@ -6,6 +6,9 @@ import CoreLocation
 struct WalkSummaryView: View {
 
     let walk: WalkInterface
+    /// Set by the hosts that can present the Honor overview afterwards; the
+    /// recordings list, which has nowhere to send the Way, leaves it nil.
+    let onWalkAgain: ((WalkInterface) -> Void)?
     /// Computed once per walk identity — `TurningDayService` runs Julian-day
     /// astro math, which must not re-run on every body evaluation.
     let walkTurning: SeasonalMarker?
@@ -18,8 +21,9 @@ struct WalkSummaryView: View {
     @State private var transcriptions: [UUID: String] = [:]
     @State private var selectedFavicon: WalkFavicon?
     @State private var showPrompts = false
-    init(walk: WalkInterface) {
+    init(walk: WalkInterface, onWalkAgain: ((WalkInterface) -> Void)? = nil) {
         self.walk = walk
+        self.onWalkAgain = onWalkAgain
         self.walkTurning = TurningDayService.turning(for: walk.startDate, hemisphere: .current)
         self.cachedSeekSummary = SeekSummaryModel.summaryData(for: walk)
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
@@ -657,8 +661,21 @@ struct WalkSummaryView: View {
         }
     }
 
+    @ViewBuilder
     private var shareCard: some View {
         WalkSharingButtons(walk: walk, pinnedPhotos: photoCandidates.filter(\.isPinned), onShare: markSharedAndReveal)
+        // The route is already cached (AF17) — a body must never re-fault
+        // `routeData` to find out whether there is a Way to walk.
+        if cachedRouteCoordinates.count >= 2, let onWalkAgain {
+            Button {
+                onWalkAgain(walk)
+                dismiss()
+            } label: {
+                Label("walk this again", systemImage: "signpost.right")
+                    .font(Constants.Typography.button)
+                    .foregroundColor(.stone)
+            }
+        }
     }
 
     private func markSharedAndReveal() {
