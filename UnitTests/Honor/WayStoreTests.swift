@@ -6,10 +6,12 @@ final class WayStoreTests: XCTestCase {
     private var dir: URL!
     private var store: WayStore!
     private let now = Date(timeIntervalSince1970: 2_000_000)
+    private var clock = Date(timeIntervalSince1970: 2_000_000)
 
     override func setUp() {
         dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        store = WayStore(baseDirectory: dir)
+        clock = Date(timeIntervalSince1970: 2_000_000)
+        store = WayStore(baseDirectory: dir, now: { [unowned self] in self.clock })
     }
 
     override func tearDown() { try? FileManager.default.removeItem(at: dir) }
@@ -97,7 +99,7 @@ final class WayStoreTests: XCTestCase {
 
     func testListReturnsNewestAcceptedFirst() throws {
         try store.save(way(id: "share:firstfirst", expires: nil))
-        Thread.sleep(forTimeInterval: 0.02)
+        clock = clock.addingTimeInterval(60)
         try store.save(way(id: "share:secondsecd", expires: nil))
         XCTAssertEqual(store.list().map(\.id), ["share:secondsecd", "share:firstfirst"])
     }
@@ -105,7 +107,7 @@ final class WayStoreTests: XCTestCase {
     func testResavingAWayKeepsItsAcceptedAt() throws {
         try store.save(way(id: "share:aaaaaaaaaa", expires: nil))
         let firstAcceptedAt = store.acceptedAt(id: "share:aaaaaaaaaa")
-        Thread.sleep(forTimeInterval: 0.02)
+        clock = clock.addingTimeInterval(60)
         let updatedWay = Way(id: "share:aaaaaaaaaa", source: .share(id: "abc", pageURL: URL(string: "https://walk.pilgrimapp.org/abc")!),
             title: "updated", departedAt: now, tzIdentifier: nil, expires: nil,
             route: [WayPoint(lat: 0, lon: 0, alt: nil, t: 0), WayPoint(lat: 0, lon: 0.001, alt: nil, t: 60)],
@@ -113,6 +115,7 @@ final class WayStoreTests: XCTestCase {
         try store.save(updatedWay)
         let secondAcceptedAt = store.acceptedAt(id: "share:aaaaaaaaaa")
         XCTAssertEqual(firstAcceptedAt, secondAcceptedAt)
+        XCTAssertEqual(firstAcceptedAt, Date(timeIntervalSince1970: 2_000_000))
         XCTAssertEqual(store.load(id: "share:aaaaaaaaaa")?.title, "updated")
     }
 }

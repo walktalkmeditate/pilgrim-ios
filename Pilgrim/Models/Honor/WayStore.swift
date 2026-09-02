@@ -20,6 +20,9 @@ final class WayStore {
 
     private let fileManager = FileManager.default
     private let base: URL
+    /// Injectable so tests can advance "now" deterministically instead of
+    /// racing `iso8601`'s whole-second precision with real sleeps.
+    private let now: () -> Date
     private let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.dateEncodingStrategy = .iso8601
@@ -34,8 +37,9 @@ final class WayStore {
 
     private struct Accepted: Codable { let acceptedAt: Date }
 
-    init(baseDirectory: URL) {
+    init(baseDirectory: URL, now: @escaping () -> Date = Date.init) {
         base = baseDirectory
+        self.now = now
         try? fileManager.createDirectory(at: base, withIntermediateDirectories: true)
         var url = base
         var values = URLResourceValues()
@@ -59,7 +63,7 @@ final class WayStore {
         try encoder.encode(way).write(to: dir.appendingPathComponent("way.json"), options: .atomic)
         let accepted = dir.appendingPathComponent("accepted.json")
         if !fileManager.fileExists(atPath: accepted.path) {
-            try encoder.encode(Accepted(acceptedAt: Date())).write(to: accepted, options: .atomic)
+            try encoder.encode(Accepted(acceptedAt: now())).write(to: accepted, options: .atomic)
         }
     }
 
