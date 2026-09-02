@@ -17,7 +17,7 @@ final class WayImporterTests: XCTestCase {
            {"type":"photo","frac":0.8,"n":1,"dwell":5},
            {"type":"rest","frac":0.9,"minutes":4,"dwell":4}\(extraEncounter),
            {"type":"arrival","frac":1}],
-         "meditation":[{"start_frac":0.5,"end_frac":0.5,"duration":720},{"start_frac":0.5,"end_frac":0.5}],
+         "meditation":[{"start_frac":0.5,"end_frac":0.5,"duration":720},{"start_frac":0.75,"end_frac":0.75}],
          "activity_segments":[],"stats":{"active_duration":540}}
         """
         return try JSONDecoder().decode(TourManifest.self, from: Data(json.utf8))
@@ -41,8 +41,9 @@ final class WayImporterTests: XCTestCase {
         XCTAssertEqual(way.moments.first { $0.id == "photo-1" }?.kind, .photo(media: .file("photos/1.jpg")))
         let sits = way.moments.filter { if case .meditation = $0.kind { return true }; return false }
         XCTAssertEqual(sits.map(\.kind), [.meditation(minutes: 12, isEstimate: false),
-                                          .meditation(minutes: 7, isEstimate: true)],
-                       "second sitting has no duration: estimated from the 400 s gap around frac 0.5")
+                                          .meditation(minutes: 3, isEstimate: true)],
+                       "second sitting has no duration: estimated from the 200 s gap of the segment " +
+                       "containing frac 0.75 (interior to the second leg, which spans frac 0.5 to 1)")
     }
 
     func testExpiredManifestIsReturnedToTrail() throws {
@@ -66,5 +67,76 @@ final class WayImporterTests: XCTestCase {
         XCTAssertThrowsError(try WayImporter.way(from: manifest(extraEncounter: many), shareId: "x", now: Date())) {
             XCTAssertEqual($0 as? WayError, .unavailable)
         }
+    }
+
+    func testDepartureArrivalAndUnknownTypesAreSkipped() throws {
+        let way = try WayImporter.way(from: manifest(extraEncounter: ",{\"type\":\"beacon\",\"frac\":0.95}"), shareId: "x", now: Date())
+        XCTAssertEqual(way.moments.count, 6, "departure, arrival, and the unknown 'beacon' type are all skipped")
+        XCTAssertTrue(way.moments.allSatisfy { moment in
+            if case .waypoint = moment.kind { return false }
+            return true
+        }, "the base fixture carries no waypoint encounter")
+    }
+
+    /// A manifest with just the fields `WayImporter.way(from:)` reads, every one
+    /// inside its valid range by default, so each parameter below isolates exactly
+    /// one field for `testOutOfRangeNumbersAreUnavailable`.
+    private func manifestJSON(
+        ts0: String = "1000", ts1: String = "1400", routeLat: String = "42.88",
+        encounterFrac: String = "0.5", encounterN: String = "1",
+        sittingDuration: String = "720", weatherTemperature: String = "9"
+    ) -> String {
+        """
+        {"v":1,"start_date":"2026-08-01T07:00:00Z","expires":"2099-01-01T00:00:00.000Z",
+         "weather_temperature":\(weatherTemperature),
+         "route":[{"lat":\(routeLat),"lon":-8.545,"alt":250,"ts":\(ts0)},{"lat":42.88,"lon":-8.540,"alt":250,"ts":\(ts1)}],
+         "encounters":[{"type":"voice","frac":\(encounterFrac),"end_frac":0.6,"n":\(encounterN),"duration":40,"lat":42.8801,"lon":-8.5401}],
+         "meditation":[{"start_frac":0.25,"end_frac":0.25,"duration":\(sittingDuration)}],
+         "stats":{"active_duration":540}}
+        """
+    }
+
+    private func decode(_ json: String) throws -> TourManifest {
+        try JSONDecoder().decode(TourManifest.self, from: Data(json.utf8))
+    }
+
+    func testOutOfRangeNumbersAreUnavailable() throws {
+        let cases: [(name: String, json: String)] = [
+            // ts0/ts1 are Int.min/Int.max: individually valid Int64s, so decoding
+            // succeeds; only the sane-window check stops `ts - ts0` from trapping.
+            ("ts overflow pair", manifestJSON(ts0: "-9223372036854775808", ts1: "9223372036854775807")),
+            ("duration", manifestJSON(sittingDuration: "1e300")),
+            ("weather_temperature", manifestJSON(weatherTemperature: "1e300")),
+            ("lat", manifestJSON(routeLat: "91")),
+            ("frac", manifestJSON(encounterFrac: "1.5")),
+            ("n", manifestJSON(encounterN: "0"))
+        ]
+        for testCase in cases {
+            let manifest = try decode(testCase.json)
+            XCTAssertThrowsError(try WayImporter.way(from: manifest, shareId: "x", now: Date()), testCase.name) { error in
+                XCTAssertEqual(error as? WayError, .unavailable, testCase.name)
+            }
+        }
+    }
+
+    func testMeditationCountIsCapped() throws {
+        let sitting = "{\"start_frac\":0.25,\"end_frac\":0.25,\"duration\":60}"
+        let many = Array(repeating: sitting, count: WayImporter.maxEncounters + 1).joined(separator: ",")
+        let json = """
+        {"v":1,"start_date":"2026-08-01T07:00:00Z","expires":"2099-01-01T00:00:00.000Z",
+         "route":[{"lat":42.88,"lon":-8.545,"alt":250,"ts":1000},{"lat":42.88,"lon":-8.540,"alt":250,"ts":1400}],
+         "encounters":[],"meditation":[\(many)],"stats":{"active_duration":540}}
+        """
+        let manifest = try decode(json)
+        XCTAssertThrowsError(try WayImporter.way(from: manifest, shareId: "x", now: Date())) {
+            XCTAssertEqual($0 as? WayError, .unavailable)
+        }
+    }
+
+    func testShareIdShapeAcceptsTenSafeCharacters() {
+        XCTAssertTrue(WayImporter.isShareId("Qoi4YmPHLN"))
+        XCTAssertFalse(WayImporter.isShareId("Qoi4YmPHL"), "9 characters")
+        XCTAssertFalse(WayImporter.isShareId("Qoi4YmPHLNx"), "11 characters")
+        XCTAssertFalse(WayImporter.isShareId("Qoi4YmPH/N"), "a slash in place of a safe character")
     }
 }

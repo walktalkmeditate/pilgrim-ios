@@ -25,7 +25,8 @@ enum HonorOverviewModel {
     static func weatherLine(theirs: WayWeather?, today: String?) -> String? {
         guard let theirs else { return nil }
         var line = "they walked this in \(spoken(theirs.condition))"
-        if let t = theirs.temperatureC { line += " at \(Int(t.rounded()))°" }
+        // Int(_:) traps on an out-of-range Double; clamp so a Way from any source stays safe.
+        if let t = theirs.temperatureC { line += " at \(Int(min(max(t.rounded(), -1000), 1000)))°" }
         line += "."
         if let today { line += " Today is \(spoken(today))." }
         return line
@@ -193,7 +194,9 @@ struct HonorOverviewView: View {
     }
 
     private func durationText(_ seconds: Double) -> String {
-        let hours = Int(seconds) / 3600, minutes = (Int(seconds) % 3600) / 60
+        // Int(_:) traps on an out-of-range Double; clamp so a Way from any source stays safe.
+        let clamped = Int(min(max(seconds, 0), 999_999_999))
+        let hours = clamped / 3600, minutes = (clamped % 3600) / 60
         return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
     }
 
