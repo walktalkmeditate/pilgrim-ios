@@ -4,6 +4,18 @@ import AVFoundation
 
 final class WayVoicePlayerTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        WayVoicePlayer.shared.stop()
+        AudioPriorityQueue.shared.stopWhisper()
+    }
+
+    override func tearDown() {
+        WayVoicePlayer.shared.stop()
+        AudioPriorityQueue.shared.stopWhisper()
+        super.tearDown()
+    }
+
     func testMissingFileReportsFinishedAndReleasesTheSession() {
         let player = WayVoicePlayer()
         let finished = expectation(description: "finished")
