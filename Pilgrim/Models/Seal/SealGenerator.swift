@@ -71,6 +71,7 @@ enum SealGenerator {
             displayDistance: displayDist,
             unitLabel: unitLabel,
             routePoints: input.routePoints.count > 1 ? input.routePoints : nil,
+            wayPoints: (input.wayPoints?.count ?? 0) > 1 ? input.wayPoints : nil,
             altitudes: input.altitudes.count > 10 ? input.altitudes : nil,
             weatherCondition: input.weatherCondition,
             weatherSeed: weatherSeed
