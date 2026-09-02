@@ -70,6 +70,10 @@ final class MainCoordinatorHonorTests: XCTestCase {
 
     func testHandleOverviewDismissStartsTheHonorWalk() throws {
         let coordinator = MainCoordinator()
+        // Registered before the XCTUnwrap below can throw, so a failed
+        // unwrap still cancels any walk the coordinator started rather than
+        // leaking a live view model into the rest of the suite.
+        addTeardownBlock { coordinator.cancelWalk() }
         let way = try makeWay()
         coordinator.openOverview(for: way)
         coordinator.startHonor(way: way)
@@ -80,7 +84,15 @@ final class MainCoordinatorHonorTests: XCTestCase {
         XCTAssertEqual(vm.mode, .honor)
         XCTAssertEqual(vm.way?.id, way.id)
         XCTAssertNil(coordinator.pendingStartWay)
-        coordinator.cancelWalk()
+    }
+
+    func testHandleOverviewDismissWithNothingParkedStartsNoWalk() {
+        let coordinator = MainCoordinator()
+        addTeardownBlock { coordinator.cancelWalk() }
+
+        coordinator.handleOverviewDismiss()
+
+        XCTAssertNil(coordinator.activeWalkViewModel)
     }
 
     func testWalkAgainParksTheWayBuiltFromTheWalk() throws {

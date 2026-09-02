@@ -178,6 +178,7 @@ class MainCoordinator: ObservableObject {
 
     /// Called from a summary's "walk this again": hold the Way, let the
     /// summary sheet close, then present (AF60: never two sheets at once).
+    /// A nil build (OwnWalkWayBuilder.make(from:) rejecting too short a route or a missing uuid) parks nothing and no overview appears; every host wiring `onWalkAgain` must also wire its summary's `onDismiss` to `promotePendingHonorWay`, since the park is global but the promote is per-host.
     func walkAgain(_ walk: WalkInterface) {
         pendingHonorWay = OwnWalkWayBuilder.make(from: walk)
     }

@@ -11,6 +11,11 @@ struct HonorWaysSheet: View {
     @State private var pasted = ""
     @State private var showOwnWalks = false
     @State private var acceptedWays: [Way] = []
+    /// Computed alongside `acceptedWays` in `onAppear`, not read live from
+    /// `WayStore` in `wayRow`: the `TextField` above re-evaluates this body
+    /// on every keystroke, and `hasMedia` is a filesystem stat per call.
+    @State private var withMedia: Set<String> = []
+    @State private var unwalkableAlert = false
 
     var body: some View {
         NavigationStack {
@@ -62,13 +67,22 @@ struct HonorWaysSheet: View {
             }
             .sheet(isPresented: $showOwnWalks) {
                 OwnWalkPicker(walks: ownWalks) { walk in
-                    guard let way = OwnWalkWayBuilder.make(from: walk) else { return }
+                    guard let way = OwnWalkWayBuilder.make(from: walk) else {
+                        unwalkableAlert = true
+                        return
+                    }
                     onChoose(way)   // dismisses the parent sheet, which takes this nested one with it
+                }
+                .alert("Can't walk this one again", isPresented: $unwalkableAlert) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("This walk doesn't have enough of a route to follow. Try another.")
                 }
             }
             .onAppear {
                 WayStore.shared.sweepExpired(now: Date())
                 acceptedWays = WayStore.shared.list().filter { if case .share = $0.source { return true } else { return false } }
+                withMedia = Set(acceptedWays.filter { WayStore.shared.hasMedia(id: $0.id) }.map(\.id))
             }
         }
     }
@@ -82,7 +96,7 @@ struct HonorWaysSheet: View {
             HStack {
                 Text(DateFormatter.localizedString(from: way.departedAt, dateStyle: .medium, timeStyle: .none))
                 Text("·")
-                Text(WayStore.shared.hasMedia(id: way.id) || way.voiceCount + way.photoCount == 0
+                Text(withMedia.contains(way.id) || way.voiceCount + way.photoCount == 0
                      ? HonorOverviewModel.countsLine(way: way) : "voices returned to the trail")
             }
             .font(Constants.Typography.caption)
@@ -92,13 +106,19 @@ struct HonorWaysSheet: View {
 }
 
 struct OwnWalkPicker: View {
-    let walks: [Walk]
     let onPick: (Walk) -> Void
 
-    /// Computed once on appear from the stored `distance` attribute: faulting
-    /// every walk's `routeData` per body pass is the O(walks) main-thread
-    /// cost `HomeViewModel` already avoids with bulk queries.
-    @State private var eligible: [Walk] = []
+    /// Computed in `init` from the passed array's stored `distance`
+    /// attribute, not in `onAppear`: faulting every walk's `routeData` per
+    /// body pass is the O(walks) main-thread cost `HomeViewModel` already
+    /// avoids with bulk queries, and `onAppear` ran a frame late, flashing
+    /// the empty state before the filter landed.
+    private let eligible: [Walk]
+
+    init(walks: [Walk], onPick: @escaping (Walk) -> Void) {
+        eligible = walks.filter { $0.distance > 0 }
+        self.onPick = onPick
+    }
 
     var body: some View {
         NavigationStack {
@@ -114,7 +134,6 @@ struct OwnWalkPicker: View {
             }
             .navigationTitle("Walk again")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear { eligible = walks.filter { $0.distance > 0 } }
         }
     }
 
