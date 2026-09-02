@@ -187,6 +187,7 @@ struct PromptListView: View {
         }
 
         let (photoEntries, narrativeArc) = buildPhotoContext()
+        let practice = self.practice
 
         return ActivityContext(
             recordings: recordings,
@@ -206,6 +207,7 @@ struct PromptListView: View {
             narrativeArc: narrativeArc,
             mode: practice.mode,
             seekStory: practice.seekStory,
+            honorStory: practice.honorStory,
             pauses: walk.pauses.map {
                 PauseContext(startDate: $0.startDate, duration: $0.endDate.timeIntervalSince($0.startDate))
             },
@@ -221,8 +223,13 @@ struct PromptListView: View {
         return CelestialCalculator.snapshot(for: walk.startDate, system: system)
     }
 
-    private var practice: (mode: PracticeMode, seekStory: SeekStoryContext?) {
-        WalkPracticeModel.practice(events: walk.workoutEvents.map { ($0.eventType, $0.timestamp) })
+    /// Reached only from `buildActivityContext()`, never from a body — the
+    /// Way title costs a disk read, and only for an honor walk.
+    private var practice: (mode: PracticeMode, seekStory: SeekStoryContext?, honorStory: HonorStoryContext?) {
+        let practice = WalkPracticeModel.practice(events: walk.workoutEvents.map { ($0.eventType, $0.timestamp) })
+        guard let story = practice.honorStory, let uuid = walk.uuid else { return practice }
+        let title = WayStore.shared.way(forWalk: uuid)?.title
+        return (practice.mode, practice.seekStory, HonorStoryContext(wayTitle: title, arrived: story.arrived))
     }
 
     private func buildPhotoContext() -> ([PhotoContextEntry], NarrativeArc?) {

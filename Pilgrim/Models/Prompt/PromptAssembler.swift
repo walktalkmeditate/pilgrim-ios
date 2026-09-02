@@ -149,8 +149,8 @@ enum PromptAssembler {
 
     /// Teaches the downstream model the walk's ritual grammar in Pilgrim's
     /// own vocabulary, so route and pace data read as practice, not as
-    /// fitness telemetry. Seek walks carry their story; a zero-arrival seek
-    /// is named, not hidden.
+    /// fitness telemetry. Seek and honor walks carry their story; a
+    /// zero-arrival seek and a Way left early are named, not hidden.
     static func practiceLexicon(context: ActivityContext) -> String {
         switch context.mode {
         case .wander:
@@ -165,6 +165,13 @@ enum PromptAssembler {
                 } else if let first = story.arrivalTimes.first, let last = story.arrivalTimes.last {
                     text += " \(story.arrivalTimes.count) clearings were found — the first in the \(ContextFormatter.timeOfDayDescription(first)), the last in the \(ContextFormatter.timeOfDayDescription(last))."
                 }
+            }
+            return text
+        case .honor:
+            var text = "**About this practice:** This walk was an Honor. The walker followed a Way another walker laid down, hearing their voices where they were spoken. Two traveling together; the line was traced, not raced."
+            if let story = context.honorStory {
+                if let title = story.wayTitle { text += " The Way: \(title)." }
+                text += story.arrived ? " The end of the Way was reached." : " The Way was left before its end, which the practice honors too."
             }
             return text
         }

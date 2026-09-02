@@ -5,6 +5,7 @@ import Foundation
 enum PracticeMode {
     case wander
     case seek
+    case honor
 }
 
 /// What this seek held: when each clearing was reached. An empty list is a
@@ -13,23 +14,36 @@ struct SeekStoryContext {
     let arrivalTimes: [Date]
 }
 
+/// What this honor held: whose Way was followed, and whether its end was
+/// reached. The title is nil until a caller that can reach the Way store
+/// fills it — the event stream alone does not carry it.
+struct HonorStoryContext {
+    let wayTitle: String?
+    let arrived: Bool
+}
+
 /// Pure mapping from a walk's events to its practice context, mirroring how
 /// SeekSummaryModel keeps event interpretation testable outside the view. A
 /// `.seekMode` event marks the walk as a seek; `.seekArrival` events carry
-/// when each clearing was reached.
+/// when each clearing was reached. A `.honorMode` event marks an honor walk,
+/// and `.honorArrival` says the end of the Way was reached.
 enum WalkPracticeModel {
 
     static func practice(
         events: [(type: WalkEvent.EventType, timestamp: Date)]
-    ) -> (mode: PracticeMode, seekStory: SeekStoryContext?) {
+    ) -> (mode: PracticeMode, seekStory: SeekStoryContext?, honorStory: HonorStoryContext?) {
+        if events.contains(where: { $0.type == .honorMode }) {
+            let arrived = events.contains { $0.type == .honorArrival }
+            return (.honor, nil, HonorStoryContext(wayTitle: nil, arrived: arrived))
+        }
         guard events.contains(where: { $0.type == .seekMode }) else {
-            return (.wander, nil)
+            return (.wander, nil, nil)
         }
         let arrivals = events
             .filter { $0.type == .seekArrival }
             .map(\.timestamp)
             .sorted()
-        return (.seek, SeekStoryContext(arrivalTimes: arrivals))
+        return (.seek, SeekStoryContext(arrivalTimes: arrivals), nil)
     }
 }
 
@@ -51,6 +65,7 @@ struct ActivityContext {
     let narrativeArc: NarrativeArc?
     let mode: PracticeMode
     let seekStory: SeekStoryContext?
+    let honorStory: HonorStoryContext?
     let pauses: [PauseContext]
     let ascent: Double?
     let descent: Double?
@@ -78,6 +93,7 @@ extension ActivityContext {
         narrativeArc: NarrativeArc? = nil,
         mode: PracticeMode = .wander,
         seekStory: SeekStoryContext? = nil,
+        honorStory: HonorStoryContext? = nil,
         pauses: [PauseContext] = [],
         ascent: Double? = nil,
         descent: Double? = nil,
@@ -101,6 +117,7 @@ extension ActivityContext {
             narrativeArc: narrativeArc,
             mode: mode,
             seekStory: seekStory,
+            honorStory: honorStory,
             pauses: pauses,
             ascent: ascent,
             descent: descent,
