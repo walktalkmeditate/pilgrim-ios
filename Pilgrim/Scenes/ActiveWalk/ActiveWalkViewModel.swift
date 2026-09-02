@@ -8,6 +8,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     let id = UUID()
     let mode: WalkMode
+    /// The Way an honor walk follows; nil for every other mode.
+    let way: Way?
     let builder: WalkBuilder
     let locationManagement: LocationManagement
     private let altitudeManagement: AltitudeManagement
@@ -87,6 +89,23 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     var previousActiveFogBucket: Int?
     var seekCancellables: [AnyCancellable] = []
 
+    // Honor lifecycle lives in ActiveWalkViewModel+Honor.swift.
+    @Published var honorEngine: HonorEngine?
+    @Published var honorCards: [WayMoment] = []
+    @Published var activeVoice: WayMoment?
+    @Published var isVoicePaused = false
+    @Published var honorArrival: HonorArrivalCard?
+    @Published var heardVoiceIDs: Set<String> = []
+    /// "they sat here for 12 minutes. Sit?": a static caption for
+    /// MeditationView, never a countdown.
+    @Published var suggestedMeditationMinutes: Int?
+    var pendingReplyOrigin: WayMoment?
+    let honorSenses: HonorSenses
+    var wayVoicePlayer: WayVoicePlaying?
+    /// Invalidates a finished-voice callback that lands after teardown.
+    var honorGeneration = 0
+    var honorCancellables: [AnyCancellable] = []
+
     @Published var whispersPlacedThisWalk = 0
     @Published var stonePlacedThisWalk = false
     @Published var encounteredWhisperIDs: Set<String> = []
@@ -123,12 +142,16 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     init(
         mode: WalkMode = .wander,
+        way: Way? = nil,
         seekAccuracy: SeekAccuracyProviding = SeekLocationAccuracyProvider(),
-        seekSenses: SeekSenses = SeekSenses()
+        seekSenses: SeekSenses = SeekSenses(),
+        honorSenses: HonorSenses = HonorSenses()
     ) {
         self.mode = mode
+        self.way = way
         self.seekAccuracy = seekAccuracy
         self.seekSenses = seekSenses
+        self.honorSenses = honorSenses
         self.seekSetupStage = mode == .seek ? .verifyingAccuracy : .ready
         self.seekShowsSafetyCaption = mode == .seek && !UserPreferences.seekSafetyShown.value
         self.mapCameraSeed = MapCameraSeed.forActiveWalk()
@@ -179,6 +202,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     deinit {
         seekEngine?.stop()
         seekSound?.stop()
+        honorEngine?.stop()
+        wayVoicePlayer?.stop()
     }
 
     func fetchWeather(retryOnFailure: Bool = false) {
@@ -298,6 +323,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         proximityService.resetSession()
         builder.setStatus(.recording)
         writeSeekMarkerEventIfNeeded()
+        writeHonorMarkerEventIfNeeded()
+        startHonorEngineIfNeeded()
         soundManagement.onWalkStart()
         startVoiceGuideIfEnabled()
         WalkActivityManager.shared.start(walkStartDate: Date(), intention: intention)
@@ -309,6 +336,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func stop() {
         teardownSeek()
+        teardownHonor()
         cancellables.removeAll()
         proximityService.stopListening()
         // Checkpoint deletion happens in MainCoordinator's saveWalk success
@@ -324,6 +352,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func cancel() {
         teardownSeek()
+        teardownHonor()
         cancellables.removeAll()
         proximityService.stopListening()
         sessionGuard?.stopAndCleanup()
@@ -406,6 +435,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     private func finalizeMeditation(endDate: Date = Date()) {
+        suggestedMeditationMinutes = nil
         guard let start = meditationStartDate else { return }
         let interval = TempActivityInterval(
             uuid: nil,
@@ -491,7 +521,12 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
         builder.voiceRecordingsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recordings in
-                self?.completedRecordings = recordings
+                guard let self else { return }
+                let isNewRecording = recordings.count > self.completedRecordings.count
+                self.completedRecordings = recordings
+                if isNewRecording, let latest = recordings.last {
+                    self.recordReplyIfPending(latestRecording: latest)
+                }
             }
             .store(in: &cancellables)
     }

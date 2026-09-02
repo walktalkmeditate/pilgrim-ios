@@ -11,6 +11,7 @@
 		00E54B754C677E3CC38471D2 /* SeekStillnessDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D40461D0593348DADEA56E /* SeekStillnessDetector.swift */; };
 		016C147EEB766219648BE07F /* PromptVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD98EC76665031455843D5C /* PromptVoice.swift */; };
 		0247093D7E5B019E36A98F9F /* AudioAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2B0038D4875801C41DE26 /* AudioAsset.swift */; };
+		0354ECB1683CCE4A2966CB06 /* ActiveWalkHonorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D678D33B10C6C0D65BB789A2 /* ActiveWalkHonorTests.swift */; };
 		0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
 		0497A85158418E09A4753B5B /* SeekGlance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBA20381F115380FCCA8D9 /* SeekGlance.swift */; };
@@ -535,6 +536,7 @@
 		E45CCFD6C6A29B3BC03CF2AD /* MeditationGuideManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CE1DB41D3DBD404C28973D /* MeditationGuideManagementTests.swift */; };
 		E58124E91A8DEF710C1944B7 /* whisper-stillness-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = 98AE88EB65E9E2DBE7F0A927 /* whisper-stillness-1.aac */; };
 		E599A6F8ED9AEBCAF54D30C3 /* ProximityNotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */; };
+		E65BB078BB0FCDC6365ACCCD /* ActiveWalkViewModel+Honor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A773662D19C26501C8377349 /* ActiveWalkViewModel+Honor.swift */; };
 		E66DD877BDBA458E95E4347F /* TranscriptContextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */; };
 		E68F52E5A8F0C2714A4F2390 /* PromptStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1825CBE5A81CE064675082D /* PromptStyle.swift */; };
 		E7A047A98B7EBFBD29C2640D /* SeekPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93906AE2C0546C8D298FEF51 /* SeekPersistenceTests.swift */; };
@@ -1027,6 +1029,7 @@
 		A4B5C6D7E8F9A0B1C2D3E4F5 /* SealColorPalette.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPalette.swift; sourceTree = "<group>"; };
 		A5B6C7D8E9F0A1B2C3D4E5F6 /* PilgrimV5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV5.swift; sourceTree = "<group>"; };
 		A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkCheckpoint.swift; sourceTree = "<group>"; };
+		A773662D19C26501C8377349 /* ActiveWalkViewModel+Honor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ActiveWalkViewModel+Honor.swift"; sourceTree = "<group>"; };
 		A8159CD04A05F3887CFD27E5 /* whisper-compassion-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-3.aac"; sourceTree = "<group>"; };
 		AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FootprintShape.swift; sourceTree = "<group>"; };
 		AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimLogoView.swift; sourceTree = "<group>"; };
@@ -1202,6 +1205,7 @@
 		D4E5F6A7B8C9D0E1F2A3B4C6 /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
 		D5331F2664EE5627D264EC81 /* ArrivalDebounce.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ArrivalDebounce.swift; sourceTree = "<group>"; };
 		D574A07BC95CBC99586D5869 /* SeekChainGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekChainGeneratorTests.swift; sourceTree = "<group>"; };
+		D678D33B10C6C0D65BB789A2 /* ActiveWalkHonorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActiveWalkHonorTests.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* SealColorPaletteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealColorPaletteTests.swift; sourceTree = "<group>"; };
 		D8134F8A37D74FB3805684F1 /* WalkSessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSessionGuard.swift; sourceTree = "<group>"; };
 		D82C6861710E41CF801A9A4F /* TourPhotoExporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourPhotoExporter.swift; sourceTree = "<group>"; };
@@ -2387,6 +2391,7 @@
 				E5238E3C51FA281A12447112 /* ActiveWalkViewModel+Seek.swift */,
 				4C6DCD6A0B61B96409E9AA92 /* SeekSetupFlowModifier.swift */,
 				8F59CC48C65D33C14EE7C68E /* SeekGatewayView.swift */,
+				A773662D19C26501C8377349 /* ActiveWalkViewModel+Honor.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -2608,6 +2613,7 @@
 				00D3A7A1F2616273BF1D7DF9 /* HonorMomentTrackerTests.swift */,
 				2493D1384FA9B3AF350CCB1E /* WayVoicePlayerTests.swift */,
 				2B0CF7513A498758721A98B4 /* WayStoreTests.swift */,
+				D678D33B10C6C0D65BB789A2 /* ActiveWalkHonorTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3392,6 +3398,7 @@
 				126F1949D837CC878A1E6D21 /* HonorMomentTracker.swift in Sources */,
 				8A18F9906A7FE3752F54FF5A /* WayVoicePlayer.swift in Sources */,
 				3B39C39F53480BE58EE4BBD1 /* WayStore.swift in Sources */,
+				E65BB078BB0FCDC6365ACCCD /* ActiveWalkViewModel+Honor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3551,6 +3558,7 @@
 				517F9A56063F5C659EC3A010 /* WayVoicePlayerTests.swift in Sources */,
 				C59696CB45F182DF81E8EC97 /* AudioPriorityQueueTests.swift in Sources */,
 				F75E671F22630FDA9350D56E /* WayStoreTests.swift in Sources */,
+				0354ECB1683CCE4A2966CB06 /* ActiveWalkHonorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
