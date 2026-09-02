@@ -465,8 +465,10 @@ when `offWayMeters > 200` continuously for 120 s, fire
 bar; re-arm when back within 60 m. Nothing else ever comments on deviation.
 
 **Arrival**: within 30 m of the last route point, using the same debounce as
-Seek, **and only once `progressFrac ≥ 0.9` and the walker's own recorded
-distance is at least half of `totalDistanceMeters`**. Without the progress
+Seek, **and only once `progressFrac ≥ 0.9` and the walker has covered at
+least half of the Way that lay ahead at Begin, measured along the Way by
+the progress high-water mark (which neither GPS jitter nor a fix without a
+speed can inflate)**. Without the progress
 gate any loop or out-and-back Way, the commonest shape for an own walk,
 would arrive at Begin: three fixes at the start are inside 30 m of the end.
 The debounce logic is extracted from `SeekEngine.updateArrivalDebounce`

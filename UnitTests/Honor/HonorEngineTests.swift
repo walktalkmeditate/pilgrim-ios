@@ -16,6 +16,14 @@ final class HonorEngineTests: XCTestCase {
                    totalDistanceMeters: 1000, theirActiveSeconds: 600, moments: [], weather: nil)
     }
 
+    /// A straight kilometre east along the equator, eleven points, 60 s apart.
+    private func straightWay() -> Way {
+        let route = (0...10).map { i in WayPoint(lat: 0, lon: Double(i) * 0.000898, alt: nil, t: Double(i) * 60) }
+        return Way(id: "walk:straight", source: .ownWalk(UUID()), title: "line", departedAt: clock,
+                   tzIdentifier: nil, expires: nil, route: route,
+                   totalDistanceMeters: 1000, theirActiveSeconds: 600, moments: [], weather: nil)
+    }
+
     private func fix(lon: Double, lat: Double = 0, accuracy: Double = 5, speed: Double = 1.4, at seconds: Double) -> CLLocation {
         CLLocation(coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon), altitude: 0,
                    horizontalAccuracy: accuracy, verticalAccuracy: 5, course: 90, speed: speed,
@@ -156,12 +164,13 @@ final class HonorEngineTests: XCTestCase {
     }
 
     func testProgressNeverMovesBackBeyondTheTolerance() {
-        let engine = makeEngine()
+        let engine = makeEngine(way: straightWay())
         engine.processLocation(fix(lon: 0, at: 0))
         for i in 1...4 { engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i) * 60)) }
         XCTAssertEqual(engine.progressFrac, 0.4, accuracy: 0.02)
-        engine.processLocation(fix(lon: 0.000898 * 3.5, at: 270))   // 50 m back along the outbound leg
-        XCTAssertGreaterThanOrEqual(engine.progressFrac, 0.4 - HonorTuning.backwardTolerance - 0.001)
+        engine.processLocation(fix(lon: 0.000898 * 3.5, at: 270))   // 50 m back along the line
+        XCTAssertEqual(engine.progressFrac, 0.4 - HonorTuning.backwardTolerance, accuracy: 0.005,
+                       "clamped to the window's lower edge, not frozen and not further back")
     }
 
     func testSoftTapDisabledNeverFires() {
@@ -177,19 +186,38 @@ final class HonorEngineTests: XCTestCase {
         XCTAssertEqual(taps, 0)
     }
 
-    func testStationaryJitterDoesNotCountTowardArrival() {
-        let engine = makeEngine()
+    func testStationaryJitterNeverAdvancesTheWalk() {
+        let engine = makeEngine(way: straightWay())
+        engine.processLocation(fix(lon: 0.000898 * 5, at: 0))
+        XCTAssertEqual(engine.startFrac ?? -1, 0.5, accuracy: 0.02)
+        for s in stride(from: 1.0, through: 600, by: 1) {
+            let jitter = (Int(s) % 2 == 0) ? 0.0003 : -0.0003     // ~33 m either side
+            let speed = (Int(s) % 3 == 0) ? -1.0 : 0.0              // unknown and stationary alike
+            engine.processLocation(fix(lon: 0.000898 * 5 + jitter, speed: speed, at: s))
+        }
+        XCTAssertLessThan(engine.distanceWalkedMeters, 50)
+        XCTAssertLessThan(engine.progressFrac, 0.56)
+    }
+
+    func testUnknownSpeedStillReachesArrival() {
+        let engine = makeEngine(way: straightWay())
         var arrived = 0
         let sub = engine.events.sink { if case .arrived = $0 { arrived += 1 } }
         defer { sub.cancel() }
-        // Begin near the end (frac 0.95) and stand still with jittering fixes for ten minutes.
-        engine.processLocation(fix(lon: 0.000898 * 0.5, at: 0))
-        for s in stride(from: 1.0, through: 600, by: 1) {
-            let jitter = (s.truncatingRemainder(dividingBy: 2) == 0) ? 0.0003 : -0.0003   // ~33 m either side
-            engine.processLocation(fix(lon: 0.000898 * 0.5 + jitter, speed: 0, at: s))
-        }
-        XCTAssertLessThan(engine.distanceWalkedMeters, 50)
-        XCTAssertEqual(arrived, 0)
+        for i in 0...10 { engine.processLocation(fix(lon: 0.000898 * Double(i), speed: -1, at: Double(i) * 60)) }
+        for i in 0..<3 { engine.processLocation(fix(lon: 0.000898 * 10, speed: -1, at: 660 + Double(i))) }
+        XCTAssertEqual(arrived, 1, "a stream with no speed values must still arrive")
+    }
+
+    func testMidWayBeginCanStillArrive() {
+        let engine = makeEngine(way: straightWay())
+        var arrived = 0
+        let sub = engine.events.sink { if case .arrived = $0 { arrived += 1 } }
+        defer { sub.cancel() }
+        for i in 6...10 { engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i - 6) * 60)) }
+        XCTAssertEqual(engine.startFrac ?? -1, 0.6, accuracy: 0.02)
+        for i in 0..<3 { engine.processLocation(fix(lon: 0.000898 * 10, at: 300 + Double(i))) }
+        XCTAssertEqual(arrived, 1, "half of what lay ahead at Begin is enough")
     }
 
     func testStopCancelsTheBoundStreams() {
@@ -203,9 +231,14 @@ final class HonorEngineTests: XCTestCase {
         locations.send(fix(lon: 0.000898, at: 0))
         settleCombineSchedulers()
         XCTAssertEqual(engine.startFrac ?? -1, 0.1, accuracy: 0.02)
+        duration.send(60)
+        settleCombineSchedulers()
+        XCTAssertEqual(engine.companionFrac, 0.2, accuracy: 0.02)
         engine.stop()
         locations.send(fix(lon: 0.000898 * 3, at: 60))
+        duration.send(600)
         settleCombineSchedulers()
         XCTAssertEqual(engine.progressFrac, 0.1, accuracy: 0.02, "nothing moves after stop()")
+        XCTAssertEqual(engine.companionFrac, 0.2, accuracy: 0.02, "the clock stops too")
     }
 }

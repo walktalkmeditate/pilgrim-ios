@@ -32,7 +32,13 @@ final class HonorEngine: ObservableObject {
 
     private(set) var startFrac: Double?
     private(set) var companionT0: Double = 0
-    private(set) var distanceWalkedMeters: Double = 0
+    /// Along-Way distance since Begin, from the progress high-water mark:
+    /// GPS jitter cannot inflate it cumulatively (each excursion is bounded
+    /// by the window and the backward tolerance) and it needs no speed.
+    var distanceWalkedMeters: Double {
+        max(0, progressHighWater - (startFrac ?? 0)) * geometry.totalMeters
+    }
+    private var progressHighWater: Double = 0
 
     private let now: () -> Date
     private let softTapEnabled: Bool
@@ -42,11 +48,11 @@ final class HonorEngine: ObservableObject {
     private var moments: HonorMomentTracker
     private var gates = HonorMomentTracker.Gates()
     private var activeDuration: TimeInterval = 0
-    private var lastAcceptedCoordinate: CLLocationCoordinate2D?
     /// Begin found nothing within 60 m and fell back to frac 0; the first
     /// on-Way fix becomes the real anchor.
     private var anchoredByFallback = false
     private var offWaySince: Date?
+    private var lastReacquireAttempt: Date?
     private var softTapSince: Date?
     private var softTapArmed = true
 
@@ -113,14 +119,6 @@ final class HonorEngine: ObservableObject {
         let accuracy = location.horizontalAccuracy
         guard accuracy >= 0, accuracy <= HonorTuning.fixAccuracyMeters else { return }
         let coordinate = location.coordinate
-        // Only moving fixes count toward the arrival distance gate: a
-        // stationary phone's 30-50 m jitter would otherwise fabricate
-        // kilometres during a long sitting. Teleports are ignored too.
-        if let last = lastAcceptedCoordinate, location.speed >= HonorTuning.stationarySpeed {
-            let step = CLLocation(latitude: last.latitude, longitude: last.longitude).distance(from: location)
-            if step <= HonorTuning.maxStepMeters { distanceWalkedMeters += step }
-        }
-        lastAcceptedCoordinate = coordinate
 
         if startFrac == nil { anchor(at: coordinate) }
         track(coordinate)
@@ -140,6 +138,7 @@ final class HonorEngine: ObservableObject {
         let frac = hit ?? 0
         startFrac = frac
         progressFrac = frac
+        progressHighWater = frac
         companionT0 = geometry.elapsed(atFrac: frac)
         companionFrac = geometry.frac(atElapsed: companionT0 + activeDuration)
     }
@@ -147,6 +146,7 @@ final class HonorEngine: ObservableObject {
     private func reanchor(at frac: Double) {
         anchoredByFallback = false
         startFrac = frac
+        progressHighWater = frac
         companionT0 = geometry.elapsed(atFrac: frac)
         companionFrac = geometry.frac(atElapsed: companionT0 + activeDuration)
     }
@@ -160,25 +160,34 @@ final class HonorEngine: ObservableObject {
         if local.meters <= HonorTuning.onWayMeters {
             isOnWay = true
             offWaySince = nil
-            progressFrac = max(lower, local.frac)
+            lastReacquireAttempt = nil
+            progressFrac = local.frac   // nearest already clamps into the window
+            progressHighWater = max(progressHighWater, progressFrac)
             if anchoredByFallback { reanchor(at: progressFrac) }
             return
         }
         isOnWay = false
         let time = now()
         if offWaySince == nil { offWaySince = time }
-        if let since = offWaySince, time.timeIntervalSince(since) >= HonorTuning.reacquireSeconds {
+        let dueForRetry = lastReacquireAttempt == nil
+            || time.timeIntervalSince(lastReacquireAttempt!) >= HonorTuning.reacquireRetrySeconds
+        if let since = offWaySince, time.timeIntervalSince(since) >= HonorTuning.reacquireSeconds, dueForRetry {
+            lastReacquireAttempt = time
             // Forward first: on an out-and-back the return leg shares the
             // outbound leg's pavement, and the global lowest frac would drag
             // progress back to the outbound leg with arrival then impossible.
             let ahead = geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate, from: lower)
             if let found = ahead ?? geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate) {
                 progressFrac = found
+                progressHighWater = max(progressHighWater, progressFrac)
                 offWayMeters = geometry.nearest(to: coordinate, within: found...found).meters
                 isOnWay = true
                 offWaySince = nil
+                lastReacquireAttempt = nil
                 if anchoredByFallback { reanchor(at: found) }
             }
+            // A failed re-acquire retries every 10 s, not on every fix:
+            // lowestFrac scans the whole Way (up to 4,000 points).
         }
     }
 
@@ -207,9 +216,12 @@ final class HonorEngine: ObservableObject {
     // MARK: - Arrival
 
     private func evaluateArrival(_ location: CLLocation) {
-        guard phase == .walking, let last = geometry.points.last else { return }
+        guard phase == .walking, let last = geometry.points.last, let start = startFrac else { return }
+        // Half of the Way that lay ahead at Begin, along the Way: blocks an
+        // arrival at Begin on a loop while letting a mid-Way start finish.
+        let aheadAtBegin = max(0, 1 - start)
         guard progressFrac >= HonorTuning.arrivalMinFrac,
-              distanceWalkedMeters >= HonorTuning.arrivalMinDistanceRatio * geometry.totalMeters else {
+              progressHighWater - start >= HonorTuning.arrivalMinDistanceRatio * aheadAtBegin else {
             arrival.reset()
             return
         }

@@ -4,12 +4,12 @@ import Foundation
 /// tuning candidates, not commitments.
 enum HonorTuning {
     static let fixAccuracyMeters = 50.0
-    static let maxStepMeters = 100.0
     static let onWayMeters = 60.0
     static let windowMeters = 300.0
     static let backwardTolerance = 0.02
     static let momentFracTolerance = 0.05
     static let reacquireSeconds: TimeInterval = 120
+    static let reacquireRetrySeconds: TimeInterval = 10
     static let voiceRadiusMeters = 42.0
     static let momentRadiusMeters = 60.0
     static let voiceDropMeters = 300.0

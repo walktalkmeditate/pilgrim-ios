@@ -153,7 +153,11 @@ struct WayGeometry {
     /// and the re-acquire target after sustained drift. The first contiguous
     /// run of segments within range is scanned and its closest point
     /// returned, so a walker standing mid-Way anchors where they stand on
-    /// finely sampled routes too. Nil when nothing is near.
+    /// finely sampled routes too. Nil when nothing is near. On a switchback
+    /// where the leg the walker is on is separated from a lower-frac leg by
+    /// a gap wider than `meters`, the lower leg wins; that is the
+    /// conservative direction, and the forward window recovers within a few
+    /// fixes.
     func lowestFrac(within meters: Double, of coordinate: CLLocationCoordinate2D, from minFrac: Double = 0) -> Double? {
         guard points.count > 1, totalMeters > 0 else {
             return nearest(to: coordinate, within: nil).meters <= meters ? 0 : nil
