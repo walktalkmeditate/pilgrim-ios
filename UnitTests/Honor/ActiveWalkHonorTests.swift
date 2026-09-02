@@ -188,12 +188,26 @@ final class ActiveWalkHonorTests: XCTestCase {
         XCTAssertFalse(vm.isVoicePaused)
 
         vm.stop()
-        // The closure closed over its own honor generation at engine start;
-        // firing the same captured closure after teardown bumped the
-        // generation must be inert, not resurrect a torn-down queue.
-        onFinished?()
-        XCTAssertNil(vm.activeVoice)
         XCTAssertNil(vm.honorEngine)
+
+        // Re-boot a live second engine on the same view model. `stop()` left
+        // `mode`/`way` untouched and `honorEngine` nil, so the guard on
+        // `startHonorEngineIfNeeded()` passes; `resume()` puts the builder
+        // back in `.recording` (valid from `.ready`) so the new engine's
+        // pause gate isn't shut before it can start a voice.
+        vm.resume()
+        vm.startHonorEngineIfNeeded()
+        settleCombineSchedulers()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        XCTAssertEqual(vm.activeVoice?.id, "voice-1")
+
+        // The closure closed over the FIRST engine's honor generation;
+        // firing it now that a second, live engine owns `activeVoice` must
+        // be inert, not clear the second engine's voice.
+        onFinished?()
+        XCTAssertEqual(vm.activeVoice?.id, "voice-1")
+        XCTAssertFalse(vm.isVoicePaused)
     }
 
     func testReplyHereMapsTheNextRecordingToTheOriginVoice() throws {
@@ -227,6 +241,15 @@ final class ActiveWalkHonorTests: XCTestCase {
         drive(fix(lon: 0, seconds: 0))
         drive(fix(lon: 300 / 111_320, seconds: 200))
         XCTAssertEqual(vm.activeVoice?.id, "voice-1")
+
+        // Unlike the pre-walk attempt above, the recorder really does open
+        // now that the walk is active in this test host.
+        vm.replyHere(to: voice)
+        XCTAssertNotNil(vm.pendingReplyOrigin)
+        if vm.voiceRecordingManagement.isRecording {
+            vm.toggleVoiceRecording()
+            settleCombineSchedulers()
+        }
 
         // This test host's recorder does open successfully once the walk is
         // active, so exercising the mapping through a real record → stop →
@@ -270,6 +293,29 @@ final class ActiveWalkHonorTests: XCTestCase {
     }
 
     func testArrivalCardCountsHeardVoicesAndReachedPlaces() throws {
+        // A `.rest` moment sitting 1 km off the route the walker passes
+        // `frac`-wise but never comes within the 60 m moment radius: it must
+        // never fire `.momentReached`, so `placesPassed` must stay 1 (just
+        // "sit-1"). `way.moments.count - voiceCount` would count it anyway
+        // and give 2 — that's the bug this fixture is built to catch.
+        let route = (0...10).map { i in WayPoint(lat: 0, lon: Double(i) * 0.000898, alt: nil, t: Double(i) * 60) }
+        let voice = WayMoment(id: "voice-1", frac: 0.3, at: WayCoordinate(lat: 0, lon: 300 / 111_320),
+                              kind: .voice(endFrac: 0.35, duration: 20, kind: .spoken, media: .recording(relativePath: "Recordings/honor-test.m4a")))
+        let sit = WayMoment(id: "sit-1", frac: 0.5, at: WayCoordinate(lat: 0, lon: 500 / 111_320),
+                            kind: .meditation(minutes: 7, isEstimate: false))
+        let unreachedRest = WayMoment(id: "rest-1", frac: 0.7, at: WayCoordinate(lat: 0.009, lon: 700 / 111_320),
+                                      kind: .rest(minutes: 3))
+        let testWay = Way(id: "walk:test", source: .ownWalk(UUID()), title: "Test way", departedAt: start,
+                          tzIdentifier: nil, expires: nil, route: route, totalDistanceMeters: 1000,
+                          theirActiveSeconds: 600, moments: [voice, sit, unreachedRest], weather: nil)
+
+        var senses = HonorSenses()
+        senses.makeVoicePlayer = { [player] in player! }
+        senses.isAppActive = { false }
+        vm.cancel()
+        vm = ActiveWalkViewModel(mode: .honor, way: testWay, honorSenses: senses)
+        settleCombineSchedulers()
+
         begin(startedSecondsAgo: 500)
         vm.honorEngine?.updateActiveDuration(500)
         for i in 0...10 { drive(fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60)) }
@@ -297,8 +343,29 @@ final class ActiveWalkHonorTests: XCTestCase {
         try FileManager.default.createDirectory(at: mediaFile.deletingLastPathComponent(), withIntermediateDirectories: true)
         _ = try TestAudioFile.writeSilentAudioFile(to: mediaFile)
 
+        // The traversal targets must actually exist on disk before the
+        // assertions run: `resolvedMediaURL` returns nil both when the
+        // containment check rejects a path AND when the (contained) file is
+        // simply missing, so an escape target with nothing there would read
+        // as "rejected" even if the containment check were deleted outright.
+        // `.file("../../escape.m4a")` resolves to `mediaDirectory/../..` =
+        // the store's own base directory.
+        let escapedStoreFile = storeDir.appendingPathComponent("escape.m4a")
+        XCTAssertTrue(FileManager.default.createFile(atPath: escapedStoreFile.path, contents: Data()))
+        // `.recording(relativePath: "../Library/escape.m4a")` resolves to
+        // Documents' sibling `Library/` — writable in the simulator, unlike
+        // the container root a bare "../escape.m4a" would land in.
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let escapedLibraryFile = docs.deletingLastPathComponent().appendingPathComponent("Library/escape.m4a")
+        try FileManager.default.createDirectory(at: escapedLibraryFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        XCTAssertTrue(FileManager.default.createFile(atPath: escapedLibraryFile.path, contents: Data()))
+        defer {
+            try? FileManager.default.removeItem(at: escapedStoreFile)
+            try? FileManager.default.removeItem(at: escapedLibraryFile)
+        }
+
         XCTAssertNotNil(vm.mediaURL(for: .file("audio/1.m4a")))
         XCTAssertNil(vm.mediaURL(for: .file("../../escape.m4a")))
-        XCTAssertNil(vm.mediaURL(for: .recording(relativePath: "../escape.m4a")))
+        XCTAssertNil(vm.mediaURL(for: .recording(relativePath: "../Library/escape.m4a")))
     }
 }
