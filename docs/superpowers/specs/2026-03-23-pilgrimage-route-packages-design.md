@@ -1,7 +1,7 @@
 # Pilgrimage Route Packages
 
 **Date:** 2026-03-23
-**Status:** Approved design, not yet scheduled
+**Status:** Approved design, not yet scheduled. Folded into Honor mode on 2026-09-01: see `2026-09-01-honor-mode-design.md`. Packages are Honor slice two, offline tiles slice three; the data repo is `walktalkmeditate/open-pilgrimages` (already live), and the one-route-at-a-time, z6–14, and tile-budget decisions below still stand.
 
 ## Summary
 
