@@ -272,10 +272,19 @@ enum GoshuinMilestones {
             milestones.insert(.firstOfSeason(season))
         }
 
+        milestones.formUnion(crossings(for: input, among: allInputs))
+
+        return milestones
+    }
+
+    /// The seeking and honor thresholds this seal crossed, counted against
+    /// every walk strictly before it.
+    private static func crossings(for input: SealInput, among allInputs: [SealInput]) -> Set<Milestone> {
         let earlier = allInputs.filter {
             $0.uuid != input.uuid
                 && isOrderedBefore($0.startDate, $0.uuid, input.startDate, input.uuid)
         }
+        var milestones: Set<Milestone> = []
 
         if input.foundPlaceCount > 0 {
             milestones.formUnion(

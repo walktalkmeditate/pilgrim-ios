@@ -15,6 +15,12 @@ struct WalkSummaryView: View {
     /// Seek story groups, or nil for wander walks and zero-arrival seeks —
     /// computed once per walk identity like the route caches below (AF17).
     private let cachedSeekSummary: SeekSummaryData?
+    /// The honored Way's story, or nil for every walk that was not an honor —
+    /// computed once per walk identity like the seek story above.
+    private let cachedHonorSummary: HonorSummaryData?
+    /// Drops `private` so `WalkSummaryView+Map.swift` can lay the Way's ghost
+    /// line under the walk's own ink.
+    let cachedHonorWay: HonorWayState?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var transcriptionService = TranscriptionService.shared
@@ -26,6 +32,9 @@ struct WalkSummaryView: View {
         self.onWalkAgain = onWalkAgain
         self.walkTurning = TurningDayService.turning(for: walk.startDate, hemisphere: .current)
         self.cachedSeekSummary = SeekSummaryModel.summaryData(for: walk)
+        let honor = Self.computeHonorState(for: walk)
+        self.cachedHonorSummary = honor?.data
+        self.cachedHonorWay = honor?.way
         _selectedFavicon = State(initialValue: walk.favicon.flatMap { WalkFavicon(rawValue: $0) })
         // Route-derived caches (AF17): the CoreStore `routeData` relationship
         // is traversed once here, never per body evaluation — the body
@@ -84,6 +93,9 @@ struct WalkSummaryView: View {
                     intentionCard
                     if let seekSummary = cachedSeekSummary {
                         SeekSummarySection(data: seekSummary)
+                    }
+                    if let honorSummary = cachedHonorSummary {
+                        HonorSummarySection(data: honorSummary)
                     }
                     elevationProfile
                     journeyQuote
@@ -725,6 +737,32 @@ extension WalkSummaryView {
         }
     }
 
+    /// Three Way-store reads, in `init` and only for a walk whose events say
+    /// it honored a Way — a body must never reach the store.
+    static func computeHonorState(for walk: WalkInterface)
+        -> (data: HonorSummaryData, way: HonorWayState?)? {
+        guard walk.workoutEvents.contains(where: { $0.eventType == .honorMode }),
+              let uuid = walk.uuid else { return nil }
+        let link = WayStore.shared.wayLink(forWalk: uuid)
+        let way = link.flatMap { WayStore.shared.load(id: $0.wayId) }
+        let replies = link.map { WayStore.shared.replies(for: $0.wayId) } ?? [:]
+        guard let data = HonorSummaryModel.summaryData(
+            for: walk, way: way, link: link, replies: replies
+        ) else { return nil }
+        let wayState = way.map { loaded in
+            HonorWayState(
+                id: loaded.id,
+                routeCoordinates: loaded.route.map {
+                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                }
+            )
+        }
+        return (data, wayState)
+    }
+
+    /// Honor arrivals ride the generic waypoint branch below: their reserved
+    /// icon is already a signpost, so they draw as the stone symbol the
+    /// engine chose without a kind of their own.
     static func computeAnnotations(for walk: WalkInterface) -> [PilgrimAnnotation] {
         var pins: [PilgrimAnnotation] = []
 

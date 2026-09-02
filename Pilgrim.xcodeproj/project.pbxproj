@@ -196,6 +196,7 @@
 		3B39C39F53480BE58EE4BBD1 /* WayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8279F26667FF1641BE8DAC8B /* WayStore.swift */; };
 		3B84698FB2D24F8086A6E59B /* MarkerLexicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5D982D293545FCB5E56CE9 /* MarkerLexicons.swift */; };
 		3BF183E8A14BB56BB9A98EF8 /* whisper-courage-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = 983897F799EB8C90B591419F /* whisper-courage-2.aac */; };
+		3C0D3321EE4259139E1B7750 /* HonorSummarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C408FC0A5A9010201397D /* HonorSummarySection.swift */; };
 		3C4D5E6F7A8B9C0D1E2F3A4B /* TourBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F7A8B9C0D1E2F3A4B5C /* TourBuilder.swift */; };
 		3C55BD8AE4CD85263004E064 /* VoiceGuideManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B789354C6B8AAE45AEC71F0 /* VoiceGuideManifestTests.swift */; };
 		3D254F3D8D18F5FF91F89330 /* WhisperPlacementSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3542AA50A2E8FA62E52758C7 /* WhisperPlacementSheet.swift */; };
@@ -1214,6 +1215,7 @@
 		D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageExporterArchivedTests.swift; sourceTree = "<group>"; };
 		D0CF8169656208D52DB6F4D6 /* CollectiveRouteCatalogServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveRouteCatalogServiceTests.swift; sourceTree = "<group>"; };
 		D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePayload.swift; sourceTree = "<group>"; };
+		D15C408FC0A5A9010201397D /* HonorSummarySection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorSummarySection.swift; sourceTree = "<group>"; };
 		D2DC1601B9458B3FC1788F0E /* Pods_Pilgrim.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pilgrim.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityListView.swift; sourceTree = "<group>"; };
 		D30651941E3AA93F6BB14A1D /* whisper-play-12.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-12.aac"; sourceTree = "<group>"; };
@@ -2437,6 +2439,7 @@
 				BBBB00000000000000001D /* Reliquary */,
 				105159E380C21159A15B02E6 /* SeekSummarySection.swift */,
 				FF9003DAA26DCF18D810004A /* CollectiveTrailSection.swift */,
+				D15C408FC0A5A9010201397D /* HonorSummarySection.swift */,
 			);
 			path = WalkSummary;
 			sourceTree = "<group>";
@@ -3444,6 +3447,7 @@
 				FD906E2A9885A1725F9E1DDF /* WayPlaceCard.swift in Sources */,
 				5A58541C1D0FCD23EDF0DF2C /* ActiveWalkView+Honor.swift in Sources */,
 				93D8BA32A352B7DAA459BF0B /* StaffsShape.swift in Sources */,
+				3C0D3321EE4259139E1B7750 /* HonorSummarySection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
