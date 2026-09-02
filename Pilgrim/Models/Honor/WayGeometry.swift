@@ -169,7 +169,8 @@ struct WayGeometry {
         for i in 0..<(points.count - 1) {
             let fa = cumulative[i] / totalMeters, fb = cumulative[i + 1] / totalMeters
             if fb < minFrac { continue }
-            let hit = nearest(to: coordinate, within: max(fa, minFrac)...fb)
+            let uLo = fb > fa ? min(1, max(0, (minFrac - fa) / (fb - fa))) : 0
+            let hit = nearest(onSegment: i, to: coordinate, uRange: uLo...1)
             if hit.meters <= meters {
                 if best == nil || hit.meters < best!.meters { best = hit }
             } else if best != nil {

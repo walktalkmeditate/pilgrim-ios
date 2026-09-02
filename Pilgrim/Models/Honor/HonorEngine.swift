@@ -32,13 +32,18 @@ final class HonorEngine: ObservableObject {
 
     private(set) var startFrac: Double?
     private(set) var companionT0: Double = 0
-    /// Along-Way distance since Begin, from the progress high-water mark:
-    /// GPS jitter cannot inflate it cumulatively (each excursion is bounded
-    /// by the window and the backward tolerance) and it needs no speed.
+    /// Along-Way distance since Begin, accumulated in `walkedFrac` from
+    /// windowed on-Way fixes only: GPS jitter cannot inflate it cumulatively
+    /// (each excursion is bounded by the window and the backward tolerance)
+    /// and it needs no speed.
     var distanceWalkedMeters: Double {
-        max(0, progressHighWater - (startFrac ?? 0)) * geometry.totalMeters
+        walkedFrac * geometry.totalMeters
     }
     private var progressHighWater: Double = 0
+    /// Along-Way progress earned on the Way: increments of the high-water
+    /// mark from windowed on-Way fixes only. A re-acquire moves position
+    /// without adding here.
+    private var walkedFrac: Double = 0
 
     private let now: () -> Date
     private let softTapEnabled: Bool
@@ -139,6 +144,7 @@ final class HonorEngine: ObservableObject {
         startFrac = frac
         progressFrac = frac
         progressHighWater = frac
+        walkedFrac = 0
         companionT0 = geometry.elapsed(atFrac: frac)
         companionFrac = geometry.frac(atElapsed: companionT0 + activeDuration)
     }
@@ -147,6 +153,7 @@ final class HonorEngine: ObservableObject {
         anchoredByFallback = false
         startFrac = frac
         progressHighWater = frac
+        walkedFrac = 0
         companionT0 = geometry.elapsed(atFrac: frac)
         companionFrac = geometry.frac(atElapsed: companionT0 + activeDuration)
     }
@@ -162,8 +169,12 @@ final class HonorEngine: ObservableObject {
             offWaySince = nil
             lastReacquireAttempt = nil
             progressFrac = local.frac   // nearest already clamps into the window
-            progressHighWater = max(progressHighWater, progressFrac)
-            if anchoredByFallback { reanchor(at: progressFrac) }
+            if anchoredByFallback {
+                reanchor(at: progressFrac)
+            } else {
+                walkedFrac += max(0, progressFrac - progressHighWater)
+                progressHighWater = max(progressHighWater, progressFrac)
+            }
             return
         }
         isOnWay = false
@@ -187,7 +198,7 @@ final class HonorEngine: ObservableObject {
                 if anchoredByFallback { reanchor(at: found) }
             }
             // A failed re-acquire retries every 10 s, not on every fix:
-            // lowestFrac scans the whole Way (up to 4,000 points).
+            // lowestFrac is a linear scan of the whole Way (up to 4,000 points).
         }
     }
 
@@ -219,9 +230,11 @@ final class HonorEngine: ObservableObject {
         guard phase == .walking, let last = geometry.points.last, let start = startFrac else { return }
         // Half of the Way that lay ahead at Begin, along the Way: blocks an
         // arrival at Begin on a loop while letting a mid-Way start finish.
+        // The credit comes only from progress made on the Way (walkedFrac),
+        // never from a re-acquire's position jump.
         let aheadAtBegin = max(0, 1 - start)
         guard progressFrac >= HonorTuning.arrivalMinFrac,
-              progressHighWater - start >= HonorTuning.arrivalMinDistanceRatio * aheadAtBegin else {
+              walkedFrac >= HonorTuning.arrivalMinDistanceRatio * aheadAtBegin else {
             arrival.reset()
             return
         }

@@ -192,7 +192,7 @@ final class HonorEngineTests: XCTestCase {
         XCTAssertEqual(engine.startFrac ?? -1, 0.5, accuracy: 0.02)
         for s in stride(from: 1.0, through: 600, by: 1) {
             let jitter = (Int(s) % 2 == 0) ? 0.0003 : -0.0003     // ~33 m either side
-            let speed = (Int(s) % 3 == 0) ? -1.0 : 0.0              // unknown and stationary alike
+            let speed = (Int(s) % 3 == 0) ? -1.0 : 0.0              // speed is irrelevant to the gate; vary it anyway
             engine.processLocation(fix(lon: 0.000898 * 5 + jitter, speed: speed, at: s))
         }
         XCTAssertLessThan(engine.distanceWalkedMeters, 50)
@@ -218,6 +218,43 @@ final class HonorEngineTests: XCTestCase {
         XCTAssertEqual(engine.startFrac ?? -1, 0.6, accuracy: 0.02)
         for i in 0..<3 { engine.processLocation(fix(lon: 0.000898 * 10, at: 300 + Double(i))) }
         XCTAssertEqual(arrived, 1, "half of what lay ahead at Begin is enough")
+    }
+
+    func testReacquireCorrectsPositionWithoutCreditingDistance() {
+        let engine = makeEngine(way: straightWay())
+        var arrived = 0
+        let sub = engine.events.sink { if case .arrived = $0 { arrived += 1 } }
+        defer { sub.cancel() }
+        engine.processLocation(fix(lon: 0, at: 0))
+        for i in 1...2 { engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i) * 60)) }
+        XCTAssertEqual(engine.distanceWalkedMeters, 200, accuracy: 10)
+        // Off the Way for over two minutes, then rejoin far ahead at 800 m (outside the 300 m window).
+        for s in stride(from: 130.0, through: 260, by: 10) {
+            clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.processLocation(fix(lon: 0.000898 * 4, lat: 0.0036, at: s))
+        }
+        clock = Date(timeIntervalSince1970: 1_000_000 + 270)
+        engine.processLocation(fix(lon: 0.000898 * 8, at: 270))
+        XCTAssertEqual(engine.progressFrac, 0.8, accuracy: 0.02, "position corrected")
+        XCTAssertEqual(engine.distanceWalkedMeters, 200, accuracy: 10, "the jump earned nothing")
+        for i in 0..<4 { engine.processLocation(fix(lon: 0.000898 * 10, at: 400 + Double(i))) }
+        XCTAssertEqual(engine.distanceWalkedMeters, 400, accuracy: 20)
+        XCTAssertEqual(arrived, 0, "400 m walked of 1000 ahead is under the half required")
+    }
+
+    func testSoftTapStopsAfterArrival() {
+        let engine = makeEngine(way: straightWay())
+        var taps = 0
+        let sub = engine.events.sink { if case .softTap = $0 { taps += 1 } }
+        defer { sub.cancel() }
+        for i in 0...10 { engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i) * 60)) }
+        for i in 0..<3 { engine.processLocation(fix(lon: 0.000898 * 10, at: 660 + Double(i))) }
+        XCTAssertEqual(engine.phase, .arrived)
+        for s in stride(from: 700.0, through: 900, by: 10) {
+            clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.processLocation(fix(lon: 0.000898 * 10, lat: 0.0036, at: s))
+        }
+        XCTAssertEqual(taps, 0)
     }
 
     func testStopCancelsTheBoundStreams() {
