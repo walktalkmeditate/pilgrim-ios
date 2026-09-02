@@ -127,7 +127,7 @@ git commit -m "chore: script to register source files with an Xcode target"
 **Files:**
 - Modify: `Pilgrim/Models/Walk/WalkMode.swift`
 - Modify: `Pilgrim/Scenes/Home/WalkStartView.swift:125-137`, `:227-241`, `:257-323` (together footprints), `:410-436`, and the `together*` state at `:24-25`, `:78-79`
-- Modify: `Pilgrim/Support Files/Base.lproj/Localizable.strings:165-167`, `Pilgrim/Support Files/en.lproj/Localizable.strings` (same keys)
+- Modify: `Pilgrim/Support Files/Base.lproj/Localizable.strings:165-167` (the only `Localizable.strings`; `en.lproj` holds `InfoPlist.strings` only)
 - Test: `UnitTests/Honor/WalkModeTests.swift`
 
 **Interfaces:**
@@ -203,9 +203,9 @@ enum WalkMode: String, CaseIterable {
 }
 ```
 
-- [ ] **Step 4: Replace the quote strings in both `.lproj` files**
+- [ ] **Step 4: Replace the quote strings**
 
-Replace the three `Together.Quote.N` lines with (the user may swap the copy later; the keys stay):
+In `Pilgrim/Support Files/Base.lproj/Localizable.strings:165-167` replace the three `Together.Quote.N` lines with (the user may swap the copy later; the keys stay):
 
 ```
 "Honor.Quote.1" = "Where they walked,\nyou walk";
@@ -746,6 +746,16 @@ import XCTest
 final class OwnWalkWayBuilderTests: XCTestCase {
 
     private let start = DateFactory.makeDate(2026, 5, 1, 8, 0, 0)
+    private var recordingURL: URL!
+
+    override func setUpWithError() throws {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        recordingURL = docs.appendingPathComponent("Recordings/a/b.m4a")
+        try FileManager.default.createDirectory(at: recordingURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        _ = try TestAudioFile.writeSilentAudioFile(to: recordingURL)
+    }
+
+    override func tearDown() { try? FileManager.default.removeItem(at: recordingURL) }
 
     private func sample(_ i: Int, lon: Double) -> TempRouteDataSample {
         TempRouteDataSample(uuid: nil, timestamp: start.addingTimeInterval(Double(i) * 60),
@@ -810,6 +820,13 @@ final class OwnWalkWayBuilderTests: XCTestCase {
         XCTAssertNil(OwnWalkWayBuilder.make(from: WalkDataFactory.makeWalk(routeData: [])))
     }
 
+    func testSkipsRecordingsWhoseFileIsGone() throws {
+        try FileManager.default.removeItem(at: recordingURL)
+        let way = try XCTUnwrap(OwnWalkWayBuilder.make(from: walk()))
+        XCTAssertFalse(way.moments.contains { $0.isVoice })
+        XCTAssertEqual(way.voiceCount, 0)
+    }
+
     func testIdentityAndTitle() throws {
         let id = UUID()
         let way = try XCTUnwrap(OwnWalkWayBuilder.make(from: walk(uuid: id)))
@@ -860,8 +877,18 @@ enum OwnWalkWayBuilder {
             return (frac, WayCoordinate(lat: nearest.latitude, lon: nearest.longitude))
         }
 
-        for (n, rec) in walk.voiceRecordings.sorted(by: { $0.startDate < $1.startDate }).enumerated()
-        where !rec.fileRelativePath.isEmpty {
+        // Recordings are deletable in-app while their rows stay; a Way must
+        // not promise a voice whose file is gone (TourBuilder.candidates
+        // makes the same check).
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let present = walk.voiceRecordings
+            .filter { !$0.fileRelativePath.isEmpty }
+            .filter {
+                let size = (try? FileManager.default.attributesOfItem(atPath: docs.appendingPathComponent($0.fileRelativePath).path)[.size]) as? Int
+                return (size ?? 0) > 0
+            }
+            .sorted { $0.startDate < $1.startDate }
+        for (n, rec) in present.enumerated() {
             let start = place(rec.startDate)
             let end = place(rec.endDate)
             moments.append(WayMoment(
@@ -1080,7 +1107,7 @@ git commit -m "refactor(seek): extract ArrivalDebounce so Honor can share the ar
 **Interfaces:**
 - Consumes: `Way`, `WayGeometry`, `ArrivalDebounce`.
 - Produces: `HonorTuning` constants; `HonorPhase { walking, arrived }`; `HonorEngineEvent` (`.momentReached`, `.voiceStart`, `.voicePause`, `.voiceResume`, `.voiceDropped`, `.softTap(offWayMeters:)`, `.arrived(theirSeconds:yourSeconds:)`); `HonorEngine(way:softTapEnabled:voicesEnabled:now:)` with `@Published progressFrac, distanceRemainingMeters, offWayMeters, isOnWay, companionFrac, phase`, `events`, `startFrac`, `companionT0`, `distanceWalkedMeters`, `processLocation(_:)`, `updateActiveDuration(_:)`, `setGates(paused:meditating:recording:externalAudio:)`, `voiceDidFinish()`, `bind(...)`, `stop()`. Task 8 fills in the moment tracker the engine already calls.
-- `WayGeometry.lowestFrac(within meters: Double, of: CLLocationCoordinate2D) -> Double?`: the smallest frac whose segment passes within `meters`.
+- `WayGeometry.lowestFrac(within meters: Double, of: CLLocationCoordinate2D, from minFrac: Double = 0) -> Double?`: the smallest frac at or beyond `minFrac` whose segment passes within `meters`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1185,6 +1212,41 @@ final class HonorEngineTests: XCTestCase {
         XCTAssertEqual(taps, 2, "re-armed after returning within 60 m")
     }
 
+    func testLowestFracFromRespectsTheFloor() {
+        let geo = WayGeometry(route: outAndBackWay().route)
+        let probe = CLLocationCoordinate2D(latitude: 0, longitude: 0.000898 * 2.5)
+        XCTAssertEqual(geo.lowestFrac(within: 60, of: probe) ?? -1, 0.25, accuracy: 0.01)
+        XCTAssertEqual(geo.lowestFrac(within: 60, of: probe, from: 0.5) ?? -1, 0.75, accuracy: 0.01)
+    }
+
+    func testReacquireOnTheReturnLegNeverFallsBackToTheOutboundLeg() {
+        let engine = makeEngine()
+        engine.processLocation(fix(lon: 0, at: 0))
+        for i in 1...5 { engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i) * 60)) }
+        for i in 1...2 { engine.processLocation(fix(lon: 0.000898 * Double(5 - i), at: Double(5 + i) * 60)) }
+        XCTAssertEqual(engine.progressFrac, 0.7, accuracy: 0.02)
+        // Detour 400 m north for over two minutes, then rejoin at the trailhead,
+        // which is frac 0 (outbound) and frac 1 (return) at once.
+        for s in stride(from: 430.0, through: 560, by: 10) {
+            clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.processLocation(fix(lon: 0.000898 * 2, lat: 0.0036, at: s))
+        }
+        clock = Date(timeIntervalSince1970: 1_000_000 + 570)
+        engine.processLocation(fix(lon: 0, at: 570))
+        XCTAssertGreaterThanOrEqual(engine.progressFrac, 0.95, "the return leg's end, never the outbound leg's start")
+        XCTAssertTrue(engine.isOnWay)
+    }
+
+    func testNoisyBeginReanchorsOnTheFirstOnWayFix() {
+        let engine = makeEngine()
+        engine.processLocation(fix(lon: 0.000898 * 2, lat: 0.0007, at: 0))   // 78 m north of the 200 m mark
+        XCTAssertEqual(engine.startFrac, 0)
+        XCTAssertFalse(engine.isOnWay)
+        engine.processLocation(fix(lon: 0.000898 * 2, at: 5))
+        XCTAssertEqual(engine.startFrac ?? -1, 0.2, accuracy: 0.02)
+        XCTAssertEqual(engine.companionT0, 120, accuracy: 2)
+    }
+
     func testReacquiresAfterSustainedOffWay() {
         let engine = makeEngine()
         engine.processLocation(fix(lon: 0, at: 0))
@@ -1244,13 +1306,14 @@ Append inside `struct WayGeometry`:
     /// The smallest frac whose segment passes within `meters` of the
     /// coordinate: the anchor for a walker who starts mid-Way, and the
     /// re-acquire target after sustained drift. Nil when nothing is near.
-    func lowestFrac(within meters: Double, of coordinate: CLLocationCoordinate2D) -> Double? {
+    func lowestFrac(within meters: Double, of coordinate: CLLocationCoordinate2D, from minFrac: Double = 0) -> Double? {
         guard points.count > 1, totalMeters > 0 else {
             return nearest(to: coordinate, within: nil).meters <= meters ? 0 : nil
         }
         for i in 0..<(points.count - 1) {
             let fa = cumulative[i] / totalMeters, fb = cumulative[i + 1] / totalMeters
-            let hit = nearest(to: coordinate, within: fa...fb)
+            if fb < minFrac { continue }
+            let hit = nearest(to: coordinate, within: max(fa, minFrac)...fb)
             if hit.meters <= meters { return hit.frac }
         }
         return nil
@@ -1305,6 +1368,9 @@ final class HonorEngine: ObservableObject {
     private var gates = HonorMomentTracker.Gates()
     private var activeDuration: TimeInterval = 0
     private var lastAcceptedCoordinate: CLLocationCoordinate2D?
+    /// Begin found nothing within 60 m and fell back to frac 0; the first
+    /// on-Way fix becomes the real anchor.
+    private var anchoredByFallback = false
     private var offWaySince: Date?
     private var softTapSince: Date?
     private var softTapArmed = true
@@ -1389,9 +1455,18 @@ final class HonorEngine: ObservableObject {
     // MARK: - Position
 
     private func anchor(at coordinate: CLLocationCoordinate2D) {
-        let frac = geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate) ?? 0
+        let hit = geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate)
+        anchoredByFallback = hit == nil
+        let frac = hit ?? 0
         startFrac = frac
         progressFrac = frac
+        companionT0 = geometry.elapsed(atFrac: frac)
+        companionFrac = geometry.frac(atElapsed: companionT0 + activeDuration)
+    }
+
+    private func reanchor(at frac: Double) {
+        anchoredByFallback = false
+        startFrac = frac
         companionT0 = geometry.elapsed(atFrac: frac)
         companionFrac = geometry.frac(atElapsed: companionT0 + activeDuration)
     }
@@ -1406,17 +1481,24 @@ final class HonorEngine: ObservableObject {
             isOnWay = true
             offWaySince = nil
             progressFrac = max(lower, local.frac)
+            if anchoredByFallback { reanchor(at: progressFrac) }
             return
         }
         isOnWay = false
         let time = now()
         if offWaySince == nil { offWaySince = time }
-        if let since = offWaySince, time.timeIntervalSince(since) >= HonorTuning.reacquireSeconds,
-           let found = geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate) {
-            progressFrac = found
-            offWayMeters = geometry.nearest(to: coordinate, within: found...found).meters
-            isOnWay = true
-            offWaySince = nil
+        if let since = offWaySince, time.timeIntervalSince(since) >= HonorTuning.reacquireSeconds {
+            // Forward first: on an out-and-back the return leg shares the
+            // outbound leg's pavement, and the global lowest frac would drag
+            // progress back to the outbound leg with arrival then impossible.
+            let ahead = geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate, from: lower)
+            if let found = ahead ?? geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate) {
+                progressFrac = found
+                offWayMeters = geometry.nearest(to: coordinate, within: found...found).meters
+                isOnWay = true
+                offWaySince = nil
+                if anchoredByFallback { reanchor(at: found) }
+            }
         }
     }
 
@@ -1499,7 +1581,7 @@ ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/HonorTuning.swift
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/HonorEngine.swift
 xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/HonorEngineTests -only-testing:UnitTests/WayGeometryTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 6 tests, with 0 failures` and the geometry suite green.
+Expected: `Executed 9 tests, with 0 failures` and the geometry suite green.
 
 - [ ] **Step 7: Commit**
 
@@ -1600,6 +1682,15 @@ final class HonorMomentTrackerTests: XCTestCase {
         XCTAssertEqual(t.gatesDidChange(.init()), [])
     }
 
+    func testQueuedVoiceIsKeptWhileAnotherVoicePlays() {
+        var t = tracker()
+        _ = t.update(location: coord(300), progressFrac: 0.3, gates: .init(), isStationary: false)   // voice 1 plays
+        _ = t.update(location: coord(500), progressFrac: 0.5, gates: .init(), isStationary: false)   // voice 2 waits
+        // 320 m past voice 2 while voice 1 still plays: nothing is dropped.
+        XCTAssertEqual(t.update(location: coord(820), progressFrac: 0.82, gates: .init(), isStationary: false), [])
+        XCTAssertEqual(t.voiceDidFinish(gates: .init()), [.voiceStart(voice2)])
+    }
+
     func testVoicesDisabledStillReachesCardsAndNeverStartsAudio() {
         var t = tracker(voicesEnabled: false)
         let actions = t.update(location: coord(300), progressFrac: 0.3, gates: .init(), isStationary: false)
@@ -1679,8 +1770,10 @@ struct HonorMomentTracker {
             }
         }
 
-        if !isStationary {
-            // Abandon voices the walker has left far behind, playing-but-paused included.
+        // Abandon voices the walker has left far behind, but never while a
+        // voice is playing: listening to a long musing carries the walker
+        // hundreds of metres, and the next voice must still be waiting.
+        if !isStationary, playing == nil || isVoicePaused {
             let dropped = queue.filter { here.distance(from: place(of: $0)) > HonorTuning.voiceDropMeters }
             queue.removeAll { dropped.contains($0) }
             actions += dropped.map { .voiceDropped($0) }
@@ -1738,7 +1831,7 @@ struct HonorMomentTracker {
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/HonorMomentTracker.swift
 xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/HonorMomentTrackerTests -only-testing:UnitTests/HonorEngineTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 7 tests, with 0 failures` and `Executed 6 tests, with 0 failures`.
+Expected: `Executed 8 tests, with 0 failures` and `Executed 9 tests, with 0 failures`.
 
 - [ ] **Step 5: Commit**
 
@@ -1757,7 +1850,7 @@ git commit -m "feat(honor): moment triggers, voice queue, pause-and-resume, drop
 - Test: `UnitTests/Honor/WayVoicePlayerTests.swift`
 
 **Interfaces:**
-- Produces: `protocol WayVoicePlaying: AnyObject { var onFinished: (() -> Void)? { get set }; func play(url: URL); func pause(); func resume(); func stop() }` and `final class WayVoicePlayer: NSObject, WayVoicePlaying, AVAudioPlayerDelegate` with `static let shared`, `@Published private(set) var isPlayingWayVoice`, `@Published private(set) var elapsedSeconds: TimeInterval`. `AudioPriorityQueue.playWhisper` defers while a Way voice plays and resumes the whisper when it ends. Consumer name `"honor-voice"`.
+- Produces: `protocol WayVoicePlaying: AnyObject { var onFinished: (() -> Void)? { get set }; func play(url: URL, volume: Float); func pause(); func resume(); func stop() }` and `final class WayVoicePlayer: NSObject, WayVoicePlaying, AVAudioPlayerDelegate` with `static let shared`, `@Published private(set) var isPlayingWayVoice`, `@Published private(set) var elapsedSeconds: TimeInterval`. `AudioPriorityQueue.playWhisper` defers while a Way voice plays and resumes the whisper when it ends. Consumer name `"honor-voice"`.
 
 - [ ] **Step 1: Write the failing test (the seam, not the hardware)**
 
@@ -1771,15 +1864,17 @@ final class WayVoicePlayerTests: XCTestCase {
         let player = WayVoicePlayer()
         let finished = expectation(description: "finished")
         player.onFinished = { finished.fulfill() }
-        player.play(url: URL(fileURLWithPath: "/nonexistent/voice.m4a"))
+        player.play(url: URL(fileURLWithPath: "/nonexistent/voice.m4a"), volume: 0.8)
         wait(for: [finished], timeout: 1)
         XCTAssertFalse(player.isPlayingWayVoice)
     }
 
-    func testPlaysABundledTestFileAndPausesResumes() throws {
-        let url = try TestAudioFile.url()
+    func testPlaysAGeneratedFileAndPausesResumes() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("way-voice-\(UUID().uuidString).m4a")
+        _ = try TestAudioFile.writeSilentAudioFile(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
         let player = WayVoicePlayer()
-        player.play(url: url)
+        player.play(url: url, volume: 0.8)
         XCTAssertTrue(player.isPlayingWayVoice)
         player.pause()
         XCTAssertTrue(player.isPlayingWayVoice, "paused is still 'in flight' for the queue")
@@ -1790,7 +1885,7 @@ final class WayVoicePlayerTests: XCTestCase {
 }
 ```
 
-Read `UnitTests/Helpers/TestAudioFile.swift` first and use its actual accessor name if it is not `url()`.
+`TestAudioFile.writeSilentAudioFile(to:duration:)` is the existing helper at `UnitTests/Helpers/TestAudioFile.swift:13`.
 
 - [ ] **Step 2: Register and run to verify it fails**
 
@@ -1808,7 +1903,8 @@ import Foundation
 
 protocol WayVoicePlaying: AnyObject {
     var onFinished: (() -> Void)? { get set }
-    func play(url: URL)
+    /// `volume` is the voice's target level; the caller halves it for ambience.
+    func play(url: URL, volume: Float)
     func pause()
     func resume()
     func stop()
@@ -1827,7 +1923,7 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     var onFinished: (() -> Void)?
 
     private var player: AVAudioPlayer?
-    private var pendingURL: URL?
+    private var pending: (url: URL, volume: Float)?
     private var preDuckVolume: Float?
     private var elapsedTimer: Timer?
     private var cancellables: [AnyCancellable] = []
@@ -1845,12 +1941,12 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
 
     deinit { elapsedTimer?.invalidate() }
 
-    func play(url: URL) {
+    func play(url: URL, volume: Float) {
         if voiceGuide.isPlaying {
-            pendingURL = url
+            pending = (url, volume)
             return
         }
-        start(url: url)
+        start(url: url, volume: volume)
     }
 
     func pause() {
@@ -1865,7 +1961,7 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     }
 
     func stop() {
-        pendingURL = nil
+        pending = nil
         player?.stop()
         finish(notify: false)
     }
@@ -1876,7 +1972,7 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
 
     // MARK: - Private
 
-    private func start(url: URL) {
+    private func start(url: URL, volume: Float) {
         stop()
         let current = soundscape.currentTargetVolume
         preDuckVolume = current
@@ -1886,7 +1982,7 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
         do {
             let p = try AVAudioPlayer(contentsOf: url)
             p.delegate = self
-            p.volume = Float(UserPreferences.voiceGuideVolume.value)
+            p.volume = volume
             p.prepareToPlay()
             p.play()
             player = p
@@ -1900,9 +1996,9 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     }
 
     private func startPendingIfNeeded() {
-        guard let url = pendingURL else { return }
-        pendingURL = nil
-        start(url: url)
+        guard let pending else { return }
+        self.pending = nil
+        start(url: pending.url, volume: pending.volume)
     }
 
     private func startElapsedTimer() {
@@ -1978,8 +2074,8 @@ git commit -m "feat(honor): WayVoicePlayer ducks, defers to guide prompts, holds
 - Test: `UnitTests/Honor/WayStoreTests.swift`
 
 **Interfaces:**
-- Produces: `final class WayStore` with `static let shared`, `init(baseDirectory: URL)`, `save(_ way: Way) throws`, `load(id:) -> Way?`, `list() -> [Way]` (accepted shares and persisted own-walk Ways, newest `acceptedAt` first), `acceptedAt(id:) -> Date?`, `mediaDirectory(for:) -> URL`, `mediaURL(for:relative:) -> URL`, `replies(for:) -> [Int: String]`, `setReply(wayId:originN:relativePath:) throws`, `link(walkUUID:to:) throws`, `wayId(forWalk:) -> String?`, `way(forWalk:) -> Way?`, `diskUsage(id:) -> Int`, `totalDiskUsage() -> Int`, `delete(id:)`, `deleteMedia(id:)`, `sweepExpired(now:) -> [String]`, `hasMedia(id:) -> Bool`.
-- Layout: `Ways/index.json` (`[walkUUID: wayId]`), `Ways/{id}/way.json`, `Ways/{id}/accepted.json` (`{"acceptedAt": Date}`), `Ways/{id}/replies.json`, `Ways/{id}/media/`.
+- Produces: `final class WayStore` with `static let shared`, `init(baseDirectory: URL)`, `save(_ way: Way) throws`, `load(id:) -> Way?`, `list() -> [Way]` (accepted shares and persisted own-walk Ways, newest `acceptedAt` first), `acceptedAt(id:) -> Date?`, `mediaDirectory(for:) -> URL`, `mediaURL(for:relative:) -> URL`, `replies(for:) -> [Int: String]`, `setReply(wayId:originN:relativePath:) throws`, `link(walkUUID:to:arrival:) throws`, `wayLink(forWalk:) -> WayLink?`, `wayId(forWalk:) -> String?`, `way(forWalk:) -> Way?`, `diskUsage(id:) -> Int`, `totalDiskUsage() -> Int`, `delete(id:)`, `deleteMedia(id:)`, `sweepExpired(now:) -> [String]`, `hasMedia(id:) -> Bool`.
+- Layout: `Ways/index.json` (`[walkUUID: WayLink]` where `struct WayLink: Codable, Equatable { let wayId: String; let theirSeconds: Double?; let yourSeconds: Double? }`), `Ways/{id}/way.json`, `Ways/{id}/accepted.json` (`{"acceptedAt": Date}`), `Ways/{id}/replies.json`, `Ways/{id}/media/`. `link(walkUUID:to:arrival:)` takes an optional `(theirSeconds: Double, yourSeconds: Double)` recorded at arrival; `wayLink(forWalk:) -> WayLink?`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2018,7 +2114,7 @@ final class WayStoreTests: XCTestCase {
     func testLinkAndRepliesSurviveMediaDeletion() throws {
         try store.save(way(id: "share:a", expires: nil))
         let walk = UUID()
-        try store.link(walkUUID: walk, to: "share:a")
+        try store.link(walkUUID: walk, to: "share:a", arrival: (theirSeconds: 600, yourSeconds: 540))
         try store.setReply(wayId: "share:a", originN: 3, relativePath: "Recordings/x/y.m4a")
         let media = store.mediaURL(for: "share:a", relative: "audio/1.m4a")
         try FileManager.default.createDirectory(at: media.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -2028,6 +2124,7 @@ final class WayStoreTests: XCTestCase {
         store.deleteMedia(id: "share:a")
         XCTAssertFalse(store.hasMedia(id: "share:a"))
         XCTAssertEqual(store.wayId(forWalk: walk), "share:a")
+        XCTAssertEqual(store.wayLink(forWalk: walk), WayLink(wayId: "share:a", theirSeconds: 600, yourSeconds: 540))
         XCTAssertEqual(store.replies(for: "share:a"), [3: "Recordings/x/y.m4a"])
         XCTAssertEqual(store.way(forWalk: walk)?.id, "share:a")
     }
@@ -2039,7 +2136,7 @@ final class WayStoreTests: XCTestCase {
         try store.save(way(id: "share:live", expires: future))
         try store.save(Way(id: "walk:own", source: .ownWalk(UUID()), title: "own", departedAt: now, tzIdentifier: nil,
                            expires: nil, route: [], totalDistanceMeters: 0, theirActiveSeconds: 0, moments: [], weather: nil))
-        try store.link(walkUUID: UUID(), to: "share:walked-expired")
+        try store.link(walkUUID: UUID(), to: "share:walked-expired", arrival: nil)
         for id in ["share:unwalked-expired", "share:walked-expired", "share:live"] {
             let media = store.mediaURL(for: id, relative: "audio/1.m4a")
             try FileManager.default.createDirectory(at: media.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -2054,10 +2151,18 @@ final class WayStoreTests: XCTestCase {
         XCTAssertNotNil(store.load(id: "walk:own"))
     }
 
+    func testStrayFolderNamesAreIgnoredAndBadIdsRefused() throws {
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("..%2Fescape"), withIntermediateDirectories: true)
+        XCTAssertTrue(store.list().isEmpty)
+        XCTAssertThrowsError(try store.save(way(id: "share:../x", expires: nil)))
+        XCTAssertFalse(WayStore.isValidId("index.json"))
+        XCTAssertTrue(WayStore.isValidId("walk:\(UUID().uuidString)"))
+    }
+
     func testDeleteRemovesEverythingAndTheIndexLink() throws {
         try store.save(way(id: "share:a", expires: nil))
         let walk = UUID()
-        try store.link(walkUUID: walk, to: "share:a")
+        try store.link(walkUUID: walk, to: "share:a", arrival: nil)
         store.delete(id: "share:a")
         XCTAssertNil(store.load(id: "share:a"))
         XCTAssertNil(store.wayId(forWalk: walk))
@@ -2077,6 +2182,14 @@ xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimula
 
 ```swift
 import Foundation
+
+struct WayLink: Codable, Equatable {
+    let wayId: String
+    /// The companion's timeline at arrival, recorded by the engine; nil when
+    /// the walk ended before the end of the Way.
+    let theirSeconds: Double?
+    let yourSeconds: Double?
+}
 
 /// Application Support/Ways: one folder per Way, an index from walk UUID to
 /// Way id, and the sharer's-promise sweep. The whole tree is excluded from
@@ -2115,7 +2228,15 @@ final class WayStore {
 
     // MARK: - Ways
 
+    /// Ids are built by code (`share:` + a validated share id, `walk:` + a
+    /// UUID). The store still refuses anything else so a stray folder name or
+    /// a future caller can never turn an id into a path outside `Ways/`.
+    static func isValidId(_ id: String) -> Bool {
+        id.range(of: "^(share:[A-Za-z0-9_-]{10}|walk:[0-9A-Fa-f-]{36})$", options: .regularExpression) != nil
+    }
+
     func save(_ way: Way) throws {
+        guard Self.isValidId(way.id) else { throw CocoaError(.fileWriteInvalidFileName) }
         let dir = directory(for: way.id)
         try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         try encoder.encode(way).write(to: dir.appendingPathComponent("way.json"), options: .atomic)
@@ -2138,14 +2259,15 @@ final class WayStore {
 
     func list() -> [Way] {
         let ids = (try? fileManager.contentsOfDirectory(atPath: base.path)) ?? []
-        return ids.compactMap { load(id: $0) }
+        return ids.filter(Self.isValidId).compactMap { load(id: $0) }
             .sorted { (acceptedAt(id: $0.id) ?? .distantPast) > (acceptedAt(id: $1.id) ?? .distantPast) }
     }
 
     func delete(id: String) {
+        guard Self.isValidId(id) else { return }
         try? fileManager.removeItem(at: directory(for: id))
         var index = loadIndex()
-        index = index.filter { $0.value != id }
+        index = index.filter { $0.value.wayId != id }
         saveIndex(index)
     }
 
@@ -2191,17 +2313,19 @@ final class WayStore {
         try encoder.encode(encodable).write(to: directory(for: wayId).appendingPathComponent("replies.json"), options: .atomic)
     }
 
-    func link(walkUUID: UUID, to wayId: String) throws {
+    func link(walkUUID: UUID, to wayId: String, arrival: (theirSeconds: Double, yourSeconds: Double)?) throws {
         var index = loadIndex()
-        index[walkUUID.uuidString] = wayId
+        index[walkUUID.uuidString] = WayLink(wayId: wayId, theirSeconds: arrival?.theirSeconds, yourSeconds: arrival?.yourSeconds)
         saveIndex(index)
     }
 
-    func wayId(forWalk uuid: UUID) -> String? { loadIndex()[uuid.uuidString] }
+    func wayLink(forWalk uuid: UUID) -> WayLink? { loadIndex()[uuid.uuidString] }
+
+    func wayId(forWalk uuid: UUID) -> String? { wayLink(forWalk: uuid)?.wayId }
 
     func way(forWalk uuid: UUID) -> Way? { wayId(forWalk: uuid).flatMap(load(id:)) }
 
-    private var walkedIds: Set<String> { Set(loadIndex().values) }
+    private var walkedIds: Set<String> { Set(loadIndex().values.map(\.wayId)) }
 
     // MARK: - Sweep
 
@@ -2226,23 +2350,24 @@ final class WayStore {
     // MARK: - Private
 
     private func directory(for id: String) -> URL {
-        base.appendingPathComponent(id, isDirectory: true)
+        precondition(Self.isValidId(id), "WayStore: invalid way id \(id)")
+        return base.appendingPathComponent(id, isDirectory: true)
     }
 
     private var indexURL: URL { base.appendingPathComponent("index.json") }
 
-    private func loadIndex() -> [String: String] {
+    private func loadIndex() -> [String: WayLink] {
         guard let data = try? Data(contentsOf: indexURL) else { return [:] }
-        return (try? decoder.decode([String: String].self, from: data)) ?? [:]
+        return (try? decoder.decode([String: WayLink].self, from: data)) ?? [:]
     }
 
-    private func saveIndex(_ index: [String: String]) {
+    private func saveIndex(_ index: [String: WayLink]) {
         try? encoder.encode(index).write(to: indexURL, options: .atomic)
     }
 }
 ```
 
-`list()` must skip `index.json`: `load(id:)` returns nil for it because there is no `way.json` inside a file, which is the intended behavior.
+`list()` filters directory names through `isValidId` before touching them, so `index.json` and any stray folder never reach `directory(for:)`.
 
 - [ ] **Step 4: Register, test**
 
@@ -2250,7 +2375,7 @@ final class WayStore {
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/WayStore.swift
 xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/WayStoreTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 4 tests, with 0 failures`.
+Expected: `Executed 5 tests, with 0 failures`.
 
 - [ ] **Step 5: Commit**
 
@@ -2272,7 +2397,7 @@ git commit -m "feat(honor): WayStore with index, replies, expiry sweep, and back
 
 **Interfaces:**
 - Consumes: `HonorEngine`, `WayVoicePlaying`, `WayStore`, `HonorPersistence`.
-- Produces: `ActiveWalkViewModel.init(mode:way:seekAccuracy:seekSenses:honorSenses:)`; `let way: Way?`; `@Published honorEngine: HonorEngine?`, `honorCards: [WayMoment]` (pending, trigger order), `activeVoice: WayMoment?`, `isVoicePaused: Bool`, `honorArrival: HonorArrivalCard?`; `struct HonorSenses { makeVoicePlayer, isAppActive, resolveMediaURL }`; `func dismissTopCard()`, `func showCard(for moment: WayMoment)`, `func replyHere(to voice: WayMoment)`, `func mediaURL(for media: WayMedia) -> URL?`, `func startMeditation(minutes:)` (wraps `startMeditation()` and sets the timer preset), `writeHonorMarkerEventIfNeeded()`, `handleHonorEvent(_:)`, `teardownHonor()`, `var honorGlance: HonorGlanceState?` (Task 16 wires it).
+- Produces: `ActiveWalkViewModel.init(mode:way:seekAccuracy:seekSenses:honorSenses:)`; `let way: Way?`; `@Published honorEngine: HonorEngine?`, `honorCards: [WayMoment]` (pending, trigger order), `activeVoice: WayMoment?`, `isVoicePaused: Bool`, `honorArrival: HonorArrivalCard?`; `struct HonorSenses { makeVoicePlayer, isAppActive, store }`; `func dismissTopCard()`, `func showCard(for moment: WayMoment)`, `func replyHere(to voice: WayMoment)`, `func mediaURL(for media: WayMedia) -> URL?` (nil when the file is missing), `func togglePlayback(of:)`, `func skipVoice()`, `func startMeditation(minutes:)` (sets `suggestedMeditationMinutes` and calls `startMeditation()`), `writeHonorMarkerEventIfNeeded()`, `handleHonorEvent(_:)`, `teardownHonor()`, `var honorGlance: HonorGlanceState?` (Task 16 wires it).
 - `UserPreferences.honorVoicesEnabled` (Bool, default true), `honorSoftTapEnabled` (Bool, default false). `HapticPattern.honorOffWay`, `.honorArrival`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -2289,7 +2414,7 @@ final class ActiveWalkHonorTests: XCTestCase {
         var onFinished: (() -> Void)?
         var played: [URL] = []
         var pauses = 0, resumes = 0, stops = 0
-        func play(url: URL) { played.append(url) }
+        func play(url: URL, volume: Float) { played.append(url) }
         func pause() { pauses += 1 }
         func resume() { resumes += 1 }
         func stop() { stops += 1 }
@@ -2297,13 +2422,13 @@ final class ActiveWalkHonorTests: XCTestCase {
 
     private var player: SpyVoicePlayer!
     private var vm: ActiveWalkViewModel!
-
+    private var recordingURL: URL!
     private let start = Date(timeIntervalSince1970: 1_000_000)
 
     private func way() -> Way {
         let route = (0...10).map { i in WayPoint(lat: 0, lon: Double(i) * 0.000898, alt: nil, t: Double(i) * 60) }
         let voice = WayMoment(id: "voice-1", frac: 0.3, at: WayCoordinate(lat: 0, lon: 300 / 111_320),
-                              kind: .voice(endFrac: 0.35, duration: 20, kind: .spoken, media: .recording(relativePath: "Recordings/x.m4a")))
+                              kind: .voice(endFrac: 0.35, duration: 20, kind: .spoken, media: .recording(relativePath: "Recordings/honor-test.m4a")))
         let sit = WayMoment(id: "sit-1", frac: 0.5, at: WayCoordinate(lat: 0, lon: 500 / 111_320),
                             kind: .meditation(minutes: 7, isEstimate: false))
         return Way(id: "walk:test", source: .ownWalk(UUID()), title: "Test way", departedAt: start, tzIdentifier: nil,
@@ -2311,18 +2436,28 @@ final class ActiveWalkHonorTests: XCTestCase {
                    moments: [voice, sit], weather: nil)
     }
 
-    override func setUp() {
-        player = SpyVoicePlayer()
+    private func makeVM() -> ActiveWalkViewModel {
         var senses = HonorSenses()
         senses.makeVoicePlayer = { [player] in player! }
         senses.isAppActive = { false }
-        vm = ActiveWalkViewModel(mode: .honor, way: way(), honorSenses: senses)
+        let vm = ActiveWalkViewModel(mode: .honor, way: way(), honorSenses: senses)
         settleCombineSchedulers()
+        return vm
+    }
+
+    override func setUpWithError() throws {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        recordingURL = docs.appendingPathComponent("Recordings/honor-test.m4a")
+        try FileManager.default.createDirectory(at: recordingURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        _ = try TestAudioFile.writeSilentAudioFile(to: recordingURL)
+        player = SpyVoicePlayer()
+        vm = makeVM()
     }
 
     override func tearDown() {
         vm.cancel()
         vm = nil
+        try? FileManager.default.removeItem(at: recordingURL)
     }
 
     private func fix(lon: Double, seconds: Double) -> TempRouteDataSample {
@@ -2330,49 +2465,96 @@ final class ActiveWalkHonorTests: XCTestCase {
                             altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, speed: 1.4, direction: 90)
     }
 
-    func testEngineBootsOnRecordingStartAndWritesTheMarkerEvent() {
+    /// Every engine stream hops through `receive(on: .main)`: settle after each write.
+    private func drive(_ sample: TempRouteDataSample) {
+        vm.currentLocation = sample
+        settleCombineSchedulers()
+    }
+
+    private func begin() {
         vm.startRecording()
+        settleCombineSchedulers()
+    }
+
+    private func recordedEvents() throws -> [TempWalkEvent] {
+        try awaitPublisher(vm.builder.workoutEventsPublisher)
+    }
+
+    func testEngineBootsOnRecordingStartAndWritesTheMarkerEvent() throws {
+        begin()
         XCTAssertNotNil(vm.honorEngine)
-        XCTAssertTrue(vm.builder.workoutEvents.contains { $0.eventType == .honorMode })
+        XCTAssertTrue(try recordedEvents().contains { $0.eventType == .honorMode })
     }
 
     func testVoicePlaysWhereItWasSpokenAndSitOffersACard() {
-        vm.startRecording()
-        vm.currentLocation = fix(lon: 0, seconds: 0)
-        vm.currentLocation = fix(lon: 300 / 111_320, seconds: 200)
-        XCTAssertEqual(player.played.count, 1)
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        XCTAssertEqual(player.played, [recordingURL])
         XCTAssertEqual(vm.activeVoice?.id, "voice-1")
-        vm.currentLocation = fix(lon: 500 / 111_320, seconds: 400)
+        XCTAssertEqual(vm.heardVoiceIDs, ["voice-1"])
+        drive(fix(lon: 500 / 111_320, seconds: 400))
         XCTAssertEqual(vm.honorCards.first?.id, "sit-1")
         vm.dismissTopCard()
         XCTAssertTrue(vm.honorCards.isEmpty)
     }
 
     func testMeditationPausesTheVoiceAndResumesAfter() {
-        vm.startRecording()
-        vm.currentLocation = fix(lon: 0, seconds: 0)
-        vm.currentLocation = fix(lon: 300 / 111_320, seconds: 200)
-        vm.startMeditation()
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        vm.startMeditation(minutes: 7)
+        settleCombineSchedulers()
         XCTAssertEqual(player.pauses, 1)
         XCTAssertTrue(vm.isVoicePaused)
+        XCTAssertEqual(vm.suggestedMeditationMinutes, 7)
         vm.endMeditationSilently()
+        settleCombineSchedulers()
         XCTAssertEqual(player.resumes, 1)
         XCTAssertFalse(vm.isVoicePaused)
+        XCTAssertNil(vm.suggestedMeditationMinutes)
     }
 
-    func testArrivalWritesEventAndReservedWaypoint() {
-        vm.startRecording()
+    func testTogglePlaybackAndSkip() {
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        let voice = vm.activeVoice!
+        vm.togglePlayback(of: voice)
+        XCTAssertEqual(player.pauses, 1)
+        XCTAssertTrue(vm.isVoicePaused)
+        vm.togglePlayback(of: voice)
+        XCTAssertEqual(player.resumes, 1)
+        vm.skipVoice()
+        XCTAssertGreaterThanOrEqual(player.stops, 1)
+        XCTAssertNil(vm.activeVoice)
+    }
+
+    func testMissingRecordingFileIsNeitherPlayedNorHeard() throws {
+        try FileManager.default.removeItem(at: recordingURL)
+        vm.cancel()
+        vm = makeVM()
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        XCTAssertTrue(player.played.isEmpty)
+        XCTAssertTrue(vm.heardVoiceIDs.isEmpty)
+    }
+
+    func testArrivalWritesEventWaypointAndTheCompanionDelta() throws {
+        begin()
         vm.honorEngine?.updateActiveDuration(500)
-        for i in 0...10 { vm.currentLocation = fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60) }
-        for i in 0..<3 { vm.currentLocation = fix(lon: 10 * 0.000898, seconds: 700 + Double(i)) }
-        XCTAssertTrue(vm.builder.workoutEvents.contains { $0.eventType == .honorArrival })
+        for i in 0...10 { drive(fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60)) }
+        for i in 0..<3 { drive(fix(lon: 10 * 0.000898, seconds: 700 + Double(i))) }
+        XCTAssertTrue(try recordedEvents().contains { $0.eventType == .honorArrival })
         XCTAssertEqual(vm.waypoints.filter(HonorPersistence.isArrivalWaypoint).count, 1)
         XCTAssertEqual(vm.waypoints.first?.label, HonorPersistence.arrivalWaypointLabel(wayTitle: "Test way"))
-        XCTAssertNotNil(vm.honorArrival)
+        XCTAssertEqual(vm.honorArrival?.theirSeconds ?? 0, 600, accuracy: 1)
+        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? 0, 500, accuracy: 1)
     }
 
     func testStopTearsDownThePlayer() {
-        vm.startRecording()
+        begin()
         vm.stop()
         XCTAssertGreaterThanOrEqual(player.stops, 1)
         XCTAssertNil(vm.honorEngine)
@@ -2380,7 +2562,7 @@ final class ActiveWalkHonorTests: XCTestCase {
 }
 ```
 
-`builder.workoutEvents` must be readable; check `WalkBuilder` for its events accessor name (`grep -n "workoutEvents" Pilgrim/Models/Walk/WalkBuilder/WalkBuilder.swift`) and use it. The seek tests in `UnitTests/Seek/ActiveWalkSeekTests.swift` show how they assert on the `.seekMode` event; copy that access path.
+Events are read the way `ActiveWalkSeekTests.recordedEvents(of:)` reads them: `awaitPublisher(vm.builder.workoutEventsPublisher)`. Every assertion follows a `settleCombineSchedulers()` because `HonorEngine.bind` hops through `receive(on: .main)`.
 
 - [ ] **Step 2: Register and run to verify it fails**
 
@@ -2429,6 +2611,8 @@ Add after the seek state block (`:88`):
     @Published var isVoicePaused = false
     @Published var honorArrival: HonorArrivalCard?
     @Published var heardVoiceIDs: Set<String> = []
+    /// "they sat here for 12 minutes. Sit?": a static caption for MeditationView, never a countdown.
+    @Published var suggestedMeditationMinutes: Int?
     var pendingReplyOrigin: WayMoment?
     let honorSenses: HonorSenses
     var wayVoicePlayer: WayVoicePlaying?
@@ -2448,7 +2632,7 @@ Change the initializer signature to:
         self.way = way
         self.honorSenses = honorSenses
 ```
-and after `if mode == .seek { bindSeekLifecycle() }` add nothing; the honor engine boots from `startRecording`. In `startRecording()` add `writeHonorMarkerEventIfNeeded()` and `startHonorEngineIfNeeded()` right after `writeSeekMarkerEventIfNeeded()`. In `stop()` and `cancel()` add `teardownHonor()` right after `teardownSeek()`. In `startMeditation()` nothing changes: the engine reads `$isMeditating`.
+and after `if mode == .seek { bindSeekLifecycle() }` add nothing; the honor engine boots from `startRecording`. In `startRecording()` add `writeHonorMarkerEventIfNeeded()` and `startHonorEngineIfNeeded()` right after `writeSeekMarkerEventIfNeeded()`. In `stop()` and `cancel()` add `teardownHonor()` right after `teardownSeek()`. In `startMeditation()` nothing changes: the engine reads `$isMeditating`. In `finalizeMeditation()` add `suggestedMeditationMinutes = nil`.
 
 - [ ] **Step 5: Create `ActiveWalkViewModel+Honor.swift`**
 
@@ -2469,6 +2653,10 @@ struct HonorArrivalCard: Equatable {
     let wayTitle: String
     let voicesHeard: Int
     let placesPassed: Int
+    /// The engine's numbers on the companion's timeline; persisted into the
+    /// index link at save time so the summary can read them back.
+    let theirSeconds: Double
+    let yourSeconds: Double
 }
 
 extension ActiveWalkViewModel {
@@ -2524,14 +2712,14 @@ extension ActiveWalkViewModel {
             fireHonorHaptic(.waypointDropped)
 
         case .voiceStart(let moment):
-            guard case .voice(_, _, _, let media) = moment.kind, let url = mediaURL(for: media) else {
+            guard case .voice(_, _, let kind, let media) = moment.kind, let url = mediaURL(for: media) else {
                 honorEngine?.voiceDidFinish()
                 return
             }
             activeVoice = moment
             isVoicePaused = false
             heardVoiceIDs.insert(moment.id)
-            wayVoicePlayer?.play(url: url)
+            wayVoicePlayer?.play(url: url, volume: Self.voiceVolume(for: kind))
 
         case .voicePause:
             isVoicePaused = true
@@ -2551,20 +2739,21 @@ extension ActiveWalkViewModel {
         case .softTap:
             fireHonorHaptic(.honorOffWay)
 
-        case .arrived:
-            recordHonorArrival()
+        case .arrived(let theirSeconds, let yourSeconds):
+            recordHonorArrival(theirSeconds: theirSeconds, yourSeconds: yourSeconds)
             fireHonorHaptic(.honorArrival)
         }
     }
 
     /// The persistence commit happens before any ritual effect, as in Seek.
-    private func recordHonorArrival() {
+    private func recordHonorArrival(theirSeconds: Double, yourSeconds: Double) {
         guard let way else { return }
         builder.addWorkoutEvent(TempWalkEvent(uuid: nil, eventType: .honorArrival, timestamp: Date()))
         addWaypoint(label: HonorPersistence.arrivalWaypointLabel(wayTitle: way.title),
                     icon: HonorPersistence.arrivalWaypointIcon)
         honorArrival = HonorArrivalCard(wayTitle: way.title, voicesHeard: heardVoiceIDs.count,
-                                        placesPassed: way.moments.count - way.voiceCount)
+                                        placesPassed: way.moments.count - way.voiceCount,
+                                        theirSeconds: theirSeconds, yourSeconds: yourSeconds)
     }
 
     // MARK: - Cards, media, replies
@@ -2579,11 +2768,20 @@ extension ActiveWalkViewModel {
         honorCards.insert(moment, at: 0)
     }
 
+    /// Ambience is the sound of a place, not a voice: it plays once at half
+    /// the voice level on entry. A continuous bed inside its span is deferred
+    /// (one player at a time, per the resource-safety rules).
+    static func voiceVolume(for kind: VoiceKind) -> Float {
+        let base = Float(UserPreferences.voiceGuideVolume.value)
+        return kind == .ambient ? base * 0.5 : base
+    }
+
     func mediaURL(for media: WayMedia) -> URL? {
         switch media {
         case .recording(let relativePath):
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            return docs.appendingPathComponent(relativePath)
+            let url = docs.appendingPathComponent(relativePath)
+            return FileManager.default.fileExists(atPath: url.path) ? url : nil
         case .file(let relative):
             guard let way else { return nil }
             let url = honorSenses.store().mediaURL(for: way.id, relative: relative)
@@ -2609,8 +2807,31 @@ extension ActiveWalkViewModel {
     }
 
     func startMeditation(minutes: Int) {
-        UserPreferences.meditationTimerMinutes.value = minutes
+        suggestedMeditationMinutes = minutes
         startMeditation()
+    }
+
+    /// From the card or the chip: pause or resume the active voice, or replay
+    /// another voice outside the engine's queue.
+    func togglePlayback(of moment: WayMoment) {
+        if moment == activeVoice {
+            if isVoicePaused { wayVoicePlayer?.resume() } else { wayVoicePlayer?.pause() }
+            isVoicePaused.toggle()
+            return
+        }
+        guard case .voice(_, _, let kind, let media) = moment.kind, let url = mediaURL(for: media) else { return }
+        wayVoicePlayer?.stop()
+        activeVoice = moment
+        isVoicePaused = false
+        heardVoiceIDs.insert(moment.id)
+        wayVoicePlayer?.play(url: url, volume: Self.voiceVolume(for: kind))
+    }
+
+    func skipVoice() {
+        wayVoicePlayer?.stop()
+        activeVoice = nil
+        isVoicePaused = false
+        honorEngine?.voiceDidFinish()
     }
 
     // MARK: - Private
@@ -2635,14 +2856,14 @@ extension ActiveWalkViewModel {
 }
 ```
 
-One thing this extension needs from the main file: a meditation timer preference. Check `grep -rn "meditationTimerMinutes\|timerMinutes\|meditationDuration" Pilgrim/Models/Preferences/UserPreferences.swift Pilgrim/Scenes/ActiveWalk/MeditationView.swift`. If the app has no preset preference (the timer is open-ended), replace `startMeditation(minutes:)` with a stored `var suggestedMeditationMinutes: Int?` set before `startMeditation()`, and let `MeditationView` show it as the countdown target when present. Also wire replies: in `bindCompletedRecordings` (main file `:490-497`) call `self?.recordReplyIfPending(latestRecording:)` with `recordings.last` when the count grew.
+`MeditationView` has an elapsed timer and no preset (verified: `Pilgrim/Scenes/ActiveWalk/MeditationView.swift` has no countdown). The suggestion is a static caption, not a timer: `MeditationView` gains `let suggestedMinutes: Int?` (passed from `ActiveWalkView.swift:204` as `viewModel.suggestedMeditationMinutes`) and, when non-nil, renders "they sat here \(n) minutes" in `Constants.Typography.caption` under the elapsed timer. No new `Timer`, no end behavior, no bell change. Wire replies: in `bindCompletedRecordings` (main file `:490-497`) call `self?.recordReplyIfPending(latestRecording:)` with `recordings.last` when the count grew.
 
 - [ ] **Step 6: Run the tests**
 
 ```bash
 xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/ActiveWalkHonorTests -only-testing:UnitTests/ActiveWalkSeekTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 5 tests, with 0 failures`; the Seek VM suite still green.
+Expected: `Executed 7 tests, with 0 failures`; the Seek VM suite still green.
 
 - [ ] **Step 7: Commit**
 
@@ -2945,6 +3166,10 @@ git commit -m "feat(honor): ghost line, companion dot, and way pins on the map"
 - `HonorOverviewModel.statusLine(distanceToStartMeters: Double?) -> String?` ("2.3 km from the start" / "you're on the way" / nil when unknown), `HonorOverviewModel.weatherLine(theirs: WayWeather?, today: String?) -> String?`, `HonorOverviewModel.countsLine(way:) -> String` ("9 voices · 4 photos").
 - `WalkSummaryView(walk:onWalkAgain:)`, `HomeView(viewModel:onWalkAgain:)`.
 
+**Deviation from the spec, for sign-off.** The spec places the Ways list inline under the mode selector with Begin's label flipping once a Way is chosen. `WalkStartView` is a fixed atmospheric layout (logo, quote, moon, selector, Begin) with no scrollable region, so this plan opens a "Choose a way" sheet from Begin instead and the overview is a second sheet. If the inline list is wanted after seeing it, the sheet's rows move into a three-row `HonorWaysList` under the selector and Begin's label flips; nothing else changes.
+
+**Presentation rule (AF60).** Never change two presentations in one update: every road into the overview parks the Way and promotes it from the closing sheet's `onDismiss`; Begin parks the Way and starts the walk from the overview's `onDismiss`.
+
 - [ ] **Step 1: Write the failing tests**
 
 ```swift
@@ -3053,6 +3278,7 @@ struct HonorOverviewView: View {
     @State private var cameraZoom: CGFloat = 14
     @State private var isMeditating = false
     @State private var distanceToStart: Double?
+    @State private var todayCondition: String?
     @State private var voicesEnabled = UserPreferences.honorVoicesEnabled.value
     private let locationProbe = CLLocationManager()
 
@@ -3087,7 +3313,7 @@ struct HonorOverviewView: View {
                     Text(HonorOverviewModel.countsLine(way: way))
                 }
                 .font(Constants.Typography.body).foregroundColor(.ink)
-                if let line = HonorOverviewModel.weatherLine(theirs: way.weather, today: nil) {
+                if let line = HonorOverviewModel.weatherLine(theirs: way.weather, today: todayCondition) {
                     Text(line).font(Constants.Typography.caption).foregroundColor(.fog)
                 }
                 if let status = HonorOverviewModel.statusLine(distanceToStartMeters: distanceToStart) {
@@ -3115,6 +3341,15 @@ struct HonorOverviewView: View {
             ToolbarItem(placement: .cancellationAction) { Button("Close", action: onClose) }
         }
         .onAppear { probeDistance() }
+        .task { await fetchToday() }
+    }
+
+    /// "Today is clear": the same service the walk uses, on the walker's
+    /// current fix; silent when offline or without a fix.
+    private func fetchToday() async {
+        guard let here = locationProbe.location,
+              let snapshot = await WeatherService().fetchCurrent(for: here) else { return }
+        todayCondition = snapshot.condition.rawValue   // the string the walk stores as `weatherCondition`
     }
 
     private func durationText(_ seconds: Double) -> String {
@@ -3183,8 +3418,7 @@ struct HonorWaysSheet: View {
             .sheet(isPresented: $showOwnWalks) {
                 OwnWalkPicker(walks: ownWalks) { walk in
                     guard let way = OwnWalkWayBuilder.make(from: walk) else { return }
-                    showOwnWalks = false
-                    onChoose(way)
+                    onChoose(way)   // dismisses the parent sheet, which takes this nested one with it
                 }
             }
             .onAppear {
@@ -3213,7 +3447,10 @@ struct OwnWalkPicker: View {
     let walks: [Walk]
     let onPick: (Walk) -> Void
 
-    private var eligible: [Walk] { walks.filter { $0.routeData.count >= 2 } }
+    /// Computed once on appear from the stored `distance` attribute: faulting
+    /// every walk's `routeData` per body pass is the O(walks) main-thread
+    /// cost `HomeViewModel` already avoids with bulk queries.
+    @State private var eligible: [Walk] = []
 
     var body: some View {
         NavigationStack {
@@ -3236,6 +3473,7 @@ struct OwnWalkPicker: View {
             }
             .navigationTitle("Walk again")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { eligible = walks.filter { $0.distance > 0 } }
         }
     }
 }
@@ -3259,12 +3497,19 @@ enum HonorLinkPreview {
     @Published var honorWaysPresented = false
     @Published var honorOverviewWay: Way?
     var pendingHonorWay: Way?
+    var pendingStartWay: Way?
 
     func chooseWay() { honorWaysPresented = true }
 
+    /// From the Ways sheet: park the Way, close the sheet, promote on dismiss.
+    /// From a link with no sheet open: present directly (one change).
     func openOverview(for way: Way) {
-        honorWaysPresented = false
-        honorOverviewWay = way
+        if honorWaysPresented {
+            pendingHonorWay = way
+            honorWaysPresented = false
+        } else {
+            honorOverviewWay = way
+        }
     }
 
     /// Called from a summary's "walk this again": hold the Way, let the
@@ -3281,15 +3526,23 @@ enum HonorLinkPreview {
     }
 
     func startHonor(way: Way) {
+        pendingStartWay = way
         honorOverviewWay = nil
-        startWalk(mode: .honor, way: way)
+    }
+
+    func handleOverviewDismiss() {
+        if let way = pendingStartWay {
+            pendingStartWay = nil
+            startWalk(mode: .honor, way: way)
+        }
     }
 ```
 Change `startWalk(mode:)` to `startWalk(mode: WalkMode = .wander, way: Way? = nil)` and construct `ActiveWalkViewModel(mode: mode, way: way)`. In the save-success branch, after `snapshot.uuid = walk?.uuid`, add:
 ```swift
                     if let way, let uuid = walk?.uuid {
                         try? WayStore.shared.save(way)
-                        try? WayStore.shared.link(walkUUID: uuid, to: way.id)
+                        let arrival = vm?.honorArrival.map { (theirSeconds: $0.theirSeconds, yourSeconds: $0.yourSeconds) }
+                        try? WayStore.shared.link(walkUUID: uuid, to: way.id, arrival: arrival)
                     }
 ```
 (`save` is idempotent; for an own-walk Way this is the moment `way.json` is first written.) `handleSummaryDismiss()` additionally calls `promotePendingHonorWay()`.
@@ -3302,14 +3555,14 @@ Change `startWalk(mode:)` to `startWalk(mode: WalkMode = .wander, way: Way? = ni
 ```
 Add two sheets after the summary sheet:
 ```swift
-        .sheet(isPresented: $coordinator.honorWaysPresented) {
+        .sheet(isPresented: $coordinator.honorWaysPresented, onDismiss: coordinator.promotePendingHonorWay) {
             HonorWaysSheet(
                 ownWalks: coordinator.homeViewModel.walks,
                 onChoose: { coordinator.openOverview(for: $0) },
                 onPaste: { _ in }   // Phase B, Task 19
             )
         }
-        .sheet(item: $coordinator.honorOverviewWay) { way in
+        .sheet(item: $coordinator.honorOverviewWay, onDismiss: coordinator.handleOverviewDismiss) { way in
             NavigationStack {
                 HonorOverviewView(way: way, onBegin: { coordinator.startHonor(way: way) },
                                   onClose: { coordinator.honorOverviewWay = nil })
@@ -3318,7 +3571,7 @@ Add two sheets after the summary sheet:
 ```
 `Way` must be `Identifiable`: add `extension Way: Identifiable {}` in `Way.swift` (its `id` is already a `String`). Pass `onWalkAgain: { coordinator.walkAgain($0) }` to the summary sheet in `MainTabView`, and `MainCoordinatorView` passes `HomeView(viewModel:, onWalkAgain: coordinator.walkAgain)`; `HomeView` forwards it to its `WalkSummaryView` and calls `onWalkAgainPromote` on the sheet's `onDismiss`. Concretely `HomeView` gains `let onWalkAgain: (WalkInterface) -> Void` and `let onSummaryDismiss: () -> Void`, and `MainCoordinatorView` passes `coordinator.walkAgain` and `coordinator.promotePendingHonorWay`.
 
-`WalkSummaryView`: add `var onWalkAgain: ((WalkInterface) -> Void)? = nil` and, next to the sharing buttons, when `walk.routeData.count >= 2 && onWalkAgain != nil`:
+`WalkSummaryView`: add `var onWalkAgain: ((WalkInterface) -> Void)? = nil` and, next to the sharing buttons, when `cachedRouteCoordinates.count >= 2 && onWalkAgain != nil` (the route is already cached; never re-fault `routeData` in a body):
 ```swift
                     Button {
                         onWalkAgain?(walk)
@@ -3347,10 +3600,11 @@ git commit -m "feat(honor): choose a way, overview with camera on the Way, walk 
 **Files:**
 - Create: `Pilgrim/Scenes/ActiveWalk/WayPlaceCard.swift`
 - Modify: `Pilgrim/Scenes/ActiveWalk/ActiveWalkView.swift:599-624` (map inputs, tap routing), the sheet composition near `:340-370`
-- Modify: `Pilgrim/Scenes/ActiveWalk/WalkStatsSheet.swift:325-357` (minimized bar hosts the listening chip and the off-way caption)
+- Modify: `Pilgrim/Scenes/ActiveWalk/WalkStatsSheet.swift:325-357` (minimized bar hosts the listening chip and the soft-tap caption)
+- Modify: `Pilgrim/Scenes/ActiveWalk/ActiveWalkViewModel+Honor.swift` (`existingReplyURL(for:)`, `softTapCaption`)
 
 **Interfaces:**
-- Produces: `WayPlaceCard(moment:way:mediaURL:isPlaying:isPaused:elapsed:onPlayPause:onReply:onSit:onDismiss:pendingCount:)`; `HonorListeningChip(voice:elapsed:isPaused:onPauseResume:onSkip:)`; `HonorArrivalCardView(card:onDismiss:)`.
+- Produces: `WayPlaceCard(moment:way:mediaURL:existingReply:isPlaying:isPaused:elapsed:pendingCount:onPlayPause:onReply:onSit:onDismiss:)`; `HonorListeningChip(voice:elapsed:isPaused:onPauseResume:onSkip:)`; `HonorArrivalCardView(card:onDismiss:)`; on the view model, `existingReplyURL(for:) -> URL?` and `@Published var softTapCaption: String?`.
 
 - [ ] **Step 1: Create `WayPlaceCard.swift`**
 
@@ -3367,10 +3621,13 @@ struct WayPlaceCard: View {
     let isPaused: Bool
     let elapsed: TimeInterval
     let pendingCount: Int
+    /// The walker's earlier reply to this voice, from a previous honoring of the same Way.
+    let existingReply: URL?
     let onPlayPause: () -> Void
     let onReply: () -> Void
     let onSit: (Int) -> Void
     let onDismiss: () -> Void
+    @State private var confirmReplace = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
@@ -3412,10 +3669,30 @@ struct WayPlaceCard: View {
                 Text("\(Int(elapsed) / 60):\(String(format: "%02d", Int(elapsed) % 60)) / \(Int(duration) / 60):\(String(format: "%02d", Int(duration) % 60))")
                     .font(Constants.Typography.timer).foregroundColor(.ink)
                 Spacer()
-                Button(action: onReply) {
-                    Label("reply here", systemImage: "mic").font(Constants.Typography.button).foregroundColor(.stone)
+                if existingReply == nil {
+                    Button(action: onReply) {
+                        Label("reply here", systemImage: "mic").font(Constants.Typography.button).foregroundColor(.stone)
+                    }
+                    .accessibilityLabel("Record a reply at this spot")
+                } else {
+                    Button { confirmReplace = true } label: {
+                        Label("record again", systemImage: "mic").font(Constants.Typography.button).foregroundColor(.stone)
+                    }
+                    .accessibilityLabel("Record a new reply, replacing your earlier one")
+                    .confirmationDialog("Replace your earlier reply?", isPresented: $confirmReplace, titleVisibility: .visible) {
+                        Button("Replace", role: .destructive, action: onReply)
+                        Button("Keep it", role: .cancel) {}
+                    }
                 }
-                .accessibilityLabel("Record a reply at this spot")
+            }
+            if let existingReply {
+                HStack(spacing: Constants.UI.Padding.small) {
+                    Text("your reply").font(Constants.Typography.caption).foregroundColor(.fog)
+                    Button { WayVoicePlayer.shared.play(url: existingReply, volume: Float(UserPreferences.voiceGuideVolume.value)) } label: {
+                        Image(systemName: "play.circle").foregroundColor(.stone)
+                    }
+                    .accessibilityLabel("Play your earlier reply")
+                }
             }
         case .photo(let media):
             WayPhotoPlate(media: media, fileURL: mediaURL)
@@ -3548,6 +3825,7 @@ Card host: in the view that composes the stats sheet, above the sheet content an
                 WayPlaceCard(
                     moment: moment, way: way,
                     mediaURL: mediaURL(for: moment),
+                    existingReply: viewModel.existingReplyURL(for: moment),
                     isPlaying: viewModel.activeVoice == moment,
                     isPaused: viewModel.isVoicePaused,
                     elapsed: WayVoicePlayer.shared.elapsedSeconds,
@@ -3560,11 +3838,20 @@ Card host: in the view that composes the stats sheet, above the sheet content an
                 .padding(.horizontal, Constants.UI.Padding.normal)
             }
 ```
-Re-reply: `WayPlaceCard` also takes `existingReply: URL?` (from `WayStore.shared.replies(for: way.id)` keyed by the voice's `n`, resolved through the Documents directory). When present, the voice body shows a second row, "your reply" with its own play button, and the reply control reads "record again" and asks "Replace your earlier reply?" before calling `onReply`; the earlier recording stays in the earlier walk's record either way.
+View-model additions for this task, in `ActiveWalkViewModel+Honor.swift`:
 
-Add `togglePlayback(of:)` to the view model extension: if the moment is the active voice, pause or resume the player and flip `isVoicePaused`; otherwise stop the current voice, set `activeVoice`, and play its media URL (a replay from the card, outside the engine's queue). `mediaURL(for:)` unwraps the moment's media through `viewModel.mediaURL(for:)`.
+```swift
+    /// The walker's earlier reply to `voice`, from a previous honoring of the same Way.
+    func existingReplyURL(for voice: WayMoment) -> URL? {
+        guard let way, let n = Int(voice.id.replacingOccurrences(of: "voice-", with: "")),
+              let relative = honorSenses.store().replies(for: way.id)[n] else { return nil }
+        return mediaURL(for: .recording(relativePath: relative))
+    }
+```
 
-Listening chip: in `WalkStatsSheet.minimizedContent`, when `activeVoice != nil`, show `HonorListeningChip` in place of the intention mantra; pass the view model's `activeVoice`, `WayVoicePlayer.shared.elapsedSeconds`, `isVoicePaused`, and closures that call `togglePlayback(of:)` and a new `skipVoice()` (stop the player and call `honorEngine?.voiceDidFinish()`). When `viewModel.honorEngine?.isOnWay == false` and `offWayMeters > 100`, the minimized bar's third stat reads "off the way · 240 m"; otherwise the third stat is the distance remaining when honoring.
+and, in `handleHonorEvent`, the `.softTap(let meters)` case additionally sets `softTapCaption = "off the way · \(Int(meters)) m"` and clears it 20 s later through a generation-guarded `asyncAfter` (`honorGeneration`, the same pattern as Seek's reveal whisper). `softTapCaption` is `@Published var softTapCaption: String?` beside the other honor state. The earlier recording stays in the earlier walk's record either way; `recordReplyIfPending` overwrites only the mapping. `mediaURL(for:)` in the card host unwraps the moment's media through `viewModel.mediaURL(for:)`.
+
+Listening chip: in `WalkStatsSheet.minimizedContent`, when `activeVoice != nil`, show `HonorListeningChip` in place of the intention mantra; pass the view model's `activeVoice`, `WayVoicePlayer.shared.elapsedSeconds`, `isVoicePaused`, and closures that call `togglePlayback(of:)` and `skipVoice()` (both Task 11). When honoring, the minimized bar's third stat is the distance remaining. The only deviation signal is the soft tap: while `softTapCaption` is non-nil (which can only happen with `UserPreferences.honorSoftTapEnabled` on, since the engine emits `.softTap` only then) the third stat shows that caption instead. With the preference off, nothing on screen ever comments on deviation.
 
 - [ ] **Step 3: Build and commit**
 
@@ -3584,6 +3871,7 @@ If `ActiveWalkView` crosses 700 lines, move the card host into `ActiveWalkView+H
 **Files:**
 - Create: `Pilgrim/Scenes/WalkSummary/HonorSummarySection.swift`
 - Create: `Pilgrim/Views/Scenery/StaffsShape.swift`
+- Note: this task touches twelve existing files; its test file asserts one behavior per subsystem (prompts, milestones, scenery, summary data, seal input, journal snapshots). Land it as one PR-reviewable commit per Step, not as a single commit.
 - Modify: `Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift:24`, `:81-83`, `:711-754` (`computeAnnotations`), `WalkSummaryView+Map.swift:52-64` (pass `honorWay`)
 - Modify: `Pilgrim/Scenes/Home/HomeViewModel.swift:17-20`, `:85-149`
 - Modify: `Pilgrim/Scenes/Home/InkScrollView.swift:354-357`, `:694`
@@ -3592,10 +3880,11 @@ If `ActiveWalkView` crosses 700 lines, move the card host into `ActiveWalkView+H
 - Modify: `Pilgrim/Scenes/Goshuin/GoshuinMilestones.swift:5-20`, `:33-41`, `:143-160`, `:218-231`, `:233-243`
 - Modify: `Pilgrim/Models/Seal/SealInput.swift`, `SealGenerator.swift:73`, `SealRenderer.swift:15`, `:111-149`
 - Modify: `Pilgrim/Models/Prompt/ActivityContext.swift:5-34`, `PromptAssembler.swift:154-171`
+- Modify: `UnitTests/SceneryGeneratorTests.swift`, `UnitTests/InkScrollLayoutTests.swift` (their `WalkSnapshot(...)` helpers gain `isHonor: false, honorArrivals: 0`; `HomeViewModel.buildSnapshots` is the third call site)
 - Test: `UnitTests/Honor/HonorJournalTests.swift`
 
 **Interfaces:**
-- Produces: `HonorSummaryData { wayTitle, arrivedBeforeTheirsSeconds: Double?, voicesHeard, repliesMade }`, `HonorSummaryModel.summaryData(for walk: WalkInterface, way: Way?, replies: [Int: String]) -> HonorSummaryData?` (nil unless the walk has a `.honorMode` event); `WalkSnapshot.isHonor`, `.honorArrivals`; `WalkModeFootprints(mode: WalkModeGlyph, color:)` with `enum WalkModeGlyph { wander, honor, seek }`; `SceneryType.staffs`; `GoshuinMilestones.Milestone.firstHonor`, `.honorsWalked(Int)`, `honorThresholds == [10, 25, 50, 100]`, `honorMilestones(arrivalsInWalk:arrivalsBefore:)`; `SealInput.honorArrivalCount`, `SealInput.wayPoints: [(lat: Double, lon: Double)]?`; `PracticeMode.honor`, `HonorStoryContext { wayTitle: String?, arrived: Bool }`.
+- Produces: `HonorSummaryData { wayTitle, arrivedBeforeTheirsSeconds: Double?, voicesHeard, repliesMade }`, `HonorSummaryModel.summaryData(for walk: WalkInterface, way: Way?, link: WayLink?, replies: [Int: String]) -> HonorSummaryData?` (nil unless the walk has a `.honorMode` event; the delta comes from the link record the engine wrote at arrival, never from `theirActiveSeconds`); `WalkSnapshot.isHonor`, `.honorArrivals`; `WalkModeFootprints(mode: WalkModeGlyph, color:)` with `enum WalkModeGlyph { wander, honor, seek }`; `SceneryType.staffs`; `GoshuinMilestones.Milestone.firstHonor`, `.honorsWalked(Int)`, `honorThresholds == [10, 25, 50, 100]`, `honorMilestones(arrivalsInWalk:arrivalsBefore:)`; `SealInput.honorArrivalCount`, `SealInput.wayPoints: [(lat: Double, lon: Double)]?`; `PracticeMode.honor`, `HonorStoryContext { wayTitle: String?, arrived: Bool }`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -3634,15 +3923,45 @@ final class HonorJournalTests: XCTestCase {
         let way = Way(id: "walk:x", source: .ownWalk(UUID()), title: "Old walk", departedAt: Date(), tzIdentifier: nil,
                       expires: nil, route: [], totalDistanceMeters: 0, theirActiveSeconds: 600, moments: [], weather: nil)
         let plain = WalkDataFactory.makeWalk()
-        XCTAssertNil(HonorSummaryModel.summaryData(for: plain, way: way, replies: [:]))
+        XCTAssertNil(HonorSummaryModel.summaryData(for: plain, way: way, link: nil, replies: [:]))
         let honored = WalkDataFactory.makeWalk(
             activeDuration: 540,
             workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: Date()),
                             TempWalkEvent(uuid: nil, eventType: .honorArrival, timestamp: Date())])
-        let data = HonorSummaryModel.summaryData(for: honored, way: way, replies: [2: "r"])
+        let link = WayLink(wayId: "walk:x", theirSeconds: 600, yourSeconds: 540)
+        let data = HonorSummaryModel.summaryData(for: honored, way: way, link: link, replies: [2: "r"])
         XCTAssertEqual(data?.wayTitle, "Old walk")
         XCTAssertEqual(data?.repliesMade, 1)
         XCTAssertEqual(data?.arrivedBeforeTheirsSeconds, 60)
+        let unlinked = HonorSummaryModel.summaryData(for: honored, way: way, link: nil, replies: [:])
+        XCTAssertNil(unlinked?.arrivedBeforeTheirsSeconds, "no delta without the engine's record")
+    }
+
+    func testSealInputCountsHonorArrivalsAndCarriesNoWayPointsWithoutALink() {
+        let arrival = TempWaypoint(uuid: nil, latitude: 1, longitude: 1, label: "x",
+                                   icon: HonorPersistence.arrivalWaypointIcon, timestamp: Date())
+        let walk = WalkDataFactory.makeWalk(uuid: UUID(), waypoints: [arrival])
+        let input = SealInput(walk: walk)
+        XCTAssertEqual(input.honorArrivalCount, 1)
+        XCTAssertEqual(input.foundPlaceCount, 0)
+        XCTAssertNil(input.wayPoints)
+    }
+
+    /// Follows `DataManagerThreadsDeletionTests`' in-memory stack setup.
+    func testJournalSnapshotsMarkHonorWalks() throws {
+        let walk = WalkDataFactory.makeWalk(
+            uuid: UUID(),
+            workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: Date())],
+            waypoints: [TempWaypoint(uuid: nil, latitude: 1, longitude: 1, label: "x",
+                                     icon: HonorPersistence.arrivalWaypointIcon, timestamp: Date())])
+        let saved = expectation(description: "saved")
+        DataManager.saveWalk(object: walk) { success, _, _ in XCTAssertTrue(success); saved.fulfill() }
+        wait(for: [saved], timeout: 5)
+        let viewModel = HomeViewModel()
+        let snapshot = try XCTUnwrap(viewModel.walkSnapshots.first)
+        XCTAssertTrue(snapshot.isHonor)
+        XCTAssertEqual(snapshot.honorArrivals, 1)
+        XCTAssertFalse(snapshot.isSeek)
     }
 }
 ```
@@ -3751,11 +4070,13 @@ struct HonorSummaryData: Equatable {
 }
 
 enum HonorSummaryModel {
-    static func summaryData(for walk: WalkInterface, way: Way?, replies: [Int: String]) -> HonorSummaryData? {
+    static func summaryData(for walk: WalkInterface, way: Way?, link: WayLink?, replies: [Int: String]) -> HonorSummaryData? {
         let types = walk.workoutEvents.map(\.eventType)
         guard types.contains(.honorMode) else { return nil }
-        let arrived = types.contains(.honorArrival)
-        let delta: Double? = (arrived && way != nil) ? (way!.theirActiveSeconds - walk.activeDuration) : nil
+        // The dot walked the companion's timeline; the summary reads the
+        // numbers the engine recorded at arrival, never a recomputation.
+        var delta: Double?
+        if let theirs = link?.theirSeconds, let yours = link?.yourSeconds { delta = theirs - yours }
         return HonorSummaryData(
             wayTitle: way?.title ?? "a way that has been removed",
             arrivedBeforeTheirsSeconds: delta,
@@ -3792,7 +4113,7 @@ struct HonorSummarySection: View {
     }
 }
 ```
-`WalkSummaryView`: cache `cachedHonorSummary` in `init` via `HonorSummaryModel.summaryData(for: walk, way: walk.uuid.flatMap(WayStore.shared.way(forWalk:)), replies: ...)`, render it after the seek section, and in `computeAnnotations` treat `HonorPersistence.isArrivalWaypoint` waypoints as `.waypoint(label:icon:)` with their reserved icon (they already render as a stone symbol). `WalkSummaryView+Map.swift` passes `honorWay:` built from the cached Way so the ghost sits under the ink.
+`WalkSummaryView`: cache `cachedHonorSummary` in `init` via `HonorSummaryModel.summaryData(for: walk, way: walk.uuid.flatMap(WayStore.shared.way(forWalk:)), link: walk.uuid.flatMap(WayStore.shared.wayLink(forWalk:)), replies: ...)`, render it after the seek section, and in `computeAnnotations` treat `HonorPersistence.isArrivalWaypoint` waypoints as `.waypoint(label:icon:)` with their reserved icon (they already render as a stone symbol). `WalkSummaryView+Map.swift` passes `honorWay:` built from the cached Way so the ghost sits under the ink.
 
 - [ ] **Step 7: Register, test, commit**
 
@@ -3903,7 +4224,20 @@ In `HonorOverviewView`, inside `#if DEBUG`, add a toolbar `Menu` with "Export si
 4. Airplane mode does not affect Phase A. For Phase B, accept the Way online first, then toggle airplane mode before Begin to prove the media is local.
 ```
 
-`ScreenshotDataSeeder`: add a seventh `ScreenshotWalk` after the seek walk, `daysAgo: 3`, six route points near Santiago, `talkMinutes: 5`, with `events: [(WalkEvent.EventType.honorMode.rawValue, 0), (WalkEvent.EventType.honorArrival.rawValue, 40)]` and a waypoint `(HonorPersistence.arrivalWaypointLabel(wayTitle: "A morning in the old town"), HonorPersistence.arrivalWaypointIcon, <last lat>, <last lon>, 40)`. In `seed(completion:)`, after that walk saves, build `OwnWalkWayBuilder.make(from:)` from the saved `Walk` (the completion hands it back), give it title "A morning in the old town", `WayStore.shared.save(way)` and `link(walkUUID:to:)`, so the demo summary shows the ghost.
+`ScreenshotDataSeeder`: add a seventh `ScreenshotWalk` after the seek walk, `daysAgo: 3`, six route points near Santiago, `talkMinutes: 5`, with `events: [(WalkEvent.EventType.honorMode.rawValue, 0), (WalkEvent.EventType.honorArrival.rawValue, 40)]` and a waypoint `(HonorPersistence.arrivalWaypointLabel(wayTitle: "A morning in the old town"), HonorPersistence.arrivalWaypointIcon, <last lat>, <last lon>, 40)`. Set that spec's `intention` to "A morning in the old town" (the Way's title comes from `walk.comment`). `seed(completion:)` reports only a count and its save closure discards the object, so for the honor spec the closure becomes:
+
+```swift
+            DataManager.saveWalk(object: walk) { _, _, saved in
+                if spec.events.contains(where: { $0.eventType == WalkEvent.EventType.honorMode.rawValue }),
+                   let saved, let uuid = saved.uuid, let way = OwnWalkWayBuilder.make(from: saved) {
+                    try? WayStore.shared.save(way)
+                    try? WayStore.shared.link(walkUUID: uuid, to: way.id, arrival: (theirSeconds: 2400, yourSeconds: 2100))
+                }
+                savedCount += 1
+                if savedCount == total { completion(total) }
+            }
+```
+so the demo summary shows the ghost and the quiet delta.
 
 - [ ] **Step 5: Live Activity glance**
 
@@ -3963,11 +4297,10 @@ Then the simulator pass from `docs/honor-simulation.md`, then a real walk-it-aga
 **Files:**
 - Create: `Pilgrim/Models/Honor/TourManifest.swift`
 - Create: `Pilgrim/Models/Honor/WayImporter.swift`
-- Create: `UnitTests/Honor/Fixtures/tour-sample.json` (copy of `../pilgrim-worker/scripts/fixtures/` output shape; register with the UnitTests target's resources phase via a one-line variant of `xcode-add.rb` that uses `resources_build_phase`)
 - Test: `UnitTests/Honor/WayImporterTests.swift`
 
 **Interfaces:**
-- Produces: `struct TourManifest: Decodable` mirroring `pilgrim-worker/src/types.ts:118-142` (`v`, `place_start`, `place_end`, `weather_condition`, `weather_temperature`, `start_date`, `tz_identifier`, `expires`, `route: [RoutePoint {lat, lon, alt, ts}]`, `encounters: [Encounter {type, frac, end_frac?, n?, duration?, label?, icon?, minutes?, lat?, lon?}]`, `meditation: [{start_frac, end_frac, duration?}]`, `stats {active_duration?}`); `enum WayError: Error, Equatable { case notFound, returnedToTrail, unavailable }`; `WayImporter(session: URLSession = .shared, store: WayStore = .shared, now: () -> Date = Date.init)`, `func importShare(id: String) async throws -> Way`, `static func way(from manifest: TourManifest, shareId: String, now: Date) throws -> Way`; `WayImporter.maxRoutePoints == 2000`, `maxEncounters == 200`.
+- Produces: `struct TourManifest: Decodable` mirroring `pilgrim-worker/src/types.ts:118-142` (`v`, `place_start`, `place_end`, `weather_condition`, `weather_temperature`, `start_date`, `tz_identifier`, `expires`, `route: [RoutePoint {lat, lon, alt, ts}]`, `encounters: [Encounter {type, frac, end_frac?, n?, duration?, label?, icon?, minutes?, lat?, lon?}]`, `meditation: [{start_frac, end_frac, duration?}]`, `stats {active_duration?}`); `enum WayError: Error, Equatable { case notFound, returnedToTrail, unavailable, diskFull }`; `WayImporter(session: URLSession = .shared, store: WayStore = .shared, now: () -> Date = Date.init)`, `func importShare(id: String) async throws -> Way`, `static func way(from manifest: TourManifest, shareId: String, now: Date) throws -> Way`; `WayImporter.maxRoutePoints == 2000`, `maxEncounters == 200`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -3977,7 +4310,8 @@ import XCTest
 
 final class WayImporterTests: XCTestCase {
 
-    private func manifest(expires: String = "2099-01-01T00:00:00Z", extraEncounter: String = "") throws -> TourManifest {
+    /// `expires` carries milliseconds because the worker's Date.toISOString() does.
+    private func manifest(expires: String = "2099-01-01T00:00:00.000Z", extraEncounter: String = "") throws -> TourManifest {
         let json = """
         {"v":1,"theme":"light","time_bucket":"morning","place_start":"Rúa do Franco","place_end":"Obradoiro",
          "weather_condition":"rain","weather_temperature":9,"units":"metric","start_date":"2026-08-01T07:00:00Z",
@@ -4024,6 +4358,16 @@ final class WayImporterTests: XCTestCase {
         }
     }
 
+    func testMalformedShareIdIsNotFoundBeforeAnyNetwork() async {
+        let store = WayStore(baseDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+        do {
+            _ = try await WayImporter(store: store).importShare(id: "../etc")
+            XCTFail("expected notFound")
+        } catch {
+            XCTAssertEqual(error as? WayError, .notFound)
+        }
+    }
+
     func testOversizedManifestIsUnavailable() throws {
         let many = (0..<300).map { _ in ",{\"type\":\"waypoint\",\"frac\":0.5,\"label\":\"x\",\"icon\":\"leaf\",\"dwell\":3}" }.joined()
         XCTAssertThrowsError(try WayImporter.way(from: manifest(extraEncounter: many), shareId: "x", now: Date())) {
@@ -4048,13 +4392,20 @@ xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimula
 ```swift
 import Foundation
 
-enum WayError: Error, Equatable { case notFound, returnedToTrail, unavailable }
+enum WayError: Error, Equatable { case notFound, returnedToTrail, unavailable, diskFull }
 
 struct WayImporter {
 
     static let maxRoutePoints = 2000
     static let maxEncounters = 200
+    static let maxManifestBytes = 2 * 1024 * 1024
     static let baseURL = URL(string: "https://walk.pilgrimapp.org")!
+
+    /// The importer enforces the id shape itself; it must never depend on a
+    /// UI-layer parser having run first.
+    static func isShareId(_ id: String) -> Bool {
+        id.range(of: "^[A-Za-z0-9_-]{10}$", options: .regularExpression) != nil
+    }
 
     let session: URLSession
     let store: WayStore
@@ -4065,9 +4416,26 @@ struct WayImporter {
     }
 
     func importShare(id: String) async throws -> Way {
+        guard Self.isShareId(id) else { throw WayError.notFound }
         let url = Self.baseURL.appendingPathComponent(id).appendingPathComponent("tour.json")
-        let (data, response): (Data, URLResponse)
-        do { (data, response) = try await session.data(from: url) } catch { throw WayError.unavailable }
+        let data: Data
+        let response: URLResponse
+        do {
+            // Streamed with a cap: a manifest is tens of kilobytes; anything
+            // approaching the cap is not a manifest and must not be buffered.
+            let (bytes, resp) = try await session.bytes(from: url)
+            response = resp
+            var buffer = Data()
+            for try await byte in bytes {
+                buffer.append(byte)
+                if buffer.count > Self.maxManifestBytes { throw WayError.unavailable }
+            }
+            data = buffer
+        } catch let error as WayError {
+            throw error
+        } catch {
+            throw WayError.unavailable
+        }
         guard let http = response as? HTTPURLResponse else { throw WayError.unavailable }
         if http.statusCode == 404 { throw WayError.notFound }
         guard http.statusCode == 200 else { throw WayError.unavailable }
@@ -4079,8 +4447,7 @@ struct WayImporter {
     }
 
     static func way(from m: TourManifest, shareId: String, now: Date) throws -> Way {
-        let iso = ISO8601DateFormatter()
-        guard let expires = iso.date(from: m.expires), let departed = iso.date(from: m.start_date) else { throw WayError.unavailable }
+        guard let expires = isoDate(m.expires), let departed = isoDate(m.start_date) else { throw WayError.unavailable }
         guard expires > now else { throw WayError.returnedToTrail }
         guard m.route.count >= 2, m.route.count <= maxRoutePoints, m.encounters.count <= maxEncounters else { throw WayError.unavailable }
         let ts0 = m.route[0].ts
@@ -4137,6 +4504,16 @@ struct WayImporter {
             theirActiveSeconds: m.stats?.active_duration ?? geometry.totalSeconds,
             moments: moments,
             weather: m.weather_condition.map { WayWeather(condition: $0, temperatureC: m.weather_temperature) })
+    }
+
+    /// The worker writes `expires` through Date.toISOString(), which always
+    /// carries milliseconds; iOS writes `start_date` without them. Try both.
+    static func isoDate(_ s: String) -> Date? {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = f.date(from: s) { return d }
+        f.formatOptions = [.withInternetDateTime]
+        return f.date(from: s)
     }
 
     /// Time between the two route points bracketing `frac`: a sitting collapses
@@ -4228,6 +4605,8 @@ final class WayMediaDownloader: NSObject, ObservableObject {
     @Published private(set) var progress: [String: Double] = [:]
     @Published private(set) var failures: [String: [String]] = [:]
     @Published private(set) var active: Set<String> = []
+    /// Way ids whose download hit a full disk; the coordinator names the problem instead of offering a retry.
+    @Published private(set) var diskFull: Set<String> = []
     var backgroundCompletionHandler: (() -> Void)?
 
     private let store: WayStore
@@ -4242,10 +4621,10 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         let config = URLSessionConfiguration.background(withIdentifier: sessionIdentifier)
         config.isDiscretionary = false
         config.sessionSendsLaunchEvents = true
-        session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
+        session = URLSession(configuration: config, delegate: self, delegateQueue: .main)
     }
 
-    static func mediaFiles(for way: Way) -> [String] {
+    nonisolated static func mediaFiles(for way: Way) -> [String] {
         var seen: Set<String> = []
         var files: [String] = []
         for moment in way.moments {
@@ -4263,11 +4642,11 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         return files
     }
 
-    static func remoteURL(shareId: String, relative: String) -> URL {
+    nonisolated static func remoteURL(shareId: String, relative: String) -> URL {
         WayImporter.baseURL.appendingPathComponent(shareId).appendingPathComponent(relative)
     }
 
-    static func byteCap(for relative: String) -> Int {
+    nonisolated static func byteCap(for relative: String) -> Int {
         relative.hasPrefix("photos/") ? 2 * 1024 * 1024 : 15 * 1024 * 1024
     }
 
@@ -4304,9 +4683,9 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         task.resume()
     }
 
-    private func finish(taskId: Int, success: Bool) {
+    private func finish(taskId: Int, success: Bool, retryable: Bool = true) {
         guard let entry = tasks.removeValue(forKey: taskId) else { return }
-        if !success {
+        if !success, retryable {
             let shareId = store.load(id: entry.wayId).flatMap { way -> String? in
                 if case .share(let id, _) = way.source { return id } else { return nil }
             }
@@ -4315,6 +4694,8 @@ final class WayMediaDownloader: NSObject, ObservableObject {
                 enqueue(wayId: entry.wayId, shareId: shareId, relative: entry.relative)
                 return
             }
+            failures[entry.wayId, default: []].append(entry.relative)
+        } else if !success {
             failures[entry.wayId, default: []].append(entry.relative)
         }
         pending[entry.wayId]?.remove(entry.relative)
@@ -4342,15 +4723,34 @@ extension WayMediaDownloader: URLSessionDownloadDelegate {
             let dest = self.store.mediaURL(for: entry.wayId, relative: entry.relative)
             try? FileManager.default.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
             try? FileManager.default.removeItem(at: dest)
-            return (try? FileManager.default.moveItem(at: location, to: dest)) != nil
+            do {
+                try FileManager.default.moveItem(at: location, to: dest)
+                return true
+            } catch let error as NSError where error.domain == NSCocoaErrorDomain && error.code == NSFileWriteOutOfSpaceError {
+                self.diskFull.insert(entry.wayId)
+                return false
+            } catch {
+                return false
+            }
         }
         Task { @MainActor in self.finish(taskId: taskId, success: moved) }
     }
 
+    /// The byte cap is enforced while the bytes arrive, not after: an oversized
+    /// object is cancelled as soon as it crosses its cap.
+    nonisolated func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
+                                totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        MainActor.assumeIsolated {
+            guard let entry = self.tasks[downloadTask.taskIdentifier] else { return }
+            if totalBytesWritten > Int64(entry.expected) { downloadTask.cancel() }
+        }
+    }
+
     nonisolated func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard error != nil else { return }
+        guard let error else { return }
         let taskId = task.taskIdentifier
-        Task { @MainActor in self.finish(taskId: taskId, success: false) }
+        let cancelled = (error as? URLError)?.code == .cancelled
+        Task { @MainActor in self.finish(taskId: taskId, success: false, retryable: !cancelled) }
     }
 
     nonisolated func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
@@ -4362,7 +4762,7 @@ extension WayMediaDownloader: URLSessionDownloadDelegate {
 }
 ```
 
-`MainActor.assumeIsolated` inside a delegate callback on the session's queue is a deliberate trade: the session is created with `delegateQueue: nil` so callbacks arrive on a serial background queue, and the bookkeeping dictionary is only touched from main. If Swift 6 strict checking rejects it, replace `tasks` access with a lock-protected dictionary and keep the move synchronous.
+The session is created with `delegateQueue: .main`, so every delegate callback already runs on the main thread and `MainActor.assumeIsolated` holds by construction. `assumeIsolated` is a runtime precondition that aborts when called off the main actor, not a compile-time check, which is why the queue choice is load-bearing. The temp-file move stays synchronous inside `didFinishDownloadingTo` because URLSession deletes the file when the method returns; the move is small.
 
 `AppDelegate.swift`: in `runPostDoneLaunchTasks()` add `WayStore.shared.sweepExpired(now: Date())` (the spec's launch sweep), and add:
 ```swift
@@ -4389,15 +4789,16 @@ git commit -m "feat(honor): background media download for shared Ways"
 
 **Files:**
 - Create: `Pilgrim/Models/Honor/HonorLink.swift`
+- Create: `Pilgrim/Models/Honor/HonorImportReducer.swift`
 - Modify: `Pilgrim/Pilgrim.entitlements`
 - Modify: `Pilgrim/PilgrimApp.swift:31-41`
 - Modify: `Pilgrim/Scenes/Root/RootCoordinatorView.swift`, `RootCoordinatorViewModel.swift`
 - Modify: `Pilgrim/Scenes/Root/MainCoordinatorView.swift` (`openWay(shareId:)`), `MainTabView.swift` (paste closure, overview gathering state)
 - Modify: `Pilgrim/Scenes/Honor/HonorOverviewView.swift` (gathering / failure states), `HonorWaysSheet.swift` (use `HonorLink.parse`, delete `HonorLinkPreview`)
-- Test: `UnitTests/Honor/HonorLinkTests.swift`
+- Test: `UnitTests/Honor/HonorLinkTests.swift`, `UnitTests/Honor/HonorImportReducerTests.swift`
 
 **Interfaces:**
-- Produces: `enum HonorLink { static func parse(_ url: URL) -> String?; static func parse(text: String) -> String? }`; `MainCoordinator.openWay(shareId:)`, `@Published var honorImportState: HonorImportState` (`.idle`, `.fetching`, `.gathering(progress: Double)`, `.ready`, `.failed(WayError)`, `.mediaMissing([String])`), `@Published var pendingLinkToast: String?`.
+- Produces: `enum HonorLink { static func parse(_ url: URL) -> String?; static func parse(text: String) -> String? }`; `enum HonorImportState: Equatable { idle, fetching, gathering(progress: Double), ready, mediaMissing([String]), failed(WayError) }` (top level, not nested, so the reducer and views name it without the coordinator); `enum HonorImportReducer { static func state(wayId:progress:active:failures:diskFull:) -> HonorImportState }`; `MainCoordinator.openWay(shareId:)`, `@Published var honorImportState: HonorImportState`, `@Published var pendingLinkToast: String?`. The overview sheet is presented by `honorOverviewWay` alone; `honorImportState` only decorates whichever sheet is showing.
 - `NotificationCenter` name `.pilgrimOpenWay` with `userInfo["shareId"]`, posted by `PilgrimApp`, observed by `MainTabView`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -4500,51 +4901,121 @@ and
 
 `MainCoordinator`:
 ```swift
-    enum HonorImportState: Equatable {
-        case idle, fetching, gathering(progress: Double), ready, mediaMissing([String]), failed(WayError)
-    }
     @Published var honorImportState: HonorImportState = .idle
     @Published var pendingLinkToast: String?
     private var importTask: Task<Void, Never>?
     private var gatheringCancellable: AnyCancellable?
 
+    /// Fetch happens wherever the user is: inside the Ways sheet the state
+    /// renders inline beside the paste field (a not-found error keeps the
+    /// field editable); from a link with no sheet open, a toast carries it.
     func openWay(shareId: String) {
         guard activeWalkViewModel == nil else { pendingLinkToast = "finish this walk first"; return }
-        honorWaysPresented = false
         importTask?.cancel()
         honorImportState = .fetching
+        if !honorWaysPresented { pendingLinkToast = "reaching for the walk…" }
         importTask = Task { @MainActor in
             do {
                 let way = try await WayImporter().importShare(id: shareId)
-                honorOverviewWay = way
-                gather(way)
+                pendingLinkToast = nil
+                honorImportState = .idle
+                openOverview(for: way)      // AF60-safe: parks or presents, never both
             } catch let error as WayError {
                 honorImportState = .failed(error)
+                if !honorWaysPresented { pendingLinkToast = HonorImportCopy.line(for: .failed(error)) }
             } catch {
                 honorImportState = .failed(.unavailable)
             }
         }
     }
 
+    @MainActor
     func gather(_ way: Way) {
+        guard case .share = way.source else { honorImportState = .ready; return }
         let downloader = WayMediaDownloader.shared
         downloader.download(way)
-        honorImportState = .gathering(progress: downloader.progress[way.id] ?? 0)
-        gatheringCancellable = downloader.$progress.combineLatest(downloader.$active, downloader.$failures)
+        honorImportState = HonorImportReducer.state(
+            wayId: way.id, progress: downloader.progress, active: downloader.active,
+            failures: downloader.failures, diskFull: downloader.diskFull)
+        gatheringCancellable = downloader.$progress
+            .combineLatest(downloader.$active, downloader.$failures, downloader.$diskFull)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] progress, active, failures in
-                guard let self else { return }
-                if active.contains(way.id) {
-                    self.honorImportState = .gathering(progress: progress[way.id] ?? 0)
-                } else if let missing = failures[way.id], !missing.isEmpty {
-                    self.honorImportState = .mediaMissing(missing)
-                } else {
-                    self.honorImportState = .ready
-                }
+            .sink { [weak self] progress, active, failures, diskFull in
+                self?.honorImportState = HonorImportReducer.state(
+                    wayId: way.id, progress: progress, active: active, failures: failures, diskFull: diskFull)
             }
     }
 ```
-`HonorWaysSheet`'s `onPaste` closure in `MainTabView` becomes `{ text in if let id = HonorLink.parse(text: text) { coordinator.openWay(shareId: id) } }`; replace `HonorLinkPreview.shareId(in:)` with `HonorLink.parse(text:)` and delete `HonorLinkPreview`. The overview sheet now presents while `honorImportState` is not `.idle` as well as when `honorOverviewWay` is set: while `.fetching` it shows a parchment card "reaching for the walk…"; `.failed(.notFound)` shows "couldn't find that walk. Check the link, or it may have returned to the trail."; `.failed(.returnedToTrail)` shows the tombstone line "This walk has returned to the trail"; `.failed(.unavailable)` shows "couldn't reach the walk" with a retry that calls `openWay` again. `HonorOverviewView` gains `importState: MainCoordinator.HonorImportState` and `onRetryMedia: () -> Void`: Begin is disabled during `.fetching` and `.gathering`, the card shows "gathering their voices · N%" under the counts, and `.mediaMissing` shows "try again" and "walk without the missing voices" (which sets the state to `.ready`). Own-walk Ways skip gathering: `openOverview(for:)` sets `.ready` when the source is `.ownWalk`.
+
+`promotePendingHonorWay()` and the direct-present branch of `openOverview` both call `gather(way)` right after setting `honorOverviewWay`, so gathering begins when the overview appears. `HonorImportReducer.swift`:
+
+```swift
+import Foundation
+
+enum HonorImportState: Equatable {
+    case idle, fetching, gathering(progress: Double), ready, mediaMissing([String]), failed(WayError)
+}
+
+/// Pure mapping from the downloader's published sets to the overview state,
+/// so the state machine is testable without a session.
+enum HonorImportReducer {
+    static func state(
+        wayId: String,
+        progress: [String: Double],
+        active: Set<String>,
+        failures: [String: [String]],
+        diskFull: Set<String>
+    ) -> HonorImportState {
+        if diskFull.contains(wayId) { return .failed(.diskFull) }
+        if active.contains(wayId) { return .gathering(progress: progress[wayId] ?? 0) }
+        if let missing = failures[wayId], !missing.isEmpty { return .mediaMissing(missing) }
+        return .ready
+    }
+}
+
+enum HonorImportCopy {
+    static func line(for state: HonorImportState) -> String? {
+        switch state {
+        case .idle, .ready: return nil
+        case .fetching: return "reaching for the walk…"
+        case .gathering(let p): return "gathering their voices · \(Int((p * 100).rounded()))%"
+        case .mediaMissing: return "some voices didn't arrive"
+        case .failed(.notFound): return "couldn't find that walk. Check the link, or it may have returned to the trail."
+        case .failed(.returnedToTrail): return "This walk has returned to the trail"
+        case .failed(.unavailable): return "couldn't reach the walk"
+        case .failed(.diskFull): return "not enough space on this phone to save these voices"
+        }
+    }
+}
+```
+
+`HonorImportReducerTests.swift`:
+
+```swift
+import XCTest
+@testable import Pilgrim
+
+final class HonorImportReducerTests: XCTestCase {
+
+    func testTransitions() {
+        let id = "share:abc"
+        XCTAssertEqual(HonorImportReducer.state(wayId: id, progress: [id: 0.4], active: [id], failures: [:], diskFull: []),
+                       .gathering(progress: 0.4))
+        XCTAssertEqual(HonorImportReducer.state(wayId: id, progress: [id: 1], active: [], failures: [:], diskFull: []), .ready)
+        XCTAssertEqual(HonorImportReducer.state(wayId: id, progress: [id: 1], active: [], failures: [id: ["audio/2.m4a"]], diskFull: []),
+                       .mediaMissing(["audio/2.m4a"]))
+        XCTAssertEqual(HonorImportReducer.state(wayId: id, progress: [:], active: [id], failures: [:], diskFull: [id]),
+                       .failed(.diskFull), "disk full outranks everything")
+    }
+
+    func testCopyNamesEveryFailure() {
+        XCTAssertEqual(HonorImportCopy.line(for: .failed(.diskFull)), "not enough space on this phone to save these voices")
+        XCTAssertNotNil(HonorImportCopy.line(for: .failed(.notFound)))
+        XCTAssertNil(HonorImportCopy.line(for: .ready))
+    }
+}
+```
+`HonorWaysSheet`'s `onPaste` closure in `MainTabView` becomes `{ text in if let id = HonorLink.parse(text: text) { coordinator.openWay(shareId: id) } }`; replace `HonorLinkPreview.shareId(in:)` with `HonorLink.parse(text:)` and delete `HonorLinkPreview`. `HonorWaysSheet` gains `importState: HonorImportState` and renders `HonorImportCopy.line(for:)` in caption type directly under the paste field; the field stays editable through `.fetching` and every `.failed` case, so a mistyped link is corrected in place. `HonorOverviewView` gains `importState: HonorImportState` and `onRetryMedia: () -> Void`: Begin is disabled during `.gathering`, the card shows the same copy line under the counts, `.mediaMissing` shows "try again" and "walk without the missing voices" (which sets the state to `.ready`), and `.failed(.diskFull)` shows its message with no retry. Own-walk Ways never gather: `gather` sets `.ready` for any non-share source.
 
 Share-sheet copy: in the share flow's interactive section (`Scenes/WalkShare/`), add the caption "Anyone with the link can walk it there." under the Interactive toggle.
 
@@ -4552,8 +5023,10 @@ Share-sheet copy: in the share flow's interactive section (`Scenes/WalkShare/`),
 
 ```bash
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/HonorLink.swift
+ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/HonorImportReducer.swift
+ruby scripts/xcode-add.rb UnitTests UnitTests/Honor/HonorImportReducerTests.swift
 xcodebuild build -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator 2>&1 | grep -E "error:|BUILD"
-xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/HonorLinkTests 2>&1 | grep -E "error:|Executed"
+xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/HonorLinkTests -only-testing:UnitTests/HonorImportReducerTests 2>&1 | grep -E "error:|Executed"
 git add -A Pilgrim UnitTests Pilgrim.xcodeproj/project.pbxproj
 git commit -m "feat(honor): walk it there — universal link, paste, gathering their voices"
 ```
@@ -4565,6 +5038,8 @@ git commit -m "feat(honor): walk it there — universal link, paste, gathering t
 **Files:**
 - Create: `Pilgrim/Scenes/Settings/WaysListView.swift`
 - Modify: `Pilgrim/Scenes/Settings/SettingsCards/DataCard.swift`
+
+This task is UI glue over `WayStore`, whose behavior Task 10 tests; it is deliberately exempt from the write-a-failing-test rhythm. Verification is the manual check in Step 2.
 
 **Interfaces:**
 - Produces: `WaysListView` (list of `WayStore.shared.list()` with title, date, size, "voices returned to the trail" when media is gone, swipe-to-delete calling `WayStore.shared.delete(id:)`, and a confirmed "Delete all Ways"); a `DataCard` row "Ways" with detail "N ways · X.X MB".
@@ -4635,7 +5110,9 @@ struct WaysListView: View {
 ```
 with `@State private var waysDetail: String = ""` computed in `.onAppear` as `"\(count) ways · \(String(format: "%.1f MB", mb))"` from `WayStore.shared.list().count` and `totalDiskUsage()`.
 
-- [ ] **Step 2: Register, build, commit**
+- [ ] **Step 2: Register, build, check by hand, commit**
+
+Accept two shared Ways on the simulator (Task 19's paste field), open Settings → Data → Ways, swipe-delete one, then "Delete all Ways"; the DataCard detail must read "0 ways · 0.0 MB" afterwards.
 
 ```bash
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Scenes/Settings/WaysListView.swift
@@ -4715,6 +5192,8 @@ Expected: `0 failures`, no lint errors.
 3. Airplane mode after gathering: Begin, walk, voices play from disk.
 4. Reply here on a voice, finish the walk, share it: the summary shows one reply; the share payload carries no `honor` field (slice four).
 5. Delete the Way in Settings: the honor walk's summary shows "a way that has been removed" and no ghost.
+6. Paste a mistyped id: the not-found line appears under the paste field and the field stays editable.
+7. Fill the simulator's disk (a large file in the container) and accept a share: the disk-full message appears, no retry offered.
 
 - [ ] **Step 3: Open the PR**
 

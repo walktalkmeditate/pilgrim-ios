@@ -403,8 +403,11 @@ Begin, `startFrac` anchors to the lowest-frac candidate within 60 m, or to
 `[progressFrac − 0.02, progressFrac + w]` where `w` is roughly 300 m of
 path, and updates `progressFrac` only when that local nearest point is
 within 60 m. After 120 s continuously beyond 60 m the engine falls back to
-a global search to re-acquire the walker, again taking the lowest-frac
-candidate.
+a wider search to re-acquire the walker: first the lowest-frac candidate at
+or ahead of the last progress, then the global lowest only when nothing
+lies ahead, so a detour on the return leg of an out-and-back never drags
+progress back to the outbound leg. When Begin found nothing within 60 m
+and fell back to frac 0, the first on-Way fix becomes the real anchor.
 
 **Companion**: one clock for the dot and for the arrival card. The
 companion is anchored at `t0 = geometry.elapsed(atFrac: startFrac)` and
@@ -423,7 +426,7 @@ moment's `at` coordinate (or `coordinate(atFrac:)` when `at` is nil) and
 | Moment | Radius | Behavior |
 |---|---|---|
 | voice (spoken) | 42 m | plays in full via `WayVoicePlayer`; queued if another voice is playing |
-| voice (ambient) | 42 m | plays at low volume while the walker is inside its frac span, fades on exit |
+| voice (ambient) | 42 m | plays once at half the voice volume on entry; a continuous bed inside its span is deferred (one player at a time) |
 | photo | 60 m | pin becomes active; a plate rises in the sheet: "what they saw here" |
 | rest | 60 m | card: "they rested here 12 minutes" |
 | meditation | 60 m | card: "they sat here for 12 minutes. Sit?" → `startMeditation()` with a timer preset to those minutes |
