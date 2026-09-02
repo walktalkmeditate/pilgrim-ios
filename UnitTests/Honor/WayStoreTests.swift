@@ -94,4 +94,25 @@ final class WayStoreTests: XCTestCase {
         XCTAssertNil(store.wayId(forWalk: walk))
         XCTAssertEqual(store.totalDiskUsage(), 0)
     }
+
+    func testListReturnsNewestAcceptedFirst() throws {
+        try store.save(way(id: "share:firstfirst", expires: nil))
+        Thread.sleep(forTimeInterval: 0.02)
+        try store.save(way(id: "share:secondsecd", expires: nil))
+        XCTAssertEqual(store.list().map(\.id), ["share:secondsecd", "share:firstfirst"])
+    }
+
+    func testResavingAWayKeepsItsAcceptedAt() throws {
+        try store.save(way(id: "share:aaaaaaaaaa", expires: nil))
+        let firstAcceptedAt = store.acceptedAt(id: "share:aaaaaaaaaa")
+        Thread.sleep(forTimeInterval: 0.02)
+        let updatedWay = Way(id: "share:aaaaaaaaaa", source: .share(id: "abc", pageURL: URL(string: "https://walk.pilgrimapp.org/abc")!),
+            title: "updated", departedAt: now, tzIdentifier: nil, expires: nil,
+            route: [WayPoint(lat: 0, lon: 0, alt: nil, t: 0), WayPoint(lat: 0, lon: 0.001, alt: nil, t: 60)],
+            totalDistanceMeters: 111, theirActiveSeconds: 60, moments: [], weather: nil)
+        try store.save(updatedWay)
+        let secondAcceptedAt = store.acceptedAt(id: "share:aaaaaaaaaa")
+        XCTAssertEqual(firstAcceptedAt, secondAcceptedAt)
+        XCTAssertEqual(store.load(id: "share:aaaaaaaaaa")?.title, "updated")
+    }
 }
