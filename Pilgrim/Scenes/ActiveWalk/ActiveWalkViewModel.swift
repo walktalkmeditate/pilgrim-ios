@@ -96,6 +96,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var isVoicePaused = false
     @Published var honorArrival: HonorArrivalCard?
     @Published var heardVoiceIDs: Set<String> = []
+    /// Non-voice moments actually reached (`.momentReached`), not every
+    /// non-voice moment on the Way — the arrival card's `placesPassed`
+    /// must count what the walker passed, not what the Way carries.
+    @Published var reachedMomentIDs: Set<String> = []
     /// "they sat here for 12 minutes. Sit?": a static caption for
     /// MeditationView, never a countdown.
     @Published var suggestedMeditationMinutes: Int?

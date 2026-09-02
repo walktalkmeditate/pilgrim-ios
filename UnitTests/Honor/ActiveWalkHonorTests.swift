@@ -20,13 +20,13 @@ final class ActiveWalkHonorTests: XCTestCase {
     private var recordingURL: URL!
     private let start = Date(timeIntervalSince1970: 1_000_000)
 
-    private func way() -> Way {
+    private func way(id: String = "walk:test") -> Way {
         let route = (0...10).map { i in WayPoint(lat: 0, lon: Double(i) * 0.000898, alt: nil, t: Double(i) * 60) }
         let voice = WayMoment(id: "voice-1", frac: 0.3, at: WayCoordinate(lat: 0, lon: 300 / 111_320),
                               kind: .voice(endFrac: 0.35, duration: 20, kind: .spoken, media: .recording(relativePath: "Recordings/honor-test.m4a")))
         let sit = WayMoment(id: "sit-1", frac: 0.5, at: WayCoordinate(lat: 0, lon: 500 / 111_320),
                             kind: .meditation(minutes: 7, isEstimate: false))
-        return Way(id: "walk:test", source: .ownWalk(UUID()), title: "Test way", departedAt: start, tzIdentifier: nil,
+        return Way(id: id, source: .ownWalk(UUID()), title: "Test way", departedAt: start, tzIdentifier: nil,
                    expires: nil, route: route, totalDistanceMeters: 1000, theirActiveSeconds: 600,
                    moments: [voice, sit], weather: nil)
     }
@@ -173,5 +173,132 @@ final class ActiveWalkHonorTests: XCTestCase {
         vm.stop()
         XCTAssertGreaterThanOrEqual(player.stops, 1)
         XCTAssertNil(vm.honorEngine)
+    }
+
+    func testNaturalFinishClearsTheVoiceAndAdvancesTheQueue() {
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        XCTAssertNotNil(vm.activeVoice)
+
+        let onFinished = player.onFinished
+        onFinished?()
+        settleCombineSchedulers()
+        XCTAssertNil(vm.activeVoice)
+        XCTAssertFalse(vm.isVoicePaused)
+
+        vm.stop()
+        // The closure closed over its own honor generation at engine start;
+        // firing the same captured closure after teardown bumped the
+        // generation must be inert, not resurrect a torn-down queue.
+        onFinished?()
+        XCTAssertNil(vm.activeVoice)
+        XCTAssertNil(vm.honorEngine)
+    }
+
+    func testReplyHereMapsTheNextRecordingToTheOriginVoice() throws {
+        let storeDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let store = WayStore(baseDirectory: storeDir)
+        defer { try? FileManager.default.removeItem(at: storeDir) }
+        let testWay = way(id: "walk:\(UUID().uuidString)")
+        try store.save(testWay)
+
+        var senses = HonorSenses()
+        senses.makeVoicePlayer = { [player] in player! }
+        senses.isAppActive = { false }
+        senses.store = { store }
+        vm.cancel()
+        vm = ActiveWalkViewModel(mode: .honor, way: testWay, honorSenses: senses)
+        settleCombineSchedulers()
+
+        let voice = testWay.moments.first { $0.id == "voice-1" }!
+
+        // Before the walk starts, `VoiceRecordingManagement.startRecording()`
+        // bails on its own `isWalkActive` guard regardless of the test
+        // host's microphone authorization — a deterministic way to drive
+        // the "never opens" path without depending on that authorization
+        // state (this test host, unlike the brief's assumption, does grant
+        // the recorder real mic access once a walk is active — see below).
+        vm.replyHere(to: voice)
+        XCTAssertFalse(vm.voiceRecordingManagement.isRecording)
+        XCTAssertNil(vm.pendingReplyOrigin)
+
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        XCTAssertEqual(vm.activeVoice?.id, "voice-1")
+
+        // This test host's recorder does open successfully once the walk is
+        // active, so exercising the mapping through a real record → stop →
+        // AVAudioRecorderDelegate → commit round trip would make this
+        // test's timing depend on AVFoundation's asynchronous finish
+        // callback. `recordReplyIfPending` — the exact call
+        // `bindCompletedRecordings` makes once a real recording completes —
+        // is called directly instead, keeping the test deterministic.
+        vm.pendingReplyOrigin = vm.activeVoice
+        let recording = TempVoiceRecording(uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(5),
+                                           duration: 5, fileRelativePath: "Recordings/reply.m4a", isEnhanced: false)
+        vm.recordReplyIfPending(latestRecording: recording)
+        XCTAssertEqual(store.replies(for: testWay.id), [1: "Recordings/reply.m4a"])
+        XCTAssertNil(vm.pendingReplyOrigin)
+    }
+
+    func testShowCardJumpsTheQueue() {
+        let route = (0...10).map { i in WayPoint(lat: 0, lon: Double(i) * 0.000898, alt: nil, t: Double(i) * 60) }
+        let first = WayMoment(id: "wp-1", frac: 0.2, at: WayCoordinate(lat: 0, lon: 200 / 111_320),
+                              kind: .waypoint(label: "First", icon: "star"))
+        let second = WayMoment(id: "wp-2", frac: 0.4, at: WayCoordinate(lat: 0, lon: 400 / 111_320),
+                               kind: .waypoint(label: "Second", icon: "star"))
+        let testWay = Way(id: "walk:test", source: .ownWalk(UUID()), title: "Two-card way", departedAt: start,
+                          tzIdentifier: nil, expires: nil, route: route, totalDistanceMeters: 1000,
+                          theirActiveSeconds: 600, moments: [first, second], weather: nil)
+        var senses = HonorSenses()
+        senses.makeVoicePlayer = { [player] in player! }
+        senses.isAppActive = { false }
+        vm.cancel()
+        vm = ActiveWalkViewModel(mode: .honor, way: testWay, honorSenses: senses)
+        settleCombineSchedulers()
+
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 200 / 111_320, seconds: 100))
+        drive(fix(lon: 400 / 111_320, seconds: 200))
+
+        XCTAssertEqual(vm.honorCards.map(\.id), ["wp-1", "wp-2"])
+        vm.showCard(for: second)
+        XCTAssertEqual(vm.honorCards.map(\.id), ["wp-2", "wp-1"])
+    }
+
+    func testArrivalCardCountsHeardVoicesAndReachedPlaces() throws {
+        begin(startedSecondsAgo: 500)
+        vm.honorEngine?.updateActiveDuration(500)
+        for i in 0...10 { drive(fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60)) }
+        for i in 0..<3 { drive(fix(lon: 10 * 0.000898, seconds: 700 + Double(i))) }
+        XCTAssertEqual(vm.honorArrival?.voicesHeard, 1)
+        XCTAssertEqual(vm.honorArrival?.placesPassed, 1)
+    }
+
+    func testMediaURLForWayFileResolvesInsideTheStoreAndRejectsTraversal() throws {
+        let storeDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let store = WayStore(baseDirectory: storeDir)
+        defer { try? FileManager.default.removeItem(at: storeDir) }
+        let testWay = way(id: "walk:\(UUID().uuidString)")
+        try store.save(testWay)
+
+        var senses = HonorSenses()
+        senses.makeVoicePlayer = { [player] in player! }
+        senses.isAppActive = { false }
+        senses.store = { store }
+        vm.cancel()
+        vm = ActiveWalkViewModel(mode: .honor, way: testWay, honorSenses: senses)
+        settleCombineSchedulers()
+
+        let mediaFile = store.mediaURL(for: testWay.id, relative: "audio/1.m4a")
+        try FileManager.default.createDirectory(at: mediaFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        _ = try TestAudioFile.writeSilentAudioFile(to: mediaFile)
+
+        XCTAssertNotNil(vm.mediaURL(for: .file("audio/1.m4a")))
+        XCTAssertNil(vm.mediaURL(for: .file("../../escape.m4a")))
+        XCTAssertNil(vm.mediaURL(for: .recording(relativePath: "../escape.m4a")))
     }
 }

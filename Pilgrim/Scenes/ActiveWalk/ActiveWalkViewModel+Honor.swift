@@ -77,10 +77,15 @@ extension ActiveWalkViewModel {
         honorEngine?.stop()
         honorEngine = nil
         wayVoicePlayer?.stop()
+        // The player outlives this walk (it's the shared singleton in
+        // production); drop the closure here so it can't call back into a
+        // torn-down view model once a future walk replaces it.
+        wayVoicePlayer?.onFinished = nil
         wayVoicePlayer = nil
         activeVoice = nil
         isVoicePaused = false
         honorCards.removeAll()
+        reachedMomentIDs.removeAll()
         suggestedMeditationMinutes = nil
         pendingReplyOrigin = nil
     }
@@ -91,6 +96,7 @@ extension ActiveWalkViewModel {
         switch event {
         case .momentReached(let moment):
             if !honorCards.contains(moment) { honorCards.append(moment) }
+            reachedMomentIDs.insert(moment.id)
             fireHonorHaptic(.waypointDropped)
 
         case .voiceStart(let moment):
@@ -140,7 +146,7 @@ extension ActiveWalkViewModel {
         addWaypoint(label: HonorPersistence.arrivalWaypointLabel(wayTitle: way.title),
                     icon: HonorPersistence.arrivalWaypointIcon)
         honorArrival = HonorArrivalCard(wayTitle: way.title, voicesHeard: heardVoiceIDs.count,
-                                        placesPassed: way.moments.count - way.voiceCount,
+                                        placesPassed: reachedMomentIDs.count,
                                         theirSeconds: theirSeconds, yourSeconds: yourSeconds)
     }
 
@@ -168,15 +174,27 @@ extension ActiveWalkViewModel {
         switch media {
         case .recording(let relativePath):
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let url = docs.appendingPathComponent(relativePath)
-            return FileManager.default.fileExists(atPath: url.path) ? url : nil
+            return Self.resolvedMediaURL(docs.appendingPathComponent(relativePath), within: docs)
         case .file(let relative):
             guard let way else { return nil }
-            let url = honorSenses.store().mediaURL(for: way.id, relative: relative)
-            return FileManager.default.fileExists(atPath: url.path) ? url : nil
+            let store = honorSenses.store()
+            let url = store.mediaURL(for: way.id, relative: relative)
+            return Self.resolvedMediaURL(url, within: store.mediaDirectory(for: way.id))
         case .photoAsset:
             return nil
         }
+    }
+
+    /// A relative path comes from a Way's own JSON — a share file or a
+    /// hand-edited own-walk record — so a `../` component must not be able
+    /// to walk it outside its base directory. Standardizing collapses any
+    /// such component before the containment check.
+    private static func resolvedMediaURL(_ url: URL, within base: URL) -> URL? {
+        let resolved = url.standardizedFileURL
+        let baseComponents = base.standardizedFileURL.pathComponents
+        guard resolved.pathComponents.count > baseComponents.count,
+              Array(resolved.pathComponents.prefix(baseComponents.count)) == baseComponents else { return nil }
+        return FileManager.default.fileExists(atPath: resolved.path) ? resolved : nil
     }
 
     /// Starts a recording answering `voice`. When that recording completes,
@@ -185,6 +203,15 @@ extension ActiveWalkViewModel {
     func replyHere(to voice: WayMoment) {
         pendingReplyOrigin = voice
         if !isRecordingVoice { toggleVoiceRecording() }
+        // `isRecordingVoice` only mirrors `voiceRecordingManagement.isRecording`
+        // through an async main-queue sink, so it can't be trusted here yet —
+        // reading the component directly gives the synchronous answer.
+        // Denied permission, an inactive walk, or a recorder that failed to
+        // open all leave it false; with nothing now in flight, no completed
+        // recording will ever arrive to consume this origin.
+        if !voiceRecordingManagement.isRecording {
+            pendingReplyOrigin = nil
+        }
     }
 
     /// The reply is filed under the origin voice's own index — the `n` in
@@ -220,6 +247,7 @@ extension ActiveWalkViewModel {
     }
 
     func skipVoice() {
+        guard activeVoice != nil else { return }
         wayVoicePlayer?.stop()
         activeVoice = nil
         isVoicePaused = false
