@@ -42,6 +42,11 @@ struct WayGeometry {
                                       longitude: a.lon + (b.lon - a.lon) * u)
     }
 
+    /// On a stationary plateau (several points at one location), returns the
+    /// moment the walker moved on — the end of the pause. This ensures a
+    /// companion anchored at a rest spot departs together with the honoring
+    /// walker. For holding the dot at rest through the pause, use `frac(atElapsed:)`,
+    /// which maps every second of the pause to the same frac.
     func elapsed(atFrac frac: Double) -> Double {
         guard points.count > 1, totalMeters > 0 else { return 0 }
         let (i, u) = segment(atDistance: min(max(frac, 0), 1) * totalMeters)
@@ -102,6 +107,9 @@ struct WayGeometry {
 
     // MARK: - Helpers
 
+    /// Binary search for the segment containing distance d. The search deliberately
+    /// lands on the last segment of equal cumulative distances (a plateau), ensuring
+    /// `elapsed(atFrac:)` returns the end of the pause.
     private func segment(atDistance d: Double) -> (index: Int, u: Double) {
         var lo = 0, hi = points.count - 1
         while hi - lo > 1 {

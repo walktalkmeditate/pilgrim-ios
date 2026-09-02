@@ -57,4 +57,21 @@ final class WayGeometryTests: XCTestCase {
         XCTAssertEqual(hit.frac, 0)
         XCTAssertEqual(hit.meters, 0, accuracy: 0.01)
     }
+
+    /// A rest: two points at one place, sixty seconds apart. The inverse map
+    /// lands on the end of the pause (depart together); the forward map holds
+    /// the dot at the rest for the whole pause.
+    func testAPauseMapsToTheMomentTheyMovedOn() {
+        let points = [
+            WayPoint(lat: 0, lon: 0, alt: nil, t: 0),
+            WayPoint(lat: 0, lon: 0.000898, alt: nil, t: 60),
+            WayPoint(lat: 0, lon: 0.000898, alt: nil, t: 120),
+            WayPoint(lat: 0, lon: 0.001796, alt: nil, t: 180),
+        ]
+        let geo = WayGeometry(route: points)
+        XCTAssertEqual(geo.elapsed(atFrac: 0.5), 120, accuracy: 0.5)
+        XCTAssertEqual(geo.frac(atElapsed: 70), 0.5, accuracy: 0.01)
+        XCTAssertEqual(geo.frac(atElapsed: 110), 0.5, accuracy: 0.01)
+        XCTAssertEqual(geo.frac(atElapsed: 150), 0.75, accuracy: 0.01)
+    }
 }
