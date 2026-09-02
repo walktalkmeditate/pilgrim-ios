@@ -322,6 +322,16 @@ extension ActiveWalkViewModel {
         honorEngine?.voiceDidFinish()
     }
 
+    // MARK: - Live Activity glance
+
+    /// Computed here — never in the widget, which has no sensors.
+    func currentHonorGlance() -> HonorGlanceState? {
+        guard let engine = honorEngine else { return nil }
+        return HonorGlanceState(
+            distanceRemainingBucketMeters: SeekGlanceModel.distanceBucket(forMeters: engine.distanceRemainingMeters),
+            isOnWay: engine.isOnWay, isArrived: engine.phase == .arrived)
+    }
+
     // MARK: - Private
 
     private static let voiceIDPrefix = "voice-"

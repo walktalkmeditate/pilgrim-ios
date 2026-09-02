@@ -30,6 +30,7 @@
 		0F2670E277C94DDDB875E31C /* SealHashComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A746E370064ED49CDAFBF4 /* SealHashComputerTests.swift */; };
 		0F963291E27EF3F9723C8240 /* whisper-play-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 1C0C607162BDD498F2ED5A96 /* whisper-play-3.aac */; };
 		10D97D3E9D67A2E673AAF318 /* HonorJournalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 989DDF0FE18AF1800F778AA4 /* HonorJournalTests.swift */; };
+		11193683CC904418C478E20D /* WayGPXExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C91107C7F80DC9AA20170B0 /* WayGPXExporterTests.swift */; };
 		11C747B0EAF53D9F444C6243 /* DataSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1066617851420CAB7B50442 /* DataSettingsView.swift */; };
 		126F1949D837CC878A1E6D21 /* HonorMomentTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BB0C825C8EFC112CA91645 /* HonorMomentTracker.swift */; };
 		12B4814A464F4B33A4DFDF5E /* ThreadIntentionSuggestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1177FF093DBC4775929CC150 /* ThreadIntentionSuggestionsTests.swift */; };
@@ -299,6 +300,7 @@
 		7E8F9A0B1C2D3E4F5A6B7C8D /* RouteTrimmerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A0B1C2D3E4F5A6B7C8D9E /* RouteTrimmerTests.swift */; };
 		7ac8ee442a1ce6fcb926501a /* SharePayloadTourTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = cc51a46c5e27674f5165b409 /* SharePayloadTourTests.swift */; };
 		801F76F93C564F65BC1406CF /* MarkerAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022D4273DD894D1996FFEBBA /* MarkerAnalyzer.swift */; };
+		81FFD29CA97DDAC83BB51C2E /* WayGPXExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F81B45DE02D281146CDC87 /* WayGPXExporter.swift */; };
 		8478CDC1C45890FF1F4E473A /* WalkPromptVoices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */; };
 		847990ED75B5CA66C0317D1C /* ArchivedWalkFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F875DF77E21A42330B294FDB /* ArchivedWalkFixtures.swift */; };
 		84BCD32DEACC4861A0DB176C /* CollectiveContributionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F01EBB4099CCC5ECC424C1E /* CollectiveContributionLog.swift */; };
@@ -912,6 +914,7 @@
 		3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityIntervalTests.swift; sourceTree = "<group>"; };
 		3BEB221D84466A0EED8D2C4A /* WayVoicePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayVoicePlayer.swift; sourceTree = "<group>"; };
 		3C6AF4CB2CDC4F6DA1162CEA /* ThreadsDossierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsDossierTests.swift; sourceTree = "<group>"; };
+		3C91107C7F80DC9AA20170B0 /* WayGPXExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayGPXExporterTests.swift; sourceTree = "<group>"; };
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3F47849F190C412386DF5E9C /* DossierSensesCrossWalkMoonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesCrossWalkMoonTests.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
@@ -921,6 +924,7 @@
 		44661BA899955FDD26DFF034 /* whisper-compassion-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-1.aac"; sourceTree = "<group>"; };
 		44C8743FE13846D2827B0B84 /* DossierSensesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesTests.swift; sourceTree = "<group>"; };
 		47BB0C825C8EFC112CA91645 /* HonorMomentTracker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorMomentTracker.swift; sourceTree = "<group>"; };
+		47F81B45DE02D281146CDC87 /* WayGPXExporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayGPXExporter.swift; sourceTree = "<group>"; };
 		4850AE45F47BD522EA066821 /* CollectiveArtifactFixtures.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveArtifactFixtures.swift; sourceTree = "<group>"; };
 		494D7F90572546A4A3A58143 /* WayGeometryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayGeometryTests.swift; sourceTree = "<group>"; };
 		4AD7C7A50CC75536619799F2 /* PilgrimMapView+SeekFog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+SeekFog.swift"; sourceTree = "<group>"; };
@@ -2550,6 +2554,7 @@
 				47BB0C825C8EFC112CA91645 /* HonorMomentTracker.swift */,
 				3BEB221D84466A0EED8D2C4A /* WayVoicePlayer.swift */,
 				8279F26667FF1641BE8DAC8B /* WayStore.swift */,
+				47F81B45DE02D281146CDC87 /* WayGPXExporter.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2656,6 +2661,7 @@
 				0DE1BFEB94806A03D2E5BBF1 /* HonorOverviewModelTests.swift */,
 				E95877AA2EC5E5FA0446D18E /* MainCoordinatorHonorTests.swift */,
 				989DDF0FE18AF1800F778AA4 /* HonorJournalTests.swift */,
+				3C91107C7F80DC9AA20170B0 /* WayGPXExporterTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3448,6 +3454,7 @@
 				5A58541C1D0FCD23EDF0DF2C /* ActiveWalkView+Honor.swift in Sources */,
 				93D8BA32A352B7DAA459BF0B /* StaffsShape.swift in Sources */,
 				3C0D3321EE4259139E1B7750 /* HonorSummarySection.swift in Sources */,
+				81FFD29CA97DDAC83BB51C2E /* WayGPXExporter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3612,6 +3619,7 @@
 				69C78B00BAD71C64783279F7 /* HonorOverviewModelTests.swift in Sources */,
 				E803E93430DEAED6BF200042 /* MainCoordinatorHonorTests.swift in Sources */,
 				10D97D3E9D67A2E673AAF318 /* HonorJournalTests.swift in Sources */,
+				11193683CC904418C478E20D /* WayGPXExporterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

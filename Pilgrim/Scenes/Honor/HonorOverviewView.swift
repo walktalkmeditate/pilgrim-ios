@@ -60,6 +60,10 @@ struct HonorOverviewView: View {
     @State private var distanceToStart: Double?
     @State private var todayCondition: String?
     @State private var voicesEnabled = UserPreferences.honorVoicesEnabled.value
+    #if DEBUG
+    @State private var debugExportURL: URL?
+    @State private var isShowingDebugExport = false
+    #endif
 
     private var wayState: HonorWayState {
         HonorWayState(id: way.id,
@@ -90,10 +94,44 @@ struct HonorOverviewView: View {
                     .font(Constants.Typography.button)
                     .foregroundColor(.stone)
             }
+            #if DEBUG
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("Export simulation GPX", action: exportSimulationGPX)
+                } label: {
+                    Image(systemName: "ladybug")
+                }
+            }
+            #endif
         }
         .onAppear { probeDistance() }
         .task { await fetchToday() }
+        #if DEBUG
+        .sheet(isPresented: $isShowingDebugExport) {
+            if let debugExportURL {
+                ShareSheet(items: [debugExportURL])
+            }
+        }
+        #endif
     }
+
+    #if DEBUG
+    /// Xcode's Core Location simulation only reads `<wpt>` elements, so this
+    /// hands the file to the share sheet for an AirDrop to the developer's Mac
+    /// — see docs/honor-simulation.md.
+    private func exportSimulationGPX() {
+        let data = WayGPXExporter.gpx(for: way)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(way.id.replacingOccurrences(of: ":", with: "-")).gpx")
+        do {
+            try data.write(to: url)
+            debugExportURL = url
+            isShowingDebugExport = true
+        } catch {
+            print("[HonorOverviewView] Failed to export simulation GPX: \(error)")
+        }
+    }
+    #endif
 
     private var card: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {

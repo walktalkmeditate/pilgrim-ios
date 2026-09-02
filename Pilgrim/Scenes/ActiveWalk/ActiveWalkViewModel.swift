@@ -534,7 +534,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                     isPaused: isPaused,
                     isMeditating: self.isMeditating,
                     isRecordingVoice: self.isRecordingVoice,
-                    seek: self.currentSeekGlance()
+                    seek: self.currentSeekGlance(),
+                    honor: self.currentHonorGlance()
                 )
             }
             .store(in: &cancellables)

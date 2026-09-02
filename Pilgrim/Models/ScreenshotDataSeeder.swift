@@ -165,6 +165,28 @@ enum ScreenshotDataSeeder {
             ],
             pauses: [(offsetMinutes: 33, durationMinutes: 6)]
         ),
+        ScreenshotWalk(
+            daysAgo: 3, hour: 9, distanceMeters: 1400, durationMinutes: 42, steps: 1866,
+            latitude: 42.8795, longitude: -8.5480, altitudeBase: 270,
+            ascend: 20, descend: 15,
+            talkMinutes: 5, meditateMinutes: 0,
+            intention: "A morning in the old town",
+            transcription: nil,
+            favicon: nil,
+            weatherCondition: "clear", weatherTemperature: 16.0, weatherHumidity: 0.60, weatherWindSpeed: 1.5,
+            routePoints: [
+                (42.8795, -8.5480, 270), (42.8798, -8.5470, 268), (42.8802, -8.5462, 265),
+                (42.8805, -8.5456, 260), (42.8803, -8.5450, 258), (42.8800, -8.5445, 255)
+            ],
+            waypoints: [
+                (HonorPersistence.arrivalWaypointLabel(wayTitle: "A morning in the old town"),
+                 HonorPersistence.arrivalWaypointIcon, 42.8800, -8.5445, 40)
+            ],
+            events: [
+                (WalkEvent.EventType.honorMode.rawValue, 0),
+                (WalkEvent.EventType.honorArrival.rawValue, 40)
+            ]
+        ),
     ]
 
     /// `--demo-journal-stress` replicates the demo walks into a deep,
@@ -199,7 +221,12 @@ enum ScreenshotDataSeeder {
 
             let walk = makeWalk(from: spec, startDate: adjustedStart, index: index)
 
-            DataManager.saveWalk(object: walk) { _, _, _ in
+            DataManager.saveWalk(object: walk) { _, _, saved in
+                if spec.events.contains(where: { $0.eventType == WalkEvent.EventType.honorMode.rawValue }),
+                   let saved, let uuid = saved.uuid, let way = OwnWalkWayBuilder.make(from: saved) {
+                    try? WayStore.shared.save(way)
+                    try? WayStore.shared.link(walkUUID: uuid, to: way.id, arrival: (theirSeconds: 2400, yourSeconds: 2100))
+                }
                 savedCount += 1
                 if savedCount == total {
                     completion(total)

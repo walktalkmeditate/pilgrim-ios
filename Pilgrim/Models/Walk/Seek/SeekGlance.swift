@@ -18,6 +18,15 @@ struct SeekGlanceState: Codable, Hashable {
     let isComplete: Bool
 }
 
+/// Coarse lock-screen glance for an honor walk, mirroring `SeekGlanceState`'s
+/// widget-shared shape: derived in the app process, rendered by the widget
+/// with no sensors of its own.
+struct HonorGlanceState: Codable, Hashable {
+    let distanceRemainingBucketMeters: Int
+    let isOnWay: Bool
+    let isArrived: Bool
+}
+
 /// Declared here rather than SeekEngine.swift so the widget-shared file is
 /// self-contained; the engine (app target only) references it freely.
 enum SeekEnginePhase: Equatable {

@@ -20,5 +20,7 @@ struct WalkActivityAttributes: ActivityAttributes {
         /// to pre-seek builds (parity requirement; synthesized Codable
         /// omits the key when nil).
         var seek: SeekGlanceState?
+        /// nil for every mode but honor — same omit-when-nil parity as `seek`.
+        var honor: HonorGlanceState?
     }
 }

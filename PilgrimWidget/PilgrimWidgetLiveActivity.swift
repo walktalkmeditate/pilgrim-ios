@@ -186,6 +186,17 @@ struct PilgrimWidgetLiveActivity: Widget {
             if let seek = context.state.seek {
                 seekGlanceBar(seek, imperial: context.attributes.isImperial)
             }
+
+            if let honor = context.state.honor {
+                HStack(spacing: 6) {
+                    Image(systemName: "signpost.right").font(.caption).foregroundColor(Self.stone)
+                    Text(honor.isArrived ? "their way, walked"
+                         : honor.isOnWay ? "\(seekDistanceText(bucket: honor.distanceRemainingBucketMeters, imperial: context.attributes.isImperial)) to go"
+                         : "off the way")
+                        .font(.system(.caption, design: .serif)).foregroundColor(Self.ink)
+                    Spacer()
+                }
+            }
         }
         .padding()
         .background(Self.parchment)
