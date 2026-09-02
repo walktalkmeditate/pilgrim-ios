@@ -210,6 +210,7 @@
 		48CE4EDDAB9C4702A5BAAB87 /* SolarHorizonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */; };
 		48E98C7054E4A201ACFDA9E1 /* CollectiveMilestone.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC3AE0A67A2BD0CB573672A /* CollectiveMilestone.swift */; };
 		4942C685817BB789737E18B1 /* whisper-play-7.aac in Resources */ = {isa = PBXBuildFile; fileRef = A1E1CDD84132639F8B1B90D8 /* whisper-play-7.aac */; };
+		4997C102426B18E2BE23D309 /* OwnWalkWayBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02475497E961BD82401A2037 /* OwnWalkWayBuilder.swift */; };
 		4A874B223DF94F32AE65A3B2 /* ThreadStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44E1DA26DB135B0837E447F /* ThreadStoreTests.swift */; };
 		4BCC1742561447DFBD59EF01 /* ThreadsDossierBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1060C3B913FD4DA88015D30D /* ThreadsDossierBuilder.swift */; };
 		4C4159A687E6427094B9CA5A /* ShareStatusSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A615AC9A6DC4AFEBC7DBD97 /* ShareStatusSection.swift */; };
@@ -373,6 +374,7 @@
 		AD00000200000000MGIB0001 /* MapGlyphImageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD00000100000000MGIB0001 /* MapGlyphImageBuilder.swift */; };
 		AD00000200000000WKCH0001 /* WalkCharacter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD00000100000000WKCH0001 /* WalkCharacter.swift */; };
 		ADB1EFE3A67DBDD566E302AA /* WalkShareInteractiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C142E36B6C8770B5B7ACF2FB /* WalkShareInteractiveTests.swift */; };
+		AED160E46E2303916AFF0352 /* OwnWalkWayBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3979B0C401A69966EB931831 /* OwnWalkWayBuilderTests.swift */; };
 		AEEE78F348F94AFAE50C2CCA /* CachedWhisper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3023392A906A22FDA4E0B84A /* CachedWhisper.swift */; };
 		B0261DB7EE2F64C26CF7A41F /* VoiceGuideFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */; };
 		B1B77C4B2BCFC984DB3D8244 /* LaunchLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119C8CECDB3E592FD5E40D38 /* LaunchLoadingView.swift */; };
@@ -679,6 +681,7 @@
 		008E97D4312732C8F271886C /* AstrologyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstrologyModels.swift; sourceTree = "<group>"; };
 		0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = JourneyEditorView.swift; sourceTree = "<group>"; };
 		022D4273DD894D1996FFEBBA /* MarkerAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkerAnalyzer.swift; sourceTree = "<group>"; };
+		02475497E961BD82401A2037 /* OwnWalkWayBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OwnWalkWayBuilder.swift; sourceTree = "<group>"; };
 		03371BD125C7861863DB4412 /* WayGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayGeometry.swift; sourceTree = "<group>"; };
 		03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationDecor.swift; sourceTree = "<group>"; };
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
@@ -872,6 +875,7 @@
 		3542AA50A2E8FA62E52758C7 /* WhisperPlacementSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperPlacementSheet.swift; sourceTree = "<group>"; };
 		378126B70503E7FF35DA0C6B /* whisper-presence-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-1.aac"; sourceTree = "<group>"; };
 		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
+		3979B0C401A69966EB931831 /* OwnWalkWayBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OwnWalkWayBuilderTests.swift; sourceTree = "<group>"; };
 		3A98AEE09143482AA1EFE5DC /* SolarHorizon.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SolarHorizon.swift; sourceTree = "<group>"; };
 		3B789284BE2A474BA89993F2 /* ActivityIntervalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityIntervalTests.swift; sourceTree = "<group>"; };
 		3C6AF4CB2CDC4F6DA1162CEA /* ThreadsDossierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsDossierTests.swift; sourceTree = "<group>"; };
@@ -2481,6 +2485,7 @@
 				1F27E3942F3A3506303C87B7 /* HonorPersistence.swift */,
 				FC5BEAE397F9ACDD37AC8042 /* Way.swift */,
 				03371BD125C7861863DB4412 /* WayGeometry.swift */,
+				02475497E961BD82401A2037 /* OwnWalkWayBuilder.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2566,6 +2571,7 @@
 				9B000626F7A2E74A9F0CFB8E /* WalkModeTests.swift */,
 				F9784EC5C78D2C5DE2F544F4 /* HonorPersistenceTests.swift */,
 				494D7F90572546A4A3A58143 /* WayGeometryTests.swift */,
+				3979B0C401A69966EB931831 /* OwnWalkWayBuilderTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3343,6 +3349,7 @@
 				69DA4490041B15E3D1973DD4 /* HonorPersistence.swift in Sources */,
 				1AF7D38A317AD3197196E45B /* Way.swift in Sources */,
 				28510308552652DE0984CC98 /* WayGeometry.swift in Sources */,
+				4997C102426B18E2BE23D309 /* OwnWalkWayBuilder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3495,6 +3502,7 @@
 				C5E89C7DAA3D5CBB80866CE3 /* WalkModeTests.swift in Sources */,
 				3F00188A28676D102B6141AE /* HonorPersistenceTests.swift in Sources */,
 				77E76C8B3A4B95DBF47901C0 /* WayGeometryTests.swift in Sources */,
+				AED160E46E2303916AFF0352 /* OwnWalkWayBuilderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
