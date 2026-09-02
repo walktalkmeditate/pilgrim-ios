@@ -5,6 +5,30 @@
 **Repos:** pilgrim-ios (this spec), pilgrim-worker (handoff surface, small contract below), open-pilgrimages (slice two, separate spec)
 **Supersedes in part:** `2026-03-23-pilgrimage-route-packages-design.md` (packages become Honor slice two; its data-repo, tile-budget, and one-route-at-a-time decisions stand)
 
+## Why
+
+Three sources, three different reasons to exist, and the evidence for each:
+
+- **Your own past walks.** Every user already has them, and every walk with
+  recordings is a place-anchored voice archive nobody can revisit in place
+  today. Evidence: the journal itself. Zero dependencies.
+- **Shared walks.** Walk-with-me pages exist so a walk can be given to
+  someone; today the receiver can only scroll it. "Let them walk it" is the
+  tour backlog's "Walk It There" item, and the developer's own live shares
+  are the test bed. Evidence: the shares that exist so far are mostly the
+  developer's; demand from other sharers is unmeasured.
+- **Pilgrimage stages.** The app is named for them, and the only measured
+  demand signal, search traffic on pilgrimage terms, points here. They need
+  a data packaging pipeline and offline tiles before they are walkable.
+
+Slice order, decided in conversation on 2026-09-01: the engine ships first
+against sources that need no data pipeline, own walks and then shared walks,
+because that proves the mode on real data the developer already holds and
+lets packages plug into a working engine. Packages carry the strongest
+demand but the longest dependency chain, so they are slices two and three.
+Whether slice one itself should split into an own-walk-only release first
+is an open question at the end of this document.
+
 ## Vision
 
 Wander is a walk without an aim. Seek is a walk with a goal. Honor is a walk
@@ -56,6 +80,8 @@ your moss ink lays down over it as you walk. At the summary you see both.
 4. **Media obeys the sharer's promise.** The sharer chose an expiry. Their
    voices and photos are swept from the honoring phone when that date passes.
    The geometry stays with the honoring walker's own walk record forever.
+   The `Ways/` tree is excluded from iCloud backup so a restore cannot
+   resurrect swept media.
 5. **Companion, not navigator.** No turn-by-turn. The only deviation signal is
    an opt-in single soft tap after sustained drift.
 6. **Zero schema migration.** Mode, arrival, and linkage are recorded exactly
@@ -96,8 +122,11 @@ your moss ink lays down over it as you walk. At the summary you see both.
   5 s throttle and 1.2× exit hysteresis, surfaced through
   `ActiveWalkView.handleProximityEvent`.
 - **Audio arbitration** is `AudioSessionCoordinator` with named consumers;
-  `WhisperPlayer` activates `.playbackOnly` for `"whisper-preview"` and
-  deactivates in every completion and error path.
+  `WhisperPlayer` is the settings preview player: it activates
+  `.playbackOnly` for `"whisper-preview"` and deactivates in every
+  completion and error path. In-walk whisper playback, the soundscape duck,
+  deferral while a guide prompt plays, and `interruptForVoiceGuide()` all
+  live in `Models/Audio/AudioPriorityQueue.swift`.
 - **Voice recording** starts and stops through
   `ActiveWalkViewModel.toggleVoiceRecording()`; meditation through
   `startMeditation()` (which stops a running recording first).
@@ -126,10 +155,10 @@ your moss ink lays down over it as you walk. At the summary you see both.
 
 | Slice | Content | Spec |
 |---|---|---|
-| **1 (this spec)** | Honor mode, the Way model, own-walk and shared-walk sources, universal link + paste, media download and expiry, ghost line, moments at places, companion dot, soft tap, place cards, reply here, summary/journal/seal/scenery, share lineage field, debug simulation export, worker handoff surface | this file |
+| **1 (this spec)** | Honor mode, the Way model, own-walk and shared-walk sources, universal link + paste, media download and expiry, ghost line, moments at places, companion dot, soft tap, place cards, reply here (local), summary/journal/seal/scenery, debug simulation export, worker handoff surface | this file |
 | 2 | Pilgrimage packages online: open-pilgrimages packaging build, manifest, catalog inside Honor, one-route-at-a-time with Replace, stages as Ways, curated POIs, stage interior text, morning card, arrival reflection, stage stamps | next spec |
 | 3 | Offline tiles: `tileStoreUsageMode = .shared`, corridor tile region per route, estimator, style pack, storage row, purge on Remove | next spec |
-| 4 | Practices at places, credencial keepsake, Collective honor counter, page lineage rendering, voices of the Way | later |
+| 4 | Practices at places, credencial keepsake, Collective honor counter, the `honor` lineage field on the share payload with origin-existence validation and page rendering of call-and-response and "walked by", voices of the Way | later |
 
 ## The Way
 
@@ -156,12 +185,14 @@ enum WaySource: Codable, Equatable {
 }
 
 enum WayMoment: Codable, Equatable {
-    case voice(frac: Double, endFrac: Double, duration: Double, kind: VoiceKind, media: WayMedia)
-    case photo(frac: Double, media: WayMedia)
-    case waypoint(frac: Double, label: String, icon: String)
-    case rest(frac: Double, minutes: Int)
-    case meditation(frac: Double, minutes: Int, isEstimate: Bool)
+    case voice(frac: Double, endFrac: Double, at: WayCoordinate?, duration: Double, kind: VoiceKind, media: WayMedia)
+    case photo(frac: Double, at: WayCoordinate?, media: WayMedia)
+    case waypoint(frac: Double, at: WayCoordinate?, label: String, icon: String)
+    case rest(frac: Double, at: WayCoordinate?, minutes: Int)
+    case meditation(frac: Double, at: WayCoordinate?, minutes: Int, isEstimate: Bool)
 }
+
+struct WayCoordinate: Codable, Equatable { let lat, lon: Double }
 
 enum VoiceKind: String, Codable { case spoken, ambient }
 
@@ -172,13 +203,20 @@ enum WayMedia: Codable, Equatable {
 }
 ```
 
+`at` is the moment's true coordinate when the source knows it. Triggers
+fire on `at`; `frac` orders moments and feeds the progress gate. A `nil`
+`at` falls back to `coordinate(atFrac:)`, which on a simplified shared
+route can sit well off the real path, so every source that can supply a
+coordinate must.
+
 `WayGeometry` wraps a Way's route with cumulative distances and is the only
 place that does geometry:
 
 - `coordinate(atFrac:)`, `frac(atElapsed:)`, `elapsed(atFrac:)` (linear
   within a segment).
-- `nearest(to: CLLocationCoordinate2D) -> (frac: Double, meters: Double)`,
-  the closest point on the polyline. Pure Swift haversine, ported from
+- `nearest(to: CLLocationCoordinate2D, within: ClosedRange<Double>?) -> (frac: Double, meters: Double)`,
+  the closest point on the polyline, optionally restricted to a frac
+  window. Pure Swift haversine, ported from
   `SeekChainGenerator.distance(from:to:)`; no Turf dependency added.
 - Route caps: an own-walk Way keeps up to 4,000 points through
   `RouteDownsampler` (Ramer-Douglas-Peucker, already in the app); a share Way
@@ -191,10 +229,14 @@ place that does geometry:
 Built on demand from the walk record; nothing is copied.
 
 - Route: `routeData` samples with their timestamps → `t`.
-- Voices: `voiceRecordings` placed by `startDate`; `kind` from
-  `TourBuilder.classify(transcription:)`; media `.recording(relativePath:)`.
-- Photos: `walkPhotos` placed by timestamp; media `.photoAsset`.
-- Waypoints: all except reserved icons (`"sun.haze"` and Honor's own, below).
+- Voices: `voiceRecordings` placed by `startDate`; `at` is the
+  full-resolution route sample nearest `startDate`, chosen before any
+  downsampling; `kind` from `TourBuilder.classify(transcription:)`; media
+  `.recording(relativePath:)`.
+- Photos: `walkPhotos` placed by timestamp, `at` from their own stored
+  coordinate; media `.photoAsset`.
+- Waypoints: all except reserved icons (`"sun.haze"` and Honor's own, below),
+  `at` from their stored coordinate.
 - Rests: `pauses` of 180 s or more, matching the worker's `MIN_REST_SECONDS`.
 - Sittings: meditation `activityIntervals`, exact minutes, `isEstimate: false`.
 - Weather: the walk's stored condition and temperature.
@@ -207,17 +249,26 @@ with two or more route samples. It calls
 
 `WayImporter.import(shareId:) async throws -> Way`:
 
-1. `GET https://walk.pilgrimapp.org/{id}/tour.json`. 404 → `WayError.returnedToTrail`.
-   Any other non-200 or a decode failure → `WayError.unavailable`.
-2. If `expires` is already past → `returnedToTrail`.
+1. `GET https://walk.pilgrimapp.org/{id}/tour.json`. 404 → `WayError.notFound`:
+   the worker answers the same 404 for an id that never existed and for a
+   share swept after expiry, so the copy is "couldn't find that walk. Check
+   the link, or it may have returned to the trail." Any other non-200 or a
+   decode failure → `WayError.unavailable`. A decoded manifest with more
+   than 2,000 route points or 200 encounters is rejected as `unavailable`,
+   a defensive ceiling independent of the server's own limits.
+2. If `expires` is already past → `WayError.returnedToTrail`, the only path
+   that shows the tombstone line.
 3. Build the Way: route from `route[]` (`t = ts - route[0].ts`), title from
    `place_start`/`place_end`, moments from `encounters[]`:
-   `voice`/`ambience` → `.voice` with media `.file("audio/{n}.m4a")`;
-   `photo` → `.photo(.file("photos/{n}.jpg"))`; `waypoint` and `rest` map
-   directly. `meditation[]` entries become `.meditation` moments at
-   `start_frac`, minutes from the worker's `duration` field when present,
-   otherwise estimated as the time gap between the route points bracketing
-   that frac, flagged `isEstimate: true` and rendered as "about".
+   `voice` → `.voice(kind: .spoken)` and `ambience` → `.voice(kind: .ambient)`,
+   both with media `.file("audio/{n}.m4a")`; `photo` →
+   `.photo(.file("photos/{n}.jpg"))`; `waypoint` and `rest` map directly.
+   `at` comes from the encounter's `lat`/`lon` (worker contract item 4);
+   shares made before that field shipped leave `at` nil. `meditation[]`
+   entries become `.meditation` moments at `start_frac`, minutes from the
+   worker's `duration` field when present, otherwise estimated as the time
+   gap between the route points bracketing that frac, flagged
+   `isEstimate: true` and rendered as "about".
 4. Persist `way.json` to `Ways/share:{id}/` and start the media download.
 
 Tour manifests deliberately carry no transcripts, and Honor does not want
@@ -227,16 +278,33 @@ them. Nothing is decoded that is not needed.
 
 **Universal link, with paste as the fallback and the test path.**
 
+- The handoff lives on a second hostname, `honor.pilgrimapp.org`, routed to
+  the same worker. iOS sends a universal-link tap to Safari when the link is
+  on the same domain as the page being viewed, so a pill on
+  walk.pilgrimapp.org pointing back at walk.pilgrimapp.org would never open
+  the app. A different host makes the tap cross-domain, which iOS routes
+  to the app. Verify on a device that the sibling subdomain counts as
+  cross-domain before the worker contract is frozen; if it does not, use a
+  second zone.
 - Entitlement: `com.apple.developer.associated-domains` =
-  `applinks:walk.pilgrimapp.org`. The Associated Domains capability is
-  already enabled on the developer account.
-- The page's button links to `https://walk.pilgrimapp.org/{id}/honor`. Only
-  the `/honor` path is claimed by the app, so ordinary share links keep
-  opening in Safari for everyone, including app owners.
+  `applinks:honor.pilgrimapp.org`. The Associated Domains capability is
+  already enabled on the developer account; the provisioning profile the
+  release workflows sign with must be regenerated before the first build
+  that carries the entitlement.
+- The page's button links to `https://honor.pilgrimapp.org/{id}`. The AASA
+  on that host claims `/*`. Ordinary share links on walk.pilgrimapp.org are
+  untouched and keep opening in Safari for everyone, including app owners.
 - `PilgrimApp` gains `.onOpenURL` and `.onContinueUserActivity(NSUserActivityTypeBrowsingWeb)`.
   Both feed `HonorLink.parse(_ url: URL) -> String?`, which accepts
-  `/{id}`, `/{id}/honor`, trailing slashes, query strings, and fragments, and
-  validates the ten-character id pattern.
+  `honor.pilgrimapp.org/{id}` and `walk.pilgrimapp.org/{id}` with optional
+  trailing slash, query string, and fragment, and validates the
+  ten-character id pattern.
+- Without the app, `honor.pilgrimapp.org/{id}` serves a small page:
+  "Open in Pilgrim" (App Store link), the `apple-itunes-app` smart-banner
+  meta with `app-argument` set to the same URL, and "back to the walk."
+  In-app browsers inside Messages, WhatsApp, and Instagram never fire
+  universal links, so app owners see this page there too and the banner is
+  their opener.
 - Routing: `RootCoordinatorView` forwards a parsed id to
   `MainCoordinatorView.openWay(shareId:)`. If setup is not complete the link
   is dropped silently. If a walk is active, a toast reads "finish this walk
@@ -268,11 +336,22 @@ Ways/
 
 `WayStore` mirrors `AudioFileStore`: `list()`, `load(id:)`, `save(_:)`,
 `diskUsage(id:)`, `totalDiskUsage()`, `delete(id:)`, `deleteMedia(id:)`,
-`sweepExpired(now:)`, `link(walkUUID:to wayId:)`, `way(forWalk:)`.
+`sweepExpired(now:)`, `link(walkUUID:to wayId:)`, `way(forWalk:)`. On first
+write it sets `isExcludedFromBackup = true` on the `Ways/` directory, the
+same pattern `TranscriptContextStore` uses, so iCloud never carries a third
+party's voices past the sharer's expiry.
 
-`WayMediaDownloader` mirrors `VoiceGuideDownloadManager` but runs on a
-background `URLSession` configuration so a locked phone finishes the job:
-one task per file, temp file then atomic move, one retry per file,
+`WayMediaDownloader` keeps `VoiceGuideFileStore`'s file conventions, a
+per-Way folder under Application Support with temp file then atomic move
+and one retry per file, but not `VoiceGuideDownloadManager`'s transport,
+because that manager uses `session.download(from:)` on a default session
+and background sessions reject async and completion-handler APIs. The
+downloader is a `URLSessionDownloadDelegate` on
+`URLSessionConfiguration.background(withIdentifier: "org.walktalkmeditate.pilgrim.ways")`,
+maps `taskIdentifier` to `(wayId, relativeFile)`, moves the delivered file
+inside `didFinishDownloadingTo`, and `AppDelegate` gains
+`application(_:handleEventsForBackgroundURLSession:completionHandler:)` to
+re-attach the session after suspension or relaunch. State:
 `@Published progress: [wayId: Double]` and `failures: [wayId: [String]]`.
 Sizes are bounded by the worker: at most 12 recordings, 15 MB each, 60 MB
 total; at most 20 photos, 2 MB each.
@@ -316,18 +395,30 @@ existing publishers and persists nothing.
 - `phase: .walking | .arrived`
 - `activeVoice: WayMoment?` and `pendingCards: [WayCard]`
 
-**Position**: each fix runs `WayGeometry.nearest(to:)`. `progressFrac` only
-advances (monotonic with a 0.02 backward tolerance) so a loop walk crossing
-its own line does not jump.
+**Position**: the nearest-point search is windowed, because on an
+out-and-back Way the outbound and return legs share the same pavement and
+an unanchored global search would jump forward on GPS noise alone. At
+Begin, `startFrac` anchors to the lowest-frac candidate within 60 m, or to
+0 when nothing is within 60 m. Each fix then searches
+`[progressFrac − 0.02, progressFrac + w]` where `w` is roughly 300 m of
+path, and updates `progressFrac` only when that local nearest point is
+within 60 m. After 120 s continuously beyond 60 m the engine falls back to
+a global search to re-acquire the walker, again taking the lowest-frac
+candidate.
 
-**Companion**: `companionFrac = geometry.frac(atElapsed: activeDuration)`.
+**Companion**: one clock for the dot and for the arrival card. The
+companion is anchored at `t0 = geometry.elapsed(atFrac: startFrac)` and
+moves as `companionFrac = geometry.frac(atElapsed: t0 + activeDuration)`.
 Because the clock is the walker's active duration, pausing pauses the
 companion, and the original walker's own rests are already baked into the
-Way's timing, so the dot rests where they rested. Arrival difference is
-`theirActiveSeconds` versus your active duration at arrival.
+Way's timing, so the dot rests where they rested. The arrival difference is
+`(route.last.t − t0)` versus your active duration at arrival, the same
+timeline the dot moves on. `theirActiveSeconds` serves only the "their
+duration" label on the overview.
 
 **Moments** trigger once each, when the walker is within a radius of the
-moment's coordinate and `progressFrac ≥ moment.frac − 0.05`:
+moment's `at` coordinate (or `coordinate(atFrac:)` when `at` is nil) and
+`progressFrac ≥ moment.frac − 0.05`:
 
 | Moment | Radius | Behavior |
 |---|---|---|
@@ -338,18 +429,32 @@ moment's coordinate and `progressFrac ≥ moment.frac − 0.05`:
 | meditation | 60 m | card: "they sat here for 12 minutes. Sit?" → `startMeditation()` with a timer preset to those minutes |
 | waypoint | none | always visible as a faded pin with label |
 
-Gates, matching the voice guide's: no voice plays while the walker is
+Gates, matching the voice guide's: no voice starts while the walker is
 recording, meditating, or paused, or while a whisper or guide prompt is
-playing. A gated voice waits; a waiting voice is dropped once the walker is
-more than 300 m past its spot. The `walk with their voice` toggle on the
-overview (default on, remembered as `UserPreferences.honorVoicesEnabled`)
-silences voices without affecting cards or pins.
+playing. A voice already playing when a gate closes is **paused, not
+stopped**: tapping Sit, starting a recording, or pausing the walk pauses
+it, and it resumes from where it stopped when the gate clears. This
+matters because a sitting and a reflection at the same bench is the
+commonest pairing on a contemplative walk. A gated voice that has not
+started waits; a waiting voice is dropped once the walker is more than
+300 m past its spot, except that a paused or waiting voice is exempt from
+the drop while the walker is stationary. The `walk with their voice`
+toggle on the overview (default on, remembered as
+`UserPreferences.honorVoicesEnabled`) silences voices without affecting
+cards or pins.
 
-`WayVoicePlayer` follows `WhisperPlayer` exactly: one `AVAudioPlayer` at a
-time, `coordinator.activate(for: .playbackOnly, consumer: "honor-voice")`,
-deactivate in completion and every error path, soundscape ducked through
-the existing duck level while playing. The stats sheet shows a listening
-chip with elapsed time and a pause/skip control while a voice plays.
+`WayVoicePlayer` is modeled on `AudioPriorityQueue`, not on the settings
+preview player, because that is where the soundscape duck, deferral while
+`VoiceGuidePlayer.isPlaying`, and `interruptForVoiceGuide()` already live.
+It reuses the queue's `preDuckVolume`/`duckLevel` logic, exposes an
+`isPlayingWayVoice` flag that `AudioPriorityQueue.playWhisper` checks so a
+community whisper never plays over a Way voice, and drives the engine's
+"whisper or guide prompt is playing" gate from
+`AudioPriorityQueue.isPlayingWhisper` and `VoiceGuidePlayer.isPlaying`.
+One `AVAudioPlayer` at a time, `coordinator.activate(for: .playbackOnly,
+consumer: "honor-voice")`, deactivate in completion and every error path.
+The stats sheet shows a listening chip with elapsed time and a pause/skip
+control while a voice plays.
 
 **Soft tap** (opt-in, `UserPreferences.honorSoftTapEnabled`, default off):
 when `offWayMeters > 200` continuously for 120 s, fire
@@ -357,14 +462,19 @@ when `offWayMeters > 200` continuously for 120 s, fire
 bar; re-arm when back within 60 m. Nothing else ever comments on deviation.
 
 **Arrival**: within 30 m of the last route point, using the same debounce as
-Seek. That logic is extracted from `SeekEngine.updateArrivalDebounce` into a
-pure `ArrivalDebounce` value type shared by both engines, with its existing
-behavior pinned by tests before the extraction. On arrival the engine emits
-`.arrived`; the view model writes the `.honorArrival` event and the reserved
-waypoint, fires `HapticPattern.honorArrival`, and shows the arrival card:
-"you walked their way" plus "they arrived 18 minutes after you" or "before
-you." The walk continues until the walker ends it, as with Seek's complete
-state.
+Seek, **and only once `progressFrac ≥ 0.9` and the walker's own recorded
+distance is at least half of `totalDistanceMeters`**. Without the progress
+gate any loop or out-and-back Way, the commonest shape for an own walk,
+would arrive at Begin: three fixes at the start are inside 30 m of the end.
+The debounce logic is extracted from `SeekEngine.updateArrivalDebounce`
+into a pure `ArrivalDebounce` value type shared by both engines, with its
+existing behavior pinned by tests before the extraction. On arrival the
+engine emits `.arrived`; the view model writes the `.honorArrival` event
+and the reserved waypoint, fires `HapticPattern.honorArrival`, and shows
+the arrival card: "you walked their way," leading with what was met on the
+Way (voices heard, places passed), never with who was faster. The
+before/after minutes live only in the summary as a quiet stat. The walk
+continues until the walker ends it, as with Seek's complete state.
 
 ## Map rendering
 
@@ -389,7 +499,10 @@ state.
   in the existing bottom sheet. One component, four bodies: photo (small
   parchment-matted image, tap to enlarge), voice (duration, play/pause,
   "spoken here", and **reply here**), rest, meditation (with the Sit
-  button).
+  button). `pendingCards` renders one card at a time in trigger order; when
+  more are waiting the card shows a small "+N more" affordance, and
+  dismissing advances to the next. A tapped pin's card jumps the queue and
+  the pending ones resume after it.
 
 ## The walk, start to finish
 
@@ -401,8 +514,13 @@ state.
    4 photos", expiry aging, or "voices returned to the trail"), a "walk one
    of yours again" row opening `OwnWalkPicker` (walks with routes, newest
    first), and "from a shared walk" with the paste field. Begin reads
-   "Choose a way" until a Way is selected. The pilgrimage-routes door
-   arrives in slice two.
+   "Choose a way" until a Way is selected. Accepted share Ways sort by
+   acceptance date, newest first. Every fresh install hits the empty case,
+   so it has copy: `HonorWaysList` with nothing accepted shows "no ways yet.
+   Accept a shared walk, or walk one of yours again." and `OwnWalkPicker`
+   with no walk carrying a route shows "walk somewhere first. Any walk with
+   a route can be walked again." The pilgrimage-routes door arrives in
+   slice two.
 2. **Overview.** `HonorOverviewView`: the map fit to the Way's bounds with
    ghost line and pins, camera not following the puck; a card with title,
    date, distance, their duration, "they walked this in rain at 9°. Today is
@@ -414,7 +532,11 @@ state.
 4. **Reply here.** From the voice card or the listening chip. Starts
    `toggleVoiceRecording()`; when that recording stops, its `relativePath` is
    written to `replies.json` under the origin voice's `n`. The reply pins
-   beside theirs on the live map and in the summary.
+   beside theirs on the live map and in the summary. When `replies.json`
+   already holds an entry for that voice, from an earlier honoring of the
+   same Way, the card shows "your reply" with playback and a "record again"
+   action that confirms before overwriting; the earlier recording stays in
+   the earlier walk's record either way.
 5. **Arrival** as above. **End** as any walk.
 
 **Live Activity**: `HonorGlanceState { distanceRemainingMeters, isOnWay }`
@@ -453,38 +575,42 @@ rendered like `SeekGlanceState`.
 - **Prompts**: `PracticeMode.honor` with a lexicon so journal prose knows the
   walk followed another's steps.
 
-## Share payload addition
+## Share lineage (deferred to slice four)
 
-`SharePayload.honor?`:
-
-```json
-"honor": {
-  "origin_share_id": "Qoi4YmPHLN",
-  "origin_title": "Rúa do Franco → Praza do Obradoiro",
-  "replies": [ { "n": 2, "origin_n": 3 } ]
-}
-```
-
-Sent only when the honor walk's Way is a share. `n` is the honoring walker's
-own recording index in its tour, `origin_n` the origin voice it answers.
-Rendering call-and-response and "walked by" on the pages is worker slice
-four; slice one only stores it.
+Slice one keeps replies local. `way.json` and `replies.json` already retain
+the origin share id, the origin title, and the reply mapping through the
+expiry sweep, so the lineage can be reconstructed later without loss. The
+`honor` field on the share payload (`origin_share_id`, `origin_title`,
+`replies[{n, origin_n}]`), its worker validation, and the page rendering
+of call-and-response and "walked by" all ship together in slice four, when
+the renderer that consumes them exists. When that field ships, the worker
+must look up `walks/{origin_share_id}/meta.json` and reject the field if
+the origin does not exist or has expired, because `/api/share` is gated
+only by a device token and a forged origin would otherwise render as
+attribution on someone else's page. Sharing an honor walk will also need
+its own share-sheet line naming the origin walk being linked.
 
 ## Debug: location-simulation export
 
-`#if DEBUG` only. `WayGPXExporter.gpx(for: Way) -> Data` writes one track
-with a `<trkpt>` per route point carrying `<ele>` when known and `<time>` =
-`departedAt + t`, plus a `<wpt>` per moment named by its kind for reference.
-A debug menu on the overview card offers "Export simulation GPX" through the
-share sheet. Xcode's Core Location simulation paces a timestamped track at
-its recorded speed, so the simulator walks the Way with voices, pins, and the
-companion live. `docs/` gains a short how-to. `ScreenshotDataSeeder` seeds one
-honor walk with a matching Way folder so the summary ghost appears in demo
-mode.
+`#if DEBUG` only. `WayGPXExporter.gpx(for: Way) -> Data` writes one
+`<wpt lat lon>` per route point, in ascending order, carrying `<ele>` when
+known and `<time>` = `departedAt + t`. Xcode's Core Location simulation
+reads only `<wpt>` elements and ignores `<trk>`/`<trkpt>`; with `<time>` on
+each waypoint it interpolates movement at the speed the timestamps dictate,
+so this is the one form that paces the Way at recorded speed. Moments are
+not emitted as separate untimed waypoints, which would hop the simulator
+off the route; instead each moment's kind goes into `<name>` on the nearest
+route waypoint. A debug menu on the overview card offers "Export simulation
+GPX" through the share sheet, and the simulator then walks the Way with
+voices, pins, and the companion live. `docs/` gains a short how-to.
+`ScreenshotDataSeeder` seeds one honor walk with a matching Way folder so
+the summary ghost appears in demo mode.
 
 ## Error handling
 
 - `returnedToTrail` → overview shows the tombstone line and a back action.
+- `notFound` → "couldn't find that walk. Check the link, or it may have
+  returned to the trail." with the paste field still editable.
 - Network failure on import → "couldn't reach the walk" with retry.
 - Media failure → per-file retry, then the two-choice card above.
 - Location denied or reduced accuracy → same behavior as every other mode.
@@ -510,18 +636,26 @@ mode.
 Unit, in `UnitTests/Honor/`:
 
 - `WayGeometry`: frac/coordinate/elapsed round trips, nearest-point on
-  straight and looping routes, monotonic progress tolerance.
+  straight and looping routes, windowed search on an out-and-back fixture
+  where the outbound and return legs overlap, monotonic progress tolerance.
 - `WayImporter`: builds a Way from the worker's `sample-share.json` fixture;
-  expired and 404 paths; meditation minutes from `duration` versus estimate.
+  expired, 404, and oversized-manifest paths; meditation minutes from
+  `duration` versus estimate; `at` present and absent.
 - Own-walk Way builder: recordings, photos, rests, sittings placed at the
-  right fracs; reserved icons excluded.
-- `HonorEngine`: moment fires once, frac gate, voice queue and 300 m drop,
-  gating by meditation/recording/pause, companion frac under pause, soft tap
-  arm/re-arm timing, arrival debounce via the extracted `ArrivalDebounce`.
+  right fracs with `at` taken from full-resolution samples before
+  downsampling; reserved icons excluded.
+- `HonorEngine`: moment fires once on `at`, frac gate, voice queue and
+  300 m drop with the stationary exemption, pause-and-resume when Sit or a
+  recording interrupts a playing voice, gating by meditation/recording/pause,
+  companion anchored at `startFrac` and frozen under pause, arrival
+  difference on the companion's clock, soft tap arm/re-arm timing, arrival
+  debounce via the extracted `ArrivalDebounce`, and a loop Way whose first
+  and last points coincide does not arrive at Begin.
 - `ArrivalDebounce`: Seek's current behavior pinned before extraction.
 - `WayStore.sweepExpired`: the three-row table above.
 - `HonorLink.parse`: every accepted URL form and the rejections.
-- `WayGPXExporter`: point count, timestamp monotonicity, waypoint names.
+- `WayGPXExporter`: one `<wpt>` per route point, no `<trk>` element,
+  timestamp monotonicity, moment kinds carried in `<name>`.
 - `PilgrimPackageConverter`: honor events round-trip.
 - `GoshuinMilestones`: first honor and threshold crossing with the ordering
   tie-break.
@@ -532,25 +666,45 @@ the user's own live shares on a phone.
 
 ## Worker contract (pilgrim-worker, deploys before the iOS build ships)
 
-1. `GET /.well-known/apple-app-site-association`: JSON, `application/json`,
+1. A second hostname, `honor.pilgrimapp.org`, added to the zone and to the
+   worker's routes. On that host only: `GET /.well-known/apple-app-site-association`,
+   JSON, `application/json`,
    `applinks.details[0].appIDs = ["YCF2TGZAX8.org.walktalkmeditate.pilgrim"]`,
-   `components = [{ "/": "/*/honor" }]`.
-2. `GET /{id}/honor`: for phones without the app, a small page with
-   "Open in Pilgrim" (App Store link), the `apple-itunes-app` smart-banner
-   meta with `app-argument` set to the same URL, and "back to the walk."
+   `components = [{ "/": "/*" }]`. Verify Apple's CDN can fetch it through
+   Cloudflare (`app-site-association.cdn-apple.com/a/v1/honor.pilgrimapp.org`)
+   after deploy and before the iOS build depends on it; bot-protection
+   rules can block that fetch silently.
+2. `GET honor.pilgrimapp.org/{id}`: the fallback page with "Open in Pilgrim"
+   (App Store link), the `apple-itunes-app` smart-banner meta with
+   `app-argument` set to the same URL, and "back to the walk." Unknown or
+   expired id → the existing tombstone.
 3. Template: a `walk it there` pill on interactive pages, class `sound-pill`
    so it is a pointer-events island, hidden in embed mode, linking to
-   `/{id}/honor`. Live shares regenerated with `scripts/regenerate-share.ts`.
-   No engine change, so no `tour-v8`.
-4. `tour.json`: `meditation[]` entries gain `duration` in seconds. Additive;
-   old engines ignore it.
-5. `POST /api/share` accepts and stores `honor` (id pattern, title ≤ 100
-   chars, ≤ 12 replies, indices positive integers).
-6. Share sheet copy in iOS: "Anyone with the link can walk it there."
+   `https://honor.pilgrimapp.org/{id}`. The developer's own live shares are
+   regenerated with `scripts/regenerate-share.ts`; other live shares pick
+   the pill up when re-shared after the consent copy ships. No engine
+   change, so no `tour-v8`.
+4. `tour.json`: `meditation[]` entries gain `duration` in seconds, and
+   `voice`, `ambience`, `photo`, and `waypoint` encounters gain `lat`/`lon`.
+   Photos and waypoints already carry coordinates in the POST; recordings
+   need a new per-recording `lat`/`lon` in the iOS tour payload, computed
+   from full-resolution `routeData` at `start_ts` before downsampling. All
+   additive; old engines ignore them.
+5. Share sheet copy in iOS: "Anyone with the link can walk it there."
 
 ## Out of scope for slice one
 
 Pilgrimage packages and the catalog, offline tiles, the morning card and
 arrival reflection, practices at places, the credencial, the Collective
-honor counter, page rendering of lineage and "walked by," voices of the Way,
-Android parity.
+honor counter, the `honor` share field and page rendering of lineage and
+"walked by," voices of the Way, Android parity.
+
+## Deferred / Open Questions
+
+### From 2026-09-01 review
+
+- **An own-walk-only first slice delivers the Honor experience without the worker, AASA, or storage machinery** — Slices (P1, product-lens, confidence 75)
+
+  Roughly half of slice one exists only to serve the shared-walk source: importer, universal link and paste, AASA and fallback page, template pill and share regeneration, background downloader, expiry sweep, Ways list and storage row, and replies.json, plus a cross-repo deploy-order dependency. The own-walk source needs none of it and still exercises every defining Honor behavior: ghost line, companion, place-triggered voices, place cards, sitting offers, arrival, summary, journal, seal. Proposed split: 1a (Way model, own-walk source, HonorEngine, HonorWayRenderer, place cards, arrival, summary/journal/seal/scenery, PracticeMode, debug GPX) shipped as its own release, then 1b (WayImporter, universal link + paste, WayStore/WayMediaDownloader, expiry sweep, Ways list and Settings row, worker contract). The build order inside slice one already follows this sequence; the open decision is whether 1a ships alone.
+
+  <!-- dedup-key: section="slices" title="an ownwalkonly first slice delivers the honor experience without the worker aasa or storage machinery" evidence="Built on demand from the walk record; nothing is copied." -->
