@@ -32,20 +32,18 @@ final class HonorEngine: ObservableObject {
 
     private(set) var startFrac: Double?
     private(set) var companionT0: Double = 0
-    /// Along-Way distance since Begin, accumulated in `walkedFrac` from
-    /// windowed on-Way fixes only: GPS jitter cannot inflate it cumulatively
-    /// (each excursion is bounded by the window and the backward tolerance)
-    /// and it needs no speed.
+    /// Along-Way credit toward arrival: progress earned on the Way through
+    /// windowed fixes, plus a re-acquire's jump capped at the Way's own
+    /// pace. GPS jitter is credited once, never cumulatively.
     var distanceWalkedMeters: Double {
         walkedFrac * geometry.totalMeters
     }
-    /// Position high-water mark: the baseline credit is measured against. A
-    /// re-acquire may move it for free; only on-Way fixes (and pace-bounded
-    /// re-acquire credit) add to walkedFrac.
+    /// Position high-water mark, the baseline that credit is measured
+    /// against. A re-acquire may move it beyond what was credited.
     private var progressHighWater: Double = 0
-    /// Along-Way progress earned on the Way: increments of the high-water
-    /// mark from windowed on-Way fixes only. A re-acquire moves position
-    /// without adding here.
+    /// Arrival credit in frac: increments of the high-water mark from
+    /// on-Way fixes, plus pace-bounded credit for a re-acquire. Reset at
+    /// anchor and re-anchor.
     private var walkedFrac: Double = 0
 
     private let now: () -> Date
@@ -194,11 +192,13 @@ final class HonorEngine: ObservableObject {
             if let found = ahead ?? geometry.lowestFrac(within: HonorTuning.onWayMeters, of: coordinate) {
                 // Credit the jump, but no faster than the Way was walked:
                 // an honest walker off-signal through a corner earns the
-                // stretch; a car cannot outrun the Way's own pace.
-                if let since = offWaySince, geometry.totalSeconds > 0 {
+                // stretch; a car cannot outrun the Way's own pace. When
+                // Begin fell back to frac 0, the re-anchor that follows
+                // resets the credit: the walk had not really begun.
+                if geometry.totalSeconds > 0 {
                     let jump = max(0, found.frac - progressHighWater)
                     let paceFrac = time.timeIntervalSince(since) / geometry.totalSeconds
-                    walkedFrac += min(jump, paceFrac)
+                    walkedFrac += max(0, min(jump, paceFrac))
                 }
                 progressFrac = found.frac
                 progressHighWater = max(progressHighWater, progressFrac)
@@ -241,8 +241,9 @@ final class HonorEngine: ObservableObject {
         guard phase == .walking, let last = geometry.points.last, let start = startFrac else { return }
         // Half of the Way that lay ahead at Begin, along the Way: blocks an
         // arrival at Begin on a loop while letting a mid-Way start finish.
-        // The credit comes only from progress made on the Way (walkedFrac),
-        // never from a re-acquire's position jump.
+        // The credit is walkedFrac: progress on the Way, plus a
+        // re-acquire's jump capped at the Way's pace, so neither a loop's
+        // trailhead nor a car ride satisfies it.
         let aheadAtBegin = max(0, 1 - start)
         guard progressFrac >= HonorTuning.arrivalMinFrac,
               walkedFrac >= HonorTuning.arrivalMinDistanceRatio * aheadAtBegin else {

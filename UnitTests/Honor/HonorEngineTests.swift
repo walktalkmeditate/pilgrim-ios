@@ -243,6 +243,25 @@ final class HonorEngineTests: XCTestCase {
         XCTAssertEqual(arrived, 1, "an honest walker who lost signal still arrives")
     }
 
+    /// The honest case the pace credit exists for: signal lost through a
+    /// corner, back on the line 450 m later after five minutes. The stretch
+    /// is credited in full because it is under the Way's pace; a pace-only
+    /// implementation would credit 500 m here.
+    func testHonestOffSignalStretchIsCreditedInFull() {
+        let engine = makeEngine(way: straightWay())
+        engine.processLocation(fix(lon: 0, at: 0))
+        for i in 1...2 { engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i) * 60)) }
+        XCTAssertEqual(engine.distanceWalkedMeters, 200, accuracy: 10)
+        for s in stride(from: 210.0, through: 500, by: 10) {
+            clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.processLocation(fix(lon: 0.000898 * 3.5, lat: 0.0036, at: s))
+        }
+        clock = Date(timeIntervalSince1970: 1_000_000 + 510)
+        engine.processLocation(fix(lon: 0.000898 * 6.5, at: 510))
+        XCTAssertEqual(engine.progressFrac, 0.65, accuracy: 0.02)
+        XCTAssertEqual(engine.distanceWalkedMeters, 650, accuracy: 15, "the 450 m jump is under 300 s of the Way's pace, so it counts in full")
+    }
+
     func testReacquireCannotOutrunTheWaysPace() {
         let engine = makeEngine(way: straightWay())
         var arrived = 0
