@@ -34,20 +34,30 @@ struct HonorSummarySection: View {
             if let delta = data.arrivedBeforeTheirsSeconds {
                 Text(deltaLine(delta)).font(Constants.Typography.caption).foregroundColor(.fog)
             }
-            HStack {
-                if data.voicesHeard > 0 { Text("\(data.voicesHeard) voices along the way") }
-                if data.repliesMade > 0 { Text("· \(data.repliesMade) replies") }
+            if let countsLine {
+                Text(countsLine).font(Constants.Typography.caption).foregroundColor(.fog)
             }
-            .font(Constants.Typography.caption).foregroundColor(.fog)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Constants.UI.Padding.normal)
-        .background(RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.big).fill(Color.parchmentSecondary))
+        .background(RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal).fill(Color.parchmentSecondary))
+    }
+
+    private var countsLine: String? {
+        var parts: [String] = []
+        if data.voicesHeard > 0 {
+            parts.append("\(data.voicesHeard) \(data.voicesHeard == 1 ? "voice" : "voices") along the way")
+        }
+        if data.repliesMade > 0 {
+            parts.append("\(data.repliesMade) \(data.repliesMade == 1 ? "reply" : "replies")")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     private func deltaLine(_ delta: Double) -> String {
         let minutes = Int(abs(delta) / 60)
         if minutes == 0 { return "you arrived together" }
-        return delta > 0 ? "they arrived \(minutes) minutes after you" : "they arrived \(minutes) minutes before you"
+        let unit = minutes == 1 ? "minute" : "minutes"
+        return delta > 0 ? "they arrived \(minutes) \(unit) after you" : "they arrived \(minutes) \(unit) before you"
     }
 }

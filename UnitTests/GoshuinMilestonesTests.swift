@@ -135,4 +135,62 @@ final class GoshuinMilestonesTests: XCTestCase {
         ]
         XCTAssertEqual(awards.filter { $0 }.count, 1, "a startDate tie must resolve to exactly one first unknown")
     }
+
+    // MARK: - detect() aggregation (honor)
+
+    private func honorWalk(uuid: UUID, daysAgo: Int, arrivals: Int) -> TempWalk {
+        let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+            .addingTimeInterval(-Double(daysAgo) * 86_400)
+        return WalkDataFactory.makeWalk(
+            uuid: uuid,
+            startDate: start,
+            waypoints: (0..<arrivals).map { index in
+                TempWaypoint(
+                    uuid: nil,
+                    latitude: Double(index),
+                    longitude: 0,
+                    label: HonorPersistence.arrivalWaypointLabel(wayTitle: "A Way"),
+                    icon: HonorPersistence.arrivalWaypointIcon,
+                    timestamp: start.addingTimeInterval(Double(index + 1) * 600)
+                )
+            }
+        )
+    }
+
+    private func honorMilestones(for walk: TempWalk, in all: [WalkInterface]) -> Set<GoshuinMilestones.Milestone> {
+        GoshuinMilestones.detect(
+            walkCount: all.count,
+            walkIndex: 4,
+            walk: walk,
+            allWalks: all,
+            honorArrivalCounts: GoshuinMilestones.honorArrivalCounts(for: all)
+        )
+    }
+
+    func testDetect_firstHonor_goesToTheEarliestArrivalWalk() {
+        let earlier = honorWalk(uuid: UUID(), daysAgo: 2, arrivals: 1)
+        let later = honorWalk(uuid: UUID(), daysAgo: 0, arrivals: 1)
+        let all: [WalkInterface] = [earlier, later]
+
+        XCTAssertTrue(honorMilestones(for: earlier, in: all).contains(.firstHonor))
+        XCTAssertFalse(
+            honorMilestones(for: later, in: all).contains(.firstHonor),
+            "the earlier walk's honor arrivals must count as before the later walk"
+        )
+    }
+
+    // MARK: - Primary milestone (seek vs. honor tie-break)
+
+    func testPrimaryMilestone_seekOutranksHonorAtEqualN() {
+        XCTAssertEqual(
+            GoshuinMilestones.primaryMilestone(of: [.firstUnknown, .firstHonor]),
+            .firstUnknown,
+            "a walk carrying both once-ever moments must resolve deterministically"
+        )
+        XCTAssertEqual(
+            GoshuinMilestones.primaryMilestone(of: [.unknownsFound(10), .honorsWalked(10)]),
+            .unknownsFound(10),
+            "a walk crossing both thresholds at once must resolve deterministically"
+        )
+    }
 }

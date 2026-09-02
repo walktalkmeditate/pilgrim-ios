@@ -90,8 +90,7 @@ class HomeViewModel: ObservableObject {
     private func buildSnapshots() {
         let seekWalkIDs = fetchWalkIDs(withEvent: .seekMode)
         let honorWalkIDs = fetchWalkIDs(withEvent: .honorMode)
-        let arrivalCounts = GoshuinMilestones.arrivalCounts(for: walks)
-        let honorArrivalCounts = GoshuinMilestones.honorArrivalCounts(for: walks)
+        let (arrivalCounts, honorArrivalCounts) = GoshuinMilestones.arrivalAndHonorCounts(for: walks)
         let reversed = walks.reversed()
         var cumulative: Double = 0
         var arrivalsBefore = 0

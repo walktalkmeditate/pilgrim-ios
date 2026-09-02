@@ -29,10 +29,13 @@ enum GoshuinMilestones {
     /// caption and the share-image label shuffle between launches.
     /// Once-ever moments outrank threshold crossings outrank recurring
     /// and transient records; within threshold crossings the largest
-    /// count is the headline.
+    /// count is the headline. A hand-edited `.pilgrim` import can give one
+    /// walk both a seek and an honor milestone at the same displayPriority
+    /// and the same n, so `subPriority` breaks that last tie deterministically.
     static func primaryMilestone(of milestones: Set<Milestone>) -> Milestone? {
         milestones.min { lhs, rhs in
-            (displayPriority(lhs), -intraPriority(lhs)) < (displayPriority(rhs), -intraPriority(rhs))
+            (displayPriority(lhs), -intraPriority(lhs), subPriority(lhs))
+                < (displayPriority(rhs), -intraPriority(rhs), subPriority(rhs))
         }
     }
 
@@ -55,6 +58,14 @@ enum GoshuinMilestones {
         }
     }
 
+    /// Seek before honor when displayPriority and intraPriority both tie.
+    private static func subPriority(_ milestone: Milestone) -> Int {
+        switch milestone {
+        case .firstHonor, .honorsWalked: return 1
+        default: return 0
+        }
+    }
+
     /// One waypoint-fault pass for the whole book: callers look up arrival
     /// counts by uuid instead of re-faulting every prior walk's waypoint
     /// relationship per seal cell (which was O(walks²) on the main thread).
@@ -69,7 +80,9 @@ enum GoshuinMilestones {
     }
 
     /// The same single-pass count for Way arrivals — the reserved honor
-    /// icon rather than the seek one.
+    /// icon rather than the seek one. Kept alongside `arrivalCounts` for
+    /// callers that only need the honor map; `arrivalAndHonorCounts` below
+    /// is for callers that need both.
     static func honorArrivalCounts(for walks: [WalkInterface]) -> [UUID: Int] {
         var counts: [UUID: Int] = [:]
         for walk in walks {
@@ -78,6 +91,27 @@ enum GoshuinMilestones {
             if count > 0 { counts[uuid] = count }
         }
         return counts
+    }
+
+    /// Both reserved-icon counts from one waypoint-fault pass per walk,
+    /// for callers that need seek and honor arrivals together — reading
+    /// `arrivalCounts` and `honorArrivalCounts` back to back would fault
+    /// every walk's waypoint relationship twice.
+    static func arrivalAndHonorCounts(for walks: [WalkInterface]) -> (arrivals: [UUID: Int], honorArrivals: [UUID: Int]) {
+        var arrivals: [UUID: Int] = [:]
+        var honorArrivals: [UUID: Int] = [:]
+        for walk in walks {
+            guard let uuid = walk.uuid else { continue }
+            var arrivalCount = 0
+            var honorCount = 0
+            for waypoint in walk.waypoints {
+                if SeekPersistence.isArrivalWaypoint(waypoint) { arrivalCount += 1 }
+                if HonorPersistence.isArrivalWaypoint(waypoint) { honorCount += 1 }
+            }
+            if arrivalCount > 0 { arrivals[uuid] = arrivalCount }
+            if honorCount > 0 { honorArrivals[uuid] = honorCount }
+        }
+        return (arrivals, honorArrivals)
     }
 
     /// Strictly-before ordering with a stable uuid tie-break, so two walks
@@ -280,6 +314,7 @@ enum GoshuinMilestones {
     /// The seeking and honor thresholds this seal crossed, counted against
     /// every walk strictly before it.
     private static func crossings(for input: SealInput, among allInputs: [SealInput]) -> Set<Milestone> {
+        guard input.foundPlaceCount > 0 || input.honorArrivalCount > 0 else { return [] }
         let earlier = allInputs.filter {
             $0.uuid != input.uuid
                 && isOrderedBefore($0.startDate, $0.uuid, input.startDate, input.uuid)
