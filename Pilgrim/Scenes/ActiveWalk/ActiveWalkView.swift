@@ -146,6 +146,8 @@ struct ActiveWalkView: View {
                 .padding(.bottom, minimizedSheetHeight + 16)
                 .allowsHitTesting(viewModel.status.isActiveStatus && sheetState == .minimized)
 
+            honorCardLayer(bottomInset: mapBottomInset)
+
             // Bottom sheet with stats and controls
             bottomSheet
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -606,13 +608,14 @@ struct ActiveWalkView: View {
                 kind: .waypoint(label: wp.label, icon: wp.icon)
             )
         }
-        // Proximity pins are memoized in the view model (AF43) — reading a
-        // stored property here keeps body evaluations free of distance math.
+        // Proximity and Way pins are both memoized in the view model (AF43) —
+        // reading stored properties here keeps body evaluations free of
+        // distance math and of a per-frame `WayGeometry` build.
         return PilgrimMapView(
             showsUserLocation: true,
             followsUserLocation: true,
             routeSegments: viewModel.routeSegments,
-            pinAnnotations: waypointPins + viewModel.proximityPins,
+            pinAnnotations: waypointPins + viewModel.proximityPins + viewModel.honorPins,
             onAnnotationTap: { annotation in
                 handleAnnotationTap(annotation)
             },
@@ -622,7 +625,9 @@ struct ActiveWalkView: View {
             initialCamera: viewModel.mapCameraSeed,
             fadesInOnStyleLoad: true,
             walkingColor: activeTurning?.uiColor ?? .moss,
-            isMeditating: $viewModel.isMeditating
+            isMeditating: $viewModel.isMeditating,
+            honorWay: viewModel.honorWayState,
+            companion: viewModel.companionCoordinate
         )
     }
 
@@ -902,7 +907,7 @@ extension ActiveWalkView {
                 tappedCairn = cached
             }
         default:
-            break
+            showWayCard(for: annotation)
         }
     }
 
