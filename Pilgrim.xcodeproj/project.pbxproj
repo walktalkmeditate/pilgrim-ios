@@ -190,6 +190,7 @@
 		37049E79926C85FEE92366A2 /* GeneratedPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */; };
 		39963097E78080FC16ED4DD9 /* ThreadsDossierModalLeanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166A1DAD8E9A1074A5502612 /* ThreadsDossierModalLeanTests.swift */; };
 		399E4F372A47137A69C039BF /* CollectiveRouteCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61858A83B246D92A1EDF558B /* CollectiveRouteCatalogTests.swift */; };
+		3B39C39F53480BE58EE4BBD1 /* WayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8279F26667FF1641BE8DAC8B /* WayStore.swift */; };
 		3B84698FB2D24F8086A6E59B /* MarkerLexicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5D982D293545FCB5E56CE9 /* MarkerLexicons.swift */; };
 		3BF183E8A14BB56BB9A98EF8 /* whisper-courage-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = 983897F799EB8C90B591419F /* whisper-courage-2.aac */; };
 		3C4D5E6F7A8B9C0D1E2F3A4B /* TourBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F7A8B9C0D1E2F3A4B5C /* TourBuilder.swift */; };
@@ -564,6 +565,7 @@
 		F68DAA11D2864EEF954B29D2 /* TranscriptContextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A9DB8ECE2349858CF3747B /* TranscriptContextStore.swift */; };
 		F6EA13F42AEA3562CB70442D /* GeoCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70459CCA754AD3355F39DA5 /* GeoCacheService.swift */; };
 		F6F821BCD8CEF1926A95449F /* PilgrimPackageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7AF87641B4BC5D1B1E8FA9 /* PilgrimPackageBuilder.swift */; };
+		F75E671F22630FDA9350D56E /* WayStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B0CF7513A498758721A98B4 /* WayStoreTests.swift */; };
 		F9A0B1C2D3E4F5A6B7C8D9E0 /* SealGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */; };
 		F9B0C02BADD44059819D57D6 /* TourPhotoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D82C6861710E41CF801A9A4F /* TourPhotoExporter.swift */; };
 		FA3A2A63A5918E8EDA93F05C /* PilgrimMapView+SeekWisp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C094BDB35610B61FBFB8488 /* PilgrimMapView+SeekWisp.swift */; };
@@ -874,6 +876,7 @@
 		2737896863F22401CF29A1B4 /* CairnDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnDetailView.swift; sourceTree = "<group>"; };
 		27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-5.aac"; sourceTree = "<group>"; };
 		2A677576F283F65E658EB774 /* StonePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StonePlayer.swift; sourceTree = "<group>"; };
+		2B0CF7513A498758721A98B4 /* WayStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayStoreTests.swift; sourceTree = "<group>"; };
 		2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourBuilderTests.swift; sourceTree = "<group>"; };
 		2BD4237D6467ED96F4E54E50 /* ContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContextFormatter.swift; sourceTree = "<group>"; };
 		2CA2B0038D4875801C41DE26 /* AudioAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAsset.swift; sourceTree = "<group>"; };
@@ -975,6 +978,7 @@
 		7F7AF87641B4BC5D1B1E8FA9 /* PilgrimPackageBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageBuilder.swift; sourceTree = "<group>"; };
 		8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
 		81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesMarkerPhotoTests.swift; sourceTree = "<group>"; };
+		8279F26667FF1641BE8DAC8B /* WayStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayStore.swift; sourceTree = "<group>"; };
 		82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourPhotoExporterTests.swift; sourceTree = "<group>"; };
 		83BD1C5A8539657B3A5EC6BD /* whisper-presence-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-4.aac"; sourceTree = "<group>"; };
 		841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestService.swift; sourceTree = "<group>"; };
@@ -2513,6 +2517,7 @@
 				8FBA0BA40BB22ADE0C73524C /* HonorEngine.swift */,
 				47BB0C825C8EFC112CA91645 /* HonorMomentTracker.swift */,
 				3BEB221D84466A0EED8D2C4A /* WayVoicePlayer.swift */,
+				8279F26667FF1641BE8DAC8B /* WayStore.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2602,6 +2607,7 @@
 				E9A26ACCEA7556F8C3E98DF4 /* HonorEngineTests.swift */,
 				00D3A7A1F2616273BF1D7DF9 /* HonorMomentTrackerTests.swift */,
 				2493D1384FA9B3AF350CCB1E /* WayVoicePlayerTests.swift */,
+				2B0CF7513A498758721A98B4 /* WayStoreTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3385,6 +3391,7 @@
 				141180E7BB8B17200B0BA8EE /* HonorEngine.swift in Sources */,
 				126F1949D837CC878A1E6D21 /* HonorMomentTracker.swift in Sources */,
 				8A18F9906A7FE3752F54FF5A /* WayVoicePlayer.swift in Sources */,
+				3B39C39F53480BE58EE4BBD1 /* WayStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3543,6 +3550,7 @@
 				47B51B337DB4D7CEA15ADB11 /* HonorMomentTrackerTests.swift in Sources */,
 				517F9A56063F5C659EC3A010 /* WayVoicePlayerTests.swift in Sources */,
 				C59696CB45F182DF81E8EC97 /* AudioPriorityQueueTests.swift in Sources */,
+				F75E671F22630FDA9350D56E /* WayStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
