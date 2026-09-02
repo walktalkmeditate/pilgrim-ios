@@ -271,20 +271,3 @@ final class HonorEngine: ObservableObject {
         }
     }
 }
-
-// PLACEHOLDER: replaced by Pilgrim/Models/Honor/HonorMomentTracker.swift in
-// Task 8. Every method is a no-op until then, so no moment fires and no
-// voice plays. Delete this stub when the real tracker lands.
-struct HonorMomentTracker {
-    enum Action: Equatable {
-        case reached(WayMoment), voiceStart(WayMoment), voicePause, voiceResume, voiceDropped(WayMoment)
-    }
-    struct Gates: Equatable {
-        var paused = false, meditating = false, recording = false, externalAudio = false
-        var isClosed: Bool { paused || meditating || recording || externalAudio }
-    }
-    init(moments: [WayMoment], geometry: WayGeometry, voicesEnabled: Bool) {}
-    mutating func update(location: CLLocationCoordinate2D, progressFrac: Double, gates: Gates, isStationary: Bool) -> [Action] { [] }
-    mutating func gatesDidChange(_ gates: Gates) -> [Action] { [] }
-    mutating func voiceDidFinish(gates: Gates) -> [Action] { [] }
-}
