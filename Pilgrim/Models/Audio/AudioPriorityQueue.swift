@@ -25,10 +25,19 @@ final class AudioPriorityQueue: NSObject, ObservableObject, AVAudioPlayerDelegat
                 self?.playPendingWhisperIfNeeded()
             }
             .store(in: &cancellables)
+
+        WayVoicePlayer.shared.$isPlayingWayVoice
+            .removeDuplicates()
+            .filter { !$0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.playPendingWhisperIfNeeded()
+            }
+            .store(in: &cancellables)
     }
 
     func playWhisper(url: URL, volume: Float = 0.8) {
-        if voiceGuidePlayer.isPlaying {
+        if voiceGuidePlayer.isPlaying || WayVoicePlayer.shared.isPlayingWayVoice {
             pendingWhisperURL = url
             return
         }
