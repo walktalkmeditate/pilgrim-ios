@@ -4,6 +4,7 @@ import SwiftUI
 struct HonorWaysSheet: View {
 
     let ownWalks: [Walk]
+    let importState: HonorImportState
     let onChoose: (Way) -> Void
     let onPaste: (String) -> Void
 
@@ -48,7 +49,14 @@ struct HonorWaysSheet: View {
                         .autocorrectionDisabled()
                     Button("Open") { onPaste(pasted) }
                         .font(Constants.Typography.button)
-                        .disabled(HonorLinkPreview.shareId(in: pasted) == nil)
+                        .disabled(HonorLink.parse(text: pasted) == nil || importState == .fetching)
+                    // The field above stays editable in every state, so a
+                    // mistyped link is corrected where it was typed.
+                    if let line = HonorImportCopy.line(for: importState) {
+                        Text(line)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(isFailure ? .rust : .fog)
+                    }
                 } header: {
                     Text("From a shared walk").font(Constants.Typography.caption)
                 } footer: {
@@ -85,6 +93,11 @@ struct HonorWaysSheet: View {
                 withMedia = Set(acceptedWays.filter { WayStore.shared.hasMedia(id: $0.id) }.map(\.id))
             }
         }
+    }
+
+    private var isFailure: Bool {
+        if case .failed = importState { return true }
+        return false
     }
 
     @ViewBuilder
@@ -154,16 +167,5 @@ struct OwnWalkPicker: View {
             return comment
         }
         return DateFormatter.localizedString(from: walk.startDate, dateStyle: .medium, timeStyle: .none)
-    }
-}
-
-/// Phase B replaces this with `HonorLink.parse`; until then the paste field
-/// only recognizes a bare ten-character id or a walk.pilgrimapp.org URL.
-enum HonorLinkPreview {
-    static func shareId(in text: String) -> String? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let candidate = trimmed.split(separator: "/").last.map(String.init) ?? trimmed
-        let pattern = "^[A-Za-z0-9_-]{10}$"
-        return candidate.range(of: pattern, options: .regularExpression) != nil ? candidate : nil
     }
 }

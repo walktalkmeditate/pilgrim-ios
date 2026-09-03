@@ -45,6 +45,16 @@ struct MainTabView: View {
         }) { vm in
             ActiveWalkView(viewModel: vm, onCancel: { coordinator.cancelWalk() })
                 .constellationDecorated(nebulae: false)
+                // A cover sits above the tab view's own overlay, so the
+                // "finish this walk first" answer to a link tapped mid-walk
+                // has to be repeated here to be seen at all.
+                .overlay(alignment: .top) {
+                    if let toast = coordinator.pendingLinkToast {
+                        HonorLinkToast(text: toast)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                }
+                .animation(.easeInOut, value: coordinator.pendingLinkToast)
         }
         .sheet(item: $coordinator.completedSnapshot, onDismiss: {
             coordinator.handleSummaryDismiss()
@@ -55,18 +65,29 @@ struct MainTabView: View {
         .sheet(isPresented: $coordinator.honorWaysPresented, onDismiss: coordinator.promotePendingHonorWay) {
             HonorWaysSheet(
                 ownWalks: coordinator.homeViewModel.walks,
+                importState: coordinator.honorImportState,
                 onChoose: { coordinator.openOverview(for: $0) },
-                onPaste: { _ in }   // Phase B, Task 19
+                onPaste: { text in
+                    if let id = HonorLink.parse(text: text) { coordinator.openWay(shareId: id) }
+                }
             )
         }
         .sheet(item: $coordinator.honorOverviewWay, onDismiss: coordinator.handleOverviewDismiss) { way in
             NavigationStack {
                 HonorOverviewView(
                     way: way,
+                    importState: coordinator.honorImportState,
                     onBegin: { coordinator.startHonor(way: way) },
-                    onClose: { coordinator.honorOverviewWay = nil }
+                    onClose: { coordinator.honorOverviewWay = nil },
+                    onRetryMedia: { coordinator.retryMedia(for: way) },
+                    onWalkWithoutMissing: coordinator.walkWithoutMissingVoices
                 )
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .pilgrimOpenWay)) { note in
+            guard let id = note.userInfo?["shareId"] as? String else { return }
+            selectedTab = .path
+            coordinator.openWay(shareId: id)
         }
         .alert("Save Failed", isPresented: $coordinator.showSaveError) {
             Button("Dismiss") {
@@ -108,11 +129,18 @@ struct MainTabView: View {
             ShareSheet(items: [url])
         }
         .overlay(alignment: .top) {
-            if let date = coordinator.recoveredWalkDate {
-                RecoveryBanner(date: date)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+            VStack(spacing: Constants.UI.Padding.xs) {
+                if let date = coordinator.recoveredWalkDate {
+                    RecoveryBanner(date: date)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                if let toast = coordinator.pendingLinkToast {
+                    HonorLinkToast(text: toast)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
         }
         .animation(.easeInOut, value: coordinator.recoveredWalkDate != nil)
+        .animation(.easeInOut, value: coordinator.pendingLinkToast)
     }
 }

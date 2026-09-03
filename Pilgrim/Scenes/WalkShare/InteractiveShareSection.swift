@@ -26,6 +26,10 @@ struct InteractiveShareSection: View {
                 if on { viewModel.prepareInteractive() }
             }
 
+            Text("Anyone with the link can walk it there.")
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
+
             if viewModel.interactiveEnabled {
                 if viewModel.hasRecordings {
                     recordingsList

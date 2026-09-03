@@ -38,6 +38,18 @@ struct PilgrimApp: App {
             }
             .environmentObject(appearanceManager)
             .preferredColorScheme(appearanceManager.resolvedScheme)
+            .onOpenURL { url in Self.route(url) }
+            .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                if let url = activity.webpageURL { Self.route(url) }
+            }
         }
+    }
+
+    /// Broadcast rather than routed directly: `MainTabView` owns the
+    /// coordinator, and a link arriving before setup finishes has no
+    /// `MainTabView` mounted to hear it — dropped by construction.
+    private static func route(_ url: URL) {
+        guard let id = HonorLink.parse(url) else { return }
+        NotificationCenter.default.post(name: .pilgrimOpenWay, object: nil, userInfo: ["shareId": id])
     }
 }

@@ -52,8 +52,11 @@ enum HonorOverviewModel {
 struct HonorOverviewView: View {
 
     let way: Way
+    let importState: HonorImportState
     let onBegin: () -> Void
     let onClose: () -> Void
+    let onRetryMedia: () -> Void
+    let onWalkWithoutMissing: () -> Void
 
     @State private var cameraCenter: CLLocationCoordinate2D?
     @State private var cameraZoom: CGFloat = 14
@@ -151,6 +154,7 @@ struct HonorOverviewView: View {
             }
             .font(Constants.Typography.body)
             .foregroundColor(.ink)
+            importLine
             if let line = HonorOverviewModel.weatherLine(theirs: way.weather, today: todayCondition) {
                 Text(line)
                     .font(Constants.Typography.caption)
@@ -176,13 +180,46 @@ struct HonorOverviewView: View {
                     .foregroundColor(.parchment)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.stone)
+                    .background(isGathering ? Color.fog : Color.stone)
                     .cornerRadius(Constants.UI.CornerRadius.normal)
             }
             .accessibilityLabel("Begin honoring this way")
+            .disabled(isGathering)
         }
         .padding(Constants.UI.Padding.normal)
         .background(Color.parchment)
+    }
+
+    private var isGathering: Bool {
+        if case .gathering = importState { return true }
+        return false
+    }
+
+    private var isTrouble: Bool {
+        switch importState {
+        case .failed, .mediaMissing: return true
+        default: return false
+        }
+    }
+
+    /// The one place the import speaks on this screen: its line under the
+    /// counts, and — only when files are actually missing — the choice
+    /// between waiting for them and walking without them.
+    @ViewBuilder
+    private var importLine: some View {
+        if let line = HonorImportCopy.line(for: importState) {
+            Text(line)
+                .font(Constants.Typography.caption)
+                .foregroundColor(isTrouble ? .rust : .fog)
+        }
+        if case .mediaMissing = importState {
+            HStack(spacing: Constants.UI.Padding.normal) {
+                Button("try again", action: onRetryMedia)
+                Button("walk without the missing voices", action: onWalkWithoutMissing)
+            }
+            .font(Constants.Typography.caption)
+            .foregroundColor(.stone)
+        }
     }
 
     /// "Today is clear": the same service the walk uses, on the walker's

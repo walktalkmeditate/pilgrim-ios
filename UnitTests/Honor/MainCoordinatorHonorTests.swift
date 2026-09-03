@@ -95,6 +95,18 @@ final class MainCoordinatorHonorTests: XCTestCase {
         XCTAssertNil(coordinator.activeWalkViewModel)
     }
 
+    func testOpenWayWhileWalkingSetsTheToast() throws {
+        let coordinator = MainCoordinator()
+        addTeardownBlock { coordinator.cancelWalk() }
+        coordinator.startWalk()
+        _ = try XCTUnwrap(coordinator.activeWalkViewModel, "the guard under test only means something with a walk running")
+
+        coordinator.openWay(shareId: "Qoi4YmPHLN")
+
+        XCTAssertEqual(coordinator.pendingLinkToast, "finish this walk first")
+        XCTAssertEqual(coordinator.honorImportState, .idle, "no import may start underneath a walk")
+    }
+
     func testWalkAgainParksTheWayBuiltFromTheWalk() throws {
         let coordinator = MainCoordinator()
         let uuid = UUID()

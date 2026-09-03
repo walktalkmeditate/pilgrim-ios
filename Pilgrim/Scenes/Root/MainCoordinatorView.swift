@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import UIKit
 import CoreLocation
@@ -16,6 +17,9 @@ class MainCoordinator: ObservableObject {
     @Published var recoveredWalkDate: Date?
     @Published var honorWaysPresented = false
     @Published var honorOverviewWay: Way?
+    @Published var honorImportState: HonorImportState = .idle
+    /// The only feedback a link has when no Honor sheet is open to carry it.
+    @Published var pendingLinkToast: String?
 
     /// A Way waiting for the sheet in front of it to finish closing, and a Way
     /// waiting for the overview to finish closing before its walk begins.
@@ -25,6 +29,9 @@ class MainCoordinator: ObservableObject {
 
     private var pendingSnapshot: TempWalk?
     private var bannerDismissWork: DispatchWorkItem?
+    private var linkToastWork: DispatchWorkItem?
+    private var importTask: Task<Void, Never>?
+    private var gatheringCancellable: AnyCancellable?
 
     init() {
         checkForRecovery()
@@ -52,6 +59,8 @@ class MainCoordinator: ObservableObject {
 
     deinit {
         bannerDismissWork?.cancel()
+        linkToastWork?.cancel()
+        importTask?.cancel()
     }
 
     func openSettings() {
@@ -62,6 +71,11 @@ class MainCoordinator: ObservableObject {
 
     func startWalk(mode: WalkMode = .wander, way: Way? = nil) {
         guard activeWalkViewModel == nil else { return }
+        // The overview is gone by the time a walk starts, so nothing is left
+        // to render an import: a Way's gathering must not outlive its sheet.
+        importTask?.cancel()
+        importTask = nil
+        gatheringCancellable = nil
         let locationStatus = CLLocationManager().authorizationStatus
         if locationStatus == .denied || locationStatus == .restricted {
             showLocationDenied = true
@@ -165,6 +179,33 @@ class MainCoordinator: ObservableObject {
         honorWaysPresented = true
     }
 
+    /// Fetch happens wherever the user is: inside the Ways sheet the state
+    /// renders inline beside the paste field (a not-found error keeps the
+    /// field editable); from a link with no sheet open, a toast carries it.
+    func openWay(shareId: String) {
+        guard activeWalkViewModel == nil else { showLinkToast("finish this walk first"); return }
+        importTask?.cancel()
+        honorImportState = .fetching
+        if !honorWaysPresented { showLinkToast("reaching for the walk…") }
+        importTask = Task { @MainActor [weak self] in
+            do {
+                let way = try await WayImporter().importShare(id: shareId)
+                // A cancelled import belongs to a link the walker has already
+                // replaced; neither its Way nor its error may land on top of
+                // the newer one's state.
+                guard let self, !Task.isCancelled else { return }
+                self.showLinkToast(nil)
+                self.honorImportState = .idle
+                self.openOverview(for: way)      // AF60-safe: parks or presents, never both
+            } catch {
+                guard let self, !Task.isCancelled else { return }
+                let failure = (error as? WayError) ?? .unavailable
+                self.honorImportState = .failed(failure)
+                self.showLinkToast(self.honorWaysPresented ? nil : HonorImportCopy.line(for: .failed(failure)))
+            }
+        }
+    }
+
     /// From the Ways sheet: park the Way, close the sheet, promote on dismiss.
     /// From a link with no sheet open: present directly (one change).
     func openOverview(for way: Way) {
@@ -173,7 +214,43 @@ class MainCoordinator: ObservableObject {
             honorWaysPresented = false
         } else {
             honorOverviewWay = way
+            gather(way)
         }
+    }
+
+    /// Drives the downloader's published sets into `honorImportState` for the
+    /// Way the overview is showing. Hops to the main actor rather than being
+    /// isolated to it, so the nonisolated presentation calls above can reach
+    /// the (main-actor) downloader without each repeating the hop.
+    func gather(_ way: Way) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard case .share = way.source else { self.honorImportState = .ready; return }
+            let downloader = WayMediaDownloader.shared
+            downloader.download(way)
+            self.honorImportState = HonorImportReducer.state(
+                wayId: way.id, progress: downloader.progress, active: downloader.active,
+                failures: downloader.failures, diskFull: downloader.diskFull)
+            self.gatheringCancellable = downloader.$progress
+                .combineLatest(downloader.$active, downloader.$failures, downloader.$diskFull)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] progress, active, failures, diskFull in
+                    self?.honorImportState = HonorImportReducer.state(
+                        wayId: way.id, progress: progress, active: active, failures: failures, diskFull: diskFull)
+                }
+        }
+    }
+
+    func retryMedia(for way: Way) {
+        Task { @MainActor in WayMediaDownloader.shared.retry(way) }
+    }
+
+    /// "walk without the missing voices": the sink is dropped first, so a
+    /// later change from another Way's download can't recompute this one back
+    /// into `.mediaMissing`. The absent files simply never play.
+    func walkWithoutMissingVoices() {
+        gatheringCancellable = nil
+        honorImportState = .ready
     }
 
     /// Called from a summary's "walk this again": hold the Way, let the
@@ -187,6 +264,7 @@ class MainCoordinator: ObservableObject {
         if let way = pendingHonorWay {
             pendingHonorWay = nil
             honorOverviewWay = way
+            gather(way)
         }
     }
 
@@ -196,10 +274,29 @@ class MainCoordinator: ObservableObject {
     }
 
     func handleOverviewDismiss() {
+        // A link arriving while the overview is open swaps the sheet's item
+        // rather than closing it, and this fires for the outgoing Way after
+        // the incoming one's gathering has already begun. Reset only on a
+        // real close.
+        if honorOverviewWay == nil {
+            gatheringCancellable = nil
+            honorImportState = .idle
+        }
         if let way = pendingStartWay {
             pendingStartWay = nil
             startWalk(mode: .honor, way: way)
         }
+    }
+
+    /// One toast at a time, always with a cancellable expiry: a link that
+    /// never resolves must not leave "reaching for the walk…" on screen.
+    private func showLinkToast(_ text: String?) {
+        linkToastWork?.cancel()
+        pendingLinkToast = text
+        guard text != nil else { return }
+        let work = DispatchWorkItem { [weak self] in self?.pendingLinkToast = nil }
+        linkToastWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: work)
     }
 
     private func requestReviewIfAppropriate() {
@@ -245,6 +342,26 @@ struct MainCoordinatorView: View {
             onWalkAgain: coordinator.walkAgain,
             onSummaryDismiss: coordinator.promotePendingHonorWay
         )
+    }
+}
+
+/// What a link says when no Honor sheet is open to say it inline.
+struct HonorLinkToast: View {
+
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(Constants.Typography.caption)
+            .foregroundColor(Color(.ink))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, Constants.UI.Padding.normal)
+            .padding(.vertical, Constants.UI.Padding.small)
+            .background(Color(.parchmentSecondary).opacity(0.95))
+            .cornerRadius(8)
+            .padding(.horizontal, Constants.UI.Padding.normal)
+            .padding(.top, Constants.UI.Padding.small)
+            .allowsHitTesting(false)
     }
 }
 
