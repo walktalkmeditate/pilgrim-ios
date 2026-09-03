@@ -120,3 +120,12 @@ extension OwnWalkWayBuilderTests {
         }
     }
 }
+
+extension OwnWalkWayBuilderTests {
+
+    func testTheWalkersOwnTranscriptionRidesOntoTheVoiceMoment() throws {
+        let way = try XCTUnwrap(OwnWalkWayBuilder.make(from: walk()))
+        let voice = try XCTUnwrap(way.moments.first { $0.isVoice })
+        XCTAssertEqual(voice.transcript, "a thought that runs on for more than eight words in total")
+    }
+}

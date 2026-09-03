@@ -44,6 +44,36 @@ struct WayMoment: Codable, Equatable, Identifiable {
     /// The street or place the sharer's page names for a voice, when the
     /// worker had one. Optional and last: older `way.json` files lack it.
     var place: String?
+    /// What they said, when the source transcribed it: the walker's own
+    /// recordings carry one; shared walks carry the worker's. Optional and
+    /// last, like `place`.
+    var transcript: String?
+
+    /// The first sentence of the transcript, for a card that has one line
+    /// to spare. Nil when there is nothing to quote.
+    var transcriptLine: String? { WayMoment.firstSentence(of: transcript, maxCharacters: 120) }
+
+    static let maxTranscriptCharacters = 600
+
+    /// Trims, drops the empty, and caps at `maxTranscriptCharacters`.
+    static func trimmedTranscript(_ raw: String?) -> String? {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
+        return String(trimmed.prefix(maxTranscriptCharacters))
+    }
+
+    static func firstSentence(of transcript: String?, maxCharacters: Int) -> String? {
+        guard let transcript = trimmedTranscript(transcript) else { return nil }
+        var sentence = transcript
+        if let end = transcript.firstIndex(where: { ".!?".contains($0) }) {
+            sentence = String(transcript[...end])
+        }
+        if sentence.count > maxCharacters {
+            let cut = sentence.prefix(maxCharacters)
+            let atWord = cut.lastIndex(of: " ").map { String(cut[..<$0]) } ?? String(cut)
+            return atWord + "…"
+        }
+        return sentence
+    }
 
     var isVoice: Bool {
         if case .voice = kind { return true }

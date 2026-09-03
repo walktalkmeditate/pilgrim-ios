@@ -226,3 +226,22 @@ extension WayImporterTests {
         XCTAssertNil(place("voice-5"))
     }
 }
+
+extension WayImporterTests {
+
+    func testVoiceTranscriptIsCarriedTrimmedAndCapped() throws {
+        let long = String(repeating: "y", count: WayMoment.maxTranscriptCharacters + 40)
+        let extra = """
+        ,{"type":"voice","frac":0.55,"end_frac":0.56,"n":3,"duration":5,"dwell":1,"transcript":"  The adobe walls hold the light. Then more.  "},
+        {"type":"voice","frac":0.56,"end_frac":0.57,"n":4,"duration":5,"dwell":1,"transcript":"\(long)"},
+        {"type":"voice","frac":0.57,"end_frac":0.58,"n":5,"duration":5,"dwell":1,"transcript":"   "}
+        """
+        let way = try WayImporter.way(from: manifest(extraEncounter: extra), shareId: "Qoi4YmPHLN", now: Date())
+        func transcript(_ id: String) -> String? { way.moments.first { $0.id == id }?.transcript }
+        XCTAssertNil(transcript("voice-1"), "a voice the worker never transcribed carries nothing")
+        XCTAssertEqual(transcript("voice-3"), "The adobe walls hold the light. Then more.")
+        XCTAssertEqual(transcript("voice-4")?.count, WayMoment.maxTranscriptCharacters)
+        XCTAssertNil(transcript("voice-5"))
+        XCTAssertEqual(way.moments.first { $0.id == "voice-3" }?.transcriptLine, "The adobe walls hold the light.")
+    }
+}

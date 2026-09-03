@@ -82,6 +82,11 @@ struct WayMomentPreview: View {
 
     private func voiceContent(duration: Double, kind: VoiceKind) -> some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+            if let transcript = moment.transcript {
+                Text("“\(transcript)”")
+                    .font(Constants.Typography.body).italic().foregroundColor(.ink)
+                    .padding(.bottom, Constants.UI.Padding.xs)
+            }
             if let mediaURL {
                 HStack(spacing: Constants.UI.Padding.small) {
                     Button { player.toggle(url: mediaURL) } label: {
