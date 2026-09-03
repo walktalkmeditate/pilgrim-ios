@@ -157,6 +157,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         Task { @MainActor in DossierSensesFieldReport.runIfRequested() }
         #endif
         startLaunchRecordingCleanup()
+        WayStore.shared.sweepExpired(now: Date())
     }
 
     /// Launch cleanup ordering (AF2): the orphan sweep runs only once BOTH
@@ -179,6 +180,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         if !FileManager.default.fileExists(atPath: WalkSessionGuard.checkpointFileURL().path) {
             OrphanSweepGate.shared.noteWalkRecoveryResolved()
         }
+    }
+
+    func application(_ application: UIApplication,
+                     handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+        guard identifier == "org.walktalkmeditate.pilgrim.ways" else { completionHandler(); return }
+        Task { @MainActor in WayMediaDownloader.shared.backgroundCompletionHandler = completionHandler }
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {

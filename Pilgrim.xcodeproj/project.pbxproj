@@ -212,6 +212,7 @@
 		3F8E37CD28D541C1838F01BD /* PilgrimV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2722224F049B455DB473E7C9 /* PilgrimV2.swift */; };
 		40B873B0CAA240F6B032214F /* TranscriptNLP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5565804A282944E2A6E82504 /* TranscriptNLP.swift */; };
 		40F2FC48F0769A2D5B08DAE1 /* HonorWaysSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A312457000654189A0B40D7 /* HonorWaysSheet.swift */; };
+		441413024C1949B2E1B94DD6 /* WayMediaDownloaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E286411EC07E1AF086CBE1D /* WayMediaDownloaderTests.swift */; };
 		44B04EE19F844EACEBD0DB0F /* CelestialCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */; };
 		45ADCF5FB26E4696BC6F1FB2 /* DossierSensesMarkerPhotoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81C820FEC4D64630A9C557BE /* DossierSensesMarkerPhotoTests.swift */; };
 		45ECE5D78ADACF7F238277C4 /* AudioManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */; };
@@ -457,6 +458,7 @@
 		BF1DA86CA86FD1C0838C7727 /* whispers-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = F84C904FE5DE382CD95787DF /* whispers-bootstrap.json */; };
 		BF61749EA6478D2B779C1C89 /* HonorOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2883311D4280C8C5D8E025E /* HonorOverviewView.swift */; };
 		BREATH000000000000000002 /* BreathTransitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BREATH000000000000000001 /* BreathTransitionView.swift */; };
+		C037A7A17A407579957E3DAD /* WayMediaDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A8B723E58F2FA26AB22C45 /* WayMediaDownloader.swift */; };
 		C20E0DFA8CDB82064EEBB6C3 /* CollectiveRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84222C86D32DD5651B365FE4 /* CollectiveRoute.swift */; };
 		C2CF7F7376ACA1F2A6981E4D /* SeekStillnessDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE2429C168EC1EF14EC99CD /* SeekStillnessDetectorTests.swift */; };
 		C34D17383682ACAD912B2387 /* RouteShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */; };
@@ -724,6 +726,7 @@
 		0BEFB40EDD8525B65D45062C /* CairnTier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnTier.swift; sourceTree = "<group>"; };
 		0BF12667E7A1DF70EA195B19 /* CelestialCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculator.swift; sourceTree = "<group>"; };
 		0DE1BFEB94806A03D2E5BBF1 /* HonorOverviewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorOverviewModelTests.swift; sourceTree = "<group>"; };
+		0E286411EC07E1AF086CBE1D /* WayMediaDownloaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayMediaDownloaderTests.swift; sourceTree = "<group>"; };
 		0F5581F46A4FFE9ED1D2DCEB /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
 		0FFEFA24B7A952A033F823BF /* SeekChainGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekChainGenerator.swift; sourceTree = "<group>"; };
 		105159E380C21159A15B02E6 /* SeekSummarySection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSummarySection.swift; sourceTree = "<group>"; };
@@ -941,6 +944,7 @@
 		4E104D87032C76222B9E346E /* VoiceGuideHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideHistoryTests.swift; sourceTree = "<group>"; };
 		4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityNotificationView.swift; sourceTree = "<group>"; };
 		50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstronomicalEventsTests.swift; sourceTree = "<group>"; };
+		50A8B723E58F2FA26AB22C45 /* WayMediaDownloader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayMediaDownloader.swift; sourceTree = "<group>"; };
 		5565804A282944E2A6E82504 /* TranscriptNLP.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptNLP.swift; sourceTree = "<group>"; };
 		5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ArchivedWalkPrivacyTests.swift; sourceTree = "<group>"; };
 		567070352F733CB000FD1910 /* JourneyViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewerView.swift; sourceTree = "<group>"; };
@@ -2563,6 +2567,7 @@
 				47F81B45DE02D281146CDC87 /* WayGPXExporter.swift */,
 				F521AB197701BFC0252FFFBC /* TourManifest.swift */,
 				CD6A8FE7FA38DDDF7FE897FF /* WayImporter.swift */,
+				50A8B723E58F2FA26AB22C45 /* WayMediaDownloader.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2671,6 +2676,7 @@
 				989DDF0FE18AF1800F778AA4 /* HonorJournalTests.swift */,
 				3C91107C7F80DC9AA20170B0 /* WayGPXExporterTests.swift */,
 				B47EF058F5CCCCD122689CA5 /* WayImporterTests.swift */,
+				0E286411EC07E1AF086CBE1D /* WayMediaDownloaderTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3466,6 +3472,7 @@
 				81FFD29CA97DDAC83BB51C2E /* WayGPXExporter.swift in Sources */,
 				B5CB838747A53368D71068C7 /* TourManifest.swift in Sources */,
 				3026F5401165F511ADF6A425 /* WayImporter.swift in Sources */,
+				C037A7A17A407579957E3DAD /* WayMediaDownloader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3632,6 +3639,7 @@
 				10D97D3E9D67A2E673AAF318 /* HonorJournalTests.swift in Sources */,
 				11193683CC904418C478E20D /* WayGPXExporterTests.swift in Sources */,
 				15917F246C519C3AEAB00835 /* WayImporterTests.swift in Sources */,
+				441413024C1949B2E1B94DD6 /* WayMediaDownloaderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
