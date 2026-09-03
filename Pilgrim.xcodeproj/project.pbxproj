@@ -17,6 +17,7 @@
 		0497A85158418E09A4753B5B /* SeekGlance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBA20381F115380FCCA8D9 /* SeekGlance.swift */; };
 		07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */; };
 		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
+		085A5DD2915A505529A94BA3 /* WayPhotoViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD4E7D8A0E356F0605D09A1D /* WayPhotoViewer.swift */; };
 		0878C1CAF7C3058C2C7287D4 /* HonorLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411C57823FDC9D21FE236E6C /* HonorLink.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
 		0908DCA790C0A5619B6B7515 /* ActiveWalkSeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */; };
@@ -1236,6 +1237,7 @@
 		CC55DD66EE77FF88AA99BB02 /* EtegamiMoonPhase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiMoonPhase.swift; sourceTree = "<group>"; };
 		CC55DD66EE77FF88AA99BB04 /* EtegamiRenderer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiRenderer.swift; sourceTree = "<group>"; };
 		CC55DD66EE77FF88AA99BB06 /* EtegamiGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiGenerator.swift; sourceTree = "<group>"; };
+		CD4E7D8A0E356F0605D09A1D /* WayPhotoViewer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayPhotoViewer.swift; sourceTree = "<group>"; };
 		CD6A8FE7FA38DDDF7FE897FF /* WayImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayImporter.swift; sourceTree = "<group>"; };
 		CD8F03E2A0BEBE022381BFB3 /* GeneratedPrompt.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeneratedPrompt.swift; sourceTree = "<group>"; };
 		CDB41AD9F5C496AE9BC8C260 /* VoiceGuideFileStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideFileStore.swift; sourceTree = "<group>"; };
@@ -2599,6 +2601,7 @@
 				E2883311D4280C8C5D8E025E /* HonorOverviewView.swift */,
 				2A312457000654189A0B40D7 /* HonorWaysSheet.swift */,
 				A4C5E2D7D058435DA3A5730A /* WayMomentPreview.swift */,
+				CD4E7D8A0E356F0605D09A1D /* WayPhotoViewer.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3503,6 +3506,7 @@
 				269714B93E46F46E60FE32BB /* ActiveWalkView+Map.swift in Sources */,
 				493C30BC957DAB3F448A2BE0 /* ActiveWalkViewModel+Segments.swift in Sources */,
 				C94A3491F0E9679B28631867 /* WayMomentPreview.swift in Sources */,
+				085A5DD2915A505529A94BA3 /* WayPhotoViewer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

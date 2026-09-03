@@ -104,6 +104,7 @@ struct WayPlaceCard: View {
 struct WayPhotoPlate: View {
     let media: WayMedia
     let fileURL: URL?
+    var maxHeight: CGFloat = 160
     @State private var image: UIImage?
     @State private var enlarged = false
 
@@ -111,7 +112,7 @@ struct WayPhotoPlate: View {
         Group {
             if let image {
                 Image(uiImage: image).resizable().scaledToFit()
-                    .frame(maxHeight: 160).cornerRadius(4)
+                    .frame(maxWidth: .infinity, maxHeight: maxHeight).cornerRadius(4)
                     .padding(6).background(Color.parchment).cornerRadius(6)
                     .onTapGesture { enlarged = true }
                     .accessibilityAddTraits(.isButton)
@@ -126,10 +127,9 @@ struct WayPhotoPlate: View {
         // never re-fire when it does.
         .task(id: fileURL) { load() }
         .fullScreenCover(isPresented: $enlarged) {
-            ZStack { Color.black.ignoresSafeArea(); if let image { Image(uiImage: image).resizable().scaledToFit() } }
-                .onTapGesture { enlarged = false }
-                .accessibilityAddTraits(.isButton)
-                .accessibilityLabel("Close photo")
+            if let image {
+                WayPhotoViewer(image: image) { enlarged = false }
+            }
         }
     }
 

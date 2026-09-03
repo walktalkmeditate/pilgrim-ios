@@ -132,10 +132,11 @@ struct HonorOverviewView: View {
         .task { await fetchToday() }
         .sheet(item: $previewMoment) { moment in
             WayMomentPreview(
+                way: way,
                 moment: moment,
                 mediaURL: moment.media.flatMap { ActiveWalkViewModel.localMediaURL(for: $0, wayId: way.id, store: WayStore.shared) }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
         #if DEBUG
