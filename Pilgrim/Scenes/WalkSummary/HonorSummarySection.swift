@@ -4,7 +4,9 @@ struct HonorSummaryData: Equatable {
     let wayTitle: String
     /// Positive when the honoring walker arrived before the companion.
     let arrivedBeforeTheirsSeconds: Double?
-    let voicesHeard: Int
+    /// Every voice the Way carries, not the subset this walk played — the
+    /// arrival card's `voicesHeard` is the one that counts what was heard.
+    let voicesAlongTheWay: Int
     let repliesMade: Int
 }
 
@@ -19,7 +21,7 @@ enum HonorSummaryModel {
         return HonorSummaryData(
             wayTitle: way?.title ?? "a way that has been removed",
             arrivedBeforeTheirsSeconds: delta,
-            voicesHeard: way?.voiceCount ?? 0,
+            voicesAlongTheWay: way?.voiceCount ?? 0,
             repliesMade: replies.count)
     }
 }
@@ -45,8 +47,8 @@ struct HonorSummarySection: View {
 
     private var countsLine: String? {
         var parts: [String] = []
-        if data.voicesHeard > 0 {
-            parts.append("\(data.voicesHeard) \(data.voicesHeard == 1 ? "voice" : "voices") along the way")
+        if data.voicesAlongTheWay > 0 {
+            parts.append("\(data.voicesAlongTheWay) \(data.voicesAlongTheWay == 1 ? "voice" : "voices") along the way")
         }
         if data.repliesMade > 0 {
             parts.append("\(data.repliesMade) \(data.repliesMade == 1 ? "reply" : "replies")")

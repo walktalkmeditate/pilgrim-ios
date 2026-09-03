@@ -182,6 +182,30 @@ final class SeekLiveActivityTests: XCTestCase {
         XCTAssertNotEqual(a, nil as SeekGlanceState?)
     }
 
+    func testShouldPushOnHonorGlanceChangeAlone() {
+        XCTAssertTrue(WalkActivityManager.shouldPush(
+            movedMeters: 0,
+            flagsChanged: false,
+            seekGlanceChanged: false,
+            honorGlanceChanged: true,
+            secondsSinceLastPush: 1
+        ), "the honor row must refresh on its own — an honoring walk pushes no seek glance to ride along with")
+    }
+
+    func testHonorGlanceEqualityMatchesGatingExpectations() {
+        let a = HonorGlanceState(distanceRemainingBucketMeters: 400, isOnWay: true, isArrived: false)
+        let sameAsA = HonorGlanceState(distanceRemainingBucketMeters: 400, isOnWay: true, isArrived: false)
+        let newBucket = HonorGlanceState(distanceRemainingBucketMeters: 300, isOnWay: true, isArrived: false)
+        let wentOffWay = HonorGlanceState(distanceRemainingBucketMeters: 400, isOnWay: false, isArrived: false)
+        let arrived = HonorGlanceState(distanceRemainingBucketMeters: 400, isOnWay: true, isArrived: true)
+
+        XCTAssertEqual(a, sameAsA, "an unchanged glance must not spend a push")
+        XCTAssertNotEqual(a, newBucket)
+        XCTAssertNotEqual(a, wentOffWay)
+        XCTAssertNotEqual(a, arrived)
+        XCTAssertNotEqual(a, nil as HonorGlanceState?)
+    }
+
     // MARK: - ContentState backward compatibility (wander parity)
 
     func testContentStateDecodesPreSeekFixtureWithoutSeekKey() throws {

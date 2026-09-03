@@ -222,6 +222,55 @@ final class WalkShareInteractiveTests: XCTestCase {
         XCTAssertTrue(labels.contains("AtUpperBound"), "a waypoint exactly at the kept window's upper bound must be included — ClosedRange.contains is inclusive")
     }
 
+    func testInteractiveKeptWindowStripsTrimmedRecordingCoordinates() throws {
+        let route = longRoute(points: 20)
+        let doorstepRec = try makeRealRecording(startDate: route[0].timestamp, seconds: 30)
+        let midpointRec = try makeRealRecording(startDate: route[10].timestamp, seconds: 30)
+        let walk = WalkDataFactory.makeWalk(routeData: route, voiceRecordings: [doorstepRec, midpointRec])
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.prepareInteractive()
+
+        let recordings = vm.testBuildPayload().tour?.recordings ?? []
+        XCTAssertEqual(recordings.count, 2)
+        let doorstep = recordings.first { $0.startTs == Int(doorstepRec.startDate.timeIntervalSince1970) }
+        let midpoint = recordings.first { $0.startTs == Int(midpointRec.startDate.timeIntervalSince1970) }
+        XCTAssertNil(doorstep?.lat, "a voice spoken inside the trimmed doorstep zone must not carry the fix that names the doorstep")
+        XCTAssertNil(doorstep?.lon)
+        XCTAssertNotNil(midpoint?.lat, "a voice spoken inside the kept window keeps its coordinate")
+        XCTAssertNotNil(midpoint?.lon)
+    }
+
+    func testUntrimmedShareKeepsEveryRecordingCoordinate() throws {
+        let route = longRoute(points: 20)
+        let doorstepRec = try makeRealRecording(startDate: route[0].timestamp, seconds: 30)
+        let walk = WalkDataFactory.makeWalk(routeData: route, voiceRecordings: [doorstepRec])
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.trimEnabled = false
+        vm.prepareInteractive()
+
+        XCTAssertNotNil(vm.testBuildPayload().tour?.recordings.first?.lat, "with the trim off there is no kept window, so every coordinate rides along")
+    }
+
+    /// A candidate only reaches `tourItems` with a real file behind it, so
+    /// coordinate specs need one on disk rather than a fabricated path.
+    private func makeRealRecording(startDate: Date, seconds: Double) throws -> TempVoiceRecording {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let relativePath = "share-coord-\(UUID().uuidString).m4a"
+        let fileURL = docs.appendingPathComponent(relativePath)
+        try TestAudioFile.writeSilentAudioFile(to: fileURL, duration: 0.2)
+        addTeardownBlock { try? FileManager.default.removeItem(at: fileURL) }
+        return TempVoiceRecording(
+            uuid: nil,
+            startDate: startDate,
+            endDate: startDate.addingTimeInterval(seconds),
+            duration: seconds,
+            fileRelativePath: relativePath,
+            transcription: nil
+        )
+    }
+
     func testShortRouteTrimIsHonestAndLeavesWaypointsUnfiltered() {
         let route = longRoute(points: 4) // ~333m total — well under the 4x-150m trim threshold
         let early = TempV4.Waypoint(

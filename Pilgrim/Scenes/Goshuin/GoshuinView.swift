@@ -12,8 +12,9 @@ struct GoshuinView: View {
     init(walks: [Walk], onSelectWalk: @escaping (UUID) -> Void) {
         self.walks = walks
         self.onSelectWalk = onSelectWalk
-        self.arrivalCounts = GoshuinMilestones.arrivalCounts(for: walks)
-        self.honorArrivalCounts = GoshuinMilestones.honorArrivalCounts(for: walks)
+        let counts = GoshuinMilestones.arrivalAndHonorCounts(for: walks)
+        self.arrivalCounts = counts.arrivals
+        self.honorArrivalCounts = counts.honorArrivals
     }
 
     @State private var activeFilter: WalkFavicon?

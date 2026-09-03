@@ -118,10 +118,21 @@ enum TourBuilder {
             .absoluteString
     }
 
-    static func tourItems(candidates: [TourRecordingCandidate], trimM: Int, soundscapeUrl: String? = nil) -> (tour: SharePayload.Tour, files: [URL]) {
+    static func tourItems(
+        candidates: [TourRecordingCandidate],
+        trimM: Int,
+        soundscapeUrl: String? = nil,
+        keptWindow: ClosedRange<Int>? = nil
+    ) -> (tour: SharePayload.Tour, files: [URL]) {
         let included = candidates.filter { $0.includeInShare && $0.unavailableReason == nil && $0.fileURL != nil }
         let recordings = included.enumerated().map { index, c in
-            SharePayload.TourRecording(
+            // The trim's promise covers everything with a coordinate. A voice
+            // spoken in the trimmed doorstep zone still travels — the walker
+            // consented to the recording — but it must not carry the fix that
+            // names the doorstep, exactly as waypointPayload/photoPayload drop
+            // theirs. Audio stays, the place does not.
+            let inWindow = keptWindow.map { $0.contains(c.startTs) } ?? true
+            return SharePayload.TourRecording(
                 n: index + 1,
                 startTs: c.startTs,
                 endTs: c.endTs,
@@ -133,8 +144,8 @@ enum TourBuilder {
                 transcription: nil,
                 wpm: c.wpm,
                 sizeBytes: c.sizeBytes,
-                lat: c.lat,
-                lon: c.lon
+                lat: inWindow ? c.lat : nil,
+                lon: inWindow ? c.lon : nil
             )
         }
         let files = included.compactMap(\.fileURL)
