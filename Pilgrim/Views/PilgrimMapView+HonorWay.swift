@@ -3,15 +3,41 @@ import MapboxMaps
 import UIKit
 
 struct HonorWayState: Equatable {
+
+    /// One stretch of the ghost, colored like the walk's own route segments
+    /// (`activityType` strings shared with `RouteSourcePlanner`).
+    struct Segment: Equatable {
+        let kind: String
+        let coordinates: [CLLocationCoordinate2D]
+
+        static func == (lhs: Segment, rhs: Segment) -> Bool {
+            lhs.kind == rhs.kind && lhs.coordinates.count == rhs.coordinates.count
+        }
+    }
+
     let id: String
     let routeCoordinates: [CLLocationCoordinate2D]
+    let segments: [Segment]
+
+    init(id: String, routeCoordinates: [CLLocationCoordinate2D], segments: [Segment]? = nil) {
+        self.id = id
+        self.routeCoordinates = routeCoordinates
+        self.segments = segments ?? [Segment(kind: "walking", coordinates: routeCoordinates)]
+    }
+
+    init(way: Way) {
+        self.init(
+            id: way.id,
+            routeCoordinates: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) },
+            segments: PilgrimMapView.HonorWayRendering.segments(route: way.route, spans: way.spans ?? []))
+    }
 
     /// `CLLocationCoordinate2D` isn't `Equatable`, so `routeCoordinates` can't
     /// be compared directly — nor does it need to be, since `id` already
     /// identifies a Way's geometry (fixed after acceptance). The count is a
     /// cheap extra guard, not a per-coordinate diff.
     static func == (lhs: HonorWayState, rhs: HonorWayState) -> Bool {
-        lhs.id == rhs.id && lhs.routeCoordinates.count == rhs.routeCoordinates.count
+        lhs.id == rhs.id && lhs.routeCoordinates.count == rhs.routeCoordinates.count && lhs.segments == rhs.segments
     }
 }
 
@@ -60,6 +86,35 @@ extension PilgrimMapView {
         static func ghostStyle(for mapView: MBMapView) -> GhostStyle {
             ghostStyle(dark: mapView.traitCollection.userInterfaceStyle == .dark)
         }
+
+        /// Cuts the route at every span boundary so each piece can carry the
+        /// activity it was walked in. Overlapping or out-of-order spans are
+        /// resolved by a forward cursor: a span never reaches back over one
+        /// already drawn, and any gap between spans is walking.
+        static func segments(route: [WayPoint], spans: [WaySpan]) -> [HonorWayState.Segment] {
+            let geometry = WayGeometry(route: route)
+            guard route.count > 1, geometry.totalMeters > 0 else {
+                return [HonorWayState.Segment(kind: "walking", coordinates: route.map {
+                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                })]
+            }
+            var pieces: [HonorWayState.Segment] = []
+            var cursor = 0.0
+            func add(_ kind: String, from start: Double, to end: Double) {
+                guard end > start else { return }
+                pieces.append(HonorWayState.Segment(kind: kind, coordinates: geometry.slice(fromFrac: start, toFrac: end)))
+            }
+            for span in spans.sorted(by: { $0.startFrac < $1.startFrac }) {
+                let start = max(min(max(span.startFrac, 0), 1), cursor)
+                let end = min(max(span.endFrac, 0), 1)
+                guard end > start else { continue }
+                add("walking", from: cursor, to: start)
+                add(span.kind == .meditating ? "meditating" : "talking", from: start, to: end)
+                cursor = end
+            }
+            add("walking", from: cursor, to: 1)
+            return pieces
+        }
     }
 
     static func wayPins(for way: Way, heardVoiceIDs: Set<String>) -> [PilgrimAnnotation] {
@@ -88,7 +143,7 @@ extension PilgrimMapView {
         let renderer = coordinator.honorWayRenderer
         renderer.pendingWay = way
         renderer.pendingCompanion = companion
-        guard coordinator.shouldRender, mapView.mapboxMap.isStyleLoaded else { return }
+        guard coordinator.shouldRender, coordinator.styleHasLoaded || mapView.mapboxMap.isStyleLoaded else { return }
         applyGhostLine(way, on: mapView, renderer: renderer)
         applyCompanion(companion, on: mapView, renderer: renderer)
     }
@@ -119,7 +174,12 @@ extension PilgrimMapView {
         removeGhostLine(from: mapView)
         do {
             var source = GeoJSONSource(id: HonorWayRendering.sourceID)
-            source.data = .feature(Feature(geometry: .lineString(LineString(way.routeCoordinates))))
+            source.data = .featureCollection(FeatureCollection(features: way.segments.enumerated().map { index, segment in
+                var feature = Feature(geometry: .lineString(LineString(segment.coordinates)))
+                feature.identifier = .string("honor-way-\(index)")
+                feature.properties = ["activityType": .string(segment.kind)]
+                return feature
+            }))
             try mapView.mapboxMap.addSource(source)
             var layer = LineLayer(id: HonorWayRendering.lineLayerID, source: HonorWayRendering.sourceID)
             layer.lineWidth = .constant(HonorWayRendering.lineWidth)
@@ -127,7 +187,18 @@ extension PilgrimMapView {
             layer.lineJoin = .constant(.round)
             let style = HonorWayRendering.ghostStyle(for: mapView)
             layer.lineOpacity = .constant(style.lineOpacity)
-            layer.lineColor = .constant(StyleColor(style.color))
+            // The walk's own palette (see PilgrimMapView+RouteSource), faded
+            // by the opacity above so it reads as someone else's trace.
+            layer.lineColor = .expression(
+                Exp(.match) {
+                    Exp(.get) { "activityType" }
+                    "meditating"
+                    UIColor.dawn
+                    "talking"
+                    UIColor.rust
+                    UIColor.moss
+                }
+            )
             try mapView.mapboxMap.addLayer(layer, layerPosition: ghostLinePosition(on: mapView))
             renderer.appliedWayID = way.id
         } catch {

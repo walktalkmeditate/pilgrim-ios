@@ -51,3 +51,45 @@ extension HonorWayRenderingTests {
         XCTAssertGreaterThan(white, 0.7, "the dark-style ghost must be light enough to read on the ink ground")
     }
 }
+
+extension HonorWayRenderingTests {
+
+    private func straightRoute() -> [WayPoint] {
+        (0...10).map { i in WayPoint(lat: 0, lon: Double(i) * 0.000898, alt: nil, t: Double(i) * 60) }
+    }
+
+    func testSegmentsCutTheRouteAtSpanBoundariesAndStayContiguous() {
+        let spans = [
+            WaySpan(startFrac: 0.6, endFrac: 0.7, kind: .meditating),
+            WaySpan(startFrac: 0.2, endFrac: 0.4, kind: .talking),
+        ]
+        let segments = PilgrimMapView.HonorWayRendering.segments(route: straightRoute(), spans: spans)
+        XCTAssertEqual(segments.map(\.kind), ["walking", "talking", "walking", "meditating", "walking"])
+        for (previous, next) in zip(segments, segments.dropFirst()) {
+            XCTAssertEqual(previous.coordinates.last?.longitude ?? -1, next.coordinates.first?.longitude ?? -2, accuracy: 1e-9)
+        }
+        XCTAssertEqual(segments.first?.coordinates.first?.longitude ?? -1, 0, accuracy: 1e-9)
+        XCTAssertEqual(segments.last?.coordinates.last?.longitude ?? -1, 10 * 0.000898, accuracy: 1e-9)
+        XCTAssertEqual(segments[1].coordinates.first?.longitude ?? -1, 2 * 0.000898, accuracy: 1e-6)
+    }
+
+    func testNoSpansIsOneWalkingSegmentAndOverlapsNeverReachBack() {
+        let route = straightRoute()
+        let whole = PilgrimMapView.HonorWayRendering.segments(route: route, spans: [])
+        XCTAssertEqual(whole.map(\.kind), ["walking"])
+        XCTAssertEqual(whole.first?.coordinates.count, route.count)
+        let overlapping = [
+            WaySpan(startFrac: 0.1, endFrac: 0.5, kind: .talking),
+            WaySpan(startFrac: 0.3, endFrac: 0.6, kind: .meditating),
+        ]
+        let segments = PilgrimMapView.HonorWayRendering.segments(route: route, spans: overlapping)
+        XCTAssertEqual(segments.map(\.kind), ["walking", "talking", "meditating", "walking"])
+    }
+
+    func testStateFromAWayCarriesItsSpans() {
+        let way = Way(id: "walk:t", source: .ownWalk(UUID()), title: "t", departedAt: Date(), tzIdentifier: nil, expires: nil,
+                      route: straightRoute(), totalDistanceMeters: 1000, theirActiveSeconds: 600, moments: [], weather: nil,
+                      spans: [WaySpan(startFrac: 0.5, endFrac: 0.8, kind: .talking)])
+        XCTAssertEqual(HonorWayState(way: way).segments.map(\.kind), ["walking", "talking", "walking"])
+    }
+}

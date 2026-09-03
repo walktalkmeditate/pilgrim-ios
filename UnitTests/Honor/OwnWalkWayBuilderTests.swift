@@ -106,3 +106,17 @@ final class OwnWalkWayBuilderTests: XCTestCase {
         XCTAssertNil(way.expires)
     }
 }
+
+extension OwnWalkWayBuilderTests {
+
+    func testSpansFollowTheRecordingAndTheSitting() throws {
+        let way = try XCTUnwrap(OwnWalkWayBuilder.make(from: walk()))
+        let spans = try XCTUnwrap(way.spans)
+        XCTAssertEqual(spans.map(\.kind), [.talking, .meditating])
+        for span in spans {
+            XCTAssertGreaterThan(span.endFrac, span.startFrac)
+            XCTAssertGreaterThanOrEqual(span.startFrac, 0)
+            XCTAssertLessThanOrEqual(span.endFrac, 1)
+        }
+    }
+}

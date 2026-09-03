@@ -58,6 +58,18 @@ struct WayWeather: Codable, Equatable {
     let temperatureC: Double?
 }
 
+enum WaySpanKind: String, Codable {
+    case meditating, talking
+}
+
+/// A stretch of the Way walked in a practice other than walking, by distance
+/// fraction. The ghost line colors these the way the walk's own route does.
+struct WaySpan: Codable, Equatable {
+    let startFrac: Double
+    let endFrac: Double
+    let kind: WaySpanKind
+}
+
 struct Way: Codable, Equatable {
     let id: String
     let source: WaySource
@@ -70,6 +82,9 @@ struct Way: Codable, Equatable {
     let theirActiveSeconds: Double
     let moments: [WayMoment]
     let weather: WayWeather?
+    /// Optional and last so a `way.json` written before spans existed still
+    /// decodes (as an all-walking Way) and every call site keeps its shape.
+    var spans: [WaySpan]?
 
     var voiceCount: Int { moments.filter(\.isVoice).count }
     var photoCount: Int {

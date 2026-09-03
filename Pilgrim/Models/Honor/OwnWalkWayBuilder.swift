@@ -89,6 +89,13 @@ enum OwnWalkWayBuilder {
         }
         moments.sort { $0.frac == $1.frac ? $0.id < $1.id : $0.frac < $1.frac }
 
+        // The same stretches the walk's own route colors: a recording is a
+        // talking span, a sitting a meditating span.
+        let spans = Self.spans(
+            talking: present.map { ($0.startDate, $0.endDate) },
+            meditating: sittings.map { ($0.startDate, $0.endDate) },
+            frac: { place($0).frac })
+
         let title: String
         if let comment = walk.comment?.trimmingCharacters(in: .whitespacesAndNewlines), !comment.isEmpty {
             title = comment
@@ -101,7 +108,22 @@ enum OwnWalkWayBuilder {
             id: "walk:\(uuid.uuidString)", source: .ownWalk(uuid), title: title,
             departedAt: walk.startDate, tzIdentifier: TimeZone.current.identifier, expires: nil,
             route: route, totalDistanceMeters: fullGeometry.totalMeters,
-            theirActiveSeconds: walk.activeDuration, moments: moments, weather: weather)
+            theirActiveSeconds: walk.activeDuration, moments: moments, weather: weather, spans: spans)
+    }
+
+    private static func spans(
+        talking: [(start: Date, end: Date)],
+        meditating: [(start: Date, end: Date)],
+        frac: (Date) -> Double
+    ) -> [WaySpan] {
+        func spans(_ intervals: [(start: Date, end: Date)], kind: WaySpanKind) -> [WaySpan] {
+            intervals.compactMap { interval in
+                let start = frac(interval.start), end = frac(interval.end)
+                return end > start ? WaySpan(startFrac: start, endFrac: end, kind: kind) : nil
+            }
+        }
+        return (spans(talking, kind: .talking) + spans(meditating, kind: .meditating))
+            .sorted { $0.startFrac < $1.startFrac }
     }
 
     private static func strideSample(_ points: [WayPoint], target: Int) -> [WayPoint] {

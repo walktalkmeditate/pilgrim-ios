@@ -123,3 +123,19 @@ final class WayStoreTests: XCTestCase {
         XCTAssertEqual(store.load(id: "share:aaaaaaaaaa")?.title, "updated")
     }
 }
+
+extension WayStoreTests {
+
+    func testAWayWrittenBeforeSpansExistedStillDecodes() throws {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let way = Way(id: "share:aaaaaaaaaa", source: .ownWalk(UUID()), title: "t", departedAt: Date(), tzIdentifier: nil, expires: nil,
+                      route: [], totalDistanceMeters: 0, theirActiveSeconds: 0, moments: [], weather: nil)
+        let json = try XCTUnwrap(String(data: try encoder.encode(way), encoding: .utf8))
+        XCTAssertFalse(json.contains("\"spans\""), "nil spans stay off the wire")
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(Way.self, from: Data(json.utf8))
+        XCTAssertNil(decoded.spans)
+    }
+}

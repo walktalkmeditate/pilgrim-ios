@@ -179,3 +179,32 @@ final class WayImporterTests: XCTestCase {
         }
     }
 }
+
+extension WayImporterTests {
+
+    func testActivitySegmentsBecomeSpansAndUnknownKindsAreSkipped() throws {
+        let json = """
+        {"v":1,"place_start":"A","place_end":"B","start_date":"2026-08-01T07:00:00Z","expires":"2099-01-01T00:00:00.000Z",
+         "route":[{"lat":42.88,"lon":-8.545,"alt":250,"ts":1000},{"lat":42.88,"lon":-8.540,"alt":250,"ts":1400},{"lat":42.88,"lon":-8.535,"alt":250,"ts":1600}],
+         "encounters":[],"meditation":[],
+         "activity_segments":[{"kind":"talk","start_frac":0.1,"end_frac":0.2},{"kind":"meditation","start_frac":0.5,"end_frac":0.6},{"kind":"dance","start_frac":0.7,"end_frac":0.8}],
+         "stats":{"active_duration":540}}
+        """
+        let manifest = try JSONDecoder().decode(TourManifest.self, from: Data(json.utf8))
+        let way = try WayImporter.way(from: manifest, shareId: "Qoi4YmPHLN", now: Date())
+        XCTAssertEqual(way.spans?.map(\.kind), [.talking, .meditating])
+        XCTAssertEqual(way.spans?.first?.startFrac ?? 0, 0.1, accuracy: 1e-9)
+    }
+
+    func testActivitySegmentOutOfRangeIsUnavailable() throws {
+        let json = """
+        {"v":1,"start_date":"2026-08-01T07:00:00Z","expires":"2099-01-01T00:00:00.000Z",
+         "route":[{"lat":42.88,"lon":-8.545,"alt":250,"ts":1000},{"lat":42.88,"lon":-8.535,"alt":250,"ts":1600}],
+         "encounters":[],"meditation":[],"activity_segments":[{"kind":"talk","start_frac":0.1,"end_frac":1.5}]}
+        """
+        let manifest = try JSONDecoder().decode(TourManifest.self, from: Data(json.utf8))
+        XCTAssertThrowsError(try WayImporter.way(from: manifest, shareId: "Qoi4YmPHLN", now: Date())) {
+            XCTAssertEqual($0 as? WayError, .unavailable)
+        }
+    }
+}

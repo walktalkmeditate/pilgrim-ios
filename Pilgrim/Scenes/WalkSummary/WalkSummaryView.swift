@@ -749,14 +749,7 @@ extension WalkSummaryView {
         guard let data = HonorSummaryModel.summaryData(
             for: walk, way: way, link: link, replies: replies
         ) else { return nil }
-        let wayState = way.map { loaded in
-            HonorWayState(
-                id: loaded.id,
-                routeCoordinates: loaded.route.map {
-                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                }
-            )
-        }
+        let wayState = way.map { HonorWayState(way: $0) }
         return (data, wayState)
     }
 

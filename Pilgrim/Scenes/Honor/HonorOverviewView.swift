@@ -120,10 +120,7 @@ struct HonorOverviewView: View {
             rendering = WayRendering(
                 pins: PilgrimMapView.wayPins(for: way, heardVoiceIDs: []),
                 bounds: HonorOverviewModel.bounds(of: way),
-                state: HonorWayState(
-                    id: way.id,
-                    routeCoordinates: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
-                )
+                state: HonorWayState(way: way)
             )
         }
         .task { await fetchToday() }

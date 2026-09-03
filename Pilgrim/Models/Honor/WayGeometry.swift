@@ -42,6 +42,23 @@ struct WayGeometry {
                                       longitude: a.lon + (b.lon - a.lon) * u)
     }
 
+    /// The polyline between two fracs: an interpolated point at each end and
+    /// every route point strictly inside, so consecutive slices share their
+    /// boundary coordinate and draw as one continuous line.
+    func slice(fromFrac start: Double, toFrac end: Double) -> [CLLocationCoordinate2D] {
+        guard points.count > 1, totalMeters > 0 else {
+            return points.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+        }
+        let a = min(max(min(start, end), 0), 1) * totalMeters
+        let b = min(max(max(start, end), 0), 1) * totalMeters
+        var coords = [coordinate(atFrac: a / totalMeters)]
+        for (index, point) in points.enumerated() where cumulative[index] > a && cumulative[index] < b {
+            coords.append(CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon))
+        }
+        coords.append(coordinate(atFrac: b / totalMeters))
+        return coords
+    }
+
     /// On a stationary plateau (several points at one location), returns the
     /// moment the walker moved on — the end of the pause. This ensures a
     /// companion anchored at a rest spot departs together with the honoring

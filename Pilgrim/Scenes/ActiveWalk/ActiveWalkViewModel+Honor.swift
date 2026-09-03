@@ -77,9 +77,7 @@ extension ActiveWalkViewModel {
     func refreshHonorPins() {
         guard let way else { return }
         if honorWayState == nil {
-            honorWayState = HonorWayState(
-                id: way.id,
-                routeCoordinates: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) })
+            honorWayState = HonorWayState(way: way)
         }
         honorPins = PilgrimMapView.wayPins(for: way, heardVoiceIDs: heardVoiceIDs)
     }

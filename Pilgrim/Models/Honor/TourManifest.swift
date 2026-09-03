@@ -50,6 +50,15 @@ struct TourManifest: Decodable {
         enum CodingKeys: String, CodingKey { case active_duration }
     }
 
+    /// `kind` is a plain `String` for the same reason `Encounter.type` is.
+    struct ActivitySegment: Decodable, Equatable {
+        let kind: String
+        let start_frac: Double
+        let end_frac: Double
+
+        enum CodingKeys: String, CodingKey { case kind, start_frac, end_frac }
+    }
+
     let v: Int
     let place_start: String?
     let place_end: String?
@@ -61,10 +70,11 @@ struct TourManifest: Decodable {
     let route: [RoutePoint]
     let encounters: [Encounter]
     let meditation: [Sitting]
+    let activity_segments: [ActivitySegment]?
     let stats: Stats?
 
     enum CodingKeys: String, CodingKey {
         case v, place_start, place_end, weather_condition, weather_temperature,
-             start_date, tz_identifier, expires, route, encounters, meditation, stats
+             start_date, tz_identifier, expires, route, encounters, meditation, activity_segments, stats
     }
 }

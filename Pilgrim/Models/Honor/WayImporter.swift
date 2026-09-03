@@ -113,6 +113,9 @@ struct WayImporter {
             guard inFrac(sit.start_frac), inFrac(sit.end_frac) else { return false }
             if let v = sit.duration, !(0...maxVoiceDurationSeconds).contains(v) { return false }
         }
+        for seg in m.activity_segments ?? [] {
+            guard inFrac(seg.start_frac), inFrac(seg.end_frac) else { return false }
+        }
 
         if let v = m.stats?.active_duration, !(0...maxActiveDurationSeconds).contains(v) { return false }
         if let v = m.weather_temperature, !(-100...100).contains(v) { return false }
@@ -175,6 +178,8 @@ struct WayImporter {
         // A tiebreak on id keeps ordering deterministic when two moments share a frac.
         moments.sort { $0.frac == $1.frac ? $0.id < $1.id : $0.frac < $1.frac }
 
+        let spans = spans(from: m.activity_segments ?? [])
+
         let wayTitle = title(placeStart: m.place_start, placeEnd: m.place_end, departed: departed)
         return Way(
             id: "share:\(shareId)",
@@ -183,7 +188,22 @@ struct WayImporter {
             route: route, totalDistanceMeters: geometry.totalMeters,
             theirActiveSeconds: m.stats?.active_duration ?? geometry.totalSeconds,
             moments: moments,
-            weather: m.weather_condition.map { WayWeather(condition: capped($0, maxWeatherConditionCharacters), temperatureC: m.weather_temperature) })
+            weather: m.weather_condition.map { WayWeather(condition: capped($0, maxWeatherConditionCharacters), temperatureC: m.weather_temperature) },
+            spans: spans)
+    }
+
+    /// Unknown kinds are skipped, like unknown encounter types.
+    private static func spans(from segments: [TourManifest.ActivitySegment]) -> [WaySpan] {
+        segments.compactMap { seg in
+            let kind: WaySpanKind
+            switch seg.kind {
+            case "meditation": kind = .meditating
+            case "talk": kind = .talking
+            default: return nil
+            }
+            guard seg.end_frac > seg.start_frac else { return nil }
+            return WaySpan(startFrac: seg.start_frac, endFrac: seg.end_frac, kind: kind)
+        }.sorted { $0.startFrac < $1.startFrac }
     }
 
     /// A route with no real length is not a Way anyone can follow: the same

@@ -153,6 +153,12 @@ struct PilgrimMapView: UIViewRepresentable {
         // and the Metal-backed map view for the rest of the session.
         mapView.mapboxMap.onStyleLoaded.observeNext { [weak coordinator = context.coordinator, weak mapView] _ in
             guard let coordinator, let mapView else { return }
+            // The honor layers go in before the wabi-sabi pass: that pass adds
+            // a terrain source, which flips `isStyleLoaded` back to false for
+            // the rest of this callback, and the overview has no later
+            // re-render to try again on.
+            coordinator.styleHasLoaded = true
+            Self.reinstallHonorWay(on: mapView, coordinator: coordinator)
             let mode: PilgrimMapStyle.Mode = coordinator.currentColorScheme == .dark ? .dark : .light
             PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap, mode: mode)
             if shouldFade, mapView.alpha < 1 {
@@ -170,7 +176,6 @@ struct PilgrimMapView: UIViewRepresentable {
             Self.applyRouteSource(coordinator.pendingSegments, walkingColor: coordinator.walkingColor, on: mapView, coordinator: coordinator)
             Self.applyAnnotations(coordinator.pendingAnnotations, activePhotoID: coordinator.pendingActivePhotoID, on: mapView, coordinator: coordinator)
             Self.reinstallSeekFog(on: mapView, coordinator: coordinator)
-            Self.reinstallHonorWay(on: mapView, coordinator: coordinator)
         }.store(in: &context.coordinator.cancellables)
 
         Self.installSeekWispCameraObservers(on: mapView, coordinator: context.coordinator)
@@ -205,6 +210,7 @@ struct PilgrimMapView: UIViewRepresentable {
             context.coordinator.currentColorScheme = colorScheme
             context.coordinator.routePlanner.reset()
             let newStyle: StyleURI = colorScheme == .dark ? .dark : .light
+            context.coordinator.styleHasLoaded = false
             mapView.mapboxMap.loadStyle(newStyle)
             return
         }
@@ -301,7 +307,11 @@ struct PilgrimMapView: UIViewRepresentable {
     // Route-line rendering lives in PilgrimMapView+RouteSource.swift.
 
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], activePhotoID: String?, on mapView: MBMapView, coordinator: Coordinator) {
-        guard mapView.mapboxMap.isStyleLoaded else { return }
+        // Same reason as the honor gate: the wabi-sabi pass flips
+        // `isStyleLoaded` back to false inside the style-loaded callback, and a
+        // screen that never re-renders (the honor overview) would keep its
+        // pins pending forever.
+        guard coordinator.styleHasLoaded || mapView.mapboxMap.isStyleLoaded else { return }
 
         // Install (or refresh) the "photo image loaded" callback on
         // the photo marker loader. Each async PHImageManager result
@@ -629,6 +639,10 @@ struct PilgrimMapView: UIViewRepresentable {
         /// Honor ghost line / companion bookkeeping — state and logic live in
         /// PilgrimMapView+HonorWay.swift; only the storage lives here.
         let honorWayRenderer = HonorWayRenderer()
+        /// Set by the style-loaded callback before any runtime styling runs.
+        /// `mapboxMap.isStyleLoaded` alone is not enough for honor: it reads
+        /// false again while the wabi-sabi terrain source is still fetching.
+        var styleHasLoaded = false
 
         fileprivate var isAppInBackground: Bool = false
         fileprivate var walkingColor: UIColor = .moss
