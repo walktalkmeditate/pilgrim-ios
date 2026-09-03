@@ -17,6 +17,7 @@
 		0497A85158418E09A4753B5B /* SeekGlance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBA20381F115380FCCA8D9 /* SeekGlance.swift */; };
 		07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */; };
 		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
+		0878C1CAF7C3058C2C7287D4 /* HonorLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411C57823FDC9D21FE236E6C /* HonorLink.swift */; };
 		0900F4294F091546C199FA0A /* WalkDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4181215714A52E71449BC390 /* WalkDataFactory.swift */; };
 		0908DCA790C0A5619B6B7515 /* ActiveWalkSeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */; };
 		0AA343D1A7FB780905B6A20F /* ActivityContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12245A2A15EE8E64818B6D3F /* ActivityContext.swift */; };
@@ -73,6 +74,7 @@
 		2230925F24D6F6A700A3F636 /* WalkBuilder+Status.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2230925E24D6F6A700A3F636 /* WalkBuilder+Status.swift */; };
 		2230926124D7081A00A3F636 /* LocationManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2230926024D7081A00A3F636 /* LocationManagement.swift */; };
 		2230926324D7573C00A3F636 /* Double.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2230926224D7573C00A3F636 /* Double.swift */; };
+		22392BA6A14C3C4F889E9864 /* HonorImportReducerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A66535C9A2D8EE7F70F5B4 /* HonorImportReducerTests.swift */; };
 		2243899C26EFCC8000DEC75E /* LiveStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2243899B26EFCC8000DEC75E /* LiveStats.swift */; };
 		224AF62A237624E80047CBDE /* CustomDateFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 224AF629237624E80047CBDE /* CustomDateFormatting.swift */; };
 		22558387242E80FA0043432F /* PolicyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22558386242E80FA0043432F /* PolicyManager.swift */; };
@@ -409,6 +411,7 @@
 		B5CB838747A53368D71068C7 /* TourManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F521AB197701BFC0252FFFBC /* TourManifest.swift */; };
 		B630C01285A745C4C0B04FC5 /* SeekDemoSeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891AB02D5C379B14317F9FBA /* SeekDemoSeedTests.swift */; };
 		B6EE97B5CE406DEAF57A3EEC /* whisper-presence-5.aac in Resources */ = {isa = PBXBuildFile; fileRef = 27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */; };
+		B8AEBE27DE6EA2822E939ACE /* HonorLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE908B2E637A3BC4A0DC0B3 /* HonorLinkTests.swift */; };
 		B97AE0EC614F740DA0BF99D7 /* whisper-play-8.aac in Resources */ = {isa = PBXBuildFile; fileRef = 6E9C51C681E296C685A851E3 /* whisper-play-8.aac */; };
 		B9C538ECD15D4CE3B5B4186E /* ActivityInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */; };
 		BA77E6A7E000000000000001 /* BatteryGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA77E6A7E000000000000002 /* BatteryGate.swift */; };
@@ -522,6 +525,7 @@
 		CED5FDA068F49C88B833F845 /* SeekGatewayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F59CC48C65D33C14EE7C68E /* SeekGatewayView.swift */; };
 		CF635D421DBD437A8A75B616 /* ThreadsBackfill.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0523495072F4F50ACDEF645 /* ThreadsBackfill.swift */; };
 		CFDAC9CE88E02E670B7D75B0 /* ConstellationStarGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB3EC77FC9F0C0EDEDB0713 /* ConstellationStarGenerationTests.swift */; };
+		D084A7C6B0CB68B016917E7B /* HonorImportReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEF964C737F1A099125ED95 /* HonorImportReducer.swift */; };
 		D0E01E2C230520CA2D6344A5 /* whisper-play-12.aac in Resources */ = {isa = PBXBuildFile; fileRef = D30651941E3AA93F6BB14A1D /* whisper-play-12.aac */; };
 		D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */; };
 		D34BBFBCCF7D7FCF4956E864 /* SeekSoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9245B5EF90D7E8BB2FA5C9 /* SeekSoundPlayer.swift */; };
@@ -900,6 +904,7 @@
 		27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-5.aac"; sourceTree = "<group>"; };
 		2A312457000654189A0B40D7 /* HonorWaysSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorWaysSheet.swift; sourceTree = "<group>"; };
 		2A677576F283F65E658EB774 /* StonePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StonePlayer.swift; sourceTree = "<group>"; };
+		2AEF964C737F1A099125ED95 /* HonorImportReducer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorImportReducer.swift; sourceTree = "<group>"; };
 		2B0CF7513A498758721A98B4 /* WayStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayStoreTests.swift; sourceTree = "<group>"; };
 		2B3C4D5E6F7A8B9C0D1E2F3A /* TourBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TourBuilderTests.swift; sourceTree = "<group>"; };
 		2BD4237D6467ED96F4E54E50 /* ContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContextFormatter.swift; sourceTree = "<group>"; };
@@ -912,6 +917,7 @@
 		305468F7FF377BC0DFF74897 /* WhisperManifest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifest.swift; sourceTree = "<group>"; };
 		30AE2BD0110C456B9BA0C97A /* ThemeExtractor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThemeExtractor.swift; sourceTree = "<group>"; };
 		30F1855EFA5E8651248785BF /* whisper-courage-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-courage-1.aac"; sourceTree = "<group>"; };
+		31A66535C9A2D8EE7F70F5B4 /* HonorImportReducerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorImportReducerTests.swift; sourceTree = "<group>"; };
 		3542AA50A2E8FA62E52758C7 /* WhisperPlacementSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperPlacementSheet.swift; sourceTree = "<group>"; };
 		378126B70503E7FF35DA0C6B /* whisper-presence-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-1.aac"; sourceTree = "<group>"; };
 		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
@@ -924,6 +930,7 @@
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3F47849F190C412386DF5E9C /* DossierSensesCrossWalkMoonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesCrossWalkMoonTests.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
+		411C57823FDC9D21FE236E6C /* HonorLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorLink.swift; sourceTree = "<group>"; };
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
 		418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActiveWalkSeekTests.swift; sourceTree = "<group>"; };
 		41D1577001FA4F5C5BEE2D27 /* SeekSetupFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSetupFlowTests.swift; sourceTree = "<group>"; };
@@ -935,6 +942,7 @@
 		494D7F90572546A4A3A58143 /* WayGeometryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayGeometryTests.swift; sourceTree = "<group>"; };
 		4AD7C7A50CC75536619799F2 /* PilgrimMapView+SeekFog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+SeekFog.swift"; sourceTree = "<group>"; };
 		4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCoordinator.swift; sourceTree = "<group>"; };
+		4AE908B2E637A3BC4A0DC0B3 /* HonorLinkTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorLinkTests.swift; sourceTree = "<group>"; };
 		4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceSparklineView.swift; sourceTree = "<group>"; };
 		4B95E4FB1DF743CEF3AC77C2 /* RouteShapeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteShapeView.swift; sourceTree = "<group>"; };
 		4C6DCD6A0B61B96409E9AA92 /* SeekSetupFlowModifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSetupFlowModifier.swift; sourceTree = "<group>"; };
@@ -2568,6 +2576,8 @@
 				F521AB197701BFC0252FFFBC /* TourManifest.swift */,
 				CD6A8FE7FA38DDDF7FE897FF /* WayImporter.swift */,
 				50A8B723E58F2FA26AB22C45 /* WayMediaDownloader.swift */,
+				411C57823FDC9D21FE236E6C /* HonorLink.swift */,
+				2AEF964C737F1A099125ED95 /* HonorImportReducer.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2677,6 +2687,8 @@
 				3C91107C7F80DC9AA20170B0 /* WayGPXExporterTests.swift */,
 				B47EF058F5CCCCD122689CA5 /* WayImporterTests.swift */,
 				0E286411EC07E1AF086CBE1D /* WayMediaDownloaderTests.swift */,
+				4AE908B2E637A3BC4A0DC0B3 /* HonorLinkTests.swift */,
+				31A66535C9A2D8EE7F70F5B4 /* HonorImportReducerTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3473,6 +3485,8 @@
 				B5CB838747A53368D71068C7 /* TourManifest.swift in Sources */,
 				3026F5401165F511ADF6A425 /* WayImporter.swift in Sources */,
 				C037A7A17A407579957E3DAD /* WayMediaDownloader.swift in Sources */,
+				0878C1CAF7C3058C2C7287D4 /* HonorLink.swift in Sources */,
+				D084A7C6B0CB68B016917E7B /* HonorImportReducer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3640,6 +3654,8 @@
 				11193683CC904418C478E20D /* WayGPXExporterTests.swift in Sources */,
 				15917F246C519C3AEAB00835 /* WayImporterTests.swift in Sources */,
 				441413024C1949B2E1B94DD6 /* WayMediaDownloaderTests.swift in Sources */,
+				B8AEBE27DE6EA2822E939ACE /* HonorLinkTests.swift in Sources */,
+				22392BA6A14C3C4F889E9864 /* HonorImportReducerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
