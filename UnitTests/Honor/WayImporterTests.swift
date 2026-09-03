@@ -165,4 +165,17 @@ final class WayImporterTests: XCTestCase {
         let way = try WayImporter.way(from: decode(json), shareId: "Qoi4YmPHLN", now: Date())
         XCTAssertEqual(way.weather?.condition.count, WayImporter.maxWeatherConditionCharacters)
     }
+
+    /// The same floor `OwnWalkWayBuilder` applies: a route with no real
+    /// length is not a Way anyone can follow.
+    func testRouteShorterThanTheFloorIsUnavailable() throws {
+        let json = """
+        {"v":1,"start_date":"2026-08-01T07:00:00Z","expires":"2099-01-01T00:00:00.000Z",
+         "route":[{"lat":42.88,"lon":-8.545,"alt":250,"ts":1000},{"lat":42.88,"lon":-8.54501,"alt":250,"ts":1400}],
+         "encounters":[],"meditation":[],"stats":{"active_duration":540}}
+        """
+        XCTAssertThrowsError(try WayImporter.way(from: decode(json), shareId: "Qoi4YmPHLN", now: Date())) {
+            XCTAssertEqual($0 as? WayError, .unavailable)
+        }
+    }
 }

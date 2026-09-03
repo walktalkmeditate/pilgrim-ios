@@ -57,7 +57,15 @@ final class HonorEngine: ObservableObject {
     /// Begin found nothing within 60 m and fell back to frac 0; the first
     /// on-Way fix becomes the real anchor.
     private var anchoredByFallback = false
+    /// The walk's active duration at the moment the Way was (re-)anchored.
+    /// Both the companion's clock and `yourSeconds` are measured from here,
+    /// so an approach walk to the trailhead neither puts the companion
+    /// hundreds of metres ahead nor counts toward the walker's own time.
+    private var anchorActiveDuration: TimeInterval = 0
     private var offWaySince: Date?
+    /// Active duration when the walker went off the Way, so a re-acquire's
+    /// pace credit is earned on walking time — not on time spent paused.
+    private var offWayActiveDuration: TimeInterval = 0
     private var lastReacquireAttempt: Date?
     private var softTapSince: Date?
     private var softTapArmed = true
@@ -108,8 +116,13 @@ final class HonorEngine: ObservableObject {
     func updateActiveDuration(_ seconds: TimeInterval) {
         activeDuration = seconds
         guard startFrac != nil else { return }
-        companionFrac = geometry.frac(atElapsed: companionT0 + seconds)
+        companionFrac = geometry.frac(atElapsed: companionT0 + sinceAnchorSeconds)
     }
+
+    /// Walking time since the Way was anchored. Never negative: the walk's
+    /// active duration is monotonic, but a re-anchor could otherwise race a
+    /// stale emission.
+    private var sinceAnchorSeconds: TimeInterval { max(0, activeDuration - anchorActiveDuration) }
 
     func setGates(paused: Bool, meditating: Bool, recording: Bool, externalAudio: Bool) {
         gates = HonorMomentTracker.Gates(paused: paused, meditating: meditating,
@@ -146,8 +159,9 @@ final class HonorEngine: ObservableObject {
         progressFrac = frac
         progressHighWater = frac
         walkedFrac = 0
+        anchorActiveDuration = activeDuration
         companionT0 = geometry.elapsed(atFrac: frac)
-        companionFrac = geometry.frac(atElapsed: companionT0 + activeDuration)
+        companionFrac = geometry.frac(atElapsed: companionT0)
     }
 
     private func reanchor(at frac: Double) {
@@ -155,8 +169,9 @@ final class HonorEngine: ObservableObject {
         startFrac = frac
         progressHighWater = frac
         walkedFrac = 0
+        anchorActiveDuration = activeDuration
         companionT0 = geometry.elapsed(atFrac: frac)
-        companionFrac = geometry.frac(atElapsed: companionT0 + activeDuration)
+        companionFrac = geometry.frac(atElapsed: companionT0)
     }
 
     private func track(_ coordinate: CLLocationCoordinate2D) {
@@ -164,7 +179,10 @@ final class HonorEngine: ObservableObject {
         let lower = max(0, progressFrac - HonorTuning.backwardTolerance)
         let upper = min(1, progressFrac + windowSpan)
         let local = geometry.nearest(to: coordinate, within: lower...upper)
-        offWayMeters = local.meters
+        // `nearest` returns .infinity when the window holds no segment (a
+        // degenerate Way); clamped so the value stays printable and never
+        // reaches `Int(_:)` as an infinity.
+        offWayMeters = Self.clampedMeters(local.meters)
         if local.meters <= HonorTuning.onWayMeters {
             isOnWay = true
             offWaySince = nil
@@ -180,9 +198,12 @@ final class HonorEngine: ObservableObject {
         }
         isOnWay = false
         let time = now()
-        if offWaySince == nil { offWaySince = time }
-        let dueForRetry = lastReacquireAttempt == nil
-            || time.timeIntervalSince(lastReacquireAttempt!) >= HonorTuning.reacquireRetrySeconds
+        if offWaySince == nil {
+            offWaySince = time
+            offWayActiveDuration = activeDuration
+        }
+        let dueForRetry = lastReacquireAttempt
+            .map { time.timeIntervalSince($0) >= HonorTuning.reacquireRetrySeconds } ?? true
         if let since = offWaySince, time.timeIntervalSince(since) >= HonorTuning.reacquireSeconds, dueForRetry {
             lastReacquireAttempt = time
             // Forward first: on an out-and-back the return leg shares the
@@ -197,12 +218,16 @@ final class HonorEngine: ObservableObject {
                 // resets the credit: the walk had not really begun.
                 if geometry.totalSeconds > 0 {
                     let jump = max(0, found.frac - progressHighWater)
-                    let paceFrac = time.timeIntervalSince(since) / geometry.totalSeconds
+                    // Walking time off the Way, not wall clock: a walk paused
+                    // for an hour off-Way must not convert that hour into
+                    // arrival credit.
+                    let offWayWalking = max(0, activeDuration - offWayActiveDuration)
+                    let paceFrac = offWayWalking / geometry.totalSeconds
                     walkedFrac += max(0, min(jump, paceFrac))
                 }
                 progressFrac = found.frac
                 progressHighWater = max(progressHighWater, progressFrac)
-                offWayMeters = found.meters
+                offWayMeters = Self.clampedMeters(found.meters)
                 isOnWay = true
                 offWaySince = nil
                 lastReacquireAttempt = nil
@@ -215,7 +240,20 @@ final class HonorEngine: ObservableObject {
 
     // MARK: - Soft tap
 
+    /// A Way is at most a few hundred kilometres; anything past this is a
+    /// sentinel or a bad fix, and every consumer formats it as a number.
+    private static let maxReportedOffWayMeters: Double = 100_000
+
+    private static func clampedMeters(_ meters: Double) -> Double {
+        meters.isFinite ? min(meters, maxReportedOffWayMeters) : maxReportedOffWayMeters
+    }
+
     private func evaluateSoftTap() {
+        // Nothing has been joined yet: Begin found no Way within 60 m and
+        // fell back to frac 0, so the walker is still approaching. Tapping
+        // them on the shoulder for being "off the way" they have not
+        // started is the wrong word at the wrong time.
+        guard !anchoredByFallback else { return }
         guard phase == .walking, softTapEnabled else { return }
         if offWayMeters <= HonorTuning.onWayMeters {
             softTapSince = nil
@@ -255,7 +293,7 @@ final class HonorEngine: ObservableObject {
         if arrival.register(distance: distance, radius: HonorTuning.arrivalRadiusMeters,
                             accuracy: location.horizontalAccuracy) {
             phase = .arrived
-            subject.send(.arrived(theirSeconds: geometry.totalSeconds - companionT0, yourSeconds: activeDuration))
+            subject.send(.arrived(theirSeconds: geometry.totalSeconds - companionT0, yourSeconds: sinceAnchorSeconds))
         }
     }
 

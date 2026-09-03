@@ -168,7 +168,9 @@ extension ActiveWalkViewModel {
     /// like every other honor `asyncAfter`: teardown bumps the generation and
     /// this write becomes a no-op.
     private func showSoftTapCaption(meters: Double) {
-        softTapCaption = "off the way · \(Int(meters)) m"
+        // `Int(_:)` traps on an infinity; the engine already clamps, and this
+        // is the last line of defence before the number reaches the screen.
+        softTapCaption = "off the way · \(Int(min(meters.isFinite ? meters : 0, 999_999))) m"
         let generation = honorGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.softTapCaptionSeconds) { [weak self] in
             guard let self, self.honorGeneration == generation else { return }

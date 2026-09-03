@@ -229,15 +229,20 @@ final class HonorEngineTests: XCTestCase {
         for i in 1...2 { engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i) * 60)) }
         XCTAssertEqual(engine.distanceWalkedMeters, 200, accuracy: 10)
         // Off the Way for over two minutes, then rejoin far ahead at 800 m (outside the 300 m window).
+        // Pace credit is earned on WALKING time, so the active-duration
+        // stream advances with the clock here exactly as on a real walk.
         for s in stride(from: 130.0, through: 260, by: 10) {
             clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.updateActiveDuration(s)
             engine.processLocation(fix(lon: 0.000898 * 4, lat: 0.0036, at: s))
         }
         clock = Date(timeIntervalSince1970: 1_000_000 + 270)
+        engine.updateActiveDuration(270)
         engine.processLocation(fix(lon: 0.000898 * 8, at: 270))
         XCTAssertEqual(engine.progressFrac, 0.8, accuracy: 0.02, "position corrected")
         XCTAssertEqual(engine.distanceWalkedMeters, 200 + 233, accuracy: 15, "credited at the Way's pace, not the 600 m jump")
         clock = Date(timeIntervalSince1970: 1_000_000 + 400)
+        engine.updateActiveDuration(400)
         for i in 0..<4 { engine.processLocation(fix(lon: 0.000898 * 10, at: 400 + Double(i))) }
         XCTAssertEqual(engine.distanceWalkedMeters, 633, accuracy: 25)
         XCTAssertEqual(arrived, 1, "an honest walker who lost signal still arrives")
@@ -254,9 +259,11 @@ final class HonorEngineTests: XCTestCase {
         XCTAssertEqual(engine.distanceWalkedMeters, 200, accuracy: 10)
         for s in stride(from: 210.0, through: 500, by: 10) {
             clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.updateActiveDuration(s)
             engine.processLocation(fix(lon: 0.000898 * 3.5, lat: 0.0036, at: s))
         }
         clock = Date(timeIntervalSince1970: 1_000_000 + 510)
+        engine.updateActiveDuration(510)
         engine.processLocation(fix(lon: 0.000898 * 6.5, at: 510))
         XCTAssertEqual(engine.progressFrac, 0.65, accuracy: 0.02)
         XCTAssertEqual(engine.distanceWalkedMeters, 650, accuracy: 15, "the 450 m jump is under 300 s of the Way's pace, so it counts in full")
@@ -273,15 +280,137 @@ final class HonorEngineTests: XCTestCase {
         // Drive 800 m in a car: off the line from 70 s, back on it at 900 m at 210 s.
         for s in stride(from: 70.0, through: 200, by: 10) {
             clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.updateActiveDuration(s)
             engine.processLocation(fix(lon: 0.000898 * 5, lat: 0.0036, at: s))
         }
         clock = Date(timeIntervalSince1970: 1_000_000 + 210)
+        engine.updateActiveDuration(210)
         engine.processLocation(fix(lon: 0.000898 * 9, at: 210))
         XCTAssertEqual(engine.progressFrac, 0.9, accuracy: 0.02)
         XCTAssertEqual(engine.distanceWalkedMeters, 100 + 233, accuracy: 15, "140 s off the Way earns 140 s of the Way's pace, not 800 m")
         clock = Date(timeIntervalSince1970: 1_000_000 + 300)
+        engine.updateActiveDuration(300)
         for i in 0..<4 { engine.processLocation(fix(lon: 0.000898 * 10, at: 300 + Double(i))) }
         XCTAssertEqual(arrived, 0, "433 m earned of 1000 ahead is under the half required")
+    }
+
+    // MARK: - The re-anchor (A1, A2, A3)
+
+    /// Begin away from the Way, walk eight minutes to the trailhead, join at
+    /// frac 0: the companion starts where the walker does, and the approach
+    /// counts toward neither clock.
+    func testReanchorRestartsTheCompanionClockAndYourSeconds() {
+        let engine = makeEngine(way: straightWay())
+        engine.updateActiveDuration(0)
+        engine.processLocation(fix(lon: 0.05, lat: 0.05, at: 0))
+        XCTAssertEqual(engine.startFrac, 0, "no Way within 60 m — the fallback anchor")
+
+        // Eight minutes of approach walking, still nowhere near the Way.
+        engine.updateActiveDuration(480)
+        clock = Date(timeIntervalSince1970: 1_000_000 + 480)
+        engine.processLocation(fix(lon: 0, at: 480))
+        XCTAssertEqual(engine.startFrac ?? -1, 0, accuracy: 0.001)
+        XCTAssertEqual(engine.companionFrac, 0, accuracy: 0.001, "the companion starts at the re-anchor, not 800 m ahead")
+        XCTAssertEqual(engine.distanceWalkedMeters, 0, accuracy: 0.001, "the re-anchor zeroes the arrival credit")
+
+        engine.updateActiveDuration(540)
+        XCTAssertEqual(engine.companionFrac, 0.1, accuracy: 0.02, "one minute past the re-anchor is one minute of their Way")
+    }
+
+    func testYourSecondsExcludesTheApproachWalk() {
+        let engine = makeEngine(way: straightWay())
+        var yours: Double?
+        let sub = engine.events.sink { if case .arrived(_, let seconds) = $0 { yours = seconds } }
+        defer { sub.cancel() }
+
+        engine.updateActiveDuration(0)
+        engine.processLocation(fix(lon: 0.05, lat: 0.05, at: 0))
+        engine.updateActiveDuration(480)
+        clock = Date(timeIntervalSince1970: 1_000_000 + 480)
+        engine.processLocation(fix(lon: 0, at: 480))
+
+        for i in 1...10 {
+            let seconds = 480 + Double(i) * 60
+            engine.updateActiveDuration(seconds)
+            engine.processLocation(fix(lon: 0.000898 * Double(i), at: seconds))
+        }
+        engine.updateActiveDuration(1140)
+        for i in 0..<4 { engine.processLocation(fix(lon: 0.000898 * 10, at: 1140 + Double(i))) }
+
+        // 1140 s of walk, 480 s of it spent reaching the trailhead.
+        XCTAssertEqual(yours ?? -1, 660, accuracy: 1, "the eight-minute approach is not part of the walker's time on the Way")
+    }
+
+    /// A2: the walker has not joined the Way yet, so "off the way" is the
+    /// wrong word — the soft tap stays quiet until something is anchored.
+    func testSoftTapStaysQuietDuringTheApproachWalk() {
+        let engine = makeEngine(way: straightWay())
+        var taps = 0
+        let sub = engine.events.sink { if case .softTap = $0 { taps += 1 } }
+        defer { sub.cancel() }
+
+        for s in stride(from: 0.0, through: 200, by: 10) {
+            clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.updateActiveDuration(s)
+            engine.processLocation(fix(lon: 0.05, lat: 0.05, at: s))
+        }
+
+        XCTAssertEqual(taps, 0, "nothing has been joined, so nothing has been left")
+    }
+
+    /// A3: a walk paused off the Way must not convert paused time into
+    /// arrival credit — pace is earned by walking, not by waiting.
+    func testPausedTimeOffTheWayEarnsNoPaceCredit() {
+        let engine = makeEngine(way: straightWay())
+        engine.updateActiveDuration(0)
+        engine.processLocation(fix(lon: 0, at: 0))
+        for i in 1...2 {
+            engine.updateActiveDuration(Double(i) * 60)
+            engine.processLocation(fix(lon: 0.000898 * Double(i), at: Double(i) * 60))
+        }
+        XCTAssertEqual(engine.distanceWalkedMeters, 200, accuracy: 10)
+
+        // Five minutes pass on the wall clock with the walk paused: the
+        // active-duration stream never moves.
+        for s in stride(from: 130.0, through: 500, by: 10) {
+            clock = Date(timeIntervalSince1970: 1_000_000 + s)
+            engine.processLocation(fix(lon: 0.000898 * 4, lat: 0.0036, at: s))
+        }
+        clock = Date(timeIntervalSince1970: 1_000_000 + 510)
+        engine.processLocation(fix(lon: 0.000898 * 8, at: 510))
+
+        XCTAssertEqual(engine.progressFrac, 0.8, accuracy: 0.02, "position still corrects")
+        XCTAssertEqual(engine.distanceWalkedMeters, 200, accuracy: 1, "paused time buys no credit")
+    }
+
+    // MARK: - Degenerate geometry
+
+    func testEngineOnAWayOfIdenticalPointsDoesNotTrap() {
+        let route = (0...4).map { i in WayPoint(lat: 0, lon: 0, alt: nil, t: Double(i) * 60) }
+        let way = Way(id: "walk:degenerate", source: .ownWalk(UUID()), title: "still", departedAt: clock,
+                      tzIdentifier: nil, expires: nil, route: route, totalDistanceMeters: 0,
+                      theirActiveSeconds: 240, moments: [], weather: nil)
+        let engine = HonorEngine(way: way, softTapEnabled: true, voicesEnabled: true, now: { self.clock })
+
+        engine.updateActiveDuration(60)
+        engine.processLocation(fix(lon: 0, at: 0))
+        engine.processLocation(fix(lon: 0.05, lat: 0.05, at: 60))
+        engine.updateActiveDuration(600)
+
+        XCTAssertTrue(engine.offWayMeters.isFinite, "the no-segment sentinel must never reach a caller as an infinity")
+        XCTAssertLessThanOrEqual(engine.offWayMeters, 100_000)
+    }
+
+    func testVoiceDidFinishWithNothingPlayingIsInert() {
+        let engine = makeEngine(way: straightWay())
+        var events: [HonorEngineEvent] = []
+        let sub = engine.events.sink { events.append($0) }
+        defer { sub.cancel() }
+
+        engine.voiceDidFinish()
+        engine.voiceDidFinish()
+
+        XCTAssertTrue(events.isEmpty, "a finish for a voice that never started must say nothing")
     }
 
     func testSoftTapStopsAfterArrival() {

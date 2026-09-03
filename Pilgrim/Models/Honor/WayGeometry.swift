@@ -173,7 +173,11 @@ struct WayGeometry {
             let uLo = fb > fa ? min(1, max(0, (minFrac - fa) / (fb - fa))) : 0
             let hit = nearest(onSegment: i, to: coordinate, uRange: uLo...1)
             if hit.meters <= meters {
-                if best == nil || hit.meters < best!.meters { best = hit }
+                if let current = best {
+                    if hit.meters < current.meters { best = hit }
+                } else {
+                    best = hit
+                }
             } else if best != nil {
                 break
             }

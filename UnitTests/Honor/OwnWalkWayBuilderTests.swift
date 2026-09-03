@@ -78,6 +78,19 @@ final class OwnWalkWayBuilderTests: XCTestCase {
         XCTAssertNil(OwnWalkWayBuilder.make(from: WalkDataFactory.makeWalk(routeData: [])))
     }
 
+    /// A walk that never left one spot is jitter, not a Way: every frac would
+    /// collapse onto the same place and the companion could not move.
+    func testNilWhenTheRouteIsShorterThanTheFloor() {
+        let jitter = (0..<10).map { sample($0, lon: -8.54 + Double($0) * 0.00001) }  // ~8 m end to end
+        XCTAssertNil(OwnWalkWayBuilder.make(from: WalkDataFactory.makeWalk(uuid: UUID(), startDate: start, routeData: jitter)))
+    }
+
+    func testAWayJustOverTheFloorIsStillBuilt() throws {
+        let short = (0..<10).map { sample($0, lon: -8.54 + Double($0) * 0.00005) }   // ~40 m end to end
+        let way = try XCTUnwrap(OwnWalkWayBuilder.make(from: WalkDataFactory.makeWalk(uuid: UUID(), startDate: start, routeData: short)))
+        XCTAssertGreaterThanOrEqual(way.totalDistanceMeters, OwnWalkWayBuilder.minLengthMeters)
+    }
+
     func testSkipsRecordingsWhoseFileIsGone() throws {
         try FileManager.default.removeItem(at: recordingURL)
         let way = try XCTUnwrap(OwnWalkWayBuilder.make(from: walk()))

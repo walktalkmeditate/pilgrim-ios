@@ -128,7 +128,7 @@ struct WayImporter {
         guard validate(m) else { throw WayError.unavailable }
         let ts0 = m.route[0].ts
         let route = m.route.map { WayPoint(lat: $0.lat, lon: $0.lon, alt: $0.alt, t: Double($0.ts - ts0)) }
-        let geometry = WayGeometry(route: route)
+        let geometry = try validGeometry(for: route)
 
         var moments: [WayMoment] = []
         var voiceN = 0, photoN = 0, waypointN = 0, restN = 0
@@ -184,6 +184,14 @@ struct WayImporter {
             theirActiveSeconds: m.stats?.active_duration ?? geometry.totalSeconds,
             moments: moments,
             weather: m.weather_condition.map { WayWeather(condition: capped($0, maxWeatherConditionCharacters), temperatureC: m.weather_temperature) })
+    }
+
+    /// A route with no real length is not a Way anyone can follow: the same
+    /// floor `OwnWalkWayBuilder` applies to the walker's own walks.
+    private static func validGeometry(for route: [WayPoint]) throws -> WayGeometry {
+        let geometry = WayGeometry(route: route)
+        guard geometry.totalMeters >= OwnWalkWayBuilder.minLengthMeters else { throw WayError.unavailable }
+        return geometry
     }
 
     /// Bounds one free-text field from an untrusted manifest.

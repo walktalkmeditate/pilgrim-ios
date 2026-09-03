@@ -6,6 +6,10 @@ enum OwnWalkWayBuilder {
 
     static let maxRoutePoints = 4000
     static let minRestSeconds = 180.0
+    /// Below this a "Way" is a cluster of jitter around one spot: every frac
+    /// collapses onto the same place, the companion cannot move, and arrival
+    /// is either instant or unreachable. Shared with `WayImporter`.
+    static let minLengthMeters = 20.0
 
     static func make(from walk: WalkInterface) -> Way? {
         let samples = walk.routeData.sorted { $0.timestamp < $1.timestamp }
@@ -16,6 +20,7 @@ enum OwnWalkWayBuilder {
                      t: $0.timestamp.timeIntervalSince(t0))
         }
         let fullGeometry = WayGeometry(route: full)
+        guard fullGeometry.totalMeters >= minLengthMeters else { return nil }
         let route = full.count > maxRoutePoints ? strideSample(full, target: maxRoutePoints) : full
 
         var moments: [WayMoment] = []
@@ -82,7 +87,7 @@ enum OwnWalkWayBuilder {
                 kind: .meditation(minutes: Int((sit.endDate.timeIntervalSince(sit.startDate) / 60).rounded()),
                                   isEstimate: false)))
         }
-        moments.sort { $0.frac < $1.frac }
+        moments.sort { $0.frac == $1.frac ? $0.id < $1.id : $0.frac < $1.frac }
 
         let title: String
         if let comment = walk.comment?.trimmingCharacters(in: .whitespacesAndNewlines), !comment.isEmpty {

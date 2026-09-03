@@ -172,7 +172,10 @@ final class ActiveWalkHonorTests: XCTestCase {
         XCTAssertEqual(vm.waypoints.filter(HonorPersistence.isArrivalWaypoint).count, 1)
         XCTAssertEqual(vm.waypoints.first?.label, HonorPersistence.arrivalWaypointLabel(wayTitle: "Test way"))
         XCTAssertEqual(vm.honorArrival?.theirSeconds ?? 0, 600, accuracy: 1)
-        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? 0, 500, accuracy: 1)
+        // The walk's first 500 s were spent before a Way was anchored, and
+        // `yourSeconds` counts only the time on the Way — the approach walk
+        // belongs to neither clock.
+        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? -1, 0, accuracy: 1)
     }
 
     func testStopTearsDownThePlayer() {
@@ -385,7 +388,10 @@ final class ActiveWalkHonorTests: XCTestCase {
         vm.honorArrivalCardDismissed = true
         XCTAssertTrue(vm.honorArrivalCardDismissed)
         XCTAssertEqual(vm.honorArrival?.theirSeconds ?? 0, 600, accuracy: 1)
-        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? 0, 500, accuracy: 1)
+        // The walk's first 500 s were spent before a Way was anchored, and
+        // `yourSeconds` counts only the time on the Way — the approach walk
+        // belongs to neither clock.
+        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? -1, 0, accuracy: 1)
     }
 
     func testMediaURLForWayFileResolvesInsideTheStoreAndRejectsTraversal() throws {

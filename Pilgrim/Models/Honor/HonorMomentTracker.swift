@@ -31,7 +31,9 @@ struct HonorMomentTracker {
     private(set) var isVoicePaused = false
 
     init(moments: [WayMoment], geometry: WayGeometry, voicesEnabled: Bool) {
-        self.moments = moments.sorted { $0.frac < $1.frac }
+        // A tiebreak on id keeps ordering deterministic when two moments
+        // share a frac — the same rule `WayImporter` sorts by.
+        self.moments = moments.sorted { $0.frac == $1.frac ? $0.id < $1.id : $0.frac < $1.frac }
         self.geometry = geometry
         self.voicesEnabled = voicesEnabled
     }
