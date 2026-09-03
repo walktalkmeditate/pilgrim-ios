@@ -157,7 +157,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         Task { @MainActor in DossierSensesFieldReport.runIfRequested() }
         #endif
         startLaunchRecordingCleanup()
-        WayStore.shared.sweepExpired(now: Date())
+        sweepExpiredWays()
+    }
+
+    /// Skipped under XCTest for the same reason `startLaunchRecordingCleanup`
+    /// is: the shared-singleton sweep touches the real Application Support
+    /// tree, which would race a unit test writing fixtures into it. Runs
+    /// detached because it decodes every Way's `way.json` from disk.
+    private func sweepExpiredWays() {
+        guard NSClassFromString("XCTestCase") == nil else { return }
+        Task.detached(priority: .utility) {
+            WayStore.shared.sweepExpired(now: Date())
+        }
     }
 
     /// Launch cleanup ordering (AF2): the orphan sweep runs only once BOTH
