@@ -18,4 +18,23 @@ final class HonorLinkTests: XCTestCase {
             XCTAssertNil(HonorLink.parse(text: s), s)
         }
     }
+
+    func testHostIsCaseInsensitive() {
+        XCTAssertEqual(HonorLink.parse(text: "https://HONOR.pilgrimapp.org/Qoi4YmPHLN"), "Qoi4YmPHLN")
+        XCTAssertEqual(HonorLink.parse(URL(string: "https://HONOR.pilgrimapp.org/Qoi4YmPHLN")!), "Qoi4YmPHLN")
+    }
+
+    /// A cold-launch link is stashed on `PilgrimApp` for `MainTabView.onAppear`
+    /// to claim once mounted; reading it must also clear it, so the same id
+    /// can't be replayed a second time.
+    @MainActor
+    func testPendingShareIdIsDrainedOnce() {
+        PilgrimApp.pendingShareId = "Qoi4YmPHLN"
+
+        let drained = PilgrimApp.pendingShareId
+        PilgrimApp.pendingShareId = nil
+
+        XCTAssertEqual(drained, "Qoi4YmPHLN")
+        XCTAssertNil(PilgrimApp.pendingShareId)
+    }
 }

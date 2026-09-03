@@ -28,6 +28,12 @@ struct PilgrimApp: App {
     @StateObject private var appearanceManager = AppearanceManager()
     @StateObject private var rootViewModel = RootCoordinatorViewModel()
 
+    /// A link tapped on a cold launch arrives before `MainTabView` exists to
+    /// hear the notification below — held here so its `onAppear` can claim
+    /// it once the launch gate (`RootCoordinatorView`'s `appLaunchState`)
+    /// finally mounts the tab view.
+    @MainActor static var pendingShareId: String?
+
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -47,9 +53,13 @@ struct PilgrimApp: App {
 
     /// Broadcast rather than routed directly: `MainTabView` owns the
     /// coordinator, and a link arriving before setup finishes has no
-    /// `MainTabView` mounted to hear it — dropped by construction.
+    /// `MainTabView` mounted to hear it. Stashing the id in `pendingShareId`
+    /// too means that cold-launch case isn't just broadcast into silence —
+    /// `MainTabView.onAppear` drains it once mounted.
+    @MainActor
     private static func route(_ url: URL) {
         guard let id = HonorLink.parse(url) else { return }
+        pendingShareId = id
         NotificationCenter.default.post(name: .pilgrimOpenWay, object: nil, userInfo: ["shareId": id])
     }
 }

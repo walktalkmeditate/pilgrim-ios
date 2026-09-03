@@ -175,7 +175,11 @@ class MainCoordinator: ObservableObject {
 
     // MARK: - Honor
 
+    /// Resets the import state and any toast left over from a previous link
+    /// so a stale failure line never greets the next opening of the sheet.
     func chooseWay() {
+        honorImportState = .idle
+        showLinkToast(nil)
         honorWaysPresented = true
     }
 
@@ -196,12 +200,19 @@ class MainCoordinator: ObservableObject {
                 guard let self, !Task.isCancelled else { return }
                 self.showLinkToast(nil)
                 self.honorImportState = .idle
+                self.importTask = nil
+                // A Begin already in flight (a walk starting, or parked to
+                // start once the overview closes) wins — presenting this Way
+                // now would race it for the overview sheet or interrupt the
+                // walk that's already beginning. Drop it silently.
+                guard self.activeWalkViewModel == nil, self.pendingStartWay == nil else { return }
                 self.openOverview(for: way)      // AF60-safe: parks or presents, never both
             } catch {
                 guard let self, !Task.isCancelled else { return }
                 let failure = (error as? WayError) ?? .unavailable
                 self.honorImportState = .failed(failure)
                 self.showLinkToast(self.honorWaysPresented ? nil : HonorImportCopy.line(for: .failed(failure)))
+                self.importTask = nil
             }
         }
     }
@@ -225,6 +236,9 @@ class MainCoordinator: ObservableObject {
     func gather(_ way: Way) {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            // A dismiss or an item swap that lands before this hop must not
+            // install a sink for a Way that is no longer showing.
+            guard self.honorOverviewWay?.id == way.id else { return }
             guard case .share = way.source else { self.honorImportState = .ready; return }
             let downloader = WayMediaDownloader.shared
             downloader.download(way)

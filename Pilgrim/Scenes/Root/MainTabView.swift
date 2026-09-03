@@ -86,8 +86,21 @@ struct MainTabView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .pilgrimOpenWay)) { note in
             guard let id = note.userInfo?["shareId"] as? String else { return }
+            // Consumed here too so a warm-launch link (this view already
+            // mounted) doesn't sit in `pendingShareId` for a later onAppear
+            // to replay a second time.
+            PilgrimApp.pendingShareId = nil
             selectedTab = .path
             coordinator.openWay(shareId: id)
+        }
+        .onAppear {
+            // A link tapped on a cold launch posted before this view existed
+            // to receive it (see `PilgrimApp.route`) — claim it exactly once.
+            if let id = PilgrimApp.pendingShareId {
+                PilgrimApp.pendingShareId = nil
+                selectedTab = .path
+                coordinator.openWay(shareId: id)
+            }
         }
         .alert("Save Failed", isPresented: $coordinator.showSaveError) {
             Button("Dismiss") {

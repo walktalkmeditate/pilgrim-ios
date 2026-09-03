@@ -190,9 +190,15 @@ struct HonorOverviewView: View {
         .background(Color.parchment)
     }
 
+    /// `.fetching` too, not only `.gathering`: a link tapped for a different
+    /// Way while this overview is up can still swap the sheet out from under
+    /// a Begin tap, so Begin stays disabled for the whole window a fetch or a
+    /// download could still land.
     private var isGathering: Bool {
-        if case .gathering = importState { return true }
-        return false
+        switch importState {
+        case .gathering, .fetching: return true
+        default: return false
+        }
     }
 
     private var isTrouble: Bool {
@@ -213,9 +219,16 @@ struct HonorOverviewView: View {
                 .foregroundColor(isTrouble ? .rust : .fog)
         }
         if case .mediaMissing = importState {
-            HStack(spacing: Constants.UI.Padding.normal) {
+            // Vertical, not the section's usual horizontal pairing: the
+            // second label is long enough to clip on an SE width at large
+            // accessibility type sizes if it has to share a row.
+            VStack(alignment: .leading, spacing: Constants.UI.Padding.xs) {
                 Button("try again", action: onRetryMedia)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 Button("walk without the missing voices", action: onWalkWithoutMissing)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .font(Constants.Typography.caption)
             .foregroundColor(.stone)

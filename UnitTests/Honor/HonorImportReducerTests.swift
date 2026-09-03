@@ -19,4 +19,16 @@ final class HonorImportReducerTests: XCTestCase {
         XCTAssertNotNil(HonorImportCopy.line(for: .failed(.notFound)))
         XCTAssertNil(HonorImportCopy.line(for: .ready))
     }
+
+    func testCopyGatheringRoundsToWholePercent() {
+        XCTAssertEqual(HonorImportCopy.line(for: .gathering(progress: 0.456)), "gathering their voices · 46%")
+    }
+
+    func testCopyMediaMissing() {
+        XCTAssertEqual(HonorImportCopy.line(for: .mediaMissing(["audio/2.m4a"])), "some voices didn't arrive")
+    }
+
+    func testCopyIdleIsSilent() {
+        XCTAssertNil(HonorImportCopy.line(for: .idle))
+    }
 }

@@ -23,11 +23,23 @@ struct WayImporter {
         id.range(of: "^[A-Za-z0-9_-]{10}$", options: .regularExpression) != nil
     }
 
+    /// The overview's toast promises a quick answer ("reaching for the
+    /// walk…") and expires at 5 s — `.shared`'s default multi-minute
+    /// timeouts would leave a hung request outliving both the copy and the
+    /// toast, so a share fetch gets its own short-lived, tightly-timed
+    /// session instead.
+    private static let defaultSession: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 15
+        config.timeoutIntervalForResource = 30
+        return URLSession(configuration: config)
+    }()
+
     let session: URLSession
     let store: WayStore
     let now: () -> Date
 
-    init(session: URLSession = .shared, store: WayStore = .shared, now: @escaping () -> Date = { Date() }) {
+    init(session: URLSession = WayImporter.defaultSession, store: WayStore = .shared, now: @escaping () -> Date = { Date() }) {
         self.session = session; self.store = store; self.now = now
     }
 
