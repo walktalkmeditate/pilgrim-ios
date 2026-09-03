@@ -41,10 +41,15 @@ class DemandBuffer<S: Subscriber> {
     ///
     /// - returns: The demand fulfilled by the bufferr
     func buffer(value: S.Input) -> Subscribers.Demand {
-        precondition(self.completion == nil,
-                     "How could a completed publisher sent values?! Beats me 🤷‍♂️")
         lock.lock()
         defer { lock.unlock() }
+
+        // Pilgrim patch (see Podfile post_install): `completion` used to be
+        // read here OUTSIDE the lock and trapped when non-nil. A relay
+        // cancelled on one thread while another is still delivering a value
+        // — ending a walk with a location sample in flight — races that
+        // read. A value that arrives after completion is dropped instead.
+        guard self.completion == nil else { return .none }
 
         switch demandState.requested {
         case .unlimited:
@@ -63,8 +68,11 @@ class DemandBuffer<S: Subscriber> {
     ///
     /// - parameter completion: Completion event
     func complete(completion: Subscribers.Completion<S.Failure>) {
-        precondition(self.completion == nil,
-                     "Completion have already occured, which is quite awkward 🥺")
+        lock.lock()
+        defer { lock.unlock() }
+
+        // Pilgrim patch: a second completion is ignored rather than trapped.
+        guard self.completion == nil else { return }
 
         self.completion = completion
         _ = flush()

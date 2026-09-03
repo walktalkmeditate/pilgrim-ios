@@ -36,6 +36,7 @@
 		11C747B0EAF53D9F444C6243 /* DataSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1066617851420CAB7B50442 /* DataSettingsView.swift */; };
 		126F1949D837CC878A1E6D21 /* HonorMomentTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BB0C825C8EFC112CA91645 /* HonorMomentTracker.swift */; };
 		12B4814A464F4B33A4DFDF5E /* ThreadIntentionSuggestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1177FF093DBC4775929CC150 /* ThreadIntentionSuggestionsTests.swift */; };
+		12C6CDFB56CC3A47937E2511 /* CombineExtDemandBufferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85218CAD2816EBF40EA0D48C /* CombineExtDemandBufferTests.swift */; };
 		12E3604D72CCECD3C8BC22D8 /* ArchivedWalkPrivacyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5594E7D807E64AEF97963F69 /* ArchivedWalkPrivacyTests.swift */; };
 		13F3292004EFCFD3572E44B9 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6DC51742E035602E624F1 /* AudioSessionCoordinator.swift */; };
 		141180E7BB8B17200B0BA8EE /* HonorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FBA0BA40BB22ADE0C73524C /* HonorEngine.swift */; };
@@ -1028,6 +1029,7 @@
 		83BD1C5A8539657B3A5EC6BD /* whisper-presence-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-4.aac"; sourceTree = "<group>"; };
 		841E96DB07AF435E7D911B50 /* WhisperManifestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperManifestService.swift; sourceTree = "<group>"; };
 		84222C86D32DD5651B365FE4 /* CollectiveRoute.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveRoute.swift; sourceTree = "<group>"; };
+		85218CAD2816EBF40EA0D48C /* CombineExtDemandBufferTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CombineExtDemandBufferTests.swift; sourceTree = "<group>"; };
 		8585A815173A295C2F468057 /* WhisperService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
 		86222C880AE25FA86DCC6C66 /* View+ListRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "View+ListRow.swift"; sourceTree = "<group>"; };
 		862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPromptVoices.swift; sourceTree = "<group>"; };
@@ -2156,6 +2158,7 @@
 				14E8AB91D2FEEE6CBBA235C6 /* CollectiveRouteBundledArtifactTests.swift */,
 				F5DA9377F2D838797758AC46 /* Honor */,
 				10DFF0205EDFD489A5BFC491 /* AudioPriorityQueueTests.swift */,
+				85218CAD2816EBF40EA0D48C /* CombineExtDemandBufferTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -3684,6 +3687,7 @@
 				441413024C1949B2E1B94DD6 /* WayMediaDownloaderTests.swift in Sources */,
 				B8AEBE27DE6EA2822E939ACE /* HonorLinkTests.swift in Sources */,
 				22392BA6A14C3C4F889E9864 /* HonorImportReducerTests.swift in Sources */,
+				12C6CDFB56CC3A47937E2511 /* CombineExtDemandBufferTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
