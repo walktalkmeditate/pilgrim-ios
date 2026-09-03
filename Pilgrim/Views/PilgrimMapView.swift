@@ -25,6 +25,11 @@ struct PilgrimMapView: UIViewRepresentable {
     /// PilgrimMapView+SeekFog.swift; the wisp in PilgrimMapView+SeekWisp.swift.
     var seekFog: SeekFogState?
     var seekPulse: SeekPulseVisual = .none
+    /// Honor-only inputs: the ghost line for the Way being honored and the
+    /// companion dot's current position. `nil` way means no honor path is
+    /// active. All rendering lives in PilgrimMapView+HonorWay.swift.
+    var honorWay: HonorWayState?
+    var companion: CLLocationCoordinate2D?
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     @Binding var isMeditating: Bool
@@ -69,7 +74,9 @@ struct PilgrimMapView: UIViewRepresentable {
         initialCamera: MapCameraSeed.Seed? = nil,
         fadesInOnStyleLoad: Bool = false,
         walkingColor: UIColor = .moss,
-        isMeditating: Binding<Bool> = .constant(false)
+        isMeditating: Binding<Bool> = .constant(false),
+        honorWay: HonorWayState? = nil,
+        companion: CLLocationCoordinate2D? = nil
     ) {
         self.isInteractive = isInteractive
         self.showsUserLocation = showsUserLocation
@@ -89,6 +96,8 @@ struct PilgrimMapView: UIViewRepresentable {
         self.initialCamera = initialCamera
         self.fadesInOnStyleLoad = fadesInOnStyleLoad
         self.walkingColor = walkingColor
+        self.honorWay = honorWay
+        self.companion = companion
     }
 
     func makeCoordinator() -> Coordinator {
@@ -144,6 +153,12 @@ struct PilgrimMapView: UIViewRepresentable {
         // and the Metal-backed map view for the rest of the session.
         mapView.mapboxMap.onStyleLoaded.observeNext { [weak coordinator = context.coordinator, weak mapView] _ in
             guard let coordinator, let mapView else { return }
+            // The honor layers go in before the wabi-sabi pass: that pass adds
+            // a terrain source, which flips `isStyleLoaded` back to false for
+            // the rest of this callback, and the overview has no later
+            // re-render to try again on.
+            coordinator.styleHasLoaded = true
+            Self.reinstallHonorWay(on: mapView, coordinator: coordinator)
             let mode: PilgrimMapStyle.Mode = coordinator.currentColorScheme == .dark ? .dark : .light
             PilgrimMapStyle.applyWabiSabiStyle(to: mapView.mapboxMap, mode: mode)
             if shouldFade, mapView.alpha < 1 {
@@ -195,6 +210,7 @@ struct PilgrimMapView: UIViewRepresentable {
             context.coordinator.currentColorScheme = colorScheme
             context.coordinator.routePlanner.reset()
             let newStyle: StyleURI = colorScheme == .dark ? .dark : .light
+            context.coordinator.styleHasLoaded = false
             mapView.mapboxMap.loadStyle(newStyle)
             return
         }
@@ -206,6 +222,7 @@ struct PilgrimMapView: UIViewRepresentable {
         }
         Self.applyAnnotations(pinAnnotations, activePhotoID: activePhotoID, on: mapView, coordinator: context.coordinator)
         Self.applySeekFog(seekFog, pulse: seekPulse, on: mapView, coordinator: context.coordinator)
+        Self.applyHonorWay(honorWay, companion: companion, on: mapView, coordinator: context.coordinator)
 
         if followsUserLocation {
             let padding = UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
@@ -224,17 +241,29 @@ struct PilgrimMapView: UIViewRepresentable {
             context.coordinator.lastBottomInset = bottomInset
 
             if let bounds = cameraBounds {
-                do {
-                    let camera = try mapView.mapboxMap.camera(
-                        for: [bounds.sw, bounds.ne],
-                        camera: CameraOptions(),
-                        coordinatesPadding: UIEdgeInsets(top: 40, left: 30, bottom: 40 + bottomInset, right: 30),
-                        maxZoom: nil,
-                        offset: nil
-                    )
-                    mapView.camera.ease(to: camera, duration: cameraDuration)
-                } catch {
-                    print("[PilgrimMapView] camera(for:bounds:) failed: \(error)")
+                // Only when the bounds actually change, or the inset moved
+                // them: `updateUIView` runs on every published tick behind
+                // the map (a gathering percentage, say), and easing again on
+                // each one yanks a pan the walker just made back to the fit.
+                // A first application always eases — `lastAppliedBounds`
+                // starts nil.
+                let changed = context.coordinator.lastAppliedBounds != bounds
+                    || context.coordinator.lastAppliedBoundsInset != bottomInset
+                if changed {
+                    context.coordinator.lastAppliedBounds = bounds
+                    context.coordinator.lastAppliedBoundsInset = bottomInset
+                    do {
+                        let camera = try mapView.mapboxMap.camera(
+                            for: [bounds.sw, bounds.ne],
+                            camera: CameraOptions(),
+                            coordinatesPadding: UIEdgeInsets(top: 40, left: 30, bottom: 40 + bottomInset, right: 30),
+                            maxZoom: nil,
+                            offset: nil
+                        )
+                        mapView.camera.ease(to: camera, duration: cameraDuration)
+                    } catch {
+                        print("[PilgrimMapView] camera(for:bounds:) failed: \(error)")
+                    }
                 }
             } else if let center = cameraCenter {
                 let camera: CameraOptions
@@ -278,7 +307,11 @@ struct PilgrimMapView: UIViewRepresentable {
     // Route-line rendering lives in PilgrimMapView+RouteSource.swift.
 
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], activePhotoID: String?, on mapView: MBMapView, coordinator: Coordinator) {
-        guard mapView.mapboxMap.isStyleLoaded else { return }
+        // Same reason as the honor gate: the wabi-sabi pass flips
+        // `isStyleLoaded` back to false inside the style-loaded callback, and a
+        // screen that never re-renders (the honor overview) would keep its
+        // pins pending forever.
+        guard coordinator.styleHasLoaded || mapView.mapboxMap.isStyleLoaded else { return }
 
         // Install (or refresh) the "photo image loaded" callback on
         // the photo marker loader. Each async PHImageManager result
@@ -396,6 +429,10 @@ struct PilgrimMapView: UIViewRepresentable {
                 // in `buildPoints`; the halo above still carries the hour's
                 // light, so the two-part reading survives the glyph swap.
                 continue
+            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
+                // Way moments render as faded PointAnnotations in `buildPoints`
+                // (via MapGlyph.wayMark) — no filled circle underneath.
+                continue
             }
             circles.append(circle)
         }
@@ -506,6 +543,12 @@ struct PilgrimMapView: UIViewRepresentable {
                 }
                 point.iconSize = 1.0
                 points.append(point)
+            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
+                // Branching on the specific way* kind, and the shared
+                // wayPoint() builder, both live in PilgrimMapView+HonorWay.swift
+                // — keeps this switch (and SwiftLint's cyclomatic-complexity
+                // count for it) from growing with every new moment kind.
+                points.append(wayAnnotationPoint(for: pin, coordinator: coordinator))
             default:
                 break
             }
@@ -576,6 +619,10 @@ struct PilgrimMapView: UIViewRepresentable {
         /// AF20 change detection. `nil` forces the next apply through.
         var lastAppliedAnnotations: [PilgrimAnnotation]?
         var lastAppliedActivePhotoID: String?
+        /// Last camera bounds actually eased to, with the inset they were fit
+        /// under. `nil` forces the first application through.
+        var lastAppliedBounds: MapCameraBounds?
+        var lastAppliedBoundsInset: CGFloat = 0
 
         /// Loads circular photo-marker images for photo pin
         /// annotations. Encapsulated in its own class so the
@@ -588,6 +635,14 @@ struct PilgrimMapView: UIViewRepresentable {
         /// Seek fog/ring bookkeeping — state and logic live in
         /// PilgrimMapView+SeekFog.swift; only the storage lives here.
         let seekFogRenderer = SeekFogRenderer()
+
+        /// Honor ghost line / companion bookkeeping — state and logic live in
+        /// PilgrimMapView+HonorWay.swift; only the storage lives here.
+        let honorWayRenderer = HonorWayRenderer()
+        /// Set by the style-loaded callback before any runtime styling runs.
+        /// `mapboxMap.isStyleLoaded` alone is not enough for honor: it reads
+        /// false again while the wabi-sabi terrain source is still fetching.
+        var styleHasLoaded = false
 
         fileprivate var isAppInBackground: Bool = false
         fileprivate var walkingColor: UIColor = .moss
@@ -672,6 +727,7 @@ struct PilgrimMapView: UIViewRepresentable {
             }
             if shouldRender && !wasRendering {
                 PilgrimMapView.flushDeferredSeekFog(on: mapView, coordinator: self)
+                PilgrimMapView.reinstallHonorWay(on: mapView, coordinator: self)
             }
         }
 
@@ -684,7 +740,7 @@ struct PilgrimMapView: UIViewRepresentable {
             var closest: (annotation: PilgrimAnnotation, distance: CLLocationDistance)?
             for pin in currentPinAnnotations {
                 switch pin.kind {
-                case .whisper, .cairn, .photo:
+                case .whisper, .cairn, .photo, .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
                     let pinLoc = CLLocation(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude)
                     let dist = tapLoc.distance(from: pinLoc)
                     if dist < 25, closest == nil || dist < closest!.distance {

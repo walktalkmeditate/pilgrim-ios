@@ -83,7 +83,7 @@ final class WalkShareInteractiveTests: XCTestCase {
 
     func testFlipKindTogglesOverride() {
         let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
-        vm.tourCandidates = [TourRecordingCandidate(id: 0, startTs: 1, endTs: 2, duration: 1, sizeBytes: 1, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil)]
+        vm.tourCandidates = [TourRecordingCandidate(id: 0, startTs: 1, endTs: 2, duration: 1, sizeBytes: 1, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil, lat: nil, lon: nil)]
         vm.flipKind(candidateID: 0)
         XCTAssertEqual(vm.tourCandidates[0].effectiveKind, .ambient)
         vm.flipKind(candidateID: 0)
@@ -93,8 +93,8 @@ final class WalkShareInteractiveTests: XCTestCase {
     // MARK: - Review finding #17: excluded recordings leave no trace
 
     func testExcludedRecordingLeavesNoTalkInterval() {
-        let keptCandidate = TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
-        let excludedCandidate = TourRecordingCandidate(id: 1, startTs: 2000, endTs: 2090, duration: 90, sizeBytes: 1_500_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil)
+        let keptCandidate = TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil, lat: nil, lon: nil)
+        let excludedCandidate = TourRecordingCandidate(id: 1, startTs: 2000, endTs: 2090, duration: 90, sizeBytes: 1_500_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil, lat: nil, lon: nil)
         // talkDuration must cover the kept candidate's 60s, or the round-2 active-duration clamp
         // (min(includedSum, walk.talkDuration)) would mask this test's actual target: exclusion filtering.
         let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk(talkDuration: 150))
@@ -116,7 +116,7 @@ final class WalkShareInteractiveTests: XCTestCase {
         let vm = WalkShareViewModel(walk: walk)
         // interactiveEnabled left false — classic share must ignore tourCandidates exclusions entirely.
         vm.tourCandidates = [rec1, rec2].enumerated().map { i, rec in
-            TourRecordingCandidate(id: i, startTs: Int(rec.startDate.timeIntervalSince1970), endTs: Int(rec.endDate.timeIntervalSince1970), duration: rec.duration, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil)
+            TourRecordingCandidate(id: i, startTs: Int(rec.startDate.timeIntervalSince1970), endTs: Int(rec.endDate.timeIntervalSince1970), duration: rec.duration, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil, lat: nil, lon: nil)
         }
         vm.toggleInclude(candidateID: 1)
         let payload = vm.testBuildPayload()
@@ -133,8 +133,8 @@ final class WalkShareInteractiveTests: XCTestCase {
         let vm = WalkShareViewModel(walk: walk)
         vm.interactiveEnabled = true
         vm.tourCandidates = [
-            TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil),
-            TourRecordingCandidate(id: 1, startTs: 2000, endTs: 2060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil)
+            TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil, lat: nil, lon: nil),
+            TourRecordingCandidate(id: 1, startTs: 2000, endTs: 2060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil, lat: nil, lon: nil)
         ]
         let payload = vm.testBuildPayload()
         XCTAssertEqual(payload.stats.talkDuration, 100, "the included candidates sum to 120 — must clamp to walk.talkDuration, same reason NewWalk clamps to activeDuration")
@@ -144,8 +144,8 @@ final class WalkShareInteractiveTests: XCTestCase {
 
     func testToggleIncludeSkipsUnavailableCandidates() {
         let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
-        let unavailable = TourRecordingCandidate(id: 0, startTs: 1, endTs: 2, duration: 1, sizeBytes: 0, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: false, kindOverride: nil, fileURL: nil, unavailableReason: "audio removed")
-        let available = TourRecordingCandidate(id: 1, startTs: 1, endTs: 2, duration: 1, sizeBytes: 100, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil)
+        let unavailable = TourRecordingCandidate(id: 0, startTs: 1, endTs: 2, duration: 1, sizeBytes: 0, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: false, kindOverride: nil, fileURL: nil, unavailableReason: "audio removed", lat: nil, lon: nil)
+        let available = TourRecordingCandidate(id: 1, startTs: 1, endTs: 2, duration: 1, sizeBytes: 100, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/1.m4a"), unavailableReason: nil, lat: nil, lon: nil)
         vm.tourCandidates = [unavailable, available]
 
         vm.toggleInclude(candidateID: 0)
@@ -161,7 +161,7 @@ final class WalkShareInteractiveTests: XCTestCase {
         // Guards the whole payload path, not just TourBuilder.tourItems: even an offerable, transcript-bearing candidate must never put the transcript's text — or the "transcription" key itself — on the wire.
         let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
         vm.tourCandidates = [
-            TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: "some real speech", wpm: 120, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
+            TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: "some real speech", wpm: 120, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil, lat: nil, lon: nil)
         ]
         vm.interactiveEnabled = true
         vm.prepareInteractive()
@@ -222,6 +222,55 @@ final class WalkShareInteractiveTests: XCTestCase {
         XCTAssertTrue(labels.contains("AtUpperBound"), "a waypoint exactly at the kept window's upper bound must be included — ClosedRange.contains is inclusive")
     }
 
+    func testInteractiveKeptWindowStripsTrimmedRecordingCoordinates() throws {
+        let route = longRoute(points: 20)
+        let doorstepRec = try makeRealRecording(startDate: route[0].timestamp, seconds: 30)
+        let midpointRec = try makeRealRecording(startDate: route[10].timestamp, seconds: 30)
+        let walk = WalkDataFactory.makeWalk(routeData: route, voiceRecordings: [doorstepRec, midpointRec])
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.prepareInteractive()
+
+        let recordings = vm.testBuildPayload().tour?.recordings ?? []
+        XCTAssertEqual(recordings.count, 2)
+        let doorstep = recordings.first { $0.startTs == Int(doorstepRec.startDate.timeIntervalSince1970) }
+        let midpoint = recordings.first { $0.startTs == Int(midpointRec.startDate.timeIntervalSince1970) }
+        XCTAssertNil(doorstep?.lat, "a voice spoken inside the trimmed doorstep zone must not carry the fix that names the doorstep")
+        XCTAssertNil(doorstep?.lon)
+        XCTAssertNotNil(midpoint?.lat, "a voice spoken inside the kept window keeps its coordinate")
+        XCTAssertNotNil(midpoint?.lon)
+    }
+
+    func testUntrimmedShareKeepsEveryRecordingCoordinate() throws {
+        let route = longRoute(points: 20)
+        let doorstepRec = try makeRealRecording(startDate: route[0].timestamp, seconds: 30)
+        let walk = WalkDataFactory.makeWalk(routeData: route, voiceRecordings: [doorstepRec])
+        let vm = WalkShareViewModel(walk: walk)
+        vm.interactiveEnabled = true
+        vm.trimEnabled = false
+        vm.prepareInteractive()
+
+        XCTAssertNotNil(vm.testBuildPayload().tour?.recordings.first?.lat, "with the trim off there is no kept window, so every coordinate rides along")
+    }
+
+    /// A candidate only reaches `tourItems` with a real file behind it, so
+    /// coordinate specs need one on disk rather than a fabricated path.
+    private func makeRealRecording(startDate: Date, seconds: Double) throws -> TempVoiceRecording {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let relativePath = "share-coord-\(UUID().uuidString).m4a"
+        let fileURL = docs.appendingPathComponent(relativePath)
+        try TestAudioFile.writeSilentAudioFile(to: fileURL, duration: 0.2)
+        addTeardownBlock { try? FileManager.default.removeItem(at: fileURL) }
+        return TempVoiceRecording(
+            uuid: nil,
+            startDate: startDate,
+            endDate: startDate.addingTimeInterval(seconds),
+            duration: seconds,
+            fileRelativePath: relativePath,
+            transcription: nil
+        )
+    }
+
     func testShortRouteTrimIsHonestAndLeavesWaypointsUnfiltered() {
         let route = longRoute(points: 4) // ~333m total — well under the 4x-150m trim threshold
         let early = TempV4.Waypoint(
@@ -269,7 +318,7 @@ final class WalkShareInteractiveTests: XCTestCase {
 
         let singularVM = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
         singularVM.tourCandidates = [
-            TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
+            TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil, lat: nil, lon: nil)
         ]
         XCTAssertTrue(singularVM.tourTotalsLabel.hasPrefix("1 recording ·"), "singular wording must not add a trailing s")
         XCTAssertFalse(singularVM.tourTotalsLabel.contains("1 recordings"))
@@ -294,7 +343,7 @@ final class WalkShareInteractiveTests: XCTestCase {
         let vm = WalkShareViewModel(walk: WalkDataFactory.makeWalk())
         vm.interactiveEnabled = true
         vm.tourCandidates = (0..<13).map { i in
-            TourRecordingCandidate(id: i, startTs: i, endTs: i + 1, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil)
+            TourRecordingCandidate(id: i, startTs: i, endTs: i + 1, duration: 60, sizeBytes: 1_000_000, transcription: nil, wpm: nil, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: nil, unavailableReason: nil, lat: nil, lon: nil)
         }
         XCTAssertNotNil(vm.tourValidationError)
         XCTAssertFalse(vm.canShare)
@@ -435,8 +484,8 @@ final class WalkShareInteractiveTests: XCTestCase {
         // The cached startTs (100) is absent from EVERY current recording — not just shifted position, but genuinely gone. Two recordings (not one) so this can't accidentally pass just because index 0 mismatches.
         let cached = [ShareService.FailedMediaItem(kind: "audio", n: 1, audioStartTs: 100, photoLocalID: nil, photoTs: nil)]
         let recordings = [
-            SharePayload.TourRecording(n: 1, startTs: 200, endTs: 260, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000),
-            SharePayload.TourRecording(n: 2, startTs: 300, endTs: 360, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000)
+            SharePayload.TourRecording(n: 1, startTs: 200, endTs: 260, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000, lat: nil, lon: nil),
+            SharePayload.TourRecording(n: 2, startTs: 300, endTs: 360, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000, lat: nil, lon: nil)
         ]
         let audioFiles = [URL(fileURLWithPath: "/tmp/audio1.m4a"), URL(fileURLWithPath: "/tmp/audio2.m4a")]
 
@@ -450,8 +499,8 @@ final class WalkShareInteractiveTests: XCTestCase {
         // The cached failure originally pointed at slot n=3, whose recording had startTs 500. Since then an earlier recording dropped out of the candidate set, so that SAME recording (still startTs 500) now sits at index 0 — an index-locked lookup (index 2) would miss it entirely.
         let cached = [ShareService.FailedMediaItem(kind: "audio", n: 3, audioStartTs: 500, photoLocalID: nil, photoTs: nil)]
         let recordings = [
-            SharePayload.TourRecording(n: 1, startTs: 500, endTs: 560, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000),
-            SharePayload.TourRecording(n: 2, startTs: 600, endTs: 660, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000)
+            SharePayload.TourRecording(n: 1, startTs: 500, endTs: 560, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000, lat: nil, lon: nil),
+            SharePayload.TourRecording(n: 2, startTs: 600, endTs: 660, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000, lat: nil, lon: nil)
         ]
         let audioFiles = [URL(fileURLWithPath: "/tmp/shifted-0.m4a"), URL(fileURLWithPath: "/tmp/shifted-1.m4a")]
 
@@ -464,7 +513,7 @@ final class WalkShareInteractiveTests: XCTestCase {
 
     func testResolveRetryItemsAudioMatchesWhenStartTsAgrees() {
         let cached = [ShareService.FailedMediaItem(kind: "audio", n: 1, audioStartTs: 100, photoLocalID: nil, photoTs: nil)]
-        let recordings = [SharePayload.TourRecording(n: 1, startTs: 100, endTs: 160, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000)]
+        let recordings = [SharePayload.TourRecording(n: 1, startTs: 100, endTs: 160, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000, lat: nil, lon: nil)]
         let fileURL = URL(fileURLWithPath: "/tmp/audio1.m4a")
 
         let (uploadable, remaining) = WalkShareViewModel.resolveRetryItems(cached: cached, currentRecordings: recordings, currentAudioFiles: [fileURL], currentPhotos: [])
@@ -478,8 +527,8 @@ final class WalkShareInteractiveTests: XCTestCase {
 
     func testExpectedFailureRecordsMatchIdentityMapping() {
         let recordings = [
-            SharePayload.TourRecording(n: 1, startTs: 100, endTs: 160, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000),
-            SharePayload.TourRecording(n: 2, startTs: 200, endTs: 260, duration: 60, kind: "ambient", transcription: nil, wpm: nil, sizeBytes: 2_000)
+            SharePayload.TourRecording(n: 1, startTs: 100, endTs: 160, duration: 60, kind: "spoken", transcription: nil, wpm: nil, sizeBytes: 1_000, lat: nil, lon: nil),
+            SharePayload.TourRecording(n: 2, startTs: 200, endTs: 260, duration: 60, kind: "ambient", transcription: nil, wpm: nil, sizeBytes: 2_000, lat: nil, lon: nil)
         ]
         let photos = [TourPhoto(meta: SharePayload.Photo(lat: 1, lon: 2, ts: 999, data: nil), jpegData: Data([0xAA]), sourceLocalIdentifier: "photo-1")]
 

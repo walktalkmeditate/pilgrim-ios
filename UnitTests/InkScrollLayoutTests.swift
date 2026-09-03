@@ -30,7 +30,9 @@ final class InkScrollLayoutTests: XCTestCase {
             weatherCondition: nil,
             isSeek: false,
             foundPlaces: 0,
-            threshold: nil
+            threshold: nil,
+            isHonor: false,
+            honorArrivals: 0
         )
     }
 

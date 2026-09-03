@@ -60,7 +60,8 @@ extension WalkSummaryView {
                     cameraZoom: $cameraZoom,
                     cameraBounds: cameraBounds,
                     cameraDuration: cameraDuration,
-                    walkingColor: walkTurning?.uiColor ?? .moss
+                    walkingColor: walkTurning?.uiColor ?? .moss,
+                    honorWay: cachedHonorWay
                 )
                 .frame(height: 320)
                 .mask(

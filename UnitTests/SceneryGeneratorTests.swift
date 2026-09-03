@@ -26,7 +26,9 @@ final class SceneryGeneratorTests: XCTestCase {
             weatherCondition: nil,
             isSeek: isSeek,
             foundPlaces: foundPlaces,
-            threshold: threshold
+            threshold: threshold,
+            isHonor: false,
+            honorArrivals: 0
         )
     }
 

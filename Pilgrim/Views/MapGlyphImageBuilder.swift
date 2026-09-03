@@ -5,13 +5,20 @@ enum MapGlyph {
     case whisper(tint: UIColor)
     case cairn(tier: CairnTier)
     case seekClearing(tint: UIColor)
+    /// A moment of a Way being honored: an SF Symbol rendered faded, so it
+    /// reads next to a live pin as someone else's mark, not the walker's own.
+    case wayMark(symbol: String, tint: UIColor)
 }
 
 /// Rasterizes the catalog's vector glyph art into Mapbox-ready
 /// `PointAnnotation` images. Mapbox stores raster sprites, so everything
-/// is drawn at display scale (R11) and cached — the key space is small
-/// and fixed: 8 whisper mood colors, 7 cairn tiers, and the 6 daypart
-/// hexes a clearing can be found under.
+/// is drawn at display scale (R11) and cached. Most of the key space is
+/// small and fixed — 8 whisper mood colors, 7 cairn tiers, the 6 daypart
+/// hexes a clearing can be found under — but `wayMark` isn't: its symbol
+/// name comes from a shared Way's waypoint icons, not a closed set. The
+/// cache still never needs to evict, because entries are keyed one per
+/// distinct symbol+tint actually seen on screen, which tracks the moments
+/// in the Ways currently loaded rather than growing per frame or gesture.
 ///
 /// Cache keys deliberately match the formats the annotation managers
 /// already use as image names (`whisper-RRGGBB`, `cairn-<tier>`), so the
@@ -30,6 +37,12 @@ enum MapGlyphImageBuilder {
     /// same discipline as PilgrimMapView.symbolImageCache.
     private static var cache: [String: UIImage] = [:]
 
+    /// Main-thread only, like `cache` above. `cacheKey(for:)` calls
+    /// `resolvedWayMarkSymbol` on every request, independent of whether the
+    /// rendered image itself is already cached; this memoizes that lookup
+    /// so a repeated wayMark symbol skips `UIImage(systemName:)` too.
+    private static var resolvedSymbols: [String: String] = [:]
+
     static func image(for glyph: MapGlyph, size: CGFloat) -> UIImage? {
         let key = "\(cacheKey(for: glyph))-\(size)"
         if let cached = cache[key] {
@@ -43,6 +56,8 @@ enum MapGlyphImageBuilder {
             rendered = self.rendered(assetNamed: tier.glyphAssetName, tint: nil, size: size)
         case .seekClearing(let tint):
             rendered = self.rendered(assetNamed: seekClearingAssetName, tint: tint, size: size)
+        case .wayMark(let symbol, let tint):
+            rendered = self.renderedWayMark(symbol: symbol, tint: tint, size: size)
         }
         if let rendered {
             cache[key] = rendered
@@ -58,7 +73,29 @@ enum MapGlyphImageBuilder {
             return "cairn-\(tier.rawValue)"
         case .seekClearing(let tint):
             return "clearing-\(rgbKey(for: tint))"
+        case .wayMark(let symbol, let tint):
+            // Keyed on what actually renders, not on what was asked for: a
+            // shared Way's icon is unvalidated, so every unknown name draws
+            // the same "mappin" and must share one entry rather than mint a
+            // new one per bad name.
+            return "way-\(resolvedWayMarkSymbol(symbol))-\(rgbKey(for: tint.resolvedColor(with: lightTraits)))"
         }
+    }
+
+    /// Way marks are rasterized against the light palette in both
+    /// appearances: on the dark map style a light parchment disc still reads
+    /// as a pin, whereas the dark parchment is the ground's own color. It
+    /// also keeps the cache key stable across an appearance flip.
+    private static let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+
+    /// An SF Symbol name a shared Way supplied is not validated at write
+    /// time; anything the system doesn't know falls back to "mappin" rather
+    /// than rendering an invisible but still-tappable pin.
+    private static func resolvedWayMarkSymbol(_ symbol: String) -> String {
+        if let resolved = resolvedSymbols[symbol] { return resolved }
+        let resolved = UIImage(systemName: symbol) == nil ? "mappin" : symbol
+        resolvedSymbols[symbol] = resolved
+        return resolved
     }
 
     /// Tints are fixed, opaque literals — `WhisperCategory.borderColor` for
@@ -90,9 +127,35 @@ enum MapGlyphImageBuilder {
         }
     }
 
+    /// A faded SF Symbol over a parchment disc — way pins read as someone
+    /// else's mark, not the walker's own, next to a live pin of the same
+    /// shape. The symbol renders at roughly half the disc's point size and
+    /// is centered rather than stretched to fill the square, so wide glyphs
+    /// (e.g. "waveform") stay inside the disc instead of overrunning it.
+    private static func renderedWayMark(symbol: String, tint: UIColor, size: CGFloat) -> UIImage? {
+        let resolvedSymbol = resolvedWayMarkSymbol(symbol)
+        let config = UIImage.SymbolConfiguration(pointSize: size * 0.55, weight: .medium)
+        guard let symbolImage = UIImage(systemName: resolvedSymbol, withConfiguration: config)?
+            .withTintColor(tint.resolvedColor(with: lightTraits), renderingMode: .alwaysOriginal) else { return nil }
+        let target = CGSize(width: size, height: size)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = false
+        return UIGraphicsImageRenderer(size: target, format: format).image { _ in
+            UIColor.parchment.resolvedColor(with: lightTraits).withAlphaComponent(0.9).setFill()
+            UIBezierPath(ovalIn: CGRect(origin: .zero, size: target)).fill()
+            let origin = CGPoint(
+                x: (target.width - symbolImage.size.width) / 2,
+                y: (target.height - symbolImage.size.height) / 2
+            )
+            symbolImage.draw(at: origin, blendMode: .normal, alpha: 0.55)
+        }
+    }
+
     #if DEBUG
     static func _test_clearCache() {
         cache.removeAll()
+        resolvedSymbols.removeAll()
     }
     #endif
 }

@@ -31,8 +31,8 @@ final class SharePayloadTourTests: XCTestCase {
     func testTourEncodesSnakeCaseWithOrderedRecordings() throws {
         let tour = SharePayload.Tour(
             recordings: [
-                .init(n: 1, startTs: 1100, endTs: 1400, duration: 300, kind: "spoken", transcription: nil, wpm: 120, sizeBytes: 2_400_000),
-                .init(n: 2, startTs: 1450, endTs: 1500, duration: 50, kind: "ambient", transcription: nil, wpm: nil, sizeBytes: 800_000),
+                .init(n: 1, startTs: 1100, endTs: 1400, duration: 300, kind: "spoken", transcription: nil, wpm: 120, sizeBytes: 2_400_000, lat: 35.68, lon: -105.94),
+                .init(n: 2, startTs: 1450, endTs: 1500, duration: 50, kind: "ambient", transcription: nil, wpm: nil, sizeBytes: 800_000, lat: nil, lon: nil),
             ],
             trimM: 150,
             soundscapeUrl: "https://cdn.pilgrimapp.org/audio/soundscape/stream.m4a"
@@ -48,7 +48,13 @@ final class SharePayloadTourTests: XCTestCase {
         XCTAssertEqual(recs[0]["end_ts"] as? Int, 1400)
         XCTAssertEqual(recs[0]["kind"] as? String, "spoken")
         XCTAssertEqual(recs[0]["size_bytes"] as? Int, 2_400_000)
+        XCTAssertEqual(recs[0]["lat"] as? Double, 35.68)
+        XCTAssertEqual(recs[0]["lon"] as? Double, -105.94)
         XCTAssertEqual(recs[1]["wpm"] as? Double, nil)
+        // A recording from a routeless walk must not ship "lat": null — the
+        // worker treats the key's presence, not its value, as a place claim.
+        XCTAssertNil(recs[1]["lat"])
+        XCTAssertNil(recs[1]["lon"])
     }
 
     func testPausesEncodeSnakeCase() throws {

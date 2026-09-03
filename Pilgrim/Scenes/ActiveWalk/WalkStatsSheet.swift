@@ -45,6 +45,9 @@ struct WalkStatsSheet: View {
 
     @Binding var state: SheetState
     @ObservedObject var viewModel: ActiveWalkViewModel
+    /// The listening chip's clock. The view model doesn't mirror the player's
+    /// elapsed seconds, so the chip observes the player itself.
+    @ObservedObject private var voicePlayer = WayVoicePlayer.shared
     let onStartMeditation: () -> Void
     let onRequestEndWalk: () -> Void
     /// Increment from the parent to trigger a one-time "wink" hint
@@ -324,7 +327,37 @@ struct WalkStatsSheet: View {
     /// ensures nothing overflows even at the largest supported text size.
     private var minimizedContent: some View {
         VStack(spacing: isLargeText ? 4 : 6) {
-            if let intention = viewModel.intention, !intention.isEmpty {
+            // A voice from the Way takes the mantra's place while it plays:
+            // it is the thing the walker may want to pause or let go of. It
+            // sits outside the glance row's single VoiceOver element so its
+            // pause and skip buttons stay reachable.
+            if let voice = viewModel.activeVoice {
+                HonorListeningChip(
+                    elapsed: voicePlayer.elapsedSeconds,
+                    isPaused: viewModel.isVoicePaused,
+                    onPauseResume: { viewModel.togglePlayback(of: voice) },
+                    onSkip: { viewModel.skipVoice() }
+                )
+            }
+
+            glanceRow
+        }
+        .padding(.horizontal, Constants.UI.Padding.big)
+        .padding(.top, Constants.UI.Padding.small)
+        .padding(.bottom, Constants.UI.Padding.small)
+        .frame(maxWidth: .infinity)
+        // The wander tap-to-expand target: on the padded container, not the
+        // inner glance row, so the full minimized bar — including its
+        // padding — is tappable, matching the pre-honor target.
+        .contentShape(Rectangle())
+        .onTapGesture {
+            state = .expanded
+        }
+    }
+
+    private var glanceRow: some View {
+        VStack(spacing: isLargeText ? 4 : 6) {
+            if viewModel.activeVoice == nil, let intention = viewModel.intention, !intention.isEmpty {
                 Text(intention)
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog.opacity(0.7))
@@ -338,17 +371,10 @@ struct WalkStatsSheet: View {
                 Spacer(minLength: Constants.UI.Padding.normal)
                 statColumn(value: viewModel.distance, label: "Distance")
                 Spacer(minLength: Constants.UI.Padding.normal)
-                statColumn(value: viewModel.steps, label: "Steps")
+                thirdStat
             }
         }
-        .padding(.horizontal, Constants.UI.Padding.big)
-        .padding(.top, Constants.UI.Padding.small)
-        .padding(.bottom, Constants.UI.Padding.small)
         .frame(maxWidth: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            state = .expanded
-        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Walk stats")
         .accessibilityValue(minimizedAccessibilityValue)
@@ -376,11 +402,46 @@ struct WalkStatsSheet: View {
         }
     }
 
+    /// The bar's third glance stat: steps, except while honoring, where the
+    /// walker's question is how much of the Way is left. The soft tap borrows
+    /// the slot for its caption — with the preference off, nothing on screen
+    /// ever comments on deviation.
+    @ViewBuilder
+    private var thirdStat: some View {
+        if let caption = viewModel.softTapCaption {
+            Text(caption)
+                .font(Constants.Typography.caption)
+                .foregroundColor(.fog)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+        } else if viewModel.mode == .honor {
+            statColumn(value: distanceRemaining, label: "Remaining")
+        } else {
+            statColumn(value: viewModel.steps, label: "Steps")
+        }
+    }
+
+    /// Republished by the view model's one-second duration tick rather than
+    /// observed off the engine — a metre-by-metre countdown is not what this
+    /// bar is for.
+    private var distanceRemaining: String {
+        guard let meters = viewModel.honorEngine?.distanceRemainingMeters else { return "--" }
+        return StatsHelper.string(for: meters, unit: UnitLength.meters, type: .distance)
+    }
+
     /// VoiceOver value for the minimized bar. Prepends the intention so
     /// walkers are reminded of their mantra when they check the stats,
     /// then reads the three glance stats.
     private var minimizedAccessibilityValue: String {
-        let stats = "\(viewModel.duration), \(viewModel.distance), \(viewModel.steps) steps"
+        let third: String
+        if let caption = viewModel.softTapCaption {
+            third = caption
+        } else if viewModel.mode == .honor {
+            third = "\(distanceRemaining) remaining"
+        } else {
+            third = "\(viewModel.steps) steps"
+        }
+        let stats = "\(viewModel.duration), \(viewModel.distance), \(third)"
         if let intention = viewModel.intention, !intention.isEmpty {
             return "\(intention). \(stats)"
         }

@@ -490,24 +490,28 @@ enum PilgrimPackageConverter {
 
     // MARK: - Helpers
 
-    private static func workoutEventTypeString(_ type: WalkEvent.EventType) -> String {
+    static func workoutEventTypeString(_ type: WalkEvent.EventType) -> String {
         switch type {
         case .lap: return "lap"
         case .marker: return "marker"
         case .segment: return "segment"
         case .seekMode: return "seekMode"
         case .seekArrival: return "seekArrival"
+        case .honorMode: return "honorMode"
+        case .honorArrival: return "honorArrival"
         case .unknown: return "unknown"
         }
     }
 
-    private static func walkEventType(from string: String) -> WalkEvent.EventType {
+    static func walkEventType(from string: String) -> WalkEvent.EventType {
         switch string {
         case "lap": return .lap
         case "marker": return .marker
         case "segment": return .segment
         case "seekMode": return .seekMode
         case "seekArrival": return .seekArrival
+        case "honorMode": return .honorMode
+        case "honorArrival": return .honorArrival
         default: return .unknown
         }
     }

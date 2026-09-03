@@ -13,6 +13,8 @@ enum SealRenderer {
         let displayDistance: String
         let unitLabel: String
         let routePoints: [(lat: Double, lon: Double)]?
+        /// The honored Way, drawn fainter beneath the walk's own line.
+        let wayPoints: [(lat: Double, lon: Double)]?
         let altitudes: [Double]?
         let weatherCondition: String?
         let weatherSeed: UInt64
@@ -110,14 +112,18 @@ enum SealRenderer {
 
     private static func drawGhostRoute(ctx: CGContext, input: Input, size: CGFloat) {
         guard let points = input.routePoints, points.count >= 2 else { return }
+        let way = (input.wayPoints?.count ?? 0) >= 2 ? input.wayPoints : nil
 
         let geo = input.geometry
         let cx = geo.center.x
         let cy = geo.center.y
         let fitRadius = geo.outerRadius * 0.7
 
-        let lats = points.map { $0.lat }
-        let lons = points.map { $0.lon }
+        // One fit for both lines: the drift between the Way and the walk that
+        // honored it is the whole story, and separate fits would erase it.
+        let fitted = points + (way ?? [])
+        let lats = fitted.map { $0.lat }
+        let lons = fitted.map { $0.lon }
         guard let minLat = lats.min(), let maxLat = lats.max(),
               let minLon = lons.min(), let maxLon = lons.max() else { return }
 
@@ -130,23 +136,30 @@ enum SealRenderer {
 
         let scale = fitRadius * 2 / CGFloat(span)
 
+        func stroke(_ line: [(lat: Double, lon: Double)], alpha: CGFloat) {
+            ctx.setAlpha(alpha)
+            for (i, point) in line.enumerated() {
+                let x = cx + CGFloat(point.lon - midLon) * scale
+                let y = cy - CGFloat(point.lat - midLat) * scale
+                if i == 0 {
+                    ctx.move(to: CGPoint(x: x, y: y))
+                } else {
+                    ctx.addLine(to: CGPoint(x: x, y: y))
+                }
+            }
+            ctx.strokePath()
+        }
+
         ctx.saveGState()
-        ctx.setAlpha(0.055)
         ctx.setStrokeColor(input.color.cgColor)
         ctx.setLineWidth(1.0)
         ctx.setLineCap(.round)
         ctx.setLineJoin(.round)
 
-        for (i, point) in points.enumerated() {
-            let x = cx + CGFloat(point.lon - midLon) * scale
-            let y = cy - CGFloat(point.lat - midLat) * scale
-            if i == 0 {
-                ctx.move(to: CGPoint(x: x, y: y))
-            } else {
-                ctx.addLine(to: CGPoint(x: x, y: y))
-            }
+        if let way {
+            stroke(way, alpha: 0.03)
         }
-        ctx.strokePath()
+        stroke(points, alpha: 0.055)
         ctx.restoreGState()
     }
 

@@ -20,7 +20,11 @@ struct MainTabView: View {
         return TabView(selection: $selectedTab) {
             Tab("Path", systemImage: "figure.walk", value: .path) {
                 WalkStartView(onStartWalk: { mode in
-                    coordinator.startWalk(mode: mode)
+                    if mode == .honor {
+                        coordinator.chooseWay()
+                    } else {
+                        coordinator.startWalk(mode: mode)
+                    }
                 })
             }
             .accessibilityIdentifier("tab_path")
@@ -41,12 +45,65 @@ struct MainTabView: View {
         }) { vm in
             ActiveWalkView(viewModel: vm, onCancel: { coordinator.cancelWalk() })
                 .constellationDecorated(nebulae: false)
+                // A cover sits above the tab view's own overlay, so the
+                // "finish this walk first" answer to a link tapped mid-walk
+                // has to be repeated here to be seen at all.
+                .overlay(alignment: .top) {
+                    if let toast = coordinator.pendingLinkToast {
+                        HonorLinkToast(text: toast)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                }
+                .animation(.easeInOut, value: coordinator.pendingLinkToast)
         }
         .sheet(item: $coordinator.completedSnapshot, onDismiss: {
             coordinator.handleSummaryDismiss()
         }) { snapshot in
-            WalkSummaryView(walk: snapshot)
+            WalkSummaryView(walk: snapshot, onWalkAgain: { coordinator.walkAgain($0) })
                 .constellationDecorated(nebulae: false)
+        }
+        .sheet(isPresented: $coordinator.honorWaysPresented, onDismiss: coordinator.promotePendingHonorWay) {
+            HonorWaysSheet(
+                ownWalks: coordinator.homeViewModel.walks,
+                importState: coordinator.honorImportState,
+                onChoose: { coordinator.openOverview(for: $0) },
+                onPaste: { text in
+                    if let id = HonorLink.parse(text: text) { coordinator.openWay(shareId: id) }
+                }
+            )
+        }
+        .sheet(item: $coordinator.honorOverviewWay, onDismiss: coordinator.handleOverviewDismiss) { way in
+            NavigationStack {
+                HonorOverviewView(
+                    way: way,
+                    importState: coordinator.honorImportState,
+                    onBegin: { coordinator.startHonor(way: way) },
+                    onClose: { coordinator.honorOverviewWay = nil },
+                    onRetryMedia: { coordinator.retryMedia(for: way) },
+                    onWalkWithoutMissing: coordinator.walkWithoutMissingVoices
+                )
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .pilgrimOpenWay)) { note in
+            guard let id = note.userInfo?["shareId"] as? String else { return }
+            // Consumed here too so a warm-launch link (this view already
+            // mounted) doesn't sit in `pendingShareId` for a later onAppear
+            // to replay a second time.
+            PilgrimApp.pendingShareId = nil
+            // Mid-walk `openWay` refuses and says so with a toast, so the tab
+            // must not switch out from under the walker for a link that is
+            // about to go nowhere.
+            if coordinator.activeWalkViewModel == nil { selectedTab = .path }
+            coordinator.openWay(shareId: id)
+        }
+        .onAppear {
+            // A link tapped on a cold launch posted before this view existed
+            // to receive it (see `PilgrimApp.route`) — claim it exactly once.
+            if let id = PilgrimApp.pendingShareId {
+                PilgrimApp.pendingShareId = nil
+                if coordinator.activeWalkViewModel == nil { selectedTab = .path }
+                coordinator.openWay(shareId: id)
+            }
         }
         .alert("Save Failed", isPresented: $coordinator.showSaveError) {
             Button("Dismiss") {
@@ -88,11 +145,18 @@ struct MainTabView: View {
             ShareSheet(items: [url])
         }
         .overlay(alignment: .top) {
-            if let date = coordinator.recoveredWalkDate {
-                RecoveryBanner(date: date)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+            VStack(spacing: Constants.UI.Padding.xs) {
+                if let date = coordinator.recoveredWalkDate {
+                    RecoveryBanner(date: date)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                if let toast = coordinator.pendingLinkToast {
+                    HonorLinkToast(text: toast)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
         }
         .animation(.easeInOut, value: coordinator.recoveredWalkDate != nil)
+        .animation(.easeInOut, value: coordinator.pendingLinkToast)
     }
 }

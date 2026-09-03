@@ -186,6 +186,17 @@ struct PilgrimWidgetLiveActivity: Widget {
             if let seek = context.state.seek {
                 seekGlanceBar(seek, imperial: context.attributes.isImperial)
             }
+
+            if let honor = context.state.honor {
+                HStack(spacing: 6) {
+                    Image(systemName: "signpost.right").font(.caption).foregroundColor(Self.stone)
+                    Text(honor.isArrived ? "their way, walked"
+                         : honor.isOnWay ? honorDistanceText(bucket: honor.distanceRemainingBucketMeters, imperial: context.attributes.isImperial)
+                         : "off the way")
+                        .font(.system(.caption, design: .serif)).foregroundColor(Self.ink)
+                    Spacer()
+                }
+            }
         }
         .padding()
         .background(Self.parchment)
@@ -239,6 +250,17 @@ struct PilgrimWidgetLiveActivity: Widget {
             return String(format: "~%.1f km", Double(bucket) / 1000)
         }
         return "~\(bucket) m"
+    }
+
+    /// The seek row reads a bucket as a bare distance, where the two end
+    /// buckets are words ("close") or already carry a suffix ("2 km +").
+    /// The honor row appends "to go", which turns those into "close to go"
+    /// and "2 km + to go". Only the middle buckets compose — the ends get
+    /// their own phrasing.
+    private func honorDistanceText(bucket: Int, imperial: Bool) -> String {
+        if bucket < 100 { return "almost there" }
+        if bucket >= 2000 { return imperial ? "1.2 mi+ to go" : "2 km+ to go" }
+        return "\(seekDistanceText(bucket: bucket, imperial: imperial)) to go"
     }
 
     @ViewBuilder

@@ -1,12 +1,18 @@
 import SwiftUI
 
+/// Which mode's miniature a row wears.
+enum WalkModeGlyph {
+    case wander, honor, seek
+}
+
 /// Static miniature of the path screen's mode language, for compact rows
-/// (the ink-scroll quick view). Wander: the grounded pair. Seek: one print
-/// beside a trail of dots dissolving upward into the unknown. No animation —
-/// these are glances, not scenes; the drifting versions live on the path
-/// screen only.
+/// (the ink-scroll quick view). Wander: the grounded pair. Honor: one print
+/// beside the staff of the walker whose Way is being followed. Seek: one
+/// print beside a trail of dots dissolving upward into the unknown. No
+/// animation — these are glances, not scenes; the drifting versions live on
+/// the path screen only.
 struct WalkModeFootprints: View {
-    let isSeek: Bool
+    let mode: WalkModeGlyph
     let color: Color
 
     var body: some View {
@@ -16,11 +22,16 @@ struct WalkModeFootprints: View {
                 .frame(width: 10, height: 16)
                 .scaleEffect(x: -1)
                 .rotationEffect(.degrees(-12))
-            if isSeek {
+            switch mode {
+            case .seek:
                 dissolvingDots
                     .frame(width: 10, height: 18)
                     .rotationEffect(.degrees(12))
-            } else {
+            case .honor:
+                StaffGlyph()
+                    .stroke(color, lineWidth: 1)
+                    .frame(width: 8, height: 14)
+            case .wander:
                 FootprintShape()
                     .fill(color.opacity(0.75))
                     .frame(width: 10, height: 16)

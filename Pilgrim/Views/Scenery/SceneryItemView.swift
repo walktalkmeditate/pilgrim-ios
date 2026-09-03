@@ -33,6 +33,7 @@ struct SceneryItemView: View {
         case .torii: toriiView
         case .cairn: cairnView
         case .drift: driftView
+        case .staffs: staffsView
         }
     }
 
@@ -171,6 +172,24 @@ struct SceneryItemView: View {
                 .fill(Color(red: 0.77, green: 0.58, blue: 0.42).opacity(0.10))
                 .frame(width: size * 1.5, height: size * 1.5)
                 .blur(radius: 7)
+        }
+    }
+
+    // MARK: - Staffs — two leaning together, raised by a walk that honored a
+    // Way to its end. Static, like the cairn: dōgyō ninin stands, it does
+    // not sway.
+
+    private var staffsView: some View {
+        ZStack {
+            StaffsShape()
+                .fill(tintColor.opacity(0.1))
+                .frame(width: size * 1.06, height: size * 1.06)
+                .offset(x: 1.5, y: 1.5)
+                .blur(radius: 1.2)
+
+            StaffsShape()
+                .fill(tintColor.opacity(0.35))
+                .frame(width: size, height: size)
         }
     }
 

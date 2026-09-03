@@ -7,11 +7,14 @@ struct GoshuinView: View {
     /// One waypoint-fault pass for the whole book, computed at
     /// construction; seal cells read arrival counts by uuid.
     private let arrivalCounts: [UUID: Int]
+    private let honorArrivalCounts: [UUID: Int]
 
     init(walks: [Walk], onSelectWalk: @escaping (UUID) -> Void) {
         self.walks = walks
         self.onSelectWalk = onSelectWalk
-        self.arrivalCounts = GoshuinMilestones.arrivalCounts(for: walks)
+        let counts = GoshuinMilestones.arrivalAndHonorCounts(for: walks)
+        self.arrivalCounts = counts.arrivals
+        self.honorArrivalCounts = counts.honorArrivals
     }
 
     @State private var activeFilter: WalkFavicon?
@@ -105,6 +108,7 @@ struct GoshuinView: View {
                             totalWalkCount: walks.count,
                             globalStartIndex: pageIndex * 6,
                             arrivalCounts: arrivalCounts,
+                            honorArrivalCounts: honorArrivalCounts,
                             onSelectWalk: { uuid in
                                 dismiss()
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

@@ -109,9 +109,13 @@ struct SharePayload: Encodable {
         let transcription: String?
         let wpm: Double?
         let sizeBytes: Int
+        /// The route sample nearest the recording's start — nil when the walk
+        /// carried no route (e.g. an own-walk Way with GPS off).
+        let lat: Double?
+        let lon: Double?
 
         enum CodingKeys: String, CodingKey {
-            case n, duration, kind, transcription, wpm
+            case n, duration, kind, transcription, wpm, lat, lon
             case startTs = "start_ts"
             case endTs = "end_ts"
             case sizeBytes = "size_bytes"

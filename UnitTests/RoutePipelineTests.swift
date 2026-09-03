@@ -63,8 +63,13 @@ final class RoutePipelineTests: XCTestCase {
         let sampleCount = 10_000
         feed(vm, indices: 0..<sampleCount, manager: manager)
 
+        // Both channels must drain before `cancel()`: the currentLocation
+        // chain takes two hops on the shared background queue and lands after
+        // the route channel, and CombineExt's DemandBuffer traps when a relay
+        // is cancelled while a delivery is still in flight.
+        let lastTimestamp = Self.baseDate.addingTimeInterval(Double(sampleCount - 1))
         waitUntil(message: "all samples must reach the view model") {
-            vm.routeCoordinates.count == sampleCount
+            vm.routeCoordinates.count == sampleCount && vm.currentLocation?.timestamp == lastTimestamp
         }
 
         XCTAssertEqual(fullRebuilds, 0, "steady-state growth must never re-map the whole route")

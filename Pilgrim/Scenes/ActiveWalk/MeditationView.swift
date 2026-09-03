@@ -4,6 +4,9 @@ import Combine
 struct MeditationView: View {
 
     let soundManagement: SoundManagement
+    /// How long the walker being honored sat here. A caption under the
+    /// elapsed time, never a countdown: this sitting has its own length.
+    let suggestedMinutes: Int?
     let onDismiss: (Date) -> Void
 
     @State private var phase: BreathPhase = .inhale
@@ -80,6 +83,11 @@ struct MeditationView: View {
 
                     sessionTimer
                         .padding(.top, 8)
+
+                    if let suggestedMinutes {
+                        theirSittingCaption(minutes: suggestedMinutes)
+                            .padding(.top, 6)
+                    }
 
                     soundscapeLabel
                         .padding(.top, 8)
@@ -387,6 +395,14 @@ struct MeditationView: View {
             return AudioManifestService.shared.asset(byId: id)?.displayName
         }
         return nil
+    }
+
+    private func theirSittingCaption(minutes: Int) -> some View {
+        let text = "they sat here \(minutes) \(minutes == 1 ? "minute" : "minutes")"
+        return Text(text)
+            .font(Constants.Typography.caption)
+            .foregroundColor(Color.fog.opacity(0.4))
+            .accessibilityLabel(text)
     }
 
     private var sessionTimer: some View {

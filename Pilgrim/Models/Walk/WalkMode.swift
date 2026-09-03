@@ -1,12 +1,12 @@
 import Foundation
 
 enum WalkMode: String, CaseIterable {
-    case wander, together, seek
+    case wander, honor, seek
 
     var subtitle: String {
         switch self {
         case .wander: return "walk · talk · meditate"
-        case .together: return "walk with others nearby"
+        case .honor: return "walk in their steps"
         case .seek: return "follow the unknown"
         }
     }
@@ -14,19 +14,17 @@ enum WalkMode: String, CaseIterable {
     var buttonLabel: String {
         switch self {
         case .wander: return "Wander"
-        case .together: return "Walk Together"
+        case .honor: return "Choose a way"
         case .seek: return "Seek"
         }
     }
 
-    var isAvailable: Bool {
-        self == .wander || self == .seek
-    }
+    var isAvailable: Bool { true }
 
     var quotes: [String] {
         switch self {
         case .wander: return (1...6).map { LS["Welcome.Quote.\($0)"] }
-        case .together: return (1...3).map { LS["Together.Quote.\($0)"] }
+        case .honor: return (1...3).map { LS["Honor.Quote.\($0)"] }
         case .seek: return (1...3).map { LS["Seek.Quote.\($0)"] }
         }
     }

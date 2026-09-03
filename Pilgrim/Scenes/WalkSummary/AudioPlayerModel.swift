@@ -26,15 +26,30 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func toggle(relativePath: String) {
-        if currentPath == relativePath {
+        toggle(key: relativePath, url: Self.documentsURL(for: relativePath))
+    }
+
+    /// For audio that does not live under Documents (a shared Way's voices
+    /// under Application Support): keyed by the file path instead.
+    func toggle(url: URL) {
+        toggle(key: url.path, url: url)
+    }
+
+    private func toggle(key: String, url: URL) {
+        if currentPath == key {
             if isPlaying {
                 pause()
             } else if player != nil {
                 resume()
             }
         } else {
-            play(relativePath: relativePath)
+            play(url: url, key: key)
         }
+    }
+
+    private static func documentsURL(for relativePath: String) -> URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return docs.appendingPathComponent(relativePath)
     }
 
     func cycleSpeed() {
@@ -49,10 +64,15 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func play(relativePath: String) {
-        stopPlayer()
+        play(url: Self.documentsURL(for: relativePath), key: relativePath)
+    }
 
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let url = docs.appendingPathComponent(relativePath)
+    func play(url: URL) {
+        play(url: url, key: url.path)
+    }
+
+    private func play(url: URL, key: String) {
+        stopPlayer()
 
         guard FileManager.default.fileExists(atPath: url.path) else {
             print("[AudioPlayerModel] File not found: \(url.path)")
@@ -73,7 +93,7 @@ class AudioPlayerModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 return
             }
             player = p
-            currentPath = relativePath
+            currentPath = key
             totalDuration = p.duration
             isPlaying = true
             startProgressTimer()

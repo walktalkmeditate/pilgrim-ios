@@ -135,4 +135,101 @@ final class GoshuinMilestonesTests: XCTestCase {
         ]
         XCTAssertEqual(awards.filter { $0 }.count, 1, "a startDate tie must resolve to exactly one first unknown")
     }
+
+    // MARK: - detect() aggregation (honor)
+
+    private func honorWalk(uuid: UUID, daysAgo: Int, arrivals: Int) -> TempWalk {
+        let start = DateFactory.makeDate(2024, 6, 15, 9, 0, 0)
+            .addingTimeInterval(-Double(daysAgo) * 86_400)
+        return WalkDataFactory.makeWalk(
+            uuid: uuid,
+            startDate: start,
+            waypoints: (0..<arrivals).map { index in
+                TempWaypoint(
+                    uuid: nil,
+                    latitude: Double(index),
+                    longitude: 0,
+                    label: HonorPersistence.arrivalWaypointLabel(wayTitle: "A Way"),
+                    icon: HonorPersistence.arrivalWaypointIcon,
+                    timestamp: start.addingTimeInterval(Double(index + 1) * 600)
+                )
+            }
+        )
+    }
+
+    private func honorMilestones(for walk: TempWalk, in all: [WalkInterface]) -> Set<GoshuinMilestones.Milestone> {
+        GoshuinMilestones.detect(
+            walkCount: all.count,
+            walkIndex: 4,
+            walk: walk,
+            allWalks: all,
+            honorArrivalCounts: GoshuinMilestones.honorArrivalCounts(for: all)
+        )
+    }
+
+    func testDetect_firstHonor_goesToTheEarliestArrivalWalk() {
+        let earlier = honorWalk(uuid: UUID(), daysAgo: 2, arrivals: 1)
+        let later = honorWalk(uuid: UUID(), daysAgo: 0, arrivals: 1)
+        let all: [WalkInterface] = [earlier, later]
+
+        XCTAssertTrue(honorMilestones(for: earlier, in: all).contains(.firstHonor))
+        XCTAssertFalse(
+            honorMilestones(for: later, in: all).contains(.firstHonor),
+            "the earlier walk's honor arrivals must count as before the later walk"
+        )
+    }
+
+    // MARK: - Combined counts
+
+    func testArrivalAndHonorCountsMatchTheSeparatePasses() {
+        let seekID = UUID(), honorID = UUID(), neitherID = UUID(), bothID = UUID()
+        let seekOnly = seekWalk(uuid: seekID, daysAgo: 3, arrivals: 2)
+        let honorOnly = honorWalk(uuid: honorID, daysAgo: 2, arrivals: 3)
+        let neither = WalkDataFactory.makeWalk(uuid: neitherID, startDate: DateFactory.makeDate(2024, 6, 14, 9, 0, 0))
+        let both = WalkDataFactory.makeWalk(
+            uuid: bothID,
+            startDate: DateFactory.makeDate(2024, 6, 13, 9, 0, 0),
+            waypoints: [
+                TempWaypoint(uuid: nil, latitude: 0, longitude: 0,
+                             label: SeekPersistence.arrivalWaypointLabel(clearingOrdinal: 1),
+                             icon: SeekPersistence.arrivalWaypointIcon,
+                             timestamp: DateFactory.makeDate(2024, 6, 13, 9, 10, 0)),
+                TempWaypoint(uuid: nil, latitude: 0, longitude: 0,
+                             label: HonorPersistence.arrivalWaypointLabel(wayTitle: "A Way"),
+                             icon: HonorPersistence.arrivalWaypointIcon,
+                             timestamp: DateFactory.makeDate(2024, 6, 13, 9, 20, 0)),
+                TempWaypoint(uuid: nil, latitude: 0, longitude: 0, label: "A place", icon: "mappin",
+                             timestamp: DateFactory.makeDate(2024, 6, 13, 9, 30, 0))
+            ]
+        )
+        let all: [WalkInterface] = [seekOnly, honorOnly, neither, both]
+
+        let combined = GoshuinMilestones.arrivalAndHonorCounts(for: all)
+
+        XCTAssertEqual(combined.arrivals, GoshuinMilestones.arrivalCounts(for: all),
+                       "the one-pass reading must agree with the seek-only pass exactly")
+        XCTAssertEqual(combined.honorArrivals, GoshuinMilestones.honorArrivalCounts(for: all),
+                       "the one-pass reading must agree with the honor-only pass exactly")
+        XCTAssertEqual(combined.arrivals[seekID], 2)
+        XCTAssertEqual(combined.honorArrivals[honorID], 3)
+        XCTAssertEqual(combined.arrivals[bothID], 1)
+        XCTAssertEqual(combined.honorArrivals[bothID], 1)
+        XCTAssertNil(combined.arrivals[neitherID], "a walk with no arrivals must not appear in either map")
+        XCTAssertNil(combined.honorArrivals[neitherID])
+    }
+
+    // MARK: - Primary milestone (seek vs. honor tie-break)
+
+    func testPrimaryMilestone_seekOutranksHonorAtEqualN() {
+        XCTAssertEqual(
+            GoshuinMilestones.primaryMilestone(of: [.firstUnknown, .firstHonor]),
+            .firstUnknown,
+            "a walk carrying both once-ever moments must resolve deterministically"
+        )
+        XCTAssertEqual(
+            GoshuinMilestones.primaryMilestone(of: [.unknownsFound(10), .honorsWalked(10)]),
+            .unknownsFound(10),
+            "a walk crossing both thresholds at once must resolve deterministically"
+        )
+    }
 }

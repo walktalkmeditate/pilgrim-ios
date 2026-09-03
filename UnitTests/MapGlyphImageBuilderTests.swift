@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 @testable import Pilgrim
 
 /// The builder turns glyph requests into correctly sized, cached UIImages
@@ -63,5 +64,16 @@ final class MapGlyphImageBuilderTests: XCTestCase {
     func testMissingAssetDegradesToNil() {
         XCTAssertNil(MapGlyphImageBuilder.rendered(assetNamed: "no-such-glyph", tint: nil, size: 14),
                      "a broken asset-name contract must degrade, not crash")
+    }
+}
+
+extension MapGlyphImageBuilderTests {
+
+    func testWayMarkKeyAndSpriteAreTheSameInEitherAppearance() {
+        let glyph = MapGlyph.wayMark(symbol: "waveform", tint: .stone)
+        var lightKey = "", darkKey = ""
+        UITraitCollection(userInterfaceStyle: .light).performAsCurrent { lightKey = MapGlyphImageBuilder.cacheKey(for: glyph) }
+        UITraitCollection(userInterfaceStyle: .dark).performAsCurrent { darkKey = MapGlyphImageBuilder.cacheKey(for: glyph) }
+        XCTAssertEqual(lightKey, darkKey)
     }
 }

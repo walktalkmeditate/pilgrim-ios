@@ -8,7 +8,11 @@ final class SeekDemoSeedTests: XCTestCase {
 
     private func makeDemoSeekWalk() throws -> NewWalk {
         let spec = try XCTUnwrap(
-            ScreenshotDataSeeder.walks.first { !$0.events.isEmpty },
+            // Select on the seek marker itself: the honor demo walk also
+            // carries events, so "has any event" no longer names one walk.
+            ScreenshotDataSeeder.walks.first { spec in
+                spec.events.contains { $0.eventType == WalkEvent.EventType.seekMode.rawValue }
+            },
             "The seeder should carry a demo seek walk"
         )
         return ScreenshotDataSeeder.makeWalk(from: spec, startDate: startDate, index: 0)

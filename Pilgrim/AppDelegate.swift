@@ -157,6 +157,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         Task { @MainActor in DossierSensesFieldReport.runIfRequested() }
         #endif
         startLaunchRecordingCleanup()
+        sweepExpiredWays()
+    }
+
+    /// Skipped under XCTest for the same reason `startLaunchRecordingCleanup`
+    /// is: the shared-singleton sweep touches the real Application Support
+    /// tree, which would race a unit test writing fixtures into it. Runs
+    /// detached because it decodes every Way's `way.json` from disk.
+    private func sweepExpiredWays() {
+        guard NSClassFromString("XCTestCase") == nil else { return }
+        Task.detached(priority: .utility) {
+            let swept = WayStore.shared.sweepExpired(now: Date())
+            guard !swept.isEmpty else { return }
+            // A transfer still in flight for a swept Way would recreate the
+            // folder the sweep just removed; the downloader is main-isolated,
+            // so the cancel hops back.
+            await MainActor.run {
+                for id in swept { WayMediaDownloader.shared.cancel(wayId: id) }
+            }
+        }
     }
 
     /// Launch cleanup ordering (AF2): the orphan sweep runs only once BOTH
@@ -178,6 +197,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         }
         if !FileManager.default.fileExists(atPath: WalkSessionGuard.checkpointFileURL().path) {
             OrphanSweepGate.shared.noteWalkRecoveryResolved()
+        }
+    }
+
+    func application(_ application: UIApplication,
+                     handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+        guard identifier == "org.walktalkmeditate.pilgrim.ways" else { completionHandler(); return }
+        // This delegate method already runs on main, so the handler is
+        // installed synchronously: a Task hop could let the session's own
+        // completion callbacks fire before the handler is in place, and the
+        // system would never be told the work was finished.
+        MainActor.assumeIsolated {
+            WayMediaDownloader.shared.backgroundCompletionHandler = completionHandler
         }
     }
 

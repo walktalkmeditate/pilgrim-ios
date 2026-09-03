@@ -27,6 +27,12 @@ struct InteractiveShareSection: View {
             }
 
             if viewModel.interactiveEnabled {
+                // A non-interactive share carries no tour.json — the
+                // "walk it there" promise only applies once Interactive is on.
+                Text("Anyone with the link can walk it there.")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+
                 if viewModel.hasRecordings {
                     recordingsList
 

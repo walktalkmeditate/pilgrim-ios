@@ -31,8 +31,9 @@ final class TourBuilderTests: XCTestCase {
         XCTAssertEqual(TourBuilder.classify(transcription: "  \n "), .ambient)
     }
 
-    private func candidate(id: Int, bytes: Int = 1_000_000, seconds: Double = 60, included: Bool = true, kind: TourRecordingKind = .spoken) -> TourRecordingCandidate {
-        TourRecordingCandidate(id: id, startTs: 1000 + id * 100, endTs: 1050 + id * 100, duration: seconds, sizeBytes: bytes, transcription: nil, wpm: nil, autoKind: kind, includeInShare: included, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/\(id).m4a"), unavailableReason: nil)
+    private func candidate(id: Int, bytes: Int = 1_000_000, seconds: Double = 60, included: Bool = true, kind: TourRecordingKind = .spoken, startTs: Int? = nil, lat: Double? = nil, lon: Double? = nil) -> TourRecordingCandidate {
+        let start = startTs ?? (1000 + id * 100)
+        return TourRecordingCandidate(id: id, startTs: start, endTs: start + 50, duration: seconds, sizeBytes: bytes, transcription: nil, wpm: nil, autoKind: kind, includeInShare: included, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/\(id).m4a"), unavailableReason: nil, lat: lat, lon: lon)
     }
 
     func testTourItems_renumbersAfterExclusion() {
@@ -86,7 +87,7 @@ final class TourBuilderTests: XCTestCase {
     }
 
     func testTourItems_stripsTranscription() {
-        let withTranscript = TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: "some real speech", wpm: 120, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil)
+        let withTranscript = TourRecordingCandidate(id: 0, startTs: 1000, endTs: 1060, duration: 60, sizeBytes: 1_000_000, transcription: "some real speech", wpm: 120, autoKind: .spoken, includeInShare: true, kindOverride: nil, fileURL: URL(fileURLWithPath: "/tmp/0.m4a"), unavailableReason: nil, lat: nil, lon: nil)
         let (tour, _) = TourBuilder.tourItems(candidates: [withTranscript], trimM: 0)
         XCTAssertNil(tour.recordings[0].transcription, "transcripts never leave the device — the page renders none of them")
     }
@@ -113,7 +114,7 @@ final class TourBuilderTests: XCTestCase {
 
     func testUnavailableCandidatesNeverEnterTour() {
         var removed = candidate(id: 1)
-        removed = TourRecordingCandidate(id: 1, startTs: 1100, endTs: 1150, duration: 50, sizeBytes: 0, transcription: "kept transcript", wpm: nil, autoKind: .spoken, includeInShare: false, kindOverride: nil, fileURL: nil, unavailableReason: "audio removed")
+        removed = TourRecordingCandidate(id: 1, startTs: 1100, endTs: 1150, duration: 50, sizeBytes: 0, transcription: "kept transcript", wpm: nil, autoKind: .spoken, includeInShare: false, kindOverride: nil, fileURL: nil, unavailableReason: "audio removed", lat: nil, lon: nil)
         let (tour, files) = TourBuilder.tourItems(candidates: [candidate(id: 0), removed], trimM: 0)
         XCTAssertEqual(tour.recordings.count, 1)
         XCTAssertEqual(files.count, 1)
@@ -183,5 +184,56 @@ final class TourBuilderTests: XCTestCase {
         XCTAssertEqual(candidates.map(\.startTs), candidates.map(\.startTs).sorted(), "candidates must come back sorted by start date regardless of storage order")
         XCTAssertEqual(candidates.first?.startTs, Int(early.startDate.timeIntervalSince1970))
         XCTAssertEqual(candidates.last?.startTs, Int(late.startDate.timeIntervalSince1970))
+    }
+
+    func testCandidatesCarryTheRecordingCoordinate() throws {
+        let start = DateFactory.makeDate(2026, 5, 1, 8, 0, 0)
+        let route = (0..<5).map { i in
+            TempRouteDataSample(uuid: nil, timestamp: start.addingTimeInterval(Double(i) * 60), latitude: 42.0 + Double(i) * 0.001,
+                                longitude: -8.0, altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, speed: 1, direction: 0)
+        }
+        // A real file, not a fake path: an "audio removed" candidate is
+        // excluded from tourItems entirely, so the coordinate has to survive
+        // the same availability gate every other recording goes through.
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let relativePath = "tourbuilder-coord-\(UUID().uuidString).m4a"
+        let fileURL = docs.appendingPathComponent(relativePath)
+        try TestAudioFile.writeSilentAudioFile(to: fileURL, duration: 0.2)
+        addTeardownBlock { try? FileManager.default.removeItem(at: fileURL) }
+
+        let rec = TempVoiceRecording(uuid: nil, startDate: start.addingTimeInterval(125), endDate: start.addingTimeInterval(160),
+                                     duration: 35, fileRelativePath: relativePath, transcription: nil)
+        let walk = WalkDataFactory.makeWalk(startDate: start, routeData: route, voiceRecordings: [rec])
+        let candidate = TourBuilder.candidates(for: walk).first
+        XCTAssertEqual(candidate?.lat ?? 0, 42.002, accuracy: 0.0001)
+        XCTAssertEqual(candidate?.lon ?? 0, -8.0, accuracy: 0.0001)
+        let items = TourBuilder.tourItems(candidates: TourBuilder.candidates(for: walk), trimM: 0)
+        XCTAssertEqual(items.tour.recordings.first?.lat ?? 0, 42.002, accuracy: 0.0001)
+    }
+
+    func testKeptWindowNullsCoordinatesOutsideIt() {
+        let inside = candidate(id: 0, startTs: 500, lat: 42.0, lon: -8.0)
+        let before = candidate(id: 1, startTs: 100, lat: 42.0, lon: -8.0)
+        let after = candidate(id: 2, startTs: 900, lat: 42.0, lon: -8.0)
+
+        let (tour, _) = TourBuilder.tourItems(candidates: [before, inside, after], trimM: 150, keptWindow: 400...600)
+
+        XCTAssertNil(tour.recordings.first { $0.startTs == 100 }?.lat, "a recording before the kept window loses its coordinate")
+        XCTAssertNil(tour.recordings.first { $0.startTs == 900 }?.lon, "a recording after the kept window loses its coordinate")
+        XCTAssertNotNil(tour.recordings.first { $0.startTs == 500 }?.lat, "a recording inside the kept window keeps its coordinate")
+    }
+
+    func testKeptWindowBoundsAreInclusive() {
+        let (tour, _) = TourBuilder.tourItems(
+            candidates: [candidate(id: 0, startTs: 400, lat: 42.0, lon: -8.0), candidate(id: 1, startTs: 600, lat: 42.0, lon: -8.0)],
+            trimM: 150,
+            keptWindow: 400...600
+        )
+        XCTAssertEqual(tour.recordings.compactMap(\.lat).count, 2, "recordings exactly at either bound stay inside the window")
+    }
+
+    func testNoKeptWindowKeepsEveryCoordinate() {
+        let (tour, _) = TourBuilder.tourItems(candidates: [candidate(id: 0, startTs: 100, lat: 42.0, lon: -8.0)], trimM: 0)
+        XCTAssertNotNil(tour.recordings.first?.lat, "no trim means no window, and every coordinate rides along")
     }
 }

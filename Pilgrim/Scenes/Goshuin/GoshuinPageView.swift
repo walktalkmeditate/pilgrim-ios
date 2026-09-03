@@ -7,6 +7,7 @@ struct GoshuinPageView: View {
     let totalWalkCount: Int
     let globalStartIndex: Int
     let arrivalCounts: [UUID: Int]
+    let honorArrivalCounts: [UUID: Int]
     let onSelectWalk: (UUID) -> Void
 
     private let columns = [
@@ -34,7 +35,8 @@ struct GoshuinPageView: View {
             walkIndex: walkIndex,
             walk: walk,
             allWalks: allWalks,
-            arrivalCounts: arrivalCounts
+            arrivalCounts: arrivalCounts,
+            honorArrivalCounts: honorArrivalCounts
         )
         let isMilestone = !milestones.isEmpty
         let isArchived = walk.uuid.map { UserPreferences.isArchivedWalk(uuid: $0) } ?? false

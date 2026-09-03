@@ -395,7 +395,7 @@ final class WalkShareViewModel: ObservableObject {
             photos: photoPayload(interactive: interactive, tourPhotoMeta: tourPhotoMeta)
         )
         if interactive {
-            applyInteractiveTourAndPauses(to: &payload, trimM: trimM)
+            applyInteractiveTourAndPauses(to: &payload, trimM: trimM, keptWindow: keptWindow)
         }
         payload.turningDay = turningDayCode()
         return payload
@@ -439,14 +439,15 @@ final class WalkShareViewModel: ObservableObject {
         }
     }
 
-    private func applyInteractiveTourAndPauses(to payload: inout SharePayload, trimM: Int) {
+    private func applyInteractiveTourAndPauses(to payload: inout SharePayload, trimM: Int, keptWindow: ClosedRange<Int>?) {
         payload.tour = TourBuilder.tourItems(
             candidates: tourCandidates,
             trimM: trimM,
             soundscapeUrl: TourBuilder.soundscapeUrl(
                 selectedId: UserPreferences.selectedSoundscapeId.value,
                 manifest: AudioManifestService.shared.manifest
-            )
+            ),
+            keptWindow: keptWindow
         ).tour
         // The worker validates TRUNCATED integers: filter after truncation or a
         // sub-second pause 400s the whole share.

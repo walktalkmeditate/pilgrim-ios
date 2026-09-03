@@ -21,7 +21,7 @@ final class SeekPersistenceTests: XCTestCase {
 
     func testEventType_unknownRawValues_fallBackToUnknown() {
         XCTAssertEqual(WalkEvent.EventType(rawValue: 99), .unknown)
-        XCTAssertEqual(WalkEvent.EventType(rawValue: 5), .unknown)
+        XCTAssertEqual(WalkEvent.EventType(rawValue: 7), .unknown)
         XCTAssertEqual(WalkEvent.EventType(rawValue: -5), .unknown)
     }
 

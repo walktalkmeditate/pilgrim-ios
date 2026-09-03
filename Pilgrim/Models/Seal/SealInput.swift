@@ -19,8 +19,13 @@ struct SealInput {
     /// Seek arrivals recorded on this walk (reserved-icon waypoints), for
     /// the seeking milestones.
     let foundPlaceCount: Int
+    /// Ways walked to their end on this walk, for the honor milestones.
+    let honorArrivalCount: Int
+    /// The Way this walk honored, for the second ghost line under the seal.
+    /// Nil for every walk that was not an honor.
+    let wayPoints: [(lat: Double, lon: Double)]?
 
-    init(walk: WalkInterface) {
+    init(walk: WalkInterface, store: WayStore = .shared) {
         self.uuid = walk.uuid?.uuidString
         self.distance = walk.distance
         self.ascend = walk.ascend
@@ -39,5 +44,13 @@ struct SealInput {
         }
         self.voiceRecordingStartDates = walk.voiceRecordings.map(\.startDate)
         self.foundPlaceCount = walk.waypoints.filter(SeekPersistence.isArrivalWaypoint).count
+        self.honorArrivalCount = walk.waypoints.filter(HonorPersistence.isArrivalWaypoint).count
+        // Two disk reads — the walk index, then the Way itself — and only
+        // for a walk whose events say it honored a Way; every other seal is
+        // built without touching the store.
+        let isHonor = walk.workoutEvents.contains { $0.eventType == .honorMode }
+        self.wayPoints = isHonor
+            ? walk.uuid.flatMap(store.way(forWalk:))?.route.map { (lat: $0.lat, lon: $0.lon) }
+            : nil
     }
 }

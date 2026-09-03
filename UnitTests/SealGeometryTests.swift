@@ -69,6 +69,7 @@ final class SealGeometryTests: XCTestCase {
             displayDistance: "5.2",
             unitLabel: "KM",
             routePoints: [(35.68, 139.76), (35.69, 139.77), (35.70, 139.78)],
+            wayPoints: nil,
             altitudes: Array(stride(from: 100.0, through: 200.0, by: 10.0)),
             weatherCondition: "rain",
             weatherSeed: UInt64(bytes[0]) | (UInt64(bytes[1]) << 8) | (UInt64(bytes[2]) << 16) | (UInt64(bytes[3]) << 24)

@@ -4,6 +4,11 @@ import CoreStore
 struct HomeView: View {
 
     @ObservedObject var viewModel: HomeViewModel
+    let onWalkAgain: (WalkInterface) -> Void
+    /// The journal's summary sheet is the second road into the Honor
+    /// overview, so it owes the coordinator the same promote-on-dismiss the
+    /// post-walk summary does (AF60).
+    let onSummaryDismiss: () -> Void
     @State private var selectedWalk: Walk?
     @State private var showGoshuin = false
     @State private var unitKey: String = UserPreferences.distanceMeasurementType.safeValue.symbol
@@ -51,8 +56,8 @@ struct HomeView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: isWalkExpanded)
-            .sheet(item: $selectedWalk) { walk in
-                WalkSummaryView(walk: walk)
+            .sheet(item: $selectedWalk, onDismiss: onSummaryDismiss) { walk in
+                WalkSummaryView(walk: walk, onWalkAgain: onWalkAgain)
             }
             .sheet(isPresented: $showGoshuin) {
                 GoshuinView(

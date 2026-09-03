@@ -22,6 +22,11 @@ struct WalkSnapshot: Identifiable {
     /// Practice gates (first walk, every tenth) stand vermilion; seeking
     /// gates (first unknown, unknown milestones) stand weathered stone.
     let threshold: WalkThreshold?
+    /// Honor walks carry two staffs rather than a single walker's pair.
+    let isHonor: Bool
+    /// Ways walked to their end on this walk — an arrival raises the staffs
+    /// on the ink scroll.
+    let honorArrivals: Int
 
     var walkOnlyDuration: TimeInterval {
         max(0, duration - talkDuration - meditateDuration)
@@ -83,11 +88,13 @@ class HomeViewModel: ObservableObject {
     }
 
     private func buildSnapshots() {
-        let seekWalkIDs = fetchSeekWalkIDs()
-        let arrivalCounts = GoshuinMilestones.arrivalCounts(for: walks)
+        let seekWalkIDs = fetchWalkIDs(withEvent: .seekMode)
+        let honorWalkIDs = fetchWalkIDs(withEvent: .honorMode)
+        let (arrivalCounts, honorArrivalCounts) = GoshuinMilestones.arrivalAndHonorCounts(for: walks)
         let reversed = walks.reversed()
         var cumulative: Double = 0
         var arrivalsBefore = 0
+        var honorArrivalsBefore = 0
         var snapshots: [WalkSnapshot] = []
 
         for (chronologicalIndex, walk) in reversed.enumerated() {
@@ -98,12 +105,19 @@ class HomeViewModel: ObservableObject {
                 : 0
             let walkNumber = chronologicalIndex + 1
             let foundPlaces = walk.uuid.flatMap { arrivalCounts[$0] } ?? 0
+            let honorArrivals = walk.uuid.flatMap { honorArrivalCounts[$0] } ?? 0
             // Mystery outranks routine: a tenth walk that also found its
-            // first unknown stands at a seeking gate.
-            let threshold: WalkThreshold?
-            if !GoshuinMilestones.seekingMilestones(
+            // first unknown stands at a seeking gate. An honor threshold
+            // stands at the same gate — both are the walk meeting something
+            // it did not choose.
+            let crossedSeeking = !GoshuinMilestones.seekingMilestones(
                 arrivalsInWalk: foundPlaces, arrivalsBefore: arrivalsBefore
-            ).isEmpty {
+            ).isEmpty
+            let crossedHonor = !GoshuinMilestones.honorMilestones(
+                arrivalsInWalk: honorArrivals, arrivalsBefore: honorArrivalsBefore
+            ).isEmpty
+            let threshold: WalkThreshold?
+            if crossedSeeking || crossedHonor {
                 threshold = .seeking
             } else if walkNumber == 1 || walkNumber % 10 == 0 {
                 threshold = .practice
@@ -111,6 +125,7 @@ class HomeViewModel: ObservableObject {
                 threshold = nil
             }
             arrivalsBefore += foundPlaces
+            honorArrivalsBefore += honorArrivals
 
             snapshots.append(WalkSnapshot(
                 id: walk.id,
@@ -126,24 +141,27 @@ class HomeViewModel: ObservableObject {
                 weatherCondition: walk.weatherCondition,
                 isSeek: walk.uuid.map(seekWalkIDs.contains) ?? false,
                 foundPlaces: foundPlaces,
-                threshold: threshold
+                threshold: threshold,
+                isHonor: walk.uuid.map(honorWalkIDs.contains) ?? false,
+                honorArrivals: honorArrivals
             ))
         }
 
         walkSnapshots = snapshots.reversed()
     }
 
-    /// Seek walks are marked by their `.seekMode` event (origin R18). One
-    /// bulk fetch — the event count equals the seek-walk count — instead of
-    /// faulting every walk's event list while building snapshots.
-    private func fetchSeekWalkIDs() -> Set<UUID> {
+    /// Seek walks are marked by their `.seekMode` event (origin R18), honor
+    /// walks by `.honorMode`. One bulk fetch per mode — the event count
+    /// equals the walk count — instead of faulting every walk's event list
+    /// while building snapshots.
+    private func fetchWalkIDs(withEvent eventType: WalkEvent.EventType) -> Set<UUID> {
         do {
             let events = try DataManager.dataStack.fetchAll(
-                From<WalkEvent>().where(\._eventType == .seekMode)
+                From<WalkEvent>().where(\._eventType == eventType)
             )
             return Set(events.compactMap { $0.workout?.uuid })
         } catch {
-            print("[HomeViewModel] Failed to fetch seek events:", error.localizedDescription)
+            print("[HomeViewModel] Failed to fetch \(eventType) events:", error.localizedDescription)
             return []
         }
     }
