@@ -181,6 +181,7 @@
 		22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */; };
 		23795691640A42D0872CBC91 /* TranscriptContextAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F837FC0ECF4D4ED1BA756517 /* TranscriptContextAnalyzerTests.swift */; };
 		25679B99B2C71D0991CF99A2 /* whisper-play-11.aac in Resources */ = {isa = PBXBuildFile; fileRef = 1BEB21BACB47BB26018EECA3 /* whisper-play-11.aac */; };
+		269714B93E46F46E60FE32BB /* ActiveWalkView+Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95BEC3E6C0D69DEFBFC0B625 /* ActiveWalkView+Map.swift */; };
 		26D2A22BA6DF2D3C6508C30F /* SeekSummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB2D6A557287CBD051BF314 /* SeekSummaryTests.swift */; };
 		26FA567381DD9B65054096FF /* whisper-play-4.aac in Resources */ = {isa = PBXBuildFile; fileRef = 6C077B3FA336178A9F4CBC6F /* whisper-play-4.aac */; };
 		270866FCC73A070D4842C4E3 /* collective-routes-bootstrap.json in Resources */ = {isa = PBXBuildFile; fileRef = 7028BC966EE0FBC3420C3B89 /* collective-routes-bootstrap.json */; };
@@ -225,6 +226,7 @@
 		487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */; };
 		48CE4EDDAB9C4702A5BAAB87 /* SolarHorizonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */; };
 		48E98C7054E4A201ACFDA9E1 /* CollectiveMilestone.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC3AE0A67A2BD0CB573672A /* CollectiveMilestone.swift */; };
+		493C30BC957DAB3F448A2BE0 /* ActiveWalkViewModel+Segments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87CEE1CB8907A7EAE847CF69 /* ActiveWalkViewModel+Segments.swift */; };
 		4942C685817BB789737E18B1 /* whisper-play-7.aac in Resources */ = {isa = PBXBuildFile; fileRef = A1E1CDD84132639F8B1B90D8 /* whisper-play-7.aac */; };
 		4997C102426B18E2BE23D309 /* OwnWalkWayBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02475497E961BD82401A2037 /* OwnWalkWayBuilder.swift */; };
 		4A874B223DF94F32AE65A3B2 /* ThreadStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44E1DA26DB135B0837E447F /* ThreadStoreTests.swift */; };
@@ -1025,6 +1027,7 @@
 		86222C880AE25FA86DCC6C66 /* View+ListRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "View+ListRow.swift"; sourceTree = "<group>"; };
 		862461B76A73D888F6A1A77D /* WalkPromptVoices.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkPromptVoices.swift; sourceTree = "<group>"; };
 		871968A73E694CE1A7813792 /* DataManagerThreadsDeletionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataManagerThreadsDeletionTests.swift; sourceTree = "<group>"; };
+		87CEE1CB8907A7EAE847CF69 /* ActiveWalkViewModel+Segments.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ActiveWalkViewModel+Segments.swift"; sourceTree = "<group>"; };
 		891AB02D5C379B14317F9FBA /* SeekDemoSeedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekDemoSeedTests.swift; sourceTree = "<group>"; };
 		8C0699EE439FF3DC5E16B8E0 /* Pods-Pilgrim.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.debug.xcconfig"; sourceTree = "<group>"; };
 		8DCF304CF49DA89E9F3E1AE8 /* CairnStonesShape.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CairnStonesShape.swift; sourceTree = "<group>"; };
@@ -1044,6 +1047,7 @@
 		93E56D65EF09E89723F2AB06 /* ArrivalDebounceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ArrivalDebounceTests.swift; sourceTree = "<group>"; };
 		9493E7AD112D41C6B876DB33 /* ThreadIntentionSuggestions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadIntentionSuggestions.swift; sourceTree = "<group>"; };
 		94D4ED498F6BB16685DC466E /* whisper-play-6.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-6.aac"; sourceTree = "<group>"; };
+		95BEC3E6C0D69DEFBFC0B625 /* ActiveWalkView+Map.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ActiveWalkView+Map.swift"; sourceTree = "<group>"; };
 		964D4C7663494F3ABBEEF84F /* ActivityIntervalInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIntervalInterface.swift; sourceTree = "<group>"; };
 		96A68D86FE44D740B891CF2C /* CollectiveRouteCatalog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveRouteCatalog.swift; sourceTree = "<group>"; };
 		980407DB8189D982A61A73F9 /* Pods-UnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -2442,6 +2446,8 @@
 				A773662D19C26501C8377349 /* ActiveWalkViewModel+Honor.swift */,
 				1EE564442C86089DEDD3EB2B /* WayPlaceCard.swift */,
 				57015020E935520A43C76E97 /* ActiveWalkView+Honor.swift */,
+				95BEC3E6C0D69DEFBFC0B625 /* ActiveWalkView+Map.swift */,
+				87CEE1CB8907A7EAE847CF69 /* ActiveWalkViewModel+Segments.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -3491,6 +3497,8 @@
 				0878C1CAF7C3058C2C7287D4 /* HonorLink.swift in Sources */,
 				D084A7C6B0CB68B016917E7B /* HonorImportReducer.swift in Sources */,
 				D431FC2E804E25AFC7470A71 /* WaysListView.swift in Sources */,
+				269714B93E46F46E60FE32BB /* ActiveWalkView+Map.swift in Sources */,
+				493C30BC957DAB3F448A2BE0 /* ActiveWalkViewModel+Segments.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

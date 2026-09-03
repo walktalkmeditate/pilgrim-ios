@@ -15,7 +15,7 @@ final class WayMediaDownloaderTests: XCTestCase {
     /// Never the live host: `download` resumes real background tasks, and a
     /// spec must not reach out to walk.pilgrimapp.org to exercise its
     /// bookkeeping.
-    private static let deadHost = URL(string: "https://127.0.0.1:9/")!
+    nonisolated private static let deadHost = URL(string: "https://127.0.0.1:9/")!
 
     private func makeDownloader(store: WayStore, baseURL: URL = WayMediaDownloaderTests.deadHost) -> WayMediaDownloader {
         let downloader = WayMediaDownloader(store: store, sessionIdentifier: "test-\(UUID())", baseURL: baseURL)

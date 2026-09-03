@@ -235,17 +235,29 @@ struct PilgrimMapView: UIViewRepresentable {
             context.coordinator.lastBottomInset = bottomInset
 
             if let bounds = cameraBounds {
-                do {
-                    let camera = try mapView.mapboxMap.camera(
-                        for: [bounds.sw, bounds.ne],
-                        camera: CameraOptions(),
-                        coordinatesPadding: UIEdgeInsets(top: 40, left: 30, bottom: 40 + bottomInset, right: 30),
-                        maxZoom: nil,
-                        offset: nil
-                    )
-                    mapView.camera.ease(to: camera, duration: cameraDuration)
-                } catch {
-                    print("[PilgrimMapView] camera(for:bounds:) failed: \(error)")
+                // Only when the bounds actually change, or the inset moved
+                // them: `updateUIView` runs on every published tick behind
+                // the map (a gathering percentage, say), and easing again on
+                // each one yanks a pan the walker just made back to the fit.
+                // A first application always eases — `lastAppliedBounds`
+                // starts nil.
+                let changed = context.coordinator.lastAppliedBounds != bounds
+                    || context.coordinator.lastAppliedBoundsInset != bottomInset
+                if changed {
+                    context.coordinator.lastAppliedBounds = bounds
+                    context.coordinator.lastAppliedBoundsInset = bottomInset
+                    do {
+                        let camera = try mapView.mapboxMap.camera(
+                            for: [bounds.sw, bounds.ne],
+                            camera: CameraOptions(),
+                            coordinatesPadding: UIEdgeInsets(top: 40, left: 30, bottom: 40 + bottomInset, right: 30),
+                            maxZoom: nil,
+                            offset: nil
+                        )
+                        mapView.camera.ease(to: camera, duration: cameraDuration)
+                    } catch {
+                        print("[PilgrimMapView] camera(for:bounds:) failed: \(error)")
+                    }
                 }
             } else if let center = cameraCenter {
                 let camera: CameraOptions
@@ -597,6 +609,10 @@ struct PilgrimMapView: UIViewRepresentable {
         /// AF20 change detection. `nil` forces the next apply through.
         var lastAppliedAnnotations: [PilgrimAnnotation]?
         var lastAppliedActivePhotoID: String?
+        /// Last camera bounds actually eased to, with the inset they were fit
+        /// under. `nil` forces the first application through.
+        var lastAppliedBounds: MapCameraBounds?
+        var lastAppliedBoundsInset: CGFloat = 0
 
         /// Loads circular photo-marker images for photo pin
         /// annotations. Encapsulated in its own class so the

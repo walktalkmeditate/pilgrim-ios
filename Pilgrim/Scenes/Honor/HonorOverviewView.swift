@@ -70,10 +70,16 @@ struct HonorOverviewView: View {
     @State private var isShowingDebugExport = false
     #endif
 
-    private var wayState: HonorWayState {
-        HonorWayState(id: way.id,
-                      routeCoordinates: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) })
+    /// The three O(route) derivations the map needs. `importState` changes on
+    /// every gathering tick and re-runs `body`, so these are computed once per
+    /// Way in `.task(id:)` rather than three times per tick.
+    private struct WayRendering {
+        let pins: [PilgrimAnnotation]
+        let bounds: MapCameraBounds?
+        let state: HonorWayState
     }
+
+    @State private var rendering: WayRendering?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -81,12 +87,12 @@ struct HonorOverviewView: View {
                 isInteractive: true,
                 showsUserLocation: true,
                 followsUserLocation: false,
-                pinAnnotations: PilgrimMapView.wayPins(for: way, heardVoiceIDs: []),
+                pinAnnotations: rendering?.pins ?? [],
                 cameraCenter: $cameraCenter,
                 cameraZoom: $cameraZoom,
-                cameraBounds: HonorOverviewModel.bounds(of: way),
+                cameraBounds: rendering?.bounds,
                 isMeditating: $isMeditating,
-                honorWay: wayState
+                honorWay: rendering?.state
             )
             .frame(maxHeight: .infinity)
 
@@ -110,6 +116,16 @@ struct HonorOverviewView: View {
             #endif
         }
         .onAppear { probeDistance() }
+        .task(id: way.id) {
+            rendering = WayRendering(
+                pins: PilgrimMapView.wayPins(for: way, heardVoiceIDs: []),
+                bounds: HonorOverviewModel.bounds(of: way),
+                state: HonorWayState(
+                    id: way.id,
+                    routeCoordinates: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+                )
+            )
+        }
         .task { await fetchToday() }
         #if DEBUG
         .sheet(isPresented: $isShowingDebugExport) {

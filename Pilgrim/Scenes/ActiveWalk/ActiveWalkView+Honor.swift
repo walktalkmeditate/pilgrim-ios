@@ -24,6 +24,11 @@ extension ActiveWalkView {
     /// `way*` kinds are the only ones carrying a moment id; every other pin
     /// belongs to `handleAnnotationTap`.
     func showWayCard(for annotation: PilgrimAnnotation) {
+        // The card LAYER is already gated on an active walk, but the queue
+        // behind it is not: a pin tapped on the overview map before Begin
+        // used to sit in `honorCards` and ambush the walker with someone
+        // else's card the moment they started walking.
+        guard viewModel.status.isActiveStatus else { return }
         let momentID: String
         switch annotation.kind {
         case .wayVoice(let id, _), .wayPhoto(let id), .wayRest(let id, _),
@@ -86,10 +91,13 @@ struct HonorCardHost: View {
         .padding(.horizontal, Constants.UI.Padding.normal)
     }
 
-    /// Re-resolves when the card changes, and once more when a recording
-    /// ends — that is when a fresh reply becomes readable.
+    /// Re-resolves when the card changes, and again once a recording has
+    /// finished saving — the completed count, not the recording flag: the
+    /// file only becomes readable after the flag has already gone back to
+    /// false, so keying on the flag left a fresh reply hidden until the card
+    /// was closed and reopened.
     private func lookupKey(for moment: WayMoment) -> String {
-        "\(moment.id)|\(viewModel.isRecordingVoice)"
+        "\(moment.id)|\(viewModel.completedRecordingCount)"
     }
 
     private func resolveFiles(for moment: WayMoment) {

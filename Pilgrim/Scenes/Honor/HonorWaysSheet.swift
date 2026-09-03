@@ -120,6 +120,7 @@ struct HonorWaysSheet: View {
 
 struct OwnWalkPicker: View {
     let onPick: (Walk) -> Void
+    @Environment(\.dismiss) private var dismiss
 
     /// Computed in `init` from the passed array's stored `distance`
     /// attribute, not in `onAppear`: faulting every walk's `routeData` per
@@ -147,6 +148,13 @@ struct OwnWalkPicker: View {
             }
             .navigationTitle("Walk again")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                        .font(Constants.Typography.button)
+                        .foregroundColor(.stone)
+                }
+            }
         }
     }
 

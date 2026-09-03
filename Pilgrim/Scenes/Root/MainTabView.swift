@@ -90,7 +90,10 @@ struct MainTabView: View {
             // mounted) doesn't sit in `pendingShareId` for a later onAppear
             // to replay a second time.
             PilgrimApp.pendingShareId = nil
-            selectedTab = .path
+            // Mid-walk `openWay` refuses and says so with a toast, so the tab
+            // must not switch out from under the walker for a link that is
+            // about to go nowhere.
+            if coordinator.activeWalkViewModel == nil { selectedTab = .path }
             coordinator.openWay(shareId: id)
         }
         .onAppear {
@@ -98,7 +101,7 @@ struct MainTabView: View {
             // to receive it (see `PilgrimApp.route`) — claim it exactly once.
             if let id = PilgrimApp.pendingShareId {
                 PilgrimApp.pendingShareId = nil
-                selectedTab = .path
+                if coordinator.activeWalkViewModel == nil { selectedTab = .path }
                 coordinator.openWay(shareId: id)
             }
         }

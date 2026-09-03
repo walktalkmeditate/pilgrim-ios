@@ -27,6 +27,11 @@ class MainCoordinator: ObservableObject {
     var pendingHonorWay: Way?
     var pendingStartWay: Way?
 
+    /// Injectable so a spec can hold an import open across a Begin or a walk
+    /// start and pin what the resolution is allowed to do. Production always
+    /// gets the real importer.
+    var importShare: (String) async throws -> Way = { try await WayImporter().importShare(id: $0) }
+
     private var pendingSnapshot: TempWalk?
     private var bannerDismissWork: DispatchWorkItem?
     private var linkToastWork: DispatchWorkItem?
@@ -72,7 +77,9 @@ class MainCoordinator: ObservableObject {
     func startWalk(mode: WalkMode = .wander, way: Way? = nil) {
         guard activeWalkViewModel == nil else { return }
         // The overview is gone by the time a walk starts, so nothing is left
-        // to render an import: a Way's gathering must not outlive its sheet.
+        // to render an import's progress — only the OBSERVATION is dropped.
+        // The background transfers keep running, and a file that lands
+        // mid-walk becomes playable like any other.
         importTask?.cancel()
         importTask = nil
         gatheringCancellable = nil
@@ -191,9 +198,10 @@ class MainCoordinator: ObservableObject {
         importTask?.cancel()
         honorImportState = .fetching
         if !honorWaysPresented { showLinkToast("reaching for the walk…") }
+        let fetch = importShare
         importTask = Task { @MainActor [weak self] in
             do {
-                let way = try await WayImporter().importShare(id: shareId)
+                let way = try await fetch(shareId)
                 // A cancelled import belongs to a link the walker has already
                 // replaced; neither its Way nor its error may land on top of
                 // the newer one's state.
@@ -220,7 +228,11 @@ class MainCoordinator: ObservableObject {
     /// From the Ways sheet: park the Way, close the sheet, promote on dismiss.
     /// From a link with no sheet open: present directly (one change).
     func openOverview(for way: Way) {
-        if honorWaysPresented {
+        // A summary sheet is a presented sheet too: presenting the overview
+        // over it drops the overview on the floor and dead-ends the link.
+        // `handleSummaryDismiss` promotes the park when the summary closes,
+        // exactly as the Ways sheet's dismiss does.
+        if honorWaysPresented || completedSnapshot != nil {
             pendingHonorWay = way
             honorWaysPresented = false
         } else {
@@ -344,6 +356,14 @@ class MainCoordinator: ObservableObject {
             }
         }
     }
+
+    #if DEBUG
+    /// Awaits the in-flight import so a spec can assert on what its
+    /// resolution was allowed to do, without polling or a deadline.
+    func waitForImport() async {
+        await importTask?.value
+    }
+    #endif
 }
 
 struct MainCoordinatorView: View {

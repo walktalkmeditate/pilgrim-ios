@@ -33,6 +33,8 @@ extension ActiveWalkViewModel {
 
     func startHonorEngineIfNeeded() {
         guard mode == .honor, let way, honorEngine == nil else { return }
+        // Nothing queued before Begin belongs to this walk.
+        honorCards.removeAll()
         honorGeneration += 1
         let generation = honorGeneration
         let engine = HonorEngine(
