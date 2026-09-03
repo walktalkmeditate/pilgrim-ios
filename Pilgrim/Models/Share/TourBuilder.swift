@@ -15,6 +15,10 @@ struct TourRecordingCandidate: Identifiable, Equatable {
     var kindOverride: TourRecordingKind?
     var fileURL: URL?
     let unavailableReason: String?
+    /// The route sample nearest this recording's start, at full resolution —
+    /// nil when the walk carried no route.
+    let lat: Double?
+    let lon: Double?
 
     var effectiveKind: TourRecordingKind { kindOverride ?? autoKind }
 }
@@ -43,6 +47,9 @@ enum TourBuilder {
     static func candidates(for walk: WalkInterface) -> [TourRecordingCandidate] {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let sorted = walk.voiceRecordings.sorted { $0.startDate < $1.startDate }
+        // Full-resolution samples, not the map's downsampled route: a voice
+        // moment deserves the closest fix the phone actually recorded.
+        let samples = walk.routeData
         return sorted.enumerated().compactMap { index, rec in
             guard !rec.fileRelativePath.isEmpty else { return nil }
             let url = docs.appendingPathComponent(rec.fileRelativePath)
@@ -61,6 +68,7 @@ enum TourBuilder {
             } else {
                 unavailableReason = nil
             }
+            let nearest = samples.min { abs($0.timestamp.timeIntervalSince(rec.startDate)) < abs($1.timestamp.timeIntervalSince(rec.startDate)) }
             return TourRecordingCandidate(
                 id: index,
                 startTs: startTs,
@@ -73,7 +81,9 @@ enum TourBuilder {
                 includeInShare: unavailableReason == nil,
                 kindOverride: nil,
                 fileURL: unavailableReason == nil ? url : nil,
-                unavailableReason: unavailableReason
+                unavailableReason: unavailableReason,
+                lat: nearest?.latitude,
+                lon: nearest?.longitude
             )
         }
     }
@@ -122,7 +132,9 @@ enum TourBuilder {
                 // Deliberate — do not wire c.transcription through.
                 transcription: nil,
                 wpm: c.wpm,
-                sizeBytes: c.sizeBytes
+                sizeBytes: c.sizeBytes,
+                lat: c.lat,
+                lon: c.lon
             )
         }
         let files = included.compactMap(\.fileURL)
