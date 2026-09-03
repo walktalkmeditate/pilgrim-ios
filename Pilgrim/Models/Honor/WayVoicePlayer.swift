@@ -26,6 +26,9 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     private var player: AVAudioPlayer?
     private var pending: (url: URL, volume: Float)?
     private var preDuckVolume: Float?
+    /// Set only by `pauseForGuide()`, so a walker's own pause is never
+    /// undone by a guide prompt ending.
+    private var pausedByGuide = false
     private var elapsedTimer: Timer?
     private var cancellables: [AnyCancellable] = []
     private let coordinator = AudioSessionCoordinator.shared
@@ -36,7 +39,7 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
         super.init()
         voiceGuide.playbackDidFinish
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.startPendingIfNeeded() }
+            .sink { [weak self] in self?.guideDidFinish() }
             .store(in: &cancellables)
     }
 
@@ -57,8 +60,33 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
 
     func resume() {
         guard let player else { return }
+        // A guide prompt may have taken the duck over while this voice was
+        // held; take it back rather than speaking over a soundscape at full
+        // volume.
+        if preDuckVolume == nil {
+            preDuckVolume = soundscape.currentTargetVolume
+            soundscape.setVolume(Float(UserPreferences.voiceGuideDuckLevel.value), animated: true)
+        }
         player.play()
         startElapsedTimer()
+    }
+
+    /// Hands a starting guide prompt the soundscape level this player ducked
+    /// FROM, so the guide's own restore lands on the walker's level instead
+    /// of on this duck — exactly one owner of the duck at a time. A voice
+    /// that is actually speaking is also held for the length of the prompt
+    /// and resumed when it ends; a voice the walker paused is left paused.
+    /// `isPlayingWayVoice` deliberately stays true either way: a whisper
+    /// waiting on this voice must keep waiting.
+    func pauseForGuide() -> Float? {
+        guard player != nil, !pausedByGuide else { return nil }
+        if player?.isPlaying == true {
+            pausedByGuide = true
+            pause()
+        }
+        let inherited = preDuckVolume
+        preDuckVolume = nil
+        return inherited
     }
 
     func stop() {
@@ -87,11 +115,18 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     // MARK: - Private
 
     private func start(url: URL, volume: Float) {
-        stop()
+        // Between two voices in one run the session stays activated and the
+        // soundscape stays ducked from the ORIGINAL level: releasing and
+        // re-ducking here was an audible swell plus session churn every few
+        // hundred metres.
+        pending = nil
+        player?.stop()
+        finish(notify: false, releaseSession: false)
         AudioPriorityQueue.shared.interruptForWayVoice()
-        let current = soundscape.currentTargetVolume
-        preDuckVolume = current
-        soundscape.setVolume(Float(UserPreferences.voiceGuideDuckLevel.value), animated: true)
+        if preDuckVolume == nil {
+            preDuckVolume = soundscape.currentTargetVolume
+            soundscape.setVolume(Float(UserPreferences.voiceGuideDuckLevel.value), animated: true)
+        }
         coordinator.activate(for: .playbackOnly, consumer: "honor-voice")
         do {
             let p = try AVAudioPlayer(contentsOf: url)
@@ -112,6 +147,28 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
         }
     }
 
+    /// A guide prompt ended. A prompt that replaced another one emits too, so
+    /// re-check before acting: while a guide is still speaking, both the held
+    /// voice and the pending one keep waiting.
+    private func guideDidFinish() {
+        guard !voiceGuide.isPlaying else { return }
+        // A newer voice queued while the guide spoke supersedes a held one,
+        // exactly as it would have superseded a playing one.
+        if pending != nil {
+            pausedByGuide = false
+            startPendingIfNeeded()
+            return
+        }
+        if pausedByGuide {
+            pausedByGuide = false
+            // `resume()` takes the duck back: the guide restored the
+            // soundscape to the walker's level on its way out.
+            resume()
+            return
+        }
+        startPendingIfNeeded()
+    }
+
     private func startPendingIfNeeded() {
         guard let pending else { return }
         self.pending = nil
@@ -128,17 +185,23 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
         elapsedTimer = timer
     }
 
-    private func finish(notify: Bool) {
+    /// `releaseSession: false` is the one-run case — `start()` retiring the
+    /// previous voice before the next one begins. Every other exit gives the
+    /// soundscape and the session back.
+    private func finish(notify: Bool, releaseSession: Bool = true) {
         elapsedTimer?.invalidate()
         elapsedTimer = nil
         player = nil
         elapsedSeconds = 0
         isPlayingWayVoice = false
-        if let volume = preDuckVolume {
-            soundscape.setVolume(volume, animated: true)
-            preDuckVolume = nil
+        pausedByGuide = false
+        if releaseSession {
+            if let volume = preDuckVolume {
+                soundscape.setVolume(volume, animated: true)
+                preDuckVolume = nil
+            }
+            coordinator.deactivate(consumer: "honor-voice")
         }
-        coordinator.deactivate(consumer: "honor-voice")
         if notify { onFinished?() }
     }
 }

@@ -37,4 +37,15 @@ final class HonorLinkTests: XCTestCase {
         XCTAssertEqual(drained, "Qoi4YmPHLN")
         XCTAssertNil(PilgrimApp.pendingShareId)
     }
+
+    /// `$` in a regex matches before a trailing newline, so an id pasted with
+    /// one used to pass every shape check in the pipeline.
+    func testTrailingNewlineIsRejected() {
+        // Pasted text is trimmed first, so the newline has to arrive by a
+        // path that does not trim — an encoded one inside the URL itself.
+        XCTAssertNil(HonorLink.parse(URL(string: "https://honor.pilgrimapp.org/Qoi4YmPHLN%0A")!))
+        XCTAssertFalse(WayImporter.isShareId("Qoi4YmPHLN\n"))
+        XCTAssertFalse(WayStore.isValidId("share:Qoi4YmPHLN\n"))
+        XCTAssertFalse(WayStore.isValidId("walk:\(UUID().uuidString)\n"))
+    }
 }

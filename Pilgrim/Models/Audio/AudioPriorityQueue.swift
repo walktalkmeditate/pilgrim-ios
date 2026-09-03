@@ -52,10 +52,13 @@ final class AudioPriorityQueue: NSObject, ObservableObject, AVAudioPlayerDelegat
     }
 
     func stopWhisper() {
+        // Cleared above the guard: "stop the whisper" must also drop one that
+        // is merely waiting to start, or it surfaces after the walker
+        // silenced it.
+        pendingWhisperURL = nil
         guard player != nil else { return }
         player?.stop()
         player = nil
-        pendingWhisperURL = nil
         isPlayingWhisper = false
         restoreAndDeactivate()
     }

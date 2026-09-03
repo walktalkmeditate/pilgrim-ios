@@ -12,10 +12,37 @@ final class WayMediaDownloaderTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeDownloader(store: WayStore) -> WayMediaDownloader {
-        let downloader = WayMediaDownloader(store: store, sessionIdentifier: "test-\(UUID())")
+    /// Never the live host: `download` resumes real background tasks, and a
+    /// spec must not reach out to walk.pilgrimapp.org to exercise its
+    /// bookkeeping.
+    private static let deadHost = URL(string: "https://127.0.0.1:9/")!
+
+    private func makeDownloader(store: WayStore, baseURL: URL = WayMediaDownloaderTests.deadHost) -> WayMediaDownloader {
+        let downloader = WayMediaDownloader(store: store, sessionIdentifier: "test-\(UUID())", baseURL: baseURL)
         downloaders.append(downloader)
         return downloader
+    }
+
+    private func makeStore() -> WayStore {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        return WayStore(baseDirectory: dir)
+    }
+
+    private func way(id: String, shareId: String, moments: [WayMoment]) -> Way {
+        Way(id: id,
+            source: .share(id: shareId, pageURL: URL(string: "https://walk.pilgrimapp.org/\(shareId)")!), title: "t",
+            departedAt: Date(), tzIdentifier: nil, expires: nil, route: [], totalDistanceMeters: 0,
+            theirActiveSeconds: 0, moments: moments, weather: nil)
+    }
+
+    private func voiceMoment(_ index: Int) -> WayMoment {
+        WayMoment(id: "voice-\(index)", frac: 0.1, at: nil,
+                  kind: .voice(endFrac: 0.2, duration: 1, kind: .spoken, media: .file("audio/\(index).m4a")))
+    }
+
+    private func photoMoment(_ index: Int) -> WayMoment {
+        WayMoment(id: "photo-\(index)", frac: 0.5, at: nil, kind: .photo(media: .file("photos/\(index).jpg")))
     }
 
     func testMediaFilesListsEveryFileOnce() {
@@ -151,5 +178,113 @@ final class WayMediaDownloaderTests: XCTestCase {
     func testEntryFromURLRejectsMismatchedExtension() {
         let url = URL(string: "https://walk.pilgrimapp.org/aaaaaaaaaa/audio/12.jpg")!
         XCTAssertNil(WayMediaDownloader.entry(from: url))
+    }
+
+    func testEntryFromURLRejectsTrailingNewline() {
+        let url = URL(string: "https://walk.pilgrimapp.org/Qoi4YmPHLN%0A/audio/1.m4a")!
+        XCTAssertNil(WayMediaDownloader.entry(from: url), "a trailing newline must not slip past the id shape")
+    }
+
+    // MARK: - Delivery gating (B1, B4)
+
+    func testDeliveryForADeletedWayNeitherLandsNorRecreatesTheFolder() throws {
+        let store = makeStore()
+        let downloader = makeDownloader(store: store)
+        let way = way(id: "share:cccccccccc", shareId: "cccccccccc", moments: [voiceMoment(1)])
+        try store.save(way)
+
+        downloader._test_registerTask(id: 7, wayId: way.id, relative: "audio/1.m4a")
+
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID()).m4a")
+        try Data([1, 2, 3]).write(to: temp)
+        addTeardownBlock { try? FileManager.default.removeItem(at: temp) }
+
+        // The walker deletes the Way while the transfer is still in flight.
+        store.delete(id: way.id)
+
+        downloader.deliver(taskId: 7, requestURL: nil, status: 200, size: 3, location: temp)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: store.mediaURL(for: way.id, relative: "audio/1.m4a").path),
+                       "a delivery for a deleted Way must not recreate its folder")
+        XCTAssertFalse(downloader._test_hasTask(id: 7), "the bookkeeping for the dead transfer is dropped")
+        XCTAssertNil(downloader.failures[way.id], "no state may be recorded against a Way that no longer exists")
+        XCTAssertNil(downloader.progress[way.id])
+    }
+
+    func testDeliveryForALiveWayLands() throws {
+        let store = makeStore()
+        let downloader = makeDownloader(store: store)
+        let way = way(id: "share:dddddddddd", shareId: "dddddddddd", moments: [voiceMoment(1)])
+        try store.save(way)
+        downloader._test_registerTask(id: 8, wayId: way.id, relative: "audio/1.m4a")
+
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID()).m4a")
+        try Data([1, 2, 3]).write(to: temp)
+        addTeardownBlock { try? FileManager.default.removeItem(at: temp) }
+
+        downloader.deliver(taskId: 8, requestURL: nil, status: 200, size: 3, location: temp)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: store.mediaURL(for: way.id, relative: "audio/1.m4a").path),
+                      "a live Way's file still lands — the guard must gate deletion, not delivery itself")
+    }
+
+    /// B4: a relaunch-derived target carries no remembered cap, so the cap its
+    /// folder implies has to stand in — never "uncapped".
+    func testRelaunchDeliveryIsStillCapped() throws {
+        let store = makeStore()
+        let downloader = makeDownloader(store: store)
+        let way = way(id: "share:aaaaaaaaaa", shareId: "aaaaaaaaaa", moments: [photoMoment(1)])
+        try store.save(way)
+
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID()).jpg")
+        try Data([1]).write(to: temp)
+        addTeardownBlock { try? FileManager.default.removeItem(at: temp) }
+
+        let url = WayMediaDownloader.remoteURL(shareId: "aaaaaaaaaa", relative: "photos/1.jpg")
+        downloader.deliver(taskId: 9, requestURL: url,
+                           status: 200, size: WayMediaDownloader.byteCap(for: "photos/1.jpg") + 1, location: temp)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: store.mediaURL(for: way.id, relative: "photos/1.jpg").path),
+                       "an oversized relaunch redelivery must be refused, not written")
+    }
+
+    // MARK: - Aggregate ceilings (B9)
+
+    func testDownloadRefusesFilesBeyondThePerKindCeilings() throws {
+        let store = makeStore()
+        let downloader = makeDownloader(store: store)
+        let extraAudio = WayMediaDownloader.maxAudioFilesPerWay + 2
+        let extraPhotos = WayMediaDownloader.maxPhotoFilesPerWay + 3
+        let moments = (1...extraAudio).map(voiceMoment) + (1...extraPhotos).map(photoMoment)
+        let way = way(id: "share:eeeeeeeeee", shareId: "eeeeeeeeee", moments: moments)
+        try store.save(way)
+
+        downloader.download(way)
+        addTeardownBlock { [downloader] in downloader.cancel(wayId: "share:eeeeeeeeee") }
+
+        let refused = downloader.failures[way.id] ?? []
+        XCTAssertEqual(refused.count, 5, "everything past 12 audio and 20 photos is refused before it is enqueued")
+        XCTAssertTrue(refused.contains("audio/\(extraAudio).m4a"))
+        XCTAssertTrue(refused.contains("photos/\(extraPhotos).jpg"))
+        XCTAssertFalse(refused.contains("audio/1.m4a"), "the files inside the ceiling still go")
+    }
+
+    // MARK: - Retry (B8)
+
+    func testRetryRestartsEvenWhileTheWayIsStillActive() throws {
+        let store = makeStore()
+        let downloader = makeDownloader(store: store)
+        let way = way(id: "share:ffffffffff", shareId: "ffffffffff", moments: [voiceMoment(1)])
+        try store.save(way)
+
+        downloader.download(way)
+        XCTAssertTrue(downloader.active.contains(way.id))
+
+        // A retry tapped while the Way is still active used to be a silent
+        // no-op; it must leave the Way downloading again, not idle.
+        downloader.retry(way)
+        addTeardownBlock { [downloader] in downloader.cancel(wayId: "share:ffffffffff") }
+
+        XCTAssertTrue(downloader.active.contains(way.id), "retry re-enqueues instead of bouncing off the active guard")
     }
 }

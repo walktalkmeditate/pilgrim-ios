@@ -23,7 +23,7 @@ struct WaysListView: View {
                 // A walk that already followed this Way keeps its own route and
                 // moments; only the shareable Way folder goes away, so the
                 // walk's summary falls back to "a way that has been removed".
-                for index in offsets { WayStore.shared.delete(id: ways[index].id) }
+                for index in offsets { delete(id: ways[index].id) }
                 reload()
             }
             if !ways.isEmpty {
@@ -35,7 +35,7 @@ struct WaysListView: View {
         .onAppear(perform: reload)
         .alert("Delete all Ways?", isPresented: $confirmDeleteAll) {
             Button("Delete", role: .destructive) {
-                ways.forEach { WayStore.shared.delete(id: $0.id) }
+                ways.forEach { delete(id: $0.id) }
                 reload()
             }
             Button("Cancel", role: .cancel) {}
@@ -44,8 +44,16 @@ struct WaysListView: View {
         }
     }
 
+    /// The store stays UI-free, so cancelling the transfers that would
+    /// otherwise land in a folder nothing can see or remove belongs here, at
+    /// the delete site.
+    private func delete(id: String) {
+        WayMediaDownloader.shared.cancel(wayId: id)
+        WayStore.shared.delete(id: id)
+    }
+
     private func reload() {
-        WayStore.shared.sweepExpired(now: Date())
+        for id in WayStore.shared.sweepExpired(now: Date()) { WayMediaDownloader.shared.cancel(wayId: id) }
         ways = WayStore.shared.list()
         details = Dictionary(uniqueKeysWithValues: ways.map { ($0.id, detail(for: $0)) })
     }

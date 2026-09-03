@@ -53,7 +53,9 @@ final class WayImporterTests: XCTestCase {
     }
 
     func testMalformedShareIdIsNotFoundBeforeAnyNetwork() async {
-        let store = WayStore(baseDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        let store = WayStore(baseDirectory: dir)
         do {
             _ = try await WayImporter(store: store).importShare(id: "../etc")
             XCTFail("expected notFound")
@@ -138,5 +140,29 @@ final class WayImporterTests: XCTestCase {
         XCTAssertFalse(WayImporter.isShareId("Qoi4YmPHL"), "9 characters")
         XCTAssertFalse(WayImporter.isShareId("Qoi4YmPHLNx"), "11 characters")
         XCTAssertFalse(WayImporter.isShareId("Qoi4YmPH/N"), "a slash in place of a safe character")
+    }
+
+    func testUntrustedFreeTextIsBounded() throws {
+        let long = String(repeating: "x", count: 500)
+        let extra = ",{\"type\":\"waypoint\",\"frac\":0.4,\"label\":\"\(long)\",\"icon\":\"\(long)\"}"
+        let json = try manifest(extraEncounter: extra)
+        let way = try WayImporter.way(from: json, shareId: "Qoi4YmPHLN", now: Date())
+
+        let waypoint = try XCTUnwrap(way.moments.first { $0.id == "waypoint-1" })
+        guard case .waypoint(let label, let icon) = waypoint.kind else { return XCTFail("expected a waypoint moment") }
+        XCTAssertEqual(label.count, WayImporter.maxLabelCharacters, "a manifest label reaches a map callout — bound it at the door")
+        XCTAssertEqual(icon.count, WayImporter.maxIconCharacters)
+    }
+
+    func testWeatherConditionIsBounded() throws {
+        let long = String(repeating: "y", count: 500)
+        let json = """
+        {"v":1,"start_date":"2026-08-01T07:00:00Z","expires":"2099-01-01T00:00:00.000Z",
+         "weather_condition":"\(long)",
+         "route":[{"lat":42.88,"lon":-8.545,"alt":250,"ts":1000},{"lat":42.88,"lon":-8.540,"alt":250,"ts":1400}],
+         "encounters":[],"meditation":[],"stats":{"active_duration":540}}
+        """
+        let way = try WayImporter.way(from: decode(json), shareId: "Qoi4YmPHLN", now: Date())
+        XCTAssertEqual(way.weather?.condition.count, WayImporter.maxWeatherConditionCharacters)
     }
 }

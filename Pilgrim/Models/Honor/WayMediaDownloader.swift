@@ -18,6 +18,9 @@ final class WayMediaDownloader: NSObject, ObservableObject {
     var backgroundCompletionHandler: (() -> Void)?
 
     private let store: WayStore
+    /// Injectable so a spec can resume real tasks against an unroutable host
+    /// instead of the live one; production always gets `WayImporter.baseURL`.
+    private let baseURL: URL
     private var session: URLSession!
     private var tasks: [Int: (wayId: String, relative: String, cap: Int)] = [:]
     private var pending: [String: Set<String>] = [:]
@@ -26,8 +29,9 @@ final class WayMediaDownloader: NSObject, ObservableObject {
     /// reads this instead of reloading the Way from disk on every completion.
     private var totals: [String: Int] = [:]
 
-    init(store: WayStore, sessionIdentifier: String) {
+    init(store: WayStore, sessionIdentifier: String, baseURL: URL = WayImporter.baseURL) {
         self.store = store
+        self.baseURL = baseURL
         super.init()
         let config = URLSessionConfiguration.background(withIdentifier: sessionIdentifier)
         config.isDiscretionary = false
@@ -55,18 +59,43 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         return files
     }
 
-    nonisolated static func remoteURL(shareId: String, relative: String) -> URL {
-        WayImporter.baseURL.appendingPathComponent(shareId).appendingPathComponent(relative)
+    nonisolated static func remoteURL(baseURL: URL = WayImporter.baseURL, shareId: String, relative: String) -> URL {
+        baseURL.appendingPathComponent(shareId).appendingPathComponent(relative)
     }
 
     nonisolated static func byteCap(for relative: String) -> Int {
         relative.hasPrefix("audio/") ? 15 * 1024 * 1024 : 2 * 1024 * 1024
     }
 
+    /// The sharing side ships at most 12 recordings and 20 photos, so a
+    /// manifest declaring more never came from a walk page this app made.
+    /// `WayImporter.maxEncounters` alone would let one share id pull 200
+    /// files (3 GB at the audio cap) onto the disk; refusing the excess
+    /// before anything is enqueued bounds that at 12x15 MB + 20x2 MB.
+    static let maxAudioFilesPerWay = 12
+    static let maxPhotoFilesPerWay = 20
+
+    /// Splits the files to fetch into the ones within the per-kind ceilings
+    /// and the ones beyond them, preserving manifest order so the same
+    /// manifest always refuses the same files.
+    private static func withinCeilings(_ files: [String]) -> (accepted: [String], refused: [String]) {
+        var accepted: [String] = []
+        var refused: [String] = []
+        var audio = 0, photos = 0
+        for relative in files {
+            let isAudio = relative.hasPrefix("audio/")
+            let room = isAudio ? audio < maxAudioFilesPerWay : photos < maxPhotoFilesPerWay
+            guard room else { refused.append(relative); continue }
+            if isAudio { audio += 1 } else { photos += 1 }
+            accepted.append(relative)
+        }
+        return (accepted, refused)
+    }
+
     /// What `WayImporter.way(from:shareId:now:)` writes into every `media:
     /// .file(...)`: an index of at most 5 digits under the matching folder.
     /// A prefix check alone can't be trusted here — see `entry(from:)`.
-    nonisolated private static let mediaPathPattern = "^(?:audio/[0-9]{1,5}\\.m4a|photos/[0-9]{1,5}\\.jpg)$"
+    nonisolated private static let mediaPathPattern = "\\A(?:audio/[0-9]{1,5}\\.m4a|photos/[0-9]{1,5}\\.jpg)\\z"
 
     /// A relaunch drops in-memory task bookkeeping, but the background
     /// session still redelivers a download that finished while the app was
@@ -93,9 +122,12 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         // A second `gather` from a reopened overview must not double-enqueue
         // a Way that's already downloading.
         guard !active.contains(way.id) else { return }
-        let allFiles = Self.mediaFiles(for: way)
-        let files = allFiles.filter { !FileManager.default.fileExists(atPath: store.mediaURL(for: way.id, relative: $0).path) }
-        failures[way.id] = nil
+        // The ceilings are applied to everything the Way declares, not just
+        // the files still missing, so a partly-fetched hostile manifest can't
+        // walk past them one `download` at a time.
+        let (declared, refused) = Self.withinCeilings(Self.mediaFiles(for: way))
+        let files = declared.filter { !FileManager.default.fileExists(atPath: store.mediaURL(for: way.id, relative: $0).path) }
+        failures[way.id] = refused.isEmpty ? nil : refused
         diskFull.remove(way.id)
         guard !files.isEmpty else {
             progress[way.id] = 1
@@ -104,16 +136,19 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         }
         active.insert(way.id)
         pending[way.id] = Set(files)
-        totals[way.id] = allFiles.count
+        totals[way.id] = declared.count
         // Seeded from what's already on disk, not 0, so progress is monotonic
         // across repeated `download()` calls for the same Way.
-        progress[way.id] = 1 - Double(files.count) / Double(allFiles.count)
+        progress[way.id] = 1 - Double(files.count) / Double(declared.count)
         for relative in files { enqueue(wayId: way.id, shareId: shareId, relative: relative) }
     }
 
     func retry(_ way: Way) {
-        retried[way.id] = nil
-        diskFull.remove(way.id)
+        // A retry tapped while the last failure is still hopping to the main
+        // actor would find the Way still `active` and silently do nothing.
+        // Clearing the bookkeeping first makes the retry unconditional: the
+        // in-flight `finish` then finds no entry of its own and returns.
+        cancel(wayId: way.id)
         download(way)
     }
 
@@ -145,7 +180,7 @@ final class WayMediaDownloader: NSObject, ObservableObject {
     }
 
     private func enqueue(wayId: String, shareId: String, relative: String) {
-        let task = session.downloadTask(with: Self.remoteURL(shareId: shareId, relative: relative))
+        let task = session.downloadTask(with: Self.remoteURL(baseURL: baseURL, shareId: shareId, relative: relative))
         tasks[task.taskIdentifier] = (wayId, relative, Self.byteCap(for: relative))
         task.resume()
     }
@@ -219,25 +254,42 @@ extension WayMediaDownloader: URLSessionDownloadDelegate {
         let taskId = downloadTask.taskIdentifier
         let status = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
         let size = (try? FileManager.default.attributesOfItem(atPath: location.path)[.size] as? Int) ?? 0
+        let requestURL = downloadTask.originalRequest?.url
         MainActor.assumeIsolated {
-            let known = self.tasks[taskId]
-            guard let target = known.map({ (wayId: $0.wayId, relative: $0.relative) })
-                ?? (downloadTask.originalRequest?.url).flatMap(Self.entry(from:)) else { return }
-            // A legitimate relaunch redelivery always has a `way.json` on disk; without one the Way was deleted mid-transfer.
-            if known == nil { guard self.store.load(id: target.wayId) != nil else { return } }
-            // A resumed transfer finishes as 206, not 200; a relaunch-derived
-            // target carries no remembered byte cap, so only an in-memory
-            // entry can be checked against one.
-            guard (200...299).contains(status), known.map({ size <= $0.cap }) ?? true else {
-                self.finish(taskId: taskId, success: false)
-                return
-            }
-            let dest = self.store.mediaURL(for: target.wayId, relative: target.relative)
-            switch Self.move(from: location, to: dest) {
-            case .moved: self.finish(taskId: taskId, success: true)
-            case .diskFull: self.finish(taskId: taskId, success: false, retryable: false, diskFull: true)
-            case .failed: self.finish(taskId: taskId, success: false)
-            }
+            self.deliver(taskId: taskId, requestURL: requestURL, status: status, size: size, location: location)
+        }
+    }
+
+    /// The delivery decision, lifted out of the delegate callback so a spec
+    /// can drive it without fabricating a `URLSessionDownloadTask`.
+    func deliver(taskId: Int, requestURL: URL?, status: Int, size: Int, location: URL) {
+        let known = tasks[taskId]
+        guard let target = known.map({ (wayId: $0.wayId, relative: $0.relative) })
+            ?? requestURL.flatMap(Self.entry(from:)) else { return }
+        // Nothing may land for a Way that is gone — deleted by the walker or
+        // swept as expired — whether or not an in-memory entry still
+        // remembers the transfer. `move` creates the folder it writes into,
+        // so a delivery past this point would resurrect a directory no list
+        // can see and no delete can reach. Drop the bookkeeping rather than
+        // record a failure: the Way it would be recorded against no longer
+        // exists.
+        guard store.load(id: target.wayId) != nil else {
+            tasks.removeValue(forKey: taskId)
+            return
+        }
+        // A resumed transfer finishes as 206, not 200. A relaunch-derived
+        // target carries no remembered byte cap, so it falls back to the cap
+        // its folder implies — never to "uncapped".
+        guard (200...299).contains(status),
+              known.map({ size <= $0.cap }) ?? (size <= Self.byteCap(for: target.relative)) else {
+            finish(taskId: taskId, success: false)
+            return
+        }
+        let dest = store.mediaURL(for: target.wayId, relative: target.relative)
+        switch Self.move(from: location, to: dest) {
+        case .moved: finish(taskId: taskId, success: true)
+        case .diskFull: finish(taskId: taskId, success: false, retryable: false, diskFull: true)
+        case .failed: finish(taskId: taskId, success: false)
         }
     }
 
@@ -269,3 +321,16 @@ extension WayMediaDownloader: URLSessionDownloadDelegate {
         }
     }
 }
+
+#if DEBUG
+extension WayMediaDownloader {
+
+    /// Seeds the in-memory bookkeeping a live transfer would have created,
+    /// so a spec can drive `deliver` without a real background session.
+    func _test_registerTask(id: Int, wayId: String, relative: String) {
+        tasks[id] = (wayId, relative, Self.byteCap(for: relative))
+    }
+
+    func _test_hasTask(id: Int) -> Bool { tasks[id] != nil }
+}
+#endif

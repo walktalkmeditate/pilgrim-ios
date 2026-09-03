@@ -4,16 +4,31 @@ import AVFoundation
 
 final class WayVoicePlayerTests: XCTestCase {
 
+    private var soundscapeVolume: Float = 0
+
     override func setUp() {
         super.setUp()
+        soundscapeVolume = SoundscapePlayer.shared.currentTargetVolume
+        VoiceGuidePlayer.shared.stop()
         WayVoicePlayer.shared.stop()
+        WayVoicePlayer.shared.onFinished = nil
         AudioPriorityQueue.shared.stopWhisper()
     }
 
     override func tearDown() {
+        VoiceGuidePlayer.shared.stop()
         WayVoicePlayer.shared.stop()
+        WayVoicePlayer.shared.onFinished = nil
         AudioPriorityQueue.shared.stopWhisper()
+        SoundscapePlayer.shared.setVolume(soundscapeVolume, animated: false)
         super.tearDown()
+    }
+
+    private func makeAudioFile(duration: TimeInterval = 5) throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("way-voice-\(UUID().uuidString).m4a")
+        _ = try TestAudioFile.writeSilentAudioFile(to: url, duration: duration)
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        return url
     }
 
     func testMissingFileReportsFinishedAndReleasesTheSession() {
@@ -78,5 +93,92 @@ final class WayVoicePlayerTests: XCTestCase {
         player.resume()
         player.stop()
         XCTAssertFalse(player.isPlayingWayVoice)
+    }
+
+    // MARK: - Guide interplay (B2, B3)
+
+    /// B2: a voice held behind a guide prompt used to be stranded when the
+    /// guide was STOPPED rather than allowed to finish — `stop()` sent no
+    /// `playbackDidFinish`, so nothing ever released the pending voice.
+    func testStoppingTheGuideReleasesAPendingWayVoice() throws {
+        let voiceURL = try makeAudioFile()
+        let guideAV = try TestAudioFile.makePlayer(duration: 5)
+        XCTAssertTrue(guideAV.play())
+        VoiceGuidePlayer.shared._test_install(player: guideAV, onFinished: nil)
+        XCTAssertTrue(VoiceGuidePlayer.shared.isPlaying)
+
+        let voice = WayVoicePlayer.shared
+        voice.play(url: voiceURL, volume: 0.8)
+        XCTAssertFalse(voice.isPlayingWayVoice, "a voice arriving behind a guide waits its turn")
+
+        let started = expectation(description: "the held voice starts")
+        let token = voice.$isPlayingWayVoice.filter { $0 }.sink { _ in started.fulfill() }
+        VoiceGuidePlayer.shared.stop()
+        wait(for: [started], timeout: 2)
+        token.cancel()
+    }
+
+    /// B3, guide-then-voice: the guide restores the soundscape on its way
+    /// out, the released voice ducks from there, and its own end brings the
+    /// walker's level back.
+    func testGuideThenVoiceRestoresTheOriginalSoundscapeLevel() throws {
+        let original: Float = 0.9
+        SoundscapePlayer.shared.setVolume(original, animated: false)
+        let voiceURL = try makeAudioFile()
+        let guideURL = try makeAudioFile()
+
+        VoiceGuidePlayer.shared._test_play(url: guideURL)
+        let voice = WayVoicePlayer.shared
+        voice.play(url: voiceURL, volume: 0.8)
+        XCTAssertFalse(voice.isPlayingWayVoice)
+
+        let started = expectation(description: "the held voice starts")
+        let token = voice.$isPlayingWayVoice.filter { $0 }.sink { _ in started.fulfill() }
+        VoiceGuidePlayer.shared.stop()
+        wait(for: [started], timeout: 2)
+        token.cancel()
+
+        voice.stop()
+        XCTAssertEqual(SoundscapePlayer.shared.currentTargetVolume, original, accuracy: 0.001)
+    }
+
+    /// B3, voice-then-guide: the guide arriving mid-voice used to capture the
+    /// voice's duck as its own "before", so whichever ended last left the
+    /// soundscape quiet for the rest of the walk.
+    func testVoiceThenGuideRestoresTheOriginalSoundscapeLevel() throws {
+        let original: Float = 0.9
+        SoundscapePlayer.shared.setVolume(original, animated: false)
+        let voiceURL = try makeAudioFile()
+        let guideURL = try makeAudioFile()
+
+        let voice = WayVoicePlayer.shared
+        voice.play(url: voiceURL, volume: 0.8)
+        XCTAssertTrue(voice.isPlayingWayVoice)
+        XCTAssertNotEqual(SoundscapePlayer.shared.currentTargetVolume, original, accuracy: 0.001,
+                          "the voice ducks the soundscape while it speaks")
+
+        VoiceGuidePlayer.shared._test_play(url: guideURL)
+
+        // The voice ends first — the ordering that used to leave the guide
+        // restoring the soundscape to the duck it inherited.
+        voice.stop()
+        VoiceGuidePlayer.shared.stop()
+
+        XCTAssertEqual(SoundscapePlayer.shared.currentTargetVolume, original, accuracy: 0.001)
+    }
+
+    /// A guide prompt only pauses a voice; the walker's own pause must not be
+    /// undone when the prompt ends.
+    func testGuideFinishDoesNotResumeAWalkerPausedVoice() throws {
+        let voiceURL = try makeAudioFile()
+        let guideURL = try makeAudioFile()
+        let voice = WayVoicePlayer.shared
+        voice.play(url: voiceURL, volume: 0.8)
+        voice.pause()
+
+        VoiceGuidePlayer.shared._test_play(url: guideURL)
+        VoiceGuidePlayer.shared.stop()
+
+        XCTAssertTrue(voice.isPlayingWayVoice, "a paused voice is still in flight for the queue")
     }
 }

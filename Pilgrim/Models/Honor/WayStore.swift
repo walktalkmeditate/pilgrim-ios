@@ -53,7 +53,7 @@ final class WayStore {
     /// UUID). The store still refuses anything else so a stray folder name or
     /// a future caller can never turn an id into a path outside `Ways/`.
     static func isValidId(_ id: String) -> Bool {
-        id.range(of: "^(share:[A-Za-z0-9_-]{10}|walk:[0-9A-Fa-f-]{36})$", options: .regularExpression) != nil
+        id.range(of: "\\A(share:[A-Za-z0-9_-]{10}|walk:[0-9A-Fa-f-]{36})\\z", options: .regularExpression) != nil
     }
 
     func save(_ way: Way) throws {

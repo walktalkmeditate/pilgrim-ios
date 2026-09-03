@@ -16,11 +16,16 @@ struct WayImporter {
     static let maxEncounterN = 10_000
     static let maxActiveDurationSeconds: Double = 7 * 24 * 3600
     static let maxTitlePlaceCharacters = 80
+    /// Free-text fields from an untrusted manifest reach a map callout, a
+    /// card, and the summary. Bounded here, once, so no consumer has to.
+    static let maxLabelCharacters = 80
+    static let maxIconCharacters = 64
+    static let maxWeatherConditionCharacters = 64
 
     /// The importer enforces the id shape itself; it must never depend on a
     /// UI-layer parser having run first.
     static func isShareId(_ id: String) -> Bool {
-        id.range(of: "^[A-Za-z0-9_-]{10}$", options: .regularExpression) != nil
+        id.range(of: "\\A[A-Za-z0-9_-]{10}\\z", options: .regularExpression) != nil
     }
 
     /// The overview's toast promises a quick answer ("reaching for the
@@ -148,7 +153,7 @@ struct WayImporter {
             case "waypoint":
                 waypointN += 1
                 moments.append(WayMoment(id: "waypoint-\(waypointN)", frac: e.frac, at: at,
-                                         kind: .waypoint(label: e.label ?? "", icon: e.icon ?? "mappin")))
+                    kind: .waypoint(label: capped(e.label, maxLabelCharacters), icon: capped(e.icon, maxIconCharacters, or: "mappin"))))
             case "rest":
                 restN += 1
                 moments.append(WayMoment(id: "rest-\(restN)", frac: e.frac, at: at, kind: .rest(minutes: e.minutes ?? 0)))
@@ -178,7 +183,12 @@ struct WayImporter {
             route: route, totalDistanceMeters: geometry.totalMeters,
             theirActiveSeconds: m.stats?.active_duration ?? geometry.totalSeconds,
             moments: moments,
-            weather: m.weather_condition.map { WayWeather(condition: $0, temperatureC: m.weather_temperature) })
+            weather: m.weather_condition.map { WayWeather(condition: capped($0, maxWeatherConditionCharacters), temperatureC: m.weather_temperature) })
+    }
+
+    /// Bounds one free-text field from an untrusted manifest.
+    private static func capped(_ value: String?, _ max: Int, or fallback: String = "") -> String {
+        String((value ?? fallback).prefix(max))
     }
 
     /// Drops place strings that are empty after trimming and caps each at

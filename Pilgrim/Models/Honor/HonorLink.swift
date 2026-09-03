@@ -5,7 +5,7 @@ import Foundation
 enum HonorLink {
 
     static let hosts: Set<String> = ["honor.pilgrimapp.org", "walk.pilgrimapp.org"]
-    private static let idPattern = "^[A-Za-z0-9_-]{10}$"
+    private static let idPattern = "\\A[A-Za-z0-9_-]{10}\\z"
 
     static func parse(_ url: URL) -> String? {
         guard let host = url.host?.lowercased(), hosts.contains(host) else { return nil }

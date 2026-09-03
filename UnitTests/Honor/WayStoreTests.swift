@@ -9,12 +9,16 @@ final class WayStoreTests: XCTestCase {
     private var clock = Date(timeIntervalSince1970: 2_000_000)
 
     override func setUp() {
+        super.setUp()
         dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         clock = Date(timeIntervalSince1970: 2_000_000)
         store = WayStore(baseDirectory: dir, now: { [unowned self] in self.clock })
     }
 
-    override func tearDown() { try? FileManager.default.removeItem(at: dir) }
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: dir)
+        super.tearDown()
+    }
 
     private func way(id: String, expires: Date?) -> Way {
         Way(id: id, source: .share(id: "abc", pageURL: URL(string: "https://walk.pilgrimapp.org/abc")!),

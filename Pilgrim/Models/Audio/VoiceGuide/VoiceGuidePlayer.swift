@@ -24,15 +24,23 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
 
     func play(prompt: VoiceGuidePrompt, packId: String, onFinished: (() -> Void)? = nil) {
         guard let url = fileStore.localURL(for: prompt, packId: packId) else { return }
+        lastPromptId = prompt.id
+        lastPackId = packId
+        startPlayback(url: url, onFinished: onFinished)
+    }
 
+    private func startPlayback(url: URL, onFinished: (() -> Void)?) {
         AudioPriorityQueue.shared.interruptForVoiceGuide()
         stop()
 
         self.onFinished = onFinished
-        lastPromptId = prompt.id
-        lastPackId = packId
 
-        let currentVolume = soundscapePlayer.currentTargetVolume
+        // A Way voice already speaking is held for the length of this prompt,
+        // and hands over the level it ducked FROM — otherwise this player
+        // would capture that duck as its own "before", and restoring to it
+        // would leave the soundscape quiet for the rest of the walk.
+        let inherited = WayVoicePlayer.shared.pauseForGuide()
+        let currentVolume = inherited ?? soundscapePlayer.currentTargetVolume
         preDuckVolume = currentVolume
         let duckLevel = Float(UserPreferences.voiceGuideDuckLevel.value)
         soundscapePlayer.setVolume(duckLevel, animated: true)
@@ -50,6 +58,7 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
             print("[VoiceGuidePlayer] Playback error: \(error)")
             restoreAndDeactivate()
             finishPendingCallback()
+            playbackDidFinish.send()
         }
     }
 
@@ -59,6 +68,12 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
         player = nil
         restoreAndDeactivate()
         finishPendingCallback()
+        // Every exit path announces the end, not just the natural one: a Way
+        // voice or a whisper held behind this prompt is otherwise stranded
+        // for the rest of the walk. Subscribers re-check `isPlaying` before
+        // acting, so the extra emission a replacing `play()` triggers is
+        // harmless.
+        playbackDidFinish.send()
     }
 
     /// A dropped `onFinished` wedges VoiceGuideScheduler's isPlaying latch
@@ -104,6 +119,12 @@ final class VoiceGuidePlayer: NSObject, AVAudioPlayerDelegate {
     func _test_install(player p: AVAudioPlayer, onFinished: (() -> Void)?) {
         player = p
         self.onFinished = onFinished
+    }
+
+    /// Runs the production start path against a file the spec wrote, so the
+    /// duck-and-hold sequence can be exercised without a pack on disk.
+    func _test_play(url: URL, onFinished: (() -> Void)? = nil) {
+        startPlayback(url: url, onFinished: onFinished)
     }
     #endif
 }

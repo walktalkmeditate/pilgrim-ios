@@ -68,8 +68,19 @@ enum MapGlyphImageBuilder {
         case .seekClearing(let tint):
             return "clearing-\(rgbKey(for: tint))"
         case .wayMark(let symbol, let tint):
-            return "way-\(symbol)-\(rgbKey(for: tint))"
+            // Keyed on what actually renders, not on what was asked for: a
+            // shared Way's icon is unvalidated, so every unknown name draws
+            // the same "mappin" and must share one entry rather than mint a
+            // new one per bad name.
+            return "way-\(resolvedWayMarkSymbol(symbol))-\(rgbKey(for: tint))"
         }
+    }
+
+    /// An SF Symbol name a shared Way supplied is not validated at write
+    /// time; anything the system doesn't know falls back to "mappin" rather
+    /// than rendering an invisible but still-tappable pin.
+    private static func resolvedWayMarkSymbol(_ symbol: String) -> String {
+        UIImage(systemName: symbol) == nil ? "mappin" : symbol
     }
 
     /// Tints are fixed, opaque literals — `WhisperCategory.borderColor` for
@@ -105,12 +116,9 @@ enum MapGlyphImageBuilder {
     /// else's mark, not the walker's own, next to a live pin of the same
     /// shape. The symbol renders at roughly half the disc's point size and
     /// is centered rather than stretched to fill the square, so wide glyphs
-    /// (e.g. "waveform") stay inside the disc instead of overrunning it. An
-    /// unknown SF Symbol name — a shared Way's waypoint icon isn't
-    /// validated at write time — falls back to "mappin" rather than
-    /// rendering an invisible but still-tappable pin.
+    /// (e.g. "waveform") stay inside the disc instead of overrunning it.
     private static func renderedWayMark(symbol: String, tint: UIColor, size: CGFloat) -> UIImage? {
-        let resolvedSymbol = UIImage(systemName: symbol) == nil ? "mappin" : symbol
+        let resolvedSymbol = resolvedWayMarkSymbol(symbol)
         let config = UIImage.SymbolConfiguration(pointSize: size * 0.55, weight: .medium)
         guard let symbolImage = UIImage(systemName: resolvedSymbol, withConfiguration: config)?
             .withTintColor(tint, renderingMode: .alwaysOriginal) else { return nil }

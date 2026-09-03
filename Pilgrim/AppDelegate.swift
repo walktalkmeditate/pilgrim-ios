@@ -167,7 +167,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     private func sweepExpiredWays() {
         guard NSClassFromString("XCTestCase") == nil else { return }
         Task.detached(priority: .utility) {
-            WayStore.shared.sweepExpired(now: Date())
+            let swept = WayStore.shared.sweepExpired(now: Date())
+            guard !swept.isEmpty else { return }
+            // A transfer still in flight for a swept Way would recreate the
+            // folder the sweep just removed; the downloader is main-isolated,
+            // so the cancel hops back.
+            await MainActor.run {
+                for id in swept { WayMediaDownloader.shared.cancel(wayId: id) }
+            }
         }
     }
 
@@ -197,7 +204,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                      handleEventsForBackgroundURLSession identifier: String,
                      completionHandler: @escaping () -> Void) {
         guard identifier == "org.walktalkmeditate.pilgrim.ways" else { completionHandler(); return }
-        Task { @MainActor in WayMediaDownloader.shared.backgroundCompletionHandler = completionHandler }
+        // This delegate method already runs on main, so the handler is
+        // installed synchronously: a Task hop could let the session's own
+        // completion callbacks fire before the handler is in place, and the
+        // system would never be told the work was finished.
+        MainActor.assumeIsolated {
+            WayMediaDownloader.shared.backgroundCompletionHandler = completionHandler
+        }
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {

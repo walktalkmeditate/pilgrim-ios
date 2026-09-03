@@ -25,8 +25,9 @@ enum HonorOverviewModel {
     static func weatherLine(theirs: WayWeather?, today: String?) -> String? {
         guard let theirs else { return nil }
         var line = "they walked this in \(spoken(theirs.condition))"
-        // Int(_:) traps on an out-of-range Double; clamp so a Way from any source stays safe.
-        if let t = theirs.temperatureC { line += " at \(Int(min(max(t.rounded(), -1000), 1000)))°" }
+        // Int(_:) traps on an out-of-range Double AND on a NaN or infinity,
+        // which no clamp catches; a Way from any source stays safe.
+        if let t = theirs.temperatureC, t.isFinite { line += " at \(Int(min(max(t.rounded(), -1000), 1000)))°" }
         line += "."
         if let today { line += " Today is \(spoken(today))." }
         return line

@@ -88,7 +88,7 @@ struct HonorWaysSheet: View {
                 }
             }
             .onAppear {
-                WayStore.shared.sweepExpired(now: Date())
+                for id in WayStore.shared.sweepExpired(now: Date()) { WayMediaDownloader.shared.cancel(wayId: id) }
                 acceptedWays = WayStore.shared.list().filter { if case .share = $0.source { return true } else { return false } }
                 withMedia = Set(acceptedWays.filter { WayStore.shared.hasMedia(id: $0.id) }.map(\.id))
             }
