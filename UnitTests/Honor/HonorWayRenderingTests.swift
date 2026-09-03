@@ -105,3 +105,16 @@ extension HonorWayRenderingTests {
         XCTAssertNil(PilgrimAnnotation.Kind.photo(localIdentifier: "x").wayMomentID)
     }
 }
+
+extension HonorWayRenderingTests {
+
+    func testRelationLineSaysHereWithinAFewStridesAndNamesThePlace() {
+        XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 12, place: nil), "here")
+        XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 29.6, place: nil), "here")
+        XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 40.4, place: nil), "40 m away")
+        XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 40, place: "Rúa do Franco"), "40 m away · Rúa do Franco")
+        XCTAssertEqual(WayMomentHeader.relation(distanceMeters: nil, place: "Rúa do Franco"), "Rúa do Franco")
+        XCTAssertNil(WayMomentHeader.relation(distanceMeters: nil, place: ""))
+        XCTAssertNil(WayMomentHeader.relation(distanceMeters: nil, place: nil))
+    }
+}

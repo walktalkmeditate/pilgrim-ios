@@ -148,7 +148,8 @@ struct WayImporter {
                 voiceN += 1
                 moments.append(WayMoment(id: "voice-\(voiceN)", frac: e.frac, at: at,
                     kind: .voice(endFrac: e.end_frac ?? e.frac, duration: e.duration ?? 0,
-                                 kind: e.type == "voice" ? .spoken : .ambient, media: .file("audio/\(n).m4a"))))
+                                 kind: e.type == "voice" ? .spoken : .ambient, media: .file("audio/\(n).m4a")),
+                    place: trimmedPlace(e.place)))
             case "photo":
                 guard let n = e.n else { continue }
                 photoN += 1
@@ -217,6 +218,13 @@ struct WayImporter {
     /// Bounds one free-text field from an untrusted manifest.
     private static func capped(_ value: String?, _ max: Int, or fallback: String = "") -> String {
         String((value ?? fallback).prefix(max))
+    }
+
+    /// A street name the sharer's page reverse-geocoded, or nothing: blank
+    /// after trimming reads as no place rather than an empty subline.
+    private static func trimmedPlace(_ raw: String?) -> String? {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
+        return String(trimmed.prefix(maxTitlePlaceCharacters))
     }
 
     /// Drops place strings that are empty after trimming and caps each at

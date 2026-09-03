@@ -41,6 +41,9 @@ struct WayMoment: Codable, Equatable, Identifiable {
     /// nil falls back to `WayGeometry.coordinate(atFrac:)`.
     let at: WayCoordinate?
     let kind: WayMomentKind
+    /// The street or place the sharer's page names for a voice, when the
+    /// worker had one. Optional and last: older `way.json` files lack it.
+    var place: String?
 
     var isVoice: Bool {
         if case .voice = kind { return true }

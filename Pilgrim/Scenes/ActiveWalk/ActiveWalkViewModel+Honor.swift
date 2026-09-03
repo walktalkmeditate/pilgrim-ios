@@ -48,9 +48,11 @@ extension ActiveWalkViewModel {
         // answer immediately with another `.voiceStart`.
         player.onFinished = { [weak self] in
             guard let self, self.honorGeneration == generation else { return }
+            let finished = self.activeVoice
             self.activeVoice = nil
             self.isVoicePaused = false
             self.honorEngine?.voiceDidFinish()
+            if let finished { self.retireCardLater(finished) }
         }
         wayVoicePlayer = player
 
@@ -109,6 +111,7 @@ extension ActiveWalkViewModel {
         reachedMomentIDs.removeAll()
         suggestedMeditationMinutes = nil
         pendingReplyOrigin = nil
+        touchedCardIDs.removeAll()
         softTapCaption = nil
     }
 
@@ -161,6 +164,10 @@ extension ActiveWalkViewModel {
         heardVoiceIDs.insert(moment.id)
         refreshHonorPins()
         wayVoicePlayer?.play(url: url, volume: Self.voiceVolume(for: kind))
+        // The voice's own card rises with it — the waveform, the place, the
+        // reply — and retires itself after the voice unless the walker
+        // touches it, so an unanswered voice never leaves a card to close.
+        showCard(for: moment)
     }
 
     /// The caption retires itself, so a walker who rejoins the Way is never
@@ -196,6 +203,44 @@ extension ActiveWalkViewModel {
     /// carries nothing.
     var isShowingHonorCard: Bool {
         (honorArrival != nil && !honorArrivalCardDismissed) || !honorCards.isEmpty
+    }
+
+    /// Straight-line metres from the walker's last fix to the moment's place,
+    /// nil before the first fix. Cheap enough for the card's subline.
+    func distanceToMoment(_ moment: WayMoment) -> Double? {
+        guard let here = currentLocation else { return nil }
+        let there: CLLocationCoordinate2D
+        if let at = moment.at {
+            there = CLLocationCoordinate2D(latitude: at.lat, longitude: at.lon)
+        } else if let engine = honorEngine {
+            there = engine.geometry.coordinate(atFrac: moment.frac)
+        } else {
+            return nil
+        }
+        return CLLocation(latitude: here.latitude, longitude: here.longitude)
+            .distance(from: CLLocation(latitude: there.latitude, longitude: there.longitude))
+    }
+
+    /// The seconds a finished voice's card stays before retiring on its own.
+    static let cardRetireSeconds: TimeInterval = 20
+
+    func touchCard(_ moment: WayMoment) {
+        touchedCardIDs.insert(moment.id)
+    }
+
+    /// A voice card the walker never touched leaves by itself once its voice
+    /// has ended; one they touched (played again, replied to) waits for them.
+    func retireIfUntouched(_ moment: WayMoment) {
+        guard !touchedCardIDs.contains(moment.id), activeVoice != moment else { return }
+        honorCards.removeAll { $0 == moment }
+    }
+
+    private func retireCardLater(_ moment: WayMoment) {
+        let generation = honorGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.cardRetireSeconds) { [weak self] in
+            guard let self, self.honorGeneration == generation else { return }
+            self.retireIfUntouched(moment)
+        }
     }
 
     func dismissTopCard() {

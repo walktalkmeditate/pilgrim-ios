@@ -39,48 +39,21 @@ struct WayMomentPreview: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .top, spacing: Constants.UI.Padding.normal) {
-            ZStack {
-                Circle().fill(Color.parchmentSecondary).frame(width: 52, height: 52)
-                Image(systemName: glyph).font(Constants.Typography.heading).foregroundColor(.stone)
-            }
-            VStack(alignment: .leading, spacing: Constants.UI.Padding.xs) {
-                Text(kicker).font(Constants.Typography.heading).foregroundColor(.ink)
-                Text(alongTheWay).font(Constants.Typography.caption).foregroundColor(.fog)
-            }
-        }
+        WayMomentHeader(moment: moment, subline: alongTheWay)
     }
 
-    private var glyph: String {
-        switch moment.kind {
-        case .voice(_, _, let kind, _): return kind == .ambient ? "wind" : "waveform"
-        case .photo: return "photo"
-        case .rest: return "cup.and.saucer"
-        case .meditation: return "circle.circle"
-        case .waypoint(_, let icon): return UIImage(systemName: icon) == nil ? "mappin" : icon
-        }
-    }
-
-    private var kicker: String {
-        switch moment.kind {
-        case .voice(_, _, let kind, _): return kind == .ambient ? "the sound of this place" : "spoken here"
-        case .photo: return "what they saw here"
-        case .rest(let minutes): return "they rested here \(minutes) minutes"
-        case .meditation(let minutes, let isEstimate):
-            return isEstimate ? "they sat here about \(minutes) minutes" : "they sat here for \(minutes) minutes"
-        case .waypoint(let label, _): return label
-        }
-    }
-
-    /// "1.2 km along their way · 8:41 AM": the moment's place on the line and
-    /// the hour it happened, in the walk's own time zone.
+    /// "1.2 km along their way · 8:41 AM · Rúa do Franco": the moment's place
+    /// on the line, the hour it happened in the walk's own time zone, and the
+    /// street the sharer's page names when it has one.
     private static func alongTheWay(way: Way, moment: WayMoment) -> String {
         let distance = StatsHelper.string(for: moment.frac * way.totalDistanceMeters, unit: UnitLength.meters, type: .distance)
         let elapsed = WayGeometry(route: way.route).elapsed(atFrac: moment.frac)
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.timeZone = way.tzIdentifier.flatMap(TimeZone.init(identifier:)) ?? .current
-        return "\(distance) along their way · \(formatter.string(from: way.departedAt.addingTimeInterval(elapsed)))"
+        var parts = ["\(distance) along their way", formatter.string(from: way.departedAt.addingTimeInterval(elapsed))]
+        if let place = moment.place, !place.isEmpty { parts.append(place) }
+        return parts.joined(separator: " · ")
     }
 
     // MARK: - Body per kind

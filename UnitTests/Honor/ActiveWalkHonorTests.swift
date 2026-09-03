@@ -105,8 +105,11 @@ final class ActiveWalkHonorTests: XCTestCase {
         XCTAssertEqual(player.played, [recordingURL])
         XCTAssertEqual(vm.activeVoice?.id, "voice-1")
         XCTAssertEqual(vm.heardVoiceIDs, ["voice-1"])
+        XCTAssertEqual(vm.honorCards.map(\.id), ["voice-1"], "a starting voice raises its own card")
         drive(fix(lon: 500 / 111_320, seconds: 400))
-        XCTAssertEqual(vm.honorCards.first?.id, "sit-1")
+        XCTAssertEqual(vm.honorCards.map(\.id), ["voice-1", "sit-1"])
+        vm.dismissTopCard()
+        XCTAssertEqual(vm.honorCards.map(\.id), ["sit-1"])
         vm.dismissTopCard()
         XCTAssertTrue(vm.honorCards.isEmpty)
     }
@@ -440,5 +443,49 @@ final class ActiveWalkHonorTests: XCTestCase {
         XCTAssertNotNil(vm.mediaURL(for: .file("audio/1.m4a")))
         XCTAssertNil(vm.mediaURL(for: .file("../../escape.m4a")))
         XCTAssertNil(vm.mediaURL(for: .recording(relativePath: "../Library/escape.m4a")))
+    }
+}
+
+extension ActiveWalkHonorTests {
+
+    func testDistanceToMomentReadsFromTheLastFix() {
+        let voice = vm.way!.moments.first { $0.id == "voice-1" }!
+        XCTAssertNil(vm.distanceToMoment(voice))
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        XCTAssertEqual(vm.distanceToMoment(voice) ?? -1, 300, accuracy: 3)
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        XCTAssertEqual(vm.distanceToMoment(voice) ?? -1, 0, accuracy: 1)
+    }
+
+    func testAnUntouchedVoiceCardRetiresOnlyOnceItsVoiceHasEnded() {
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        let voice = vm.activeVoice!
+        vm.showCard(for: voice)
+
+        vm.retireIfUntouched(voice)
+        XCTAssertTrue(vm.honorCards.contains(voice), "a card whose voice is still playing stays")
+
+        player.onFinished?()
+        vm.retireIfUntouched(voice)
+        XCTAssertFalse(vm.honorCards.contains(voice))
+    }
+
+    func testATouchedVoiceCardWaitsToBeDismissed() {
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        drive(fix(lon: 300 / 111_320, seconds: 200))
+        let voice = vm.activeVoice!
+        vm.showCard(for: voice)
+        vm.touchCard(voice)
+
+        player.onFinished?()
+        vm.retireIfUntouched(voice)
+        XCTAssertTrue(vm.honorCards.contains(voice))
+
+        vm.dismissTopCard()
+        XCTAssertFalse(vm.honorCards.contains(voice))
     }
 }

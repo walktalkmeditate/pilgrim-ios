@@ -559,6 +559,7 @@
 		E45CCFD6C6A29B3BC03CF2AB /* VoiceGuideManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */; };
 		E45CCFD6C6A29B3BC03CF2AC /* MeditationGuideManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CE1DB41D3DBD404C28973C /* MeditationGuideManagement.swift */; };
 		E45CCFD6C6A29B3BC03CF2AD /* MeditationGuideManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CE1DB41D3DBD404C28973D /* MeditationGuideManagementTests.swift */; };
+		E53BBE66094487C94BA1BF93 /* WayMomentHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA7F1293F3B3A254BBF2A4C /* WayMomentHeader.swift */; };
 		E58124E91A8DEF710C1944B7 /* whisper-stillness-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = 98AE88EB65E9E2DBE7F0A927 /* whisper-stillness-1.aac */; };
 		E599A6F8ED9AEBCAF54D30C3 /* ProximityNotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E1E26D725BFD04CD5FC1F25 /* ProximityNotificationView.swift */; };
 		E65BB078BB0FCDC6365ACCCD /* ActiveWalkViewModel+Honor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A773662D19C26501C8377349 /* ActiveWalkViewModel+Honor.swift */; };
@@ -1001,6 +1002,7 @@
 		65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973C /* MeditationGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973D /* MeditationGuideManagementTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagementTests.swift; sourceTree = "<group>"; };
+		6AA7F1293F3B3A254BBF2A4C /* WayMomentHeader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayMomentHeader.swift; sourceTree = "<group>"; };
 		6BF7056E6064D6423F5E736E /* InteractiveShareSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InteractiveShareSection.swift; sourceTree = "<group>"; };
 		6C077B3FA336178A9F4CBC6F /* whisper-play-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-4.aac"; sourceTree = "<group>"; };
 		6D7E8F9A0B1C2D3E4F5A6B7C /* RouteTrimmer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteTrimmer.swift; sourceTree = "<group>"; };
@@ -2602,6 +2604,7 @@
 				2A312457000654189A0B40D7 /* HonorWaysSheet.swift */,
 				A4C5E2D7D058435DA3A5730A /* WayMomentPreview.swift */,
 				CD4E7D8A0E356F0605D09A1D /* WayPhotoViewer.swift */,
+				6AA7F1293F3B3A254BBF2A4C /* WayMomentHeader.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3507,6 +3510,7 @@
 				493C30BC957DAB3F448A2BE0 /* ActiveWalkViewModel+Segments.swift in Sources */,
 				C94A3491F0E9679B28631867 /* WayMomentPreview.swift in Sources */,
 				085A5DD2915A505529A94BA3 /* WayPhotoViewer.swift in Sources */,
+				E53BBE66094487C94BA1BF93 /* WayMomentHeader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -113,6 +113,9 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     /// MeditationView, never a countdown.
     @Published var suggestedMeditationMinutes: Int?
     var pendingReplyOrigin: WayMoment?
+    /// Cards the walker has touched; an untouched voice card retires itself
+    /// after its voice ends, a touched one waits to be dismissed.
+    var touchedCardIDs: Set<String> = []
     /// The Way's pins and its ghost line, memoized like `proximityPins`
     /// (AF43): both cost a `WayGeometry` build or a whole-route map, and the
     /// walk map's body runs at up to 20 Hz. `refreshHonorPins()` is the only

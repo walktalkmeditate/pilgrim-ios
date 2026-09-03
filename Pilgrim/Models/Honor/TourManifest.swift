@@ -30,9 +30,10 @@ struct TourManifest: Decodable {
         let minutes: Int?
         let lat: Double?
         let lon: Double?
+        let place: String?
 
         enum CodingKeys: String, CodingKey {
-            case type, frac, end_frac, n, duration, label, icon, minutes, lat, lon
+            case type, frac, end_frac, n, duration, label, icon, minutes, lat, lon, place
         }
     }
 

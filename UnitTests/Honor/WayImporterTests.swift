@@ -208,3 +208,21 @@ extension WayImporterTests {
         }
     }
 }
+
+extension WayImporterTests {
+
+    func testVoicePlaceIsTrimmedCappedAndDroppedWhenBlank() throws {
+        let long = String(repeating: "x", count: 81)
+        let extra = """
+        ,{"type":"voice","frac":0.55,"end_frac":0.56,"n":3,"duration":5,"dwell":1,"place":"  Rúa do Franco  "},
+        {"type":"voice","frac":0.56,"end_frac":0.57,"n":4,"duration":5,"dwell":1,"place":"\(long)"},
+        {"type":"voice","frac":0.57,"end_frac":0.58,"n":5,"duration":5,"dwell":1,"place":"   "}
+        """
+        let way = try WayImporter.way(from: manifest(extraEncounter: extra), shareId: "Qoi4YmPHLN", now: Date())
+        func place(_ id: String) -> String? { way.moments.first { $0.id == id }?.place }
+        XCTAssertNil(place("voice-1"), "a voice without a place stays without one")
+        XCTAssertEqual(place("voice-3"), "Rúa do Franco")
+        XCTAssertEqual(place("voice-4")?.count, WayImporter.maxTitlePlaceCharacters)
+        XCTAssertNil(place("voice-5"))
+    }
+}

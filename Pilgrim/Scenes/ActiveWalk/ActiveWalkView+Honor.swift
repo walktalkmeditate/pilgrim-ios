@@ -50,6 +50,7 @@ struct HonorCardHost: View {
     let onSit: (Int) -> Void
     @State private var mediaURL: URL?
     @State private var existingReply: URL?
+    @State private var waveform: [Float]?
 
     var body: some View {
         Group {
@@ -63,21 +64,26 @@ struct HonorCardHost: View {
                 WayPlaceCard(
                     moment: moment,
                     mediaURL: mediaURL,
+                    distanceMeters: viewModel.distanceToMoment(moment),
                     isPlaying: isPlaying,
                     isPaused: viewModel.isVoicePaused,
                     // The player's clock is shared across every voice; a card
                     // whose voice isn't the one playing must not show its tick.
                     elapsed: isPlaying ? voicePlayer.elapsedSeconds : 0,
+                    waveform: waveform,
+                    isRecordingReply: viewModel.isRecordingVoice && viewModel.pendingReplyOrigin == moment,
                     pendingCount: max(0, viewModel.honorCards.count - 1),
                     existingReply: existingReply,
                     onPlayPause: { viewModel.togglePlayback(of: moment) },
                     onPlayReply: { url in viewModel.playReply(url: url) },
                     onReply: { viewModel.replyHere(to: moment) },
+                    onStopReply: { viewModel.toggleVoiceRecording() },
                     onSit: onSit,
-                    onDismiss: { viewModel.dismissTopCard() }
+                    onDismiss: { viewModel.dismissTopCard() },
+                    onTouch: { viewModel.touchCard(moment) }
                 )
                 .id(moment.id)
-                .task(id: lookupKey(for: moment)) { resolveFiles(for: moment) }
+                .task(id: lookupKey(for: moment)) { await resolveFiles(for: moment) }
             }
         }
         .padding(.horizontal, Constants.UI.Padding.normal)
@@ -92,9 +98,17 @@ struct HonorCardHost: View {
         "\(moment.id)|\(viewModel.completedRecordingCount)"
     }
 
-    private func resolveFiles(for moment: WayMoment) {
-        mediaURL = momentMediaURL(for: moment)
+    private func resolveFiles(for moment: WayMoment) async {
+        let url = momentMediaURL(for: moment)
+        mediaURL = url
         existingReply = moment.isVoice ? viewModel.existingReplyURL(for: moment) : nil
+        // The host outlives each card (only the card carries `.id`), so a
+        // stale waveform must be cleared before the next one is read.
+        waveform = nil
+        guard moment.isVoice, let url else { return }
+        let samples = await Task.detached(priority: .utility) { WaveformGenerator.generateSamples(from: url) }.value
+        guard !Task.isCancelled else { return }
+        waveform = samples
     }
 
     private func momentMediaURL(for moment: WayMoment) -> URL? {
