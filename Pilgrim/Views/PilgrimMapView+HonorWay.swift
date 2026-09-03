@@ -79,8 +79,8 @@ extension PilgrimMapView {
         /// the layers with the other palette.
         static func ghostStyle(dark: Bool) -> GhostStyle {
             dark
-                ? GhostStyle(color: UIColor(hex: "#D9CFBF"), lineOpacity: 0.55, companionOpacity: 0.85)
-                : GhostStyle(color: UIColor(hex: "#8A8175"), lineOpacity: 0.35, companionOpacity: 0.6)
+                ? GhostStyle(color: UIColor(hex: "#D9CFBF"), lineOpacity: 0.4, companionOpacity: 0.85)
+                : GhostStyle(color: UIColor(hex: "#8A8175"), lineOpacity: 0.22, companionOpacity: 0.6)
         }
 
         static func ghostStyle(for mapView: MBMapView) -> GhostStyle {
