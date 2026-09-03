@@ -63,11 +63,20 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         relative.hasPrefix("audio/") ? 15 * 1024 * 1024 : 2 * 1024 * 1024
     }
 
+    /// What `WayImporter.way(from:shareId:now:)` writes into every `media:
+    /// .file(...)`: an index of at most 5 digits under the matching folder.
+    /// A prefix check alone can't be trusted here — see `entry(from:)`.
+    nonisolated private static let mediaPathPattern = "^(?:audio/[0-9]{1,5}\\.m4a|photos/[0-9]{1,5}\\.jpg)$"
+
     /// A relaunch drops in-memory task bookkeeping, but the background
     /// session still redelivers a download that finished while the app was
     /// suspended: this rebuilds (wayId, relative) from the request URL the
-    /// way it was constructed by `remoteURL`, refusing anything that
-    /// doesn't already have the exact shape that call site produces.
+    /// way it was constructed by `remoteURL`. `pathComponents` decodes a
+    /// percent-encoded slash (`audio%2F..%2F..%2Fx.m4a`) into a single
+    /// component whose *content* still starts with "audio/", so a prefix
+    /// check alone would pass it through; matching the exact shape
+    /// `remoteURL` emits closes that gap. The `..` component check stays as
+    /// a second guard against the traversal segments that arrive unencoded.
     nonisolated static func entry(from url: URL) -> (wayId: String, relative: String)? {
         guard url.host == WayImporter.baseURL.host else { return nil }
         let components = url.pathComponents.filter { $0 != "/" }
@@ -75,7 +84,7 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         let shareId = components[0]
         guard WayImporter.isShareId(shareId) else { return nil }
         let relative = components.dropFirst().joined(separator: "/")
-        guard relative.hasPrefix("audio/") || relative.hasPrefix("photos/") else { return nil }
+        guard relative.range(of: mediaPathPattern, options: .regularExpression) != nil else { return nil }
         return (wayId: "share:\(shareId)", relative: relative)
     }
 
@@ -128,6 +137,13 @@ final class WayMediaDownloader: NSObject, ObservableObject {
         }
     }
 
+    /// For tests and other non-singleton instances to tear down their own
+    /// background session; `shared` lives for the app's lifetime and never
+    /// calls this.
+    func invalidate() {
+        session.invalidateAndCancel()
+    }
+
     private func enqueue(wayId: String, shareId: String, relative: String) {
         let task = session.downloadTask(with: Self.remoteURL(shareId: shareId, relative: relative))
         tasks[task.taskIdentifier] = (wayId, relative, Self.byteCap(for: relative))
@@ -166,9 +182,8 @@ final class WayMediaDownloader: NSObject, ObservableObject {
 
     private enum MoveOutcome { case moved, diskFull, failed }
 
-    /// `createDirectory` used to be `try?`-swallowed, silently falling
-    /// through to `moveItem` against a directory that might not exist; both
-    /// steps now report failure instead of proceeding blind.
+    /// Both steps report failure so a missing directory can't be mistaken
+    /// for a failed move.
     nonisolated private static func move(from location: URL, to dest: URL) -> MoveOutcome {
         do {
             try FileManager.default.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -208,6 +223,8 @@ extension WayMediaDownloader: URLSessionDownloadDelegate {
             let known = self.tasks[taskId]
             guard let target = known.map({ (wayId: $0.wayId, relative: $0.relative) })
                 ?? (downloadTask.originalRequest?.url).flatMap(Self.entry(from:)) else { return }
+            // A legitimate relaunch redelivery always has a `way.json` on disk; without one the Way was deleted mid-transfer.
+            if known == nil { guard self.store.load(id: target.wayId) != nil else { return } }
             // A resumed transfer finishes as 206, not 200; a relaunch-derived
             // target carries no remembered byte cap, so only an in-memory
             // entry can be checked against one.
@@ -218,7 +235,7 @@ extension WayMediaDownloader: URLSessionDownloadDelegate {
             let dest = self.store.mediaURL(for: target.wayId, relative: target.relative)
             switch Self.move(from: location, to: dest) {
             case .moved: self.finish(taskId: taskId, success: true)
-            case .diskFull: self.finish(taskId: taskId, success: false, diskFull: true)
+            case .diskFull: self.finish(taskId: taskId, success: false, retryable: false, diskFull: true)
             case .failed: self.finish(taskId: taskId, success: false)
             }
         }

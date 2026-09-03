@@ -1,7 +1,22 @@
 import XCTest
 @testable import Pilgrim
 
+@MainActor
 final class WayMediaDownloaderTests: XCTestCase {
+
+    private var downloaders: [WayMediaDownloader] = []
+
+    override func tearDown() {
+        for downloader in downloaders { downloader.invalidate() }
+        downloaders = []
+        super.tearDown()
+    }
+
+    private func makeDownloader(store: WayStore) -> WayMediaDownloader {
+        let downloader = WayMediaDownloader(store: store, sessionIdentifier: "test-\(UUID())")
+        downloaders.append(downloader)
+        return downloader
+    }
 
     func testMediaFilesListsEveryFileOnce() {
         let moments = [
@@ -24,12 +39,11 @@ final class WayMediaDownloaderTests: XCTestCase {
     /// No network involved: every file the downloader would fetch is already
     /// on disk, so `download` must resolve to full progress without touching
     /// `active` or resuming a single task.
-    @MainActor
     func testDownloadWithEverythingAlreadyOnDiskCompletesImmediately() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         let store = WayStore(baseDirectory: dir)
-        let downloader = WayMediaDownloader(store: store, sessionIdentifier: "test-\(UUID())")
+        let downloader = makeDownloader(store: store)
 
         let moments = [
             WayMoment(id: "voice-1", frac: 0.1, at: nil, kind: .voice(endFrac: 0.2, duration: 1, kind: .spoken, media: .file("audio/1.m4a"))),
@@ -56,12 +70,11 @@ final class WayMediaDownloaderTests: XCTestCase {
     /// The files are missing on purpose so `download` resumes real tasks on
     /// the background session; `cancel` must still clear every per-Way entry
     /// synchronously, without waiting on those tasks to actually complete.
-    @MainActor
     func testCancelClearsEveryPerWayEntry() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         let store = WayStore(baseDirectory: dir)
-        let downloader = WayMediaDownloader(store: store, sessionIdentifier: "test-\(UUID())")
+        let downloader = makeDownloader(store: store)
 
         let moments = [
             WayMoment(id: "voice-1", frac: 0.1, at: nil, kind: .voice(endFrac: 0.2, duration: 1, kind: .spoken, media: .file("audio/1.m4a")))
@@ -105,6 +118,38 @@ final class WayMediaDownloaderTests: XCTestCase {
 
     func testEntryFromURLRejectsTraversalSegment() {
         let url = URL(string: "https://walk.pilgrimapp.org/aaaaaaaaaa/audio/../../etc/passwd")!
+        XCTAssertNil(WayMediaDownloader.entry(from: url))
+    }
+
+    /// The traversal guard on `entry(from:)` is component-wise, so a
+    /// percent-encoded slash keeps this as one path component that starts
+    /// with "audio/" without matching the numeric-file shape the app emits.
+    func testEntryFromURLRejectsPercentEncodedTraversal() {
+        let url = URL(string: "https://walk.pilgrimapp.org/aaaaaaaaaa/audio%2F..%2F..%2Fx.m4a")!
+        XCTAssertNil(WayMediaDownloader.entry(from: url))
+    }
+
+    func testEntryFromURLRejectsPercentEncodedDotDotSegment() {
+        let url = URL(string: "https://walk.pilgrimapp.org/aaaaaaaaaa/audio/%2E%2E/x.m4a")!
+        XCTAssertNil(WayMediaDownloader.entry(from: url))
+    }
+
+    func testEntryFromURLAcceptsWellFormedAudioPath() {
+        let url = URL(string: "https://walk.pilgrimapp.org/aaaaaaaaaa/audio/12.m4a")!
+        let result = WayMediaDownloader.entry(from: url)
+        XCTAssertEqual(result?.relative, "audio/12.m4a")
+    }
+
+    func testEntryFromURLAcceptsWellFormedPhotoPath() {
+        let url = URL(string: "https://walk.pilgrimapp.org/aaaaaaaaaa/photos/3.jpg")!
+        let result = WayMediaDownloader.entry(from: url)
+        XCTAssertEqual(result?.relative, "photos/3.jpg")
+    }
+
+    /// The shape match is per-folder: an audio file never carries a `.jpg`
+    /// extension, even though both are otherwise well-formed.
+    func testEntryFromURLRejectsMismatchedExtension() {
+        let url = URL(string: "https://walk.pilgrimapp.org/aaaaaaaaaa/audio/12.jpg")!
         XCTAssertNil(WayMediaDownloader.entry(from: url))
     }
 }
