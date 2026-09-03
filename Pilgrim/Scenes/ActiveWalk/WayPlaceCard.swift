@@ -143,6 +143,11 @@ struct WayPlaceCard: View {
                 .accessibilityLabel("Stop recording your reply")
             }
         } else {
+            if let line = moment.transcriptLine {
+                Text("“\(line)”")
+                    .font(Constants.Typography.body).italic().foregroundColor(.ink)
+                    .lineLimit(2)
+            }
             transportRow(duration: duration)
             replyRow
         }

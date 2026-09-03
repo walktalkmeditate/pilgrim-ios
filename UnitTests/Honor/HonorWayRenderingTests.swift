@@ -148,3 +148,15 @@ extension HonorWayRenderingTests {
         XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 18_244, place: "Rúa do Franco"), "18.2 km away · Rúa do Franco")
     }
 }
+
+extension HonorWayRenderingTests {
+
+    func testTranscriptLineIsTheFirstSentenceCutAtAWordWhenLong() {
+        XCTAssertNil(WayMoment.firstSentence(of: nil, maxCharacters: 120))
+        XCTAssertNil(WayMoment.firstSentence(of: "  ", maxCharacters: 120))
+        XCTAssertEqual(WayMoment.firstSentence(of: "Quiet here. Birds later.", maxCharacters: 120), "Quiet here.")
+        XCTAssertEqual(WayMoment.firstSentence(of: "no punctuation at all", maxCharacters: 120), "no punctuation at all")
+        let long = "one two three four five six seven eight nine ten eleven twelve"
+        XCTAssertEqual(WayMoment.firstSentence(of: long, maxCharacters: 20), "one two three four…")
+    }
+}

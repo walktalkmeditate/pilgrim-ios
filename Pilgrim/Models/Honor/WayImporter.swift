@@ -149,7 +149,7 @@ struct WayImporter {
                 moments.append(WayMoment(id: "voice-\(voiceN)", frac: e.frac, at: at,
                     kind: .voice(endFrac: e.end_frac ?? e.frac, duration: e.duration ?? 0,
                                  kind: e.type == "voice" ? .spoken : .ambient, media: .file("audio/\(n).m4a")),
-                    place: trimmedPlace(e.place)))
+                    place: trimmedPlace(e.place), transcript: WayMoment.trimmedTranscript(e.transcript)))
             case "photo":
                 guard let n = e.n else { continue }
                 photoN += 1

@@ -50,7 +50,8 @@ enum OwnWalkWayBuilder {
                 id: "voice-\(n + 1)", frac: start.frac, at: start.at,
                 kind: .voice(endFrac: max(end.frac, start.frac), duration: rec.duration,
                              kind: TourBuilder.classify(transcription: rec.transcription) == .spoken ? .spoken : .ambient,
-                             media: .recording(relativePath: rec.fileRelativePath))))
+                             media: .recording(relativePath: rec.fileRelativePath)),
+                transcript: WayMoment.trimmedTranscript(rec.transcription)))
         }
         for (n, photo) in walk.walkPhotos.sorted(by: { $0.capturedAt < $1.capturedAt }).enumerated() {
             let p = place(photo.capturedAt)
