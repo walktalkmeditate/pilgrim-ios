@@ -112,6 +112,7 @@ extension ActiveWalkViewModel {
         suggestedMeditationMinutes = nil
         pendingReplyOrigin = nil
         touchedCardIDs.removeAll()
+        voiceRate = 1
         softTapCaption = nil
     }
 
@@ -364,6 +365,22 @@ extension ActiveWalkViewModel {
         heardVoiceIDs.insert(moment.id)
         refreshHonorPins()
         player.play(url: url, volume: Self.voiceVolume(for: kind))
+    }
+
+    /// Scrubbing a card whose voice isn't the one playing starts that voice
+    /// first — the walker asked for a spot in it, not for silence.
+    func seekVoice(_ moment: WayMoment, toFraction fraction: Double) {
+        if moment != activeVoice { togglePlayback(of: moment) }
+        guard moment == activeVoice else { return }
+        wayVoicePlayer?.seek(toFraction: fraction)
+    }
+
+    /// 1× → 1.25× → 1.5× → 2× → 1×, the same ladder as the post-walk player.
+    func cycleVoiceRate() {
+        let rates = WayVoicePlayer.rates
+        let next = rates[((rates.firstIndex(of: voiceRate) ?? 0) + 1) % rates.count]
+        voiceRate = next
+        wayVoicePlayer?.setRate(next)
     }
 
     func skipVoice() {

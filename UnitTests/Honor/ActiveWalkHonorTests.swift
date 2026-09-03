@@ -9,10 +9,14 @@ final class ActiveWalkHonorTests: XCTestCase {
         var onFinished: (() -> Void)?
         var played: [URL] = []
         var pauses = 0, resumes = 0, stops = 0
+        var seeks: [Double] = []
+        var rates: [Float] = []
         func play(url: URL, volume: Float) { played.append(url) }
         func pause() { pauses += 1 }
         func resume() { resumes += 1 }
         func stop() { stops += 1 }
+        func seek(toFraction fraction: Double) { seeks.append(fraction) }
+        func setRate(_ rate: Float) { rates.append(rate) }
     }
 
     private var player: SpyVoicePlayer!
@@ -487,5 +491,37 @@ extension ActiveWalkHonorTests {
 
         vm.dismissTopCard()
         XCTAssertFalse(vm.honorCards.contains(voice))
+    }
+}
+
+extension ActiveWalkHonorTests {
+
+    func testScrubbingACardWhoseVoiceIsNotPlayingStartsItThenSeeks() {
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        let voice = vm.way!.moments.first { $0.id == "voice-1" }!
+        XCTAssertNil(vm.activeVoice)
+
+        vm.seekVoice(voice, toFraction: 0.5)
+        XCTAssertEqual(vm.activeVoice, voice)
+        XCTAssertEqual(player.played, [recordingURL])
+        XCTAssertEqual(player.seeks, [0.5])
+
+        vm.seekVoice(voice, toFraction: 0.25)
+        XCTAssertEqual(player.played.count, 1, "the playing voice is scrubbed, not restarted")
+        XCTAssertEqual(player.seeks, [0.5, 0.25])
+    }
+
+    func testCyclingTheVoiceRateClimbsTheLadderAndWrapsToOne() {
+        begin()
+        XCTAssertEqual(vm.voiceRate, 1)
+        vm.cycleVoiceRate()
+        vm.cycleVoiceRate()
+        XCTAssertEqual(vm.voiceRate, 1.5)
+        XCTAssertEqual(player.rates, [1.25, 1.5])
+        vm.cycleVoiceRate()
+        vm.cycleVoiceRate()
+        XCTAssertEqual(vm.voiceRate, 1)
+        XCTAssertEqual(player.rates.last, 1)
     }
 }

@@ -94,6 +94,8 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var honorCards: [WayMoment] = []
     @Published var activeVoice: WayMoment?
     @Published var isVoicePaused = false
+    /// The walker's chosen voice speed for this walk; 1× at the start of every walk.
+    @Published var voiceRate: Float = 1
     @Published var honorArrival: HonorArrivalCard?
     /// The arrival card is retired by its own flag, never by clearing
     /// `honorArrival` — `MainCoordinatorView` reads the companion delta off

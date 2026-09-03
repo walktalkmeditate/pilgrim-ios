@@ -19,7 +19,10 @@ struct WayPlaceCard: View {
     let pendingCount: Int
     /// The walker's earlier reply to this voice, from a previous honoring of the same Way.
     let existingReply: URL?
+    let rate: Float
     let onPlayPause: () -> Void
+    let onSeek: (Double) -> Void
+    let onCycleRate: () -> Void
     let onPlayReply: (URL) -> Void
     let onReply: () -> Void
     let onStopReply: () -> Void
@@ -52,7 +55,6 @@ struct WayPlaceCard: View {
             body(for: moment.kind)
         }
         .padding(Constants.UI.Padding.normal)
-        .frame(maxHeight: 200)
         .background(RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal).fill(Color.parchmentSecondary))
         .offset(x: dragOffset)
         .opacity(1 - min(0.6, abs(dragOffset) / 240))
@@ -110,6 +112,11 @@ struct WayPlaceCard: View {
         }
     }
 
+    // MARK: - Voice
+
+    /// Transport on one line — play, the waveform you can scrub, the speed —
+    /// and the reply on the next, so the two kinds of touch never sit
+    /// shoulder to shoulder.
     @ViewBuilder
     private func voiceBody(duration: Double) -> some View {
         if isRecordingReply {
@@ -123,34 +130,57 @@ struct WayPlaceCard: View {
                 .accessibilityLabel("Stop recording your reply")
             }
         } else {
-            HStack(spacing: Constants.UI.Padding.small) {
-                Button { onTouch(); onPlayPause() } label: {
-                    Image(systemName: isPlaying && !isPaused ? "pause.circle.fill" : "play.circle.fill")
-                        .font(Constants.Typography.displayMedium).foregroundColor(.stone)
-                }
-                .accessibilityLabel(isPlaying && !isPaused ? "Pause their voice" : "Play their voice")
-                VStack(alignment: .leading, spacing: 3) {
-                    if let waveform {
-                        WaveformBarView(samples: waveform, progress: duration > 0 ? min(1, elapsed / duration) : 0, isPlaying: isPlaying && !isPaused)
-                            .frame(height: 24)
-                            .allowsHitTesting(false)
-                    } else {
-                        RoundedRectangle(cornerRadius: 4).fill(Color.fog.opacity(0.15)).frame(height: 24)
-                    }
-                    Text("\(clock(elapsed)) / \(clock(duration))")
-                        .font(Constants.Typography.caption).foregroundColor(.fog).monospacedDigit()
-                }
-                replyButton
+            transportRow(duration: duration)
+            replyRow
+        }
+    }
+
+    private func transportRow(duration: Double) -> some View {
+        let playing = isPlaying && !isPaused
+        return HStack(alignment: .center, spacing: Constants.UI.Padding.small) {
+            Button { onTouch(); onPlayPause() } label: {
+                Image(systemName: playing ? "pause.circle.fill" : "play.circle.fill")
+                    .font(Constants.Typography.displayMedium).foregroundColor(.stone)
             }
-            if let existingReply {
-                HStack(spacing: Constants.UI.Padding.small) {
-                    Text("your reply").font(Constants.Typography.caption).foregroundColor(.fog)
-                    Button { onTouch(); onPlayReply(existingReply) } label: {
-                        Image(systemName: "play.circle").foregroundColor(.stone)
-                            .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+            .accessibilityLabel(playing ? "Pause their voice" : "Play their voice")
+            VStack(alignment: .leading, spacing: 4) {
+                if let waveform {
+                    WaveformBarView(samples: waveform, progress: duration > 0 ? min(1, elapsed / duration) : 0, isPlaying: playing) { fraction in
+                        onTouch(); onSeek(fraction)
                     }
-                    .accessibilityLabel("Play your earlier reply")
+                    .frame(height: 28)
+                    .accessibilityLabel("Their voice; drag to move through it")
+                } else {
+                    RoundedRectangle(cornerRadius: 4).fill(Color.fog.opacity(0.15)).frame(height: 28)
                 }
+                Text("\(clock(elapsed)) / \(clock(duration))")
+                    .font(Constants.Typography.caption).foregroundColor(.fog).monospacedDigit()
+            }
+            Button { onTouch(); onCycleRate() } label: {
+                Text(rateLabel)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(rate > 1 ? .parchment : .stone)
+                    .padding(.horizontal, 6).padding(.vertical, 3)
+                    .background(rate > 1 ? Color.stone : Color.stone.opacity(0.12))
+                    .cornerRadius(4)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Playback speed, \(rateLabel)")
+        }
+    }
+
+    private var replyRow: some View {
+        HStack(spacing: Constants.UI.Padding.small) {
+            replyButton
+            if let existingReply {
+                Spacer()
+                Button { onTouch(); onPlayReply(existingReply) } label: {
+                    Label("your reply", systemImage: "play.circle")
+                        .font(Constants.Typography.caption).foregroundColor(.stone)
+                        .frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Play your earlier reply")
             }
         }
     }
@@ -158,20 +188,29 @@ struct WayPlaceCard: View {
     @ViewBuilder
     private var replyButton: some View {
         if existingReply == nil {
-            Button { onTouch(); onReply() } label: {
-                Image(systemName: "mic.circle").font(Constants.Typography.displayMedium).foregroundColor(.stone)
-            }
-            .accessibilityLabel("Record a reply at this spot")
+            Button { onTouch(); onReply() } label: { replyPill("reply here") }
+                .accessibilityLabel("Record a reply at this spot")
         } else {
-            Button { onTouch(); confirmReplace = true } label: {
-                Image(systemName: "mic.circle").font(Constants.Typography.displayMedium).foregroundColor(.stone)
-            }
-            .accessibilityLabel("Record a new reply, replacing your earlier one")
-            .confirmationDialog("Replace your earlier reply?", isPresented: $confirmReplace, titleVisibility: .visible) {
-                Button("Replace", role: .destructive, action: onReply)
-                Button("Keep it", role: .cancel) {}
-            }
+            Button { onTouch(); confirmReplace = true } label: { replyPill("record again") }
+                .accessibilityLabel("Record a new reply, replacing your earlier one")
+                .confirmationDialog("Replace your earlier reply?", isPresented: $confirmReplace, titleVisibility: .visible) {
+                    Button("Replace", role: .destructive, action: onReply)
+                    Button("Keep it", role: .cancel) {}
+                }
         }
+    }
+
+    private func replyPill(_ title: String) -> some View {
+        Label(title, systemImage: "mic")
+            .font(Constants.Typography.caption).foregroundColor(.stone)
+            .padding(.horizontal, Constants.UI.Padding.normal).padding(.vertical, Constants.UI.Padding.small)
+            .overlay(Capsule().stroke(Color.stone.opacity(0.5), lineWidth: 1))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+    }
+
+    private var rateLabel: String {
+        rate.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0fx", rate) : String(format: "%gx", rate)
     }
 
     private func clock(_ seconds: Double) -> String {

@@ -9,6 +9,10 @@ protocol WayVoicePlaying: AnyObject {
     func pause()
     func resume()
     func stop()
+    /// Moves the playing voice to `fraction` of its length; a no-op with no voice loaded.
+    func seek(toFraction fraction: Double)
+    /// Applies to the current voice and every one after it in this run.
+    func setRate(_ rate: Float)
 }
 
 /// Plays one Way voice at a time. Modeled on AudioPriorityQueue, not on the
@@ -21,7 +25,11 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
 
     @Published private(set) var isPlayingWayVoice = false
     @Published private(set) var elapsedSeconds: TimeInterval = 0
+    /// The walker's chosen speed, kept across the voices of one walk.
+    @Published private(set) var playbackRate: Float = 1
     var onFinished: (() -> Void)?
+
+    static let rates: [Float] = [1, 1.25, 1.5, 2]
 
     private var player: AVAudioPlayer?
     private var pending: (url: URL, volume: Float)?
@@ -104,6 +112,17 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
         finish(notify: false)
     }
 
+    func seek(toFraction fraction: Double) {
+        guard let player, player.duration > 0 else { return }
+        player.currentTime = min(max(0, fraction), 0.999) * player.duration
+        elapsedSeconds = player.currentTime
+    }
+
+    func setRate(_ rate: Float) {
+        playbackRate = rate
+        player?.rate = rate
+    }
+
     /// The delegate hands back the exact `AVAudioPlayer` it was invoked on;
     /// `stop()`/`start()` always nil or replace `player` first, so a callback
     /// that lands after either is guaranteed to fail the identity check.
@@ -141,6 +160,9 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
             let p = try AVAudioPlayer(contentsOf: url)
             p.delegate = self
             p.volume = volume
+            // Rate must be enabled before the player is prepared or it stays 1×.
+            p.enableRate = true
+            p.rate = playbackRate
             p.prepareToPlay()
             guard p.play() else {
                 finish(notify: true)
