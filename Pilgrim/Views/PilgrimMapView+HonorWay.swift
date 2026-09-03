@@ -36,12 +36,30 @@ extension PilgrimMapView {
         static let lineLayerID = "honor-way-line"
         static let companionSourceID = "honor-companion-source"
         static let companionLayerID = "honor-companion"
-        static let lineColor = UIColor(hex: "#8A8175")
-        static let lineOpacity = 0.35
         static let lineWidth = 4.0
         static let companionRadius = 6.0
-        static let companionOpacity = 0.6
         static let companionUpdateInterval: TimeInterval = 2
+
+        struct GhostStyle: Equatable {
+            let color: UIColor
+            let lineOpacity: Double
+            let companionOpacity: Double
+        }
+
+        /// Map layers take fixed colors, so the ghost is chosen per map style
+        /// at install time: stone on parchment reads as a faded trace, but the
+        /// same stone at 0.35 blends into the dark style's ink ground and
+        /// vanishes. An appearance flip reloads the style, which reinstalls
+        /// the layers with the other palette.
+        static func ghostStyle(dark: Bool) -> GhostStyle {
+            dark
+                ? GhostStyle(color: UIColor(hex: "#D9CFBF"), lineOpacity: 0.55, companionOpacity: 0.85)
+                : GhostStyle(color: UIColor(hex: "#8A8175"), lineOpacity: 0.35, companionOpacity: 0.6)
+        }
+
+        static func ghostStyle(for mapView: MBMapView) -> GhostStyle {
+            ghostStyle(dark: mapView.traitCollection.userInterfaceStyle == .dark)
+        }
     }
 
     static func wayPins(for way: Way, heardVoiceIDs: Set<String>) -> [PilgrimAnnotation] {
@@ -107,8 +125,9 @@ extension PilgrimMapView {
             layer.lineWidth = .constant(HonorWayRendering.lineWidth)
             layer.lineCap = .constant(.round)
             layer.lineJoin = .constant(.round)
-            layer.lineOpacity = .constant(HonorWayRendering.lineOpacity)
-            layer.lineColor = .constant(StyleColor(HonorWayRendering.lineColor))
+            let style = HonorWayRendering.ghostStyle(for: mapView)
+            layer.lineOpacity = .constant(style.lineOpacity)
+            layer.lineColor = .constant(StyleColor(style.color))
             try mapView.mapboxMap.addLayer(layer, layerPosition: ghostLinePosition(on: mapView))
             renderer.appliedWayID = way.id
         } catch {
@@ -157,8 +176,9 @@ extension PilgrimMapView {
             try mapView.mapboxMap.addSource(source)
             var layer = CircleLayer(id: HonorWayRendering.companionLayerID, source: HonorWayRendering.companionSourceID)
             layer.circleRadius = .constant(HonorWayRendering.companionRadius)
-            layer.circleColor = .constant(StyleColor(HonorWayRendering.lineColor))
-            layer.circleOpacity = .constant(HonorWayRendering.companionOpacity)
+            let style = HonorWayRendering.ghostStyle(for: mapView)
+            layer.circleColor = .constant(StyleColor(style.color))
+            layer.circleOpacity = .constant(style.companionOpacity)
             layer.circleStrokeColor = .constant(StyleColor(.white))
             layer.circleStrokeWidth = .constant(1.5)
             layer.circlePitchAlignment = .constant(.map)

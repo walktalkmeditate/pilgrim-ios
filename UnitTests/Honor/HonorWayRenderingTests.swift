@@ -38,3 +38,16 @@ final class HonorWayRenderingTests: XCTestCase {
         XCTAssertEqual(pins[0].kind, .wayVoice(id: "voice-1", heard: false))
     }
 }
+
+extension HonorWayRenderingTests {
+
+    func testGhostStyleBrightensOnTheDarkMapStyle() {
+        let light = PilgrimMapView.HonorWayRendering.ghostStyle(dark: false)
+        let dark = PilgrimMapView.HonorWayRendering.ghostStyle(dark: true)
+        XCTAssertGreaterThan(dark.lineOpacity, light.lineOpacity)
+        XCTAssertGreaterThan(dark.companionOpacity, light.companionOpacity)
+        var white: CGFloat = 0
+        XCTAssertTrue(dark.color.getWhite(&white, alpha: nil))
+        XCTAssertGreaterThan(white, 0.7, "the dark-style ghost must be light enough to read on the ink ground")
+    }
+}

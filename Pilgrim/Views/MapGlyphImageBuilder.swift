@@ -78,9 +78,15 @@ enum MapGlyphImageBuilder {
             // shared Way's icon is unvalidated, so every unknown name draws
             // the same "mappin" and must share one entry rather than mint a
             // new one per bad name.
-            return "way-\(resolvedWayMarkSymbol(symbol))-\(rgbKey(for: tint))"
+            return "way-\(resolvedWayMarkSymbol(symbol))-\(rgbKey(for: tint.resolvedColor(with: lightTraits)))"
         }
     }
+
+    /// Way marks are rasterized against the light palette in both
+    /// appearances: on the dark map style a light parchment disc still reads
+    /// as a pin, whereas the dark parchment is the ground's own color. It
+    /// also keeps the cache key stable across an appearance flip.
+    private static let lightTraits = UITraitCollection(userInterfaceStyle: .light)
 
     /// An SF Symbol name a shared Way supplied is not validated at write
     /// time; anything the system doesn't know falls back to "mappin" rather
@@ -130,13 +136,13 @@ enum MapGlyphImageBuilder {
         let resolvedSymbol = resolvedWayMarkSymbol(symbol)
         let config = UIImage.SymbolConfiguration(pointSize: size * 0.55, weight: .medium)
         guard let symbolImage = UIImage(systemName: resolvedSymbol, withConfiguration: config)?
-            .withTintColor(tint, renderingMode: .alwaysOriginal) else { return nil }
+            .withTintColor(tint.resolvedColor(with: lightTraits), renderingMode: .alwaysOriginal) else { return nil }
         let target = CGSize(width: size, height: size)
         let format = UIGraphicsImageRendererFormat()
         format.scale = UIScreen.main.scale
         format.opaque = false
         return UIGraphicsImageRenderer(size: target, format: format).image { _ in
-            UIColor.parchment.withAlphaComponent(0.9).setFill()
+            UIColor.parchment.resolvedColor(with: lightTraits).withAlphaComponent(0.9).setFill()
             UIBezierPath(ovalIn: CGRect(origin: .zero, size: target)).fill()
             let origin = CGPoint(
                 x: (target.width - symbolImage.size.width) / 2,
