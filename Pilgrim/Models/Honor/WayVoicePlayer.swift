@@ -26,8 +26,10 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     private var player: AVAudioPlayer?
     private var pending: (url: URL, volume: Float)?
     private var preDuckVolume: Float?
-    /// Set only by `pauseForGuide()`, so a walker's own pause is never
-    /// undone by a guide prompt ending.
+    /// True only while a guide-induced pause hasn't since been superseded
+    /// by the walker's own `pause()`, which always clears it — so a walker
+    /// pause landing after a guide pause is never undone when the guide
+    /// finishes.
     private var pausedByGuide = false
     private var elapsedTimer: Timer?
     private var cancellables: [AnyCancellable] = []
@@ -54,6 +56,10 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     }
 
     func pause() {
+        // Any pause — the walker's own or a guide-induced one already in
+        // effect — is the walker's word from here on: a guide finishing
+        // afterward must not resume what this call paused.
+        pausedByGuide = false
         player?.pause()
         elapsedTimer?.invalidate()
     }
@@ -62,8 +68,9 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
         guard let player else { return }
         // A guide prompt may have taken the duck over while this voice was
         // held; take it back rather than speaking over a soundscape at full
-        // volume.
-        if preDuckVolume == nil {
+        // volume. While a guide is still speaking, though, it owns the
+        // duck — re-ducking here would fight its own restore on the way out.
+        if preDuckVolume == nil && !voiceGuide.isPlaying {
             preDuckVolume = soundscape.currentTargetVolume
             soundscape.setVolume(Float(UserPreferences.voiceGuideDuckLevel.value), animated: true)
         }
@@ -81,8 +88,10 @@ final class WayVoicePlayer: NSObject, ObservableObject, WayVoicePlaying, AVAudio
     func pauseForGuide() -> Float? {
         guard player != nil, !pausedByGuide else { return nil }
         if player?.isPlaying == true {
-            pausedByGuide = true
+            // `pause()` first: it clears `pausedByGuide` unconditionally, so
+            // setting the flag has to happen after, not before, that call.
             pause()
+            pausedByGuide = true
         }
         let inherited = preDuckVolume
         preDuckVolume = nil

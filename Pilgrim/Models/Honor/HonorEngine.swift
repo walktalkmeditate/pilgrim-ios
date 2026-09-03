@@ -115,7 +115,10 @@ final class HonorEngine: ObservableObject {
 
     func updateActiveDuration(_ seconds: TimeInterval) {
         activeDuration = seconds
-        guard startFrac != nil else { return }
+        // While the fallback anchor (Begin found no Way within 60 m) is
+        // still in effect, the companion has nowhere real to walk to yet —
+        // it waits at the start until the first on-Way fix re-anchors it.
+        guard startFrac != nil, !anchoredByFallback else { return }
         companionFrac = geometry.frac(atElapsed: companionT0 + sinceAnchorSeconds)
     }
 

@@ -317,6 +317,29 @@ final class HonorEngineTests: XCTestCase {
         XCTAssertEqual(engine.companionFrac, 0.1, accuracy: 0.02, "one minute past the re-anchor is one minute of their Way")
     }
 
+    /// Before the real join, the fallback anchor gives the companion
+    /// nowhere real to walk to — it must wait at the start rather than
+    /// racing ahead on the approach walk's own active duration.
+    func testCompanionWaitsAtTheStartDuringTheApproachWalk() {
+        let engine = makeEngine(way: straightWay())
+        engine.updateActiveDuration(0)
+        engine.processLocation(fix(lon: 0.05, lat: 0.05, at: 0))
+        XCTAssertEqual(engine.startFrac, 0, "no Way within 60 m — the fallback anchor")
+
+        // Four minutes of approach walking, still nowhere near the Way.
+        engine.updateActiveDuration(240)
+        XCTAssertEqual(engine.companionFrac, 0, accuracy: 0.001, "the dot waits at the start until the Way is joined")
+
+        // The real join, at the Way's own start.
+        engine.updateActiveDuration(480)
+        clock = Date(timeIntervalSince1970: 1_000_000 + 480)
+        engine.processLocation(fix(lon: 0, at: 480))
+        XCTAssertEqual(engine.companionFrac, 0, accuracy: 0.001, "still at the start the instant it joins")
+
+        engine.updateActiveDuration(540)
+        XCTAssertEqual(engine.companionFrac, 0.1, accuracy: 0.02, "the companion resumes once the Way is actually joined")
+    }
+
     func testYourSecondsExcludesTheApproachWalk() {
         let engine = makeEngine(way: straightWay())
         var yours: Double?

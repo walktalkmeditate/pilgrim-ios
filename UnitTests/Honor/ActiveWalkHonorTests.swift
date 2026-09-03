@@ -161,21 +161,22 @@ final class ActiveWalkHonorTests: XCTestCase {
     }
 
     func testArrivalWritesEventWaypointAndTheCompanionDelta() throws {
-        // Seeding the walk's own start date 500 s back makes the one-second
-        // duration timer agree with the engine's clock, so a tick landing
-        // mid-test can't move the companion delta.
-        begin(startedSecondsAgo: 500)
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        // Seeding the walk's own start date 500 s back, right AFTER the Way
+        // anchors on that first on-Way fix, makes the one-second duration
+        // timer agree with the engine's clock — the anchor lands at (near)
+        // zero active duration, so `yourSeconds` below is a plain 500 s
+        // delta and actually proves the companion delta gets measured.
+        vm.builder._test_setStartDate(Date().addingTimeInterval(-500))
         vm.honorEngine?.updateActiveDuration(500)
-        for i in 0...10 { drive(fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60)) }
+        for i in 1...10 { drive(fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60)) }
         for i in 0..<3 { drive(fix(lon: 10 * 0.000898, seconds: 700 + Double(i))) }
         XCTAssertTrue(try recordedEvents().contains { $0.eventType == .honorArrival })
         XCTAssertEqual(vm.waypoints.filter(HonorPersistence.isArrivalWaypoint).count, 1)
         XCTAssertEqual(vm.waypoints.first?.label, HonorPersistence.arrivalWaypointLabel(wayTitle: "Test way"))
         XCTAssertEqual(vm.honorArrival?.theirSeconds ?? 0, 600, accuracy: 1)
-        // The walk's first 500 s were spent before a Way was anchored, and
-        // `yourSeconds` counts only the time on the Way — the approach walk
-        // belongs to neither clock.
-        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? -1, 0, accuracy: 1)
+        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? -1, 500, accuracy: 1)
     }
 
     func testStopTearsDownThePlayer() {
@@ -375,9 +376,14 @@ final class ActiveWalkHonorTests: XCTestCase {
     }
 
     func testDismissingTheArrivalCardKeepsTheDelta() {
-        begin(startedSecondsAgo: 500)
+        begin()
+        drive(fix(lon: 0, seconds: 0))
+        // Seeded 500 s back right AFTER the first on-Way fix — see
+        // testArrivalWritesEventWaypointAndTheCompanionDelta for why this
+        // ordering is what makes `yourSeconds` below prove the delta.
+        vm.builder._test_setStartDate(Date().addingTimeInterval(-500))
         vm.honorEngine?.updateActiveDuration(500)
-        for i in 0...10 { drive(fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60)) }
+        for i in 1...10 { drive(fix(lon: Double(i) * 0.000898, seconds: Double(i) * 60)) }
         for i in 0..<3 { drive(fix(lon: 10 * 0.000898, seconds: 700 + Double(i))) }
         XCTAssertNotNil(vm.honorArrival)
 
@@ -388,10 +394,7 @@ final class ActiveWalkHonorTests: XCTestCase {
         vm.honorArrivalCardDismissed = true
         XCTAssertTrue(vm.honorArrivalCardDismissed)
         XCTAssertEqual(vm.honorArrival?.theirSeconds ?? 0, 600, accuracy: 1)
-        // The walk's first 500 s were spent before a Way was anchored, and
-        // `yourSeconds` counts only the time on the Way — the approach walk
-        // belongs to neither clock.
-        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? -1, 0, accuracy: 1)
+        XCTAssertEqual(vm.honorArrival?.yourSeconds ?? -1, 500, accuracy: 1)
     }
 
     func testMediaURLForWayFileResolvesInsideTheStoreAndRejectsTraversal() throws {

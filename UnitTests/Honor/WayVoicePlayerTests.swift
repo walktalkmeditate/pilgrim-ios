@@ -181,4 +181,30 @@ final class WayVoicePlayerTests: XCTestCase {
 
         XCTAssertTrue(voice.isPlayingWayVoice, "a paused voice is still in flight for the queue")
     }
+
+    /// The walker pausing lands AFTER `pauseForGuide()` here, not before —
+    /// the scenario `testGuideFinishDoesNotResumeAWalkerPausedVoice` above
+    /// doesn't cover: `pausedByGuide` was already `true` when the walker's
+    /// own `pause()` ran, and that call must still win when the guide ends.
+    func testGuideFinishDoesNotResumeAVoiceTheWalkerPausedDuringTheGuide() throws {
+        let voiceURL = try makeAudioFile(duration: 0.3)
+        let guideURL = try makeAudioFile()
+        let voice = WayVoicePlayer.shared
+        voice.play(url: voiceURL, volume: 0.8)
+
+        VoiceGuidePlayer.shared._test_play(url: guideURL)
+        voice.pause()
+
+        let notified = expectation(description: "onFinished should not fire")
+        notified.isInverted = true
+        voice.onFinished = { notified.fulfill() }
+
+        VoiceGuidePlayer.shared.stop()
+
+        // Inverted wait past the (short) file's own duration: if the guide
+        // finishing had wrongly resumed playback, it would play out and
+        // notify well within this window.
+        wait(for: [notified], timeout: 0.6)
+        XCTAssertTrue(voice.isPlayingWayVoice, "a paused voice is still in flight for the queue")
+    }
 }

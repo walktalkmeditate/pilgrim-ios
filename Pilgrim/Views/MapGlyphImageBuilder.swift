@@ -37,6 +37,12 @@ enum MapGlyphImageBuilder {
     /// same discipline as PilgrimMapView.symbolImageCache.
     private static var cache: [String: UIImage] = [:]
 
+    /// Main-thread only, like `cache` above. `cacheKey(for:)` calls
+    /// `resolvedWayMarkSymbol` on every request, independent of whether the
+    /// rendered image itself is already cached; this memoizes that lookup
+    /// so a repeated wayMark symbol skips `UIImage(systemName:)` too.
+    private static var resolvedSymbols: [String: String] = [:]
+
     static func image(for glyph: MapGlyph, size: CGFloat) -> UIImage? {
         let key = "\(cacheKey(for: glyph))-\(size)"
         if let cached = cache[key] {
@@ -80,7 +86,10 @@ enum MapGlyphImageBuilder {
     /// time; anything the system doesn't know falls back to "mappin" rather
     /// than rendering an invisible but still-tappable pin.
     private static func resolvedWayMarkSymbol(_ symbol: String) -> String {
-        UIImage(systemName: symbol) == nil ? "mappin" : symbol
+        if let resolved = resolvedSymbols[symbol] { return resolved }
+        let resolved = UIImage(systemName: symbol) == nil ? "mappin" : symbol
+        resolvedSymbols[symbol] = resolved
+        return resolved
     }
 
     /// Tints are fixed, opaque literals — `WhisperCategory.borderColor` for
@@ -140,6 +149,7 @@ enum MapGlyphImageBuilder {
     #if DEBUG
     static func _test_clearCache() {
         cache.removeAll()
+        resolvedSymbols.removeAll()
     }
     #endif
 }
