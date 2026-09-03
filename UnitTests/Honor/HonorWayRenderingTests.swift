@@ -1,3 +1,4 @@
+import CoreLocation
 import XCTest
 @testable import Pilgrim
 
@@ -109,6 +110,9 @@ extension HonorWayRenderingTests {
 extension HonorWayRenderingTests {
 
     func testRelationLineSaysHereWithinAFewStridesAndNamesThePlace() {
+        // The test host's locale would otherwise pick the unit for us.
+        UserPreferences.distanceMeasurementType.value = .kilometers
+        defer { UserPreferences.distanceMeasurementType.delete() }
         XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 12, place: nil), "here")
         XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 29.6, place: nil), "here")
         XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 40.4, place: nil), "40 m away")
@@ -116,5 +120,31 @@ extension HonorWayRenderingTests {
         XCTAssertEqual(WayMomentHeader.relation(distanceMeters: nil, place: "Rúa do Franco"), "Rúa do Franco")
         XCTAssertNil(WayMomentHeader.relation(distanceMeters: nil, place: ""))
         XCTAssertNil(WayMomentHeader.relation(distanceMeters: nil, place: nil))
+    }
+}
+
+extension HonorWayRenderingTests {
+
+    func testBearingRunsClockwiseFromNorth() {
+        let origin = CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        XCTAssertEqual(WayGeometry.bearing(from: origin, to: CLLocationCoordinate2D(latitude: 1, longitude: 0)), 0, accuracy: 0.01)
+        XCTAssertEqual(WayGeometry.bearing(from: origin, to: CLLocationCoordinate2D(latitude: 0, longitude: 1)), 90, accuracy: 0.01)
+        XCTAssertEqual(WayGeometry.bearing(from: origin, to: CLLocationCoordinate2D(latitude: -1, longitude: 0)), 180, accuracy: 0.01)
+        XCTAssertEqual(WayGeometry.bearing(from: origin, to: CLLocationCoordinate2D(latitude: 0, longitude: -1)), 270, accuracy: 0.01)
+    }
+
+    func testWayDistanceSpeaksTheWalkersUnit() {
+        XCTAssertEqual(WayDistance.string(meters: 320, unit: .kilometers), "320 m")
+        XCTAssertEqual(WayDistance.string(meters: 18_244, unit: .kilometers), "18.2 km")
+        XCTAssertEqual(WayDistance.string(meters: 40, unit: .miles), "131 ft")
+        XCTAssertEqual(WayDistance.string(meters: 18_244, unit: .miles), "11.3 mi")
+    }
+
+    func testRelationLineFollowsTheDistancePreference() {
+        UserPreferences.distanceMeasurementType.value = .miles
+        defer { UserPreferences.distanceMeasurementType.delete() }
+        XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 18_244, place: nil), "11.3 mi away")
+        UserPreferences.distanceMeasurementType.value = .kilometers
+        XCTAssertEqual(WayMomentHeader.relation(distanceMeters: 18_244, place: "Rúa do Franco"), "18.2 km away · Rúa do Franco")
     }
 }

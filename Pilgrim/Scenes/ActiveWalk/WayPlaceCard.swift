@@ -20,6 +20,11 @@ struct WayPlaceCard: View {
     /// The walker's earlier reply to this voice, from a previous honoring of the same Way.
     let existingReply: URL?
     let rate: Float
+    /// Degrees from the walker's heading to the moment, for the direction tick.
+    let tick: Double?
+    /// True while the map is showing this moment instead of the walker.
+    let isFocused: Bool
+    let onFly: () -> Void
     let onPlayPause: () -> Void
     let onSeek: (Double) -> Void
     let onCycleRate: () -> Void
@@ -39,11 +44,19 @@ struct WayPlaceCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
             HStack(alignment: .top) {
-                WayMomentHeader(
-                    moment: moment,
-                    subline: WayMomentHeader.relation(distanceMeters: distanceMeters, place: moment.place),
-                    compact: true
-                )
+                // The header is the way to the place: one tap flies the map
+                // there, the next brings it back to the walker.
+                Button { onTouch(); onFly() } label: {
+                    WayMomentHeader(
+                        moment: moment,
+                        subline: WayMomentHeader.relation(distanceMeters: distanceMeters, place: moment.place),
+                        compact: true,
+                        tick: tick
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isFocused ? "Back to where you are" : "Show this place on the map")
                 Spacer(minLength: Constants.UI.Padding.small)
                 if pendingCount > 0 { queuePips }
                 Button(action: onDismiss) {

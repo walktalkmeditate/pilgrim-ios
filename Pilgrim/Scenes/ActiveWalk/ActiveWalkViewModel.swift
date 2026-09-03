@@ -96,6 +96,11 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var isVoicePaused = false
     /// The walker's chosen voice speed for this walk; 1× at the start of every walk.
     @Published var voiceRate: Float = 1
+    /// A moment the walker asked the map to show; nil means the map follows them.
+    @Published var honorFocus: CLLocationCoordinate2D?
+    /// True heading from the compass while a Way is honored; nil until it settles.
+    @Published var headingDegrees: Double?
+    var honorHeading: HeadingProviding?
     @Published var honorArrival: HonorArrivalCard?
     /// The arrival card is retired by its own flag, never by clearing
     /// `honorArrival` — `MainCoordinatorView` reads the companion delta off

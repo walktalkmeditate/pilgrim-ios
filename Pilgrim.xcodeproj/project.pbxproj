@@ -282,6 +282,7 @@
 		6AA104266A1EB53C62C020D7 /* WhisperDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4614D1D6F2BC24176FEAC8 /* WhisperDefinition.swift */; };
 		6AE85BCC627AF8321E753C1F /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9D07CA4444A7B548B5CFA4 /* ShareService.swift */; };
 		6C80A25C54AA2F3A69566EA0 /* whisper-presence-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = 378126B70503E7FF35DA0C6B /* whisper-presence-1.aac */; };
+		6E27472A104D80E454C020CE /* HeadingProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF4148B6BA9FE9E92DA42DD0 /* HeadingProvider.swift */; };
 		6EBC9E9BD642B03C2C67D8D2 /* BellPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */; };
 		6F172421DF5C4B98BDFDA00E /* PaceSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BF30D6A9C48219D3C115C /* PaceSparklineView.swift */; };
 		6F242558E79A4653BAAAE3FB /* ActivityListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FDF0BD38D9467B99B2C4D7 /* ActivityListView.swift */; };
@@ -1121,6 +1122,7 @@
 		AE8823B55D944B53A5149E70 /* AstronomicalEvents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AstronomicalEvents.swift; sourceTree = "<group>"; };
 		AEE8A0304E2A421E8707E109 /* TranscriptContextAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranscriptContextAnalyzer.swift; sourceTree = "<group>"; };
 		AF0AD2AE278F837D2E6B0B40 /* StaffsShape.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StaffsShape.swift; sourceTree = "<group>"; };
+		AF4148B6BA9FE9E92DA42DD0 /* HeadingProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeadingProvider.swift; sourceTree = "<group>"; };
 		B1399D27BD399A6D721F76E0 /* whisper-wonder-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-wonder-1.aac"; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* SealCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealCache.swift; sourceTree = "<group>"; };
 		B37DDE9B3DE8524A9F34724C /* SeekEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekEngineTests.swift; sourceTree = "<group>"; };
@@ -2592,6 +2594,7 @@
 				50A8B723E58F2FA26AB22C45 /* WayMediaDownloader.swift */,
 				411C57823FDC9D21FE236E6C /* HonorLink.swift */,
 				2AEF964C737F1A099125ED95 /* HonorImportReducer.swift */,
+				AF4148B6BA9FE9E92DA42DD0 /* HeadingProvider.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3511,6 +3514,7 @@
 				C94A3491F0E9679B28631867 /* WayMomentPreview.swift in Sources */,
 				085A5DD2915A505529A94BA3 /* WayPhotoViewer.swift in Sources */,
 				E53BBE66094487C94BA1BF93 /* WayMomentHeader.swift in Sources */,
+				6E27472A104D80E454C020CE /* HeadingProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

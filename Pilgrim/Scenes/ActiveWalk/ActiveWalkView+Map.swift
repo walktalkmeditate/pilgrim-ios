@@ -19,7 +19,9 @@ extension ActiveWalkView {
         // distance math and of a per-frame `WayGeometry` build.
         return PilgrimMapView(
             showsUserLocation: true,
-            followsUserLocation: true,
+            // A Way card's header can send the camera to its moment; the map
+            // follows the walker again the moment that focus clears.
+            followsUserLocation: viewModel.honorFocus == nil,
             routeSegments: viewModel.routeSegments,
             pinAnnotations: waypointPins + viewModel.proximityPins + viewModel.honorPins,
             onAnnotationTap: { annotation in
@@ -27,6 +29,8 @@ extension ActiveWalkView {
             },
             seekFog: viewModel.seekFogState,
             seekPulse: viewModel.seekPulse,
+            cameraCenter: .constant(viewModel.honorFocus),
+            cameraZoom: .constant(16),
             bottomInset: mapBottomInset,
             initialCamera: viewModel.mapCameraSeed,
             fadesInOnStyleLoad: true,

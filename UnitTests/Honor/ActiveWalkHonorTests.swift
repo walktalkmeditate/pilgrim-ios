@@ -19,7 +19,16 @@ final class ActiveWalkHonorTests: XCTestCase {
         func setRate(_ rate: Float) { rates.append(rate) }
     }
 
+    private final class SpyHeading: HeadingProviding {
+        let subject = CurrentValueSubject<Double?, Never>(nil)
+        var starts = 0, stops = 0
+        var headingPublisher: AnyPublisher<Double?, Never> { subject.eraseToAnyPublisher() }
+        func start() { starts += 1 }
+        func stop() { stops += 1 }
+    }
+
     private var player: SpyVoicePlayer!
+    private var heading: SpyHeading!
     private var vm: ActiveWalkViewModel!
     private var recordingURL: URL!
     private let start = Date(timeIntervalSince1970: 1_000_000)
@@ -38,6 +47,7 @@ final class ActiveWalkHonorTests: XCTestCase {
     private func makeVM() -> ActiveWalkViewModel {
         var senses = HonorSenses()
         senses.makeVoicePlayer = { [player] in player! }
+        senses.makeHeadingProvider = { [heading] in heading! }
         senses.isAppActive = { false }
         let vm = ActiveWalkViewModel(mode: .honor, way: way(), honorSenses: senses)
         settleCombineSchedulers()
@@ -55,6 +65,7 @@ final class ActiveWalkHonorTests: XCTestCase {
         try FileManager.default.createDirectory(at: recordingURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         _ = try TestAudioFile.writeSilentAudioFile(to: recordingURL)
         player = SpyVoicePlayer()
+        heading = SpyHeading()
         vm = makeVM()
     }
 
@@ -523,5 +534,47 @@ extension ActiveWalkHonorTests {
         vm.cycleVoiceRate()
         XCTAssertEqual(vm.voiceRate, 1)
         XCTAssertEqual(player.rates.last, 1)
+    }
+}
+
+extension ActiveWalkHonorTests {
+
+    func testTheDirectionTickTurnsWithTheCompassAndHidesWithoutIt() {
+        let voice = vm.way!.moments.first { $0.id == "voice-1" }!
+        begin()
+        XCTAssertEqual(heading.starts, 1, "the compass starts with the engine")
+        drive(fix(lon: 0, seconds: 0))
+        XCTAssertNil(vm.relativeBearing(to: voice), "no tick before the compass settles")
+
+        // The voice lies due east; facing 30° east of north it is 60° to the right.
+        heading.subject.send(30)
+        settleCombineSchedulers()
+        XCTAssertEqual(vm.relativeBearing(to: voice) ?? -1, 60, accuracy: 0.5)
+
+        heading.subject.send(nil)
+        settleCombineSchedulers()
+        XCTAssertNil(vm.relativeBearing(to: voice))
+
+        vm.stop()
+        XCTAssertEqual(heading.stops, 1, "teardown stops the compass")
+    }
+
+    func testTappingAHeaderFliesTheMapThereAndAgainBringsItHome() {
+        begin()
+        let voice = vm.way!.moments.first { $0.id == "voice-1" }!
+        let sit = vm.way!.moments.first { $0.id == "sit-1" }!
+        XCTAssertNil(vm.honorFocus)
+
+        vm.toggleFocus(on: voice)
+        XCTAssertEqual(vm.honorFocus?.longitude ?? -1, 300 / 111_320, accuracy: 1e-9)
+        vm.toggleFocus(on: sit)
+        XCTAssertEqual(vm.honorFocus?.longitude ?? -1, 500 / 111_320, accuracy: 1e-9, "another header jumps straight there")
+        vm.toggleFocus(on: sit)
+        XCTAssertNil(vm.honorFocus)
+
+        vm.showCard(for: voice)
+        vm.toggleFocus(on: voice)
+        vm.dismissTopCard()
+        XCTAssertNil(vm.honorFocus, "dismissing the card takes the map home")
     }
 }

@@ -6,6 +6,9 @@ struct WayMomentHeader: View {
     let moment: WayMoment
     let subline: String?
     var compact = false
+    /// Degrees clockwise from the walker's own heading to the moment; the
+    /// direction tick turns with the walker. Nil hides it.
+    var tick: Double?
 
     var body: some View {
         HStack(alignment: .top, spacing: compact ? Constants.UI.Padding.small : Constants.UI.Padding.normal) {
@@ -20,7 +23,17 @@ struct WayMomentHeader: View {
                     .font(compact ? Constants.Typography.body : Constants.Typography.heading)
                     .foregroundColor(.ink)
                 if let subline {
-                    Text(subline).font(Constants.Typography.caption).foregroundColor(.fog)
+                    HStack(spacing: 4) {
+                        if let tick {
+                            Image(systemName: "location.north.fill")
+                                .font(Constants.Typography.caption)
+                                .foregroundColor(.stone)
+                                .rotationEffect(.degrees(tick))
+                                .animation(.easeOut(duration: 0.25), value: tick)
+                                .accessibilityHidden(true)
+                        }
+                        Text(subline).font(Constants.Typography.caption).foregroundColor(.fog)
+                    }
                 }
             }
         }
@@ -47,14 +60,31 @@ struct WayMomentHeader: View {
         }
     }
 
-    /// "here" within a few strides, otherwise the distance still to cover;
-    /// the walk card's subline, with the street name when the Way has one.
+    /// "here" within a few strides, otherwise the distance still to cover in
+    /// the walker's own unit; the walk card's subline, with the street name
+    /// when the Way has one.
     static func relation(distanceMeters: Double?, place: String?) -> String? {
         var parts: [String] = []
         if let distanceMeters {
-            parts.append(distanceMeters < 30 ? "here" : "\(Int(distanceMeters.rounded())) m away")
+            parts.append(distanceMeters < 30 ? "here" : "\(WayDistance.string(meters: distanceMeters)) away")
         }
         if let place, !place.isEmpty { parts.append(place) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+}
+
+/// Walking-scale distances in the unit the walker chose in Settings: metres
+/// up to a kilometre, feet up to a tenth of a mile, then one decimal.
+enum WayDistance {
+
+    static func string(meters: Double, unit: UnitLength = UserPreferences.distanceMeasurementType.safeValue) -> String {
+        let meters = max(0, meters)
+        if unit == .miles {
+            let miles = meters / 1609.344
+            if miles < 0.1 { return "\(Int((meters * 3.28084).rounded())) ft" }
+            return String(format: "%.1f mi", miles)
+        }
+        if meters < 1000 { return "\(Int(meters.rounded())) m" }
+        return String(format: "%.1f km", meters / 1000)
     }
 }

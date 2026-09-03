@@ -10,6 +10,7 @@ struct HonorSenses {
     /// routing can stay in the view model.
     var isAppActive: () -> Bool = { UIApplication.shared.applicationState == .active }
     var store: () -> WayStore = { WayStore.shared }
+    var makeHeadingProvider: () -> HeadingProviding = { HeadingProvider() }
 }
 
 struct HonorArrivalCard: Equatable {
@@ -70,6 +71,15 @@ extension ActiveWalkViewModel {
             .sink { [weak self] event in self?.handleHonorEvent(event) }
             .store(in: &honorCancellables)
         honorEngine = engine
+        // The compass lives exactly as long as the engine: started here,
+        // stopped in teardown with the rest of the honor state.
+        let heading = honorSenses.makeHeadingProvider()
+        heading.headingPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.headingDegrees = $0 }
+            .store(in: &honorCancellables)
+        heading.start()
+        honorHeading = heading
         refreshHonorPins()
     }
 
@@ -113,6 +123,10 @@ extension ActiveWalkViewModel {
         pendingReplyOrigin = nil
         touchedCardIDs.removeAll()
         voiceRate = 1
+        honorFocus = nil
+        honorHeading?.stop()
+        honorHeading = nil
+        headingDegrees = nil
         softTapCaption = nil
     }
 
@@ -209,17 +223,35 @@ extension ActiveWalkViewModel {
     /// Straight-line metres from the walker's last fix to the moment's place,
     /// nil before the first fix. Cheap enough for the card's subline.
     func distanceToMoment(_ moment: WayMoment) -> Double? {
-        guard let here = currentLocation else { return nil }
-        let there: CLLocationCoordinate2D
-        if let at = moment.at {
-            there = CLLocationCoordinate2D(latitude: at.lat, longitude: at.lon)
-        } else if let engine = honorEngine {
-            there = engine.geometry.coordinate(atFrac: moment.frac)
-        } else {
-            return nil
-        }
+        guard let here = currentLocation, let there = coordinate(of: moment) else { return nil }
         return CLLocation(latitude: here.latitude, longitude: here.longitude)
             .distance(from: CLLocation(latitude: there.latitude, longitude: there.longitude))
+    }
+
+    /// Degrees clockwise from the walker's heading to the moment: the
+    /// direction tick. Nil until both a fix and a settled compass exist.
+    func relativeBearing(to moment: WayMoment) -> Double? {
+        guard let here = currentLocation, let heading = headingDegrees, let there = coordinate(of: moment) else { return nil }
+        let bearing = WayGeometry.bearing(from: CLLocationCoordinate2D(latitude: here.latitude, longitude: here.longitude), to: there)
+        return (bearing - heading + 360).truncatingRemainder(dividingBy: 360)
+    }
+
+    /// One tap sends the map to the moment, the next brings it home; a
+    /// different moment's header jumps straight to that moment.
+    func toggleFocus(on moment: WayMoment) {
+        guard let there = coordinate(of: moment) else { return }
+        if let focus = honorFocus, focus.latitude == there.latitude, focus.longitude == there.longitude {
+            honorFocus = nil
+        } else {
+            honorFocus = there
+        }
+    }
+
+    /// A moment recorded with its own coordinate uses it; one placed only
+    /// along the line borrows the line's point at its frac.
+    private func coordinate(of moment: WayMoment) -> CLLocationCoordinate2D? {
+        if let at = moment.at { return CLLocationCoordinate2D(latitude: at.lat, longitude: at.lon) }
+        return honorEngine?.geometry.coordinate(atFrac: moment.frac)
     }
 
     /// The seconds a finished voice's card stays before retiring on its own.
@@ -246,6 +278,8 @@ extension ActiveWalkViewModel {
 
     func dismissTopCard() {
         if !honorCards.isEmpty { honorCards.removeFirst() }
+        // A card that flew the map somewhere takes the map home when it goes.
+        honorFocus = nil
     }
 
     /// A tapped pin jumps the queue; pending cards resume after it.
