@@ -217,15 +217,20 @@ extension ActiveWalkViewModel {
     }
 
     func mediaURL(for media: WayMedia) -> URL? {
+        guard let way else { return nil }
+        return Self.localMediaURL(for: media, wayId: way.id, store: honorSenses.store())
+    }
+
+    /// Where a moment's media lives on this phone, or nil when the file is
+    /// not (yet) here. Shared by the walk's cards and the overview's preview.
+    static func localMediaURL(for media: WayMedia, wayId: String, store: WayStore) -> URL? {
         switch media {
         case .recording(let relativePath):
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            return Self.resolvedMediaURL(docs.appendingPathComponent(relativePath), within: docs)
+            return resolvedMediaURL(docs.appendingPathComponent(relativePath), within: docs)
         case .file(let relative):
-            guard let way else { return nil }
-            let store = honorSenses.store()
-            let url = store.mediaURL(for: way.id, relative: relative)
-            return Self.resolvedMediaURL(url, within: store.mediaDirectory(for: way.id))
+            let url = store.mediaURL(for: wayId, relative: relative)
+            return resolvedMediaURL(url, within: store.mediaDirectory(for: wayId))
         case .photoAsset:
             return nil
         }

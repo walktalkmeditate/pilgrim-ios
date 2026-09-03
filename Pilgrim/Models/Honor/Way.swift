@@ -46,6 +46,15 @@ struct WayMoment: Codable, Equatable, Identifiable {
         if case .voice = kind { return true }
         return false
     }
+
+    /// The file behind a voice or photo moment; nil for the other kinds.
+    var media: WayMedia? {
+        switch kind {
+        case .voice(_, _, _, let media): return media
+        case .photo(let media): return media
+        case .waypoint, .rest, .meditation: return nil
+        }
+    }
 }
 
 enum WaySource: Codable, Equatable {

@@ -33,6 +33,19 @@ struct PilgrimAnnotation: Identifiable {
 /// lists computed from the same map content compare equal. This is what lets
 /// `PilgrimMapView.applyAnnotations` skip the rebuild when nothing changed
 /// (AF20) and the view model avoid republishing identical pin sets (AF43).
+extension PilgrimAnnotation.Kind {
+    /// The Way moment a way pin stands for; nil for the walker's own pins.
+    var wayMomentID: String? {
+        switch self {
+        case .wayVoice(let id, _), .wayPhoto(let id), .wayRest(let id, _),
+             .waySit(let id, _), .wayWaypoint(let id, _, _):
+            return id
+        default:
+            return nil
+        }
+    }
+}
+
 extension PilgrimAnnotation: Equatable {
     static func == (lhs: PilgrimAnnotation, rhs: PilgrimAnnotation) -> Bool {
         lhs.coordinate.latitude == rhs.coordinate.latitude

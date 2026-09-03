@@ -28,15 +28,7 @@ extension ActiveWalkView {
         // behind it is not: a pin tapped on the overview map before Begin
         // used to sit in `honorCards` and ambush the walker with someone
         // else's card the moment they started walking.
-        guard viewModel.status.isActiveStatus else { return }
-        let momentID: String
-        switch annotation.kind {
-        case .wayVoice(let id, _), .wayPhoto(let id), .wayRest(let id, _),
-             .waySit(let id, _), .wayWaypoint(let id, _, _):
-            momentID = id
-        default:
-            return
-        }
+        guard viewModel.status.isActiveStatus, let momentID = annotation.kind.wayMomentID else { return }
         guard let moment = viewModel.way?.moments.first(where: { $0.id == momentID }) else { return }
         viewModel.showCard(for: moment)
     }

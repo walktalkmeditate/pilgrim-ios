@@ -80,6 +80,8 @@ struct HonorOverviewView: View {
     }
 
     @State private var rendering: WayRendering?
+    /// A tapped pin: its photo or voice in a half-height sheet of its own.
+    @State private var previewMoment: WayMoment?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -88,6 +90,10 @@ struct HonorOverviewView: View {
                 showsUserLocation: true,
                 followsUserLocation: false,
                 pinAnnotations: rendering?.pins ?? [],
+                onAnnotationTap: { pin in
+                    guard let id = pin.kind.wayMomentID else { return }
+                    previewMoment = way.moments.first { $0.id == id }
+                },
                 cameraCenter: $cameraCenter,
                 cameraZoom: $cameraZoom,
                 cameraBounds: rendering?.bounds,
@@ -124,6 +130,14 @@ struct HonorOverviewView: View {
             )
         }
         .task { await fetchToday() }
+        .sheet(item: $previewMoment) { moment in
+            WayMomentPreview(
+                moment: moment,
+                mediaURL: moment.media.flatMap { ActiveWalkViewModel.localMediaURL(for: $0, wayId: way.id, store: WayStore.shared) }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
         #if DEBUG
         .sheet(isPresented: $isShowingDebugExport) {
             if let debugExportURL {

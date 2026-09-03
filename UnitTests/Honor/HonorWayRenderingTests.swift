@@ -93,3 +93,15 @@ extension HonorWayRenderingTests {
         XCTAssertEqual(HonorWayState(way: way).segments.map(\.kind), ["walking", "talking", "walking"])
     }
 }
+
+extension HonorWayRenderingTests {
+
+    func testEveryWayPinKindNamesItsMoment() {
+        XCTAssertEqual(PilgrimAnnotation.Kind.wayVoice(id: "voice-1", heard: false).wayMomentID, "voice-1")
+        XCTAssertEqual(PilgrimAnnotation.Kind.wayPhoto(id: "photo-1").wayMomentID, "photo-1")
+        XCTAssertEqual(PilgrimAnnotation.Kind.wayRest(id: "rest-1", minutes: 3).wayMomentID, "rest-1")
+        XCTAssertEqual(PilgrimAnnotation.Kind.waySit(id: "sit-1", minutes: 9).wayMomentID, "sit-1")
+        XCTAssertEqual(PilgrimAnnotation.Kind.wayWaypoint(id: "waypoint-1", label: "Oak", icon: "leaf").wayMomentID, "waypoint-1")
+        XCTAssertNil(PilgrimAnnotation.Kind.photo(localIdentifier: "x").wayMomentID)
+    }
+}
