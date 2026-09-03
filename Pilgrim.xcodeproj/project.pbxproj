@@ -529,6 +529,7 @@
 		D0E01E2C230520CA2D6344A5 /* whisper-play-12.aac in Resources */ = {isa = PBXBuildFile; fileRef = D30651941E3AA93F6BB14A1D /* whisper-play-12.aac */; };
 		D247390916D4862C665DF854 /* PilgrimPackageImporterArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60442D8CBA23983930BDBA5E /* PilgrimPackageImporterArchivedTests.swift */; };
 		D34BBFBCCF7D7FCF4956E864 /* SeekSoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9245B5EF90D7E8BB2FA5C9 /* SeekSoundPlayer.swift */; };
+		D431FC2E804E25AFC7470A71 /* WaysListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3894690EAA833D8F28146E0 /* WaysListView.swift */; };
 		D43932D8FB7C96D2B56E36B3 /* SeekChainGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D574A07BC95CBC99586D5869 /* SeekChainGeneratorTests.swift */; };
 		D62B90461A22862A8FDA006C /* VoiceGuideDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */; };
 		D69446C38B3D4915B5EE6940 /* TourPhotoExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */; };
@@ -1114,6 +1115,7 @@
 		B1399D27BD399A6D721F76E0 /* whisper-wonder-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-wonder-1.aac"; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* SealCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealCache.swift; sourceTree = "<group>"; };
 		B37DDE9B3DE8524A9F34724C /* SeekEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekEngineTests.swift; sourceTree = "<group>"; };
+		B3894690EAA833D8F28146E0 /* WaysListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WaysListView.swift; sourceTree = "<group>"; };
 		B3E892B071C7BE6EBD74F3FC /* NewWalkComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewWalkComputationTests.swift; sourceTree = "<group>"; };
 		B4284167708855BA9866F9FF /* VoiceGuideScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideScheduler.swift; sourceTree = "<group>"; };
 		B47EF058F5CCCCD122689CA5 /* WayImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayImporterTests.swift; sourceTree = "<group>"; };
@@ -2629,6 +2631,7 @@
 				BBBB000000000000000030 /* ExportDateRangeFormatter.swift */,
 				0097BAECE69C75158A3F70A4 /* JourneyEditorView.swift */,
 				152CAA55785727B15491AF7C /* AppearanceView.swift */,
+				B3894690EAA833D8F28146E0 /* WaysListView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -3487,6 +3490,7 @@
 				C037A7A17A407579957E3DAD /* WayMediaDownloader.swift in Sources */,
 				0878C1CAF7C3058C2C7287D4 /* HonorLink.swift in Sources */,
 				D084A7C6B0CB68B016917E7B /* HonorImportReducer.swift in Sources */,
+				D431FC2E804E25AFC7470A71 /* WaysListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
