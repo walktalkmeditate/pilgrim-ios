@@ -46,6 +46,7 @@
   - `"A place on the way."`
 - **User's stated preference:** nothing new in the bottom stats sheet. The water notice borrows the *existing* caption slot (`viewModel.softTapCaption`, rendered by `WalkStatsSheet.thirdStat`) — no new stat, no new row.
 - **Resource safety (`.claude/CLAUDE.md`):** one player per role; no accumulating timers; `[weak self]` in `CMAltimeter`/`CMPedometer`/`NWPathMonitor` callbacks; if unsure whether something leaks, take the simpler shape.
+- **The device pass is gated on the dataset, and the dataset is not there yet.** Nothing on the CDN serves a ways build today: `index.json` on `main` carries no top-level `release` and no per-route `ways` entry, and no `vX.Y.Z` tag carries `routes/<route-id>/ways/route.json` or `stage-NN.json`. Until the open-pilgrimages ways build lands on `main` **and** a release tag carries the package files, the catalog correctly shows "the routes are out of reach right now" and no stage can be downloaded on a device. Every task here is proven by the fixture-driven unit tests; **Task 16's device pass cannot be run, and the slice is not shippable, until that build exists.** Do not treat an empty catalog on a device as a bug in this code.
 
 ## File map
 
@@ -440,7 +441,7 @@ final class PilgrimageWayImporterTests: XCTestCase {
         try store.save(way)
         XCTAssertEqual(store.load(id: "pilgrimage:camino-frances:0")?.id, way.id)
         let packageDir = try XCTUnwrap(store.pilgrimageDirectory(for: "camino-frances"))
-        XCTAssertTrue(packageDir.path.hasSuffix("Ways/pilgrimage/camino-frances"))
+        XCTAssertTrue(packageDir.path.hasSuffix("pilgrimage/camino-frances"))
         XCTAssertNil(store.pilgrimageDirectory(for: "../etc"))
         XCTAssertTrue(store.list().contains { $0.id == way.id },
                       "the package folder is not a way id, so list() steps over it")
@@ -1207,7 +1208,7 @@ EOF
 **Interfaces:**
 - Consumes: `PilgrimageError`, `WayStore.isValidRouteId`, `PilgrimageFixtures`.
 - Produces:
-  - `struct PilgrimageCatalogEntry: Codable, Equatable, Identifiable { let id: String; let name: String; let names: [String: String]; let country: String?; let region: String?; let distanceKm: Double; let tradition: String?; let stageCount: Int; let bytes: Int; let placesPerStage: Double; let sparse: Bool }` — the last two carry `init` defaults (`0` and `false`) so every literal that does not care about them stays short.
+  - `struct PilgrimageCatalogEntry: Codable, Equatable, Hashable, Identifiable { let id: String; let name: String; let names: [String: String]; let country: String?; let region: String?; let distanceKm: Double; let tradition: String?; let stageCount: Int; let bytes: Int; let placesPerStage: Double; let sparse: Bool }` — the last two carry `init` defaults (`0` and `false`) so every literal that does not care about them stays short. `Hashable` is load-bearing: Task 8 pushes an entry through `navigationDestination(item:)`, which requires it.
   - `struct PilgrimageCatalog: Codable, Equatable { let release: String; let routes: [PilgrimageCatalogEntry] }`
   - `@MainActor final class PilgrimageCatalogService: ObservableObject` with `static let shared`, `init(session:directory:now:)`, `@Published private(set) var catalog: PilgrimageCatalog?`, `func load(force: Bool = false) async throws -> PilgrimageCatalog`, `static let indexURL: URL`, `static func packageURL(release:routeId:file:) -> URL?`, `static let cacheLifetime: TimeInterval`, `static let maxIndexBytes: Int`, `static func parse(_ data: Data) throws -> PilgrimageCatalog`.
 - Produces for tests: `StubURLProtocol.stub(url:status:body:headers:)`, `StubURLProtocol.reset()`, `StubURLProtocol.session()`, `StubURLProtocol.requestedURLs`.
@@ -1471,7 +1472,9 @@ Expected: `cannot find 'PilgrimageCatalogService' in scope`.
 import Combine
 import Foundation
 
-struct PilgrimageCatalogEntry: Codable, Equatable, Identifiable {
+/// `Hashable` as well as `Identifiable`: the route view is pushed with
+/// `navigationDestination(item:)`, which takes a `Hashable` item.
+struct PilgrimageCatalogEntry: Codable, Equatable, Hashable, Identifiable {
     let id: String
     let name: String
     let names: [String: String]
@@ -2161,7 +2164,7 @@ EOF
 - Consumes: `PilgrimageCatalogEntry`, `PilgrimageCatalogService.packageURL(release:routeId:file:)`, `PilgrimageWayImporter.way(from:routeId:stageIndex:)` / `.route(from:)` / `.maxStageBytes` / `.maxRouteBytes`, `PilgrimageError`, `PilgrimageLedger`, `PilgrimageLedgerStore`, `WayStore`, `WayMediaDownloader.isDiskFull(_:)`.
 - Produces:
   - `WayStore.pilgrimageRouteIds() -> [String]`
-  - `@MainActor final class PilgrimagePackageManager: ObservableObject` with `static let shared`, `init(store:ledgers:session:)`, `var isWalkActive: () -> Bool`, `@Published private(set) var phase: Phase`, `struct Installed: Equatable { let routeId: String; let release: String; let route: PilgrimageRoute }`, `enum Phase: Equatable { case idle; case downloading(done: Int, total: Int); case failed(PilgrimageError) }`, `func installed() -> Installed?`, `func download(entry: PilgrimageCatalogEntry, release: String) async throws`, `static func stageFileName(_ index: Int) -> String`.
+  - `@MainActor final class PilgrimagePackageManager: ObservableObject` with `static let shared`, `init(store:ledgers:session:)`, `var isWalkActive: () -> Bool`, `var saveStage: (Way) throws -> Void`, `var maxPackageBytes: Int`, `@Published private(set) var phase: Phase`, `struct Installed: Equatable { let routeId: String; let release: String; let route: PilgrimageRoute }`, `enum Phase: Equatable { case idle; case downloading(done: Int, total: Int); case failed(PilgrimageError) }`, `func installed() -> Installed?`, `func download(entry: PilgrimageCatalogEntry, release: String) async throws`, `static func stageFileName(_ index: Int) -> String`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2309,6 +2312,51 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         }
         XCTAssertNil(wayStore.load(id: "pilgrimage:camino-frances:0"))
     }
+
+    /// The commit loop is the one place a half-route could survive: a stage
+    /// saved before the disk filled would sit in the Ways list with no
+    /// `route.json` to name it and no `installed()` able to reach it.
+    func testAFailedSaveMidCommitRollsBackEveryStageAlreadyWritten() async throws {
+        let manager = makeManager()
+        let store = wayStore!
+        var saves = 0
+        manager.saveStage = { way in
+            saves += 1
+            // The second stage is where the disk runs out.
+            if saves == 2 { throw CocoaError(.fileWriteOutOfSpace) }
+            try store.save(way)
+        }
+        do {
+            try await manager.download(entry: entry, release: "v1.7.0")
+            XCTFail("expected diskFull")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .diskFull)
+        }
+        XCTAssertNil(wayStore.load(id: "pilgrimage:camino-frances:0"),
+                     "the stage that did save is taken back up")
+        XCTAssertNil(wayStore.load(id: "pilgrimage:camino-frances:1"))
+        XCTAssertTrue(wayStore.list().isEmpty, "no orphan Ways left in the list")
+        XCTAssertNil(manager.installed())
+        let packageDir = try XCTUnwrap(wayStore.pilgrimageDirectory(for: "camino-frances"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: packageDir.appendingPathComponent("route.json").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: packageDir.appendingPathComponent("release.txt").path))
+        XCTAssertEqual(manager.phase, .failed(.diskFull))
+    }
+
+    /// The index's `bytes` is a hint the dataset wrote, not a promise the CDN
+    /// keeps. The ceiling has to hold against what actually lands.
+    func testTheWholePackageIsBoundedByRealBytesNotTheIndexsClaim() async throws {
+        let manager = makeManager()
+        manager.maxPackageBytes = 1_000
+        do {
+            try await manager.download(entry: entry, release: "v1.7.0")
+            XCTFail("expected incomplete")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .incomplete)
+        }
+        XCTAssertNil(manager.installed())
+        XCTAssertTrue(wayStore.list().isEmpty)
+    }
 }
 ```
 
@@ -2383,6 +2431,14 @@ final class PilgrimagePackageManager: ObservableObject {
     /// Update, and Remove are all refused while a walk is on.
     var isWalkActive: () -> Bool = { false }
 
+    /// The commit's one write to the store, behind a seam so a spec can fail
+    /// it mid-loop and prove the rollback below.
+    var saveStage: (Way) throws -> Void
+
+    /// The whole package's ceiling, counted on the bytes that actually land.
+    /// Injectable so a spec need not serve 50 MB to prove it holds.
+    var maxPackageBytes = PilgrimageCatalogService.maxPackageBytes
+
     let store: WayStore
     let ledgers: PilgrimageLedgerStore
     private let session: URLSession
@@ -2400,6 +2456,9 @@ final class PilgrimagePackageManager: ObservableObject {
         self.store = store
         self.ledgers = ledgers
         self.session = session
+        // Captures the parameter, not `self`: assigned before `self` is fully
+        // initialized and free of a retain cycle either way.
+        self.saveStage = { try store.save($0) }
     }
 
     /// Zero-padded from 00, widening only when a route needs it — the shape
@@ -2441,13 +2500,19 @@ final class PilgrimagePackageManager: ObservableObject {
         do {
             try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
             let total = entry.stageCount + 1
-            let route = try await stageRouteFile(entry: entry, release: release, into: temp)
+            // Counted across every file, not per file: 200 stages each just
+            // under the 2 MB per-file cap would otherwise be 400 MB.
+            var packageBytes = 0
+            let fetched = try await stageRouteFile(entry: entry, release: release, into: temp)
+            packageBytes += fetched.bytes
+            try checkBudget(packageBytes)
             phase = .downloading(done: 1, total: total)
-            for index in 0..<route.stageCount {
-                try await stageOneStage(entry: entry, release: release, index: index, into: temp)
+            for index in 0..<fetched.route.stageCount {
+                packageBytes += try await stageOneStage(entry: entry, release: release, index: index, into: temp)
+                try checkBudget(packageBytes)
                 phase = .downloading(done: index + 2, total: total)
             }
-            try commit(routeId: entry.id, release: release, stageCount: route.stageCount, from: temp)
+            try commit(routeId: entry.id, release: release, stageCount: fetched.route.stageCount, from: temp)
             phase = .idle
         } catch {
             let failure = (error as? PilgrimageError) ?? .incomplete
@@ -2456,26 +2521,35 @@ final class PilgrimagePackageManager: ObservableObject {
         }
     }
 
+    /// The index's `bytes` is a figure the dataset wrote; this is the one the
+    /// phone actually paid.
+    private func checkBudget(_ bytes: Int) throws {
+        guard bytes <= maxPackageBytes else { throw PilgrimageError.incomplete }
+    }
+
     /// The route file must describe the route the catalog offered: a package
     /// whose own idea of itself differs from the index's is not walkable.
-    private func stageRouteFile(entry: PilgrimageCatalogEntry, release: String, into temp: URL) async throws -> PilgrimageRoute {
+    private func stageRouteFile(entry: PilgrimageCatalogEntry, release: String, into temp: URL) async throws
+        -> (route: PilgrimageRoute, bytes: Int) {
         let data = try await fetch(routeId: entry.id, release: release, file: "route.json",
                                    cap: PilgrimageWayImporter.maxRouteBytes)
         let route = try PilgrimageWayImporter.route(from: data)
         guard route.id == entry.id, route.stageCount == entry.stageCount,
               route.stages.count == entry.stageCount else { throw PilgrimageError.notWalkable }
         try write(data, to: temp.appendingPathComponent("route.json"))
-        return route
+        return (route, data.count)
     }
 
     /// Validated as it lands, then written in the store's own encoding, so
     /// the commit below is a decode-and-save rather than a second parse of
-    /// untrusted bytes.
-    private func stageOneStage(entry: PilgrimageCatalogEntry, release: String, index: Int, into temp: URL) async throws {
+    /// untrusted bytes. Returns the bytes it cost.
+    @discardableResult
+    private func stageOneStage(entry: PilgrimageCatalogEntry, release: String, index: Int, into temp: URL) async throws -> Int {
         let data = try await fetch(routeId: entry.id, release: release, file: Self.stageFileName(index),
                                    cap: PilgrimageWayImporter.maxStageBytes)
         let way = try PilgrimageWayImporter.way(from: data, routeId: entry.id, stageIndex: index)
         try write(try Self.encoder.encode(way), to: temp.appendingPathComponent("\(index).way.json"))
+        return data.count
     }
 
     private func fetch(routeId: String, release: String, file: String, cap: Int) async throws -> Data {
@@ -2512,24 +2586,45 @@ final class PilgrimagePackageManager: ObservableObject {
 
     // MARK: - Commit
 
-    /// The only place a downloaded set becomes the installed route. Nothing
-    /// here can fail halfway and leave a half-route: every file has already
-    /// landed and validated in `temp`.
+    /// The only place a downloaded set becomes the installed route. Every
+    /// file has already landed and validated in `temp`, but the writes here
+    /// can still fail on a full disk — so each stage saved is remembered and
+    /// taken back up if a later one throws. A half-committed route is worse
+    /// than none: its stage Ways would sit in the Ways list with no
+    /// `route.json` to name them and no `installed()` able to reach them.
     private func commit(routeId: String, release: String, stageCount: Int, from temp: URL) throws {
         guard let dir = store.pilgrimageDirectory(for: routeId) else { throw PilgrimageError.notWalkable }
-        for index in 0..<stageCount {
-            let data = try Data(contentsOf: temp.appendingPathComponent("\(index).way.json"))
-            let way = try Self.decoder.decode(Way.self, from: data)
-            do {
-                try store.save(way)
-            } catch {
-                throw WayMediaDownloader.isDiskFull(error) ? PilgrimageError.diskFull : PilgrimageError.incomplete
+        var saved: [Int] = []
+        do {
+            for index in 0..<stageCount {
+                let data = try Data(contentsOf: temp.appendingPathComponent("\(index).way.json"))
+                let way = try Self.decoder.decode(Way.self, from: data)
+                try saveStage(way)
+                saved.append(index)
             }
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try write(try Data(contentsOf: temp.appendingPathComponent("route.json")),
+                      to: dir.appendingPathComponent("route.json"))
+            try write(Data(release.utf8), to: dir.appendingPathComponent("release.txt"))
+        } catch {
+            rollBack(routeId: routeId, savedStageIndices: saved)
+            if let failure = error as? PilgrimageError { throw failure }
+            throw WayMediaDownloader.isDiskFull(error) ? PilgrimageError.diskFull : PilgrimageError.incomplete
         }
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try write(try Data(contentsOf: temp.appendingPathComponent("route.json")),
-                  to: dir.appendingPathComponent("route.json"))
-        try write(Data(release.utf8), to: dir.appendingPathComponent("release.txt"))
+    }
+
+    /// Undoes everything this commit put down. An Update that fails here
+    /// leaves the route removed rather than half-replaced — the earlier
+    /// package's stages were already overwritten by the time the failure
+    /// landed, so "nothing" is the only honest state left. The ledger is
+    /// untouched, so re-downloading restores what was walked.
+    private func rollBack(routeId: String, savedStageIndices: [Int]) {
+        for index in savedStageIndices {
+            store.delete(id: WayStore.stageWayId(routeId: routeId, stageIndex: index))
+        }
+        guard let dir = store.pilgrimageDirectory(for: routeId) else { return }
+        try? FileManager.default.removeItem(at: dir.appendingPathComponent("route.json"))
+        try? FileManager.default.removeItem(at: dir.appendingPathComponent("release.txt"))
     }
 
     /// The store's own encoding, so a temp file round-trips into exactly the
@@ -2555,7 +2650,7 @@ final class PilgrimagePackageManager: ObservableObject {
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/PilgrimagePackageManager.swift
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimagePackageManagerTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 8 tests, with 0 failures`.
+Expected: `Executed 10 tests, with 0 failures`.
 
 - [ ] **Step 7: Commit**
 
@@ -2565,7 +2660,9 @@ git commit -m "$(cat <<'EOF'
 feat(honor): download a route's package all or nothing
 
 Every file is streamed under its own byte ceiling into a temporary
-directory and validated there; only a complete set is moved into place.
+directory and validated there, the whole package is bounded by the bytes
+that actually land, and a commit that fails halfway takes back every
+stage it had already saved.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
@@ -2587,6 +2684,7 @@ EOF
   - `func update(entry: PilgrimageCatalogEntry, release: String) async throws` — same swap, then reconciles the ledger by stage identity.
   - `func remove(routeId: String) throws` — takes the stages and the package files, keeps the ledger.
   - `static func replaceConfirmation(routeName: String) -> String`
+  - `static func removeConfirmation(routeName: String) -> String`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2716,10 +2814,15 @@ extension PilgrimagePackageManagerTests {
         XCTAssertEqual(manager.installed()?.routeId, "camino-frances", "nothing moved")
     }
 
-    func testTheReplaceConfirmationNamesTheRouteItIsAbout() {
+    func testTheConfirmationsNameTheRouteAndTheirOwnVerb() {
         XCTAssertEqual(
             PilgrimagePackageManager.replaceConfirmation(routeName: "Camino Francés"),
             "Replace the Camino Francés? Its stages leave your phone; what you've walked of it is remembered if it comes back. Walks in your journal stay.")
+        XCTAssertEqual(
+            PilgrimagePackageManager.removeConfirmation(routeName: "Camino Francés"),
+            "Remove the Camino Francés? Its stages leave your phone; what you've walked of it is remembered if it comes back. Walks in your journal stay.")
+        XCTAssertFalse(PilgrimagePackageManager.removeConfirmation(routeName: "x").hasPrefix("Replace"),
+                       "the Remove alert must not ask about replacing")
     }
 }
 ```
@@ -2740,6 +2843,12 @@ Append inside `PilgrimagePackageManager`, after `download(entry:release:)`:
 
     static func replaceConfirmation(routeName: String) -> String {
         "Replace the \(routeName)? Its stages leave your phone; what you've walked of it is remembered if it comes back. Walks in your journal stay."
+    }
+
+    /// The same promise, asked about the route being let go rather than the
+    /// one arriving — the Remove alert must not ask about replacing.
+    static func removeConfirmation(routeName: String) -> String {
+        "Remove the \(routeName)? Its stages leave your phone; what you've walked of it is remembered if it comes back. Walks in your journal stay."
     }
 
     /// Downloads the new route in full before the old one is touched, so a
@@ -2795,7 +2904,7 @@ Append inside `PilgrimagePackageManager`, after `download(entry:release:)`:
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimagePackageManagerTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 14 tests, with 0 failures`.
+Expected: `Executed 16 tests, with 0 failures`.
 
 - [ ] **Step 5: Commit**
 
@@ -3066,14 +3175,17 @@ EOF
 
 **Files:**
 - Create: `Pilgrim/Scenes/Honor/PilgrimageCatalogView.swift` (holds `PilgrimageCatalogModel` and the list)
-- Create: `Pilgrim/Scenes/Honor/PilgrimageRouteView.swift` (holds `PilgrimageRouteModel` and the route screen)
+- Create: `Pilgrim/Scenes/Honor/PilgrimageRouteView.swift` (holds `WayStageFacts`, `PilgrimageRouteModel`, and the route screen)
+- Modify: `Pilgrim/Models/Honor/PilgrimageCatalogService.swift` (generalize the fetch; add `routePreview`)
 - Modify: `Pilgrim/Scenes/Honor/HonorWaysSheet.swift:36-43`, `:12-19`, `:76-89`
 - Modify: `Pilgrim/Scenes/Root/MainCoordinatorView.swift` (`chooseWay`)
-- Test: `UnitTests/Honor/PilgrimageCatalogServiceTests.swift` (extend with the two model suites)
+- Test: `UnitTests/Honor/PilgrimageCatalogServiceTests.swift` (extend: the preview test on the existing suite, plus the model suite)
 
 **Interfaces:**
-- Consumes: `PilgrimageCatalogService`, `PilgrimageCatalogEntry`, `PilgrimagePackageManager`, `PilgrimageRoute`, `PilgrimageRouteStage`, `PilgrimageLedger`, `PilgrimageLedgerStore`, `PilgrimageCopy`, `WayStore`, `StatsHelper`, `Constants.Typography.*`.
+- Consumes: `PilgrimageCatalogService`, `PilgrimageCatalogEntry`, `PilgrimagePackageManager`, `PilgrimageRoute`, `PilgrimageRouteStage`, `PilgrimageLedger`, `PilgrimageLedgerStore`, `PilgrimageCopy`, `PilgrimageWayImporter.route(from:)` / `.maxRouteBytes`, `WayStore`, `StatsHelper`, `Constants.Typography.*`.
 - Produces:
+  - `PilgrimageCatalogService.routePreview(entry:release:) async throws -> PilgrimageRoute` — the route's stage list before anything is downloaded, cached beside the index cache.
+  - `enum WayStageFacts { static func line(distanceKm: Double, gainMeters: Double, hours: WayStageHours, difficulty: String) -> String }` — the single stage-facts formatter; Task 13's morning card reuses it.
   - `enum PilgrimageCatalogModel { static func card(entry:ledger:isInstalled:) -> String; static func sparseNote(for entry: PilgrimageCatalogEntry) -> String? }`
   - `enum PilgrimageRouteModel { static func stageLine(_:) -> String; static func nextRow(ledger:stageCount:) -> String; static func buttonLabel(isInstalled:hasUpdate:) -> String; static let redrawNotice: String }`
   - `struct PilgrimageCatalogView: View` — `init(onChoose: @escaping (Way) -> Void)`
@@ -3081,9 +3193,60 @@ EOF
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `UnitTests/Honor/PilgrimageCatalogServiceTests.swift`:
+Append to `PilgrimageCatalogServiceTests` (the preview lives on the service, so it is tested with the service):
 
 ```swift
+extension PilgrimageCatalogServiceTests {
+
+    /// Spec 2.2 wants a stage list before anything is downloaded, so tapping
+    /// a stage of an undownloaded route has a row to tap.
+    func testTheRoutePreviewArrivesBeforeAnythingIsDownloaded() async throws {
+        let entry = PilgrimageCatalogEntry(
+            id: "camino-frances", name: "Camino", names: [:], country: "ES", region: "Europe",
+            distanceKm: 46.1, tradition: "christian", stageCount: 2, bytes: 214_000)
+        let url = try XCTUnwrap(PilgrimageCatalogService.packageURL(
+            release: "v1.7.0", routeId: "camino-frances", file: "route.json"))
+        StubURLProtocol.stub(url: url, body: try PilgrimageFixtures.data("route.json"))
+
+        let service = makeService()
+        let route = try await service.routePreview(entry: entry, release: "v1.7.0")
+        XCTAssertEqual(route.stages.map(\.index), [0, 1])
+        XCTAssertEqual(route.stages[0].name, "Saint-Jean-Pied-de-Port to Roncesvalles")
+        XCTAssertEqual(StubURLProtocol.requestedURLs.count, 1)
+
+        // Cached beside the index: a second view of the same route is free.
+        _ = try await makeService().routePreview(entry: entry, release: "v1.7.0")
+        XCTAssertEqual(StubURLProtocol.requestedURLs.count, 1)
+    }
+
+    func testAPreviewThatDoesNotMatchTheEntryIsNotWalkable() async throws {
+        let entry = PilgrimageCatalogEntry(
+            id: "camino-frances", name: "Camino", names: [:], country: "ES", region: "Europe",
+            distanceKm: 46.1, tradition: "christian", stageCount: 5, bytes: 214_000)
+        let url = try XCTUnwrap(PilgrimageCatalogService.packageURL(
+            release: "v1.7.0", routeId: "camino-frances", file: "route.json"))
+        StubURLProtocol.stub(url: url, body: try PilgrimageFixtures.data("route.json"))
+        do {
+            _ = try await makeService().routePreview(entry: entry, release: "v1.7.0")
+            XCTFail("expected notWalkable")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .notWalkable)
+        }
+    }
+
+    func testAPreviewWithNoNetworkIsOutOfReach() async {
+        let entry = PilgrimageCatalogEntry(
+            id: "camino-frances", name: "Camino", names: [:], country: "ES", region: "Europe",
+            distanceKm: 46.1, tradition: "christian", stageCount: 2, bytes: 214_000)
+        do {
+            _ = try await makeService().routePreview(entry: entry, release: "v1.7.0")
+            XCTFail("expected catalogUnreachable")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .catalogUnreachable)
+        }
+    }
+}
+
 final class PilgrimageCatalogModelTests: XCTestCase {
 
     private let entry = PilgrimageCatalogEntry(
@@ -3140,6 +3303,22 @@ final class PilgrimageCatalogModelTests: XCTestCase {
         XCTAssertFalse(PilgrimageRouteModel.stageLine(single).contains("4 to 4"))
     }
 
+    /// One formatter, two callers: the stage list and the morning card must
+    /// not drift apart, and a non-finite figure must never reach `Int(_:)`.
+    func testTheStageFactsFormatterIsTheOneBothCallersUse() {
+        let facts = WayStageFacts.line(distanceKm: 24.2, gainMeters: 1419,
+                                       hours: WayStageHours(min: 7, max: 9), difficulty: "hard")
+        XCTAssertEqual(PilgrimageRouteModel.stageLine(stage(0)), facts)
+        XCTAssertEqual(WayStageFacts.line(distanceKm: 10, gainMeters: 0,
+                                          hours: WayStageHours(min: 4, max: 4), difficulty: ""),
+                       "\(StatsHelper.string(for: 10_000, unit: UnitLength.meters, type: .distance)) · " +
+                       "\(StatsHelper.string(for: 0, unit: UnitLength.meters, type: .altitude)) up · 4 hours",
+                       "an empty difficulty adds no trailing separator")
+        XCTAssertTrue(WayStageFacts.line(distanceKm: 10, gainMeters: 40,
+                                         hours: WayStageHours(min: .nan, max: .infinity), difficulty: "easy")
+            .contains("0 to 100 hours"), "clamped, never trapped")
+    }
+
     func testTheNextRowOffersResumesAndFinallyCongratulates() {
         var led = PilgrimageLedger(routeId: "camino-frances")
         XCTAssertEqual(PilgrimageRouteModel.nextRow(ledger: nil, stageCount: 33), "start with stage 1")
@@ -3174,9 +3353,81 @@ final class PilgrimageCatalogModelTests: XCTestCase {
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageCatalogModelTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `cannot find 'PilgrimageCatalogModel' in scope`.
+Expected: `cannot find 'PilgrimageCatalogModel' in scope`, and `value of type 'PilgrimageCatalogService' has no member 'routePreview'`.
 
-- [ ] **Step 3: Create `PilgrimageCatalogView.swift`**
+- [ ] **Step 3: Let the catalog fetch one route's stage list**
+
+In `Pilgrim/Models/Honor/PilgrimageCatalogService.swift`, generalize the private fetch so the preview can share its cap-before-draining discipline. Replace `fetchIndex()` with:
+
+```swift
+    private func fetchIndex() async throws -> Data {
+        try await fetch(Self.indexURL, cap: Self.maxIndexBytes)
+    }
+
+    /// Streamed with a cap, checked before draining: an oversized declared
+    /// length must not cost a full download first.
+    private func fetch(_ url: URL, cap: Int) async throws -> Data {
+        do {
+            let (bytes, response) = try await session.bytes(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+                  http.expectedContentLength <= Int64(cap) else { throw PilgrimageError.catalogUnreachable }
+            var buffer = Data()
+            for try await byte in bytes {
+                buffer.append(byte)
+                if buffer.count > cap { throw PilgrimageError.catalogUnreachable }
+            }
+            return buffer
+        } catch let error as PilgrimageError {
+            throw error
+        } catch {
+            throw PilgrimageError.catalogUnreachable
+        }
+    }
+```
+
+Then add the preview beneath `load(force:)`:
+
+```swift
+    /// A route's `route.json` before its package is downloaded, so the route
+    /// screen can list the stages the pilgrim is being offered. Same byte cap
+    /// and same validation as the download path; cached beside the index so
+    /// reopening a route costs nothing. The preview never writes into the
+    /// package folder — only `PilgrimagePackageManager` installs a route.
+    func routePreview(entry: PilgrimageCatalogEntry, release: String) async throws -> PilgrimageRoute {
+        if let cached = readRoutePreview(routeId: entry.id, release: release) { return cached }
+        guard let url = Self.packageURL(release: release, routeId: entry.id, file: "route.json") else {
+            throw PilgrimageError.notWalkable
+        }
+        let data = try await fetch(url, cap: PilgrimageWayImporter.maxRouteBytes)
+        let route = try PilgrimageWayImporter.route(from: data)
+        // The same identity check the download makes: a route file that
+        // disagrees with the index is not the route being offered.
+        guard route.id == entry.id, route.stageCount == entry.stageCount,
+              route.stages.count == entry.stageCount else { throw PilgrimageError.notWalkable }
+        writeRoutePreview(data, routeId: entry.id, release: release)
+        return route
+    }
+
+    /// Keyed by release as well as route: a preview from an older build must
+    /// never stand in for the stages the current index names.
+    private func routePreviewURL(routeId: String, release: String) -> URL? {
+        guard WayStore.isValidRouteId(routeId), Self.isValidRelease(release) else { return nil }
+        return directory.appendingPathComponent("route-\(routeId)-\(release).json")
+    }
+
+    private func readRoutePreview(routeId: String, release: String) -> PilgrimageRoute? {
+        guard let url = routePreviewURL(routeId: routeId, release: release),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return try? PilgrimageWayImporter.route(from: data)
+    }
+
+    private func writeRoutePreview(_ data: Data, routeId: String, release: String) {
+        guard let url = routePreviewURL(routeId: routeId, release: release) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+```
+
+- [ ] **Step 4: Create `PilgrimageCatalogView.swift`**
 
 ```swift
 import SwiftUI
@@ -3327,32 +3578,42 @@ struct PilgrimageCatalogView: View {
 }
 ```
 
-- [ ] **Step 4: Create `PilgrimageRouteView.swift`**
+- [ ] **Step 5: Create `PilgrimageRouteView.swift`**
 
 ```swift
 import SwiftUI
 
-enum PilgrimageRouteModel {
+/// "24 km · 1,400 m up · 7 to 9 hours · hard" — the one stage-facts line,
+/// shared by the route screen's stage list and the morning card. Two copies
+/// of this drifted apart once already.
+enum WayStageFacts {
 
-    static let redrawNotice = "the route's stages were redrawn; your kilometres are kept."
-
-    /// "24 km · 1,400 m up · 7 to 9 hours · hard".
-    static func stageLine(_ stage: PilgrimageRouteStage) -> String {
+    static func line(distanceKm: Double, gainMeters: Double, hours: WayStageHours, difficulty: String) -> String {
         var parts = [
-            StatsHelper.string(for: stage.distanceKm * 1000, unit: UnitLength.meters, type: .distance),
-            "\(StatsHelper.string(for: stage.gainMeters, unit: UnitLength.meters, type: .altitude)) up",
-            hours(stage.hours)
+            StatsHelper.string(for: distanceKm * 1000, unit: UnitLength.meters, type: .distance),
+            "\(StatsHelper.string(for: gainMeters, unit: UnitLength.meters, type: .altitude)) up",
+            hoursText(hours)
         ]
-        if !stage.difficulty.isEmpty { parts.append(stage.difficulty) }
+        if !difficulty.isEmpty { parts.append(difficulty) }
         return parts.joined(separator: " · ")
     }
 
     /// `Int(_:)` traps on a non-finite Double; the importer already bounds
     /// these, and this is the last step before the number reaches the screen.
-    private static func hours(_ hours: WayStageHours) -> String {
+    private static func hoursText(_ hours: WayStageHours) -> String {
         let low = Int(min(max(hours.min.isFinite ? hours.min : 0, 0), 100).rounded())
         let high = Int(min(max(hours.max.isFinite ? hours.max : 0, 0), 100).rounded())
         return low == high ? "\(low) hours" : "\(low) to \(high) hours"
+    }
+}
+
+enum PilgrimageRouteModel {
+
+    static let redrawNotice = "the route's stages were redrawn; your kilometres are kept."
+
+    static func stageLine(_ stage: PilgrimageRouteStage) -> String {
+        WayStageFacts.line(distanceKm: stage.distanceKm, gainMeters: stage.gainMeters,
+                           hours: stage.hours, difficulty: stage.difficulty)
     }
 
     static func nextRow(ledger: PilgrimageLedger?, stageCount: Int) -> String {
@@ -3382,6 +3643,11 @@ struct PilgrimageRouteView: View {
     @State private var ledger: PilgrimageLedger?
     @State private var installed: PilgrimagePackageManager.Installed?
     @State private var failure: PilgrimageError?
+    /// The stage list is fetched separately when nothing is downloaded yet;
+    /// its own two states, so a failed preview does not read as a failed
+    /// download.
+    @State private var isLoadingStages = false
+    @State private var stagesFailure: PilgrimageError?
     @State private var confirmReplace = false
     @State private var confirmRemove = false
     @State private var showRedrawNotice = false
@@ -3400,9 +3666,7 @@ struct PilgrimageRouteView: View {
                 Section { nextRow }
             }
             Section {
-                ForEach(stages, id: \.index) { stage in
-                    Button { open(stage) } label: { stageRow(stage) }
-                }
+                stageSection
             } header: {
                 Text("Stages").font(Constants.Typography.caption)
             }
@@ -3420,7 +3684,10 @@ struct PilgrimageRouteView: View {
                 }
             }
         }
-        .task { reload() }
+        .task {
+            reload()
+            await loadStagesIfNeeded()
+        }
         .alert("Replace?", isPresented: $confirmReplace) {
             Button("Replace", role: .destructive) { Task { await install(replacing: true) } }
             Button("Keep it", role: .cancel) {}
@@ -3431,10 +3698,12 @@ struct PilgrimageRouteView: View {
             Button("Remove", role: .destructive) { removeRoute() }
             Button("Keep it", role: .cancel) {}
         } message: {
-            Text(PilgrimagePackageManager.replaceConfirmation(routeName: entry.name))
+            Text(PilgrimagePackageManager.removeConfirmation(routeName: entry.name))
         }
         .alert("Download this route first?", isPresented: $promptDownload) {
-            Button("Download") { Task { await install(replacing: installed != nil) } }
+            // The same gate the download button uses: with another route
+            // already on the phone, this is a Replace and must say so.
+            Button("Download") { beginInstall() }
             Button("Not now", role: .cancel) {}
         } message: {
             Text("Its stages have to be on your phone before you can walk one.")
@@ -3469,7 +3738,7 @@ struct PilgrimageRouteView: View {
     private var downloadButton: some View {
         Button {
             if isInstalled && !hasUpdate { return }
-            if installed != nil && !isInstalled { confirmReplace = true } else { Task { await install(replacing: false) } }
+            beginInstall()
         } label: {
             Text(PilgrimageRouteModel.buttonLabel(isInstalled: isInstalled, hasUpdate: hasUpdate))
                 .font(Constants.Typography.button)
@@ -3514,6 +3783,34 @@ struct PilgrimageRouteView: View {
         }
     }
 
+    /// The stage list stands whether or not the package is here: spec 2.2
+    /// wants a row to tap before anything is downloaded.
+    @ViewBuilder
+    private var stageSection: some View {
+        if !stages.isEmpty {
+            ForEach(stages, id: \.index) { stage in
+                Button { open(stage) } label: { stageRow(stage) }
+            }
+        } else if isLoadingStages {
+            HStack {
+                SwiftUI.ProgressView().tint(.stone)
+                Text("reaching for the stages…")
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+            }
+        } else if let stagesFailure {
+            VStack(alignment: .leading, spacing: Constants.UI.Padding.xs) {
+                Text(PilgrimageCopy.line(for: stagesFailure))
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+                Button("try again") { Task { await loadStagesIfNeeded(force: true) } }
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.stone)
+                    .frame(minHeight: 44)
+            }
+        }
+    }
+
     private func stageRow(_ stage: PilgrimageRouteStage) -> some View {
         HStack(alignment: .top, spacing: Constants.UI.Padding.small) {
             Image(systemName: ledger?.stages[String(stage.index)]?.completed == true ? "circle.fill" : "circle")
@@ -3550,6 +3847,17 @@ struct PilgrimageRouteView: View {
         onChoose(way)
     }
 
+    /// Every path that starts an install goes through here, so the Replace
+    /// confirmation can never be skipped by tapping a stage instead of the
+    /// button.
+    private func beginInstall() {
+        if installed != nil && !isInstalled {
+            confirmReplace = true
+        } else {
+            Task { await install(replacing: false) }
+        }
+    }
+
     private func install(replacing: Bool) async {
         failure = nil
         do {
@@ -3577,20 +3885,35 @@ struct PilgrimageRouteView: View {
 
     /// The redraw notice is shown once and then cleared from the ledger, so
     /// the route says it the next time the pilgrim opens this screen and
-    /// never again.
+    /// never again. An installed route's own `route.json` is authoritative;
+    /// the preview only fills the gap before one exists.
     private func reload() {
         installed = packages.installed()
-        route = installed?.routeId == entry.id ? installed?.route : nil
+        if installed?.routeId == entry.id { route = installed?.route }
         ledger = ledgerStore.load(routeId: entry.id)
         if ledger?.redrawNoticePending == true {
             showRedrawNotice = true
             ledgerStore.clearRedrawNotice(routeId: entry.id)
         }
     }
+
+    /// Fetches the route's stage list when nothing is downloaded, so the
+    /// pilgrim can see what they are being offered before they take it.
+    private func loadStagesIfNeeded(force: Bool = false) async {
+        guard force || route == nil, !release.isEmpty else { return }
+        isLoadingStages = true
+        stagesFailure = nil
+        do {
+            route = try await PilgrimageCatalogService.shared.routePreview(entry: entry, release: release)
+        } catch {
+            stagesFailure = (error as? PilgrimageError) ?? .catalogUnreachable
+        }
+        isLoadingStages = false
+    }
 }
 ```
 
-- [ ] **Step 5: Open the third door**
+- [ ] **Step 6: Open the third door**
 
 In `Pilgrim/Scenes/Honor/HonorWaysSheet.swift`, add beside `showOwnWalks` (line 13):
 
@@ -3623,30 +3946,32 @@ And a nested sheet beside the `OwnWalkPicker` one (after line 89):
             }
 ```
 
-- [ ] **Step 6: Tell the package manager what a live walk is**
+- [ ] **Step 7: Tell the package manager what a live walk is**
 
-In `Pilgrim/Scenes/Root/MainCoordinatorView.swift`, at the top of `chooseWay()`:
+In `Pilgrim/Scenes/Root/MainCoordinatorView.swift`, at the top of `chooseWay()`. `MainCoordinator` is not actor-isolated and `PilgrimagePackageManager` is `@MainActor`, so the assignment hops exactly the way `retryMedia(for:)` already does:
 
 ```swift
     func chooseWay() {
         // Downloading a second route, Replace, Update, and Remove are all
         // refused while a walk is on; this is where the manager learns what
         // "on" means.
-        PilgrimagePackageManager.shared.isWalkActive = { [weak self] in self?.activeWalkViewModel != nil }
+        Task { @MainActor in
+            PilgrimagePackageManager.shared.isWalkActive = { [weak self] in self?.activeWalkViewModel != nil }
+        }
         honorImportState = .idle
 ```
 
-- [ ] **Step 7: Register, build, run the tests**
+- [ ] **Step 8: Register, build, run the tests**
 
 ```bash
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Scenes/Honor/PilgrimageCatalogView.swift
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Scenes/Honor/PilgrimageRouteView.swift
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator build 2>&1 | grep -E "error:|BUILD"
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageCatalogModelTests 2>&1 | grep -E "error:|Executed"
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageCatalogServiceTests -only-testing:UnitTests/PilgrimageCatalogModelTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `** BUILD SUCCEEDED **`, then `Executed 8 tests, with 0 failures`.
+Expected: `** BUILD SUCCEEDED **`, then `Executed 14 tests, with 0 failures` for the service suite and `Executed 9 tests, with 0 failures` for the model suite.
 
-- [ ] **Step 8: Lint and commit**
+- [ ] **Step 9: Lint and commit**
 
 ```bash
 swiftlint --quiet | grep -E "error|Pilgrimage" || echo "clean"
@@ -3655,9 +3980,9 @@ git commit -m "$(cat <<'EOF'
 feat(honor): a pilgrimage is the third way to choose a way
 
 The catalog lists what the dataset says is walkable; the route screen
-offers the next stage, marks what you have walked, and downloads once. A
-route the build marked sparse says "few places marked yet" rather than
-promising more than it holds.
+shows the stages before you download them, offers the next one, marks
+what you have walked, and downloads once. A route the build marked sparse
+says "few places marked yet" rather than promising more than it holds.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
@@ -3686,7 +4011,8 @@ EOF
   - `Way.isPilgrimageStage: Bool`
   - `enum WayStageLine { static func line(for way: Way) -> String?; static func line(for stage: WayStage) -> String }`
   - `HonorArrivalCard` gains `let stageName: String?` and `let distanceWalkedMeters: Double`.
-  - `HonorSummaryData` gains `let stageProgressLine: String?`; `HonorSummaryModel.summaryData(for:way:link:replies:ledger:)`.
+  - `HonorSummaryData` gains `let isPilgrimageStage: Bool` and `let stageProgressLine: String?`; `HonorSummaryModel.summaryData(for:way:link:replies:ledger:)`.
+  - `HonorSummarySection.kicker(for:) -> String` — the block's opening line, which must not say "their steps" on a stage.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -3765,6 +4091,33 @@ extension PilgrimageStageWalkTests {
         let line = try? XCTUnwrap(data?.stageProgressLine)
         XCTAssertEqual(line?.hasSuffix("of the stage"), true, line ?? "nil")
         XCTAssertTrue(line?.contains(StatsHelper.string(for: 24.2 * 0.58 * 1000, unit: UnitLength.meters, type: .distance)) ?? false, line ?? "nil")
+    }
+
+    /// The summary block opens with a kicker that says "in their steps".
+    /// A stage has no "their", and the flag is carried explicitly rather than
+    /// inferred from the progress line — a walk that earned no ledger entry
+    /// is still a stage walk.
+    func testTheSummaryKickerDropsTheirStepsForAStage() throws {
+        let walk = WalkDataFactory.makeWalk(
+            uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(3600),
+            workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: start)])
+
+        let stageData = try XCTUnwrap(HonorSummaryModel.summaryData(
+            for: walk, way: stageWay(), link: nil, replies: [:], ledger: nil))
+        XCTAssertTrue(stageData.isPilgrimageStage)
+        XCTAssertNil(stageData.stageProgressLine, "no ledger entry, but still a stage")
+        XCTAssertEqual(HonorSummarySection.kicker(for: stageData), "the stage you walked")
+
+        var notAStage = stageWay()
+        notAStage.stage = nil
+        let shared = try XCTUnwrap(HonorSummaryModel.summaryData(
+            for: walk, way: notAStage, link: nil, replies: [:], ledger: nil))
+        XCTAssertFalse(shared.isPilgrimageStage)
+        XCTAssertEqual(HonorSummarySection.kicker(for: shared), "in their steps")
+
+        let removed = try XCTUnwrap(HonorSummaryModel.summaryData(
+            for: walk, way: nil, link: nil, replies: [:], ledger: nil))
+        XCTAssertFalse(removed.isPilgrimageStage, "a Way that is gone says nothing about stages")
     }
 }
 ```
@@ -3921,6 +4274,24 @@ struct HonorArrivalCardView: View {
                 .foregroundColor(.fog)
 ```
 
+And, in the same card, wrap the voice toggle (line 197-204) so it never
+offers to walk with a voice a stage does not have:
+
+```swift
+            // A stage carries no recordings, so "walk with their voice" would
+            // be a switch over nothing — and would say "their" besides.
+            if !way.isPilgrimageStage {
+                Toggle(isOn: $voicesEnabled) {
+                    Text("walk with their voice")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                }
+                .tint(.stone)
+                .onChange(of: voicesEnabled) { _, on in UserPreferences.honorVoicesEnabled.value = on }
+                .disabled(way.voiceCount == 0)
+            }
+```
+
 `HonorWaysSheet.wayRow` (line 109-114) — replace the date `Text`:
 
 ```swift
@@ -3986,6 +4357,10 @@ struct HonorSummaryData: Equatable {
     /// arrival card's `voicesHeard` is the one that counts what was heard.
     let voicesAlongTheWay: Int
     let repliesMade: Int
+    /// Carried explicitly, never inferred from `stageProgressLine`: a stage
+    /// walk that earned no ledger entry (the walker never joined the line) is
+    /// still a stage walk, and must not be told it walked in someone's steps.
+    let isPilgrimageStage: Bool
     /// "14 of 24 km of the stage", from the ledger this walk just wrote.
     let stageProgressLine: String?
 }
@@ -4005,6 +4380,7 @@ enum HonorSummaryModel {
             arrivedBeforeTheirsSeconds: delta,
             voicesAlongTheWay: way?.voiceCount ?? 0,
             repliesMade: replies.count,
+            isPilgrimageStage: stage != nil,
             stageProgressLine: stage.flatMap { stageProgressLine(stage: $0, ledger: ledger) })
     }
 
@@ -4019,13 +4395,27 @@ enum HonorSummaryModel {
 }
 ```
 
-And in `HonorSummarySection.body`, insert the line under the title:
+And in `HonorSummarySection`, replace the block's unconditional opening
+`Text("in their steps")` with the kicker, and insert the progress line under
+the title:
 
 ```swift
+            Text(Self.kicker(for: data)).font(Constants.Typography.caption).foregroundColor(.fog)
             Text(data.wayTitle).font(Constants.Typography.heading).foregroundColor(.ink)
             if let stageProgressLine = data.stageProgressLine {
                 Text(stageProgressLine).font(Constants.Typography.caption).foregroundColor(.fog)
             }
+```
+
+with, beside `countsLine`:
+
+```swift
+    /// The block's opening line. Honor's copy assumes another walker; a
+    /// downloaded stage has none, so it names what was actually walked —
+    /// the same split `HonorArrivalCardView.title(for:)` makes.
+    static func kicker(for data: HonorSummaryData) -> String {
+        data.isPilgrimageStage ? "the stage you walked" : "in their steps"
+    }
 ```
 
 In `Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift`, `computeHonorState(for:)` — pass the ledger:
@@ -4043,7 +4433,7 @@ In `Pilgrim/Scenes/WalkSummary/WalkSummaryView.swift`, `computeHonorState(for:)`
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageStageWalkTests -only-testing:UnitTests/ActiveWalkHonorTests -only-testing:UnitTests/HonorJournalTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 10 tests, with 0 failures` for the stage suite and no regression in the other two. Any other caller of `HonorArrivalCard(...)` or `HonorSummaryModel.summaryData(...)` fails to compile and names itself; add the new arguments there.
+Expected: `Executed 11 tests, with 0 failures` for the stage suite and no regression in the other two. Any other caller of `HonorArrivalCard(...)` or `HonorSummaryModel.summaryData(...)` fails to compile and names itself; add the new arguments there.
 
 - [ ] **Step 9: Commit**
 
@@ -4052,8 +4442,8 @@ git add -A Pilgrim UnitTests Pilgrim.xcodeproj/project.pbxproj
 git commit -m "$(cat <<'EOF'
 feat(honor): a stage walks with its own voice, not a companion's
 
-No dot, no soft tap, no arrival delta, and the stage line stands where a
-shared walk shows the day it was walked.
+No dot, no soft tap, no arrival delta, no voice toggle, and neither the
+summary's kicker nor the date line says "their".
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
@@ -4259,7 +4649,7 @@ In `Pilgrim/Views/PilgrimMapView+HonorWay.swift`, replace the coordinate line in
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator build 2>&1 | grep -E "error:|BUILD"
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageStageWalkTests -only-testing:UnitTests/HonorWayRenderingTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `** BUILD SUCCEEDED **`, then `Executed 13 tests, with 0 failures` for the stage suite, no regression in `HonorWayRenderingTests`.
+Expected: `** BUILD SUCCEEDED **`, then `Executed 14 tests, with 0 failures` for the stage suite, no regression in `HonorWayRenderingTests`.
 
 - [ ] **Step 8: Commit**
 
@@ -4968,9 +5358,9 @@ EOF
 - Test: `UnitTests/Honor/PilgrimageStageWalkTests.swift` (extend)
 
 **Interfaces:**
-- Consumes: `WayStage`, `WeatherSnapshot`, `WeatherService.shared.fetchCurrent(for:)`, `StatsHelper`, `UserPreferences.distanceMeasurementType`.
+- Consumes: `WayStage`, `WayStageFacts.line(distanceKm:gainMeters:hours:difficulty:)` (Task 8), `WeatherSnapshot`, `WeatherService.shared.fetchCurrent(for:)`, `StatsHelper`, `UserPreferences.distanceMeasurementType`.
 - Produces:
-  - `enum StageMorningCardModel { static func factsLine(for stage: WayStage) -> String; static func weatherLine(_ snapshot: WeatherSnapshot?) -> String? }`
+  - `enum StageMorningCardModel { static func factsLine(for stage: WayStage) -> String; static func weatherLine(_ snapshot: WeatherSnapshot?) -> String? }` — `factsLine` is a one-line call through to `WayStageFacts`, kept as a named entry point so the card reads at its own level.
   - `struct StageMorningCard: View` — `init(stage: WayStage, weather: WeatherSnapshot?, buttonTitle: String, onAction: @escaping () -> Void)`
 
 - [ ] **Step 1: Write the failing tests**
@@ -5016,23 +5406,12 @@ import SwiftUI
 
 enum StageMorningCardModel {
 
-    /// "24 km · 1,400 m up · 7 to 9 hours · hard", in the walker's own unit.
+    /// "24 km · 1,400 m up · 7 to 9 hours · hard", in the walker's own unit —
+    /// the same line the route screen's stage list shows, from the same
+    /// formatter (`WayStageFacts`, Task 8). The two must not drift.
     static func factsLine(for stage: WayStage) -> String {
-        var parts = [
-            StatsHelper.string(for: stage.distanceKm * 1000, unit: UnitLength.meters, type: .distance),
-            "\(StatsHelper.string(for: stage.gainMeters, unit: UnitLength.meters, type: .altitude)) up",
-            hours(stage.hours)
-        ]
-        if !stage.difficulty.isEmpty { parts.append(stage.difficulty) }
-        return parts.joined(separator: " · ")
-    }
-
-    /// `Int(_:)` traps on a non-finite Double, and a stage file is untrusted
-    /// input however carefully the importer bounded it.
-    private static func hours(_ hours: WayStageHours) -> String {
-        let low = Int(min(max(hours.min.isFinite ? hours.min : 0, 0), 100).rounded())
-        let high = Int(min(max(hours.max.isFinite ? hours.max : 0, 0), 100).rounded())
-        return low == high ? "\(low) hours" : "\(low) to \(high) hours"
+        WayStageFacts.line(distanceKm: stage.distanceKm, gainMeters: stage.gainMeters,
+                           hours: stage.hours, difficulty: stage.difficulty)
     }
 
     /// "clear, 9°". Nothing at all when the fetch found nothing — a stage's
@@ -5214,7 +5593,7 @@ ruby scripts/xcode-add.rb Pilgrim Pilgrim/Scenes/Honor/StageMorningCard.swift
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator build 2>&1 | grep -E "error:|BUILD"
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageStageWalkTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `** BUILD SUCCEEDED **`, then `Executed 16 tests, with 0 failures`.
+Expected: `** BUILD SUCCEEDED **`, then `Executed 17 tests, with 0 failures`.
 
 - [ ] **Step 7: Commit**
 
@@ -5248,7 +5627,8 @@ EOF
   - `HonorPersistence.stageReflectionOrigin = -1`, `HonorPersistence.stageReflectionMomentID = "stage-reflection"`, `HonorPersistence.stageReflectionMoment(for stage: WayStage) -> WayMoment`
   - `ActiveWalkViewModel.originIndex(of:)` gains the `-1` branch (and loses `private` so it can be exercised).
   - `ActiveWalkViewModel.replyToStageReflection()`, `ActiveWalkViewModel.stageReflectionReplyURL() -> URL?`
-  - `HonorArrivalCard` gains `let closing: String?`.
+  - `HonorArrivalCard` gains `var closing: String?` (a `var`, so it defaults in the memberwise init).
+  - `HonorArrivalCardView` gains `onStopReply: (() -> Void)?`.
   - `HonorSummaryData` gains `let closing: String?` and `let replyRelativePath: String?`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -5390,12 +5770,22 @@ and add beside `existingReplyURL(for:)`:
 
 - [ ] **Step 5: Append the reflection to the arrival card**
 
-Extend `HonorArrivalCard` (in the same file) with one more field:
+Extend `HonorArrivalCard` (in the same file) with one more field, declared
+as a **`var`** so it defaults at the call site:
 
 ```swift
     /// The stage's closing line, present only once arrival fired on a stage.
-    let closing: String?
+    /// Optional and last, like `WayMoment.place` and `.transcript`.
+    var closing: String?
 ```
+
+`HonorArrivalCard` uses the synthesized memberwise initializer, and only a
+`var` optional gets a `nil` default there — a `let closing: String? = nil`
+would be dropped from the initializer entirely and could never be set. As a
+`var` it keeps Task 9's already-committed `HonorArrivalCard(...)`
+constructions compiling untouched while `recordHonorArrival` below passes
+`closing:` explicitly. No `= nil` on the declaration: SwiftLint's
+`implicit_optional_initialization` forbids it.
 
 and in `recordHonorArrival`, pass it:
 
@@ -5414,6 +5804,7 @@ struct HonorArrivalCardView: View {
     var existingReply: URL?
     var isRecordingReply = false
     var onReply: (() -> Void)?
+    var onStopReply: (() -> Void)?
     var onPlayReply: ((URL) -> Void)?
     let onDismiss: () -> Void
 ```
@@ -5432,12 +5823,23 @@ and its body gains, between the counts line and "continue":
 with
 
 ```swift
-    /// The same reply a voice card offers, at the stage's end place.
+    /// The same reply a voice card offers, at the stage's end place — and,
+    /// while it records, the same way to stop it. Without this the walker
+    /// could start a recording the card gave them no way to end.
     @ViewBuilder
     private var replyRow: some View {
         HStack(spacing: Constants.UI.Padding.small) {
             if isRecordingReply {
                 Text("recording your reply here").font(Constants.Typography.caption).foregroundColor(.ink)
+                Spacer()
+                if let onStopReply {
+                    Button { onStopReply() } label: {
+                        Image(systemName: "stop.circle.fill")
+                            .font(Constants.Typography.displayMedium)
+                            .foregroundColor(.rust)
+                    }
+                    .accessibilityLabel("Stop recording your reply")
+                }
             } else if let onReply {
                 Button { onReply() } label: {
                     Label(existingReply == nil ? "reply here" : "record again", systemImage: "mic")
@@ -5469,6 +5871,8 @@ In `Pilgrim/Scenes/ActiveWalk/ActiveWalkView+Honor.swift`, wire the card up insi
                     isRecordingReply: viewModel.isRecordingVoice
                         && viewModel.pendingReplyOrigin?.id == HonorPersistence.stageReflectionMomentID,
                     onReply: { viewModel.replyToStageReflection() },
+                    // The same toggle `WayPlaceCard`'s voice body stops with.
+                    onStopReply: { viewModel.toggleVoiceRecording() },
                     onPlayReply: { url in viewModel.playReply(url: url) },
                     onDismiss: { viewModel.honorArrivalCardDismissed = true })
                     .task(id: viewModel.completedRecordingCount) {
@@ -5558,7 +5962,7 @@ with the resolver beneath `deltaLine(_:)`:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator build 2>&1 | grep -E "error:|BUILD"
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageStageWalkTests -only-testing:UnitTests/ActiveWalkHonorTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `** BUILD SUCCEEDED **`, then `Executed 20 tests, with 0 failures` for the stage suite and no regression in `ActiveWalkHonorTests`.
+Expected: `** BUILD SUCCEEDED **`, then `Executed 21 tests, with 0 failures` for the stage suite and no regression in `ActiveWalkHonorTests`.
 
 - [ ] **Step 8: Commit**
 
@@ -5778,7 +6182,19 @@ Expected: `** BUILD SUCCEEDED **` and no failures across the three suites.
 ```bash
 grep -rn "they \|their \|A place they" Pilgrim/Scenes/Honor Pilgrim/Scenes/ActiveWalk/WayPlaceCard.swift Pilgrim/Scenes/WalkSummary/HonorSummarySection.swift
 ```
-Expected: every hit is inside a branch already gated on `isPilgrimageStage == false` (the shared-walk copy) — `"they rested here"`, `"what they saw here"`, `"spoken here"`, `"A place they marked."`, `"in their steps"`, `"they walked this in"`. Anything reachable for a stage is a bug the device pass looks for; fix it here if the grep finds one.
+Expected hits, every one now unreachable for a stage:
+
+| String | What gates it |
+|---|---|
+| `"A place they marked."` | `WayMomentHeader.placeCopy(for:isStage:)` (Task 10) |
+| `"in their steps"` | `HonorSummarySection.kicker(for:)` (Task 9) |
+| `"you walked their way"` | `HonorArrivalCardView.title(for:)` (Task 9) |
+| `"walk with their voice"` | `if !way.isPilgrimageStage` around the toggle (Task 9) |
+| `"along their way"` | the `else` branch of `WayMomentPreview.alongTheWay` (Task 9) |
+| `"they walked this in"` | `HonorOverviewModel.weatherLine(theirs:today:)`, which returns nil without `way.weather` — a stage's is always nil (spec 1.2) |
+| `"they rested here"`, `"what they saw here"`, `"spoken here"`, `"they sat here"` | `WayMomentHeader.kicker(for:)`'s voice/photo/rest/meditation cases — a stage carries `waypoint` moments only (spec 1.3) |
+
+Anything the grep turns up that is **not** in this table is reachable on a stage surface and must be fixed here, not left for the device pass.
 
 - [ ] **Step 9: Commit**
 
@@ -5911,6 +6327,30 @@ Add `import Network` at the top of the file.
 One real stage on the test device, location simulated from the stage's own
 GPX. Everything here is a thing the simulator cannot answer.
 
+## Prerequisite: the dataset has to exist first
+
+**None of this can be run yet.** It needs, from open-pilgrimages:
+
+- `index.json` on `main` carrying a top-level `release` and, per listed
+  route, a `ways` entry (`stageCount`, `bytes`, and — once the build
+  measures coverage — `placesPerStage` and `sparse`);
+- a `vX.Y.Z` tag, named by that `release`, carrying
+  `routes/<route-id>/ways/route.json` and `routes/<route-id>/ways/stage-NN.json`.
+
+Neither exists today: `main`'s index has no `release` and no `ways`, and no
+tag carries a `ways/` directory. Until both land, the catalog shows
+**"the routes are out of reach right now"** — which is correct behaviour,
+not a bug — and the only proof this slice works is its unit tests, which run
+against the checked-in fixture package. Check the CDN before booking device
+time:
+
+```bash
+curl -sS https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@main/index.json \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin); print("release:", d.get("release")); print("with ways:", [r["id"] for r in d["routes"] if r.get("ways")])'
+```
+Expected once the build has landed: a `vX.Y.Z` release and at least one route
+id. An empty list means the device pass is still blocked.
+
 ## Before the walk
 
 - [ ] Export the stage's GPX: open the stage's overview, ladybug menu →
@@ -6003,7 +6443,7 @@ EOF
 | Spec | Task |
 |---|---|
 | 2.1 third door, catalog states, "on your phone" | 8 |
-| 2.2 route view, stage list, next row, download prompt, off-line start | 8 (walk-as-ordinary comes free: the engine never anchors, Task 7 writes nothing) |
+| 2.2 route view, stage list (before **and** after download, via `routePreview`), next row, download prompt, off-line start | 8 (walk-as-ordinary comes free: the engine never anchors, Task 7 writes nothing) |
 | 2.3 download / replace / update / remove / guard | 5, 6 |
 | 2.4 index fetch, slug + release regex, 24 h cache, byte cap, ranges | 3 (the catalog reads `@main`, never a moving tag — see the constraint block and resolved ambiguity 7) |
 | Sparse routes: `placesPerStage` + `sparse` on the index, "few places marked yet" | 1 (fixture), 3 (model + validation), 8 (both surfaces) |
@@ -6020,6 +6460,16 @@ EOF
 | 6 every error line, offline copy | 2 (copy), 5, 6, 16 |
 | 7 every named unit test | 1–16; the device pass is Task 16's checklist |
 
-**Type consistency:** `PilgrimageError` and `PilgrimageCopy` (Task 2) are used by Tasks 3, 5, 6, 8. `PilgrimageRoute`/`PilgrimageRouteStage` (Task 2) are used by Tasks 4, 5, 6, 8. `HonorStageOutcome` and `PilgrimageLedgerWriter` (Task 4) are used by Task 7. `WayStore.stageWayId` and `isValidRouteId` (Task 1) are used by Tasks 4, 5, 6, 8. `WayMarkPins.symbol` (Task 11) is the only place mark glyphs are named. `WayStageLine` (Task 9) is the only place the stage line is formatted; `StageMorningCardModel.factsLine` (Task 13) and `PilgrimageRouteModel.stageLine` (Task 8) are deliberately different lines (the card's carries the climb and hours, the list's carries the stage number).
+**Type consistency:** `PilgrimageError` and `PilgrimageCopy` (Task 2) are used by Tasks 3, 5, 6, 8. `PilgrimageRoute`/`PilgrimageRouteStage` (Task 2) are used by Tasks 4, 5, 6, 8. `HonorStageOutcome` and `PilgrimageLedgerWriter` (Task 4) are used by Task 7. `WayStore.stageWayId` and `isValidRouteId` (Task 1) are used by Tasks 4, 5, 6, 8. `WayMarkPins.symbol` (Task 11) is the only place mark glyphs are named.
 
-**Two shapes that must not drift:** `HonorArrivalCard` grows in Task 9 (`stageName`, `distanceWalkedMeters`) and again in Task 14 (`closing`) — Task 14's test constructs it with all three. `HonorSummaryData` grows in Task 9 (`stageProgressLine`) and Task 14 (`closing`, `replyRelativePath`) — same. `HonorSummaryModel.summaryData` gains its `ledger:` argument in Task 9 and is called with it in Task 14's tests.
+**Three formatters, each with one home.** They are easy to confuse, so:
+
+| Formatter | Home | Reads | Callers |
+|---|---|---|---|
+| `WayStageFacts.line(distanceKm:gainMeters:hours:difficulty:)` | Task 8 | "24 km · 1,400 m up · 7 to 9 hours · hard" | `PilgrimageRouteModel.stageLine` (the stage list) and `StageMorningCardModel.factsLine` (the morning card) — **one implementation, two named entry points**; they were byte-identical copies once and must never be again |
+| `WayStageLine.line(for:)` | Task 9 | "stage 1 of 33 · 24 km · hard" | wherever a shared walk would show its date: the overview, the Ways sheet, the Ways list |
+| `PilgrimageLedger.progressLine(ledger:stageCount:)` | Task 4 | "stage 5 of 33 · 112 km walked" | the catalog card and the route view's next row |
+
+**Shapes that must not drift:** `HonorArrivalCard` grows in Task 9 (`stageName`, `distanceWalkedMeters`) and again in Task 14 (`var closing`, defaulted so Task 9's constructions still compile) — Task 14's test constructs it with all three. `HonorSummaryData` grows in Task 9 (`isPilgrimageStage`, `stageProgressLine`) and Task 14 (`closing`, `replyRelativePath`) — same. `HonorSummaryModel.summaryData` gains its `ledger:` argument in Task 9 and is called with it in Task 14's tests. `PilgrimageCatalogEntry` grows `placesPerStage`/`sparse` in Task 3, both defaulted, so the literals in Tasks 5, 6, and 8 are untouched.
+
+**One-way seams for testing:** `PilgrimagePackageManager.saveStage` and `.maxPackageBytes` (Task 5) exist so a spec can fail a commit and prove the rollback, and prove the package ceiling, without a full disk or 50 MB of fixtures. Both default to the production behaviour; neither is read by any view.
