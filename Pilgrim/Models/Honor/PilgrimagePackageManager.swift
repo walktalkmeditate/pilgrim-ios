@@ -161,6 +161,65 @@ final class PilgrimagePackageManager: ObservableObject {
         }
     }
 
+    // MARK: - Replace, update, remove
+
+    static func replaceConfirmation(routeName: String) -> String {
+        "Replace the \(routeName)? Its stages leave your phone; what you've walked of it is remembered if it comes back. Walks in your journal stay."
+    }
+
+    /// The same promise, asked about the route being let go rather than the
+    /// one arriving — the Remove alert must not ask about replacing.
+    static func removeConfirmation(routeName: String) -> String {
+        "Remove the \(routeName)? Its stages leave your phone; what you've walked of it is remembered if it comes back. Walks in your journal stay."
+    }
+
+    /// Downloads the new route in full before the old one is touched, so a
+    /// failed replace leaves the pilgrim with the route they already had.
+    func replace(with entry: PilgrimageCatalogEntry, release: String) async throws {
+        guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+        let previous = installed()
+        try await download(entry: entry, release: release)
+        if let previous, previous.routeId != entry.id {
+            // The ledger stays: a route that comes back finds its record.
+            removeStagesAndPackage(routeId: previous.routeId, stageCount: previous.route.stageCount)
+        }
+    }
+
+    /// The same swap, then the ledger is reconciled against the stages the
+    /// new package actually carries.
+    func update(entry: PilgrimageCatalogEntry, release: String) async throws {
+        guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+        let previousStageCount = installed()?.route.stageCount ?? 0
+        try await download(entry: entry, release: release)
+        guard let fresh = installed(), fresh.routeId == entry.id else { throw PilgrimageError.incomplete }
+        // A route that shrank leaves stage Ways above the new count behind;
+        // nothing lists them and no next row reaches them, so they go.
+        for index in fresh.route.stageCount..<max(previousStageCount, fresh.route.stageCount) {
+            store.delete(id: WayStore.stageWayId(routeId: entry.id, stageIndex: index))
+        }
+        if let ledger = ledgers.load(routeId: entry.id) {
+            ledgers.save(ledger.reconciled(against: fresh.route.stages))
+        }
+    }
+
+    func remove(routeId: String) throws {
+        guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+        let stageCount = installed().flatMap { $0.routeId == routeId ? $0.route.stageCount : nil }
+            ?? PilgrimageWayImporter.maxStageCount
+        removeStagesAndPackage(routeId: routeId, stageCount: stageCount)
+    }
+
+    /// Takes the stages, `route.json`, and `release.txt`. Never `ledger.json`
+    /// — the record of having walked a route outlives the route.
+    private func removeStagesAndPackage(routeId: String, stageCount: Int) {
+        for index in 0..<stageCount {
+            store.delete(id: WayStore.stageWayId(routeId: routeId, stageIndex: index))
+        }
+        guard let dir = store.pilgrimageDirectory(for: routeId) else { return }
+        try? FileManager.default.removeItem(at: dir.appendingPathComponent("route.json"))
+        try? FileManager.default.removeItem(at: dir.appendingPathComponent("release.txt"))
+    }
+
     /// The index's `bytes` is a figure the dataset wrote; this is the one the
     /// phone actually paid.
     nonisolated private static func checkBudget(_ bytes: Int, cap: Int) throws {

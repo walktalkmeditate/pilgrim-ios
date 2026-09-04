@@ -309,3 +309,138 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         return try JSONSerialization.data(withJSONObject: obj)
     }
 }
+
+extension PilgrimagePackageManagerTests {
+
+    private var norte: PilgrimageCatalogEntry {
+        PilgrimageCatalogEntry(id: "camino-norte", name: "Camino del Norte", names: [:], country: "ES",
+                               region: "Europe", distanceKm: 46.1, tradition: "christian",
+                               stageCount: 2, bytes: 214_000)
+    }
+
+    /// The same two fixture stages, re-slugged as a second route.
+    private func stubNorte(release: String = "v1.7.0") throws {
+        func reslugged(_ name: String) throws -> Data {
+            let text = String(data: try PilgrimageFixtures.data(name), encoding: .utf8)!
+                .replacingOccurrences(of: "camino-frances", with: "camino-norte")
+            return Data(text.utf8)
+        }
+        for (file, fixture) in [("route.json", "route.json"),
+                                ("stage-00.json", "stage-00.json"),
+                                ("stage-01.json", "stage-01.json")] {
+            let url = try XCTUnwrap(PilgrimageCatalogService.packageURL(release: release, routeId: "camino-norte", file: file))
+            StubURLProtocol.stub(url: url, body: try reslugged(fixture))
+        }
+    }
+
+    func testReplaceOnlyRemovesTheFirstRouteOnceTheSecondIsComplete() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        var led = PilgrimageLedger(routeId: "camino-frances")
+        led.record(stageIndex: 0, name: "Saint-Jean-Pied-de-Port to Roncesvalles", distanceKm: 24.2,
+                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        ledgers.save(led)
+
+        try stubNorte()
+        try await manager.replace(with: norte, release: "v1.7.0")
+
+        XCTAssertNil(wayStore.load(id: "pilgrimage:camino-frances:0"), "the first route's stages left")
+        XCTAssertNil(wayStore.load(id: "pilgrimage:camino-frances:1"))
+        XCTAssertNotNil(wayStore.load(id: "pilgrimage:camino-norte:0"))
+        XCTAssertEqual(manager.installed()?.routeId, "camino-norte")
+        XCTAssertEqual(ledgers.load(routeId: "camino-frances")?.completedCount, 1,
+                       "what you walked of it is remembered if it comes back")
+    }
+
+    func testAFailedReplaceLeavesTheFirstRouteUntouched() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        // camino-norte is never stubbed, so every fetch fails.
+        do {
+            try await manager.replace(with: norte, release: "v1.7.0")
+            XCTFail("expected incomplete")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .incomplete)
+        }
+        XCTAssertEqual(manager.installed()?.routeId, "camino-frances")
+        XCTAssertNotNil(wayStore.load(id: "pilgrimage:camino-frances:0"))
+        XCTAssertNil(wayStore.load(id: "pilgrimage:camino-norte:0"))
+    }
+
+    func testUpdateReconcilesTheLedgerByStageIdentity() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        var led = PilgrimageLedger(routeId: "camino-frances")
+        led.record(stageIndex: 0, name: "Saint-Jean-Pied-de-Port to Roncesvalles", distanceKm: 24.2,
+                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        led.record(stageIndex: 1, name: "Roncesvalles to Zubiri", distanceKm: 21.9,
+                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        ledgers.save(led)
+
+        // v1.8.0 redraws stage 1 under a new name.
+        let redrawnRoute = String(data: try PilgrimageFixtures.data("route.json"), encoding: .utf8)!
+            .replacingOccurrences(of: "\"name\": \"Roncesvalles to Zubiri\"", with: "\"name\": \"Roncesvalles to Larrasoaña\"")
+        let redrawnStage = String(data: try PilgrimageFixtures.data("stage-01.json"), encoding: .utf8)!
+            .replacingOccurrences(of: "Roncesvalles to Zubiri", with: "Roncesvalles to Larrasoaña")
+        StubURLProtocol.stub(url: try url("route.json", release: "v1.8.0"), body: Data(redrawnRoute.utf8))
+        StubURLProtocol.stub(url: try url("stage-00.json", release: "v1.8.0"), body: try PilgrimageFixtures.data("stage-00.json"))
+        StubURLProtocol.stub(url: try url("stage-01.json", release: "v1.8.0"), body: Data(redrawnStage.utf8))
+
+        XCTAssertTrue(manager.hasUpdate(catalogRelease: "v1.8.0"))
+        try await manager.update(entry: entry, release: "v1.8.0")
+
+        XCTAssertEqual(manager.installed()?.release, "v1.8.0")
+        let after = try XCTUnwrap(ledgers.load(routeId: "camino-frances"))
+        XCTAssertEqual(Set(after.stages.keys), ["0"])
+        XCTAssertEqual(after.carriedKm ?? 0, 21.9, accuracy: 0.01)
+        XCTAssertEqual(after.redrawNoticePending, true)
+        XCTAssertFalse(manager.hasUpdate(catalogRelease: "v1.8.0"))
+    }
+
+    func testRemoveTakesTheStagesAndKeepsTheLedger() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        var led = PilgrimageLedger(routeId: "camino-frances")
+        led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
+                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        ledgers.save(led)
+
+        try manager.remove(routeId: "camino-frances")
+
+        XCTAssertNil(wayStore.load(id: "pilgrimage:camino-frances:0"))
+        XCTAssertNil(wayStore.load(id: "pilgrimage:camino-frances:1"))
+        XCTAssertNil(manager.installed())
+        XCTAssertEqual(ledgers.load(routeId: "camino-frances")?.completedCount, 1)
+    }
+
+    func testReplaceUpdateAndRemoveAreAllRefusedMidWalk() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        manager.isWalkActive = { true }
+        try stubNorte()
+
+        do {
+            try await manager.replace(with: norte, release: "v1.7.0")
+            XCTFail("replace")
+        } catch { XCTAssertEqual(error as? PilgrimageError, .walkInProgress) }
+        do {
+            try await manager.update(entry: entry, release: "v1.8.0")
+            XCTFail("update")
+        } catch { XCTAssertEqual(error as? PilgrimageError, .walkInProgress) }
+        XCTAssertThrowsError(try manager.remove(routeId: "camino-frances")) {
+            XCTAssertEqual($0 as? PilgrimageError, .walkInProgress)
+        }
+        XCTAssertEqual(manager.installed()?.routeId, "camino-frances", "nothing moved")
+    }
+
+    func testTheConfirmationsNameTheRouteAndTheirOwnVerb() {
+        XCTAssertEqual(
+            PilgrimagePackageManager.replaceConfirmation(routeName: "Camino Francés"),
+            "Replace the Camino Francés? Its stages leave your phone; what you've walked of it is remembered if it comes back. Walks in your journal stay.")
+        XCTAssertEqual(
+            PilgrimagePackageManager.removeConfirmation(routeName: "Camino Francés"),
+            "Remove the Camino Francés? Its stages leave your phone; what you've walked of it is remembered if it comes back. Walks in your journal stay.")
+        XCTAssertFalse(PilgrimagePackageManager.removeConfirmation(routeName: "x").hasPrefix("Replace"),
+                       "the Remove alert must not ask about replacing")
+    }
+}
