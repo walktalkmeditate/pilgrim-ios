@@ -81,7 +81,11 @@ struct PilgrimageRouteView: View {
     private let ledgerStore = PilgrimageLedgerStore()
 
     private var isInstalled: Bool { installed?.routeId == entry.id }
-    private var hasUpdate: Bool { isInstalled && packages.hasUpdate(catalogRelease: release) }
+    /// From the cached `installed` state `reload()` already reads — never
+    /// `packages.hasUpdate`, which reparses `route.json` off disk and
+    /// `downloadButton` alone reads three times on every `phase` publish
+    /// during a download.
+    private var hasUpdate: Bool { installed.map { $0.routeId == entry.id && $0.release != release } ?? false }
     private var stages: [PilgrimageRouteStage] { route?.stages ?? [] }
 
     var body: some View {
@@ -149,7 +153,7 @@ struct PilgrimageRouteView: View {
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog.opacity(0.7))
             }
-            Text(PilgrimageCatalogModel.card(entry: entry, ledger: ledger, isInstalled: isInstalled))
+            Text(PilgrimageCatalogModel.card(entry: entry, ledger: ledger, isInstalled: isInstalled, hasUpdate: hasUpdate))
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
             downloadButton
@@ -180,7 +184,10 @@ struct PilgrimageRouteView: View {
     private var statusFooter: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.xs) {
             if case .downloading(let done, let total) = packages.phase {
-                Text("stage \(done) of \(total)").font(Constants.Typography.caption).foregroundColor(.fog)
+                // `total` counts `route.json` plus every stage; the pilgrim
+                // only cares about stages, so both sides drop the one file
+                // that isn't a stage.
+                Text("stage \(max(done - 1, 0)) of \(total - 1)").font(Constants.Typography.caption).foregroundColor(.fog)
             }
             if let failure {
                 Text(PilgrimageCopy.line(for: failure)).font(Constants.Typography.caption).foregroundColor(.rust)

@@ -3,13 +3,16 @@ import SwiftUI
 enum PilgrimageCatalogModel {
 
     /// "ES · 764 km · 33 stages", or, once the package is here, the route's
-    /// own progress instead of the bare stage count.
-    static func card(entry: PilgrimageCatalogEntry, ledger: PilgrimageLedger?, isInstalled: Bool) -> String {
+    /// own progress instead of the bare stage count. `hasUpdate` inserts
+    /// "updated" right after "on your phone" — the spec's line for a route
+    /// whose installed `release.txt` trails the catalog's current release.
+    static func card(entry: PilgrimageCatalogEntry, ledger: PilgrimageLedger?, isInstalled: Bool, hasUpdate: Bool) -> String {
         var parts: [String] = []
         if let country = entry.country, !country.isEmpty { parts.append(country) }
         parts.append(StatsHelper.string(for: entry.distanceKm * 1000, unit: UnitLength.meters, type: .distance))
         if isInstalled {
             parts.append("on your phone")
+            if hasUpdate { parts.append("updated") }
             parts.append(PilgrimageLedger.progressLine(ledger: ledger, stageCount: entry.stageCount))
         } else {
             parts.append(entry.stageCount == 1 ? "1 stage" : "\(entry.stageCount) stages")
@@ -38,7 +41,7 @@ struct PilgrimageCatalogView: View {
     @State private var isLoading = true
     @State private var failure: PilgrimageError?
     @State private var ledgers: [String: PilgrimageLedger] = [:]
-    @State private var installedRouteId: String?
+    @State private var installed: PilgrimagePackageManager.Installed?
     @State private var opened: PilgrimageCatalogEntry?
 
     private let ledgerStore = PilgrimageLedgerStore()
@@ -72,8 +75,26 @@ struct PilgrimageCatalogView: View {
                 .tint(.stone)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let routes = catalogService.catalog?.routes, !routes.isEmpty {
-            List(routes) { entry in
-                Button { opened = entry } label: { row(entry) }
+            VStack(spacing: 0) {
+                // A retry can fail while the in-memory catalog still holds an
+                // earlier success — the list branch above wins, so this is
+                // the only place that failure would ever reach the pilgrim.
+                if let failure {
+                    Text(PilgrimageCopy.line(for: failure))
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.rust)
+                        .padding(.horizontal, Constants.UI.Padding.normal)
+                        .padding(.top, Constants.UI.Padding.small)
+                }
+                List(routes) { entry in
+                    Button { opened = entry } label: { row(entry) }
+                }
+                // The NavigationStack itself never disappears while the route
+                // screen is pushed on top of it, so its own `.task` never
+                // reruns on a pop. The List does reappear, and that is the
+                // moment a just-downloaded or just-removed route needs to
+                // read correctly again.
+                .onAppear { Task { await load() } }
             }
         } else {
             unreachable
@@ -95,7 +116,9 @@ struct PilgrimageCatalogView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    @ViewBuilder
     private func row(_ entry: PilgrimageCatalogEntry) -> some View {
+        let isInstalled = installed?.routeId == entry.id
         HStack(alignment: .top, spacing: Constants.UI.Padding.normal) {
             coverPlate(entry)
             VStack(alignment: .leading, spacing: 2) {
@@ -103,7 +126,7 @@ struct PilgrimageCatalogView: View {
                     .font(Constants.Typography.body)
                     .foregroundColor(.ink)
                 Text(PilgrimageCatalogModel.card(entry: entry, ledger: ledgers[entry.id],
-                                                 isInstalled: installedRouteId == entry.id))
+                                                 isInstalled: isInstalled, hasUpdate: hasUpdate(for: entry)))
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                 if let sparseNote = PilgrimageCatalogModel.sparseNote(for: entry) {
@@ -113,6 +136,13 @@ struct PilgrimageCatalogView: View {
                 }
             }
         }
+    }
+
+    /// From the cached `installed` state `load()` already reads — never
+    /// `packages.hasUpdate`, which reparses `route.json` off disk and would
+    /// do so once per row on every body pass.
+    private func hasUpdate(for entry: PilgrimageCatalogEntry) -> Bool {
+        installed.map { $0.routeId == entry.id && $0.release != (catalogService.catalog?.release ?? "") } ?? false
     }
 
     /// The dataset ships no cover images yet (spec open question 1), so the
@@ -134,10 +164,13 @@ struct PilgrimageCatalogView: View {
         failure = nil
         do {
             let catalog = try await catalogService.load(force: force)
-            installedRouteId = packages.installed()?.routeId
-            ledgers = Dictionary(uniqueKeysWithValues: catalog.routes.compactMap { entry in
+            installed = packages.installed()
+            // `uniquingKeysWith`, not `uniqueKeysWithValues:` — `parse` already
+            // drops a repeated id, but this map must never be the thing that
+            // traps if that guarantee is ever loosened.
+            ledgers = Dictionary(catalog.routes.compactMap { entry in
                 ledgerStore.load(routeId: entry.id).map { (entry.id, $0) }
-            })
+            }, uniquingKeysWith: { first, _ in first })
         } catch {
             failure = (error as? PilgrimageError) ?? .catalogUnreachable
         }
