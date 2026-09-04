@@ -195,6 +195,7 @@
 		2E45C3D0E8EAC7789774F479 /* whisper-stillness-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = 061E977B7C29F32543182E9B /* whisper-stillness-2.aac */; };
 		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
 		3026F5401165F511ADF6A425 /* WayImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD6A8FE7FA38DDDF7FE897FF /* WayImporter.swift */; };
+		32190B1BFA6491123F61C477 /* PilgrimageWayImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 042CB0A642107281F17ADB9A /* PilgrimageWayImporterTests.swift */; };
 		327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */; };
 		3388473FDC9340D4B1E61E75 /* CelestialCalculatorIlluminationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */; };
 		366617D2E2404425A7BB8E0F /* ThreadsDossierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6AF4CB2CDC4F6DA1162CEA /* ThreadsDossierTests.swift */; };
@@ -301,6 +302,7 @@
 		77B84A5DD3344F7995B8F0FB /* ThreadIntentionSuggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9493E7AD112D41C6B876DB33 /* ThreadIntentionSuggestions.swift */; };
 		77E76C8B3A4B95DBF47901C0 /* WayGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 494D7F90572546A4A3A58143 /* WayGeometryTests.swift */; };
 		785609582C94A30C974B0F72 /* PilgrimPackageImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */; };
+		78A28B3A0CE43E011FCA76C2 /* PilgrimageFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E6E6D72CACD78103099741 /* PilgrimageFixtures.swift */; };
 		78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */; };
 		7978824143C5D5E81A6A3E06 /* StonePlacementSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */; };
 		7A87A132315C9E46AFE8CF5C /* VolumeSliderRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B886390B795403D3BB7B3372 /* VolumeSliderRow.swift */; };
@@ -729,6 +731,7 @@
 		02475497E961BD82401A2037 /* OwnWalkWayBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OwnWalkWayBuilder.swift; sourceTree = "<group>"; };
 		03371BD125C7861863DB4412 /* WayGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayGeometry.swift; sourceTree = "<group>"; };
 		03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationDecor.swift; sourceTree = "<group>"; };
+		042CB0A642107281F17ADB9A /* PilgrimageWayImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimageWayImporterTests.swift; sourceTree = "<group>"; };
 		04D6AFD9DABC41629606A762 /* ActivityInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityInsightsView.swift; sourceTree = "<group>"; };
 		061E977B7C29F32543182E9B /* whisper-stillness-2.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-stillness-2.aac"; sourceTree = "<group>"; };
 		07DBA20381F115380FCCA8D9 /* SeekGlance.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekGlance.swift; sourceTree = "<group>"; };
@@ -1185,6 +1188,7 @@
 		C14640E393BDAEC8C4856281 /* PromptAssemblerLanguageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptAssemblerLanguageTests.swift; sourceTree = "<group>"; };
 		C1B583B563EC4764AEDC9E50 /* Pods-UnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests.debug.xcconfig"; sourceTree = "<group>"; };
 		C1C8D965F1351F85D4E4F35D /* Pods-Pilgrim.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pilgrim.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pilgrim/Pods-Pilgrim.release.xcconfig"; sourceTree = "<group>"; };
+		C1E6E6D72CACD78103099741 /* PilgrimageFixtures.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimageFixtures.swift; sourceTree = "<group>"; };
 		C2D23FF60A762C30296A69E6 /* ComputationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComputationTests.swift; sourceTree = "<group>"; };
 		C2E956773703AC660C7676BD /* VoiceGuideManifest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManifest.swift; sourceTree = "<group>"; };
 		C37A4E244FA34A828856F814 /* VoiceEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEnhancer.swift; sourceTree = "<group>"; };
@@ -1478,6 +1482,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0FC5ED37C48F8F572B27ED6F /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				C1E6E6D72CACD78103099741 /* PilgrimageFixtures.swift */,
+			);
+			name = Fixtures;
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
 		205130B911D1DC9386110C0B /* Haptics */ = {
 			isa = PBXGroup;
 			children = (
@@ -2159,6 +2172,7 @@
 				F5DA9377F2D838797758AC46 /* Honor */,
 				10DFF0205EDFD489A5BFC491 /* AudioPriorityQueueTests.swift */,
 				85218CAD2816EBF40EA0D48C /* CombineExtDemandBufferTests.swift */,
+				0FC5ED37C48F8F572B27ED6F /* Fixtures */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -2713,6 +2727,7 @@
 				0E286411EC07E1AF086CBE1D /* WayMediaDownloaderTests.swift */,
 				4AE908B2E637A3BC4A0DC0B3 /* HonorLinkTests.swift */,
 				31A66535C9A2D8EE7F70F5B4 /* HonorImportReducerTests.swift */,
+				042CB0A642107281F17ADB9A /* PilgrimageWayImporterTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3688,6 +3703,8 @@
 				B8AEBE27DE6EA2822E939ACE /* HonorLinkTests.swift in Sources */,
 				22392BA6A14C3C4F889E9864 /* HonorImportReducerTests.swift in Sources */,
 				12C6CDFB56CC3A47937E2511 /* CombineExtDemandBufferTests.swift in Sources */,
+				78A28B3A0CE43E011FCA76C2 /* PilgrimageFixtures.swift in Sources */,
+				32190B1BFA6491123F61C477 /* PilgrimageWayImporterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -50,10 +50,32 @@ final class WayStore {
     // MARK: - Ways
 
     /// Ids are built by code (`share:` + a validated share id, `walk:` + a
-    /// UUID). The store still refuses anything else so a stray folder name or
-    /// a future caller can never turn an id into a path outside `Ways/`.
+    /// UUID, `pilgrimage:` + a validated route slug and stage index). The
+    /// store still refuses anything else so a stray folder name or a future
+    /// caller can never turn an id into a path outside `Ways/`.
     static func isValidId(_ id: String) -> Bool {
-        id.range(of: "\\A(share:[A-Za-z0-9_-]{10}|walk:[0-9A-Fa-f-]{36})\\z", options: .regularExpression) != nil
+        id.range(of: "\\A(share:[A-Za-z0-9_-]{10}|walk:[0-9A-Fa-f-]{36}|pilgrimage:[a-z0-9-]{1,64}:[0-9]{1,3})\\z",
+                 options: .regularExpression) != nil
+    }
+
+    /// The dataset's slug rule (spec 2.4). Checked before a route id is used
+    /// in any path or URL, the way `WayImporter.isShareId` guards a share id.
+    static func isValidRouteId(_ id: String) -> Bool {
+        id.range(of: "\\A[a-z0-9-]{1,64}\\z", options: .regularExpression) != nil
+    }
+
+    static func stageWayId(routeId: String, stageIndex: Int) -> String {
+        "pilgrimage:\(routeId):\(stageIndex)"
+    }
+
+    /// Where a downloaded route's `route.json`, `release.txt`, and ledger
+    /// live — beside the stage Ways, never inside one, so Replace and Remove
+    /// can take the stages and leave the record of having walked them.
+    /// "pilgrimage" is not a valid Way id, so `list()` steps over this folder.
+    func pilgrimageDirectory(for routeId: String) -> URL? {
+        guard Self.isValidRouteId(routeId) else { return nil }
+        return base.appendingPathComponent("pilgrimage", isDirectory: true)
+            .appendingPathComponent(routeId, isDirectory: true)
     }
 
     func save(_ way: Way) throws {
