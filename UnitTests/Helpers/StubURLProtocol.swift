@@ -20,6 +20,10 @@ final class StubURLProtocol: URLProtocol {
     private static var responses: [String: Response] = [:]
     private static var seen: [URL] = []
 
+    /// `stopLoading()` cancels this so a request torn down mid-delay never
+    /// calls back into a client that has already moved on.
+    private var delayTask: Task<Void, Never>?
+
     static func reset() {
         lock.lock(); defer { lock.unlock() }
         responses = [:]
@@ -66,8 +70,9 @@ final class StubURLProtocol: URLProtocol {
             deliver(stub, for: url)
             return
         }
-        Task {
+        delayTask = Task {
             try? await Task.sleep(nanoseconds: UInt64(stub.delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
             self.deliver(stub, for: url)
         }
     }
@@ -80,5 +85,7 @@ final class StubURLProtocol: URLProtocol {
         client?.urlProtocolDidFinishLoading(self)
     }
 
-    override func stopLoading() {}
+    override func stopLoading() {
+        delayTask?.cancel()
+    }
 }
