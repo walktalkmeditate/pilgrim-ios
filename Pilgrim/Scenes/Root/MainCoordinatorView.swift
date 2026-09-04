@@ -31,6 +31,8 @@ class MainCoordinator: ObservableObject {
     /// start and pin what the resolution is allowed to do. Production always
     /// gets the real importer.
     var importShare: (String) async throws -> Way = { try await WayImporter().importShare(id: $0) }
+    /// Injectable so a spec can point the ledger at a temporary directory.
+    var pilgrimageLedgers = PilgrimageLedgerStore()
 
     private var pendingSnapshot: TempWalk?
     private var bannerDismissWork: DispatchWorkItem?
@@ -110,6 +112,7 @@ class MainCoordinator: ObservableObject {
                         try? WayStore.shared.save(way)
                         let arrival = vm?.honorArrival.map { (theirSeconds: $0.theirSeconds, yourSeconds: $0.yourSeconds) }
                         try? WayStore.shared.link(walkUUID: uuid, to: way.id, arrival: arrival)
+                        self.recordStageWalk(way: way, outcome: vm?.honorStageOutcome)
                     }
                     self.pendingSnapshot = snapshot
                     self.activeWalkViewModel = nil
@@ -269,6 +272,18 @@ class MainCoordinator: ObservableObject {
 
     func retryMedia(for way: Way) {
         Task { @MainActor in WayMediaDownloader.shared.retry(way) }
+    }
+
+    /// The one place a stage walk reaches the route's ledger. Silent for a
+    /// Way that is not a stage, and for a walk whose engine never anchored on
+    /// the Way — an approach to a trailhead is not a stage walked.
+    func recordStageWalk(way: Way?, outcome: HonorStageOutcome?, at date: Date = Date()) {
+        guard let stage = way?.stage,
+              let written = PilgrimageLedgerWriter.entry(stage: stage, outcome: outcome) else { return }
+        var ledger = pilgrimageLedgers.load(routeId: stage.routeId) ?? PilgrimageLedger(routeId: stage.routeId)
+        ledger.record(stageIndex: written.index, name: written.name,
+                      distanceKm: written.distanceKm, outcome: written.outcome, at: date)
+        pilgrimageLedgers.save(ledger)
     }
 
     /// "walk without the missing voices": the sink is dropped first, so a

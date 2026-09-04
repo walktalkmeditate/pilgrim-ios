@@ -102,6 +102,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var headingDegrees: Double?
     var honorHeading: HeadingProviding?
     @Published var honorArrival: HonorArrivalCard?
+    /// The engine's last word on this stage, captured in `teardownHonor()`
+    /// and deliberately surviving it — the engine is gone by the time the
+    /// snapshot reaches `onWalkCompleted`, and the ledger is written there.
+    @Published var honorStageOutcome: HonorStageOutcome?
     /// The arrival card is retired by its own flag, never by clearing
     /// `honorArrival` — `MainCoordinatorView` reads the companion delta off
     /// that card when the walk is saved, which can be long after the walker

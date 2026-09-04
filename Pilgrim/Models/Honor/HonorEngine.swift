@@ -38,6 +38,10 @@ final class HonorEngine: ObservableObject {
     var distanceWalkedMeters: Double {
         walkedFrac * geometry.totalMeters
     }
+    /// Whether the walker ever actually joined the Way. Begin's frac-0
+    /// fallback (nothing within 60 m) is an approach, not a joining, and a
+    /// stage the walker never joined earns no ledger entry.
+    var isAnchoredOnWay: Bool { startFrac != nil && !anchoredByFallback }
     /// Position high-water mark, the baseline that credit is measured
     /// against. A re-acquire may move it beyond what was credited.
     private var progressHighWater: Double = 0

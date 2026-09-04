@@ -105,6 +105,10 @@ extension ActiveWalkViewModel {
     /// `honorArrival` deliberately survives — the summary reads it.
     func teardownHonor() {
         guard honorEngine != nil || wayVoicePlayer != nil else { return }
+        if let engine = honorEngine, engine.isAnchoredOnWay {
+            honorStageOutcome = HonorStageOutcome(progressFrac: engine.progressFrac,
+                                                  arrived: engine.phase == .arrived)
+        }
         honorGeneration += 1
         honorCancellables.removeAll()
         honorEngine?.stop()
