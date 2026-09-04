@@ -86,6 +86,20 @@ final class PilgrimageCatalogServiceTests: XCTestCase {
         }
     }
 
+    /// `Dictionary(uniqueKeysWithValues:)` downstream (the catalog view's
+    /// ledger map, `List`'s own `Identifiable` diffing) traps on a repeated
+    /// id; the parse itself is the one place to make that impossible.
+    func testADuplicateRouteIdInTheIndexKeepsOnlyTheFirst() throws {
+        var obj = try XCTUnwrap(JSONSerialization.jsonObject(with: try PilgrimageFixtures.data("index.json")) as? [String: Any])
+        var routes = try XCTUnwrap(obj["routes"] as? [[String: Any]])
+        routes[1]["id"] = "camino-frances"
+        routes[1]["ways"] = ["stageCount": 5, "bytes": 100_000]
+        obj["routes"] = routes
+        let data = try JSONSerialization.data(withJSONObject: obj)
+        let catalog = try PilgrimageCatalogService.parse(data)
+        XCTAssertEqual(catalog.routes.map(\.id), ["camino-frances"], "the second row's id repeats the first; first wins")
+    }
+
     func testARepairedReleaseTagIsRefused() throws {
         let base = String(data: try PilgrimageFixtures.data("index.json"), encoding: .utf8)!
         for bad in ["\"release\": \"main\"", "\"release\": \"v1.7\"", "\"release\": \"1.7.0\""] {
@@ -232,7 +246,7 @@ final class PilgrimageCatalogModelTests: XCTestCase {
     }
 
     func testACardWithoutAPackageJustCountsTheStages() {
-        XCTAssertEqual(PilgrimageCatalogModel.card(entry: entry, ledger: nil, isInstalled: false),
+        XCTAssertEqual(PilgrimageCatalogModel.card(entry: entry, ledger: nil, isInstalled: false, hasUpdate: false),
                        "ES · \(StatsHelper.string(for: 764_000, unit: UnitLength.meters, type: .distance)) · 33 stages")
     }
 
@@ -240,16 +254,27 @@ final class PilgrimageCatalogModelTests: XCTestCase {
         var led = PilgrimageLedger(routeId: "camino-frances")
         led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
                    outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true)
+        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true, hasUpdate: false)
         XCTAssertTrue(line.contains("on your phone"), line)
         XCTAssertTrue(line.contains("stage 2 of 33"), line)
+        XCTAssertFalse(line.contains("updated"), line)
+    }
+
+    /// Spec: when the catalog's release is newer than the installed
+    /// `release.txt`, the card reads "on your phone · updated · <progress>".
+    func testACardWithAnUpdateSaysSoBetweenPhoneAndProgress() {
+        var led = PilgrimageLedger(routeId: "camino-frances")
+        led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
+                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true, hasUpdate: true)
+        XCTAssertTrue(line.contains("on your phone · updated · stage 2 of 33"), line)
     }
 
     func testASparseRouteSaysSoWithoutHidingItself() {
         XCTAssertEqual(PilgrimageCatalogModel.sparseNote(for: sparseEntry), "few places marked yet")
         XCTAssertNil(PilgrimageCatalogModel.sparseNote(for: entry))
         // The note is its own quiet line, never folded into the meta line.
-        XCTAssertFalse(PilgrimageCatalogModel.card(entry: sparseEntry, ledger: nil, isInstalled: false)
+        XCTAssertFalse(PilgrimageCatalogModel.card(entry: sparseEntry, ledger: nil, isInstalled: false, hasUpdate: false)
             .contains("few places marked yet"))
     }
 

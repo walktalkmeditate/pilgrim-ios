@@ -266,7 +266,11 @@ final class PilgrimageCatalogService: ObservableObject {
                 placesPerStage: ways.placesPerStage ?? 0,
                 sparse: ways.sparse ?? false)
         }
-        return PilgrimageCatalog(release: file.release, routes: routes)
+        // First wins: a repeated id downstream would trap `Dictionary(uniqueKeysWithValues:)`
+        // and hand `List` two rows with the same `Identifiable` id.
+        var seenIds = Set<String>()
+        let deduped = routes.filter { seenIds.insert($0.id).inserted }
+        return PilgrimageCatalog(release: file.release, routes: deduped)
     }
 
     // MARK: - Cache

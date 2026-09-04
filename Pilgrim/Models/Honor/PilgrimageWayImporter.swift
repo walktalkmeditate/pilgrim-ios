@@ -260,6 +260,14 @@ enum PilgrimageWayImporter {
               (1...maxStageCount).contains(file.stageCount),
               file.stages.count <= maxStageCount,
               file.stages.allSatisfy(isSaneStageRow) else { throw PilgrimageError.notWalkable }
+        // The manager saves each stage positionally — download loop index 0,
+        // 1, 2… becomes the Way at that same stage index — and the route
+        // screen keys a tapped row on this file's own `index`. Anything but
+        // the exact run 0..<count (1-based, a duplicate, a gap) would hand a
+        // tapped row a different stage than the one saved at that position.
+        guard file.stages.map(\.index).sorted() == Array(0..<file.stages.count) else {
+            throw PilgrimageError.notWalkable
+        }
         return PilgrimageRoute(
             id: file.id,
             name: capped(file.name, maxStageNameCharacters),

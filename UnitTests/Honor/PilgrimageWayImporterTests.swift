@@ -303,6 +303,37 @@ extension PilgrimageWayImporterTests {
         }
     }
 
+    /// The manager downloads and saves each stage positionally — stage 0,
+    /// then 1, then 2 — and the route screen keys a tapped row on `route.json`'s
+    /// own `index`. 1-based indices would hand every tapped row the *next*
+    /// stage's Way.
+    func testOneBasedStageIndicesAreNotWalkable() throws {
+        var obj = try XCTUnwrap(JSONSerialization.jsonObject(with: try PilgrimageFixtures.data("route.json")) as? [String: Any])
+        var stages = try XCTUnwrap(obj["stages"] as? [[String: Any]])
+        for index in stages.indices {
+            let current = try XCTUnwrap(stages[index]["index"] as? Int)
+            stages[index]["index"] = current + 1
+        }
+        obj["stages"] = stages
+        let json = try JSONSerialization.data(withJSONObject: obj)
+        XCTAssertThrowsError(try PilgrimageWayImporter.route(from: json)) {
+            XCTAssertEqual($0 as? PilgrimageError, .notWalkable)
+        }
+    }
+
+    /// A duplicate index leaves one saved stage unreachable and hands its
+    /// row to the stage that does carry that index instead.
+    func testADuplicateStageIndexIsNotWalkable() throws {
+        var obj = try XCTUnwrap(JSONSerialization.jsonObject(with: try PilgrimageFixtures.data("route.json")) as? [String: Any])
+        var stages = try XCTUnwrap(obj["stages"] as? [[String: Any]])
+        stages[1]["index"] = 0
+        obj["stages"] = stages
+        let json = try JSONSerialization.data(withJSONObject: obj)
+        XCTAssertThrowsError(try PilgrimageWayImporter.route(from: json)) {
+            XCTAssertEqual($0 as? PilgrimageError, .notWalkable)
+        }
+    }
+
     func testEveryErrorHasItsOwnLine() {
         XCTAssertEqual(PilgrimageCopy.line(for: .notWalkable), "this route isn't walkable yet")
         XCTAssertEqual(PilgrimageCopy.line(for: .incomplete), "the download didn't finish")
