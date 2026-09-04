@@ -189,13 +189,26 @@ extension PilgrimageWayImporterTests {
         }
     }
 
-    /// One field out of range at a time; each must be refused before any
-    /// `Int(_:)` conversion, the way `WayImporter.validate` does.
+    /// One field out of range at a time; each `from` is anchored with enough
+    /// surrounding context to match exactly one place in the fixture, so a
+    /// case can never pass because a *different* field's guard fired first.
+    /// Each must be refused before any `Int(_:)` conversion, the way
+    /// `WayImporter.validate` does.
     func testOutOfRangeStageFieldsAreNotWalkable() throws {
         let base = String(data: try PilgrimageFixtures.data("stage-00.json"), encoding: .utf8)!
         let cases: [(name: String, from: String, to: String)] = [
-            ("frac above 1", "\"frac\": 0.3,", "\"frac\": 1.4,"),
-            ("latitude off Earth", "\"lat\": 0, \"lon\": 0.002694", "\"lat\": 991, \"lon\": 0.002694"),
+            ("moment frac above 1", "\"frac\": 0.3,\n      \"kind\": \"waypoint\"",
+             "\"frac\": 1.4,\n      \"kind\": \"waypoint\""),
+            ("route point latitude off Earth", "\"lat\": 0, \"lon\": 0.002694, \"alt\": 700",
+             "\"lat\": 991, \"lon\": 0.002694, \"alt\": 700"),
+            ("moment at latitude off Earth", "\"at\": { \"lat\": 0, \"lon\": 0.002694 },\n      \"pin\"",
+             "\"at\": { \"lat\": 991, \"lon\": 0.002694 },\n      \"pin\""),
+            ("moment pin longitude off Earth", "\"pin\": { \"lat\": 0, \"lon\": 0.002700 }",
+             "\"pin\": { \"lat\": 0, \"lon\": 999 }"),
+            ("mark at latitude off Earth",
+             "\"at\": { \"lat\": 0, \"lon\": 0.002694 }, \"frac\": 0.3, \"offLineMeters\": 20 }",
+             "\"at\": { \"lat\": 991, \"lon\": 0.002694 }, \"frac\": 0.3, \"offLineMeters\": 20 }"),
+            ("mark frac above 1", "\"frac\": 0.7, \"offLineMeters\": 250", "\"frac\": 1.4, \"offLineMeters\": 250"),
             ("sitMinutes absurd", "\"sitMinutes\": 5", "\"sitMinutes\": 999999999"),
             ("distanceKm absurd", "\"distanceKm\": 24.2,", "\"distanceKm\": 1e300,"),
             ("stage count over 200", "\"count\": 2,", "\"count\": 900,"),
@@ -237,9 +250,15 @@ extension PilgrimageWayImporterTests {
 
     func testUnknownMarkKindsAndMomentKindsAreSkippedNotFatal() throws {
         let base = String(data: try PilgrimageFixtures.data("stage-00.json"), encoding: .utf8)!
-        let json = base.replacingOccurrences(of: "\"kind\": \"food\"", with: "\"kind\": \"helipad\"")
+        let json = base
+            .replacingOccurrences(of: "\"kind\": \"food\"", with: "\"kind\": \"helipad\"")
+            .replacingOccurrences(of: "\"frac\": 0.0,\n      \"kind\": \"waypoint\"",
+                                  with: "\"frac\": 0.0,\n      \"kind\": \"shrine\"")
+        XCTAssertNotEqual(json, base)
         let way = try PilgrimageWayImporter.way(from: Data(json.utf8), routeId: "camino-frances", stageIndex: 0)
         XCTAssertEqual(way.marks?.map(\.id), ["wp-fuente-roldan", "wp-fuente-lejos"])
+        XCTAssertEqual(way.moments.map(\.id), ["wp-orisson", "wp-roncesvalles"],
+                       "an unknown moment kind is skipped, not fatal")
     }
 
     /// The dataset's stage files omit `tzIdentifier` entirely — no route in
