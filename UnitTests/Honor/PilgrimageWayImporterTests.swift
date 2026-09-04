@@ -118,3 +118,179 @@ final class PilgrimageWayImporterTests: XCTestCase {
                       "the package folder is not a way id, so list() steps over it")
     }
 }
+
+extension PilgrimageWayImporterTests {
+
+    private func stage00() throws -> Way {
+        try PilgrimageWayImporter.way(from: PilgrimageFixtures.data("stage-00.json"),
+                                      routeId: "camino-frances", stageIndex: 0)
+    }
+
+    func testDecodesTheFixtureStage() throws {
+        let way = try stage00()
+        XCTAssertEqual(way.id, "pilgrimage:camino-frances:0")
+        XCTAssertEqual(way.source, .pilgrimage(routeId: "camino-frances", stageIndex: 0))
+        XCTAssertEqual(way.title, "Saint-Jean-Pied-de-Port to Roncesvalles")
+        XCTAssertNil(way.expires, "a route never returns to the trail on its own")
+        XCTAssertNil(way.weather)
+        XCTAssertEqual(way.route.count, 11)
+        XCTAssertEqual(way.totalDistanceMeters, 1000, accuracy: 5)
+        XCTAssertEqual(way.theirActiveSeconds, 28_800)
+        XCTAssertEqual(way.tzIdentifier, "Europe/Madrid")
+    }
+
+    func testMomentsCarryTextLocalNamesSitMinutesAndAPin() throws {
+        let way = try stage00()
+        XCTAssertEqual(way.moments.map(\.id), ["wp-saint-jean", "wp-orisson", "wp-roncesvalles"])
+        let orisson = try XCTUnwrap(way.moments.first { $0.id == "wp-orisson" })
+        guard case .waypoint(let label, let icon) = orisson.kind else { return XCTFail("kind") }
+        XCTAssertEqual(label, "Vierge d'Orisson")
+        XCTAssertEqual(icon, "building.columns")
+        XCTAssertEqual(orisson.text, "A shepherd carried this Madonna up from Lourdes.")
+        XCTAssertEqual(orisson.names?["eu"], "Orissongo Ama Birjina")
+        XCTAssertEqual(orisson.sitMinutes, 5)
+        XCTAssertEqual(orisson.at, WayCoordinate(lat: 0, lon: 0.002694), "triggers fire on the line")
+        XCTAssertEqual(orisson.pin, WayCoordinate(lat: 0, lon: 0.0027), "the pin draws off it")
+        XCTAssertNil(way.moments.first { $0.id == "wp-saint-jean" }?.text)
+    }
+
+    func testMarksAndTheStageBlockSurvive() throws {
+        let way = try stage00()
+        let marks = try XCTUnwrap(way.marks)
+        XCTAssertEqual(marks.map(\.id), ["wp-fuente-roldan", "wp-fuente-lejos", "wp-bar-orisson"])
+        XCTAssertEqual(marks[0].kind, .water)
+        XCTAssertEqual(marks[0].name, "Fuente de Roldán")
+        XCTAssertEqual(marks[0].offLineMeters, 12)
+        XCTAssertEqual(marks[2].kind, .food)
+        let stage = try XCTUnwrap(way.stage)
+        XCTAssertEqual(stage.routeId, "camino-frances")
+        XCTAssertEqual(stage.index, 0)
+        XCTAssertEqual(stage.count, 2)
+        XCTAssertEqual(stage.theme, "Initiation")
+        XCTAssertEqual(stage.closing, "You crossed a border on foot. Few things are still done this way.")
+        XCTAssertEqual(stage.warnings, ["The Napoleon Route closes in winter."])
+        XCTAssertEqual(stage.distanceKm, 24.2)
+        XCTAssertEqual(stage.gainMeters, 1419)
+        XCTAssertEqual(stage.hours, WayStageHours(min: 7, max: 9))
+        XCTAssertEqual(stage.difficulty, "hard")
+        XCTAssertEqual(stage.end.name, "Roncesvalles")
+    }
+
+    func testTheStageMustMatchTheRouteAndIndexItWasFetchedFor() throws {
+        let data = try PilgrimageFixtures.data("stage-00.json")
+        XCTAssertThrowsError(try PilgrimageWayImporter.way(from: data, routeId: "camino-frances", stageIndex: 4)) {
+            XCTAssertEqual($0 as? PilgrimageError, .notWalkable)
+        }
+        XCTAssertThrowsError(try PilgrimageWayImporter.way(from: data, routeId: "camino-norte", stageIndex: 0)) {
+            XCTAssertEqual($0 as? PilgrimageError, .notWalkable)
+        }
+        XCTAssertThrowsError(try PilgrimageWayImporter.way(from: data, routeId: "../etc", stageIndex: 0)) {
+            XCTAssertEqual($0 as? PilgrimageError, .notWalkable)
+        }
+    }
+
+    /// One field out of range at a time; each must be refused before any
+    /// `Int(_:)` conversion, the way `WayImporter.validate` does.
+    func testOutOfRangeStageFieldsAreNotWalkable() throws {
+        let base = String(data: try PilgrimageFixtures.data("stage-00.json"), encoding: .utf8)!
+        let cases: [(name: String, from: String, to: String)] = [
+            ("frac above 1", "\"frac\": 0.3,", "\"frac\": 1.4,"),
+            ("latitude off Earth", "\"lat\": 0, \"lon\": 0.002694", "\"lat\": 991, \"lon\": 0.002694"),
+            ("sitMinutes absurd", "\"sitMinutes\": 5", "\"sitMinutes\": 999999999"),
+            ("distanceKm absurd", "\"distanceKm\": 24.2,", "\"distanceKm\": 1e300,"),
+            ("stage count over 200", "\"count\": 2,", "\"count\": 900,"),
+            ("mark frac negative", "\"frac\": 0.5, \"offLineMeters\": 12", "\"frac\": -0.5, \"offLineMeters\": 12"),
+            ("hours not finite", "\"hours\": { \"min\": 7, \"max\": 9 },", "\"hours\": { \"min\": 7, \"max\": 1e400 },")
+        ]
+        for testCase in cases {
+            let json = base.replacingOccurrences(of: testCase.from, with: testCase.to)
+            XCTAssertNotEqual(json, base, "\(testCase.name): the fixture no longer contains that text")
+            XCTAssertThrowsError(try PilgrimageWayImporter.way(from: Data(json.utf8),
+                                                              routeId: "camino-frances", stageIndex: 0),
+                                 testCase.name) {
+                XCTAssertEqual($0 as? PilgrimageError, .notWalkable, testCase.name)
+            }
+        }
+    }
+
+    func testFreeTextIsCappedAtParseTime() throws {
+        let base = String(data: try PilgrimageFixtures.data("stage-00.json"), encoding: .utf8)!
+        let long = String(repeating: "a", count: 5000)
+        let json = base
+            .replacingOccurrences(of: "\"theme\": \"Initiation\"", with: "\"theme\": \"\(long)\"")
+            .replacingOccurrences(of: "\"A shepherd carried this Madonna up from Lourdes.\"", with: "\"\(long)\"")
+        let way = try PilgrimageWayImporter.way(from: Data(json.utf8), routeId: "camino-frances", stageIndex: 0)
+        XCTAssertEqual(way.stage?.theme.count, 80)
+        XCTAssertEqual(way.moments.first { $0.id == "wp-orisson" }?.text?.count, 600)
+    }
+
+    func testTooManyMomentsOrMarksIsNotWalkable() throws {
+        let base = String(data: try PilgrimageFixtures.data("stage-00.json"), encoding: .utf8)!
+        let extraMark = ",{ \"id\": \"x\", \"kind\": \"water\", \"name\": \"x\", \"at\": { \"lat\": 0, \"lon\": 0 }, \"frac\": 0.1, \"offLineMeters\": 5 }"
+        let many = String(repeating: extraMark, count: PilgrimageWayImporter.maxMarks)
+        let json = base.replacingOccurrences(of: "\"offLineMeters\": 20 }\n  ],", with: "\"offLineMeters\": 20 }\(many)\n  ],")
+        XCTAssertThrowsError(try PilgrimageWayImporter.way(from: Data(json.utf8),
+                                                          routeId: "camino-frances", stageIndex: 0)) {
+            XCTAssertEqual($0 as? PilgrimageError, .notWalkable)
+        }
+    }
+
+    func testUnknownMarkKindsAndMomentKindsAreSkippedNotFatal() throws {
+        let base = String(data: try PilgrimageFixtures.data("stage-00.json"), encoding: .utf8)!
+        let json = base.replacingOccurrences(of: "\"kind\": \"food\"", with: "\"kind\": \"helipad\"")
+        let way = try PilgrimageWayImporter.way(from: Data(json.utf8), routeId: "camino-frances", stageIndex: 0)
+        XCTAssertEqual(way.marks?.map(\.id), ["wp-fuente-roldan", "wp-fuente-lejos"])
+    }
+
+    /// The dataset's stage files omit `tzIdentifier` entirely — no route in
+    /// the build carries a time zone — and carry a top-level `schemaVersion`
+    /// the importer has no field for. The fixtures both carry a
+    /// `tzIdentifier`, so this is the only place either fact is exercised.
+    func testDecodesAStageFileMissingTzIdentifierWithAnUnknownSchemaVersionKey() throws {
+        let base = String(data: try PilgrimageFixtures.data("stage-00.json"), encoding: .utf8)!
+        let json = base
+            .replacingOccurrences(of: "\"tzIdentifier\": \"Europe/Madrid\",\n", with: "")
+            .replacingOccurrences(of: "\"id\": \"pilgrimage:camino-frances:0\",",
+                                  with: "\"schemaVersion\": 1,\n  \"id\": \"pilgrimage:camino-frances:0\",")
+        XCTAssertNotEqual(json, base)
+        let way = try PilgrimageWayImporter.way(from: Data(json.utf8), routeId: "camino-frances", stageIndex: 0)
+        XCTAssertNil(way.tzIdentifier)
+    }
+
+    func testDecodesTheRouteFile() throws {
+        let route = try PilgrimageWayImporter.route(from: PilgrimageFixtures.data("route.json"))
+        XCTAssertEqual(route.id, "camino-frances")
+        XCTAssertEqual(route.name, "Camino de Santiago (Francés)")
+        XCTAssertEqual(route.names["gl"], "Camiño de Santiago (Francés)")
+        XCTAssertEqual(route.country, "ES")
+        XCTAssertEqual(route.stageCount, 2)
+        XCTAssertEqual(route.distanceKm, 46.1)
+        XCTAssertEqual(route.summary, "The most walked of the caminos.")
+        XCTAssertEqual(route.stages.map(\.index), [0, 1])
+        XCTAssertEqual(route.stages[0].difficulty, "hard")
+        XCTAssertEqual(route.stages[1].hours, WayStageHours(min: 5, max: 7))
+    }
+
+    func testARouteFileWhoseNumbersAreOutOfRangeIsNotWalkable() throws {
+        let base = String(data: try PilgrimageFixtures.data("route.json"), encoding: .utf8)!
+        for (from, to) in [("\"stageCount\": 2", "\"stageCount\": 0"),
+                           ("\"distanceKm\": 46.1", "\"distanceKm\": 99999"),
+                           ("\"id\": \"camino-frances\"", "\"id\": \"../etc\"")] {
+            let json = base.replacingOccurrences(of: from, with: to)
+            XCTAssertNotEqual(json, base)
+            XCTAssertThrowsError(try PilgrimageWayImporter.route(from: Data(json.utf8))) {
+                XCTAssertEqual($0 as? PilgrimageError, .notWalkable)
+            }
+        }
+    }
+
+    func testEveryErrorHasItsOwnLine() {
+        XCTAssertEqual(PilgrimageCopy.line(for: .notWalkable), "this route isn't walkable yet")
+        XCTAssertEqual(PilgrimageCopy.line(for: .incomplete), "the download didn't finish")
+        XCTAssertEqual(PilgrimageCopy.line(for: .walkInProgress), "finish your walk first")
+        XCTAssertEqual(PilgrimageCopy.line(for: .catalogUnreachable), "the routes are out of reach right now")
+        XCTAssertEqual(PilgrimageCopy.line(for: .diskFull),
+                       HonorImportCopy.line(for: .failed(.diskFull)),
+                       "disk full keeps the copy the share importer already ships")
+    }
+}
