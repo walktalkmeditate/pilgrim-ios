@@ -247,6 +247,7 @@
 		517F9A56063F5C659EC3A010 /* WayVoicePlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2493D1384FA9B3AF350CCB1E /* WayVoicePlayerTests.swift */; };
 		52241CAC2114134F46DEA35B /* PilgrimageWayImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BE7F25203AFE4F9321F0667 /* PilgrimageWayImporter.swift */; };
 		52C6F28B0AAB6E494591E8EF /* VoiceGuideManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F883597323B0CE64E69DC9 /* VoiceGuideManifestService.swift */; };
+		53C1CA8D1C20C75A9FA36C79 /* PilgrimageLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF008A9F47153297E8066FB /* PilgrimageLedger.swift */; };
 		5629E7D85292B525B5FDAFEF /* WhisperPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF0C3B1FFBCAF6277D0D9E96 /* WhisperPlayer.swift */; };
 		567070362F733CB000FD1910 /* JourneyViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567070352F733CB000FD1910 /* JourneyViewerView.swift */; };
 		567070952F74218400FD1910 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 567070942F74218400FD1910 /* WidgetKit.framework */; };
@@ -598,6 +599,7 @@
 		F1A2B3C4D5E6F7A8B9C0D1E7 /* FaviconSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E6 /* FaviconSelectorView.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D201 /* SealRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D200 /* SealRenderer.swift */; };
 		F242CB838FA7C4CF75C87E4B /* SeekPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207E5D02B1ED4FF24CCD6F36 /* SeekPersistence.swift */; };
+		F512B14B1F89A764EFD52C66 /* PilgrimageLedgerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA248E089BACD536C5E5EBD /* PilgrimageLedgerTests.swift */; };
 		F5692608E6A2333D6E107040 /* KanjiExpiryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3271A2D5ABEDAEBF7A3BDD /* KanjiExpiryPicker.swift */; };
 		F68DAA11D2864EEF954B29D2 /* TranscriptContextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A9DB8ECE2349858CF3747B /* TranscriptContextStore.swift */; };
 		F6EA13F42AEA3562CB70442D /* GeoCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70459CCA754AD3355F39DA5 /* GeoCacheService.swift */; };
@@ -943,6 +945,7 @@
 		3BEB221D84466A0EED8D2C4A /* WayVoicePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayVoicePlayer.swift; sourceTree = "<group>"; };
 		3C6AF4CB2CDC4F6DA1162CEA /* ThreadsDossierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsDossierTests.swift; sourceTree = "<group>"; };
 		3C91107C7F80DC9AA20170B0 /* WayGPXExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayGPXExporterTests.swift; sourceTree = "<group>"; };
+		3CF008A9F47153297E8066FB /* PilgrimageLedger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimageLedger.swift; sourceTree = "<group>"; };
 		3E5EFD54CACA590B1BE78B75 /* BellPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BellPlayer.swift; sourceTree = "<group>"; };
 		3F47849F190C412386DF5E9C /* DossierSensesCrossWalkMoonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesCrossWalkMoonTests.swift; sourceTree = "<group>"; };
 		3FE8447AB26F2388EA548BED /* SeekSoundPlayerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSoundPlayerTests.swift; sourceTree = "<group>"; };
@@ -1078,6 +1081,7 @@
 		9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "InkScrollView+LunarMarkers.swift"; sourceTree = "<group>"; };
 		9C1E5F82D3B44A61A7E2C905 /* ThreadsBackfillTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsBackfillTests.swift; sourceTree = "<group>"; };
 		9C521BB1A2B7532A340C53D5 /* whisper-play-10.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-10.aac"; sourceTree = "<group>"; };
+		9CA248E089BACD536C5E5EBD /* PilgrimageLedgerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimageLedgerTests.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometryTests.swift; sourceTree = "<group>"; };
 		A0D927024992021199976C22 /* SeekEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekEngine.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
@@ -2623,6 +2627,7 @@
 				AF4148B6BA9FE9E92DA42DD0 /* HeadingProvider.swift */,
 				5BE7F25203AFE4F9321F0667 /* PilgrimageWayImporter.swift */,
 				1C607B4AF45EEF7E90E4B1EC /* PilgrimageCatalogService.swift */,
+				3CF008A9F47153297E8066FB /* PilgrimageLedger.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2740,6 +2745,7 @@
 				31A66535C9A2D8EE7F70F5B4 /* HonorImportReducerTests.swift */,
 				042CB0A642107281F17ADB9A /* PilgrimageWayImporterTests.swift */,
 				760242B590C85CB67822D967 /* PilgrimageCatalogServiceTests.swift */,
+				9CA248E089BACD536C5E5EBD /* PilgrimageLedgerTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3547,6 +3553,7 @@
 				6E27472A104D80E454C020CE /* HeadingProvider.swift in Sources */,
 				52241CAC2114134F46DEA35B /* PilgrimageWayImporter.swift in Sources */,
 				37882B9D8F0A30F707F89F43 /* PilgrimageCatalogService.swift in Sources */,
+				53C1CA8D1C20C75A9FA36C79 /* PilgrimageLedger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3721,6 +3728,7 @@
 				32190B1BFA6491123F61C477 /* PilgrimageWayImporterTests.swift in Sources */,
 				DD069E6440E78D0D5DB36CF8 /* StubURLProtocol.swift in Sources */,
 				8A43304ADDDDDD57AFCFDC5F /* PilgrimageCatalogServiceTests.swift in Sources */,
+				F512B14B1F89A764EFD52C66 /* PilgrimageLedgerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
