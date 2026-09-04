@@ -150,17 +150,59 @@ final class PilgrimageCatalogService: ObservableObject {
         }
     }
 
+    /// A route's `route.json` before its package is downloaded, so the route
+    /// screen can list the stages the pilgrim is being offered. Same byte cap
+    /// and same validation as the download path; cached beside the index so
+    /// reopening a route costs nothing. The preview never writes into the
+    /// package folder — only `PilgrimagePackageManager` installs a route.
+    func routePreview(entry: PilgrimageCatalogEntry, release: String) async throws -> PilgrimageRoute {
+        if let cached = readRoutePreview(routeId: entry.id, release: release) { return cached }
+        guard let url = Self.packageURL(release: release, routeId: entry.id, file: "route.json") else {
+            throw PilgrimageError.notWalkable
+        }
+        let data = try await fetch(url, cap: PilgrimageWayImporter.maxRouteBytes)
+        let route = try PilgrimageWayImporter.route(from: data)
+        // The same identity check the download makes: a route file that
+        // disagrees with the index is not the route being offered.
+        guard route.id == entry.id, route.stageCount == entry.stageCount,
+              route.stages.count == entry.stageCount else { throw PilgrimageError.notWalkable }
+        writeRoutePreview(data, routeId: entry.id, release: release)
+        return route
+    }
+
+    /// Keyed by release as well as route: a preview from an older build must
+    /// never stand in for the stages the current index names.
+    private func routePreviewURL(routeId: String, release: String) -> URL? {
+        guard WayStore.isValidRouteId(routeId), Self.isValidRelease(release) else { return nil }
+        return directory.appendingPathComponent("route-\(routeId)-\(release).json")
+    }
+
+    private func readRoutePreview(routeId: String, release: String) -> PilgrimageRoute? {
+        guard let url = routePreviewURL(routeId: routeId, release: release),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return try? PilgrimageWayImporter.route(from: data)
+    }
+
+    private func writeRoutePreview(_ data: Data, routeId: String, release: String) {
+        guard let url = routePreviewURL(routeId: routeId, release: release) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
     private func fetchIndex() async throws -> Data {
+        try await fetch(Self.indexURL, cap: Self.maxIndexBytes)
+    }
+
+    /// Streamed with a cap, checked before draining: an oversized declared
+    /// length must not cost a full download first.
+    private func fetch(_ url: URL, cap: Int) async throws -> Data {
         do {
-            let (bytes, response) = try await session.bytes(from: Self.indexURL)
-            // Checked before draining: an oversized declared length must not
-            // cost a full download first.
+            let (bytes, response) = try await session.bytes(from: url)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200,
-                  http.expectedContentLength <= Int64(Self.maxIndexBytes) else { throw PilgrimageError.catalogUnreachable }
+                  http.expectedContentLength <= Int64(cap) else { throw PilgrimageError.catalogUnreachable }
             var buffer = Data()
             for try await byte in bytes {
                 buffer.append(byte)
-                if buffer.count > Self.maxIndexBytes { throw PilgrimageError.catalogUnreachable }
+                if buffer.count > cap { throw PilgrimageError.catalogUnreachable }
             }
             return buffer
         } catch let error as PilgrimageError {

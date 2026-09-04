@@ -188,6 +188,12 @@ class MainCoordinator: ObservableObject {
     /// Resets the import state and any toast left over from a previous link
     /// so a stale failure line never greets the next opening of the sheet.
     func chooseWay() {
+        // Downloading a second route, Replace, Update, and Remove are all
+        // refused while a walk is on; this is where the manager learns what
+        // "on" means.
+        Task { @MainActor in
+            PilgrimagePackageManager.shared.isWalkActive = { [weak self] in self?.activeWalkViewModel != nil }
+        }
         honorImportState = .idle
         showLinkToast(nil)
         honorWaysPresented = true

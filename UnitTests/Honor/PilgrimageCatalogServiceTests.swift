@@ -160,3 +160,154 @@ final class PilgrimageCatalogServiceTests: XCTestCase {
         XCTAssertNil(service.catalog)
     }
 }
+
+extension PilgrimageCatalogServiceTests {
+
+    /// Spec 2.2 wants a stage list before anything is downloaded, so tapping
+    /// a stage of an undownloaded route has a row to tap.
+    func testTheRoutePreviewArrivesBeforeAnythingIsDownloaded() async throws {
+        let entry = PilgrimageCatalogEntry(
+            id: "camino-frances", name: "Camino", names: [:], country: "ES", region: "Europe",
+            distanceKm: 46.1, tradition: "christian", stageCount: 2, bytes: 214_000)
+        let url = try XCTUnwrap(PilgrimageCatalogService.packageURL(
+            release: "v1.7.0", routeId: "camino-frances", file: "route.json"))
+        StubURLProtocol.stub(url: url, body: try PilgrimageFixtures.data("route.json"))
+
+        let service = makeService()
+        let route = try await service.routePreview(entry: entry, release: "v1.7.0")
+        XCTAssertEqual(route.stages.map(\.index), [0, 1])
+        XCTAssertEqual(route.stages[0].name, "Saint-Jean-Pied-de-Port to Roncesvalles")
+        XCTAssertEqual(StubURLProtocol.requestedURLs.count, 1)
+
+        // Cached beside the index: a second view of the same route is free.
+        _ = try await makeService().routePreview(entry: entry, release: "v1.7.0")
+        XCTAssertEqual(StubURLProtocol.requestedURLs.count, 1)
+    }
+
+    func testAPreviewThatDoesNotMatchTheEntryIsNotWalkable() async throws {
+        let entry = PilgrimageCatalogEntry(
+            id: "camino-frances", name: "Camino", names: [:], country: "ES", region: "Europe",
+            distanceKm: 46.1, tradition: "christian", stageCount: 5, bytes: 214_000)
+        let url = try XCTUnwrap(PilgrimageCatalogService.packageURL(
+            release: "v1.7.0", routeId: "camino-frances", file: "route.json"))
+        StubURLProtocol.stub(url: url, body: try PilgrimageFixtures.data("route.json"))
+        do {
+            _ = try await makeService().routePreview(entry: entry, release: "v1.7.0")
+            XCTFail("expected notWalkable")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .notWalkable)
+        }
+    }
+
+    func testAPreviewWithNoNetworkIsOutOfReach() async {
+        let entry = PilgrimageCatalogEntry(
+            id: "camino-frances", name: "Camino", names: [:], country: "ES", region: "Europe",
+            distanceKm: 46.1, tradition: "christian", stageCount: 2, bytes: 214_000)
+        do {
+            _ = try await makeService().routePreview(entry: entry, release: "v1.7.0")
+            XCTFail("expected catalogUnreachable")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .catalogUnreachable)
+        }
+    }
+}
+
+final class PilgrimageCatalogModelTests: XCTestCase {
+
+    private let entry = PilgrimageCatalogEntry(
+        id: "camino-frances", name: "Camino de Santiago (Francés)", names: [:], country: "ES",
+        region: "Europe", distanceKm: 764, tradition: "christian", stageCount: 33, bytes: 2_140_000)
+
+    private var sparseEntry: PilgrimageCatalogEntry {
+        PilgrimageCatalogEntry(
+            id: "camino-frances", name: "Camino de Santiago (Francés)", names: [:], country: "ES",
+            region: "Europe", distanceKm: 764, tradition: "christian", stageCount: 33,
+            bytes: 2_140_000, placesPerStage: 0.4, sparse: true)
+    }
+
+    private func stage(_ index: Int) -> PilgrimageRouteStage {
+        PilgrimageRouteStage(index: index, name: "Saint-Jean-Pied-de-Port to Roncesvalles",
+                             distanceKm: 24.2, gainMeters: 1419,
+                             hours: WayStageHours(min: 7, max: 9), difficulty: "hard")
+    }
+
+    func testACardWithoutAPackageJustCountsTheStages() {
+        XCTAssertEqual(PilgrimageCatalogModel.card(entry: entry, ledger: nil, isInstalled: false),
+                       "ES · \(StatsHelper.string(for: 764_000, unit: UnitLength.meters, type: .distance)) · 33 stages")
+    }
+
+    func testACardWithAPackageSaysSoAndCarriesItsProgress() {
+        var led = PilgrimageLedger(routeId: "camino-frances")
+        led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
+                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true)
+        XCTAssertTrue(line.contains("on your phone"), line)
+        XCTAssertTrue(line.contains("stage 2 of 33"), line)
+    }
+
+    func testASparseRouteSaysSoWithoutHidingItself() {
+        XCTAssertEqual(PilgrimageCatalogModel.sparseNote(for: sparseEntry), "few places marked yet")
+        XCTAssertNil(PilgrimageCatalogModel.sparseNote(for: entry))
+        // The note is its own quiet line, never folded into the meta line.
+        XCTAssertFalse(PilgrimageCatalogModel.card(entry: sparseEntry, ledger: nil, isInstalled: false)
+            .contains("few places marked yet"))
+    }
+
+    func testStageLineReadsDistanceClimbHoursAndDifficulty() {
+        let line = PilgrimageRouteModel.stageLine(stage(0))
+        XCTAssertTrue(line.hasPrefix(StatsHelper.string(for: 24_200, unit: UnitLength.meters, type: .distance)), line)
+        XCTAssertTrue(line.contains(StatsHelper.string(for: 1419, unit: UnitLength.meters, type: .altitude)), line)
+        XCTAssertTrue(line.contains("7 to 9 hours"), line)
+        XCTAssertTrue(line.hasSuffix("hard"), line)
+    }
+
+    func testAStageWithOneHourFigureDoesNotSayItTwice() {
+        let single = PilgrimageRouteStage(index: 0, name: "n", distanceKm: 10, gainMeters: 40,
+                                          hours: WayStageHours(min: 4, max: 4), difficulty: "easy")
+        XCTAssertTrue(PilgrimageRouteModel.stageLine(single).contains("4 hours"))
+        XCTAssertFalse(PilgrimageRouteModel.stageLine(single).contains("4 to 4"))
+    }
+
+    /// One formatter, two callers: the stage list and the morning card must
+    /// not drift apart, and a non-finite figure must never reach `Int(_:)`.
+    func testTheStageFactsFormatterIsTheOneBothCallersUse() {
+        let facts = WayStageFacts.line(distanceKm: 24.2, gainMeters: 1419,
+                                       hours: WayStageHours(min: 7, max: 9), difficulty: "hard")
+        XCTAssertEqual(PilgrimageRouteModel.stageLine(stage(0)), facts)
+        XCTAssertEqual(WayStageFacts.line(distanceKm: 10, gainMeters: 0,
+                                          hours: WayStageHours(min: 4, max: 4), difficulty: ""),
+                       "\(StatsHelper.string(for: 10_000, unit: UnitLength.meters, type: .distance)) · " +
+                       "\(StatsHelper.string(for: 0, unit: UnitLength.meters, type: .altitude)) up · 4 hours",
+                       "an empty difficulty adds no trailing separator")
+        XCTAssertTrue(WayStageFacts.line(distanceKm: 10, gainMeters: 40,
+                                         hours: WayStageHours(min: .nan, max: .infinity), difficulty: "easy")
+            .contains("0 to 100 hours"), "clamped, never trapped")
+    }
+
+    func testTheNextRowOffersResumesAndFinallyCongratulates() {
+        var led = PilgrimageLedger(routeId: "camino-frances")
+        XCTAssertEqual(PilgrimageRouteModel.nextRow(ledger: nil, stageCount: 33), "start with stage 1")
+        led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
+                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        XCTAssertEqual(PilgrimageRouteModel.nextRow(ledger: led, stageCount: 33), "next: stage 2")
+        led.record(stageIndex: 1, name: "b", distanceKm: 21.9,
+                   outcome: HonorStageOutcome(progressFrac: 0.58, arrived: false), at: Date())
+        XCTAssertEqual(PilgrimageRouteModel.nextRow(ledger: led, stageCount: 33), "continue from where you stopped")
+        for index in 1..<33 {
+            led.record(stageIndex: index, name: "s", distanceKm: 20,
+                       outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        }
+        XCTAssertEqual(PilgrimageRouteModel.nextRow(ledger: led, stageCount: 33), "you have walked the whole way")
+    }
+
+    func testTheButtonSaysWhatItWillDo() {
+        XCTAssertEqual(PilgrimageRouteModel.buttonLabel(isInstalled: false, hasUpdate: false), "Download")
+        XCTAssertEqual(PilgrimageRouteModel.buttonLabel(isInstalled: true, hasUpdate: true), "Update")
+        XCTAssertEqual(PilgrimageRouteModel.buttonLabel(isInstalled: true, hasUpdate: false), "On your phone")
+    }
+
+    func testTheRedrawNoticeIsTheSpecsWords() {
+        XCTAssertEqual(PilgrimageRouteModel.redrawNotice,
+                       "the route's stages were redrawn; your kilometres are kept.")
+    }
+}

@@ -11,6 +11,7 @@ struct HonorWaysSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var pasted = ""
     @State private var showOwnWalks = false
+    @State private var showPilgrimages = false
     @State private var acceptedWays: [Way] = []
     /// Computed alongside `acceptedWays` in `onAppear`, not read live from
     /// `WayStore` in `wayRow`: the `TextField` above re-evaluates this body
@@ -40,6 +41,17 @@ struct HonorWaysSheet: View {
                     }
                 } header: {
                     Text("Your own walks").font(Constants.Typography.caption)
+                }
+
+                Section {
+                    Button { showPilgrimages = true } label: {
+                        settingNavRow(label: "Walk a pilgrimage")
+                    }
+                } header: {
+                    Text("A pilgrimage").font(Constants.Typography.caption)
+                } footer: {
+                    Text("A route from the open-pilgrimages dataset, walked one stage at a time.")
+                        .font(Constants.Typography.caption)
                 }
 
                 Section {
@@ -86,6 +98,11 @@ struct HonorWaysSheet: View {
                 } message: {
                     Text("This walk doesn't have enough of a route to follow. Try another.")
                 }
+            }
+            .sheet(isPresented: $showPilgrimages) {
+                // Same handoff as the own-walk picker: choosing dismisses the
+                // parent sheet, which takes this nested one with it.
+                PilgrimageCatalogView(onChoose: onChoose)
             }
             .onAppear {
                 for id in WayStore.shared.sweepExpired(now: Date()) { WayMediaDownloader.shared.cancel(wayId: id) }

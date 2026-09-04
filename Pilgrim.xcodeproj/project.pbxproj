@@ -483,6 +483,7 @@
 		C5E89C7DAA3D5CBB80866CE3 /* WalkModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B000626F7A2E74A9F0CFB8E /* WalkModeTests.swift */; };
 		C94A3491F0E9679B28631867 /* WayMomentPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C5E2D7D058435DA3A5730A /* WayMomentPreview.swift */; };
 		C950A11E1333A7241A632EAD /* PilgrimPackageExporterArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A1823447A8FBD30A3D3EFA /* PilgrimPackageExporterArchivedTests.swift */; };
+		CA1C2BA7B9AD07899EF9E3D6 /* PilgrimageRouteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2BC3FC74ECD465C9B05B64 /* PilgrimageRouteView.swift */; };
 		CB7ADD4EA290BD08EFFF402B /* UserPreferencesArchivedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */; };
 		CC00000100000000ABOUTV02 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000ABOUTV01 /* AboutView.swift */; };
 		CC00000100000000SAFARV02 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000100000000SAFARV01 /* SafariView.swift */; };
@@ -561,6 +562,7 @@
 		DD22EE33FF44AA55BB66CC11 /* SealGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* SealGenerator.swift */; };
 		DD4A23D5ECB4476E8D5D7137 /* DossierSensesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44C8743FE13846D2827B0B84 /* DossierSensesTests.swift */; };
 		DDB1779FC0D3496A894799E5 /* ThreadsDossierFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E3FC6223746420D820D537F /* ThreadsDossierFormatter.swift */; };
+		DE3CC7C6C86506A80A91381F /* PilgrimageCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C59FCD8327EE3A2B6580F871 /* PilgrimageCatalogView.swift */; };
 		DFB954198A242EE69B14806B /* ThreadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2063941AD76F5A42ABCEB5D5 /* ThreadStore.swift */; };
 		DFEDCC6CB71A195FED057944 /* HonorEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A26ACCEA7556F8C3E98DF4 /* HonorEngineTests.swift */; };
 		E04A40C43C1753C19B527AF9 /* ArrivalDebounceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E56D65EF09E89723F2AB06 /* ArrivalDebounceTests.swift */; };
@@ -1088,6 +1090,7 @@
 		9C1E5F82D3B44A61A7E2C905 /* ThreadsBackfillTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThreadsBackfillTests.swift; sourceTree = "<group>"; };
 		9C521BB1A2B7532A340C53D5 /* whisper-play-10.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-10.aac"; sourceTree = "<group>"; };
 		9CA248E089BACD536C5E5EBD /* PilgrimageLedgerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimageLedgerTests.swift; sourceTree = "<group>"; };
+		9D2BC3FC74ECD465C9B05B64 /* PilgrimageRouteView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimageRouteView.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5A6B7C8D9E0F1 /* SealGeometryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGeometryTests.swift; sourceTree = "<group>"; };
 		A0D927024992021199976C22 /* SeekEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekEngine.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PilgrimV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimV3.swift; sourceTree = "<group>"; };
@@ -1213,6 +1216,7 @@
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* SealGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SealGenerator.swift; sourceTree = "<group>"; };
 		C415FCDCD38A1DE0212C8451 /* ProximityDetectionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProximityDetectionService.swift; sourceTree = "<group>"; };
 		C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UnitTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C59FCD8327EE3A2B6580F871 /* PilgrimageCatalogView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimageCatalogView.swift; sourceTree = "<group>"; };
 		C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculatorIlluminationTests.swift; sourceTree = "<group>"; };
 		C6EA04337299ABAFFB2644FC /* PromptAssembler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptAssembler.swift; sourceTree = "<group>"; };
 		C7AE2E45E3D1892209D4CA15 /* CollectiveCounterServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveCounterServiceTests.swift; sourceTree = "<group>"; };
@@ -2648,6 +2652,8 @@
 				A4C5E2D7D058435DA3A5730A /* WayMomentPreview.swift */,
 				CD4E7D8A0E356F0605D09A1D /* WayPhotoViewer.swift */,
 				6AA7F1293F3B3A254BBF2A4C /* WayMomentHeader.swift */,
+				C59FCD8327EE3A2B6580F871 /* PilgrimageCatalogView.swift */,
+				9D2BC3FC74ECD465C9B05B64 /* PilgrimageRouteView.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3564,6 +3570,8 @@
 				37882B9D8F0A30F707F89F43 /* PilgrimageCatalogService.swift in Sources */,
 				53C1CA8D1C20C75A9FA36C79 /* PilgrimageLedger.swift in Sources */,
 				D202AC334BD637248680B082 /* PilgrimagePackageManager.swift in Sources */,
+				DE3CC7C6C86506A80A91381F /* PilgrimageCatalogView.swift in Sources */,
+				CA1C2BA7B9AD07899EF9E3D6 /* PilgrimageRouteView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
