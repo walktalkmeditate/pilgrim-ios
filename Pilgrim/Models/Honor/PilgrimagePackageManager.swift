@@ -40,7 +40,16 @@ final class PilgrimagePackageManager: ObservableObject {
     let ledgers: PilgrimageLedgerStore
     private let session: URLSession
 
-    private static let defaultSession: URLSession = {
+    /// Guards against a second `download` interleaving with one already in
+    /// flight: every `await` below gives the run loop a chance to start
+    /// another call, and two overlapping downloads of the same route would
+    /// let the second's rollback tear down the first's clean install.
+    private var isDownloading = false
+
+    /// `nonisolated`: an init's default-argument expressions run in a
+    /// generator function outside the type's actor, the same reasoning as
+    /// `PilgrimageCatalogService.defaultSession`.
+    nonisolated private static let defaultSession: URLSession = {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 300
@@ -85,32 +94,66 @@ final class PilgrimagePackageManager: ObservableObject {
         return installed.release != catalogRelease
     }
 
+    /// What this route already has installed, before this download changes
+    /// anything — an Update's rollback has to reach every stage a prior
+    /// install left, not just the ones this attempt rewrites.
+    private func installedStageCount(for routeId: String) -> Int {
+        guard let installed = installed(), installed.routeId == routeId else { return 0 }
+        return installed.route.stages.count
+    }
+
     // MARK: - Download
 
     /// Fetches `route.json` and every stage at the exact release the index
     /// named, into a temporary directory, and swaps the finished set in.
+    /// The streaming, the temp writes, and the commit all run off the main
+    /// actor, so `phase` can still reach a view between them and a long
+    /// commit does not hang the app.
     func download(entry: PilgrimageCatalogEntry, release: String) async throws {
         guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+        guard !isDownloading else { throw PilgrimageError.incomplete }
+        isDownloading = true
+        defer { isDownloading = false }
+
         let temp = FileManager.default.temporaryDirectory
             .appendingPathComponent("pilgrimage-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: temp) }
+        let cap = maxPackageBytes
+        let session = self.session
+        let store = self.store
+        let saveStage = self.saveStage
+        let previousStageCount = installedStageCount(for: entry.id)
         do {
             try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
+            guard let routeURL = PilgrimageCatalogService.packageURL(release: release, routeId: entry.id, file: "route.json") else {
+                throw PilgrimageError.notWalkable
+            }
             let total = entry.stageCount + 1
             // Counted across every file, not per file: 200 stages each just
             // under the 2 MB per-file cap would otherwise be 400 MB.
             var packageBytes = 0
-            let fetched = try await stageRouteFile(entry: entry, release: release, into: temp)
+            let fetched = try await Self.stageRouteFile(entry: entry, routeURL: routeURL, into: temp, session: session)
             packageBytes += fetched.bytes
-            try checkBudget(packageBytes)
+            try Self.checkBudget(packageBytes, cap: cap)
             phase = .downloading(done: 1, total: total)
             for index in 0..<fetched.route.stageCount {
-                packageBytes += try await stageOneStage(entry: entry, release: release, index: index, into: temp)
-                try checkBudget(packageBytes)
+                guard let stageURL = PilgrimageCatalogService.packageURL(
+                    release: release, routeId: entry.id, file: Self.stageFileName(index)) else {
+                    throw PilgrimageError.notWalkable
+                }
+                packageBytes += try await Self.stageOneStage(entry: entry, stageURL: stageURL, index: index, into: temp, session: session)
+                try Self.checkBudget(packageBytes, cap: cap)
                 phase = .downloading(done: index + 2, total: total)
             }
-            try commit(routeId: entry.id, release: release, stageCount: fetched.route.stageCount, from: temp)
+            let plan = CommitPlan(routeId: entry.id, release: release, stageCount: fetched.route.stageCount,
+                                   previousStageCount: previousStageCount)
+            try await Self.commit(plan, from: temp, store: store, saveStage: saveStage)
             phase = .idle
+        } catch is CancellationError {
+            // A cancelled task is not a failure the pilgrim needs to see:
+            // the temp dir is still swept by the `defer` above.
+            phase = .idle
+            throw CancellationError()
         } catch {
             let failure = (error as? PilgrimageError) ?? .incomplete
             phase = .failed(failure)
@@ -120,16 +163,15 @@ final class PilgrimagePackageManager: ObservableObject {
 
     /// The index's `bytes` is a figure the dataset wrote; this is the one the
     /// phone actually paid.
-    private func checkBudget(_ bytes: Int) throws {
-        guard bytes <= maxPackageBytes else { throw PilgrimageError.incomplete }
+    nonisolated private static func checkBudget(_ bytes: Int, cap: Int) throws {
+        guard bytes <= cap else { throw PilgrimageError.incomplete }
     }
 
     /// The route file must describe the route the catalog offered: a package
     /// whose own idea of itself differs from the index's is not walkable.
-    private func stageRouteFile(entry: PilgrimageCatalogEntry, release: String, into temp: URL) async throws
+    nonisolated private static func stageRouteFile(entry: PilgrimageCatalogEntry, routeURL: URL, into temp: URL, session: URLSession) async throws
         -> (route: PilgrimageRoute, bytes: Int) {
-        let data = try await fetch(routeId: entry.id, release: release, file: "route.json",
-                                   cap: PilgrimageWayImporter.maxRouteBytes)
+        let data = try await fetch(url: routeURL, cap: PilgrimageWayImporter.maxRouteBytes, session: session)
         let route = try PilgrimageWayImporter.route(from: data)
         guard route.id == entry.id, route.stageCount == entry.stageCount,
               route.stages.count == entry.stageCount else { throw PilgrimageError.notWalkable }
@@ -140,19 +182,14 @@ final class PilgrimagePackageManager: ObservableObject {
     /// Validated as it lands, then written in the store's own encoding, so
     /// the commit below is a decode-and-save rather than a second parse of
     /// untrusted bytes. Returns the bytes it cost.
-    @discardableResult
-    private func stageOneStage(entry: PilgrimageCatalogEntry, release: String, index: Int, into temp: URL) async throws -> Int {
-        let data = try await fetch(routeId: entry.id, release: release, file: Self.stageFileName(index),
-                                   cap: PilgrimageWayImporter.maxStageBytes)
+    nonisolated private static func stageOneStage(entry: PilgrimageCatalogEntry, stageURL: URL, index: Int, into temp: URL, session: URLSession) async throws -> Int {
+        let data = try await fetch(url: stageURL, cap: PilgrimageWayImporter.maxStageBytes, session: session)
         let way = try PilgrimageWayImporter.way(from: data, routeId: entry.id, stageIndex: index)
         try write(try Self.encoder.encode(way), to: temp.appendingPathComponent("\(index).way.json"))
         return data.count
     }
 
-    private func fetch(routeId: String, release: String, file: String, cap: Int) async throws -> Data {
-        guard let url = PilgrimageCatalogService.packageURL(release: release, routeId: routeId, file: file) else {
-            throw PilgrimageError.notWalkable
-        }
+    nonisolated private static func fetch(url: URL, cap: Int, session: URLSession) async throws -> Data {
         do {
             let (bytes, response) = try await session.bytes(from: url)
             // Checked before draining: an oversized declared length must not
@@ -168,12 +205,14 @@ final class PilgrimagePackageManager: ObservableObject {
             return buffer
         } catch let error as PilgrimageError {
             throw error
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             throw WayMediaDownloader.isDiskFull(error) ? PilgrimageError.diskFull : PilgrimageError.incomplete
         }
     }
 
-    private func write(_ data: Data, to url: URL) throws {
+    nonisolated private static func write(_ data: Data, to url: URL) throws {
         do {
             try data.write(to: url, options: .atomic)
         } catch {
@@ -183,40 +222,52 @@ final class PilgrimagePackageManager: ObservableObject {
 
     // MARK: - Commit
 
+    /// What a commit needs to know about itself, bundled so the function
+    /// below stays under the lint's parameter ceiling. `previousStageCount`
+    /// is what this same route already had installed before this attempt —
+    /// an Update overwrites those stages in place, so a rollback has to know
+    /// both counts to reach past what this commit itself touched.
+    private struct CommitPlan {
+        let routeId: String
+        let release: String
+        let stageCount: Int
+        let previousStageCount: Int
+    }
+
     /// The only place a downloaded set becomes the installed route. Every
     /// file has already landed and validated in `temp`, but the writes here
-    /// can still fail on a full disk — so each stage saved is remembered and
-    /// taken back up if a later one throws. A half-committed route is worse
-    /// than none: its stage Ways would sit in the Ways list with no
-    /// `route.json` to name them and no `installed()` able to reach them.
-    private func commit(routeId: String, release: String, stageCount: Int, from temp: URL) throws {
-        guard let dir = store.pilgrimageDirectory(for: routeId) else { throw PilgrimageError.notWalkable }
-        var saved: [Int] = []
+    /// can still fail on a full disk, and a failure rolls back through
+    /// whichever of `plan`'s two counts is larger, not just the stages this
+    /// commit itself touched. A half-committed route is worse than none: its
+    /// stage Ways would sit in the Ways list with no `route.json` to name
+    /// them and no `installed()` able to reach them, and a shrinking
+    /// Update's untouched tail would orphan the same way.
+    nonisolated private static func commit(_ plan: CommitPlan, from temp: URL, store: WayStore, saveStage: (Way) throws -> Void) async throws {
+        guard let dir = store.pilgrimageDirectory(for: plan.routeId) else { throw PilgrimageError.notWalkable }
         do {
-            for index in 0..<stageCount {
+            for index in 0..<plan.stageCount {
                 let data = try Data(contentsOf: temp.appendingPathComponent("\(index).way.json"))
                 let way = try Self.decoder.decode(Way.self, from: data)
                 try saveStage(way)
-                saved.append(index)
             }
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             try write(try Data(contentsOf: temp.appendingPathComponent("route.json")),
                       to: dir.appendingPathComponent("route.json"))
-            try write(Data(release.utf8), to: dir.appendingPathComponent("release.txt"))
+            try write(Data(plan.release.utf8), to: dir.appendingPathComponent("release.txt"))
         } catch {
-            rollBack(routeId: routeId, savedStageIndices: saved)
+            rollBack(routeId: plan.routeId, stageCount: max(plan.previousStageCount, plan.stageCount), store: store)
             if let failure = error as? PilgrimageError { throw failure }
             throw WayMediaDownloader.isDiskFull(error) ? PilgrimageError.diskFull : PilgrimageError.incomplete
         }
     }
 
-    /// Undoes everything this commit put down. An Update that fails here
-    /// leaves the route removed rather than half-replaced — the earlier
-    /// package's stages were already overwritten by the time the failure
-    /// landed, so "nothing" is the only honest state left. The ledger is
-    /// untouched, so re-downloading restores what was walked.
-    private func rollBack(routeId: String, savedStageIndices: [Int]) {
-        for index in savedStageIndices {
+    /// Undoes everything a commit could have put down for this route, up
+    /// through `stageCount` — not only the indices this attempt itself
+    /// wrote, so a shrinking or same-size Update leaves nothing behind
+    /// either. The ledger is untouched, so re-downloading restores what was
+    /// walked.
+    nonisolated private static func rollBack(routeId: String, stageCount: Int, store: WayStore) {
+        for index in 0..<stageCount {
             store.delete(id: WayStore.stageWayId(routeId: routeId, stageIndex: index))
         }
         guard let dir = store.pilgrimageDirectory(for: routeId) else { return }
@@ -225,15 +276,17 @@ final class PilgrimagePackageManager: ObservableObject {
     }
 
     /// The store's own encoding, so a temp file round-trips into exactly the
-    /// `way.json` the store would have written.
-    static let encoder: JSONEncoder = {
+    /// `way.json` the store would have written. `nonisolated`: read only
+    /// from the streaming and commit helpers above, none of which run on the
+    /// main actor.
+    nonisolated private static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys]
         return encoder
     }()
 
-    static let decoder: JSONDecoder = {
+    nonisolated private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return decoder

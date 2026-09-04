@@ -10,6 +10,10 @@ final class StubURLProtocol: URLProtocol {
         let status: Int
         let body: Data
         let headers: [String: String]
+        /// Held open this long before delivering — lets a spec start a
+        /// second call while the first is still awaiting the network,
+        /// without a real one.
+        let delay: TimeInterval
     }
 
     private static let lock = NSLock()
@@ -22,11 +26,12 @@ final class StubURLProtocol: URLProtocol {
         seen = []
     }
 
-    static func stub(url: URL, status: Int = 200, body: Data, headers: [String: String]? = nil) {
+    static func stub(url: URL, status: Int = 200, body: Data, headers: [String: String]? = nil, delay: TimeInterval = 0) {
         lock.lock(); defer { lock.unlock() }
         responses[url.absoluteString] = Response(
             status: status, body: body,
-            headers: headers ?? ["Content-Length": String(body.count), "Content-Type": "application/json"])
+            headers: headers ?? ["Content-Length": String(body.count), "Content-Type": "application/json"],
+            delay: delay)
     }
 
     static var requestedURLs: [URL] {
@@ -57,6 +62,17 @@ final class StubURLProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
             return
         }
+        guard stub.delay > 0 else {
+            deliver(stub, for: url)
+            return
+        }
+        Task {
+            try? await Task.sleep(nanoseconds: UInt64(stub.delay * 1_000_000_000))
+            self.deliver(stub, for: url)
+        }
+    }
+
+    private func deliver(_ stub: Response, for url: URL) {
         let response = HTTPURLResponse(url: url, statusCode: stub.status,
                                        httpVersion: "HTTP/1.1", headerFields: stub.headers)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
