@@ -16,13 +16,13 @@ The engine does not change. What changes is where a Way comes from, what a card 
 
 1. **Packaging lives in open-pilgrimages.** A build step emits ready-to-walk Way files per stage and a catalog index. The app stays a thin client; the Way format is the only contract. (Alternatives rejected: converting on the phone, which ties the app to the dataset's schema; converting in the worker, which puts a server between the repo and the app.)
 2. **No companion dot for a stage.** The clock is synthesized silently so the engine works unchanged; the companion dot, soft tap, and arrival delta stay off for the pilgrimage source. The stage's own voice walks with you. (Rejected: a "pilgrims before you" dot at typical pace — reads as a pacer; your own last walk as companion — most stages are walked once, and slice one already gives you that by re-walking your journal.)
-3. **Meaningful places are cards; services are quiet pins.** Sacred sites, cultural sites, viewpoints, the stage's start and end towns, and credential-stamp spots become moments with the dataset's description. Water, food, beds, transport, supply, and medical points draw as small pins with no card and no tap. *A route enters the catalog only when the build's coverage report shows it has enough curated places to make that promise (1.5).*
-4. **The stage's words ship in this slice.** Morning card at Begin, arrival reflection at the summary with "reply here". Stage stamps wait for the credencial slice.
+3. **Meaningful places are cards; services are quiet pins.** Sacred sites, cultural sites, viewpoints, the stage's start and end towns, and credential-stamp spots become moments with the dataset's description. Water, food, beds, transport, supply, and medical points draw as small pins with no card and no tap. *A route whose stages mostly lack such places is listed with "few places marked yet"; the build's coverage report is the curation backlog (1.5).*
+4. **The stage's words ship in this slice.** Morning card at Begin, arrival reflection on the arrival card with "reply here", echoed on the summary. Stage stamps wait for the credencial slice.
 5. **Water is a caption, not a stat.** One line on the map's caption surface with a soft haptic as you near a source. Nothing new in the stats sheet. *Bounded: on-way sources only, at most one caption per hour of walking (3.4).*
 6. **Elevation is a warning, not a live readout.** Gain and difficulty appear in the stage list and the morning card. Nothing about the climb while you walk.
 7. **Local names ride along.** The dataset's localized names appear as a quiet second line on cards, in the language of the place.
 8. **The route remembers your place.** A per-route ledger: stages walked, kilometres covered, where a partial stage stopped. Begin offers the next stage; a partial stage resumes. *The ledger outlives the package: Replace and Remove delete the stages, not the record of having walked them.*
-9. **Updates are manual, by tag.** The catalog reads the CDN's `@v1` alias; packages are fetched at the exact release tag the index names; a newer tag shows an "updated" badge with a one-tap Update, never mid-walk.
+9. **Updates are manual, by tag.** The catalog reads the CDN's `main` branch ref; packages are fetched at the exact release tag the index names; a newer tag shows an "updated" badge with a one-tap Update, never mid-walk.
 10. *Routes are downloaded, not bundled.* A whole route is a few megabytes, so bundling the launch routes in the app was weighed. Downloading wins because route data then updates on the dataset's cadence instead of riding App Store review, the app binary stays small as routes multiply, and the same path serves a route added next month. The cost is the download and update machinery in section 2.
 
 ## Vocabulary
@@ -33,7 +33,7 @@ The engine does not change. What changes is where a Way comes from, what a card 
 - **Package:** everything the app downloads for a route: one Way file per stage plus the route's card data.
 - **Mark:** a service point on the map (water, food, bed, transport, supply, medical). Drawn, never a moment.
 - **Morning card:** the stage's interior theme, narrative, day facts, warnings, and weather, shown at Begin.
-- **Arrival reflection:** the stage's closing line at the summary, followed by "reply here".
+- **Arrival reflection:** the stage's closing line on the arrival card, followed by "reply here"; the summary shows it again with the reply's playback.
 - **Ledger:** the per-route record of stages walked.
 
 ---
@@ -42,13 +42,13 @@ The engine does not change. What changes is where a Way comes from, what a card 
 
 ### 1.1 The build step
 
-`scripts/build-ways.mjs`, run by the existing `npm run pipeline` after validation, reads each route's walked line, `stages.json`, and `waypoints.geojson` and writes `routes/<route-id>/ways/stage-NN.json` (NN zero-padded from 00), `routes/<route-id>/ways/route.json` (the route's card data), and `routes/<route-id>/ways/report.json` (the coverage report, 1.5). It regenerates `index.json` with the fields in 1.5. Every output is validated against `schema/way.schema.json` before the step succeeds; a route that fails validation fails the pipeline.
+`scripts/build-ways.ts` (the repo's scripts are TypeScript run through `tsx`), run by `npm run pipeline` before `build-index`, reads each route's walked line, `stages.json`, and `waypoints.geojson` and writes `routes/<route-id>/ways/stage-NN.json` (NN zero-padded from 00), `routes/<route-id>/ways/route.json` (the route's card data), and `routes/<route-id>/ways/report.json` (the coverage report, 1.5). It regenerates `index.json` with the fields in 1.5. Every output is validated against `schema/way.schema.json` before the step succeeds; a route that fails validation fails the pipeline.
 
-**The walked line.** `route.geojson` for the Camino Francés measures 989 km while its 33 stages sum to 764 km, because the line includes optional variants and detours. Cutting stages from it hands a 27 km day a 63 km geometry. The build therefore cuts from a walked line: `route.main.geojson` when the route provides one, else `route.geojson` only if it passes the length gate below. Producing a main line for routes that lack one is dataset work tracked in the open-pilgrimages plan, and a route without a passing walked line emits no `ways/` directory.
+**The walked line.** `route.geojson` for the Camino Francés measures 994 km while its 33 stages sum to 764 km, because the line includes optional variants and detours; sliced from it, 22 of 33 stages fail the gate below. The build therefore cuts from a walked line: `route.main.geojson` when the route provides one, else `route.geojson` only if it passes the gate. OSM offers nothing to filter on (every member role is empty), so the main line is derived: a graph over the relations' member ways joined at shared coordinates, shortest path between consecutive stage anchors, with a proportional fallback for the four boundary towns that sit off the OSM line. That yields 767.5 km with every stage passing once two compensating stage distances around Terradillos are corrected in the dataset. A route without a passing walked line emits no `ways/` directory.
 
-**Length gate.** After slicing, every stage's measured length must lie within 10% of that stage's `distanceKm`. One failing stage fails the route's build with a message naming the stage and both figures.
+**Length gate.** After slicing, every stage's measured length must lie within 10% of that stage's `distanceKm`. A route with a failing stage still writes its `report.json`, naming the stage and both figures, but emits no `ways/` directory and gets no `ways` entry in the index; the build exits 0 so one bad route never blocks the pipeline. Only a schema failure is fatal.
 
-**Release tag.** The release step moves a `v1` git tag onto each release commit after tagging `vX.Y.Z`, because the catalog URL in 1.6 reads through `@v1`. As of this review the `v1` tag is stale: it points at a March 2026 build with three routes while `v1.6.0` has seven.
+**Release.** The release step regenerates `index.json` after the version bump so its `release` field names the tag being cut. No moving tag: jsDelivr caches tag URLs permanently, so a moved `v1` keeps serving old bytes (today `@v1/index.json` returns a March 2026 index with three routes although the tag itself points at v1.6.0). The catalog is read from the `main` branch ref instead (1.6).
 
 ### 1.2 One stage, one Way
 
@@ -57,7 +57,7 @@ For stage `k` with start coordinate `S` and end coordinate `E`:
 - **Route slice.** The walked line is cut at the vertices nearest `S` and `E` (nearest vertex by haversine; if the line is a `MultiLineString`, the parts are concatenated in order first). The slice is downsampled with Ramer–Douglas–Peucker at 8 m tolerance and then capped at 1,000 points by uniform stride. The cap is the build's own choice: it keeps `WayGeometry.lowestFrac`'s linear scan cheap on a 25 km day while leaving roughly 25 m between vertices against a 60 m on-way threshold. (`OwnWalkWayBuilder`'s cap is 4,000 with stride sampling and no RDP; a stage stays well inside the geometry the engine already exercises.)
 - **Clock.** `t` for point `i` is `hours × 3600 × (cumulativeMeters[i] / totalMeters)` where `hours` is the midpoint of the stage's `estimatedHours` range. The clock exists so `WayGeometry.elapsed(atFrac:)` works; nothing on the walk or in the preview shows it (decision 2, 3.1). `theirActiveSeconds` is the same total.
 - **Altitude.** Point altitude comes from the walked line's third coordinate when present, else null.
-- **Departed / weather / expires.** `departedAt` is the build's ISO timestamp and is never shown for a stage (3.1); `tzIdentifier` is the route's `metadata.json` time zone when it has one, else null; `weather` is null; `expires` is null (a route never returns to the trail on its own).
+- **Departed / weather / expires.** `departedAt` is the route's `metadata.lastUpdated` (so a rebuild of unchanged data is byte-identical) and is never shown for a stage (3.1); `tzIdentifier` is omitted (no route carries one); `weather` and `expires` are omitted (a route never returns to the trail on its own). Absent fields are omitted, never `null`.
 - **Title.** The stage's English name (`"Saint-Jean-Pied-de-Port to Roncesvalles"`).
 - **Id.** `pilgrimage:<route-id>:<stage-index>`, where `<route-id>` matches `[a-z0-9-]{1,64}` and `<stage-index>` is a non-negative integer.
 
@@ -119,17 +119,17 @@ Moment ids are `wp-<waypoint id>` so a moment is stable across rebuilds. The spl
 { "id": "camino-frances", "name": "Camino de Santiago (Francés)", "names": { "es": "…", "gl": "…" }, "country": "ES", "region": "Europe", "distanceKm": 764, "stageCount": 33, "tradition": "christian", "summary": "<metadata.overview.description, capped 600>", "cover": "cover.jpg", "stages": [ { "index": 0, "name": "…", "distanceKm": 24.2, "gainMeters": 1419, "hours": { "min": 7, "max": 9 }, "difficulty": "hard" } ] }
 ```
 
-`distanceKm` is the sum of the stages' `distanceKm`, not the geometry's length.
+`distanceKm` is the sum of the stages' `distanceKm`, not the geometry's length; `summary` comes from `metadata.description.en`. The build runs before `build-index` in the pipeline so `index.json` stays the single generated registry.
 
 `routes/<route-id>/ways/report.json` records, per stage, the slice length against `distanceKm`, the moment count beyond the start and end towns, how many moments carry `text`, and the mark count; and per route, whether it passed the floor and why not. The report is the honest picture of what the dataset can promise and drives the launch list (open question 2).
 
-**The floor.** A route is listed in `index.json` with a `ways` entry only when every stage passed the length gate and at least half of its stages carry at least one moment beyond the start and end towns. As of this review only the Camino Francés and Shikoku 88 can approach that floor; the Norte, Portugués, Primitivo, and Inglés carry service waypoints only and would ship as empty stages. Routes below the floor stay in the index without `ways`, and the app hides them.
+**The gate and the flag.** A route is listed in `index.json` with a `ways` entry only when every stage passed the length gate; a route with a failing stage still gets its `report.json` but no `ways` entry, and the app hides it. Coverage is a flag, not a bar: `sparse` is true when fewer than half the route's stages carry a moment beyond the start and end towns, and the app says "few places marked yet" on that route's card. As measured at this review the Camino Francés is sparse (7 of 33 stages carry such a moment); the Norte, Portugués, Primitivo, and Inglés carry service waypoints only; Shikoku 88 and Kumano Kodō fail the length gate until their stage distances and lines agree. The report is the curation backlog.
 
-`index.json` gains at the top level `"release": "v1.7.0"` (the git tag of the build) and, per route, `"ways": { "stageCount": 33, "bytes": 2140000 }`.
+`index.json` gains at the top level `"release": "v1.7.0"` (the git tag of the build) and, per route, `"ways": { "stageCount": 33, "bytes": 2140000, "placesPerStage": 0.4, "sparse": true }`.
 
 ### 1.6 CDN paths
 
-- Catalog: `https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@v1/index.json` — this depends on the moving `v1` tag from 1.1.
+- Catalog: `https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@main/index.json` — a branch ref, which jsDelivr refreshes on a 12 h cycle; `index.json` is only ever regenerated by the pipeline and the release step, so `main` names the last cut release.
 - Package files: `https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@<release>/routes/<route-id>/ways/<file>` — pinned to the exact tag the index named, so a route's stages are always from one build.
 
 ### 1.7 Schema and tests
@@ -140,7 +140,7 @@ Moment ids are `wp-<waypoint id>` so a moment is stable across rebuilds. The spl
 
 ### 2.1 The third door
 
-`HonorWaysSheet`'s "Choose a way" gains "a pilgrimage" beside "one of my walks" and "from a shared walk". It opens `PilgrimageCatalogView`: the routes from the index that carry a `ways` entry, each a card with cover, name, country, distance, and stage count. While the index fetch is in flight and nothing is cached, a centred progress indicator stands where the cards will be. A route with a package downloaded is marked "on your phone" with its progress line (section 5). An empty index, or no network with nothing downloaded, shows "the routes are out of reach right now" with a retry.
+`HonorWaysSheet`'s "Choose a way" gains "a pilgrimage" beside "one of my walks" and "from a shared walk". It opens `PilgrimageCatalogView`: the routes from the index that carry a `ways` entry, each a card with cover, name, country, distance, and stage count, and "few places marked yet" when the index flags the route `sparse`. While the index fetch is in flight and nothing is cached, a centred progress indicator stands where the cards will be. A route with a package downloaded is marked "on your phone" with its progress line (section 5). An empty index, or no network with nothing downloaded, shows "the routes are out of reach right now" with a retry.
 
 ### 2.2 The route
 
@@ -158,7 +158,7 @@ Moment ids are `wp-<waypoint id>` so a moment is stable across rebuilds. The spl
 
 ### 2.4 The catalog index
 
-`PilgrimageCatalogService` (new) fetches `index.json` from the `@v1` alias when the catalog opens, at most once per 24 hours (cached in Application Support with its fetch date), with a 15 s request timeout and a 256 KB streamed cap as the importer uses. It parses `release` (which must match `v[0-9]+\.[0-9]+\.[0-9]+`), and per route the fields of 1.5. A route is rejected when its `id` fails `[a-z0-9-]{1,64}` — the same validate-before-use rule `WayImporter.isShareId` applies to a share id — or when its numbers fall outside sane ranges (distance 0–10,000 km, stage count 1–200, bytes under 50 MB), the way `WayImporter.validate` does.
+`PilgrimageCatalogService` (new) fetches `index.json` from the `@main` branch ref when the catalog opens, at most once per 24 hours (cached in Application Support with its fetch date), with a 15 s request timeout and a 256 KB streamed cap as the importer uses. It parses `release` (which must match `v[0-9]+\.[0-9]+\.[0-9]+`), and per route the fields of 1.5. A route is rejected when its `id` fails `[a-z0-9-]{1,64}` — the same validate-before-use rule `WayImporter.isShareId` applies to a share id — or when its numbers fall outside sane ranges (distance 0–10,000 km, stage count 1–200, bytes under 50 MB), the way `WayImporter.validate` does.
 
 ### 2.5 The Way file, extended
 
@@ -236,6 +236,6 @@ Offline tiles, stage stamps and the credencial, sharing lineage to pilgrimag.es 
 ## 9. Open questions
 
 1. **Cover images.** Resolved for this slice: no covers are downloaded. The catalog card shows a parchment plate with the route's initial; `route.json`'s `cover` is parsed and ignored. Whether the dataset later ships covers (a Mapbox Static render committed under ODbL, or curated photos) is its own question. Note that the live `index.json` names each route with a locale map (`"name": { "en": … }`), so the catalog reads `name.en` and keeps the map as `names`; `route.json` carries the English `name` and the same map.
-2. **Which routes at launch.** Decided by the report and the floor (1.5), not by the March list: that list names the Portugués, which has no curated waypoints, and routes the dataset does not carry. Expect the Camino Francés and Shikoku 88 first, once each has a walked line that passes the length gate; every other route needs curated places before it can be listed.
+2. **Which routes at launch.** Decided by the gate (1.5), not by the March list: that list names the Portugués, which has no curated waypoints, and routes the dataset does not carry. The Camino Francés is the launch route, listed sparse; Shikoku 88 and Kumano Kodō follow once their stage distances and lines agree; every other route needs curated places before it is worth listing.
 3. **The walked line.** Which routes can provide a `route.main.geojson` today, and how the dataset marks variants, is the first task of the open-pilgrimages plan; until a route has one it emits no package.
 4. **`reflection` in the dataset schema.** Every current stage carries `interior.reflection`; making it required in `schema/` turns the narrative-last-sentence fallback into a guard that never fires.

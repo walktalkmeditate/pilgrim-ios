@@ -23,9 +23,10 @@
   ```
   Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
   ```
-- **CDN URLs, verbatim (spec 1.6):**
-  - Catalog: `https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@v1/index.json`
+- **CDN URLs, verbatim:**
+  - Catalog: `https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@main/index.json`
   - Package file: `https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@<release>/routes/<route-id>/ways/<file>`
+  - **Never the `@v1` alias.** jsDelivr caches a tag URL permanently, so a moving `v1` tag serves whatever bytes it first saw — verified: `@v1/index.json` returns a March index with three routes while `@v1.6.0` has seven. A branch ref refreshes on jsDelivr's own 12 h cycle, and our 24 h cache sits on top of it. Packages stay pinned at the exact `release` tag the index names, because those tags never move.
 - **Regexes, verbatim (spec 2.4, 2.5):**
   - route id: `[a-z0-9-]{1,64}`
   - release tag: `v[0-9]+\.[0-9]+\.[0-9]+`
@@ -71,12 +72,14 @@
 
 ## Resolved spec ambiguities
 
-1. **The arrival reply's surface (spec 3.5 / 4.2).** 4.2 routes the reply through `ActiveWalkViewModel.replyHere`, which needs a live recorder; the summary has none. Resolution: the **arrival card on the walk** carries the closing line and the "reply here" button (that is where `replyHere` works); the **summary's honor block** carries the stage line, the closing line, and — when a reply exists — a "your reply" play button. Both use the reserved origin `-1`.
+1. **The arrival reply's surface (spec 3.5 / 4.2).** 4.2 routes the reply through `ActiveWalkViewModel.replyHere`, which needs a live recorder; the summary has none. Resolution: the **arrival card on the walk** carries the closing line and the "reply here" button (that is where `replyHere` works); the **summary's honor block** carries the stage line, the closing line, and — when a reply exists — a "your reply" play button. Both use the reserved origin `-1`. *(The spec has since been revised to say the same — decision 4 and the Vocabulary entry now read "on the arrival card … echoed on the summary" — so no deviation remains.)*
 2. **Cover images (open question 1).** The dataset has none and `index.json` carries no `cover` field. Resolution: no cover downloads in this slice. A parchment plate with the route's initial stands where the cover will go; `route.json`'s `cover` field is parsed and ignored. The open question stays open.
 3. **`index.json`'s real shape.** The live file is `{schemaVersion, generatedAt, routes: [{id, name: {locale: String}, region, country, distanceKm, topology, tradition, path, variants?}]}`. `name` is a **map**, not a string (spec 1.5's string `name` belongs to `route.json`). The catalog entry therefore picks `name["en"]` and keeps the map as `names`.
 4. **The stage file is a wire format, not a Swift-encoded `Way`.** Spec 1.3's flat field table (`label`, `icon`, `text`, `names`, `sitMinutes`, `at`, `pin`) is not what `JSONEncoder` emits for `WayMomentKind`. `PilgrimageWayImporter` decodes the flat wire format and builds a `Way`, exactly as `WayImporter` decodes `TourManifest`.
 5. **Foreground session for package downloads.** Spec 2.3 says "the background-session … handling follow[s] `WayMediaDownloader`'s pattern", but an all-or-nothing temp set that "leaves nothing" on failure cannot survive app suspension anyway. Resolution: a foreground `URLSession.bytes` per file with the streamed cap (the `WayImporter.importShare` shape); only the **disk-full detection** is reused from `WayMediaDownloader`.
 6. **Fixtures are loaded by `#filePath`, not bundled.** `scripts/xcode-add.rb` writes to the *sources* build phase; JSON would need the resources phase. Loading the four fixture files from the source tree via `#filePath` avoids touching the resource plumbing at all.
+7. **The catalog reads `@main`, not the `@v1` alias.** jsDelivr caches a tag URL permanently, so a tag the release step moves keeps serving the bytes it first saw — verified: `@v1/index.json` returns a March index with three routes while `@v1.6.0` has seven. The catalog therefore reads the default branch, which jsDelivr refreshes on a 12 h cycle, with the 24 h cache on top. **Package files are unchanged** — they stay pinned at the exact `release` tag the index names, which is exactly the case tag caching handles correctly. *(Spec 1.6 has since been revised to `@main` with the same reasoning; the plan and the spec agree.)*
+8. **`sparse` is a caption, not a filter.** The index's per-route `ways` entry gains `placesPerStage` and `sparse` (true when fewer than half a route's stages carry a curated place beyond the start and end towns — the Camino Francés today, at 7 of 33). A sparse route is still listed and still walkable; it simply says "few places marked yet" on its catalog card and under its summary. Both fields are optional on the wire so an index written before them still parses, as a dense route with no figure. *(Spec 1.5 has since been revised from a hard coverage floor to this flag; the plan and the spec agree.)*
 
 ---
 
@@ -248,7 +251,7 @@
 }
 ```
 
-`UnitTests/Fixtures/Pilgrimage/index.json` — the live shape, with one listed route, one route below the floor (no `ways`), and one route whose slug is illegal:
+`UnitTests/Fixtures/Pilgrimage/index.json` — the live shape, with one listed route that the build marked sparse (as the Camino Francés is today), one route that failed the length gate and so carries no `ways` entry, and one route whose slug is illegal. The third route also omits `placesPerStage` and `sparse`, so the parse is exercised against an index written before those fields existed:
 
 ```json
 {
@@ -265,7 +268,7 @@
       "topology": "linear",
       "tradition": "christian",
       "path": "routes/camino-frances",
-      "ways": { "stageCount": 2, "bytes": 214000 }
+      "ways": { "stageCount": 2, "bytes": 214000, "placesPerStage": 0.4, "sparse": true }
     },
     {
       "id": "camino-norte",
@@ -333,6 +336,22 @@ final class PilgrimageWayImporterTests: XCTestCase {
         XCTAssertFalse(try PilgrimageFixtures.data("stage-01.json").isEmpty)
         XCTAssertFalse(try PilgrimageFixtures.data("route.json").isEmpty)
         XCTAssertFalse(try PilgrimageFixtures.data("index.json").isEmpty)
+    }
+
+    /// The build marks a route sparse when fewer than half its stages carry a
+    /// curated place beyond the start and end towns — true of the Camino
+    /// Francés today. The fixture must carry both fields, and one route must
+    /// omit them, so the parse is exercised against an older index too.
+    func testTheFixtureIndexCarriesTheSparseFlag() throws {
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: try PilgrimageFixtures.data("index.json")) as? [String: Any])
+        let routes = try XCTUnwrap(json["routes"] as? [[String: Any]])
+        let ways = try XCTUnwrap(routes.first?["ways"] as? [String: Any])
+        XCTAssertEqual(ways["placesPerStage"] as? Double, 0.4)
+        XCTAssertEqual(ways["sparse"] as? Bool, true)
+        let older = try XCTUnwrap(routes.last?["ways"] as? [String: Any])
+        XCTAssertNil(older["sparse"], "an index written before the flag existed")
+        XCTAssertNil(older["placesPerStage"])
     }
 
     func testAStageWayCarriesMarksAndAStageBlock() throws {
@@ -574,7 +593,7 @@ In `Pilgrim/Models/Honor/WayStore.swift`, replace `isValidId` and add three memb
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageWayImporterTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 5 tests, with 0 failures`.
+Expected: `Executed 6 tests, with 0 failures`.
 
 - [ ] **Step 8: Verify the whole app still builds**
 
@@ -1159,7 +1178,7 @@ enum PilgrimageWayImporter {
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/PilgrimageWayImporter.swift
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageWayImporterTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 15 tests, with 0 failures`.
+Expected: `Executed 17 tests, with 0 failures`.
 
 - [ ] **Step 5: Commit**
 
@@ -1188,7 +1207,7 @@ EOF
 **Interfaces:**
 - Consumes: `PilgrimageError`, `WayStore.isValidRouteId`, `PilgrimageFixtures`.
 - Produces:
-  - `struct PilgrimageCatalogEntry: Codable, Equatable, Identifiable { let id: String; let name: String; let names: [String: String]; let country: String?; let region: String?; let distanceKm: Double; let tradition: String?; let stageCount: Int; let bytes: Int }`
+  - `struct PilgrimageCatalogEntry: Codable, Equatable, Identifiable { let id: String; let name: String; let names: [String: String]; let country: String?; let region: String?; let distanceKm: Double; let tradition: String?; let stageCount: Int; let bytes: Int; let placesPerStage: Double; let sparse: Bool }` — the last two carry `init` defaults (`0` and `false`) so every literal that does not care about them stays short.
   - `struct PilgrimageCatalog: Codable, Equatable { let release: String; let routes: [PilgrimageCatalogEntry] }`
   - `@MainActor final class PilgrimageCatalogService: ObservableObject` with `static let shared`, `init(session:directory:now:)`, `@Published private(set) var catalog: PilgrimageCatalog?`, `func load(force: Bool = false) async throws -> PilgrimageCatalog`, `static let indexURL: URL`, `static func packageURL(release:routeId:file:) -> URL?`, `static let cacheLifetime: TimeInterval`, `static let maxIndexBytes: Int`, `static func parse(_ data: Data) throws -> PilgrimageCatalog`.
 - Produces for tests: `StubURLProtocol.stub(url:status:body:headers:)`, `StubURLProtocol.reset()`, `StubURLProtocol.session()`, `StubURLProtocol.requestedURLs`.
@@ -1305,9 +1324,12 @@ final class PilgrimageCatalogServiceTests: XCTestCase {
         StubURLProtocol.stub(url: PilgrimageCatalogService.indexURL, status: status, body: data, headers: headers)
     }
 
-    func testTheIndexURLIsTheMovingV1Alias() {
+    /// Never a tag: jsDelivr caches a tag URL forever, so the moving `v1`
+    /// tag still serves a March index with three routes.
+    func testTheIndexIsReadFromTheBranchNotAMovingTag() {
         XCTAssertEqual(PilgrimageCatalogService.indexURL.absoluteString,
-                       "https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@v1/index.json")
+                       "https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@main/index.json")
+        XCTAssertFalse(PilgrimageCatalogService.indexURL.absoluteString.contains("@v1"))
     }
 
     func testPackageURLsArePinnedToTheExactRelease() {
@@ -1330,6 +1352,32 @@ final class PilgrimageCatalogServiceTests: XCTestCase {
         XCTAssertEqual(route.country, "ES")
         XCTAssertEqual(route.stageCount, 2)
         XCTAssertEqual(route.bytes, 214_000)
+    }
+
+    func testTheSparseFlagAndItsDensityCarryThrough() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index.json"))
+        let route = try XCTUnwrap(catalog.routes.first)
+        XCTAssertTrue(route.sparse, "the Camino Francés carries a curated place on fewer than half its stages")
+        XCTAssertEqual(route.placesPerStage, 0.4, accuracy: 0.0001)
+
+        // An index written before the flag existed still parses, as dense.
+        let base = String(data: try PilgrimageFixtures.data("index.json"), encoding: .utf8)!
+        let older = base.replacingOccurrences(
+            of: "\"stageCount\": 2, \"bytes\": 214000, \"placesPerStage\": 0.4, \"sparse\": true",
+            with: "\"stageCount\": 2, \"bytes\": 214000")
+        XCTAssertNotEqual(older, base)
+        let olderRoute = try XCTUnwrap(PilgrimageCatalogService.parse(Data(older.utf8)).routes.first)
+        XCTAssertFalse(olderRoute.sparse)
+        XCTAssertEqual(olderRoute.placesPerStage, 0)
+    }
+
+    func testAnAbsurdPlaceDensityDropsTheRoute() throws {
+        let base = String(data: try PilgrimageFixtures.data("index.json"), encoding: .utf8)!
+        for bad in ["\"placesPerStage\": 51", "\"placesPerStage\": -1", "\"placesPerStage\": 1e300"] {
+            let json = base.replacingOccurrences(of: "\"placesPerStage\": 0.4", with: bad)
+            XCTAssertNotEqual(json, base, bad)
+            XCTAssertTrue(try PilgrimageCatalogService.parse(Data(json.utf8)).routes.isEmpty, bad)
+        }
     }
 
     func testARepairedReleaseTagIsRefused() throws {
@@ -1433,6 +1481,32 @@ struct PilgrimageCatalogEntry: Codable, Equatable, Identifiable {
     let tradition: String?
     let stageCount: Int
     let bytes: Int
+    /// Curated places per stage beyond the start and end towns, as the
+    /// build's coverage report measured them.
+    let placesPerStage: Double
+    /// The build's own verdict: fewer than half this route's stages carry a
+    /// curated place. True of the Camino Francés today, so the catalog says
+    /// so rather than letting the route promise more than it holds.
+    let sparse: Bool
+
+    /// The two coverage fields default, so a literal that does not care
+    /// about them stays short and an older cache is the only thing that has
+    /// to be refetched.
+    init(id: String, name: String, names: [String: String], country: String?, region: String?,
+         distanceKm: Double, tradition: String?, stageCount: Int, bytes: Int,
+         placesPerStage: Double = 0, sparse: Bool = false) {
+        self.id = id
+        self.name = name
+        self.names = names
+        self.country = country
+        self.region = region
+        self.distanceKm = distanceKm
+        self.tradition = tradition
+        self.stageCount = stageCount
+        self.bytes = bytes
+        self.placesPerStage = placesPerStage
+        self.sparse = sparse
+    }
 }
 
 struct PilgrimageCatalog: Codable, Equatable {
@@ -1442,15 +1516,21 @@ struct PilgrimageCatalog: Codable, Equatable {
     let routes: [PilgrimageCatalogEntry]
 }
 
-/// The dataset's index, read through the moving `@v1` alias at most once a
-/// day. Nothing here reaches for a package: the catalog only says which
-/// routes exist, how big they are, and which release to pin to.
+/// The dataset's index, read from the repository's default branch at most
+/// once a day. Nothing here reaches for a package: the catalog only says
+/// which routes exist, how big they are, and which release to pin to.
 @MainActor
 final class PilgrimageCatalogService: ObservableObject {
 
     static let shared = PilgrimageCatalogService()
 
-    static let indexURL = URL(string: "https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@v1/index.json")!
+    /// `@main`, never `@v1`: jsDelivr caches a tag URL permanently, so a tag
+    /// that the release step moves still serves the bytes it first saw — the
+    /// `v1` alias returns a March index with three routes while `v1.6.0` has
+    /// seven. A branch ref refreshes on jsDelivr's own 12 h cycle, and the
+    /// 24 h cache below sits on top of it. Package files stay pinned to the
+    /// exact `release` tag the index names, because those tags never move.
+    static let indexURL = URL(string: "https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages@main/index.json")!
     private static let packageBase = "https://cdn.jsdelivr.net/gh/walktalkmeditate/open-pilgrimages"
 
     static let maxIndexBytes = 256 * 1024
@@ -1458,6 +1538,9 @@ final class PilgrimageCatalogService: ObservableObject {
     static let maxDistanceKm = 10_000.0
     static let maxStageCount = 200
     static let maxPackageBytes = 50 * 1024 * 1024
+    /// A stage cannot plausibly carry fifty curated places; anything beyond
+    /// this is a broken report, not a rich route.
+    static let maxPlacesPerStage = 50.0
 
     @Published private(set) var catalog: PilgrimageCatalog?
 
@@ -1558,6 +1641,10 @@ final class PilgrimageCatalogService: ObservableObject {
         struct Ways: Decodable {
             let stageCount: Int
             let bytes: Int
+            /// Both optional: an index written before the build measured
+            /// coverage still parses, as a dense route with no figure.
+            let placesPerStage: Double?
+            let sparse: Bool?
         }
         struct Route: Decodable {
             let id: String
@@ -1572,10 +1659,11 @@ final class PilgrimageCatalogService: ObservableObject {
         let routes: [Route]
     }
 
-    /// A route without a `ways` entry is below the dataset's floor and the
-    /// app hides it. A route whose id or numbers fail validation is dropped
-    /// rather than failing the whole catalog: one bad row must not cost the
-    /// pilgrim every route.
+    /// A route without a `ways` entry failed the build's length gate and the
+    /// app hides it; a route the build only flagged `sparse` is still listed,
+    /// and says so on its card. A route whose id or numbers fail validation
+    /// is dropped rather than failing the whole catalog: one bad row must not
+    /// cost the pilgrim every route.
     static func parse(_ data: Data) throws -> PilgrimageCatalog {
         guard let file = try? JSONDecoder().decode(IndexFile.self, from: data),
               isValidRelease(file.release) else { throw PilgrimageError.catalogUnreachable }
@@ -1583,7 +1671,9 @@ final class PilgrimageCatalogService: ObservableObject {
             guard let ways = row.ways, WayStore.isValidRouteId(row.id),
                   row.distanceKm.isFinite, (0...maxDistanceKm).contains(row.distanceKm),
                   (1...maxStageCount).contains(ways.stageCount),
-                  (0..<maxPackageBytes).contains(ways.bytes) else { return nil }
+                  (0..<maxPackageBytes).contains(ways.bytes),
+                  ways.placesPerStage.map({ $0.isFinite && (0...maxPlacesPerStage).contains($0) }) ?? true
+            else { return nil }
             let names = row.name.filter { $0.key.range(of: "\\A[a-z]{2,3}\\z", options: .regularExpression) != nil }
             guard let display = names["en"] ?? names.sorted(by: { $0.key < $1.key }).first?.value else { return nil }
             return PilgrimageCatalogEntry(
@@ -1595,7 +1685,9 @@ final class PilgrimageCatalogService: ObservableObject {
                 distanceKm: row.distanceKm,
                 tradition: row.tradition.map { String($0.prefix(WayImporter.maxLabelCharacters)) },
                 stageCount: ways.stageCount,
-                bytes: ways.bytes)
+                bytes: ways.bytes,
+                placesPerStage: ways.placesPerStage ?? 0,
+                sparse: ways.sparse ?? false)
         }
         return PilgrimageCatalog(release: file.release, routes: routes)
     }
@@ -1609,6 +1701,9 @@ final class PilgrimageCatalogService: ObservableObject {
 
     private var cacheURL: URL { directory.appendingPathComponent("catalog.json") }
 
+    /// A cache written by a build that did not know about the coverage
+    /// fields fails to decode and is simply refetched — there is nothing in
+    /// it worth a migration.
     private func readCache() -> Cached? {
         guard let data = try? Data(contentsOf: cacheURL) else { return nil }
         let decoder = JSONDecoder()
@@ -1630,17 +1725,19 @@ final class PilgrimageCatalogService: ObservableObject {
 ruby scripts/xcode-add.rb Pilgrim Pilgrim/Models/Honor/PilgrimageCatalogService.swift
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageCatalogServiceTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `Executed 9 tests, with 0 failures`.
+Expected: `Executed 11 tests, with 0 failures`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add -A Pilgrim UnitTests Pilgrim.xcodeproj/project.pbxproj
 git commit -m "$(cat <<'EOF'
-feat(honor): the pilgrimage catalog, read once a day through @v1
+feat(honor): the pilgrimage catalog, read once a day from the branch
 
-Routes without a ways entry are below the dataset's floor and stay hidden;
-a bad row is dropped rather than costing the pilgrim every route.
+Not the moving v1 tag: jsDelivr caches a tag URL permanently and still
+serves a March index behind it. Routes without a ways entry are below the
+dataset's floor and stay hidden; a bad row is dropped rather than costing
+the pilgrim every route.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
@@ -2977,7 +3074,7 @@ EOF
 **Interfaces:**
 - Consumes: `PilgrimageCatalogService`, `PilgrimageCatalogEntry`, `PilgrimagePackageManager`, `PilgrimageRoute`, `PilgrimageRouteStage`, `PilgrimageLedger`, `PilgrimageLedgerStore`, `PilgrimageCopy`, `WayStore`, `StatsHelper`, `Constants.Typography.*`.
 - Produces:
-  - `enum PilgrimageCatalogModel { static func card(entry:ledger:isInstalled:) -> String }`
+  - `enum PilgrimageCatalogModel { static func card(entry:ledger:isInstalled:) -> String; static func sparseNote(for entry: PilgrimageCatalogEntry) -> String? }`
   - `enum PilgrimageRouteModel { static func stageLine(_:) -> String; static func nextRow(ledger:stageCount:) -> String; static func buttonLabel(isInstalled:hasUpdate:) -> String; static let redrawNotice: String }`
   - `struct PilgrimageCatalogView: View` — `init(onChoose: @escaping (Way) -> Void)`
   - `struct PilgrimageRouteView: View` — `init(entry: PilgrimageCatalogEntry, release: String, onChoose: @escaping (Way) -> Void)`
@@ -2992,6 +3089,13 @@ final class PilgrimageCatalogModelTests: XCTestCase {
     private let entry = PilgrimageCatalogEntry(
         id: "camino-frances", name: "Camino de Santiago (Francés)", names: [:], country: "ES",
         region: "Europe", distanceKm: 764, tradition: "christian", stageCount: 33, bytes: 2_140_000)
+
+    private var sparseEntry: PilgrimageCatalogEntry {
+        PilgrimageCatalogEntry(
+            id: "camino-frances", name: "Camino de Santiago (Francés)", names: [:], country: "ES",
+            region: "Europe", distanceKm: 764, tradition: "christian", stageCount: 33,
+            bytes: 2_140_000, placesPerStage: 0.4, sparse: true)
+    }
 
     private func stage(_ index: Int) -> PilgrimageRouteStage {
         PilgrimageRouteStage(index: index, name: "Saint-Jean-Pied-de-Port to Roncesvalles",
@@ -3011,6 +3115,14 @@ final class PilgrimageCatalogModelTests: XCTestCase {
         let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true)
         XCTAssertTrue(line.contains("on your phone"), line)
         XCTAssertTrue(line.contains("stage 2 of 33"), line)
+    }
+
+    func testASparseRouteSaysSoWithoutHidingItself() {
+        XCTAssertEqual(PilgrimageCatalogModel.sparseNote(for: sparseEntry), "few places marked yet")
+        XCTAssertNil(PilgrimageCatalogModel.sparseNote(for: entry))
+        // The note is its own quiet line, never folded into the meta line.
+        XCTAssertFalse(PilgrimageCatalogModel.card(entry: sparseEntry, ledger: nil, isInstalled: false)
+            .contains("few places marked yet"))
     }
 
     func testStageLineReadsDistanceClimbHoursAndDifficulty() {
@@ -3084,6 +3196,14 @@ enum PilgrimageCatalogModel {
             parts.append(entry.stageCount == 1 ? "1 stage" : "\(entry.stageCount) stages")
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// The build marks a route sparse when fewer than half its stages carry
+    /// a curated place beyond the start and end towns. The route is still
+    /// walkable and still listed — this is the honest caption that keeps it
+    /// from promising more than it holds.
+    static func sparseNote(for entry: PilgrimageCatalogEntry) -> String? {
+        entry.sparse ? "few places marked yet" : nil
     }
 }
 
@@ -3167,6 +3287,11 @@ struct PilgrimageCatalogView: View {
                                                  isInstalled: installedRouteId == entry.id))
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
+                if let sparseNote = PilgrimageCatalogModel.sparseNote(for: entry) {
+                    Text(sparseNote)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog.opacity(0.7))
+                }
             }
         }
     }
@@ -3322,6 +3447,13 @@ struct PilgrimageRouteView: View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
             if let summary = route?.summary ?? entryFallbackSummary {
                 Text(summary).font(Constants.Typography.body).foregroundColor(.ink)
+            }
+            // Directly under the summary: what the route can promise, before
+            // the button that offers to download it.
+            if let sparseNote = PilgrimageCatalogModel.sparseNote(for: entry) {
+                Text(sparseNote)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog.opacity(0.7))
             }
             Text(PilgrimageCatalogModel.card(entry: entry, ledger: ledger, isInstalled: isInstalled))
                 .font(Constants.Typography.caption)
@@ -3512,7 +3644,7 @@ ruby scripts/xcode-add.rb Pilgrim Pilgrim/Scenes/Honor/PilgrimageRouteView.swift
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator build 2>&1 | grep -E "error:|BUILD"
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -workspace Pilgrim.xcworkspace -scheme Pilgrim -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnitTests/PilgrimageCatalogModelTests 2>&1 | grep -E "error:|Executed"
 ```
-Expected: `** BUILD SUCCEEDED **`, then `Executed 7 tests, with 0 failures`.
+Expected: `** BUILD SUCCEEDED **`, then `Executed 8 tests, with 0 failures`.
 
 - [ ] **Step 8: Lint and commit**
 
@@ -3523,7 +3655,9 @@ git commit -m "$(cat <<'EOF'
 feat(honor): a pilgrimage is the third way to choose a way
 
 The catalog lists what the dataset says is walkable; the route screen
-offers the next stage, marks what you have walked, and downloads once.
+offers the next stage, marks what you have walked, and downloads once. A
+route the build marked sparse says "few places marked yet" rather than
+promising more than it holds.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
@@ -5871,7 +6005,8 @@ EOF
 | 2.1 third door, catalog states, "on your phone" | 8 |
 | 2.2 route view, stage list, next row, download prompt, off-line start | 8 (walk-as-ordinary comes free: the engine never anchors, Task 7 writes nothing) |
 | 2.3 download / replace / update / remove / guard | 5, 6 |
-| 2.4 index fetch, slug + release regex, 24 h cache, byte cap, ranges | 3 |
+| 2.4 index fetch, slug + release regex, 24 h cache, byte cap, ranges | 3 (the catalog reads `@main`, never a moving tag — see the constraint block and resolved ambiguity 7) |
+| Sparse routes: `placesPerStage` + `sparse` on the index, "few places marked yet" | 1 (fixture), 3 (model + validation), 8 (both surfaces) |
 | 2.5 `marks`, `stage`, moment fields, `.pilgrimage`, id allow-list, importer | 1, 2 |
 | 3.1 no soft tap, no companion, arrival without delta, date hidden | 9 |
 | 3.2 `text`, local names, `sitMinutes`, preview | 10 |
