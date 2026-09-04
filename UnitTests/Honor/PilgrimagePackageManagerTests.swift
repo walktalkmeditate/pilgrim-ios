@@ -308,6 +308,34 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         obj["stage"] = stage
         return try JSONSerialization.data(withJSONObject: obj)
     }
+
+    /// A one-stage variant of the fixture route: stage 0 kept verbatim (the identity a ledger reconciliation recognizes), stage 1 simply gone.
+    private func oneStageRouteData() throws -> Data {
+        var obj = try XCTUnwrap(try JSONSerialization.jsonObject(with: try PilgrimageFixtures.data("route.json")) as? [String: Any])
+        var stages = try XCTUnwrap(obj["stages"] as? [[String: Any]])
+        stages.removeLast()
+        obj["stageCount"] = 1
+        obj["stages"] = stages
+        return try JSONSerialization.data(withJSONObject: obj)
+    }
+
+    private var entryWithOneStage: PilgrimageCatalogEntry {
+        PilgrimageCatalogEntry(id: "camino-frances", name: entry.name, names: [:], country: "ES",
+                               region: "Europe", distanceKm: 24.2, tradition: "christian", stageCount: 1, bytes: 100_000)
+    }
+
+    private func stubOneStagePackage(release: String) throws {
+        StubURLProtocol.stub(url: try url("route.json", release: release), body: try oneStageRouteData())
+        StubURLProtocol.stub(url: try url("stage-00.json", release: release), body: try PilgrimageFixtures.data("stage-00.json"))
+    }
+
+    /// Both stages walked, so a reconciliation test can show one entry surviving and the other dropped.
+    private func seedTwoStageLedger() {
+        var led = PilgrimageLedger(routeId: "camino-frances")
+        led.record(stageIndex: 0, name: "Saint-Jean-Pied-de-Port to Roncesvalles", distanceKm: 24.2, outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        led.record(stageIndex: 1, name: "Roncesvalles to Zubiri", distanceKm: 21.9, outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
+        ledgers.save(led)
+    }
 }
 
 extension PilgrimagePackageManagerTests {
@@ -350,6 +378,24 @@ extension PilgrimagePackageManagerTests {
         XCTAssertEqual(manager.installed()?.routeId, "camino-norte")
         XCTAssertEqual(ledgers.load(routeId: "camino-frances")?.completedCount, 1,
                        "what you walked of it is remembered if it comes back")
+        let previousDir = try XCTUnwrap(wayStore.pilgrimageDirectory(for: "camino-frances"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: previousDir.appendingPathComponent("route.json").path), "the old route's package is gone, not just unreachable through installed()")
+    }
+
+    /// Replacing the route you already hold needs Update's shrink tail-sweep and ledger reconciliation, not a bare download.
+    func testReplaceWithTheRouteAlreadyInstalledBehavesLikeAnUpdate() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        seedTwoStageLedger()
+        try stubOneStagePackage(release: "v1.8.0")
+        try await manager.replace(with: entryWithOneStage, release: "v1.8.0")
+
+        XCTAssertNil(wayStore.load(id: "pilgrimage:camino-frances:1"), "stage 1's Way is orphaned by the shrink")
+        XCTAssertNotNil(wayStore.load(id: "pilgrimage:camino-frances:0"))
+        XCTAssertEqual(manager.installed()?.release, "v1.8.0")
+        let after = try XCTUnwrap(ledgers.load(routeId: "camino-frances"))
+        XCTAssertEqual(Set(after.stages.keys), ["0"], "stage 1's entry was dropped, not left stale")
+        XCTAssertEqual(after.redrawNoticePending, true)
     }
 
     func testAFailedReplaceLeavesTheFirstRouteUntouched() async throws {
@@ -370,12 +416,7 @@ extension PilgrimagePackageManagerTests {
     func testUpdateReconcilesTheLedgerByStageIdentity() async throws {
         let manager = makeManager()
         try await manager.download(entry: entry, release: "v1.7.0")
-        var led = PilgrimageLedger(routeId: "camino-frances")
-        led.record(stageIndex: 0, name: "Saint-Jean-Pied-de-Port to Roncesvalles", distanceKm: 24.2,
-                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        led.record(stageIndex: 1, name: "Roncesvalles to Zubiri", distanceKm: 21.9,
-                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        ledgers.save(led)
+        seedTwoStageLedger()
 
         // v1.8.0 redraws stage 1 under a new name.
         let redrawnRoute = String(data: try PilgrimageFixtures.data("route.json"), encoding: .utf8)!
@@ -395,6 +436,19 @@ extension PilgrimagePackageManagerTests {
         XCTAssertEqual(after.carriedKm ?? 0, 21.9, accuracy: 0.01)
         XCTAssertEqual(after.redrawNoticePending, true)
         XCTAssertFalse(manager.hasUpdate(catalogRelease: "v1.8.0"))
+    }
+
+    /// A route that shrank leaves stage Ways above the new count behind, with nothing to reach them once `route.json` stops naming that index.
+    func testUpdateSweepsStageWaysTheNewPackageNoLongerCovers() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+
+        try stubOneStagePackage(release: "v1.8.0")
+        try await manager.update(entry: entryWithOneStage, release: "v1.8.0")
+
+        XCTAssertNil(wayStore.load(id: WayStore.stageWayId(routeId: "camino-frances", stageIndex: 1)), "the tail stage above the new count is swept")
+        XCTAssertNotNil(wayStore.load(id: WayStore.stageWayId(routeId: "camino-frances", stageIndex: 0)))
+        XCTAssertEqual(manager.installed()?.route.stageCount, 1)
     }
 
     func testRemoveTakesTheStagesAndKeepsTheLedger() async throws {

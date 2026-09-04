@@ -177,6 +177,13 @@ final class PilgrimagePackageManager: ObservableObject {
     /// failed replace leaves the pilgrim with the route they already had.
     func replace(with entry: PilgrimageCatalogEntry, release: String) async throws {
         guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+        // A replace of the route you already hold is an update by another
+        // name: it needs the same shrink tail-sweep and ledger reconciliation,
+        // not a bare download that leaves both behind.
+        if installed()?.routeId == entry.id {
+            try await update(entry: entry, release: release)
+            return
+        }
         let previous = installed()
         try await download(entry: entry, release: release)
         if let previous, previous.routeId != entry.id {
@@ -189,7 +196,7 @@ final class PilgrimagePackageManager: ObservableObject {
     /// new package actually carries.
     func update(entry: PilgrimageCatalogEntry, release: String) async throws {
         guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
-        let previousStageCount = installed()?.route.stageCount ?? 0
+        let previousStageCount = installedStageCount(for: entry.id)
         try await download(entry: entry, release: release)
         guard let fresh = installed(), fresh.routeId == entry.id else { throw PilgrimageError.incomplete }
         // A route that shrank leaves stage Ways above the new count behind;
