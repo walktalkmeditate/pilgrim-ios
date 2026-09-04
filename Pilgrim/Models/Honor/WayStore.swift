@@ -78,6 +78,14 @@ final class WayStore {
             .appendingPathComponent(routeId, isDirectory: true)
     }
 
+    /// Route ids with a package folder on this phone. A folder left holding
+    /// only its ledger still appears here; the package manager decides what
+    /// counts as installed.
+    func pilgrimageRouteIds() -> [String] {
+        let root = base.appendingPathComponent("pilgrimage", isDirectory: true)
+        return ((try? fileManager.contentsOfDirectory(atPath: root.path)) ?? []).filter(Self.isValidRouteId)
+    }
+
     func save(_ way: Way) throws {
         guard Self.isValidId(way.id) else { throw CocoaError(.fileWriteInvalidFileName) }
         let dir = directory(for: way.id)
