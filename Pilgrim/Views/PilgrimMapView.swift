@@ -429,9 +429,10 @@ struct PilgrimMapView: UIViewRepresentable {
                 // in `buildPoints`; the halo above still carries the hour's
                 // light, so the two-part reading survives the glyph swap.
                 continue
-            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
-                // Way moments render as faded PointAnnotations in `buildPoints`
-                // (via MapGlyph.wayMark) — no filled circle underneath.
+            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint, .wayMark:
+                // Way moments and marks render as faded PointAnnotations in
+                // `buildPoints` (via MapGlyph.wayMark) — no filled circle
+                // underneath.
                 continue
             }
             circles.append(circle)
@@ -543,7 +544,7 @@ struct PilgrimMapView: UIViewRepresentable {
                 }
                 point.iconSize = 1.0
                 points.append(point)
-            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
+            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint, .wayMark:
                 // Branching on the specific way* kind, and the shared
                 // wayPoint() builder, both live in PilgrimMapView+HonorWay.swift
                 // — keeps this switch (and SwiftLint's cyclomatic-complexity

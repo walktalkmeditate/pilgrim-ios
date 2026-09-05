@@ -91,6 +91,16 @@ extension ActiveWalkViewModel {
             .store(in: &honorCancellables)
         heading.start()
         honorHeading = heading
+        // The nearest-forty selection follows the walker, but a resort of
+        // every mark on the stage is not a per-fix job — 200 m at a time.
+        $currentLocation
+            .compactMap { $0 }
+            .sink { [weak self] sample in
+                self?.refreshMarkPinsIfWalkerMoved(
+                    to: CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude))
+            }
+            .store(in: &honorCancellables)
+        markPinAnchor = nil
         refreshHonorPins()
     }
 
@@ -103,6 +113,19 @@ extension ActiveWalkViewModel {
             honorWayState = HonorWayState(way: way)
         }
         honorPins = PilgrimMapView.wayPins(for: way, heardVoiceIDs: heardVoiceIDs)
+    }
+
+    /// The walk map is fixed at zoom 16, so a stage's marks always draw
+    /// there; only which forty changes.
+    func refreshMarkPinsIfWalkerMoved(to coordinate: CLLocationCoordinate2D) {
+        guard let marks = way?.marks, !marks.isEmpty else { return }
+        if let anchor = markPinAnchor {
+            let moved = CLLocation(latitude: anchor.latitude, longitude: anchor.longitude)
+                .distance(from: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
+            guard moved >= HonorTuning.markPinRefreshMeters else { return }
+        }
+        markPinAnchor = coordinate
+        honorMarkPins = WayMarkPins.pins(marks: marks, zoom: 16, near: coordinate)
     }
 
     /// Where the companion is now: a binary search over the route on the
@@ -136,6 +159,8 @@ extension ActiveWalkViewModel {
         activeVoice = nil
         isVoicePaused = false
         honorCards.removeAll()
+        honorMarkPins.removeAll()
+        markPinAnchor = nil
         reachedMomentIDs.removeAll()
         suggestedMeditationMinutes = nil
         pendingReplyOrigin = nil

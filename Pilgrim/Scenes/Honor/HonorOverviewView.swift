@@ -80,6 +80,9 @@ struct HonorOverviewView: View {
     }
 
     @State private var rendering: WayRendering?
+    /// The stage's service pins. Not part of `WayRendering`: they follow the
+    /// camera's zoom, not the Way alone.
+    @State private var markPins: [PilgrimAnnotation] = []
     /// A tapped pin: its photo or voice in a half-height sheet of its own.
     @State private var previewMoment: WayMoment?
 
@@ -89,7 +92,7 @@ struct HonorOverviewView: View {
                 isInteractive: true,
                 showsUserLocation: true,
                 followsUserLocation: false,
-                pinAnnotations: rendering?.pins ?? [],
+                pinAnnotations: markPins + (rendering?.pins ?? []),
                 onAnnotationTap: { pin in
                     guard let id = pin.kind.wayMomentID else { return }
                     previewMoment = way.moments.first { $0.id == id }
@@ -128,6 +131,10 @@ struct HonorOverviewView: View {
                 bounds: HonorOverviewModel.bounds(of: way),
                 state: HonorWayState(way: way)
             )
+            markPins = WayMarkPins.pins(marks: way.marks ?? [], zoom: cameraZoom, near: cameraCenter)
+        }
+        .onChange(of: cameraZoom) { _, zoom in
+            markPins = WayMarkPins.pins(marks: way.marks ?? [], zoom: zoom, near: cameraCenter)
         }
         .task { await fetchToday() }
         .sheet(item: $previewMoment) { moment in

@@ -133,6 +133,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     /// writer (setters stay internal for the same reason the seek state's do:
     /// the extension that writes them lives in another file).
     @Published var honorPins: [PilgrimAnnotation] = []
+    /// The stage's service pins, memoized like `honorPins` and re-selected
+    /// only when the walker has moved (see `refreshMarkPinsIfWalkerMoved`).
+    @Published var honorMarkPins: [PilgrimAnnotation] = []
+    var markPinAnchor: CLLocationCoordinate2D?
     var honorWayState: HonorWayState?
     let honorSenses: HonorSenses
     var wayVoicePlayer: WayVoicePlaying?

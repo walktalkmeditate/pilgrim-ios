@@ -308,6 +308,9 @@ extension PilgrimMapView {
             return wayPoint(pin, symbol: "circle.circle", tint: .dawn, coordinator: coordinator)
         case .wayWaypoint(_, _, let icon):
             return wayPoint(pin, symbol: icon, tint: .stone, coordinator: coordinator)
+        case .wayMark(_, let kind):
+            return wayPoint(pin, symbol: WayMarkPins.symbol(for: kind), tint: .stone,
+                            coordinator: coordinator, size: 18)
         default:
             // Unreachable: buildPoints only routes way* kinds here. A plain
             // PointAnnotation at the pin's coordinate is a harmless fallback
@@ -316,13 +319,15 @@ extension PilgrimMapView {
         }
     }
 
-    /// Faded pin for a Way moment, sharing `buildPoints`' image-caching
-    /// pattern.
-    private static func wayPoint(_ pin: PilgrimAnnotation, symbol: String, tint: UIColor, coordinator: Coordinator) -> PointAnnotation {
+    /// Faded pin for a Way moment or a service mark, sharing `buildPoints`'
+    /// image-caching pattern. Marks draw smaller: they are the map's
+    /// background, not its subject.
+    private static func wayPoint(_ pin: PilgrimAnnotation, symbol: String, tint: UIColor,
+                                 coordinator: Coordinator, size: CGFloat = 22) -> PointAnnotation {
         var point = PointAnnotation(coordinate: pin.coordinate)
         let glyph = MapGlyph.wayMark(symbol: symbol, tint: tint)
-        if let image = MapGlyphImageBuilder.image(for: glyph, size: 22) {
-            point.image = .init(image: image, name: MapGlyphImageBuilder.cacheKey(for: glyph))
+        if let image = MapGlyphImageBuilder.image(for: glyph, size: size) {
+            point.image = .init(image: image, name: "\(MapGlyphImageBuilder.cacheKey(for: glyph))-\(Int(size))")
         }
         point.iconSize = 1.0
         return point

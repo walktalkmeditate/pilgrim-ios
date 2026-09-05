@@ -26,6 +26,9 @@ struct PilgrimAnnotation: Identifiable {
         case wayRest(id: String, minutes: Int)
         case waySit(id: String, minutes: Int)
         case wayWaypoint(id: String, label: String, icon: String)
+        /// A service point on a pilgrimage stage. Drawn under the moment
+        /// pins, never tappable, hidden when the map is zoomed out.
+        case wayMark(id: String, kind: WayMarkKind)
     }
 }
 

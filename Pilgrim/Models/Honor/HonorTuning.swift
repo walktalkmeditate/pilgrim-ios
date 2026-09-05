@@ -21,4 +21,7 @@ enum HonorTuning {
     static let arrivalMinDistanceRatio = 0.5
     static let arrivalFixCount = SeekEngineTuning.arrivalFixCount
     static let arrivalAccuracyMeters = SeekEngineTuning.arrivalAccuracyMeters
+    /// How far the walker moves before the nearest-forty mark selection is
+    /// recomputed. A resort of every mark on the stage is not a per-fix job.
+    static let markPinRefreshMeters = 200.0
 }
