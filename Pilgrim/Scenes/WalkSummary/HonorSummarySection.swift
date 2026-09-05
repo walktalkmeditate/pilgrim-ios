@@ -15,6 +15,10 @@ struct HonorSummaryData: Equatable {
     let isPilgrimageStage: Bool
     /// "14 of 24 km of the stage", from the ledger this walk just wrote.
     let stageProgressLine: String?
+    /// The stage's closing line, present only when arrival actually fired.
+    let closing: String?
+    /// The walker's reply to it, relative to Documents.
+    let replyRelativePath: String?
 }
 
 enum HonorSummaryModel {
@@ -27,13 +31,16 @@ enum HonorSummaryModel {
         // numbers the engine recorded at arrival, never a recomputation.
         var delta: Double?
         if stage == nil, let theirs = link?.theirSeconds, let yours = link?.yourSeconds { delta = theirs - yours }
+        let arrived = types.contains(.honorArrival)
         return HonorSummaryData(
             wayTitle: way?.title ?? "a way that has been removed",
             arrivedBeforeTheirsSeconds: delta,
             voicesAlongTheWay: way?.voiceCount ?? 0,
             repliesMade: replies.count,
             isPilgrimageStage: stage != nil,
-            stageProgressLine: stage.flatMap { stageProgressLine(stage: $0, ledger: ledger) })
+            stageProgressLine: stage.flatMap { stageProgressLine(stage: $0, ledger: ledger) },
+            closing: arrived ? stage?.closing : nil,
+            replyRelativePath: replies[HonorPersistence.stageReflectionOrigin])
     }
 
     /// The kilometres the ledger recorded for this stage, against the stage's
@@ -48,6 +55,7 @@ enum HonorSummaryModel {
 
 struct HonorSummarySection: View {
     let data: HonorSummaryData
+    @StateObject private var player = AudioPlayerModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
@@ -62,10 +70,26 @@ struct HonorSummarySection: View {
             if let countsLine {
                 Text(countsLine).font(Constants.Typography.caption).foregroundColor(.fog)
             }
+            if let closing = data.closing {
+                Text(closing)
+                    .font(Constants.Typography.displayMedium)
+                    .foregroundColor(.ink)
+                    .padding(.top, Constants.UI.Padding.xs)
+            }
+            if let replyRelativePath = data.replyRelativePath, let url = replyURL(replyRelativePath) {
+                Button { player.toggle(url: url) } label: {
+                    Label(player.isPlaying ? "pause" : "your reply",
+                          systemImage: player.isPlaying ? "pause.circle" : "play.circle")
+                        .font(Constants.Typography.caption).foregroundColor(.stone)
+                        .frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Play your reply to this stage")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Constants.UI.Padding.normal)
         .background(RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal).fill(Color.parchmentSecondary))
+        .onDisappear { player.stop() }
     }
 
     /// The block's opening line. Honor's copy assumes another walker; a
@@ -91,5 +115,12 @@ struct HonorSummarySection: View {
         if minutes == 0 { return "you arrived together" }
         let unit = minutes == 1 ? "minute" : "minutes"
         return delta > 0 ? "they arrived \(minutes) \(unit) after you" : "they arrived \(minutes) \(unit) before you"
+    }
+
+    /// A relative path from the Way's own replies file: contained under
+    /// Documents before it is opened, the way `localMediaURL` does it.
+    private func replyURL(_ relativePath: String) -> URL? {
+        ActiveWalkViewModel.localMediaURL(for: .recording(relativePath: relativePath),
+                                          wayId: "", store: WayStore.shared)
     }
 }

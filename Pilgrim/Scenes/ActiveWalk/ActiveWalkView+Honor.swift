@@ -50,6 +50,8 @@ struct HonorCardHost: View {
     let onSit: (Int) -> Void
     @State private var mediaURL: URL?
     @State private var existingReply: URL?
+    /// Resolved off the body, like `mediaURL`: the lookup is a disk read.
+    @State private var stageReply: URL?
     @State private var waveform: [Float]?
 
     var body: some View {
@@ -58,7 +60,19 @@ struct HonorCardHost: View {
             // carries the companion delta the coordinator persists when the
             // walk is saved, which may be long after this tap.
             if let card = viewModel.honorArrival, !viewModel.honorArrivalCardDismissed {
-                HonorArrivalCardView(card: card) { viewModel.honorArrivalCardDismissed = true }
+                HonorArrivalCardView(
+                    card: card,
+                    existingReply: stageReply,
+                    isRecordingReply: viewModel.isRecordingVoice
+                        && viewModel.pendingReplyOrigin?.id == HonorPersistence.stageReflectionMomentID,
+                    onReply: { viewModel.replyToStageReflection() },
+                    // The same toggle `WayPlaceCard`'s voice body stops with.
+                    onStopReply: { viewModel.toggleVoiceRecording() },
+                    onPlayReply: { url in viewModel.playReply(url: url) },
+                    onDismiss: { viewModel.honorArrivalCardDismissed = true })
+                    .task(id: viewModel.completedRecordingCount) {
+                        stageReply = viewModel.stageReflectionReplyURL()
+                    }
             } else if let moment = viewModel.honorCards.first {
                 let isPlaying = viewModel.activeVoice == moment
                 WayPlaceCard(

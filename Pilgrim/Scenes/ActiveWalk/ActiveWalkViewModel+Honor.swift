@@ -28,6 +28,9 @@ struct HonorArrivalCard: Equatable {
     /// rather than of another walker.
     let stageName: String?
     let distanceWalkedMeters: Double
+    /// The stage's closing line, present only once arrival fired on a stage.
+    /// Optional and last, like `WayMoment.place` and `.transcript`.
+    var closing: String?
 
     var isStage: Bool { stageName != nil }
 }
@@ -236,7 +239,8 @@ extension ActiveWalkViewModel {
             placesPassed: reachedMomentIDs.count,
             theirSeconds: theirSeconds, yourSeconds: yourSeconds,
             stageName: way.stage?.name,
-            distanceWalkedMeters: honorEngine?.distanceWalkedMeters ?? 0)
+            distanceWalkedMeters: honorEngine?.distanceWalkedMeters ?? 0,
+            closing: way.stage?.closing)
     }
 
     // MARK: - Cards and media

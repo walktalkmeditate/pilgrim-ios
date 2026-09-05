@@ -41,6 +41,19 @@ extension ActiveWalkViewModel {
         return mediaURL(for: .recording(relativePath: relative))
     }
 
+    /// Starts a reply to the stage's closing line, at the stage's end place.
+    func replyToStageReflection() {
+        guard let stage = way?.stage else { return }
+        replyHere(to: HonorPersistence.stageReflectionMoment(for: stage))
+    }
+
+    /// The walker's reply to this stage's reflection, from this walk or an
+    /// earlier one. Nil when the recording is gone.
+    func stageReflectionReplyURL() -> URL? {
+        guard let stage = way?.stage else { return nil }
+        return existingReplyURL(for: HonorPersistence.stageReflectionMoment(for: stage))
+    }
+
     /// The card's "your reply" button comes through here rather than touching
     /// the player directly: one voice plays at a time, so a Way voice must be
     /// given up rather than silently replaced under a chip that still claims
@@ -58,8 +71,10 @@ extension ActiveWalkViewModel {
     private static let voiceIDPrefix = "voice-"
 
     /// The `n` in the `voice-n` ids `OwnWalkWayBuilder` writes — the index a
-    /// reply is filed under. Nil for any other moment id.
-    private static func originIndex(of moment: WayMoment) -> Int? {
+    /// reply is filed under — or the reserved index the stage's arrival
+    /// reflection uses. Nil for any other moment id.
+    static func originIndex(of moment: WayMoment) -> Int? {
+        if moment.id == HonorPersistence.stageReflectionMomentID { return HonorPersistence.stageReflectionOrigin }
         guard moment.id.hasPrefix(voiceIDPrefix) else { return nil }
         return Int(moment.id.dropFirst(voiceIDPrefix.count))
     }

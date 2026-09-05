@@ -321,3 +321,75 @@ extension PilgrimageStageWalkTests {
         XCTAssertEqual(line?.contains("9"), true, line ?? "nil")
     }
 }
+
+extension PilgrimageStageWalkTests {
+
+    func testTheReflectionIsFiledUnderTheReservedOrigin() throws {
+        let stage = try XCTUnwrap(stageWay().stage)
+        let moment = HonorPersistence.stageReflectionMoment(for: stage)
+        XCTAssertEqual(moment.id, HonorPersistence.stageReflectionMomentID)
+        XCTAssertEqual(ActiveWalkViewModel.originIndex(of: moment), HonorPersistence.stageReflectionOrigin)
+        XCTAssertEqual(HonorPersistence.stageReflectionOrigin, -1)
+        XCTAssertEqual(moment.at, stage.end.at, "the reply is recorded at the stage's end place")
+
+        var voice = WayMoment(id: "voice-3", frac: 0.5, at: nil,
+                              kind: .voice(endFrac: 0.6, duration: 10, kind: .spoken, media: .file("audio/3.m4a")))
+        voice.place = nil
+        XCTAssertEqual(ActiveWalkViewModel.originIndex(of: voice), 3, "voice replies are unchanged")
+        XCTAssertNil(ActiveWalkViewModel.originIndex(of:
+            WayMoment(id: "wp-orisson", frac: 0.3, at: nil, kind: .waypoint(label: "x", icon: "mappin"))))
+    }
+
+    func testAReplyToTheReflectionRoundTrips() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        let store = WayStore(baseDirectory: dir)
+        let way = stageWay()
+        try store.save(way)
+        var senses = HonorSenses()
+        senses.store = { store }
+        senses.isAppActive = { false }
+
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let recording = docs.appendingPathComponent("Recordings/stage-reply.m4a")
+        try FileManager.default.createDirectory(at: recording.deletingLastPathComponent(), withIntermediateDirectories: true)
+        _ = try TestAudioFile.writeSilentAudioFile(to: recording)
+        addTeardownBlock { try? FileManager.default.removeItem(at: recording) }
+
+        let vm = ActiveWalkViewModel(mode: .honor, way: way, honorSenses: senses)
+        XCTAssertNil(vm.stageReflectionReplyURL())
+        try store.setReply(wayId: way.id, originN: HonorPersistence.stageReflectionOrigin,
+                           relativePath: "Recordings/stage-reply.m4a")
+        XCTAssertEqual(vm.stageReflectionReplyURL(), recording)
+    }
+
+    func testTheArrivalCardAppendsTheStagesClosingLine() {
+        let card = HonorArrivalCard(wayTitle: "t", voicesHeard: 0, placesPassed: 2,
+                                    theirSeconds: 0, yourSeconds: 0,
+                                    stageName: "Saint-Jean-Pied-de-Port to Roncesvalles",
+                                    distanceWalkedMeters: 24_200,
+                                    closing: "You crossed a border on foot.")
+        XCTAssertEqual(card.closing, "You crossed a border on foot.")
+        XCTAssertEqual(HonorArrivalCardView.title(for: card), "you walked the stage")
+    }
+
+    func testTheSummaryCarriesTheClosingOnlyWhenArrivalFired() {
+        let walk = WalkDataFactory.makeWalk(
+            uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(3600),
+            workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: start)])
+        let noArrival = HonorSummaryModel.summaryData(for: walk, way: stageWay(), link: nil,
+                                                      replies: [:], ledger: nil)
+        XCTAssertNil(noArrival?.closing, "the way was left before its end")
+
+        let arrived = WalkDataFactory.makeWalk(
+            uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(3600),
+            workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: start),
+                            TempWalkEvent(uuid: nil, eventType: .honorArrival, timestamp: start)])
+        let data = HonorSummaryModel.summaryData(
+            for: arrived, way: stageWay(), link: nil,
+            replies: [HonorPersistence.stageReflectionOrigin: "Recordings/stage-reply.m4a"], ledger: nil)
+        XCTAssertEqual(data?.closing, "You crossed a border on foot.")
+        XCTAssertEqual(data?.replyRelativePath, "Recordings/stage-reply.m4a")
+        XCTAssertEqual(data?.repliesMade, 1)
+    }
+}

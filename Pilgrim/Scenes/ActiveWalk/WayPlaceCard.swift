@@ -349,6 +349,12 @@ struct HonorListeningChip: View {
 
 struct HonorArrivalCardView: View {
     let card: HonorArrivalCard
+    /// The stage's reply, when the walker has already recorded one.
+    var existingReply: URL?
+    var isRecordingReply = false
+    var onReply: (() -> Void)?
+    var onStopReply: (() -> Void)?
+    var onPlayReply: ((URL) -> Void)?
     let onDismiss: () -> Void
 
     var body: some View {
@@ -356,10 +362,53 @@ struct HonorArrivalCardView: View {
             Text(Self.title(for: card)).font(Constants.Typography.heading).foregroundColor(.ink)
             Text(card.stageName ?? card.wayTitle).font(Constants.Typography.body).foregroundColor(.fog)
             Text(Self.line(for: card)).font(Constants.Typography.caption).foregroundColor(.fog)
+            if let closing = card.closing {
+                Text(closing)
+                    .font(Constants.Typography.displayMedium)
+                    .foregroundColor(.ink)
+                replyRow
+            }
             Button("continue", action: onDismiss).font(Constants.Typography.button).foregroundColor(.stone)
         }
         .padding(Constants.UI.Padding.normal)
         .background(RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal).fill(Color.parchmentSecondary))
+    }
+
+    /// The same reply a voice card offers, at the stage's end place — and,
+    /// while it records, the same way to stop it. Without this the walker
+    /// could start a recording the card gave them no way to end.
+    @ViewBuilder
+    private var replyRow: some View {
+        HStack(spacing: Constants.UI.Padding.small) {
+            if isRecordingReply {
+                Text("recording your reply here").font(Constants.Typography.caption).foregroundColor(.ink)
+                Spacer()
+                if let onStopReply {
+                    Button { onStopReply() } label: {
+                        Image(systemName: "stop.circle.fill")
+                            .font(Constants.Typography.displayMedium)
+                            .foregroundColor(.rust)
+                    }
+                    .accessibilityLabel("Stop recording your reply")
+                }
+            } else if let onReply {
+                Button { onReply() } label: {
+                    Label(existingReply == nil ? "reply here" : "record again", systemImage: "mic")
+                        .font(Constants.Typography.caption).foregroundColor(.stone)
+                        .frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Record a reply to this stage")
+            }
+            if let existingReply, let onPlayReply {
+                Spacer()
+                Button { onPlayReply(existingReply) } label: {
+                    Label("your reply", systemImage: "play.circle")
+                        .font(Constants.Typography.caption).foregroundColor(.stone)
+                        .frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Play your reply")
+            }
+        }
     }
 
     static func title(for card: HonorArrivalCard) -> String {
