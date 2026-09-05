@@ -1,0 +1,41 @@
+{
+  "id": "pilgrimage:camino-frances:1",
+  "title": "Roncesvalles to Zubiri",
+  "departedAt": "2026-08-19T15:31:51Z",
+  "tzIdentifier": "Europe/Madrid",
+  "route": [
+    { "lat": 0, "lon": 0.008980, "alt": 950, "t": 0 },
+    { "lat": 0, "lon": 0.013470, "alt": 900, "t": 7200 },
+    { "lat": 0, "lon": 0.017960, "alt": 520, "t": 14400 }
+  ],
+  "totalDistanceMeters": 1000,
+  "theirActiveSeconds": 14400,
+  "moments": [
+    {
+      "id": "wp-zubiri",
+      "frac": 1.0,
+      "kind": "waypoint",
+      "label": "Zubiri",
+      "icon": "house.lodge",
+      "at": { "lat": 0, "lon": 0.017960 },
+      "pin": { "lat": 0, "lon": 0.017960 }
+    }
+  ],
+  "marks": [],
+  "stage": {
+    "routeId": "camino-frances",
+    "index": 1,
+    "count": 2,
+    "name": "Roncesvalles to Zubiri",
+    "theme": "Descent",
+    "narrative": "Down through beech woods.",
+    "closing": "The mountain is behind you now.",
+    "warnings": [],
+    "distanceKm": 21.9,
+    "gainMeters": 217,
+    "hours": { "min": 5, "max": 7 },
+    "difficulty": "moderate",
+    "start": { "name": "Roncesvalles", "at": { "lat": 0, "lon": 0.008980 } },
+    "end": { "name": "Zubiri", "at": { "lat": 0, "lon": 0.017960 } }
+  }
+}

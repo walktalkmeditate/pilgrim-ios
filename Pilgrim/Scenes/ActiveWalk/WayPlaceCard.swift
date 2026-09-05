@@ -6,6 +6,9 @@ import SwiftUI
 /// wears, one action per body, and a sideways swipe to let it go.
 struct WayPlaceCard: View {
     let moment: WayMoment
+    /// True when the Way came from a downloaded route: the copy then never
+    /// says "they".
+    var isStage = false
     let mediaURL: URL?
     /// Metres from the walker's last fix; nil before the first fix.
     let distanceMeters: Double?
@@ -109,18 +112,31 @@ struct WayPlaceCard: View {
             Text("A pause in their walk. The companion waits here with you.")
                 .font(Constants.Typography.caption).foregroundColor(.fog)
         case .meditation(let minutes, _):
-            HStack(spacing: Constants.UI.Padding.normal) {
-                Button { onTouch(); onSit(minutes) } label: {
-                    Text("Sit?").font(Constants.Typography.button).foregroundColor(.parchment)
-                        .padding(.horizontal, Constants.UI.Padding.big).padding(.vertical, Constants.UI.Padding.small)
-                        .background(Color.stone).cornerRadius(Constants.UI.CornerRadius.normal)
-                }
-                .accessibilityLabel("Sit here for \(minutes) minutes")
-                Text("your soundscape holds while you sit")
-                    .font(Constants.Typography.caption).foregroundColor(.fog)
-            }
+            sitRow(minutes: minutes)
         case .waypoint:
-            Text("A place they marked.")
+            VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+                // The dataset may send 600 characters; the card does not
+                // scroll and sits over the map, so it shows what fits.
+                Text(WayMomentHeader.placeCopy(for: moment, isStage: isStage))
+                    .font(Constants.Typography.caption).foregroundColor(.fog)
+                    .lineLimit(4)
+                if let minutes = moment.sitMinutes, minutes > 0 {
+                    sitRow(minutes: minutes)
+                }
+            }
+        }
+    }
+
+    /// The same offer a sitting card makes, wired to the same `onSit`.
+    private func sitRow(minutes: Int) -> some View {
+        HStack(spacing: Constants.UI.Padding.normal) {
+            Button { onTouch(); onSit(minutes) } label: {
+                Text("Sit?").font(Constants.Typography.button).foregroundColor(.parchment)
+                    .padding(.horizontal, Constants.UI.Padding.big).padding(.vertical, Constants.UI.Padding.small)
+                    .background(Color.stone).cornerRadius(Constants.UI.CornerRadius.normal)
+            }
+            .accessibilityLabel("Sit here for \(minutes) minutes")
+            Text("your soundscape holds while you sit")
                 .font(Constants.Typography.caption).foregroundColor(.fog)
         }
     }
@@ -333,23 +349,86 @@ struct HonorListeningChip: View {
 
 struct HonorArrivalCardView: View {
     let card: HonorArrivalCard
+    /// The stage's reply, when the walker has already recorded one.
+    var existingReply: URL?
+    var isRecordingReply = false
+    var onReply: (() -> Void)?
+    var onStopReply: (() -> Void)?
+    var onPlayReply: ((URL) -> Void)?
     let onDismiss: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-            Text("you walked their way").font(Constants.Typography.heading).foregroundColor(.ink)
-            Text(card.wayTitle).font(Constants.Typography.body).foregroundColor(.fog)
-            Text(line).font(Constants.Typography.caption).foregroundColor(.fog)
+            Text(Self.title(for: card)).font(Constants.Typography.heading).foregroundColor(.ink)
+            Text(card.stageName ?? card.wayTitle).font(Constants.Typography.body).foregroundColor(.fog)
+            Text(Self.line(for: card)).font(Constants.Typography.caption).foregroundColor(.fog)
+            if let closing = card.closing {
+                Text(closing)
+                    .font(Constants.Typography.displayMedium)
+                    .foregroundColor(.ink)
+                replyRow
+            }
             Button("continue", action: onDismiss).font(Constants.Typography.button).foregroundColor(.stone)
         }
         .padding(Constants.UI.Padding.normal)
         .background(RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal).fill(Color.parchmentSecondary))
     }
 
-    private var line: String {
+    /// The same reply a voice card offers, at the stage's end place — and,
+    /// while it records, the same way to stop it. Without this the walker
+    /// could start a recording the card gave them no way to end.
+    @ViewBuilder
+    private var replyRow: some View {
+        HStack(spacing: Constants.UI.Padding.small) {
+            if isRecordingReply {
+                Text("recording your reply here").font(Constants.Typography.caption).foregroundColor(.ink)
+                Spacer()
+                if let onStopReply {
+                    Button { onStopReply() } label: {
+                        Image(systemName: "stop.circle.fill")
+                            .font(Constants.Typography.displayMedium)
+                            .foregroundColor(.rust)
+                    }
+                    .accessibilityLabel("Stop recording your reply")
+                }
+            } else if let onReply {
+                Button { onReply() } label: {
+                    Label(existingReply == nil ? "reply here" : "record again", systemImage: "mic")
+                        .font(Constants.Typography.caption).foregroundColor(.stone)
+                        .frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Record a reply to this stage")
+            }
+            if let existingReply, let onPlayReply {
+                Spacer()
+                Button { onPlayReply(existingReply) } label: {
+                    Label("your reply", systemImage: "play.circle")
+                        .font(Constants.Typography.caption).foregroundColor(.stone)
+                        .frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Play your reply")
+            }
+        }
+    }
+
+    static func title(for card: HonorArrivalCard) -> String {
+        card.isStage ? "you walked the stage" : "you walked their way"
+    }
+
+    /// A stage counts places and kilometres; a shared walk counts voices and
+    /// places, because a voice is what the other walker left.
+    static func line(for card: HonorArrivalCard) -> String {
         var parts: [String] = []
-        if card.voicesHeard > 0 { parts.append(card.voicesHeard == 1 ? "one voice heard" : "\(card.voicesHeard) voices heard") }
-        if card.placesPassed > 0 { parts.append(card.placesPassed == 1 ? "one place passed" : "\(card.placesPassed) places passed") }
-        return parts.isEmpty ? "the whole way, in their steps" : parts.joined(separator: " · ")
+        if !card.isStage, card.voicesHeard > 0 {
+            parts.append(card.voicesHeard == 1 ? "one voice heard" : "\(card.voicesHeard) voices heard")
+        }
+        if card.placesPassed > 0 {
+            parts.append(card.placesPassed == 1 ? "one place passed" : "\(card.placesPassed) places passed")
+        }
+        if card.isStage {
+            parts.append(StatsHelper.string(for: card.distanceWalkedMeters, unit: UnitLength.meters, type: .distance))
+        }
+        if parts.isEmpty { return card.isStage ? "the whole stage" : "the whole way, in their steps" }
+        return parts.joined(separator: " · ")
     }
 }

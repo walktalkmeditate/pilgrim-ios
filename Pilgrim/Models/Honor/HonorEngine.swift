@@ -11,6 +11,7 @@ enum HonorEngineEvent: Equatable {
     case voiceResume
     case voiceDropped(WayMoment)
     case softTap(offWayMeters: Double)
+    case markAhead(mark: WayMark, meters: Double)
     case arrived(theirSeconds: Double, yourSeconds: Double)
 }
 
@@ -38,6 +39,10 @@ final class HonorEngine: ObservableObject {
     var distanceWalkedMeters: Double {
         walkedFrac * geometry.totalMeters
     }
+    /// Whether the walker ever actually joined the Way. Begin's frac-0
+    /// fallback (nothing within 60 m) is an approach, not a joining, and a
+    /// stage the walker never joined earns no ledger entry.
+    var isAnchoredOnWay: Bool { startFrac != nil && !anchoredByFallback }
     /// Position high-water mark, the baseline that credit is measured
     /// against. A re-acquire may move it beyond what was credited.
     private var progressHighWater: Double = 0
@@ -47,7 +52,9 @@ final class HonorEngine: ObservableObject {
     private var walkedFrac: Double = 0
 
     private let now: () -> Date
-    private let softTapEnabled: Bool
+    /// Internal, not private: tests confirm the view model computed the
+    /// right value for a stage vs. an own walk without re-deriving it.
+    let softTapEnabled: Bool
     private let subject = PassthroughSubject<HonorEngineEvent, Never>()
     private var cancellables: [AnyCancellable] = []
     private var arrival: ArrivalDebounce
@@ -79,7 +86,8 @@ final class HonorEngine: ObservableObject {
         self.distanceRemainingMeters = geometry.totalMeters
         self.arrival = ArrivalDebounce(requiredFixes: HonorTuning.arrivalFixCount,
                                        accuracyMeters: HonorTuning.arrivalAccuracyMeters)
-        self.moments = HonorMomentTracker(moments: way.moments, geometry: geometry, voicesEnabled: voicesEnabled)
+        self.moments = HonorMomentTracker(moments: way.moments, marks: way.marks ?? [],
+                                          geometry: geometry, voicesEnabled: voicesEnabled)
     }
 
     // MARK: - Binding
@@ -149,7 +157,8 @@ final class HonorEngine: ObservableObject {
         evaluateArrival(location)
 
         let stationary = location.speed >= 0 && location.speed < HonorTuning.stationarySpeed
-        emit(moments.update(location: coordinate, progressFrac: progressFrac, gates: gates, isStationary: stationary))
+        emit(moments.update(location: coordinate, progressFrac: progressFrac, gates: gates,
+                            isStationary: stationary, activeSeconds: activeDuration, isOnWay: isOnWay))
     }
 
     // MARK: - Position
@@ -308,6 +317,7 @@ final class HonorEngine: ObservableObject {
             case .voicePause: subject.send(.voicePause)
             case .voiceResume: subject.send(.voiceResume)
             case .voiceDropped(let moment): subject.send(.voiceDropped(moment))
+            case .markAhead(let mark, let meters): subject.send(.markAhead(mark: mark, meters: meters))
             }
         }
     }

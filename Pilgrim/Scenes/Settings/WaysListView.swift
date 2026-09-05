@@ -52,18 +52,28 @@ struct WaysListView: View {
         WayStore.shared.delete(id: id)
     }
 
+    /// A stage's Way is one file of an installed package: taking it here would
+    /// leave `route.json` and `release.txt` behind, and the route screen would
+    /// still say the route is on your phone with no stages under it. The route
+    /// screen removes a package whole, so this list never offers one — and
+    /// "Delete all Ways", which walks this same array, cannot reach one either.
+    static func listable(_ ways: [Way]) -> [Way] {
+        ways.filter { if case .pilgrimage = $0.source { return false } else { return true } }
+    }
+
     private func reload() {
         for id in WayStore.shared.sweepExpired(now: Date()) { WayMediaDownloader.shared.cancel(wayId: id) }
-        ways = WayStore.shared.list()
+        ways = Self.listable(WayStore.shared.list())
         details = Dictionary(uniqueKeysWithValues: ways.map { ($0.id, detail(for: $0)) })
     }
 
     private func detail(for way: Way) -> String {
-        let date = DateFormatter.localizedString(from: way.departedAt, dateStyle: .medium, timeStyle: .none)
+        let lead = WayStageLine.line(for: way)
+            ?? DateFormatter.localizedString(from: way.departedAt, dateStyle: .medium, timeStyle: .none)
         if way.voiceCount + way.photoCount > 0, !WayStore.shared.hasMedia(id: way.id) {
-            return "\(date) · voices returned to the trail"
+            return "\(lead) · voices returned to the trail"
         }
         let mb = String(format: "%.1f MB", Double(WayStore.shared.diskUsage(id: way.id)) / 1_000_000)
-        return "\(date) · \(mb)"
+        return "\(lead) · \(mb)"
     }
 }

@@ -1,0 +1,74 @@
+{
+  "id": "pilgrimage:camino-frances:0",
+  "title": "Saint-Jean-Pied-de-Port to Roncesvalles",
+  "departedAt": "2026-08-19T15:31:51Z",
+  "tzIdentifier": "Europe/Madrid",
+  "route": [
+    { "lat": 0, "lon": 0.0, "alt": 170, "t": 0 },
+    { "lat": 0, "lon": 0.000898, "alt": 260, "t": 2880 },
+    { "lat": 0, "lon": 0.001796, "alt": 420, "t": 5760 },
+    { "lat": 0, "lon": 0.002694, "alt": 700, "t": 8640 },
+    { "lat": 0, "lon": 0.003592, "alt": 980, "t": 11520 },
+    { "lat": 0, "lon": 0.004490, "alt": 1180, "t": 14400 },
+    { "lat": 0, "lon": 0.005388, "alt": 1300, "t": 17280 },
+    { "lat": 0, "lon": 0.006286, "alt": 1400, "t": 20160 },
+    { "lat": 0, "lon": 0.007184, "alt": 1420, "t": 23040 },
+    { "lat": 0, "lon": 0.008082, "alt": 1300, "t": 25920 },
+    { "lat": 0, "lon": 0.008980, "alt": 950, "t": 28800 }
+  ],
+  "totalDistanceMeters": 1000,
+  "theirActiveSeconds": 28800,
+  "moments": [
+    {
+      "id": "wp-saint-jean",
+      "frac": 0.0,
+      "kind": "waypoint",
+      "label": "Saint-Jean-Pied-de-Port",
+      "icon": "house.lodge",
+      "at": { "lat": 0, "lon": 0.0 },
+      "pin": { "lat": 0, "lon": 0.0 }
+    },
+    {
+      "id": "wp-orisson",
+      "frac": 0.3,
+      "kind": "waypoint",
+      "label": "Vierge d'Orisson",
+      "icon": "building.columns",
+      "text": "A shepherd carried this Madonna up from Lourdes.",
+      "names": { "eu": "Orissongo Ama Birjina", "fr": "Vierge d'Orisson" },
+      "sitMinutes": 5,
+      "at": { "lat": 0, "lon": 0.002694 },
+      "pin": { "lat": 0, "lon": 0.002700 }
+    },
+    {
+      "id": "wp-roncesvalles",
+      "frac": 1.0,
+      "kind": "waypoint",
+      "label": "Roncesvalles",
+      "icon": "house.lodge",
+      "at": { "lat": 0, "lon": 0.008980 },
+      "pin": { "lat": 0, "lon": 0.008980 }
+    }
+  ],
+  "marks": [
+    { "id": "wp-fuente-roldan", "kind": "water", "name": "Fuente de Roldán", "at": { "lat": 0, "lon": 0.004490 }, "frac": 0.5, "offLineMeters": 12 },
+    { "id": "wp-fuente-lejos", "kind": "water", "name": "Fuente lejana", "at": { "lat": 0.00224, "lon": 0.006286 }, "frac": 0.7, "offLineMeters": 250 },
+    { "id": "wp-bar-orisson", "kind": "food", "name": "Refuge Orisson", "at": { "lat": 0, "lon": 0.002694 }, "frac": 0.3, "offLineMeters": 20 }
+  ],
+  "stage": {
+    "routeId": "camino-frances",
+    "index": 0,
+    "count": 2,
+    "name": "Saint-Jean-Pied-de-Port to Roncesvalles",
+    "theme": "Initiation",
+    "narrative": "The Pyrenees are the first question the way asks.",
+    "closing": "You crossed a border on foot. Few things are still done this way.",
+    "warnings": ["The Napoleon Route closes in winter."],
+    "distanceKm": 24.2,
+    "gainMeters": 1419,
+    "hours": { "min": 7, "max": 9 },
+    "difficulty": "hard",
+    "start": { "name": "Saint-Jean-Pied-de-Port", "at": { "lat": 0, "lon": 0.0 } },
+    "end": { "name": "Roncesvalles", "at": { "lat": 0, "lon": 0.008980 } }
+  }
+}

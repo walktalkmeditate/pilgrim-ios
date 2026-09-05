@@ -102,6 +102,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     @Published var headingDegrees: Double?
     var honorHeading: HeadingProviding?
     @Published var honorArrival: HonorArrivalCard?
+    /// The engine's last word on this stage, captured in `teardownHonor()`
+    /// and deliberately surviving it — the engine is gone by the time the
+    /// snapshot reaches `onWalkCompleted`, and the ledger is written there.
+    @Published var honorStageOutcome: HonorStageOutcome?
     /// The arrival card is retired by its own flag, never by clearing
     /// `honorArrival` — `MainCoordinatorView` reads the companion delta off
     /// that card when the walk is saved, which can be long after the walker
@@ -129,6 +133,17 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     /// writer (setters stay internal for the same reason the seek state's do:
     /// the extension that writes them lives in another file).
     @Published var honorPins: [PilgrimAnnotation] = []
+    /// The stage's service pins, memoized like `honorPins` and re-selected
+    /// only when the walker has moved (see `refreshMarkPinsIfWalkerMoved`).
+    @Published var honorMarkPins: [PilgrimAnnotation] = []
+    var markPinAnchor: CLLocationCoordinate2D?
+    /// The live camera, as the walk map reports it. Not `@Published`: nothing
+    /// on screen reads the camera itself, only the pins chosen from it, and a
+    /// publish per report would re-run the walk view's body for nothing.
+    /// Seeded with the zoom the map's follow-puck viewport holds, so the marks
+    /// are right from the first fix — a pinch replaces it with the truth.
+    var mapCameraZoom: CGFloat = PilgrimMapView.followPuckZoom
+    var mapCameraCenter: CLLocationCoordinate2D?
     var honorWayState: HonorWayState?
     let honorSenses: HonorSenses
     var wayVoicePlayer: WayVoicePlaying?
@@ -175,6 +190,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     let mapCameraSeed: MapCameraSeed.Seed?
 
     private var cancellables: [AnyCancellable] = []
+
+    /// Held apart from `cancellables`, which `stop()` empties — see
+    /// `bindCompletedRecordings`.
+    private var completedRecordingsCancellable: AnyCancellable?
 
     init(
         mode: WalkMode = .wander,
@@ -375,6 +394,12 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func stop() {
         teardownSeek()
+        // A reply still recording here keeps its origin through teardown, and
+        // the recorder is deliberately left running: only the pre-snapshot
+        // flush inside `builder.setStatus(.ready)` below finalizes an
+        // in-flight recording synchronously. Stopping the recorder here would
+        // hand that commit to AVAudioRecorder's asynchronous delegate, which
+        // lands after the walk is snapshotted — losing the audio entirely.
         teardownHonor()
         cancellables.removeAll()
         proximityService.stopListening()
@@ -390,6 +415,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func cancel() {
+        discardPendingReply()
         teardownSeek()
         teardownHonor()
         cancellables.removeAll()
@@ -557,8 +583,15 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .store(in: &cancellables)
     }
 
+    /// Deliberately not stored in `cancellables`: `stop()` empties those
+    /// before `builder.setStatus(.ready)` runs the pre-snapshot flush that
+    /// finalizes a recording still in flight, so a reply started from the
+    /// arrival card — offered at the moment the walker reaches for stop —
+    /// would complete into a subscription that no longer existed and lose
+    /// its origin mapping. This one lives as long as the view model, which
+    /// outlives the walk, and ends when the view model is released.
     private func bindCompletedRecordings() {
-        builder.voiceRecordingsPublisher
+        completedRecordingsCancellable = builder.voiceRecordingsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recordings in
                 guard let self else { return }
@@ -569,7 +602,6 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                     self.recordReplyIfPending(latestRecording: latest)
                 }
             }
-            .store(in: &cancellables)
     }
 
     private func bindProximity() {

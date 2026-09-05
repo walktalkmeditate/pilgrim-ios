@@ -168,6 +168,8 @@ class WalkSessionGuard {
             return
         }
 
+        var honor: (wayId: String, outcome: HonorStageOutcome?)?
+
         if let viewModel {
             let intervals = viewModel.checkpointActivityIntervals()
             snapshot.replaceActivityIntervals(intervals)
@@ -175,6 +177,8 @@ class WalkSessionGuard {
             if let inflightTalk = viewModel.voiceRecordingManagement.checkpointVoiceRecording() {
                 snapshot.appendVoiceRecordings([inflightTalk])
             }
+
+            honor = viewModel.honorCheckpointState
         }
 
         if walkUUID == nil {
@@ -182,7 +186,13 @@ class WalkSessionGuard {
         }
 
         guard let resolvedUUID = walkUUID else { return }
-        let checkpoint = WalkCheckpoint(walkUUID: resolvedUUID, walk: snapshot)
+        let checkpoint = WalkCheckpoint(
+            walkUUID: resolvedUUID,
+            walk: snapshot,
+            wayId: honor?.wayId,
+            honorProgressFrac: honor?.outcome?.progressFrac,
+            honorArrived: honor?.outcome?.arrived
+        )
         let tier = currentTier
 
         // Snapshot capture stays on main (above); the encode + atomic write

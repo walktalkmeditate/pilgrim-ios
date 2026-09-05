@@ -237,7 +237,9 @@ final class WayMediaDownloader: NSObject, ObservableObject {
     /// A full disk can surface as a `URLError` on the transfer itself or as
     /// an `NSCocoaErrorDomain` write error on the eventual file operation
     /// (directly, or wrapped as the underlying error).
-    nonisolated private static func isDiskFull(_ error: Error) -> Bool {
+    /// Shared with `PilgrimagePackageManager`: a full disk surfaces the same
+    /// three ways whichever transfer hit it.
+    nonisolated static func isDiskFull(_ error: Error) -> Bool {
         if (error as? URLError)?.code == .cannotWriteToFile { return true }
         let nsError = error as NSError
         if nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileWriteOutOfSpaceError { return true }

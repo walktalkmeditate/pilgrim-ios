@@ -50,10 +50,44 @@ final class WayStore {
     // MARK: - Ways
 
     /// Ids are built by code (`share:` + a validated share id, `walk:` + a
-    /// UUID). The store still refuses anything else so a stray folder name or
-    /// a future caller can never turn an id into a path outside `Ways/`.
+    /// UUID, `pilgrimage:` + a validated route slug and stage index). The
+    /// store still refuses anything else so a stray folder name or a future
+    /// caller can never turn an id into a path outside `Ways/`.
     static func isValidId(_ id: String) -> Bool {
-        id.range(of: "\\A(share:[A-Za-z0-9_-]{10}|walk:[0-9A-Fa-f-]{36})\\z", options: .regularExpression) != nil
+        id.range(of: "\\A(share:[A-Za-z0-9_-]{10}|walk:[0-9A-Fa-f-]{36}|pilgrimage:[a-z0-9-]{1,64}:[0-9]{1,3})\\z",
+                 options: .regularExpression) != nil
+    }
+
+    /// The dataset's slug rule (spec 2.4). Checked before a route id is used
+    /// in any path or URL, the way `WayImporter.isShareId` guards a share id.
+    static func isValidRouteId(_ id: String) -> Bool {
+        id.range(of: "\\A[a-z0-9-]{1,64}\\z", options: .regularExpression) != nil
+    }
+
+    static func stageWayId(routeId: String, stageIndex: Int) -> String {
+        "pilgrimage:\(routeId):\(stageIndex)"
+    }
+
+    /// The folder every downloaded route's package sits under. The package
+    /// manager writes its own swap marker here, beside the routes rather than
+    /// inside one, so no route's removal can take it.
+    var pilgrimageRoot: URL { base.appendingPathComponent("pilgrimage", isDirectory: true) }
+
+    /// Where a downloaded route's `route.json`, `release.txt`, and ledger
+    /// live — beside the stage Ways, never inside one, so Replace and Remove
+    /// can take the stages and leave the record of having walked them.
+    /// "pilgrimage" is not a valid Way id, so `list()` steps over this folder.
+    func pilgrimageDirectory(for routeId: String) -> URL? {
+        guard Self.isValidRouteId(routeId) else { return nil }
+        return pilgrimageRoot.appendingPathComponent(routeId, isDirectory: true)
+    }
+
+    /// Route ids with a package folder on this phone. A folder left holding
+    /// only its ledger still appears here; the package manager decides what
+    /// counts as installed. Anything that is not a route slug — the swap
+    /// marker included — is stepped over.
+    func pilgrimageRouteIds() -> [String] {
+        ((try? fileManager.contentsOfDirectory(atPath: pilgrimageRoot.path)) ?? []).filter(Self.isValidRouteId)
     }
 
     func save(_ way: Way) throws {
@@ -169,17 +203,36 @@ final class WayStore {
         var touched: [String] = []
         for way in list() {
             guard let expires = way.expires, expires <= now else { continue }
-            if walked.contains(way.id) {
-                deleteMedia(id: way.id)
-            } else {
-                try? fileManager.removeItem(at: directory(for: way.id))
-            }
+            retire(id: way.id, walked: walked)
             touched.append(way.id)
         }
         return touched
     }
 
+    /// The sweep's rule, applied to Ways a route no longer carries. A walk in
+    /// the journal still names its stage, so a walked Way keeps `way.json`,
+    /// its replies, and its index link and loses only its media; an unwalked
+    /// one goes whole. Batched because `delete(id:)` rewrites `index.json` on
+    /// every call and a two-hundred-stage route would pay that two hundred
+    /// times — here the index is read once and, since retiring never drops a
+    /// link, written not at all.
+    func retireMany(ids: [String]) {
+        let walked = walkedIds
+        for id in ids { retire(id: id, walked: walked) }
+    }
+
     // MARK: - Private
+
+    private func retire(id: String, walked: Set<String>) {
+        guard Self.isValidId(id) else { return }
+        if walked.contains(id) {
+            deleteMedia(id: id)
+        } else {
+            // An id no link names is absent from the index by definition, so
+            // the folder is the whole of it.
+            try? fileManager.removeItem(at: directory(for: id))
+        }
+    }
 
     private func directory(for id: String) -> URL {
         precondition(Self.isValidId(id), "WayStore: invalid way id \(id)")

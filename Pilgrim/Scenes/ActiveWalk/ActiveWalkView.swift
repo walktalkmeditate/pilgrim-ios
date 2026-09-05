@@ -15,6 +15,7 @@ struct ActiveWalkView: View {
     @State private var showStopConfirmation = false
     @State private var showMeditation = false
     @State private var showOptions = false
+    @State private var showStageDay = false
     @State private var showIntention = false
     @State private var showWaypoint = false
     @State private var showBackConfirmation = false
@@ -287,11 +288,27 @@ struct ActiveWalkView: View {
                 onSeekAnew: {
                     showOptions = false
                     viewModel.seekAnewRequested()
+                },
+                stageDay: viewModel.way?.stage,
+                onOpenStageDay: {
+                    showOptions = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showStageDay = true
+                    }
                 }
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.parchment.opacity(0.95))
+        }
+        .sheet(isPresented: $showStageDay) {
+            if let stage = viewModel.way?.stage {
+                StageMorningCard(stage: stage, weather: viewModel.weatherSnapshot, buttonTitle: "close") {
+                    showStageDay = false
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
         }
         .sheet(isPresented: $showIntention) {
             IntentionSettingView(

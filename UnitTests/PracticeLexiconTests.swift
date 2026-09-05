@@ -83,3 +83,41 @@ final class PracticeLexiconTests: XCTestCase {
         XCTAssertTrue(prompt.text.contains("**About this practice:**"))
     }
 }
+
+extension PracticeLexiconTests {
+
+    private func honorContext(_ story: HonorStoryContext) -> ActivityContext {
+        ActivityContext.make(startDate: Date(timeIntervalSince1970: 1_700_000_000),
+                             mode: .honor, honorStory: story)
+    }
+
+    func testTheLexiconForAStageNamesTheRouteAndNotAnotherWalker() {
+        let text = PromptAssembler.practiceLexicon(context: honorContext(
+            HonorStoryContext(wayTitle: "Saint-Jean-Pied-de-Port to Roncesvalles", arrived: true,
+                              routeName: "Camino de Santiago (Francés)", stageLabel: "stage 1 of 33")))
+        XCTAssertTrue(text.contains("Camino de Santiago (Francés)"), text)
+        XCTAssertTrue(text.contains("stage 1 of 33"), text)
+        XCTAssertFalse(text.contains("another walker"), text)
+        XCTAssertFalse(text.contains("their voices"), text)
+        XCTAssertTrue(text.contains("The end of the stage was reached."), text)
+    }
+
+    func testTheLexiconForASharedWalkIsUnchanged() {
+        let text = PromptAssembler.practiceLexicon(context: honorContext(
+            HonorStoryContext(wayTitle: "Rúa do Franco → Obradoiro", arrived: false)))
+        XCTAssertTrue(text.contains("a Way another walker laid down"), text)
+        XCTAssertTrue(text.contains("Rúa do Franco → Obradoiro"), text)
+        XCTAssertTrue(text.contains("The Way was left before its end"), text)
+        XCTAssertFalse(text.contains("stage"), "no stage vocabulary on a shared walk: \(text)")
+        XCTAssertFalse(text.contains("pilgrimage route"), text)
+    }
+
+    /// No resolvable story falls back to the same base sentence
+    /// `sharedWalkLexicon` builds on, so the two cannot drift apart.
+    func testTheLexiconForAnUnresolvedHonorStoryMatchesTheSharedWalkBase() {
+        let context = ActivityContext.make(startDate: Date(timeIntervalSince1970: 1_700_000_000), mode: .honor)
+        let text = PromptAssembler.practiceLexicon(context: context)
+        XCTAssertTrue(text.contains("a Way another walker laid down"), text)
+        XCTAssertTrue(text.contains("hearing their voices where they were spoken"), text)
+    }
+}

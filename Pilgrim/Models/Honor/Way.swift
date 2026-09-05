@@ -48,6 +48,18 @@ struct WayMoment: Codable, Equatable, Identifiable {
     /// recordings carry one; shared walks carry the worker's. Optional and
     /// last, like `place`.
     var transcript: String?
+    /// The dataset's description of this place, or a line composed from its
+    /// structured fields. Optional and last, like `place`.
+    var text: String?
+    /// Localized names by language code; the card shows one, in the language
+    /// of the place.
+    var names: [String: String]?
+    /// When the place invites sitting, how long the dataset suggests.
+    var sitMinutes: Int?
+    /// The waypoint's own coordinate, for the map pin. `at` is its projection
+    /// onto the line, so the 60 m trigger fires as the walker passes on the
+    /// trail even when the place itself stands well off it.
+    var pin: WayCoordinate?
 
     /// The first sentence of the transcript, for a card that has one line
     /// to spare. Nil when there is nothing to quote.
@@ -90,9 +102,71 @@ struct WayMoment: Codable, Equatable, Identifiable {
     }
 }
 
+/// A service point on the stage: drawn on the map, never a moment, never
+/// tappable. The six kinds the dataset carries.
+enum WayMarkKind: String, Codable, Equatable {
+    case water, food, bed, transport, supply, medical
+}
+
+struct WayMark: Codable, Equatable, Identifiable {
+    let id: String
+    let kind: WayMarkKind
+    let name: String
+    let at: WayCoordinate
+    /// Projection onto the stage slice: what the water watcher compares the
+    /// walker's progress against.
+    let frac: Double
+    /// Distance from the line. A fountain 250 m off the trail is a detour,
+    /// not a drink, so the watcher ignores it.
+    let offLineMeters: Double
+}
+
+struct WayStageHours: Codable, Equatable {
+    let min: Double
+    let max: Double
+}
+
+struct WayStagePlace: Codable, Equatable {
+    let name: String
+    let at: WayCoordinate
+}
+
+/// The stage block a pilgrimage Way carries: what the morning card reads at
+/// Begin, what the arrival reflection closes with, and the identity the
+/// ledger checks a stage against after an update.
+struct WayStage: Codable, Equatable {
+    let routeId: String
+    /// Zero-based, as the dataset numbers stages.
+    let index: Int
+    let count: Int
+    let name: String
+    let theme: String
+    let narrative: String
+    let closing: String
+    let warnings: [String]
+    let distanceKm: Double
+    let gainMeters: Double
+    let hours: WayStageHours
+    let difficulty: String
+    let start: WayStagePlace
+    let end: WayStagePlace
+}
+
 enum WaySource: Codable, Equatable {
     case ownWalk(UUID)
     case share(id: String, pageURL: URL)
+    /// One stage of a downloaded pilgrimage route. No page, no expiry: a
+    /// route never returns to the trail on its own.
+    case pilgrimage(routeId: String, stageIndex: Int)
+
+    /// `PilgrimagePackageManager` writes and rewrites this Way's `way.json`
+    /// as packages install and update. Nothing else may save over it: a copy
+    /// captured before an Update redrew the stage would be written back on
+    /// top of the redrawn one.
+    var isPackageOwned: Bool {
+        if case .pilgrimage = self { return true }
+        return false
+    }
 }
 
 struct WayWeather: Codable, Equatable {
@@ -127,11 +201,20 @@ struct Way: Codable, Equatable {
     /// Optional and last so a `way.json` written before spans existed still
     /// decodes (as an all-walking Way) and every call site keeps its shape.
     var spans: [WaySpan]?
+    /// Service points, drawn and never triggered. Optional and last, like
+    /// `spans`, so a `way.json` written before stages still decodes.
+    var marks: [WayMark]?
+    /// Present only for a pilgrimage stage.
+    var stage: WayStage?
 
     var voiceCount: Int { moments.filter(\.isVoice).count }
     var photoCount: Int {
         moments.filter { if case .photo = $0.kind { return true } else { return false } }.count
     }
+
+    /// A Way that came from a downloaded route. Honor speaks differently
+    /// about one: no other walker, so no companion, no soft tap, no date.
+    var isPilgrimageStage: Bool { stage != nil }
 }
 
 /// `id` is already the store's folder name, so `.sheet(item:)` can key the

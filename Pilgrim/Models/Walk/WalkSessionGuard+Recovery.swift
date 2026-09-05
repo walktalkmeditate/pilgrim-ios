@@ -5,10 +5,14 @@ import AVFoundation
 /// reconnects orphaned audio, and saves the walk back into the store.
 extension WalkSessionGuard {
 
-    /// The `WalkCheckpoint.schemaVersion` value this build can decode and recover.
-    /// Tracks the writer's current version directly — bumping `WalkCheckpoint.currentSchemaVersion`
-    /// automatically narrows the set of checkpoints older builds will accept.
-    private static let supportedSchemaVersion = WalkCheckpoint.currentSchemaVersion
+    /// The `WalkCheckpoint.schemaVersion` values this build can decode and
+    /// recover. Tracks the writer's own bounds directly — bumping
+    /// `WalkCheckpoint.currentSchemaVersion` automatically narrows the set of
+    /// checkpoints older builds will accept, and raising the minimum is how a
+    /// version that can no longer be read is retired.
+    private static var supportedSchemaVersions: ClosedRange<Int> {
+        WalkCheckpoint.minimumRecoverableSchemaVersion...WalkCheckpoint.currentSchemaVersion
+    }
 
     /// Replaces a recording's file path with `""` (metadata-only) when the
     /// underlying `.m4a` is unplayable — the canonical signature of an
@@ -68,6 +72,7 @@ extension WalkSessionGuard {
     /// crashed walk's audio files before their DB rows exist (AF2).
     static func recoverIfNeeded(
         sweepGate: OrphanSweepGate = .shared,
+        wayStore: WayStore = .shared,
         completion: @escaping (Date?) -> Void
     ) {
         guard DataManager.dataStack != nil else {
@@ -111,9 +116,10 @@ extension WalkSessionGuard {
 
         let recovered = makeRecoveredWalk(from: checkpoint)
 
-        DataManager.saveWalk(object: recovered) { success, error, _ in
+        DataManager.saveWalk(object: recovered) { success, error, saved in
             if success {
                 try? FileManager.default.removeItem(at: url)
+                rebindWay(checkpoint: checkpoint, walkUUID: saved?.uuid, store: wayStore)
                 print("\(tag) RECOVERY SUCCESS — walk from \(walk.startDate) saved, checkpoint deleted")
                 sweepGate.noteWalkRecoveryResolved()
                 completion(walk.startDate)
@@ -122,6 +128,20 @@ extension WalkSessionGuard {
                 completion(nil)
             }
         }
+    }
+
+    /// Everything the walk-end save does for an honor walk that a crash took
+    /// instead: the index link the summary reads its stage block off, and the
+    /// route's ledger. A recovered walk has never been linked, so this cannot
+    /// overwrite a link the normal path wrote. No arrival is recorded — the
+    /// engine's arrival numbers died with the process.
+    private static func rebindWay(checkpoint: WalkCheckpoint, walkUUID: UUID?, store: WayStore) {
+        guard let wayId = checkpoint.wayId, let walkUUID,
+              let way = store.load(id: wayId) else { return }
+        try? store.link(walkUUID: walkUUID, to: wayId, arrival: nil)
+        guard let stage = way.stage else { return }
+        PilgrimageLedgerStore(store: store).record(
+            stage: stage, outcome: checkpoint.honorOutcome, at: checkpoint.checkpointDate)
     }
 
     /// Decodes and validates the checkpoint at `url`. Returns nil — after
@@ -139,8 +159,8 @@ extension WalkSessionGuard {
             return nil
         }
 
-        guard checkpoint.schemaVersion == Self.supportedSchemaVersion else {
-            print("\(tag) RECOVERY FAILED — unsupported schemaVersion: \(checkpoint.schemaVersion) (this build supports \(Self.supportedSchemaVersion))")
+        guard Self.supportedSchemaVersions.contains(checkpoint.schemaVersion) else {
+            print("\(tag) RECOVERY FAILED — unsupported schemaVersion: \(checkpoint.schemaVersion) (this build supports \(Self.supportedSchemaVersions))")
             try? FileManager.default.removeItem(at: url)
             return nil
         }

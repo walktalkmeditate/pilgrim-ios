@@ -76,6 +76,31 @@ final class WayStoreTests: XCTestCase {
         XCTAssertNotNil(store.load(id: ownId))
     }
 
+    /// The sweep's rule, applied in one pass to the stages a route no longer
+    /// carries. The index is only read: a walked id keeps its link, and an
+    /// unwalked one was never in the index to begin with.
+    func testRetireManyFollowsTheSweepsRuleAndLeavesTheIndexAlone() throws {
+        try store.save(way(id: "share:unwalkedXX", expires: nil))
+        try store.save(way(id: "share:walkedXXXX", expires: nil))
+        let walk = UUID()
+        try store.link(walkUUID: walk, to: "share:walkedXXXX", arrival: nil)
+        for id in ["share:unwalkedXX", "share:walkedXXXX"] {
+            let media = store.mediaURL(for: id, relative: "audio/1.m4a")
+            try FileManager.default.createDirectory(at: media.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data([1]).write(to: media)
+        }
+        let indexURL = dir.appendingPathComponent("index.json")
+        let before = try Data(contentsOf: indexURL)
+
+        store.retireMany(ids: ["share:unwalkedXX", "share:walkedXXXX", "../escape"])
+
+        XCTAssertNil(store.load(id: "share:unwalkedXX"), "whole folder gone")
+        XCTAssertNotNil(store.load(id: "share:walkedXXXX"), "way.json kept")
+        XCTAssertFalse(store.hasMedia(id: "share:walkedXXXX"), "media gone")
+        XCTAssertEqual(store.wayLink(forWalk: walk)?.wayId, "share:walkedXXXX")
+        XCTAssertEqual(try Data(contentsOf: indexURL), before, "no rewrite per id")
+    }
+
     func testStrayFolderNamesAreIgnoredAndBadIdsRefused() throws {
         try FileManager.default.createDirectory(at: dir.appendingPathComponent("..%2Fescape"), withIntermediateDirectories: true)
         XCTAssertTrue(store.list().isEmpty)

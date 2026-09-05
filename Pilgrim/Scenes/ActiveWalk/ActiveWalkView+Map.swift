@@ -23,21 +23,24 @@ extension ActiveWalkView {
             // follows the walker again the moment that focus clears.
             followsUserLocation: viewModel.honorFocus == nil,
             routeSegments: viewModel.routeSegments,
-            pinAnnotations: waypointPins + viewModel.proximityPins + viewModel.honorPins,
+            pinAnnotations: waypointPins + viewModel.proximityPins + viewModel.honorMarkPins + viewModel.honorPins,
             onAnnotationTap: { annotation in
                 handleAnnotationTap(annotation)
             },
             seekFog: viewModel.seekFogState,
             seekPulse: viewModel.seekPulse,
             cameraCenter: .constant(viewModel.honorFocus),
-            cameraZoom: .constant(16),
+            cameraZoom: .constant(PilgrimMapView.followPuckZoom),
             bottomInset: mapBottomInset,
             initialCamera: viewModel.mapCameraSeed,
             fadesInOnStyleLoad: true,
             walkingColor: activeTurning?.uiColor ?? .moss,
             isMeditating: $viewModel.isMeditating,
             honorWay: viewModel.honorWayState,
-            companion: viewModel.companionCoordinate
+            companion: viewModel.companionCoordinate,
+            onCameraChanged: { center, zoom in
+                viewModel.mapCameraDidChange(center: center, zoom: zoom)
+            }
         )
     }
 

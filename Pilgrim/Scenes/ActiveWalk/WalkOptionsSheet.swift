@@ -34,6 +34,10 @@ struct WalkOptionsSheet: View {
     var isSeekComplete: Bool = false
     var onSeekAnew: (() -> Void)?
 
+    /// The stage being walked, when the Way came from a downloaded route.
+    var stageDay: WayStage?
+    var onOpenStageDay: (() -> Void)?
+
     @State private var sonarEnabled = UserPreferences.seekSonarEnabled.value
     @State private var sonarVolume = UserPreferences.seekSonarVolume.value
 
@@ -57,6 +61,12 @@ struct WalkOptionsSheet: View {
                             subtitle: currentIntention
                         ) {
                             onSetIntention()
+                        }
+                    }
+
+                    if let stageDay, let onOpenStageDay {
+                        optionRow(icon: "sun.horizon", title: "the day", subtitle: stageDay.theme) {
+                            onOpenStageDay()
                         }
                     }
 
