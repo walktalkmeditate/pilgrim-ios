@@ -75,7 +75,7 @@ struct PilgrimageCatalogView: View {
                 .tint(.stone)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let routes = catalogService.catalog?.routes, !routes.isEmpty {
-            VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
                 // A retry can fail while the in-memory catalog still holds an
                 // earlier success — the list branch above wins, so this is
                 // the only place that failure would ever reach the pilgrim.

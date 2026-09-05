@@ -87,13 +87,6 @@ final class PilgrimagePackageManager: ObservableObject {
         return nil
     }
 
-    /// True when the catalog names a release the installed package was not
-    /// built at. Any difference counts: the index only ever moves forward.
-    func hasUpdate(catalogRelease: String) -> Bool {
-        guard let installed = installed(), PilgrimageCatalogService.isValidRelease(catalogRelease) else { return false }
-        return installed.release != catalogRelease
-    }
-
     /// What this route already has installed, before this download changes
     /// anything — an Update's rollback has to reach every stage a prior
     /// install left, not just the ones this attempt rewrites.
