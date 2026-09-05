@@ -108,5 +108,7 @@ extension PracticeLexiconTests {
         XCTAssertTrue(text.contains("a Way another walker laid down"), text)
         XCTAssertTrue(text.contains("Rúa do Franco → Obradoiro"), text)
         XCTAssertTrue(text.contains("The Way was left before its end"), text)
+        XCTAssertFalse(text.contains("stage"), "no stage vocabulary on a shared walk: \(text)")
+        XCTAssertFalse(text.contains("pilgrimage route"), text)
     }
 }

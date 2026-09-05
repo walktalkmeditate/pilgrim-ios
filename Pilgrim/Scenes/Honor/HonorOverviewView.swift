@@ -242,7 +242,7 @@ struct HonorOverviewView: View {
                     .background(isGathering ? Color.fog : Color.stone)
                     .cornerRadius(Constants.UI.CornerRadius.normal)
             }
-            .accessibilityLabel(WalkMode.honor.subtitle(for: way))
+            .accessibilityLabel(way.isPilgrimageStage ? "Walk this stage" : "Begin honoring this way")
             .disabled(isGathering)
         }
         .padding(Constants.UI.Padding.normal)
