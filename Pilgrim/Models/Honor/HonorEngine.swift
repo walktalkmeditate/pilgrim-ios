@@ -11,6 +11,7 @@ enum HonorEngineEvent: Equatable {
     case voiceResume
     case voiceDropped(WayMoment)
     case softTap(offWayMeters: Double)
+    case markAhead(mark: WayMark, meters: Double)
     case arrived(theirSeconds: Double, yourSeconds: Double)
 }
 
@@ -85,7 +86,8 @@ final class HonorEngine: ObservableObject {
         self.distanceRemainingMeters = geometry.totalMeters
         self.arrival = ArrivalDebounce(requiredFixes: HonorTuning.arrivalFixCount,
                                        accuracyMeters: HonorTuning.arrivalAccuracyMeters)
-        self.moments = HonorMomentTracker(moments: way.moments, geometry: geometry, voicesEnabled: voicesEnabled)
+        self.moments = HonorMomentTracker(moments: way.moments, marks: way.marks ?? [],
+                                          geometry: geometry, voicesEnabled: voicesEnabled)
     }
 
     // MARK: - Binding
@@ -155,7 +157,8 @@ final class HonorEngine: ObservableObject {
         evaluateArrival(location)
 
         let stationary = location.speed >= 0 && location.speed < HonorTuning.stationarySpeed
-        emit(moments.update(location: coordinate, progressFrac: progressFrac, gates: gates, isStationary: stationary))
+        emit(moments.update(location: coordinate, progressFrac: progressFrac, gates: gates,
+                            isStationary: stationary, activeSeconds: activeDuration, isOnWay: isOnWay))
     }
 
     // MARK: - Position
@@ -314,6 +317,7 @@ final class HonorEngine: ObservableObject {
             case .voicePause: subject.send(.voicePause)
             case .voiceResume: subject.send(.voiceResume)
             case .voiceDropped(let moment): subject.send(.voiceDropped(moment))
+            case .markAhead(let mark, let meters): subject.send(.markAhead(mark: mark, meters: meters))
             }
         }
     }

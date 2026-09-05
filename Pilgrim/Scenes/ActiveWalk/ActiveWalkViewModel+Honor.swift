@@ -182,6 +182,10 @@ extension ActiveWalkViewModel {
             showSoftTapCaption(meters: meters)
             fireHonorHaptic(.honorOffWay)
 
+        case .markAhead(let mark, let meters):
+            showMarkCaption(mark: mark, meters: meters)
+            fireHonorHaptic(.honorWaterAhead)
+
         case .arrived(let theirSeconds, let yourSeconds):
             recordHonorArrival(theirSeconds: theirSeconds, yourSeconds: yourSeconds)
             fireHonorHaptic(.honorArrival)
@@ -478,7 +482,8 @@ extension ActiveWalkViewModel {
     // MARK: - Private
 
     private static let voiceIDPrefix = "voice-"
-    private static let softTapCaptionSeconds: TimeInterval = 20
+    /// Not private: the water notice borrows this slot, so it borrows this life.
+    static let softTapCaptionSeconds: TimeInterval = 20
 
     /// The `n` in the `voice-n` ids `OwnWalkWayBuilder` writes — the index a
     /// reply is filed under. Nil for any other moment id.

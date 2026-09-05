@@ -1,9 +1,10 @@
 import CoreLocation
 import Foundation
 
-/// Which of a stage's service marks the walk map carries: chosen from the
-/// walker's place and the camera's zoom, and re-chosen only when one of those
-/// has moved enough to change the answer. Split out of
+/// What a stage's service marks do on the walk screen: which of them the map
+/// carries, chosen from the walker's place and the camera's zoom and re-chosen
+/// only when one of those has moved enough to change the answer, and the one
+/// line a water source is allowed to say. Split out of
 /// `ActiveWalkViewModel+Honor.swift`, which sits near SwiftLint's file length.
 extension ActiveWalkViewModel {
 
@@ -54,5 +55,17 @@ extension ActiveWalkViewModel {
         }
         let pins = WayMarkPins.pins(marks: marks, zoom: mapCameraZoom, near: markPinAnchor ?? mapCameraCenter)
         if pins != honorMarkPins { honorMarkPins = pins }
+    }
+
+    /// The water notice borrows the soft tap's slot — nothing new in the
+    /// stats sheet — and retires itself the same way, generation-guarded so
+    /// teardown makes this write a no-op.
+    func showMarkCaption(mark: WayMark, meters: Double) {
+        softTapCaption = "water in \(WayDistance.string(meters: max(0, meters.isFinite ? meters : 0)))"
+        let generation = honorGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.softTapCaptionSeconds) { [weak self] in
+            guard let self, self.honorGeneration == generation else { return }
+            self.softTapCaption = nil
+        }
     }
 }

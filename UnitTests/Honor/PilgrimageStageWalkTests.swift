@@ -277,3 +277,21 @@ extension PilgrimageStageWalkTests {
         XCTAssertEqual(way.moments[0].at?.lat, 0, "triggered on the line")
     }
 }
+
+extension PilgrimageStageWalkTests {
+
+    func testWaterAheadBorrowsTheCaptionLineAndNothingElse() {
+        let mark = WayMark(id: "wp-fuente", kind: .water, name: "Fuente de Roldán",
+                           at: WayCoordinate(lat: 0, lon: 500 / 111_320), frac: 0.5, offLineMeters: 12)
+        var senses = HonorSenses()
+        senses.isAppActive = { false }
+        let vm = ActiveWalkViewModel(mode: .honor, way: stageWay(marks: [mark]), honorSenses: senses)
+        vm.builder.setStatus(.ready)
+        vm.startRecording()
+
+        vm.handleHonorEvent(.markAhead(mark: mark, meters: 280))
+
+        XCTAssertEqual(vm.softTapCaption, "water in \(WayDistance.string(meters: 280))")
+        XCTAssertTrue(vm.honorCards.isEmpty, "a mark is never a card")
+    }
+}
