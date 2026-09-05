@@ -1,4 +1,3 @@
-import CoreLocation
 import SwiftUI
 
 enum StageMorningCardModel {
@@ -11,8 +10,8 @@ enum StageMorningCardModel {
                            hours: stage.hours, difficulty: stage.difficulty)
     }
 
-    /// "clear, 9°". Nothing at all when the fetch found nothing — a stage's
-    /// words do not need weather to stand.
+    /// "clear, 9°C" in the walker's units. Nothing at all when the fetch
+    /// found nothing — a stage's words do not need weather to stand.
     static func weatherLine(_ snapshot: WeatherSnapshot?) -> String? {
         guard let snapshot else { return nil }
         let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
@@ -62,6 +61,7 @@ struct StageMorningCard: View {
                     .background(Color.stone)
                     .cornerRadius(Constants.UI.CornerRadius.normal)
             }
+            .accessibilityLabel(buttonTitle == "walk" ? "Begin walking this stage" : "Close the day's words")
             .padding(Constants.UI.Padding.normal)
         }
         .background(Color.parchment)

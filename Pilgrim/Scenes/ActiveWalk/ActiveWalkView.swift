@@ -292,7 +292,9 @@ struct ActiveWalkView: View {
                 stageDay: viewModel.way?.stage,
                 onOpenStageDay: {
                     showOptions = false
-                    showStageDay = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showStageDay = true
+                    }
                 }
             )
             .presentationDetents([.medium, .large])

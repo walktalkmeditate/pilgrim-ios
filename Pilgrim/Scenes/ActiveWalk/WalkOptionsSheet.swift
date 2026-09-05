@@ -64,8 +64,8 @@ struct WalkOptionsSheet: View {
                         }
                     }
 
-                    if stageDay != nil, let onOpenStageDay {
-                        optionRow(icon: "sun.horizon", title: "the day", subtitle: stageDay?.theme) {
+                    if let stageDay, let onOpenStageDay {
+                        optionRow(icon: "sun.horizon", title: "the day", subtitle: stageDay.theme) {
                             onOpenStageDay()
                         }
                     }
