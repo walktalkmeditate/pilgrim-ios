@@ -159,9 +159,13 @@ extension HonorMomentTrackerTests {
         XCTAssertEqual(markAhead(hit), ["a"])
         guard case .markAhead(_, let meters) = hit.first else { return XCTFail("action") }
         XCTAssertEqual(meters, 250, accuracy: 5)
-        // And never again.
+        // And never again — not inside the quiet hour, and not after it
+        // either while the mark is still ahead.
         XCTAssertEqual(markAhead(t.update(location: coord(300), progressFrac: 0.3, gates: .init(),
                                           isStationary: false, activeSeconds: 120, isOnWay: true)), [])
+        XCTAssertEqual(markAhead(t.update(location: coord(300), progressFrac: 0.3, gates: .init(),
+                                          isStationary: false, activeSeconds: 4000, isOnWay: true)), [],
+                       "a mark that has spoken stays silent even once the hour has passed")
     }
 
     func testWaterNeverFiresOnceItIsBehindYou() {
