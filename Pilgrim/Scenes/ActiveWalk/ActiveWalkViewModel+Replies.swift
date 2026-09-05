@@ -7,8 +7,9 @@ import Foundation
 extension ActiveWalkViewModel {
 
     /// A discarded walk files no reply, so the origin goes before the recorder
-    /// does: stopping the recorder releases the microphone and the audio
-    /// session, and its late commit must not be read as an answer to a Way.
+    /// does: stopping the recorder lets the microphone go (the session itself
+    /// is released when the component does), and a late commit must not be
+    /// read as an answer to a Way.
     func discardPendingReply() {
         pendingReplyOrigin = nil
         voiceRecordingManagement.stopRecording()
