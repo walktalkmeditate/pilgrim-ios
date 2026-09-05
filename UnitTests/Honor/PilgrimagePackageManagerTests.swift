@@ -7,7 +7,8 @@ final class PilgrimagePackageManagerTests: XCTestCase {
     private var dir: URL!
     /// Not private: the streaming cases drive it from their own file.
     var wayStore: WayStore!
-    private var ledgers: PilgrimageLedgerStore!
+    /// Not private: the fixture builders seed it from their own file.
+    var ledgers: PilgrimageLedgerStore!
 
     let entry = PilgrimageCatalogEntry(
         id: "camino-frances", name: "Camino de Santiago (Francés)", names: [:], country: "ES",
@@ -224,13 +225,9 @@ final class PilgrimagePackageManagerTests: XCTestCase {
     /// never touched by this attempt at all — so the rollback has to reach
     /// past what this commit wrote to find it.
     func testAFailedUpdateRollsBackStagesLeftoverFromALargerPreviousInstall() async throws {
-        let entry3 = PilgrimageCatalogEntry(
-            id: "camino-frances", name: entry.name, names: [:], country: "ES",
-            region: "Europe", distanceKm: 46.1, tradition: "christian", stageCount: 3, bytes: 300_000)
-        StubURLProtocol.stub(url: try url("route.json"), body: try threeStageRouteData())
-        StubURLProtocol.stub(url: try url("stage-02.json"), body: try stage02Data())
+        try stubThreeStagePackage()
         let manager = makeManager()
-        try await manager.download(entry: entry3, release: "v1.7.0")
+        try await manager.download(entry: entryWithThreeStages, release: "v1.7.0")
         XCTAssertEqual(try XCTUnwrap(manager.installed()).route.stages.count, 3)
 
         try stubWholePackage()
@@ -283,73 +280,18 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         XCTAssertNotNil(manager.installed())
     }
 
-    // MARK: - Fixture mutation
-
-    /// A three-stage variant of the fixture route, built by JSON mutation
-    /// rather than a fourth checked-in fixture: only this one test needs a
-    /// previous install larger than the package replacing it.
-    private func threeStageRouteData() throws -> Data {
-        var obj = try XCTUnwrap(try JSONSerialization.jsonObject(with: try PilgrimageFixtures.data("route.json")) as? [String: Any])
-        var stages = try XCTUnwrap(obj["stages"] as? [[String: Any]])
-        stages.append([
-            "index": 2, "name": "Zubiri to Pamplona", "distanceKm": 20.4, "gainMeters": 128.0,
-            "hours": ["min": 5.0, "max": 6.0], "difficulty": "easy"
-        ])
-        obj["stageCount"] = 3
-        obj["stages"] = stages
-        return try JSONSerialization.data(withJSONObject: obj)
-    }
-
-    /// `stage-01.json` reshaped into the third stage of `threeStageRouteData()`.
-    private func stage02Data() throws -> Data {
-        var obj = try XCTUnwrap(try JSONSerialization.jsonObject(with: try PilgrimageFixtures.data("stage-01.json")) as? [String: Any])
-        var stage = try XCTUnwrap(obj["stage"] as? [String: Any])
-        obj["id"] = "pilgrimage:camino-frances:2"
-        stage["index"] = 2
-        stage["count"] = 3
-        obj["stage"] = stage
-        return try JSONSerialization.data(withJSONObject: obj)
-    }
-
-    /// A one-stage variant of the fixture route: stage 0 kept verbatim (the identity a ledger reconciliation recognizes), stage 1 simply gone.
-    private func oneStageRouteData() throws -> Data {
-        var obj = try XCTUnwrap(try JSONSerialization.jsonObject(with: try PilgrimageFixtures.data("route.json")) as? [String: Any])
-        var stages = try XCTUnwrap(obj["stages"] as? [[String: Any]])
-        stages.removeLast()
-        obj["stageCount"] = 1
-        obj["stages"] = stages
-        return try JSONSerialization.data(withJSONObject: obj)
-    }
-
-    private var entryWithOneStage: PilgrimageCatalogEntry {
-        PilgrimageCatalogEntry(id: "camino-frances", name: entry.name, names: [:], country: "ES",
-                               region: "Europe", distanceKm: 24.2, tradition: "christian", stageCount: 1, bytes: 100_000)
-    }
-
-    private func stubOneStagePackage(release: String) throws {
-        StubURLProtocol.stub(url: try url("route.json", release: release), body: try oneStageRouteData())
-        StubURLProtocol.stub(url: try url("stage-00.json", release: release), body: try PilgrimageFixtures.data("stage-00.json"))
-    }
-
-    /// Both stages walked, so a reconciliation test can show one entry surviving and the other dropped.
-    private func seedTwoStageLedger() {
-        var led = PilgrimageLedger(routeId: "camino-frances")
-        led.record(stageIndex: 0, name: "Saint-Jean-Pied-de-Port to Roncesvalles", distanceKm: 24.2, outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        led.record(stageIndex: 1, name: "Roncesvalles to Zubiri", distanceKm: 21.9, outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        ledgers.save(led)
-    }
 }
 
 extension PilgrimagePackageManagerTests {
 
-    private var norte: PilgrimageCatalogEntry {
+    var norte: PilgrimageCatalogEntry {
         PilgrimageCatalogEntry(id: "camino-norte", name: "Camino del Norte", names: [:], country: "ES",
                                region: "Europe", distanceKm: 46.1, tradition: "christian",
                                stageCount: 2, bytes: 214_000)
     }
 
     /// The same two fixture stages, re-slugged as a second route.
-    private func stubNorte(release: String = "v1.7.0") throws {
+    func stubNorte(release: String = "v1.7.0") throws {
         func reslugged(_ name: String) throws -> Data {
             let text = String(data: try PilgrimageFixtures.data(name), encoding: .utf8)!
                 .replacingOccurrences(of: "camino-frances", with: "camino-norte")

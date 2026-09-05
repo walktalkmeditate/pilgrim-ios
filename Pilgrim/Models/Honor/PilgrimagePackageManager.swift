@@ -75,16 +75,54 @@ final class PilgrimagePackageManager: ObservableObject {
 
     // MARK: - What is on the phone
 
+    /// Also where an interrupted cross-route Replace is finished. `replace`
+    /// installs the new route before it takes the old one, so a kill inside
+    /// that window leaves two valid packages and nothing in either of them to
+    /// say which one the pilgrim chose. The marker says, and is read here
+    /// because every screen that asks what is installed asks through this.
     func installed() -> Installed? {
+        var found: [Installed] = []
         for routeId in store.pilgrimageRouteIds() {
             guard let dir = store.pilgrimageDirectory(for: routeId),
                   let routeData = try? Data(contentsOf: dir.appendingPathComponent("route.json")),
                   let route = try? PilgrimageWayImporter.route(from: routeData),
                   let release = try? String(contentsOf: dir.appendingPathComponent("release.txt"), encoding: .utf8),
                   PilgrimageCatalogService.isValidRelease(release) else { continue }
-            return Installed(routeId: routeId, release: release, route: route)
+            found.append(Installed(routeId: routeId, release: release, route: route))
         }
-        return nil
+        // A download in flight is the one time both packages are meant to be
+        // there; the swap that wrote the marker is still the one to clear it.
+        guard !isDownloading, let abandonedId = replacingMarker else { return found.first }
+        if found.count > 1, let abandoned = found.first(where: { $0.routeId == abandonedId }) {
+            removeStagesAndPackage(routeId: abandoned.routeId, stageCount: abandoned.route.stageCount)
+            found.removeAll { $0.routeId == abandonedId }
+        }
+        clearReplacingMarker()
+        return found.first
+    }
+
+    /// Names the route a cross-route Replace is letting go. Its own file
+    /// rather than a field in `route.json`, so it survives the removal of
+    /// either package.
+    static let replacingMarkerName = "replacing.txt"
+
+    private var replacingMarkerURL: URL {
+        store.pilgrimageRoot.appendingPathComponent(Self.replacingMarkerName)
+    }
+
+    private var replacingMarker: String? {
+        guard let routeId = try? String(contentsOf: replacingMarkerURL, encoding: .utf8),
+              WayStore.isValidRouteId(routeId) else { return nil }
+        return routeId
+    }
+
+    private func markReplacing(_ routeId: String) {
+        try? FileManager.default.createDirectory(at: store.pilgrimageRoot, withIntermediateDirectories: true)
+        try? Data(routeId.utf8).write(to: replacingMarkerURL, options: .atomic)
+    }
+
+    private func clearReplacingMarker() {
+        try? FileManager.default.removeItem(at: replacingMarkerURL)
     }
 
     /// What this route already has installed, before this download changes
@@ -138,10 +176,17 @@ final class PilgrimagePackageManager: ObservableObject {
                     release: release, routeId: entry.id, file: Self.stageFileName(index)) else {
                     throw PilgrimageError.notWalkable
                 }
-                packageBytes += try await Self.stageOneStage(entry: entry, stageURL: stageURL, index: index, into: temp, session: session)
+                let stagePlan = StagePlan(routeId: entry.id, url: stageURL, stageCount: fetched.route.stageCount,
+                                          expected: fetched.route.stages[index])
+                packageBytes += try await Self.stageOneStage(stagePlan, into: temp, session: session)
                 try Self.checkBudget(packageBytes, cap: cap)
                 phase = .downloading(done: index + 2, total: total)
             }
+            // The stages take a whole network round trip each; a walk that
+            // began while they streamed would be walking a Way this commit is
+            // about to rewrite underneath it. The temp set is swept by the
+            // `defer` above, so nothing of the abandoned package is kept.
+            guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
             let plan = CommitPlan(routeId: entry.id, release: release, stageCount: fetched.route.stageCount,
                                    previousStageCount: previousStageCount)
             try await Self.commit(plan, from: temp, store: store, saveStage: saveStage)
@@ -182,11 +227,20 @@ final class PilgrimagePackageManager: ObservableObject {
             return
         }
         let previous = installed()
-        try await download(entry: entry, release: release)
+        // Written before a byte lands, so a kill anywhere in the swap leaves
+        // behind the name of the route being let go.
+        if let previous { markReplacing(previous.routeId) }
+        do {
+            try await download(entry: entry, release: release)
+        } catch {
+            clearReplacingMarker()
+            throw error
+        }
         if let previous, previous.routeId != entry.id {
             // The ledger stays: a route that comes back finds its record.
             removeStagesAndPackage(routeId: previous.routeId, stageCount: previous.route.stageCount)
         }
+        clearReplacingMarker()
     }
 
     /// The same swap, then the ledger is reconciled against the stages the
@@ -198,9 +252,8 @@ final class PilgrimagePackageManager: ObservableObject {
         guard let fresh = installed(), fresh.routeId == entry.id else { throw PilgrimageError.incomplete }
         // A route that shrank leaves stage Ways above the new count behind;
         // nothing lists them and no next row reaches them, so they go.
-        for index in fresh.route.stageCount..<max(previousStageCount, fresh.route.stageCount) {
-            store.delete(id: WayStore.stageWayId(routeId: entry.id, stageIndex: index))
-        }
+        store.retireMany(ids: Self.stageIds(routeId: entry.id,
+                                            range: fresh.route.stageCount..<max(previousStageCount, fresh.route.stageCount)))
         if let ledger = ledgers.load(routeId: entry.id) {
             ledgers.save(ledger.reconciled(against: fresh.route.stages))
         }
@@ -208,20 +261,31 @@ final class PilgrimagePackageManager: ObservableObject {
 
     func remove(routeId: String) throws {
         guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+        // The same refusal a second download gets: a Remove taken between two
+        // stages would be undone by the commit that lands after it, and the
+        // route the pilgrim let go would be back on the phone.
+        guard !isDownloading else { throw PilgrimageError.incomplete }
         let stageCount = installed().flatMap { $0.routeId == routeId ? $0.route.stageCount : nil }
             ?? PilgrimageWayImporter.maxStageCount
         removeStagesAndPackage(routeId: routeId, stageCount: stageCount)
     }
 
     /// Takes the stages, `route.json`, and `release.txt`. Never `ledger.json`
-    /// — the record of having walked a route outlives the route.
+    /// — the record of having walked a route outlives the route — and never
+    /// the whole of a stage a walk in the journal still names: `retireMany`
+    /// keeps a walked stage's `way.json`, its reply, and its index link, so
+    /// the summary and the prompt can still say which stage that walk was.
+    /// `installed()` keys on `route.json`, so what is kept never reads as
+    /// installed, and a re-download overwrites it in place.
     private func removeStagesAndPackage(routeId: String, stageCount: Int) {
-        for index in 0..<stageCount {
-            store.delete(id: WayStore.stageWayId(routeId: routeId, stageIndex: index))
-        }
+        store.retireMany(ids: Self.stageIds(routeId: routeId, range: 0..<stageCount))
         guard let dir = store.pilgrimageDirectory(for: routeId) else { return }
         try? FileManager.default.removeItem(at: dir.appendingPathComponent("route.json"))
         try? FileManager.default.removeItem(at: dir.appendingPathComponent("release.txt"))
+    }
+
+    nonisolated private static func stageIds(routeId: String, range: Range<Int>) -> [String] {
+        range.map { WayStore.stageWayId(routeId: routeId, stageIndex: $0) }
     }
 
     /// The index's `bytes` is a figure the dataset wrote; this is the one the
@@ -242,12 +306,35 @@ final class PilgrimagePackageManager: ObservableObject {
         return (route, data.count)
     }
 
+    /// What one stage's fetch needs to know about itself, bundled so the
+    /// function below stays under the lint's parameter ceiling — the same
+    /// shape `CommitPlan` takes. `expected` is the row `route.json` gave for
+    /// this index; the route file is validated as the exact run `0..<count`,
+    /// so the positional lookup that produced it is safe.
+    private struct StagePlan {
+        let routeId: String
+        let url: URL
+        let stageCount: Int
+        let expected: PilgrimageRouteStage
+    }
+
     /// Validated as it lands, then written in the store's own encoding, so
     /// the commit below is a decode-and-save rather than a second parse of
     /// untrusted bytes. Returns the bytes it cost.
-    nonisolated private static func stageOneStage(entry: PilgrimageCatalogEntry, stageURL: URL, index: Int, into temp: URL, session: URLSession) async throws -> Int {
-        let data = try await fetch(url: stageURL, cap: PilgrimageWayImporter.maxStageBytes, session: session)
-        let way = try PilgrimageWayImporter.way(from: data, routeId: entry.id, stageIndex: index)
+    ///
+    /// The stage block is checked against `route.json` as well as against
+    /// itself: the two files come down separately, and a stage that disagrees
+    /// with the route about how many stages there are, or about what this one
+    /// is called, would have the morning card and the ledger reading different
+    /// packages — "stage 3 of 40" against a route the screen counts as 12, and
+    /// a reconciliation that drops entries by a name the route never used.
+    nonisolated private static func stageOneStage(_ plan: StagePlan, into temp: URL, session: URLSession) async throws -> Int {
+        let index = plan.expected.index
+        let data = try await fetch(url: plan.url, cap: PilgrimageWayImporter.maxStageBytes, session: session)
+        let way = try PilgrimageWayImporter.way(from: data, routeId: plan.routeId, stageIndex: index)
+        guard way.stage?.count == plan.stageCount, way.stage?.name == plan.expected.name else {
+            throw PilgrimageError.notWalkable
+        }
         try write(try Self.encoder.encode(way), to: temp.appendingPathComponent("\(index).way.json"))
         return data.count
     }
@@ -328,11 +415,9 @@ final class PilgrimagePackageManager: ObservableObject {
     /// through `stageCount` — not only the indices this attempt itself
     /// wrote, so a shrinking or same-size Update leaves nothing behind
     /// either. The ledger is untouched, so re-downloading restores what was
-    /// walked.
+    /// walked, and so is any stage a walk in the journal still names.
     nonisolated private static func rollBack(routeId: String, stageCount: Int, store: WayStore) {
-        for index in 0..<stageCount {
-            store.delete(id: WayStore.stageWayId(routeId: routeId, stageIndex: index))
-        }
+        store.retireMany(ids: stageIds(routeId: routeId, range: 0..<stageCount))
         guard let dir = store.pilgrimageDirectory(for: routeId) else { return }
         try? FileManager.default.removeItem(at: dir.appendingPathComponent("route.json"))
         try? FileManager.default.removeItem(at: dir.appendingPathComponent("release.txt"))
