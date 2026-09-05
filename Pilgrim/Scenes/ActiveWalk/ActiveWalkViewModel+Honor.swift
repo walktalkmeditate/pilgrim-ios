@@ -91,16 +91,7 @@ extension ActiveWalkViewModel {
             .store(in: &honorCancellables)
         heading.start()
         honorHeading = heading
-        // The nearest-forty selection follows the walker, but a resort of
-        // every mark on the stage is not a per-fix job — 200 m at a time.
-        $currentLocation
-            .compactMap { $0 }
-            .sink { [weak self] sample in
-                self?.refreshMarkPinsIfWalkerMoved(
-                    to: CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude))
-            }
-            .store(in: &honorCancellables)
-        markPinAnchor = nil
+        bindMarkPins()
         refreshHonorPins()
     }
 
@@ -113,19 +104,6 @@ extension ActiveWalkViewModel {
             honorWayState = HonorWayState(way: way)
         }
         honorPins = PilgrimMapView.wayPins(for: way, heardVoiceIDs: heardVoiceIDs)
-    }
-
-    /// The walk map is fixed at zoom 16, so a stage's marks always draw
-    /// there; only which forty changes.
-    func refreshMarkPinsIfWalkerMoved(to coordinate: CLLocationCoordinate2D) {
-        guard let marks = way?.marks, !marks.isEmpty else { return }
-        if let anchor = markPinAnchor {
-            let moved = CLLocation(latitude: anchor.latitude, longitude: anchor.longitude)
-                .distance(from: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
-            guard moved >= HonorTuning.markPinRefreshMeters else { return }
-        }
-        markPinAnchor = coordinate
-        honorMarkPins = WayMarkPins.pins(marks: marks, zoom: 16, near: coordinate)
     }
 
     /// Where the companion is now: a binary search over the route on the
@@ -481,6 +459,22 @@ extension ActiveWalkViewModel {
             isOnWay: engine.isOnWay, isArrived: engine.phase == .arrived)
     }
 
+    /// The walker's fixes as `CLLocation`s. Not private: the mark pins in
+    /// `ActiveWalkViewModel+MarkPins.swift` follow the same stream rather
+    /// than re-deriving coordinates from the raw sample.
+    var honorLocationFixes: AnyPublisher<CLLocation, Never> {
+        $currentLocation
+            .compactMap { sample -> CLLocation? in
+                guard let sample else { return nil }
+                return CLLocation(
+                    coordinate: CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude),
+                    altitude: sample.altitude, horizontalAccuracy: sample.horizontalAccuracy,
+                    verticalAccuracy: sample.verticalAccuracy, course: sample.direction,
+                    speed: sample.speed, timestamp: sample.timestamp)
+            }
+            .eraseToAnyPublisher()
+    }
+
     // MARK: - Private
 
     private static let voiceIDPrefix = "voice-"
@@ -496,18 +490,5 @@ extension ActiveWalkViewModel {
     private func fireHonorHaptic(_ pattern: HapticPattern) {
         guard honorSenses.isAppActive() else { return }
         pattern.fire()
-    }
-
-    private var honorLocationFixes: AnyPublisher<CLLocation, Never> {
-        $currentLocation
-            .compactMap { sample -> CLLocation? in
-                guard let sample else { return nil }
-                return CLLocation(
-                    coordinate: CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude),
-                    altitude: sample.altitude, horizontalAccuracy: sample.horizontalAccuracy,
-                    verticalAccuracy: sample.verticalAccuracy, course: sample.direction,
-                    speed: sample.speed, timestamp: sample.timestamp)
-            }
-            .eraseToAnyPublisher()
     }
 }

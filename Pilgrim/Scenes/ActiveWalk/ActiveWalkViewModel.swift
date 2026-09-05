@@ -137,6 +137,13 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     /// only when the walker has moved (see `refreshMarkPinsIfWalkerMoved`).
     @Published var honorMarkPins: [PilgrimAnnotation] = []
     var markPinAnchor: CLLocationCoordinate2D?
+    /// The live camera, as the walk map reports it. Not `@Published`: nothing
+    /// on screen reads the camera itself, only the pins chosen from it, and a
+    /// publish per report would re-run the walk view's body for nothing.
+    /// Seeded with the zoom the map's follow-puck viewport holds, so the marks
+    /// are right from the first fix — a pinch replaces it with the truth.
+    var mapCameraZoom: CGFloat = PilgrimMapView.followPuckZoom
+    var mapCameraCenter: CLLocationCoordinate2D?
     var honorWayState: HonorWayState?
     let honorSenses: HonorSenses
     var wayVoicePlayer: WayVoicePlaying?

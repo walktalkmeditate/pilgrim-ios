@@ -59,8 +59,11 @@ struct HonorOverviewView: View {
     let onRetryMedia: () -> Void
     let onWalkWithoutMissing: () -> Void
 
-    @State private var cameraCenter: CLLocationCoordinate2D?
-    @State private var cameraZoom: CGFloat = 14
+    /// Where the map's camera actually is, as the map reports it. Nil until
+    /// the first report: this screen opens fit to the whole Way, a zoom it
+    /// never chose and cannot know, and marks must not be drawn on a guess.
+    @State private var liveCenter: CLLocationCoordinate2D?
+    @State private var liveZoom: CGFloat?
     @State private var isMeditating = false
     @State private var distanceToStart: Double?
     @State private var todayCondition: String?
@@ -80,8 +83,9 @@ struct HonorOverviewView: View {
     }
 
     @State private var rendering: WayRendering?
-    /// The stage's service pins. Not part of `WayRendering`: they follow the
-    /// camera's zoom, not the Way alone.
+    /// The stage's service pins. Not part of `WayRendering`: they answer to
+    /// the live camera the map reports, not to the Way alone — fit to a whole
+    /// stage they are all below `WayMarkPins.drawFromZoom` and none is drawn.
     @State private var markPins: [PilgrimAnnotation] = []
     /// A tapped pin: its photo or voice in a half-height sheet of its own.
     @State private var previewMoment: WayMoment?
@@ -97,11 +101,14 @@ struct HonorOverviewView: View {
                     guard let id = pin.kind.wayMomentID else { return }
                     previewMoment = way.moments.first { $0.id == id }
                 },
-                cameraCenter: $cameraCenter,
-                cameraZoom: $cameraZoom,
                 cameraBounds: rendering?.bounds,
                 isMeditating: $isMeditating,
-                honorWay: rendering?.state
+                honorWay: rendering?.state,
+                onCameraChanged: { center, zoom in
+                    liveCenter = center
+                    liveZoom = zoom
+                    refreshMarkPins()
+                }
             )
             .frame(maxHeight: .infinity)
 
@@ -131,10 +138,7 @@ struct HonorOverviewView: View {
                 bounds: HonorOverviewModel.bounds(of: way),
                 state: HonorWayState(way: way)
             )
-            markPins = WayMarkPins.pins(marks: way.marks ?? [], zoom: cameraZoom, near: cameraCenter)
-        }
-        .onChange(of: cameraZoom) { _, zoom in
-            markPins = WayMarkPins.pins(marks: way.marks ?? [], zoom: zoom, near: cameraCenter)
+            refreshMarkPins()
         }
         .task { await fetchToday() }
         .sheet(item: $previewMoment) { moment in
@@ -289,6 +293,17 @@ struct HonorOverviewView: View {
         let clamped = Int(min(max(seconds, 0), 999_999_999))
         let hours = clamped / 3600, minutes = (clamped % 3600) / 60
         return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+    }
+
+    /// Nothing is drawn until the map has said where it is: a Way fit to a
+    /// whole stage sits well below the draw-from zoom, and the first forty
+    /// marks in file order would clump at one end of it.
+    private func refreshMarkPins() {
+        guard let zoom = liveZoom else {
+            markPins = []
+            return
+        }
+        markPins = WayMarkPins.pins(marks: way.marks ?? [], zoom: zoom, near: liveCenter)
     }
 
     private func probeDistance() {

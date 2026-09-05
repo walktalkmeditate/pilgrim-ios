@@ -30,14 +30,17 @@ extension ActiveWalkView {
             seekFog: viewModel.seekFogState,
             seekPulse: viewModel.seekPulse,
             cameraCenter: .constant(viewModel.honorFocus),
-            cameraZoom: .constant(16),
+            cameraZoom: .constant(PilgrimMapView.followPuckZoom),
             bottomInset: mapBottomInset,
             initialCamera: viewModel.mapCameraSeed,
             fadesInOnStyleLoad: true,
             walkingColor: activeTurning?.uiColor ?? .moss,
             isMeditating: $viewModel.isMeditating,
             honorWay: viewModel.honorWayState,
-            companion: viewModel.companionCoordinate
+            companion: viewModel.companionCoordinate,
+            onCameraChanged: { center, zoom in
+                viewModel.mapCameraDidChange(center: center, zoom: zoom)
+            }
         )
     }
 
