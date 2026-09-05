@@ -253,6 +253,10 @@ extension PilgrimageStageWalkTests {
         XCTAssertNil(WayMomentHeader.localName(for: waypoint(names: nil)))
         XCTAssertNil(WayMomentHeader.localName(for: waypoint(names: ["ru": "Орисон"])),
                      "a language outside the order is not shown")
+        XCTAssertEqual(WayMomentHeader.localName(for: waypoint(names: ["en": "Virgin of Orisson",
+                                                                      "es": "Virgen de Orisson"])),
+                       "Virgen de Orisson", "English is never the local name")
+        XCTAssertNil(WayMomentHeader.localName(for: waypoint(names: ["en": "Virgin of Orisson"])))
     }
 
     func testThePlaceCopyChangesForAStage() {

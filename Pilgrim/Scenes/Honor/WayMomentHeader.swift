@@ -26,6 +26,7 @@ struct WayMomentHeader: View {
                     Text(localName)
                         .font(Constants.Typography.caption)
                         .foregroundColor(.fog)
+                        .lineLimit(1)
                 }
                 if let subline {
                     HStack(spacing: 4) {

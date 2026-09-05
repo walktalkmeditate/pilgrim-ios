@@ -115,8 +115,11 @@ struct WayPlaceCard: View {
             sitRow(minutes: minutes)
         case .waypoint:
             VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+                // The dataset may send 600 characters; the card does not
+                // scroll and sits over the map, so it shows what fits.
                 Text(WayMomentHeader.placeCopy(for: moment, isStage: isStage))
                     .font(Constants.Typography.caption).foregroundColor(.fog)
+                    .lineLimit(4)
                 if let minutes = moment.sitMinutes, minutes > 0 {
                     sitRow(minutes: minutes)
                 }
