@@ -152,6 +152,35 @@ final class PilgrimageCatalogServiceTests: XCTestCase {
         }
     }
 
+    /// With no `Content-Length` the guard before the drain reads -1 and lets
+    /// the body through, so only the cap counted while streaming can refuse it.
+    func testAnIndexThatNeverDeclaresItsLengthIsRefusedByTheCapCountedWhileStreaming() async throws {
+        let huge = Data(repeating: 0x7B, count: PilgrimageCatalogService.maxIndexBytes + 1)
+        stubIndex(huge, headers: ["Content-Type": "application/json"])
+        let service = makeService()
+        do {
+            _ = try await service.load()
+            XCTFail("expected catalogUnreachable")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .catalogUnreachable)
+        }
+        XCTAssertNil(service.catalog)
+    }
+
+    /// A perfectly good index body behind a 404: only the status check refuses
+    /// it, and the catalog is out of reach rather than silently empty.
+    func testAnIndexServedAsNotFoundIsOutOfReach() async throws {
+        stubIndex(try PilgrimageFixtures.data("index.json"), status: 404)
+        let service = makeService()
+        do {
+            _ = try await service.load()
+            XCTFail("expected catalogUnreachable")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .catalogUnreachable)
+        }
+        XCTAssertNil(service.catalog)
+    }
+
     func testAFailedFetchWithACachedIndexDegradesSilently() async throws {
         stubIndex(try PilgrimageFixtures.data("index.json"))
         _ = try await makeService().load()

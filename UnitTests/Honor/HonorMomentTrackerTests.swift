@@ -123,7 +123,7 @@ final class HonorMomentTrackerTests: XCTestCase {
 
     func testEveryGateHoldsAVoice() {
         let closed: [HonorMomentTracker.Gates] = [
-            .init(paused: true), .init(meditating: true), .init(recording: true), .init(externalAudio: true),
+            .init(paused: true), .init(meditating: true), .init(recording: true), .init(externalAudio: true)
         ]
         for gates in closed {
             var t = HonorMomentTracker(moments: [voice1], geometry: geometry, voicesEnabled: true)

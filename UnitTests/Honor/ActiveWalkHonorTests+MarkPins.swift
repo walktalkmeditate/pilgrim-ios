@@ -68,6 +68,11 @@ extension ActiveWalkHonorTests {
         drive(fix(lon: 0, seconds: 0))
         XCTAssertEqual(publishes, 1, "the first fix anchors the selection")
         XCTAssertEqual(markIDs().first, "m0", "nearest to the walker comes first")
+        // The same fix reaches the tracker, so the mark it is standing on
+        // fires `.markAhead` all the way through to the caption slot — the
+        // one line water is allowed to say.
+        XCTAssertEqual(vm.softTapCaption?.hasPrefix("water in ") ?? false, true,
+                       vm.softTapCaption ?? "nil")
 
         drive(fix(lon: 50 / 111_320, seconds: 40))
         XCTAssertEqual(publishes, 1, "50 m is inside the 200 m throttle")

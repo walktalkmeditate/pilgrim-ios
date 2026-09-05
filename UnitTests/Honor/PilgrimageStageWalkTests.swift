@@ -7,7 +7,80 @@ import CoreLocation
 /// differently when the Way came from a pilgrimage package.
 final class PilgrimageStageWalkTests: XCTestCase {
 
+    /// No sound may leave the test host, and the shared player would outlive
+    /// the walk that started it.
+    private final class SilentVoicePlayer: WayVoicePlaying {
+        var onFinished: (() -> Void)?
+        func play(url: URL, volume: Float) {}
+        func pause() {}
+        func resume() {}
+        func stop() {}
+        func seek(toFraction fraction: Double) {}
+        func setRate(_ rate: Float) {}
+    }
+
+    /// A compass that never asks CoreLocation for one.
+    private final class StubHeading: HeadingProviding {
+        private let subject = CurrentValueSubject<Double?, Never>(nil)
+        var headingPublisher: AnyPublisher<Double?, Never> { subject.eraseToAnyPublisher() }
+        func start() {}
+        func stop() {}
+    }
+
     let start = Date(timeIntervalSince1970: 1_000_000)
+
+    private var dir: URL!
+    /// Every Way below is written here, never into the shared store. Not
+    /// private: `PilgrimageStageWalkTests+Replies.swift` writes into it too.
+    var store: WayStore!
+    /// The walk the current test drove, so teardown can end it: a view model
+    /// left running keeps its engine, its compass, and its subscriptions.
+    private var vm: ActiveWalkViewModel?
+
+    override func setUpWithError() throws {
+        dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        store = WayStore(baseDirectory: dir)
+    }
+
+    override func tearDown() {
+        vm?.cancel()
+        vm = nil
+        try? FileManager.default.removeItem(at: dir)
+        super.tearDown()
+    }
+
+    /// Nothing a stage walk does may reach a shared singleton or the device:
+    /// the store is this test's own, haptics are off, the voice is silent, and
+    /// the compass is a stub.
+    private func stageSenses() -> HonorSenses {
+        let store = self.store!
+        var senses = HonorSenses()
+        senses.store = { store }
+        senses.isAppActive = { false }
+        senses.makeVoicePlayer = { SilentVoicePlayer() }
+        senses.makeHeadingProvider = { StubHeading() }
+        return senses
+    }
+
+    /// Builds the view model and hands it to teardown in one step, so no test
+    /// can forget to end the walk it started.
+    func honorWalk(way: Way) -> ActiveWalkViewModel {
+        let model = ActiveWalkViewModel(mode: .honor, way: way, honorSenses: stageSenses())
+        vm = model
+        return model
+    }
+
+    /// A playable file under the app's Documents directory, where a reply is
+    /// resolved from, removed when the test ends.
+    func writeSilentRecording(relativePath: String) throws -> URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let recording = docs.appendingPathComponent(relativePath)
+        try FileManager.default.createDirectory(at: recording.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        _ = try TestAudioFile.writeSilentAudioFile(to: recording)
+        addTeardownBlock { try? FileManager.default.removeItem(at: recording) }
+        return recording
+    }
 
     /// A 1 km stage running east along the equator, so every distance below
     /// is arithmetic: 0.000898° of longitude is 100 m.
@@ -54,7 +127,7 @@ final class PilgrimageStageWalkTests: XCTestCase {
     }
 
     func testTheOutcomeSurvivesTeardown() {
-        let vm = ActiveWalkViewModel(mode: .honor, way: stageWay())
+        let vm = honorWalk(way: stageWay())
         vm.builder.setStatus(.ready)
         vm.startRecording()
         let engine = try? XCTUnwrap(vm.honorEngine)
@@ -69,7 +142,7 @@ final class PilgrimageStageWalkTests: XCTestCase {
     }
 
     func testNoOutcomeWithoutAnAnchor() {
-        let vm = ActiveWalkViewModel(mode: .honor, way: stageWay())
+        let vm = honorWalk(way: stageWay())
         vm.builder.setStatus(.ready)
         vm.startRecording()
         vm.honorEngine?.processLocation(
@@ -140,7 +213,7 @@ extension PilgrimageStageWalkTests {
     func testAStageWalksWithNoCompanionAndNoSoftTap() {
         UserPreferences.honorSoftTapEnabled.value = true
         addTeardownBlock { UserPreferences.honorSoftTapEnabled.delete() }
-        let vm = ActiveWalkViewModel(mode: .honor, way: stageWay())
+        let vm = honorWalk(way: stageWay())
         vm.builder.setStatus(.ready)
         vm.startRecording()
         XCTAssertNotNil(vm.honorEngine)
@@ -156,7 +229,7 @@ extension PilgrimageStageWalkTests {
         addTeardownBlock { UserPreferences.honorSoftTapEnabled.delete() }
         var way = stageWay()
         way.stage = nil
-        let vm = ActiveWalkViewModel(mode: .honor, way: way)
+        let vm = honorWalk(way: way)
         vm.builder.setStatus(.ready)
         vm.startRecording()
         vm.honorEngine?.processLocation(
@@ -283,9 +356,7 @@ extension PilgrimageStageWalkTests {
     func testWaterAheadBorrowsTheCaptionLineAndNothingElse() {
         let mark = WayMark(id: "wp-fuente", kind: .water, name: "Fuente de Roldán",
                            at: WayCoordinate(lat: 0, lon: 500 / 111_320), frac: 0.5, offLineMeters: 12)
-        var senses = HonorSenses()
-        senses.isAppActive = { false }
-        let vm = ActiveWalkViewModel(mode: .honor, way: stageWay(marks: [mark]), honorSenses: senses)
+        let vm = honorWalk(way: stageWay(marks: [mark]))
         vm.builder.setStatus(.ready)
         vm.startRecording()
 
@@ -324,130 +395,6 @@ extension PilgrimageStageWalkTests {
 
 extension PilgrimageStageWalkTests {
 
-    func testTheReflectionIsFiledUnderTheReservedOrigin() throws {
-        let stage = try XCTUnwrap(stageWay().stage)
-        let moment = HonorPersistence.stageReflectionMoment(for: stage)
-        XCTAssertEqual(moment.id, HonorPersistence.stageReflectionMomentID)
-        XCTAssertEqual(ActiveWalkViewModel.originIndex(of: moment), HonorPersistence.stageReflectionOrigin)
-        XCTAssertEqual(HonorPersistence.stageReflectionOrigin, -1)
-        XCTAssertEqual(moment.at, stage.end.at, "the reply is recorded at the stage's end place")
-
-        var voice = WayMoment(id: "voice-3", frac: 0.5, at: nil,
-                              kind: .voice(endFrac: 0.6, duration: 10, kind: .spoken, media: .file("audio/3.m4a")))
-        voice.place = nil
-        XCTAssertEqual(ActiveWalkViewModel.originIndex(of: voice), 3, "voice replies are unchanged")
-        XCTAssertNil(ActiveWalkViewModel.originIndex(of:
-            WayMoment(id: "wp-orisson", frac: 0.3, at: nil, kind: .waypoint(label: "x", icon: "mappin"))))
-    }
-
-    func testAReplyToTheReflectionRoundTrips() throws {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
-        let store = WayStore(baseDirectory: dir)
-        let way = stageWay()
-        try store.save(way)
-        var senses = HonorSenses()
-        senses.store = { store }
-        senses.isAppActive = { false }
-
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let recording = docs.appendingPathComponent("Recordings/stage-reply.m4a")
-        try FileManager.default.createDirectory(at: recording.deletingLastPathComponent(), withIntermediateDirectories: true)
-        _ = try TestAudioFile.writeSilentAudioFile(to: recording)
-        addTeardownBlock { try? FileManager.default.removeItem(at: recording) }
-
-        let vm = ActiveWalkViewModel(mode: .honor, way: way, honorSenses: senses)
-        XCTAssertNil(vm.stageReflectionReplyURL())
-        try store.setReply(wayId: way.id, originN: HonorPersistence.stageReflectionOrigin,
-                           relativePath: "Recordings/stage-reply.m4a")
-        XCTAssertEqual(vm.stageReflectionReplyURL(), recording)
-    }
-
-    /// The arrival card invites a reply at the exact moment the walker is
-    /// about to press stop, so the recording is still open when the walk ends.
-    /// Its completion only reaches the view model after `stop()` has torn the
-    /// walk down — and the mapping must still be written.
-    func testAReplyStillRecordingWhenTheWalkEndsIsStillFiledUnderTheReflection() throws {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
-        let store = WayStore(baseDirectory: dir)
-        let way = stageWay()
-        try store.save(way)
-        var senses = HonorSenses()
-        senses.store = { store }
-        senses.isAppActive = { false }
-
-        let relativePath = "Recordings/stage-late-reply.m4a"
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let recording = docs.appendingPathComponent(relativePath)
-        try FileManager.default.createDirectory(at: recording.deletingLastPathComponent(),
-                                                withIntermediateDirectories: true)
-        _ = try TestAudioFile.writeSilentAudioFile(to: recording)
-        addTeardownBlock { try? FileManager.default.removeItem(at: recording) }
-
-        let vm = ActiveWalkViewModel(mode: .honor, way: way, honorSenses: senses)
-        vm.builder.setStatus(.ready)
-        vm.startRecording()
-        settleCombineSchedulers()
-
-        // Stands in for a real `AVAudioRecorder`, which the test host cannot
-        // be relied on to open: `replyHere` keeps the origin only when the
-        // recorder reports itself running.
-        vm.voiceRecordingManagement._test_setActiveRecording(start: start, relativePath: relativePath)
-        settleCombineSchedulers()
-
-        vm.replyToStageReflection()
-        XCTAssertEqual(vm.pendingReplyOrigin?.id, HonorPersistence.stageReflectionMomentID)
-
-        vm.stop()
-        settleCombineSchedulers()
-
-        // What `VoiceRecordingManagement.flushCurrentRecording` publishes once
-        // the pre-snapshot flush has finalized the file — after `stop()` has
-        // already emptied `cancellables`.
-        vm.builder.flushVoiceRecordings([
-            TempVoiceRecording(uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(5),
-                               duration: 5, fileRelativePath: relativePath, isEnhanced: false)
-        ])
-        settleCombineSchedulers()
-
-        XCTAssertEqual(store.replies(for: way.id), [HonorPersistence.stageReflectionOrigin: relativePath])
-        XCTAssertEqual(vm.stageReflectionReplyURL(), recording)
-    }
-
-    func testTheArrivalCardAppendsTheStagesClosingLine() {
-        let card = HonorArrivalCard(wayTitle: "t", voicesHeard: 0, placesPassed: 2,
-                                    theirSeconds: 0, yourSeconds: 0,
-                                    stageName: "Saint-Jean-Pied-de-Port to Roncesvalles",
-                                    distanceWalkedMeters: 24_200,
-                                    closing: "You crossed a border on foot.")
-        XCTAssertEqual(card.closing, "You crossed a border on foot.")
-        XCTAssertEqual(HonorArrivalCardView.title(for: card), "you walked the stage")
-    }
-
-    func testTheSummaryCarriesTheClosingOnlyWhenArrivalFired() {
-        let walk = WalkDataFactory.makeWalk(
-            uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(3600),
-            workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: start)])
-        let noArrival = HonorSummaryModel.summaryData(for: walk, way: stageWay(), link: nil,
-                                                      replies: [:], ledger: nil)
-        XCTAssertNil(noArrival?.closing, "the way was left before its end")
-
-        let arrived = WalkDataFactory.makeWalk(
-            uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(3600),
-            workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: start),
-                            TempWalkEvent(uuid: nil, eventType: .honorArrival, timestamp: start)])
-        let data = HonorSummaryModel.summaryData(
-            for: arrived, way: stageWay(), link: nil,
-            replies: [HonorPersistence.stageReflectionOrigin: "Recordings/stage-reply.m4a"], ledger: nil)
-        XCTAssertEqual(data?.closing, "You crossed a border on foot.")
-        XCTAssertEqual(data?.replyRelativePath, "Recordings/stage-reply.m4a")
-        XCTAssertEqual(data?.repliesMade, 1)
-    }
-}
-
-extension PilgrimageStageWalkTests {
-
     func testTheOfflineNoteIsSaidOnceAndOnlyForAStage() {
         XCTAssertEqual(HonorOverviewModel.offlineNote(isStage: true, isConnected: false, alreadyShown: false),
                        "map tiles need a connection; the way itself is on your phone.")
@@ -457,5 +404,35 @@ extension PilgrimageStageWalkTests {
                      "the tiles are coming")
         XCTAssertNil(HonorOverviewModel.offlineNote(isStage: false, isConnected: false, alreadyShown: false),
                      "a shared walk offline has a different problem: its voices")
+    }
+}
+
+extension PilgrimageStageWalkTests {
+
+    private func shareWay() -> Way {
+        Way(id: "share:9mYhRL7GWx", source: .share(id: "9mYhRL7GWx",
+                                                   pageURL: URL(string: "https://walk.pilgrimapp.org/9mYhRL7GWx")!),
+            title: "Rúa do Franco → Obradoiro", departedAt: start, tzIdentifier: nil, expires: nil,
+            route: [WayPoint(lat: 0, lon: 0, alt: nil, t: 0), WayPoint(lat: 0, lon: 0.001, alt: nil, t: 60)],
+            totalDistanceMeters: 111, theirActiveSeconds: 60, moments: [], weather: nil)
+    }
+
+    /// A stage's Way is one file of an installed package: Settings deleting it
+    /// would leave `route.json` and `release.txt` behind, and the route screen
+    /// would still offer a route with no stages under it. The route screen owns
+    /// a package's whole life, so the list never shows one — and "Delete all
+    /// Ways", which walks exactly the listed array, cannot reach one.
+    func testTheWaysListNeitherShowsAnInstalledStageNorTakesItWithTheRest() throws {
+        try store.save(stageWay())
+        try store.save(shareWay())
+        XCTAssertEqual(store.list().count, 2, "both are in the store")
+
+        let listed = WaysListView.listable(store.list())
+        XCTAssertEqual(listed.map(\.id), ["share:9mYhRL7GWx"], "only the shared walk is offered")
+
+        listed.forEach { store.delete(id: $0.id) }
+        XCTAssertNotNil(store.load(id: WayStore.stageWayId(routeId: "camino-frances", stageIndex: 0)),
+                        "delete-all left the package's stage where the route screen can still find it")
+        XCTAssertNil(store.load(id: "share:9mYhRL7GWx"))
     }
 }

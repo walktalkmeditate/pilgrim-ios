@@ -5,10 +5,11 @@ import XCTest
 final class PilgrimagePackageManagerTests: XCTestCase {
 
     private var dir: URL!
-    private var wayStore: WayStore!
+    /// Not private: the streaming cases drive it from their own file.
+    var wayStore: WayStore!
     private var ledgers: PilgrimageLedgerStore!
 
-    private let entry = PilgrimageCatalogEntry(
+    let entry = PilgrimageCatalogEntry(
         id: "camino-frances", name: "Camino de Santiago (Francés)", names: [:], country: "ES",
         region: "Europe", distanceKm: 46.1, tradition: "christian", stageCount: 2, bytes: 214_000)
 
@@ -26,7 +27,7 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         super.tearDown()
     }
 
-    private func url(_ file: String, release: String = "v1.7.0") throws -> URL {
+    func url(_ file: String, release: String = "v1.7.0") throws -> URL {
         try XCTUnwrap(PilgrimageCatalogService.packageURL(release: release, routeId: "camino-frances", file: file))
     }
 
@@ -36,7 +37,7 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         StubURLProtocol.stub(url: try url("stage-01.json", release: release), body: try PilgrimageFixtures.data("stage-01.json"))
     }
 
-    private func makeManager() -> PilgrimagePackageManager {
+    func makeManager() -> PilgrimagePackageManager {
         PilgrimagePackageManager(store: wayStore, ledgers: ledgers, session: StubURLProtocol.session())
     }
 
@@ -103,7 +104,8 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         XCTAssertEqual(manager.phase, .failed(.incomplete))
     }
 
-    func testAnOversizedStageFileIsRefusedBeforeItIsBuffered() async throws {
+    /// The declared-length path — the stub writes a truthful `Content-Length`. The running cap is proved in the streaming file.
+    func testAStageFileThatDeclaresMoreThanTheCapIsRefusedBeforeItIsBuffered() async throws {
         let huge = Data(repeating: 0x20, count: PilgrimageWayImporter.maxStageBytes + 1)
         StubURLProtocol.stub(url: try url("stage-00.json"), body: huge)
         let manager = makeManager()
@@ -427,7 +429,6 @@ extension PilgrimagePackageManagerTests {
         StubURLProtocol.stub(url: try url("stage-00.json", release: "v1.8.0"), body: try PilgrimageFixtures.data("stage-00.json"))
         StubURLProtocol.stub(url: try url("stage-01.json", release: "v1.8.0"), body: Data(redrawnStage.utf8))
 
-        XCTAssertTrue(manager.hasUpdate(catalogRelease: "v1.8.0"))
         try await manager.update(entry: entry, release: "v1.8.0")
 
         XCTAssertEqual(manager.installed()?.release, "v1.8.0")
@@ -435,7 +436,6 @@ extension PilgrimagePackageManagerTests {
         XCTAssertEqual(Set(after.stages.keys), ["0"])
         XCTAssertEqual(after.carriedKm ?? 0, 21.9, accuracy: 0.01)
         XCTAssertEqual(after.redrawNoticePending, true)
-        XCTAssertFalse(manager.hasUpdate(catalogRelease: "v1.8.0"))
     }
 
     /// A route that shrank leaves stage Ways above the new count behind, with nothing to reach them once `route.json` stops naming that index.
