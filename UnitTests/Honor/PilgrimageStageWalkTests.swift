@@ -445,3 +445,17 @@ extension PilgrimageStageWalkTests {
         XCTAssertEqual(data?.repliesMade, 1)
     }
 }
+
+extension PilgrimageStageWalkTests {
+
+    func testTheOfflineNoteIsSaidOnceAndOnlyForAStage() {
+        XCTAssertEqual(HonorOverviewModel.offlineNote(isStage: true, isConnected: false, alreadyShown: false),
+                       "map tiles need a connection; the way itself is on your phone.")
+        XCTAssertNil(HonorOverviewModel.offlineNote(isStage: true, isConnected: false, alreadyShown: true),
+                     "said once")
+        XCTAssertNil(HonorOverviewModel.offlineNote(isStage: true, isConnected: true, alreadyShown: false),
+                     "the tiles are coming")
+        XCTAssertNil(HonorOverviewModel.offlineNote(isStage: false, isConnected: false, alreadyShown: false),
+                     "a shared walk offline has a different problem: its voices")
+    }
+}

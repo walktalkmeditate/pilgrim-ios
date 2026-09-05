@@ -1,4 +1,5 @@
 import CoreLocation
+import Network
 import SwiftUI
 
 enum HonorOverviewModel {
@@ -40,6 +41,15 @@ enum HonorOverviewModel {
         WeatherCondition(rawValue: condition)?.label.lowercased() ?? condition
     }
 
+    /// Offline tiles are slice three. Until then a stage walked without a
+    /// connection draws over the basemap's empty grey, and the overview says
+    /// so once — the ghost line, the pins, the marks, the cards, the water,
+    /// and the ledger all work without a network.
+    static func offlineNote(isStage: Bool, isConnected: Bool, alreadyShown: Bool) -> String? {
+        guard isStage, !isConnected, !alreadyShown else { return nil }
+        return "map tiles need a connection; the way itself is on your phone."
+    }
+
     static func bounds(of way: Way) -> MapCameraBounds? {
         let lats = way.route.map(\.lat), lons = way.route.map(\.lon)
         guard let minLat = lats.min(), let maxLat = lats.max(),
@@ -70,6 +80,8 @@ struct HonorOverviewView: View {
     @State private var voicesEnabled = UserPreferences.honorVoicesEnabled.value
     @State private var showMorningCard = false
     @State private var todayWeather: WeatherSnapshot?
+    @State private var isConnected = true
+    @State private var offlineNote: String?
     #if DEBUG
     @State private var debugExportURL: URL?
     @State private var isShowingDebugExport = false
@@ -133,7 +145,7 @@ struct HonorOverviewView: View {
             }
             #endif
         }
-        .onAppear { probeDistance() }
+        .onAppear { probeDistance(); checkConnectivity() }
         .task(id: way.id) {
             rendering = WayRendering(
                 pins: PilgrimMapView.wayPins(for: way, heardVoiceIDs: []),
@@ -215,6 +227,11 @@ struct HonorOverviewView: View {
             }
             if let status = HonorOverviewModel.statusLine(distanceToStartMeters: distanceToStart) {
                 Text(status)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
+            }
+            if let offlineNote {
+                Text(offlineNote)
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
@@ -324,5 +341,25 @@ struct HonorOverviewView: View {
     private func probeDistance() {
         guard let first = way.route.first, let here = CLLocationManager().location else { return }
         distanceToStart = here.distance(from: CLLocation(latitude: first.lat, longitude: first.lon))
+    }
+
+    /// A single probe, cancelled in its own handler — no monitor outlives
+    /// this screen.
+    private func checkConnectivity() {
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { path in
+            let connected = path.status == .satisfied
+            DispatchQueue.main.async {
+                isConnected = connected
+                if let note = HonorOverviewModel.offlineNote(
+                    isStage: way.isPilgrimageStage, isConnected: connected,
+                    alreadyShown: UserPreferences.pilgrimageOfflineNoteShown.value) {
+                    offlineNote = note
+                    UserPreferences.pilgrimageOfflineNoteShown.value = true
+                }
+            }
+            monitor.cancel()
+        }
+        monitor.start(queue: DispatchQueue(label: "honor-connectivity-check"))
     }
 }
