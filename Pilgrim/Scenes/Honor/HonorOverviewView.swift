@@ -80,7 +80,6 @@ struct HonorOverviewView: View {
     @State private var voicesEnabled = UserPreferences.honorVoicesEnabled.value
     @State private var showMorningCard = false
     @State private var todayWeather: WeatherSnapshot?
-    @State private var isConnected = true
     @State private var offlineNote: String?
     #if DEBUG
     @State private var debugExportURL: URL?
@@ -346,11 +345,13 @@ struct HonorOverviewView: View {
     /// A single probe, cancelled in its own handler — no monitor outlives
     /// this screen.
     private func checkConnectivity() {
+        // The note is said once ever and only on a stage; a probe that could
+        // not produce it is a monitor allocated for nothing.
+        guard way.isPilgrimageStage, !UserPreferences.pilgrimageOfflineNoteShown.value else { return }
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { path in
             let connected = path.status == .satisfied
             DispatchQueue.main.async {
-                isConnected = connected
                 if let note = HonorOverviewModel.offlineNote(
                     isStage: way.isPilgrimageStage, isConnected: connected,
                     alreadyShown: UserPreferences.pilgrimageOfflineNoteShown.value) {

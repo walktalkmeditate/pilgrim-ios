@@ -54,9 +54,12 @@ id. An empty list means the device pass is still blocked.
 - [ ] With a new release for the route you already have, the button reads
       **Update** and tapping it installs the new release directly — **no
       confirmation dialog** (that's only Replace's). A route that shrank
-      drops its now-out-of-range stage Ways and the ledger; the redraw
-      notice reads "the route's stages were redrawn; your kilometres are
-      kept."
+      drops its now-out-of-range stage Ways and reconciles the ledger; the
+      redraw notice reads "the route's stages were redrawn; your kilometres
+      are kept."
+- [ ] Before tapping Update, go back to the catalog list: the installed
+      route's card reads "on your phone · updated · …" while a newer release
+      is pending, and loses "updated" once it is installed.
 
 ## Walking the stage
 
