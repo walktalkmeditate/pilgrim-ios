@@ -63,6 +63,7 @@ struct HonorCardHost: View {
                 let isPlaying = viewModel.activeVoice == moment
                 WayPlaceCard(
                     moment: moment,
+                    isStage: viewModel.way?.isPilgrimageStage == true,
                     mediaURL: mediaURL,
                     distanceMeters: viewModel.distanceToMoment(moment),
                     isPlaying: isPlaying,

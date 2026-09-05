@@ -227,3 +227,49 @@ extension PilgrimageStageWalkTests {
         XCTAssertFalse(removed.isPilgrimageStage, "a Way that is gone says nothing about stages")
     }
 }
+
+extension PilgrimageStageWalkTests {
+
+    private func waypoint(names: [String: String]?, label: String = "Vierge d'Orisson",
+                          text: String? = nil, sitMinutes: Int? = nil) -> WayMoment {
+        var moment = WayMoment(id: "wp-x", frac: 0.3, at: WayCoordinate(lat: 0, lon: 0),
+                               kind: .waypoint(label: label, icon: "building.columns"))
+        moment.names = names
+        moment.text = text
+        moment.sitMinutes = sitMinutes
+        return moment
+    }
+
+    func testTheLocalNameFollowsAFixedOrderAndNeverEchoesTheLabel() {
+        XCTAssertEqual(WayMomentHeader.localName(for: waypoint(names: ["es": "Virgen de Orisson",
+                                                                      "eu": "Orissongo Ama Birjina",
+                                                                      "fr": "Vierge d'Orisson"])),
+                       "Orissongo Ama Birjina", "eu comes first")
+        XCTAssertEqual(WayMomentHeader.localName(for: waypoint(names: ["es": "Virgen de Orisson",
+                                                                      "fr": "Vierge d'Orisson"])),
+                       "Virgen de Orisson", "the French name is the label; es is next in order")
+        XCTAssertNil(WayMomentHeader.localName(for: waypoint(names: ["fr": "Vierge d'Orisson"])),
+                     "the only local name is the label itself")
+        XCTAssertNil(WayMomentHeader.localName(for: waypoint(names: nil)))
+        XCTAssertNil(WayMomentHeader.localName(for: waypoint(names: ["ru": "Орисон"])),
+                     "a language outside the order is not shown")
+    }
+
+    func testThePlaceCopyChangesForAStage() {
+        XCTAssertEqual(WayMomentHeader.placeCopy(for: waypoint(names: nil), isStage: true),
+                       "A place on the way.")
+        XCTAssertEqual(WayMomentHeader.placeCopy(for: waypoint(names: nil), isStage: false),
+                       "A place they marked.")
+        XCTAssertEqual(WayMomentHeader.placeCopy(for: waypoint(names: nil, text: "A shepherd carried this Madonna."),
+                                                 isStage: true),
+                       "A shepherd carried this Madonna.")
+    }
+
+    func testAPinDrawsAtItsOwnCoordinateWhileTheTriggerStaysOnTheLine() {
+        let way = stageWay()
+        let pins = PilgrimMapView.wayPins(for: way, heardVoiceIDs: [])
+        let pin = try? XCTUnwrap(pins.first { $0.kind.wayMomentID == "wp-orisson" })
+        XCTAssertEqual(pin?.coordinate.latitude ?? 0, 0.0002, accuracy: 1e-9, "drawn at `pin`")
+        XCTAssertEqual(way.moments[0].at?.lat, 0, "triggered on the line")
+    }
+}

@@ -22,6 +22,11 @@ struct WayMomentHeader: View {
                 Text(Self.kicker(for: moment))
                     .font(compact ? Constants.Typography.body : Constants.Typography.heading)
                     .foregroundColor(.ink)
+                if let localName = Self.localName(for: moment) {
+                    Text(localName)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                }
                 if let subline {
                     HStack(spacing: 4) {
                         if let tick {
@@ -58,6 +63,28 @@ struct WayMomentHeader: View {
             return isEstimate ? "they sat here about \(minutes) minutes" : "they sat here for \(minutes) minutes"
         case .waypoint(let label, _): return label
         }
+    }
+
+    /// The languages a place's own name is worth showing in, in the order
+    /// the routes run: Basque and Galician before Spanish on the caminos,
+    /// Japanese for Shikoku. A name equal to the label says nothing twice.
+    static let localNameOrder = ["eu", "gl", "es", "fr", "ja", "pt", "it", "de"]
+
+    static func localName(for moment: WayMoment) -> String? {
+        guard let names = moment.names else { return nil }
+        let label = kicker(for: moment)
+        for code in localNameOrder {
+            guard let name = names[code], !name.isEmpty, name != label else { continue }
+            return name
+        }
+        return nil
+    }
+
+    /// A card body for a place: the dataset's own words when it has them,
+    /// otherwise the shortest true thing. A stage has no "they".
+    static func placeCopy(for moment: WayMoment, isStage: Bool) -> String {
+        if let text = moment.text, !text.isEmpty { return text }
+        return isStage ? "A place on the way." : "A place they marked."
     }
 
     /// "here" within a few strides, otherwise the distance still to cover in

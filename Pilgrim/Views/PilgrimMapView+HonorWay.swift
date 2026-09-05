@@ -120,7 +120,10 @@ extension PilgrimMapView {
     static func wayPins(for way: Way, heardVoiceIDs: Set<String>) -> [PilgrimAnnotation] {
         let geometry = WayGeometry(route: way.route)
         return way.moments.map { moment in
-            let coordinate = moment.at.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+            // `pin` is the place itself; `at` is its projection onto the
+            // line, which is where the engine's 60 m trigger fires. The pin
+            // must stand where the place does.
+            let coordinate = (moment.pin ?? moment.at).map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
                 ?? geometry.coordinate(atFrac: moment.frac)
             let kind: PilgrimAnnotation.Kind
             switch moment.kind {

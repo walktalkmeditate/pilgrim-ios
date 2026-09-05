@@ -76,8 +76,17 @@ struct WayMomentPreview: View {
                 Text("tap the photo to see it whole").font(Constants.Typography.caption).foregroundColor(.fog)
             }
         case .waypoint:
-            Text("A place they marked. When you walk it, it rises as a card as you reach it.")
-                .font(Constants.Typography.body).foregroundColor(.ink)
+            VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+                Text(WayMomentHeader.placeCopy(for: moment, isStage: way.isPilgrimageStage))
+                    .font(Constants.Typography.body).foregroundColor(.ink)
+                if let minutes = moment.sitMinutes, minutes > 0 {
+                    Text("When you walk it, the way will offer you \(minutes) minutes of sitting here.")
+                        .font(Constants.Typography.caption).foregroundColor(.fog)
+                } else {
+                    Text("When you walk it, it rises as a card as you reach it.")
+                        .font(Constants.Typography.caption).foregroundColor(.fog)
+                }
+            }
         case .rest:
             Text("A pause in their walk. The companion will wait here with you.")
                 .font(Constants.Typography.body).foregroundColor(.ink)

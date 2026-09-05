@@ -6,6 +6,9 @@ import SwiftUI
 /// wears, one action per body, and a sideways swipe to let it go.
 struct WayPlaceCard: View {
     let moment: WayMoment
+    /// True when the Way came from a downloaded route: the copy then never
+    /// says "they".
+    var isStage = false
     let mediaURL: URL?
     /// Metres from the walker's last fix; nil before the first fix.
     let distanceMeters: Double?
@@ -109,18 +112,28 @@ struct WayPlaceCard: View {
             Text("A pause in their walk. The companion waits here with you.")
                 .font(Constants.Typography.caption).foregroundColor(.fog)
         case .meditation(let minutes, _):
-            HStack(spacing: Constants.UI.Padding.normal) {
-                Button { onTouch(); onSit(minutes) } label: {
-                    Text("Sit?").font(Constants.Typography.button).foregroundColor(.parchment)
-                        .padding(.horizontal, Constants.UI.Padding.big).padding(.vertical, Constants.UI.Padding.small)
-                        .background(Color.stone).cornerRadius(Constants.UI.CornerRadius.normal)
-                }
-                .accessibilityLabel("Sit here for \(minutes) minutes")
-                Text("your soundscape holds while you sit")
-                    .font(Constants.Typography.caption).foregroundColor(.fog)
-            }
+            sitRow(minutes: minutes)
         case .waypoint:
-            Text("A place they marked.")
+            VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+                Text(WayMomentHeader.placeCopy(for: moment, isStage: isStage))
+                    .font(Constants.Typography.caption).foregroundColor(.fog)
+                if let minutes = moment.sitMinutes, minutes > 0 {
+                    sitRow(minutes: minutes)
+                }
+            }
+        }
+    }
+
+    /// The same offer a sitting card makes, wired to the same `onSit`.
+    private func sitRow(minutes: Int) -> some View {
+        HStack(spacing: Constants.UI.Padding.normal) {
+            Button { onTouch(); onSit(minutes) } label: {
+                Text("Sit?").font(Constants.Typography.button).foregroundColor(.parchment)
+                    .padding(.horizontal, Constants.UI.Padding.big).padding(.vertical, Constants.UI.Padding.small)
+                    .background(Color.stone).cornerRadius(Constants.UI.CornerRadius.normal)
+            }
+            .accessibilityLabel("Sit here for \(minutes) minutes")
+            Text("your soundscape holds while you sit")
                 .font(Constants.Typography.caption).foregroundColor(.fog)
         }
     }
