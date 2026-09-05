@@ -110,6 +110,9 @@ struct PilgrimageRouteView: View {
                     } label: {
                         Image(systemName: "ellipsis")
                     }
+                    // A Remove taken mid-download would be undone by the
+                    // commit that lands after it; the manager refuses it too.
+                    .disabled(isBusy)
                 }
             }
         }

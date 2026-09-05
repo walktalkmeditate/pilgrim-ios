@@ -160,7 +160,7 @@ final class PilgrimageCatalogService: ObservableObject {
         guard let url = Self.packageURL(release: release, routeId: entry.id, file: "route.json") else {
             throw PilgrimageError.notWalkable
         }
-        let data = try await fetch(url, cap: PilgrimageWayImporter.maxRouteBytes)
+        let data = try await Self.fetch(url, cap: PilgrimageWayImporter.maxRouteBytes, session: session)
         let route = try PilgrimageWayImporter.route(from: data)
         // The same identity check the download makes: a route file that
         // disagrees with the index is not the route being offered.
@@ -189,12 +189,17 @@ final class PilgrimageCatalogService: ObservableObject {
     }
 
     private func fetchIndex() async throws -> Data {
-        try await fetch(Self.indexURL, cap: Self.maxIndexBytes)
+        try await Self.fetch(Self.indexURL, cap: Self.maxIndexBytes, session: session)
     }
 
     /// Streamed with a cap, checked before draining: an oversized declared
     /// length must not cost a full download first.
-    private func fetch(_ url: URL, cap: Int) async throws -> Data {
+    ///
+    /// `nonisolated`, and handed the session rather than reading it off
+    /// `self`: the drain is a byte at a time, and on the main actor a quarter
+    /// of a megabyte of index would run the whole of it between the screen's
+    /// frames. This is the shape `PilgrimagePackageManager.fetch` already has.
+    nonisolated private static func fetch(_ url: URL, cap: Int, session: URLSession) async throws -> Data {
         do {
             let (bytes, response) = try await session.bytes(from: url)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200,

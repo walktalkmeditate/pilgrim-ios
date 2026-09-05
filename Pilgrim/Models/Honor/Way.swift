@@ -158,6 +158,15 @@ enum WaySource: Codable, Equatable {
     /// One stage of a downloaded pilgrimage route. No page, no expiry: a
     /// route never returns to the trail on its own.
     case pilgrimage(routeId: String, stageIndex: Int)
+
+    /// `PilgrimagePackageManager` writes and rewrites this Way's `way.json`
+    /// as packages install and update. Nothing else may save over it: a copy
+    /// captured before an Update redrew the stage would be written back on
+    /// top of the redrawn one.
+    var isPackageOwned: Bool {
+        if case .pilgrimage = self { return true }
+        return false
+    }
 }
 
 struct WayWeather: Codable, Equatable {

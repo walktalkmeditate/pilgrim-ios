@@ -108,8 +108,11 @@ class MainCoordinator: ObservableObject {
                     // The only place a walk is bound to its Way: `save` is
                     // idempotent (an own-walk Way is first written here), and
                     // `link` overwrites, so it must not run again elsewhere.
+                    // A packaged stage is skipped — this `way` was captured at
+                    // Begin, and an Update that redrew the stage while the
+                    // walk was on would be written back over here.
                     if let way, let uuid = walk?.uuid {
-                        try? WayStore.shared.save(way)
+                        if !way.source.isPackageOwned { try? WayStore.shared.save(way) }
                         let arrival = vm?.honorArrival.map { (theirSeconds: $0.theirSeconds, yourSeconds: $0.yourSeconds) }
                         try? WayStore.shared.link(walkUUID: uuid, to: way.id, arrival: arrival)
                         self.recordStageWalk(way: way, outcome: vm?.honorStageOutcome)

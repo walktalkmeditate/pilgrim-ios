@@ -81,6 +81,9 @@ struct HonorOverviewView: View {
     @State private var showMorningCard = false
     @State private var todayWeather: WeatherSnapshot?
     @State private var offlineNote: String?
+    /// The probe's only strong owner, so the handler need not retain what it
+    /// cancels.
+    @State private var connectivityMonitor: NWPathMonitor?
     #if DEBUG
     @State private var debugExportURL: URL?
     @State private var isShowingDebugExport = false
@@ -145,6 +148,7 @@ struct HonorOverviewView: View {
             #endif
         }
         .onAppear { probeDistance(); checkConnectivity() }
+        .onDisappear { releaseConnectivityMonitor() }
         .task(id: way.id) {
             rendering = WayRendering(
                 pins: PilgrimMapView.wayPins(for: way, heardVoiceIDs: []),
@@ -342,14 +346,19 @@ struct HonorOverviewView: View {
         distanceToStart = here.distance(from: CLLocation(latitude: first.lat, longitude: first.lon))
     }
 
-    /// A single probe, cancelled in its own handler — no monitor outlives
-    /// this screen.
+    /// A single probe, released in its own handler and again on dismissal —
+    /// no monitor outlives this screen. The state holds the only strong
+    /// reference, so the handler can capture it weakly and still be sure the
+    /// monitor is alive to report: a handler that captured the monitor it
+    /// cancels is a cycle, and one that captured nothing could be freed
+    /// before it ever ran.
     private func checkConnectivity() {
         // The note is said once ever and only on a stage; a probe that could
         // not produce it is a monitor allocated for nothing.
         guard way.isPilgrimageStage, !UserPreferences.pilgrimageOfflineNoteShown.value else { return }
         let monitor = NWPathMonitor()
-        monitor.pathUpdateHandler = { path in
+        connectivityMonitor = monitor
+        monitor.pathUpdateHandler = { [weak monitor] path in
             let connected = path.status == .satisfied
             DispatchQueue.main.async {
                 if let note = HonorOverviewModel.offlineNote(
@@ -358,9 +367,16 @@ struct HonorOverviewView: View {
                     offlineNote = note
                     UserPreferences.pilgrimageOfflineNoteShown.value = true
                 }
+                releaseConnectivityMonitor()
             }
-            monitor.cancel()
+            monitor?.cancel()
         }
         monitor.start(queue: DispatchQueue(label: "honor-connectivity-check"))
+    }
+
+    private func releaseConnectivityMonitor() {
+        connectivityMonitor?.cancel()
+        connectivityMonitor?.pathUpdateHandler = nil
+        connectivityMonitor = nil
     }
 }
