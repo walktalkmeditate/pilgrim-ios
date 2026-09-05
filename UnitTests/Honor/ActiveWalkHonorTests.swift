@@ -29,9 +29,9 @@ final class ActiveWalkHonorTests: XCTestCase {
 
     private var player: SpyVoicePlayer!
     private var heading: SpyHeading!
-    private var vm: ActiveWalkViewModel!
+    var vm: ActiveWalkViewModel!
     private var recordingURL: URL!
-    private let start = Date(timeIntervalSince1970: 1_000_000)
+    let start = Date(timeIntervalSince1970: 1_000_000)
 
     private func way(id: String = "walk:test") -> Way {
         let route = (0...10).map { i in WayPoint(lat: 0, lon: Double(i) * 0.000898, alt: nil, t: Double(i) * 60) }
@@ -79,13 +79,13 @@ final class ActiveWalkHonorTests: XCTestCase {
         super.tearDown()
     }
 
-    private func fix(lon: Double, seconds: Double) -> TempRouteDataSample {
+    func fix(lon: Double, seconds: Double) -> TempRouteDataSample {
         TempRouteDataSample(uuid: nil, timestamp: start.addingTimeInterval(seconds), latitude: 0, longitude: lon,
                             altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, speed: 1.4, direction: 90)
     }
 
     /// Every engine stream hops through `receive(on: .main)`: settle after each write.
-    private func drive(_ sample: TempRouteDataSample) {
+    func drive(_ sample: TempRouteDataSample) {
         vm.currentLocation = sample
         settleCombineSchedulers()
     }
@@ -94,7 +94,7 @@ final class ActiveWalkHonorTests: XCTestCase {
     /// the components report readiness first, and on the simulator none ever
     /// does. Without the real `.recording` status the engine's pause gate
     /// would stay shut and no voice could start.
-    private func begin(startedSecondsAgo: TimeInterval = 0) {
+    func begin(startedSecondsAgo: TimeInterval = 0) {
         vm.builder.setStatus(.ready)
         if startedSecondsAgo > 0 {
             vm.builder._test_setStartDate(Date().addingTimeInterval(-startedSecondsAgo))

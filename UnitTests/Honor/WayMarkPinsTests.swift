@@ -57,14 +57,16 @@ final class WayMarkPinsTests: XCTestCase {
         XCTAssertNil(pin.kind.wayMomentID, "a mark has no card to open")
     }
 
-    func testMarkPinsSitBeforeMomentPinsSoTheyDrawUnderneath() {
-        // The walk map composes `marks + moments`; a mark must never cover a
-        // moment's pin. Pinned here so the order in ActiveWalkView+Map holds.
-        let marks = WayMarkPins.pins(marks: marks(2), zoom: 15, near: nil)
-        let moment = PilgrimAnnotation(coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-                                       kind: .wayWaypoint(id: "wp-1", label: "x", icon: "mappin"))
-        let composed = marks + [moment]
-        XCTAssertNil(composed.first?.kind.wayMomentID)
-        XCTAssertEqual(composed.last?.kind.wayMomentID, "wp-1")
+    func testAPinLandsOnItsMarksOwnCoordinate() {
+        // Distinct, differently-signed lat and lon: a swap between them draws
+        // every fountain on the Camino into the Atlantic, and passes every
+        // count-and-order assertion above.
+        let fountain = WayMark(id: "m1", kind: .water, name: "fuente",
+                               at: WayCoordinate(lat: 42.881, lon: -8.545), frac: 0.5, offLineMeters: 10)
+        guard let pin = WayMarkPins.pins(marks: [fountain], zoom: 15, near: nil).first else {
+            return XCTFail("a mark above the draw zoom must produce a pin")
+        }
+        XCTAssertEqual(pin.coordinate.latitude, 42.881, accuracy: 1e-9)
+        XCTAssertEqual(pin.coordinate.longitude, -8.545, accuracy: 1e-9)
     }
 }
