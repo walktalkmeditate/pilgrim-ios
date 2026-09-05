@@ -746,8 +746,9 @@ extension WalkSummaryView {
         let link = WayStore.shared.wayLink(forWalk: uuid)
         let way = link.flatMap { WayStore.shared.load(id: $0.wayId) }
         let replies = link.map { WayStore.shared.replies(for: $0.wayId) } ?? [:]
+        let ledger = way?.stage.flatMap { PilgrimageLedgerStore().load(routeId: $0.routeId) }
         guard let data = HonorSummaryModel.summaryData(
-            for: walk, way: way, link: link, replies: replies
+            for: walk, way: way, link: link, replies: replies, ledger: ledger
         ) else { return nil }
         let wayState = way.map { HonorWayState(way: $0) }
         return (data, wayState)

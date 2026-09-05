@@ -118,3 +118,105 @@ final class PilgrimageStageWalkTests: XCTestCase {
         XCTAssertNil(ledgers.load(routeId: "camino-frances"))
     }
 }
+
+extension PilgrimageStageWalkTests {
+
+    func testTheStageLineStandsWhereADateWould() {
+        let way = stageWay()
+        XCTAssertEqual(WayStageLine.line(for: way),
+                       "stage 1 of 33 · \(StatsHelper.string(for: 24_200, unit: UnitLength.meters, type: .distance)) · hard")
+        var notAStage = way
+        notAStage.stage = nil
+        XCTAssertNil(WayStageLine.line(for: notAStage), "a shared walk still shows its date")
+        XCTAssertTrue(way.isPilgrimageStage)
+        XCTAssertFalse(notAStage.isPilgrimageStage)
+    }
+
+    func testAStageWalksWithNoCompanionAndNoSoftTap() {
+        UserPreferences.honorSoftTapEnabled.value = true
+        addTeardownBlock { UserPreferences.honorSoftTapEnabled.delete() }
+        let vm = ActiveWalkViewModel(mode: .honor, way: stageWay())
+        vm.builder.setStatus(.ready)
+        vm.startRecording()
+        XCTAssertNotNil(vm.honorEngine)
+        XCTAssertNil(vm.companionCoordinate, "the stage's own voice walks with you, not a dot")
+
+        // 400 m off the line for well past the soft-tap window: still silent.
+        let far = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 0.0036, longitude: 0.002694),
+                             altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, timestamp: start)
+        for _ in 0..<5 { vm.honorEngine?.processLocation(far) }
+        XCTAssertNil(vm.softTapCaption)
+    }
+
+    func testAnOwnWalkWayKeepsItsCompanion() {
+        var way = stageWay()
+        way.stage = nil
+        let vm = ActiveWalkViewModel(mode: .honor, way: way)
+        vm.builder.setStatus(.ready)
+        vm.startRecording()
+        vm.honorEngine?.processLocation(
+            CLLocation(coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                       altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, timestamp: start))
+        XCTAssertNotNil(vm.companionCoordinate)
+    }
+
+    func testTheArrivalCardForAStageNamesTheStageAndCarriesNoDelta() {
+        let card = HonorArrivalCard(wayTitle: "Saint-Jean-Pied-de-Port to Roncesvalles",
+                                    voicesHeard: 0, placesPassed: 3, theirSeconds: 0, yourSeconds: 0,
+                                    stageName: "Saint-Jean-Pied-de-Port to Roncesvalles",
+                                    distanceWalkedMeters: 24_200)
+        XCTAssertEqual(HonorArrivalCardView.title(for: card), "you walked the stage")
+        XCTAssertTrue(HonorArrivalCardView.line(for: card).contains("3 places passed"))
+        XCTAssertTrue(HonorArrivalCardView.line(for: card)
+            .contains(StatsHelper.string(for: 24_200, unit: UnitLength.meters, type: .distance)))
+
+        let sharedWalk = HonorArrivalCard(wayTitle: "Rúa do Franco → Obradoiro", voicesHeard: 2,
+                                          placesPassed: 1, theirSeconds: 600, yourSeconds: 540,
+                                          stageName: nil, distanceWalkedMeters: 900)
+        XCTAssertEqual(HonorArrivalCardView.title(for: sharedWalk), "you walked their way")
+    }
+
+    func testTheSummaryForAStageReadsKilometresAndNoCompanionDelta() {
+        var led = PilgrimageLedger(routeId: "camino-frances")
+        led.record(stageIndex: 0, name: "Saint-Jean-Pied-de-Port to Roncesvalles", distanceKm: 24.2,
+                   outcome: HonorStageOutcome(progressFrac: 0.58, arrived: false), at: start)
+        let walk = WalkDataFactory.makeWalk(
+            uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(3600),
+            workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: start)])
+        let data = HonorSummaryModel.summaryData(
+            for: walk, way: stageWay(),
+            link: WayLink(wayId: "pilgrimage:camino-frances:0", theirSeconds: 600, yourSeconds: 540),
+            replies: [:], ledger: led)
+        XCTAssertNil(data?.arrivedBeforeTheirsSeconds, "a stage has no companion to arrive before")
+        let line = try? XCTUnwrap(data?.stageProgressLine)
+        XCTAssertEqual(line?.hasSuffix("of the stage"), true, line ?? "nil")
+        XCTAssertTrue(line?.contains(StatsHelper.string(for: 24.2 * 0.58 * 1000, unit: UnitLength.meters, type: .distance)) ?? false, line ?? "nil")
+    }
+
+    /// The summary block opens with a kicker that says "in their steps".
+    /// A stage has no "their", and the flag is carried explicitly rather than
+    /// inferred from the progress line — a walk that earned no ledger entry
+    /// is still a stage walk.
+    func testTheSummaryKickerDropsTheirStepsForAStage() throws {
+        let walk = WalkDataFactory.makeWalk(
+            uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(3600),
+            workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: start)])
+
+        let stageData = try XCTUnwrap(HonorSummaryModel.summaryData(
+            for: walk, way: stageWay(), link: nil, replies: [:], ledger: nil))
+        XCTAssertTrue(stageData.isPilgrimageStage)
+        XCTAssertNil(stageData.stageProgressLine, "no ledger entry, but still a stage")
+        XCTAssertEqual(HonorSummarySection.kicker(for: stageData), "the stage you walked")
+
+        var notAStage = stageWay()
+        notAStage.stage = nil
+        let shared = try XCTUnwrap(HonorSummaryModel.summaryData(
+            for: walk, way: notAStage, link: nil, replies: [:], ledger: nil))
+        XCTAssertFalse(shared.isPilgrimageStage)
+        XCTAssertEqual(HonorSummarySection.kicker(for: shared), "in their steps")
+
+        let removed = try XCTUnwrap(HonorSummaryModel.summaryData(
+            for: walk, way: nil, link: nil, replies: [:], ledger: nil))
+        XCTAssertFalse(removed.isPilgrimageStage, "a Way that is gone says nothing about stages")
+    }
+}

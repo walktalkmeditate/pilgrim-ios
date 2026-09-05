@@ -124,7 +124,8 @@ struct HonorWaysSheet: View {
                 .font(Constants.Typography.body)
                 .foregroundColor(.ink)
             HStack {
-                Text(DateFormatter.localizedString(from: way.departedAt, dateStyle: .medium, timeStyle: .none))
+                Text(WayStageLine.line(for: way)
+                     ?? DateFormatter.localizedString(from: way.departedAt, dateStyle: .medium, timeStyle: .none))
                 Text("·")
                 Text(withMedia.contains(way.id) || way.voiceCount + way.photoCount == 0
                      ? HonorOverviewModel.countsLine(way: way) : "voices returned to the trail")

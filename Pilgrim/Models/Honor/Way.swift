@@ -202,6 +202,10 @@ struct Way: Codable, Equatable {
     var photoCount: Int {
         moments.filter { if case .photo = $0.kind { return true } else { return false } }.count
     }
+
+    /// A Way that came from a downloaded route. Honor speaks differently
+    /// about one: no other walker, so no companion, no soft tap, no date.
+    var isPilgrimageStage: Bool { stage != nil }
 }
 
 /// `id` is already the store's folder name, so `.sheet(item:)` can key the

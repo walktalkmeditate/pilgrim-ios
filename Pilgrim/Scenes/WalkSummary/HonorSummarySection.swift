@@ -2,27 +2,47 @@ import SwiftUI
 
 struct HonorSummaryData: Equatable {
     let wayTitle: String
-    /// Positive when the honoring walker arrived before the companion.
+    /// Positive when the honoring walker arrived before the companion. Nil
+    /// for a stage: there is no companion to arrive before.
     let arrivedBeforeTheirsSeconds: Double?
     /// Every voice the Way carries, not the subset this walk played — the
     /// arrival card's `voicesHeard` is the one that counts what was heard.
     let voicesAlongTheWay: Int
     let repliesMade: Int
+    /// Carried explicitly, never inferred from `stageProgressLine`: a stage
+    /// walk that earned no ledger entry (the walker never joined the line) is
+    /// still a stage walk, and must not be told it walked in someone's steps.
+    let isPilgrimageStage: Bool
+    /// "14 of 24 km of the stage", from the ledger this walk just wrote.
+    let stageProgressLine: String?
 }
 
 enum HonorSummaryModel {
-    static func summaryData(for walk: WalkInterface, way: Way?, link: WayLink?, replies: [Int: String]) -> HonorSummaryData? {
+    static func summaryData(for walk: WalkInterface, way: Way?, link: WayLink?,
+                            replies: [Int: String], ledger: PilgrimageLedger?) -> HonorSummaryData? {
         let types = walk.workoutEvents.map(\.eventType)
         guard types.contains(.honorMode) else { return nil }
+        let stage = way?.stage
         // The dot walked the companion's timeline; the summary reads the
         // numbers the engine recorded at arrival, never a recomputation.
         var delta: Double?
-        if let theirs = link?.theirSeconds, let yours = link?.yourSeconds { delta = theirs - yours }
+        if stage == nil, let theirs = link?.theirSeconds, let yours = link?.yourSeconds { delta = theirs - yours }
         return HonorSummaryData(
             wayTitle: way?.title ?? "a way that has been removed",
             arrivedBeforeTheirsSeconds: delta,
             voicesAlongTheWay: way?.voiceCount ?? 0,
-            repliesMade: replies.count)
+            repliesMade: replies.count,
+            isPilgrimageStage: stage != nil,
+            stageProgressLine: stage.flatMap { stageProgressLine(stage: $0, ledger: ledger) })
+    }
+
+    /// The kilometres the ledger recorded for this stage, against the stage's
+    /// own length. Silent when the walk earned no entry.
+    static func stageProgressLine(stage: WayStage, ledger: PilgrimageLedger?) -> String? {
+        guard let entry = ledger?.stages[String(stage.index)] else { return nil }
+        let walked = StatsHelper.string(for: entry.kmWalked * 1000, unit: UnitLength.meters, type: .distance)
+        let whole = StatsHelper.string(for: stage.distanceKm * 1000, unit: UnitLength.meters, type: .distance)
+        return "\(walked) of \(whole) of the stage"
     }
 }
 
@@ -31,8 +51,11 @@ struct HonorSummarySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-            Text("in their steps").font(Constants.Typography.caption).foregroundColor(.fog)
+            Text(Self.kicker(for: data)).font(Constants.Typography.caption).foregroundColor(.fog)
             Text(data.wayTitle).font(Constants.Typography.heading).foregroundColor(.ink)
+            if let stageProgressLine = data.stageProgressLine {
+                Text(stageProgressLine).font(Constants.Typography.caption).foregroundColor(.fog)
+            }
             if let delta = data.arrivedBeforeTheirsSeconds {
                 Text(deltaLine(delta)).font(Constants.Typography.caption).foregroundColor(.fog)
             }
@@ -43,6 +66,13 @@ struct HonorSummarySection: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Constants.UI.Padding.normal)
         .background(RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal).fill(Color.parchmentSecondary))
+    }
+
+    /// The block's opening line. Honor's copy assumes another walker; a
+    /// downloaded stage has none, so it names what was actually walked —
+    /// the same split `HonorArrivalCardView.title(for:)` makes.
+    static func kicker(for data: HonorSummaryData) -> String {
+        data.isPilgrimageStage ? "the stage you walked" : "in their steps"
     }
 
     private var countsLine: String? {

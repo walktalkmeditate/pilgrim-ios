@@ -88,3 +88,20 @@ enum WayDistance {
         return String(format: "%.1f km", meters / 1000)
     }
 }
+
+/// "stage 1 of 33 · 24 km · hard" — what stands where a shared walk shows
+/// the day it was walked. A stage's own date is the build's timestamp and
+/// means nothing to the walker.
+enum WayStageLine {
+
+    static func line(for way: Way) -> String? {
+        way.stage.map(line(for:))
+    }
+
+    static func line(for stage: WayStage) -> String {
+        var parts = ["stage \(stage.index + 1) of \(stage.count)",
+                     StatsHelper.string(for: stage.distanceKm * 1000, unit: UnitLength.meters, type: .distance)]
+        if !stage.difficulty.isEmpty { parts.append(stage.difficulty) }
+        return parts.joined(separator: " · ")
+    }
+}

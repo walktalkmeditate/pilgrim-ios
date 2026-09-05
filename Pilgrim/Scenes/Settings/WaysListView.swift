@@ -59,11 +59,12 @@ struct WaysListView: View {
     }
 
     private func detail(for way: Way) -> String {
-        let date = DateFormatter.localizedString(from: way.departedAt, dateStyle: .medium, timeStyle: .none)
+        let lead = WayStageLine.line(for: way)
+            ?? DateFormatter.localizedString(from: way.departedAt, dateStyle: .medium, timeStyle: .none)
         if way.voiceCount + way.photoCount > 0, !WayStore.shared.hasMedia(id: way.id) {
-            return "\(date) · voices returned to the trail"
+            return "\(lead) · voices returned to the trail"
         }
         let mb = String(format: "%.1f MB", Double(WayStore.shared.diskUsage(id: way.id)) / 1_000_000)
-        return "\(date) · \(mb)"
+        return "\(lead) · \(mb)"
     }
 }

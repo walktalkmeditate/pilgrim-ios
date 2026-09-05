@@ -337,19 +337,33 @@ struct HonorArrivalCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
-            Text("you walked their way").font(Constants.Typography.heading).foregroundColor(.ink)
-            Text(card.wayTitle).font(Constants.Typography.body).foregroundColor(.fog)
-            Text(line).font(Constants.Typography.caption).foregroundColor(.fog)
+            Text(Self.title(for: card)).font(Constants.Typography.heading).foregroundColor(.ink)
+            Text(card.stageName ?? card.wayTitle).font(Constants.Typography.body).foregroundColor(.fog)
+            Text(Self.line(for: card)).font(Constants.Typography.caption).foregroundColor(.fog)
             Button("continue", action: onDismiss).font(Constants.Typography.button).foregroundColor(.stone)
         }
         .padding(Constants.UI.Padding.normal)
         .background(RoundedRectangle(cornerRadius: Constants.UI.CornerRadius.normal).fill(Color.parchmentSecondary))
     }
 
-    private var line: String {
+    static func title(for card: HonorArrivalCard) -> String {
+        card.stageName == nil ? "you walked their way" : "you walked the stage"
+    }
+
+    /// A stage counts places and kilometres; a shared walk counts voices and
+    /// places, because a voice is what the other walker left.
+    static func line(for card: HonorArrivalCard) -> String {
         var parts: [String] = []
-        if card.voicesHeard > 0 { parts.append(card.voicesHeard == 1 ? "one voice heard" : "\(card.voicesHeard) voices heard") }
-        if card.placesPassed > 0 { parts.append(card.placesPassed == 1 ? "one place passed" : "\(card.placesPassed) places passed") }
-        return parts.isEmpty ? "the whole way, in their steps" : parts.joined(separator: " · ")
+        if card.stageName == nil, card.voicesHeard > 0 {
+            parts.append(card.voicesHeard == 1 ? "one voice heard" : "\(card.voicesHeard) voices heard")
+        }
+        if card.placesPassed > 0 {
+            parts.append(card.placesPassed == 1 ? "one place passed" : "\(card.placesPassed) places passed")
+        }
+        if card.stageName != nil {
+            parts.append(StatsHelper.string(for: card.distanceWalkedMeters, unit: UnitLength.meters, type: .distance))
+        }
+        if parts.isEmpty { return card.stageName == nil ? "the whole way, in their steps" : "the whole stage" }
+        return parts.joined(separator: " · ")
     }
 }

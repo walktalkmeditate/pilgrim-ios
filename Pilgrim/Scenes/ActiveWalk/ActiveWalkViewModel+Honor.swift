@@ -18,9 +18,14 @@ struct HonorArrivalCard: Equatable {
     let voicesHeard: Int
     let placesPassed: Int
     /// The engine's numbers on the companion's timeline; persisted into the
-    /// index link at save time so the summary can read them back.
+    /// index link at save time so the summary can read them back. Both are
+    /// zero for a stage, which has no companion.
     let theirSeconds: Double
     let yourSeconds: Double
+    /// Set only for a pilgrimage stage; the card then speaks of the stage
+    /// rather than of another walker.
+    let stageName: String?
+    let distanceWalkedMeters: Double
 }
 
 // MARK: - Honor Engine Lifecycle
@@ -40,7 +45,9 @@ extension ActiveWalkViewModel {
         let generation = honorGeneration
         let engine = HonorEngine(
             way: way,
-            softTapEnabled: UserPreferences.honorSoftTapEnabled.value,
+            // A stage has no other walker to be off the way *from*; the soft
+            // tap and the companion dot are both about someone else.
+            softTapEnabled: UserPreferences.honorSoftTapEnabled.value && !way.isPilgrimageStage,
             voicesEnabled: UserPreferences.honorVoicesEnabled.value && UserPreferences.soundsEnabled.value
         )
         let player = honorSenses.makeVoicePlayer()
@@ -97,8 +104,11 @@ extension ActiveWalkViewModel {
     /// Where the companion is now: a binary search over the route on the
     /// engine's published frac, cheap enough for the map's per-frame read.
     /// The map itself throttles the dot to one move every two seconds.
+    /// A stage has no companion — its clock is synthesized so the engine
+    /// works unchanged, and nothing draws it.
     var companionCoordinate: CLLocationCoordinate2D? {
-        honorEngine.map { $0.geometry.coordinate(atFrac: $0.companionFrac) }
+        guard way?.isPilgrimageStage != true else { return nil }
+        return honorEngine.map { $0.geometry.coordinate(atFrac: $0.companionFrac) }
     }
 
     /// Runs from both `stop()` and `cancel()`; the second call is a no-op.
@@ -210,9 +220,12 @@ extension ActiveWalkViewModel {
         builder.addWorkoutEvent(TempWalkEvent(uuid: nil, eventType: .honorArrival, timestamp: Date()))
         addWaypoint(label: HonorPersistence.arrivalWaypointLabel(wayTitle: way.title),
                     icon: HonorPersistence.arrivalWaypointIcon)
-        honorArrival = HonorArrivalCard(wayTitle: way.title, voicesHeard: heardVoiceIDs.count,
-                                        placesPassed: reachedMomentIDs.count,
-                                        theirSeconds: theirSeconds, yourSeconds: yourSeconds)
+        honorArrival = HonorArrivalCard(
+            wayTitle: way.title, voicesHeard: heardVoiceIDs.count,
+            placesPassed: reachedMomentIDs.count,
+            theirSeconds: theirSeconds, yourSeconds: yourSeconds,
+            stageName: way.stage?.name,
+            distanceWalkedMeters: honorEngine?.distanceWalkedMeters ?? 0)
     }
 
     // MARK: - Cards, media, replies

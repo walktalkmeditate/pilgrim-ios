@@ -171,7 +171,8 @@ struct HonorOverviewView: View {
             Text(way.title)
                 .font(Constants.Typography.heading)
                 .foregroundColor(.ink)
-            Text(DateFormatter.localizedString(from: way.departedAt, dateStyle: .long, timeStyle: .short))
+            Text(WayStageLine.line(for: way)
+                 ?? DateFormatter.localizedString(from: way.departedAt, dateStyle: .long, timeStyle: .short))
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
             HStack {
@@ -194,14 +195,18 @@ struct HonorOverviewView: View {
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
-            Toggle(isOn: $voicesEnabled) {
-                Text("walk with their voice")
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.ink)
+            // A stage carries no recordings, so "walk with their voice" would
+            // be a switch over nothing — and would say "their" besides.
+            if !way.isPilgrimageStage {
+                Toggle(isOn: $voicesEnabled) {
+                    Text("walk with their voice")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                }
+                .tint(.stone)
+                .onChange(of: voicesEnabled) { _, on in UserPreferences.honorVoicesEnabled.value = on }
+                .disabled(way.voiceCount == 0)
             }
-            .tint(.stone)
-            .onChange(of: voicesEnabled) { _, on in UserPreferences.honorVoicesEnabled.value = on }
-            .disabled(way.voiceCount == 0)
 
             Button(action: onBegin) {
                 Text("Begin")
