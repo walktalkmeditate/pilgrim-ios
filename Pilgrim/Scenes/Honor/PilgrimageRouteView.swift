@@ -300,10 +300,14 @@ struct PilgrimageRouteView: View {
             } else {
                 try await packages.download(entry: entry, release: release)
             }
-            reload()
+            failure = nil
         } catch {
             failure = (error as? PilgrimageError) ?? .incomplete
         }
+        // Reload on both branches: a failed update's rollback removed the
+        // package, and only reload() picks that state back up so the screen
+        // never keeps showing the pre-rollback "on your phone" state.
+        reload()
     }
 
     private func removeRoute() {

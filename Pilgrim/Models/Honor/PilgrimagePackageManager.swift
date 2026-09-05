@@ -107,6 +107,10 @@ final class PilgrimagePackageManager: ObservableObject {
         guard !isDownloading else { throw PilgrimageError.incomplete }
         isDownloading = true
         defer { isDownloading = false }
+        // The route.json fetch below is a full network round trip before
+        // the first stage lands — without an early phase, isBusy stays
+        // false and a second tap re-enters here and throws a false failure.
+        phase = .downloading(done: 0, total: entry.stageCount + 1)
 
         let temp = FileManager.default.temporaryDirectory
             .appendingPathComponent("pilgrimage-\(UUID().uuidString)", isDirectory: true)

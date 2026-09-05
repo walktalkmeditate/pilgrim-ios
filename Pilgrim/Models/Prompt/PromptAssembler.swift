@@ -169,11 +169,16 @@ enum PromptAssembler {
             return text
         case .honor:
             guard let story = context.honorStory else {
-                return "**About this practice:** This walk was an Honor. The walker followed a Way another walker laid down, hearing their voices where they were spoken. Two traveling together; the line was traced, not raced."
+                return sharedWalkBaseText
             }
             return story.routeName == nil ? sharedWalkLexicon(story) : stageLexicon(story)
         }
     }
+
+    /// Sole source for the shared-walk opening sentence — the no-story guard
+    /// above and `sharedWalkLexicon` both start from it, so a copy edit can
+    /// never desync one from the other.
+    private static let sharedWalkBaseText = "**About this practice:** This walk was an Honor. The walker followed a Way another walker laid down, hearing their voices where they were spoken. Two traveling together; the line was traced, not raced."
 
     /// A stage has no other walker: the route itself is the company, and the
     /// lexicon must never put a voice where there is none.
@@ -189,7 +194,7 @@ enum PromptAssembler {
     }
 
     private static func sharedWalkLexicon(_ story: HonorStoryContext) -> String {
-        var text = "**About this practice:** This walk was an Honor. The walker followed a Way another walker laid down, hearing their voices where they were spoken. Two traveling together; the line was traced, not raced."
+        var text = sharedWalkBaseText
         if let title = story.wayTitle { text += " The Way: \(title)." }
         text += story.arrived ? " The end of the Way was reached." : " The Way was left before its end, which the practice honors too."
         return text

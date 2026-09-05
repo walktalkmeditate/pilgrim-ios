@@ -111,4 +111,13 @@ extension PracticeLexiconTests {
         XCTAssertFalse(text.contains("stage"), "no stage vocabulary on a shared walk: \(text)")
         XCTAssertFalse(text.contains("pilgrimage route"), text)
     }
+
+    /// No resolvable story falls back to the same base sentence
+    /// `sharedWalkLexicon` builds on, so the two cannot drift apart.
+    func testTheLexiconForAnUnresolvedHonorStoryMatchesTheSharedWalkBase() {
+        let context = ActivityContext.make(startDate: Date(timeIntervalSince1970: 1_700_000_000), mode: .honor)
+        let text = PromptAssembler.practiceLexicon(context: context)
+        XCTAssertTrue(text.contains("a Way another walker laid down"), text)
+        XCTAssertTrue(text.contains("hearing their voices where they were spoken"), text)
+    }
 }

@@ -43,6 +43,11 @@ struct PilgrimageCatalogView: View {
     @State private var ledgers: [String: PilgrimageLedger] = [:]
     @State private var installed: PilgrimagePackageManager.Installed?
     @State private var opened: PilgrimageCatalogEntry?
+    /// The NavigationStack's `.task` already runs `load()` once on first
+    /// mount; without this flag the List's own `.onAppear` (meant for the
+    /// pop-back refresh) fires again right behind it and repeats the same
+    /// disk reads for no reason.
+    @State private var hasAppearedOnce = false
 
     private let ledgerStore = PilgrimageLedgerStore()
 
@@ -93,8 +98,15 @@ struct PilgrimageCatalogView: View {
                 // screen is pushed on top of it, so its own `.task` never
                 // reruns on a pop. The List does reappear, and that is the
                 // moment a just-downloaded or just-removed route needs to
-                // read correctly again.
-                .onAppear { Task { await load() } }
+                // read correctly again — but not on its very first appearance,
+                // which the NavigationStack's `.task` already covers.
+                .onAppear {
+                    if hasAppearedOnce {
+                        Task { await load() }
+                    } else {
+                        hasAppearedOnce = true
+                    }
+                }
             }
         } else {
             unreachable

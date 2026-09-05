@@ -67,7 +67,7 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         let cancellable = manager.$phase.sink { seen.append($0) }
         try await manager.download(entry: entry, release: "v1.7.0")
         cancellable.cancel()
-        XCTAssertTrue(seen.contains(.downloading(done: 1, total: 3)), "route.json landed")
+        XCTAssertTrue(seen.contains(.downloading(done: 0, total: 3)) && seen.contains(.downloading(done: 1, total: 3)), "busy before route.json's round trip, then again once it lands")
         XCTAssertTrue(seen.contains(.downloading(done: 3, total: 3)), "both stages landed")
         XCTAssertEqual(seen.last, .idle)
     }
