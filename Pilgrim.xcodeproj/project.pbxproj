@@ -182,6 +182,7 @@
 		22FEA0AF24CDD7B50007CA9C /* DiskStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0AE24CDD7B50007CA9C /* DiskStorage.swift */; };
 		22FEA0B124CDDFF80007CA9C /* CustomByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FEA0B024CDDFF80007CA9C /* CustomByteFormatting.swift */; };
 		23795691640A42D0872CBC91 /* TranscriptContextAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F837FC0ECF4D4ED1BA756517 /* TranscriptContextAnalyzerTests.swift */; };
+		24452083C36DE26C83FBEB50 /* StageMorningCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D7F1237EA1060B20D64659 /* StageMorningCard.swift */; };
 		25679B99B2C71D0991CF99A2 /* whisper-play-11.aac in Resources */ = {isa = PBXBuildFile; fileRef = 1BEB21BACB47BB26018EECA3 /* whisper-play-11.aac */; };
 		269714B93E46F46E60FE32BB /* ActiveWalkView+Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95BEC3E6C0D69DEFBFC0B625 /* ActiveWalkView+Map.swift */; };
 		26D2A22BA6DF2D3C6508C30F /* SeekSummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB2D6A557287CBD051BF314 /* SeekSummaryTests.swift */; };
@@ -1115,6 +1116,7 @@
 		A74490DBCE024418B78E73B2 /* WalkCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkCheckpoint.swift; sourceTree = "<group>"; };
 		A773662D19C26501C8377349 /* ActiveWalkViewModel+Honor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ActiveWalkViewModel+Honor.swift"; sourceTree = "<group>"; };
 		A8159CD04A05F3887CFD27E5 /* whisper-compassion-3.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-3.aac"; sourceTree = "<group>"; };
+		A9D7F1237EA1060B20D64659 /* StageMorningCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StageMorningCard.swift; sourceTree = "<group>"; };
 		AA000001FOOTPRINTSHAPE00 /* FootprintShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FootprintShape.swift; sourceTree = "<group>"; };
 		AA000001PILGRIMLOGO00000 /* PilgrimLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilgrimLogoView.swift; sourceTree = "<group>"; };
 		AA000001WALKLIGHTREADING /* WalkLightReadingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkLightReadingCard.swift; sourceTree = "<group>"; };
@@ -2667,6 +2669,7 @@
 				6AA7F1293F3B3A254BBF2A4C /* WayMomentHeader.swift */,
 				C59FCD8327EE3A2B6580F871 /* PilgrimageCatalogView.swift */,
 				9D2BC3FC74ECD465C9B05B64 /* PilgrimageRouteView.swift */,
+				A9D7F1237EA1060B20D64659 /* StageMorningCard.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3590,6 +3593,7 @@
 				60F771CF95D9C274DB04B846 /* WayMarkPins.swift in Sources */,
 				7FD2905D4A42FBCB5059714A /* PilgrimMapView+CameraReport.swift in Sources */,
 				B12CAF606F9CBFC5F4CDF7FB /* ActiveWalkViewModel+MarkPins.swift in Sources */,
+				24452083C36DE26C83FBEB50 /* StageMorningCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

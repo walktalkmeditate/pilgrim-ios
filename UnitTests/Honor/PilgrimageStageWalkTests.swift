@@ -295,3 +295,29 @@ extension PilgrimageStageWalkTests {
         XCTAssertTrue(vm.honorCards.isEmpty, "a mark is never a card")
     }
 }
+
+extension PilgrimageStageWalkTests {
+
+    func testTheFactsLineReadsInTheWalkersOwnUnit() throws {
+        let stage = try XCTUnwrap(stageWay().stage)
+        let line = StageMorningCardModel.factsLine(for: stage)
+        XCTAssertEqual(line, [
+            StatsHelper.string(for: 24_200, unit: UnitLength.meters, type: .distance),
+            "\(StatsHelper.string(for: 1419, unit: UnitLength.meters, type: .altitude)) up",
+            "7 to 9 hours",
+            "hard"
+        ].joined(separator: " · "))
+    }
+
+    func testTheWeatherLineIsSilentWithoutASnapshot() {
+        // Pinned so the assertion reads the same on any simulator's locale
+        // (`safeValue` otherwise falls back to the region's own unit system).
+        UserPreferences.distanceMeasurementType.value = .kilometers
+        addTeardownBlock { UserPreferences.distanceMeasurementType.delete() }
+        XCTAssertNil(StageMorningCardModel.weatherLine(nil))
+        let snapshot = WeatherSnapshot(condition: .clear, temperature: 9, humidity: 0.4, windSpeed: 1)
+        let line = try? XCTUnwrap(StageMorningCardModel.weatherLine(snapshot))
+        XCTAssertEqual(line?.hasPrefix("clear, "), true, line ?? "nil")
+        XCTAssertEqual(line?.contains("9"), true, line ?? "nil")
+    }
+}

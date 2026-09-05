@@ -68,6 +68,8 @@ struct HonorOverviewView: View {
     @State private var distanceToStart: Double?
     @State private var todayCondition: String?
     @State private var voicesEnabled = UserPreferences.honorVoicesEnabled.value
+    @State private var showMorningCard = false
+    @State private var todayWeather: WeatherSnapshot?
     #if DEBUG
     @State private var debugExportURL: URL?
     @State private var isShowingDebugExport = false
@@ -150,6 +152,16 @@ struct HonorOverviewView: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showMorningCard) {
+            if let stage = way.stage {
+                StageMorningCard(stage: stage, weather: todayWeather, buttonTitle: "walk") {
+                    showMorningCard = false
+                    onBegin()
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+        }
         #if DEBUG
         .sheet(isPresented: $isShowingDebugExport) {
             if let debugExportURL {
@@ -219,7 +231,9 @@ struct HonorOverviewView: View {
                 .disabled(way.voiceCount == 0)
             }
 
-            Button(action: onBegin) {
+            Button {
+                if way.isPilgrimageStage { showMorningCard = true } else { onBegin() }
+            } label: {
                 Text("Begin")
                     .font(Constants.Typography.button)
                     .foregroundColor(.parchment)
@@ -286,6 +300,7 @@ struct HonorOverviewView: View {
         guard let here = CLLocationManager().location,
               let snapshot = await WeatherService.shared.fetchCurrent(for: here) else { return }
         todayCondition = snapshot.condition.rawValue
+        todayWeather = snapshot
     }
 
     private func durationText(_ seconds: Double) -> String {
