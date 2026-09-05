@@ -3601,9 +3601,17 @@ enum WayStageFacts {
     /// `Int(_:)` traps on a non-finite Double; the importer already bounds
     /// these, and this is the last step before the number reaches the screen.
     private static func hoursText(_ hours: WayStageHours) -> String {
-        let low = Int(min(max(hours.min.isFinite ? hours.min : 0, 0), 100).rounded())
-        let high = Int(min(max(hours.max.isFinite ? hours.max : 0, 0), 100).rounded())
+        let low = boundedHours(hours.min)
+        let high = boundedHours(hours.max)
         return low == high ? "\(low) hours" : "\(low) to \(high) hours"
+    }
+
+    /// An infinite figure is an absurdly large one and clamps to the ceiling
+    /// like any other; a NaN orders against nothing, so `min`/`max` would
+    /// carry it straight through to the trap and it takes the floor instead.
+    private static func boundedHours(_ value: Double) -> Int {
+        guard !value.isNaN else { return 0 }
+        return Int(min(max(value, 0), 100).rounded())
     }
 }
 
