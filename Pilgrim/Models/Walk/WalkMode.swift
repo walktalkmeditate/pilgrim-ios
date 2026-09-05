@@ -19,6 +19,13 @@ enum WalkMode: String, CaseIterable {
         }
     }
 
+    /// Honor's copy assumes another walker. A downloaded stage has none, so
+    /// the mode says what is actually happening instead.
+    func subtitle(for way: Way?) -> String {
+        guard self == .honor, way?.isPilgrimageStage == true else { return subtitle }
+        return "walk the stage"
+    }
+
     var isAvailable: Bool { true }
 
     var quotes: [String] {
