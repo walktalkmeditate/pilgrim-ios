@@ -157,6 +157,19 @@ extension ActiveWalkViewModel {
         softTapCaption = nil
     }
 
+    /// What a checkpoint has to carry for a crashed honor walk to find its Way
+    /// again. Read here rather than from an event, so the checkpoint's own
+    /// cadence is the only clock involved: the engine is gone with the process,
+    /// and the last checkpoint is all a recovery has left of it. The outcome
+    /// half follows `teardownHonor()`'s rule — an unanchored engine is a walker
+    /// still approaching, not a stage begun.
+    var honorCheckpointState: (wayId: String, outcome: HonorStageOutcome?)? {
+        guard mode == .honor, let way else { return nil }
+        guard let engine = honorEngine, engine.isAnchoredOnWay else { return (way.id, nil) }
+        return (way.id, HonorStageOutcome(progressFrac: engine.progressFrac,
+                                          arrived: engine.phase == .arrived))
+    }
+
     // MARK: - Events
 
     func handleHonorEvent(_ event: HonorEngineEvent) {

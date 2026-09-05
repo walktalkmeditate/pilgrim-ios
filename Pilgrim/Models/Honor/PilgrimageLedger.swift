@@ -169,6 +169,17 @@ final class PilgrimageLedgerStore {
         try? encoder.encode(ledger).write(to: dir.appendingPathComponent("ledger.json"), options: .atomic)
     }
 
+    /// The one place a stage walk reaches its route's ledger, reached from the
+    /// walk's own save and from a crash recovery alike. Silent for a walk whose
+    /// engine never anchored on the Way — an approach is not a stage walked.
+    func record(stage: WayStage, outcome: HonorStageOutcome?, at date: Date) {
+        guard let written = PilgrimageLedgerWriter.entry(stage: stage, outcome: outcome) else { return }
+        var ledger = load(routeId: stage.routeId) ?? PilgrimageLedger(routeId: stage.routeId)
+        ledger.record(stageIndex: written.index, name: written.name,
+                      distanceKm: written.distanceKm, outcome: written.outcome, at: date)
+        save(ledger)
+    }
+
     func clearRedrawNotice(routeId: String) {
         guard var ledger = load(routeId: routeId), ledger.redrawNoticePending == true else { return }
         ledger.redrawNoticePending = nil

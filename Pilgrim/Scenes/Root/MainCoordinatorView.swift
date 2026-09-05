@@ -105,9 +105,11 @@ class MainCoordinator: ObservableObject {
                 guard let self else { return }
                 if success {
                     snapshot.uuid = walk?.uuid
-                    // The only place a walk is bound to its Way: `save` is
-                    // idempotent (an own-walk Way is first written here), and
-                    // `link` overwrites, so it must not run again elsewhere.
+                    // The only place a finished walk is bound to its Way:
+                    // `save` is idempotent (an own-walk Way is first written
+                    // here), and `link` overwrites, so it must not run again
+                    // elsewhere. Crash recovery binds too, but only a walk
+                    // this path never reached, so the two can't collide.
                     // A packaged stage is skipped — this `way` was captured at
                     // Begin, and an Update that redrew the stage while the
                     // walk was on would be written back over here.
@@ -283,16 +285,11 @@ class MainCoordinator: ObservableObject {
         Task { @MainActor in WayMediaDownloader.shared.retry(way) }
     }
 
-    /// The one place a stage walk reaches the route's ledger. Silent for a
-    /// Way that is not a stage, and for a walk whose engine never anchored on
-    /// the Way — an approach to a trailhead is not a stage walked.
+    /// A finished walk's way into the route's ledger. Silent for a Way that is
+    /// not a stage; the store decides what a stage walk has to have earned.
     func recordStageWalk(way: Way?, outcome: HonorStageOutcome?, at date: Date = Date()) {
-        guard let stage = way?.stage,
-              let written = PilgrimageLedgerWriter.entry(stage: stage, outcome: outcome) else { return }
-        var ledger = pilgrimageLedgers.load(routeId: stage.routeId) ?? PilgrimageLedger(routeId: stage.routeId)
-        ledger.record(stageIndex: written.index, name: written.name,
-                      distanceKm: written.distanceKm, outcome: written.outcome, at: date)
-        pilgrimageLedgers.save(ledger)
+        guard let stage = way?.stage else { return }
+        pilgrimageLedgers.record(stage: stage, outcome: outcome, at: date)
     }
 
     /// "walk without the missing voices": the sink is dropped first, so a
