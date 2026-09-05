@@ -347,23 +347,23 @@ struct HonorArrivalCardView: View {
     }
 
     static func title(for card: HonorArrivalCard) -> String {
-        card.stageName == nil ? "you walked their way" : "you walked the stage"
+        card.isStage ? "you walked the stage" : "you walked their way"
     }
 
     /// A stage counts places and kilometres; a shared walk counts voices and
     /// places, because a voice is what the other walker left.
     static func line(for card: HonorArrivalCard) -> String {
         var parts: [String] = []
-        if card.stageName == nil, card.voicesHeard > 0 {
+        if !card.isStage, card.voicesHeard > 0 {
             parts.append(card.voicesHeard == 1 ? "one voice heard" : "\(card.voicesHeard) voices heard")
         }
         if card.placesPassed > 0 {
             parts.append(card.placesPassed == 1 ? "one place passed" : "\(card.placesPassed) places passed")
         }
-        if card.stageName != nil {
+        if card.isStage {
             parts.append(StatsHelper.string(for: card.distanceWalkedMeters, unit: UnitLength.meters, type: .distance))
         }
-        if parts.isEmpty { return card.stageName == nil ? "the whole way, in their steps" : "the whole stage" }
+        if parts.isEmpty { return card.isStage ? "the whole stage" : "the whole way, in their steps" }
         return parts.joined(separator: " · ")
     }
 }

@@ -51,7 +51,9 @@ final class HonorEngine: ObservableObject {
     private var walkedFrac: Double = 0
 
     private let now: () -> Date
-    private let softTapEnabled: Bool
+    /// Internal, not private: tests confirm the view model computed the
+    /// right value for a stage vs. an own walk without re-deriving it.
+    let softTapEnabled: Bool
     private let subject = PassthroughSubject<HonorEngineEvent, Never>()
     private var cancellables: [AnyCancellable] = []
     private var arrival: ArrivalDebounce

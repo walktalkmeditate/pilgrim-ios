@@ -18,14 +18,18 @@ struct HonorArrivalCard: Equatable {
     let voicesHeard: Int
     let placesPassed: Int
     /// The engine's numbers on the companion's timeline; persisted into the
-    /// index link at save time so the summary can read them back. Both are
-    /// zero for a stage, which has no companion.
+    /// index link at save time so the summary can read them back. A stage
+    /// carries the package's own active seconds as `theirSeconds` too, but
+    /// the summary ignores them for a stage — there is no companion to
+    /// compare arrival against.
     let theirSeconds: Double
     let yourSeconds: Double
     /// Set only for a pilgrimage stage; the card then speaks of the stage
     /// rather than of another walker.
     let stageName: String?
     let distanceWalkedMeters: Double
+
+    var isStage: Bool { stageName != nil }
 }
 
 // MARK: - Honor Engine Lifecycle

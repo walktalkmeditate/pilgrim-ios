@@ -132,6 +132,11 @@ extension PilgrimageStageWalkTests {
         XCTAssertFalse(notAStage.isPilgrimageStage)
     }
 
+    /// The engine's `softTapEnabled` is what actually gates the soft tap —
+    /// driving fixes off the line and reading `softTapCaption` can't prove
+    /// this, since the first fix anchors by fallback (no soft tap while
+    /// approaching) and the view model's engine runs on the real clock, so
+    /// the 120 s window never elapses in a synchronous test either way.
     func testAStageWalksWithNoCompanionAndNoSoftTap() {
         UserPreferences.honorSoftTapEnabled.value = true
         addTeardownBlock { UserPreferences.honorSoftTapEnabled.delete() }
@@ -140,15 +145,15 @@ extension PilgrimageStageWalkTests {
         vm.startRecording()
         XCTAssertNotNil(vm.honorEngine)
         XCTAssertNil(vm.companionCoordinate, "the stage's own voice walks with you, not a dot")
-
-        // 400 m off the line for well past the soft-tap window: still silent.
-        let far = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 0.0036, longitude: 0.002694),
-                             altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, timestamp: start)
-        for _ in 0..<5 { vm.honorEngine?.processLocation(far) }
-        XCTAssertNil(vm.softTapCaption)
+        XCTAssertEqual(vm.honorEngine?.softTapEnabled, false, "a stage has no companion to be off the way from")
+        vm.teardownHonor()
     }
 
+    /// The positive control for the assertion above: an own walk keeps both
+    /// its companion dot and the soft tap the preference asked for.
     func testAnOwnWalkWayKeepsItsCompanion() {
+        UserPreferences.honorSoftTapEnabled.value = true
+        addTeardownBlock { UserPreferences.honorSoftTapEnabled.delete() }
         var way = stageWay()
         way.stage = nil
         let vm = ActiveWalkViewModel(mode: .honor, way: way)
@@ -158,6 +163,8 @@ extension PilgrimageStageWalkTests {
             CLLocation(coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0),
                        altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, timestamp: start))
         XCTAssertNotNil(vm.companionCoordinate)
+        XCTAssertEqual(vm.honorEngine?.softTapEnabled, true, "an own walk still has a companion to fall off the way from")
+        vm.teardownHonor()
     }
 
     func testTheArrivalCardForAStageNamesTheStageAndCarriesNoDelta() {
