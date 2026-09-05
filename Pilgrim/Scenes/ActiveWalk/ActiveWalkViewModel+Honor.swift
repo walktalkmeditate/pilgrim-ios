@@ -120,7 +120,11 @@ extension ActiveWalkViewModel {
     }
 
     /// Runs from both `stop()` and `cancel()`; the second call is a no-op.
-    /// `honorArrival` deliberately survives — the summary reads it.
+    /// `honorArrival` deliberately survives — the summary reads it. So does
+    /// `pendingReplyOrigin`: a reply still recording at walk end completes
+    /// after this teardown, and `recordReplyIfPending` needs the origin to
+    /// file it under. `cancel()` clears it itself, since a discarded walk
+    /// files no reply.
     func teardownHonor() {
         guard honorEngine != nil || wayVoicePlayer != nil else { return }
         if let engine = honorEngine, engine.isAnchoredOnWay {
@@ -144,7 +148,6 @@ extension ActiveWalkViewModel {
         markPinAnchor = nil
         reachedMomentIDs.removeAll()
         suggestedMeditationMinutes = nil
-        pendingReplyOrigin = nil
         touchedCardIDs.removeAll()
         voiceRate = 1
         honorFocus = nil

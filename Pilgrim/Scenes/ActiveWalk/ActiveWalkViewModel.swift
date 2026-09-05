@@ -191,6 +191,10 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     private var cancellables: [AnyCancellable] = []
 
+    /// Held apart from `cancellables`, which `stop()` empties — see
+    /// `bindCompletedRecordings`.
+    private var completedRecordingsCancellable: AnyCancellable?
+
     init(
         mode: WalkMode = .wander,
         way: Way? = nil,
@@ -390,6 +394,12 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
 
     func stop() {
         teardownSeek()
+        // A reply still recording here keeps its origin through teardown, and
+        // the recorder is deliberately left running: only the pre-snapshot
+        // flush inside `builder.setStatus(.ready)` below finalizes an
+        // in-flight recording synchronously. Stopping the recorder here would
+        // hand that commit to AVAudioRecorder's asynchronous delegate, which
+        // lands after the walk is snapshotted — losing the audio entirely.
         teardownHonor()
         cancellables.removeAll()
         proximityService.stopListening()
@@ -405,6 +415,7 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
     }
 
     func cancel() {
+        discardPendingReply()
         teardownSeek()
         teardownHonor()
         cancellables.removeAll()
@@ -572,8 +583,15 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
             .store(in: &cancellables)
     }
 
+    /// Deliberately not stored in `cancellables`: `stop()` empties those
+    /// before `builder.setStatus(.ready)` runs the pre-snapshot flush that
+    /// finalizes a recording still in flight, so a reply started from the
+    /// arrival card — offered at the moment the walker reaches for stop —
+    /// would complete into a subscription that no longer existed and lose
+    /// its origin mapping. This one lives as long as the view model, which
+    /// outlives the walk, and ends when the view model is released.
     private func bindCompletedRecordings() {
-        builder.voiceRecordingsPublisher
+        completedRecordingsCancellable = builder.voiceRecordingsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recordings in
                 guard let self else { return }
@@ -584,7 +602,6 @@ class ActiveWalkViewModel: ObservableObject, Identifiable {
                     self.recordReplyIfPending(latestRecording: latest)
                 }
             }
-            .store(in: &cancellables)
     }
 
     private func bindProximity() {

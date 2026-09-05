@@ -6,9 +6,17 @@ import Foundation
 /// the cards, so neither file grows past what one screen of context can hold.
 extension ActiveWalkViewModel {
 
+    /// A discarded walk files no reply, so the origin goes before the recorder
+    /// does: stopping the recorder releases the microphone and the audio
+    /// session, and its late commit must not be read as an answer to a Way.
+    func discardPendingReply() {
+        pendingReplyOrigin = nil
+        voiceRecordingManagement.stopRecording()
+    }
+
     /// Starts a recording answering `voice`. When that recording completes,
-    /// `bindCompletedRecordings` (ActiveWalkViewModel.swift) has it, and
-    /// `recordReplyIfPending` writes the mapping.
+    /// `bindCompletedRecordings` has it, and `recordReplyIfPending` writes
+    /// the mapping.
     func replyHere(to voice: WayMoment) {
         pendingReplyOrigin = voice
         if !isRecordingVoice { toggleVoiceRecording() }

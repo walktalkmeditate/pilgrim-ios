@@ -363,6 +363,58 @@ extension PilgrimageStageWalkTests {
         XCTAssertEqual(vm.stageReflectionReplyURL(), recording)
     }
 
+    /// The arrival card invites a reply at the exact moment the walker is
+    /// about to press stop, so the recording is still open when the walk ends.
+    /// Its completion only reaches the view model after `stop()` has torn the
+    /// walk down — and the mapping must still be written.
+    func testAReplyStillRecordingWhenTheWalkEndsIsStillFiledUnderTheReflection() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        let store = WayStore(baseDirectory: dir)
+        let way = stageWay()
+        try store.save(way)
+        var senses = HonorSenses()
+        senses.store = { store }
+        senses.isAppActive = { false }
+
+        let relativePath = "Recordings/stage-late-reply.m4a"
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let recording = docs.appendingPathComponent(relativePath)
+        try FileManager.default.createDirectory(at: recording.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        _ = try TestAudioFile.writeSilentAudioFile(to: recording)
+        addTeardownBlock { try? FileManager.default.removeItem(at: recording) }
+
+        let vm = ActiveWalkViewModel(mode: .honor, way: way, honorSenses: senses)
+        vm.builder.setStatus(.ready)
+        vm.startRecording()
+        settleCombineSchedulers()
+
+        // Stands in for a real `AVAudioRecorder`, which the test host cannot
+        // be relied on to open: `replyHere` keeps the origin only when the
+        // recorder reports itself running.
+        vm.voiceRecordingManagement._test_setActiveRecording(start: start, relativePath: relativePath)
+        settleCombineSchedulers()
+
+        vm.replyToStageReflection()
+        XCTAssertEqual(vm.pendingReplyOrigin?.id, HonorPersistence.stageReflectionMomentID)
+
+        vm.stop()
+        settleCombineSchedulers()
+
+        // What `VoiceRecordingManagement.flushCurrentRecording` publishes once
+        // the pre-snapshot flush has finalized the file — after `stop()` has
+        // already emptied `cancellables`.
+        vm.builder.flushVoiceRecordings([
+            TempVoiceRecording(uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(5),
+                               duration: 5, fileRelativePath: relativePath, isEnhanced: false)
+        ])
+        settleCombineSchedulers()
+
+        XCTAssertEqual(store.replies(for: way.id), [HonorPersistence.stageReflectionOrigin: relativePath])
+        XCTAssertEqual(vm.stageReflectionReplyURL(), recording)
+    }
+
     func testTheArrivalCardAppendsTheStagesClosingLine() {
         let card = HonorArrivalCard(wayTitle: "t", voicesHeard: 0, placesPassed: 2,
                                     theirSeconds: 0, yourSeconds: 0,
