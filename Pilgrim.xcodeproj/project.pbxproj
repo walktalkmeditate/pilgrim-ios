@@ -312,6 +312,7 @@
 		78C931B298CA7FEDAFD6CC4F /* ConstellationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */; };
 		7978824143C5D5E81A6A3E06 /* StonePlacementSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD849B71DC7CC0D6D5442236 /* StonePlacementSheet.swift */; };
 		7A87A132315C9E46AFE8CF5C /* VolumeSliderRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B886390B795403D3BB7B3372 /* VolumeSliderRow.swift */; };
+		7AFF502841893F0B79AA6DC1 /* ActiveWalkViewModel+Replies.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAFFCFB9B7F20C65C35D8629 /* ActiveWalkViewModel+Replies.swift */; };
 		7C015E0BE5E73ED93AC71E65 /* CollectiveArtifactFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4850AE45F47BD522EA066821 /* CollectiveArtifactFixtures.swift */; };
 		7C39E4160B0DA105D78F4C83 /* SharePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EA6F12A77BD40C46E34D47 /* SharePayload.swift */; };
 		7CC49F936D1CFDB1460010C5 /* ConstellationDecor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A3F7440EBCE25B7FA93C /* ConstellationDecor.swift */; };
@@ -1328,6 +1329,7 @@
 		E95877AA2EC5E5FA0446D18E /* MainCoordinatorHonorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MainCoordinatorHonorTests.swift; sourceTree = "<group>"; };
 		E9A26ACCEA7556F8C3E98DF4 /* HonorEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorEngineTests.swift; sourceTree = "<group>"; };
 		EA5D982D293545FCB5E56CE9 /* MarkerLexicons.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkerLexicons.swift; sourceTree = "<group>"; };
+		EAFFCFB9B7F20C65C35D8629 /* ActiveWalkViewModel+Replies.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ActiveWalkViewModel+Replies.swift"; sourceTree = "<group>"; };
 		EB9E58CB5C426052DB335181 /* seek-ping.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "seek-ping.aac"; sourceTree = "<group>"; };
 		EC2D4ACA7F21BA80523DF98C /* DateFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateFactory.swift; sourceTree = "<group>"; };
 		EE11AA22BB33CC44DD55EE77 /* EtegamiRouteStroke.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiRouteStroke.swift; sourceTree = "<group>"; };
@@ -2510,6 +2512,7 @@
 				95BEC3E6C0D69DEFBFC0B625 /* ActiveWalkView+Map.swift */,
 				87CEE1CB8907A7EAE847CF69 /* ActiveWalkViewModel+Segments.swift */,
 				9A7B6B019280B28A6F513D99 /* ActiveWalkViewModel+MarkPins.swift */,
+				EAFFCFB9B7F20C65C35D8629 /* ActiveWalkViewModel+Replies.swift */,
 			);
 			path = ActiveWalk;
 			sourceTree = "<group>";
@@ -3594,6 +3597,7 @@
 				7FD2905D4A42FBCB5059714A /* PilgrimMapView+CameraReport.swift in Sources */,
 				B12CAF606F9CBFC5F4CDF7FB /* ActiveWalkViewModel+MarkPins.swift in Sources */,
 				24452083C36DE26C83FBEB50 /* StageMorningCard.swift in Sources */,
+				7AFF502841893F0B79AA6DC1 /* ActiveWalkViewModel+Replies.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

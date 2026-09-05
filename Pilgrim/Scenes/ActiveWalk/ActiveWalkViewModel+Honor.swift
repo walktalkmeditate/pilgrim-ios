@@ -239,7 +239,7 @@ extension ActiveWalkViewModel {
             distanceWalkedMeters: honorEngine?.distanceWalkedMeters ?? 0)
     }
 
-    // MARK: - Cards, media, replies
+    // MARK: - Cards and media
 
     /// Whether a card is on screen at all — the walk screen's card layer
     /// spans the screen and must not take taps meant for the map when it
@@ -356,53 +356,6 @@ extension ActiveWalkViewModel {
         return FileManager.default.fileExists(atPath: resolved.path) ? resolved : nil
     }
 
-    /// Starts a recording answering `voice`. When that recording completes,
-    /// `bindCompletedRecordings` (ActiveWalkViewModel.swift) has it, and
-    /// `recordReplyIfPending` writes the mapping.
-    func replyHere(to voice: WayMoment) {
-        pendingReplyOrigin = voice
-        if !isRecordingVoice { toggleVoiceRecording() }
-        // `isRecordingVoice` only mirrors `voiceRecordingManagement.isRecording`
-        // through an async main-queue sink, so it can't be trusted here yet —
-        // reading the component directly gives the synchronous answer.
-        // Denied permission, an inactive walk, or a recorder that failed to
-        // open all leave it false; with nothing now in flight, no completed
-        // recording will ever arrive to consume this origin.
-        if !voiceRecordingManagement.isRecording {
-            pendingReplyOrigin = nil
-        }
-    }
-
-    /// The reply is filed under the origin voice's own index — the `n` in
-    /// the `voice-n` ids `OwnWalkWayBuilder` writes — never its position in
-    /// `moments`, which mixes every kind of moment together.
-    func recordReplyIfPending(latestRecording: TempVoiceRecording) {
-        guard let way, let origin = pendingReplyOrigin, let n = Self.originIndex(of: origin) else { return }
-        pendingReplyOrigin = nil
-        try? honorSenses.store().setReply(wayId: way.id, originN: n, relativePath: latestRecording.fileRelativePath)
-    }
-
-    /// The walker's earlier reply to `voice`, from a previous honoring of the
-    /// same Way. A mapping whose recording is gone reads as no reply at all —
-    /// `mediaURL(for:)` returns nil for a file that isn't there.
-    func existingReplyURL(for voice: WayMoment) -> URL? {
-        guard let way, let n = Self.originIndex(of: voice),
-              let relative = honorSenses.store().replies(for: way.id)[n] else { return nil }
-        return mediaURL(for: .recording(relativePath: relative))
-    }
-
-    /// The card's "your reply" button comes through here rather than touching
-    /// the player directly: one voice plays at a time, so a Way voice must be
-    /// given up rather than silently replaced under a chip that still claims
-    /// it is playing. The engine gets its turn back when the reply ends,
-    /// through the player's `onFinished`.
-    func playReply(url: URL) {
-        wayVoicePlayer?.stop()
-        activeVoice = nil
-        isVoicePaused = false
-        wayVoicePlayer?.play(url: url, volume: Float(UserPreferences.voiceGuideVolume.value))
-    }
-
     func startMeditation(minutes: Int) {
         suggestedMeditationMinutes = minutes
         startMeditation()
@@ -481,16 +434,8 @@ extension ActiveWalkViewModel {
 
     // MARK: - Private
 
-    private static let voiceIDPrefix = "voice-"
     /// Not private: the water notice borrows this slot, so it borrows this life.
     static let softTapCaptionSeconds: TimeInterval = 20
-
-    /// The `n` in the `voice-n` ids `OwnWalkWayBuilder` writes — the index a
-    /// reply is filed under. Nil for any other moment id.
-    private static func originIndex(of moment: WayMoment) -> Int? {
-        guard moment.id.hasPrefix(voiceIDPrefix) else { return nil }
-        return Int(moment.id.dropFirst(voiceIDPrefix.count))
-    }
 
     private func fireHonorHaptic(_ pattern: HapticPattern) {
         guard honorSenses.isAppActive() else { return }
