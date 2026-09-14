@@ -91,8 +91,18 @@ struct PilgrimageCatalogView: View {
                         .padding(.horizontal, Constants.UI.Padding.normal)
                         .padding(.top, Constants.UI.Padding.small)
                 }
-                List(routes) { entry in
-                    Button { opened = entry } label: { row(entry) }
+                List {
+                    ForEach(catalogService.catalog?.groups ?? []) { group in
+                        Section {
+                            ForEach(group.entries) { entry in
+                                Button { opened = entry } label: { row(entry) }
+                            }
+                        } header: {
+                            if let name = group.name {
+                                Text(name).font(Constants.Typography.caption)
+                            }
+                        }
+                    }
                 }
                 // The NavigationStack itself never disappears while the route
                 // screen is pushed on top of it, so its own `.task` never

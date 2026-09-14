@@ -202,6 +202,78 @@ final class PilgrimageCatalogServiceTests: XCTestCase {
         }
         XCTAssertNil(service.catalog)
     }
+
+    // MARK: - Grouping sections under their pilgrimage
+
+    /// The dataset lists routes by id, so the four dojo arrive as awa, iyo,
+    /// sanuki, tosa. `sections` carries the order they are walked in, which
+    /// for Shikoku is the order of the temple numbers.
+    func testSectionsAreOrderedAsTheirPilgrimageWalksThemNotAsTheIndexListsThem() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        XCTAssertEqual(catalog.routes.map(\.id),
+                       ["camino-frances", "shikoku-88-awa", "shikoku-88-iyo",
+                        "shikoku-88-sanuki", "shikoku-88-tosa", "st-cuthberts-way"],
+                       "the index itself is sorted by id")
+        let shikoku = try XCTUnwrap(catalog.groups.first { $0.id == "shikoku-88" })
+        XCTAssertEqual(shikoku.name, "Shikoku 88 Temple Pilgrimage")
+        XCTAssertEqual(shikoku.entries.map(\.id),
+                       ["shikoku-88-awa", "shikoku-88-tosa", "shikoku-88-iyo", "shikoku-88-sanuki"])
+    }
+
+    /// Temples 1-23, then 23-39, then 39-65, then 65-88: the ranges have to
+    /// run forward, or the list is telling the walker to start in the middle.
+    func testTheShikokuSectionsReadAsAForwardRunOfTempleNumbers() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        let shikoku = try XCTUnwrap(catalog.groups.first { $0.id == "shikoku-88" })
+        let firstTemples = shikoku.entries.compactMap { entry -> Int? in
+            guard let digits = entry.name.firstMatch(of: /(\d+)-\d+/) else { return nil }
+            return Int(digits.1)
+        }
+        XCTAssertEqual(firstTemples, [1, 23, 39, 65])
+    }
+
+    func testASectionWithNoDownloadablePackageIsSkippedAndItsPilgrimageSurvives() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        let camino = try XCTUnwrap(catalog.groups.first { $0.id == "camino-de-santiago" })
+        XCTAssertEqual(camino.entries.map(\.id), ["camino-frances"],
+                       "camino-primitivo has no route row to group")
+    }
+
+    /// Kumano's two sections both ship metadata only, so listing the
+    /// pilgrimage would offer a header over nothing.
+    func testAPilgrimageWithNothingToWalkIsNotListed() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        XCTAssertNil(catalog.groups.first { $0.id == "kumano-kodo" })
+    }
+
+    /// A route the index files under no pilgrimage is still a route someone
+    /// can walk, so it keeps a place — under no header, because inventing one
+    /// would name a pilgrimage the dataset never claimed.
+    func testARouteBelongingToNoPilgrimageIsStillOffered() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        let loose = try XCTUnwrap(catalog.groups.last)
+        XCTAssertNil(loose.name)
+        XCTAssertEqual(loose.entries.map(\.id), ["st-cuthberts-way"])
+    }
+
+    /// The grouped list is the only list the picker draws, so a route missing
+    /// from it is a route no one can reach, and a route in it twice traps
+    /// `List`'s `Identifiable` diffing.
+    func testEveryRouteAppearsInExactlyOneGroup() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        let grouped = catalog.groups.flatMap { $0.entries.map(\.id) }
+        XCTAssertEqual(grouped.sorted(), catalog.routes.map(\.id).sorted())
+        XCTAssertEqual(Set(grouped).count, grouped.count)
+    }
+
+    /// An index written before the pilgrimage layer still parses, and its
+    /// routes still reach the picker.
+    func testAnIndexWithNoPilgrimageBlockKeepsEveryRouteUnderNoHeader() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index.json"))
+        XCTAssertEqual(catalog.groups.count, 1)
+        XCTAssertNil(catalog.groups.first?.name)
+        XCTAssertEqual(catalog.groups.first?.entries.map(\.id), catalog.routes.map(\.id))
+    }
 }
 
 extension PilgrimageCatalogServiceTests {

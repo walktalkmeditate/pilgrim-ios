@@ -41,11 +41,32 @@ struct PilgrimageCatalogEntry: Codable, Equatable, Hashable, Identifiable {
     }
 }
 
+/// One pilgrimage's sections, in the order the dataset walks them. A section
+/// name rarely names its pilgrimage — nothing in "Awa (Temples 1-23)" says
+/// Shikoku — so without the header these rows are four strangers in a list.
+struct PilgrimageGroup: Codable, Equatable, Identifiable {
+    let id: String
+    /// Nil for routes the index files under no pilgrimage: they still belong
+    /// in the list, but naming a pilgrimage for them would invent one.
+    let name: String?
+    let entries: [PilgrimageCatalogEntry]
+}
+
 struct PilgrimageCatalog: Codable, Equatable {
     /// The git tag every package file is then pinned to, so a route's stages
     /// are always from one build.
     let release: String
     let routes: [PilgrimageCatalogEntry]
+    /// The same routes the picker draws, gathered under their pilgrimage.
+    /// Every route appears exactly once, so this is a view of `routes` and
+    /// never a filter on it.
+    let groups: [PilgrimageGroup]
+
+    init(release: String, routes: [PilgrimageCatalogEntry], groups: [PilgrimageGroup]? = nil) {
+        self.release = release
+        self.routes = routes
+        self.groups = groups ?? [PilgrimageGroup(id: "", name: nil, entries: routes)]
+    }
 }
 
 /// The dataset's index, read from the repository's default branch at most
@@ -237,8 +258,19 @@ final class PilgrimageCatalogService: ObservableObject {
             let tradition: String?
             let ways: Ways?
         }
+        struct Pilgrimage: Decodable {
+            let id: String
+            let name: [String: String]
+            /// Section ids in the order the pilgrimage is walked. For a
+            /// `legs` pilgrimage that order is the walk itself — Shikoku's
+            /// dojo run with the temple numbers — and for `alternatives` it
+            /// is the dataset's own listing.
+            let sections: [String]
+        }
         let release: String
         let routes: [Route]
+        /// Absent from an index written before the pilgrimage layer.
+        let pilgrimages: [Pilgrimage]?
     }
 
     /// A route without a `ways` entry failed the build's length gate and the
@@ -256,8 +288,8 @@ final class PilgrimageCatalogService: ObservableObject {
                   (0..<maxPackageBytes).contains(ways.bytes),
                   ways.placesPerStage.map({ $0.isFinite && (0...maxPlacesPerStage).contains($0) }) ?? true
             else { return nil }
-            let names = row.name.filter { $0.key.range(of: "\\A[a-z]{2,3}\\z", options: .regularExpression) != nil }
-            guard let display = names["en"] ?? names.sorted(by: { $0.key < $1.key }).first?.value else { return nil }
+            let names = localeNames(row.name)
+            guard let display = displayName(names) else { return nil }
             return PilgrimageCatalogEntry(
                 id: row.id,
                 name: String(display.prefix(PilgrimageWayImporter.maxStageNameCharacters)),
@@ -275,7 +307,49 @@ final class PilgrimageCatalogService: ObservableObject {
         // and hand `List` two rows with the same `Identifiable` id.
         var seenIds = Set<String>()
         let deduped = routes.filter { seenIds.insert($0.id).inserted }
-        return PilgrimageCatalog(release: file.release, routes: deduped)
+        return PilgrimageCatalog(release: file.release, routes: deduped,
+                                 groups: file.pilgrimages.map { grouped(deduped, under: $0) })
+    }
+
+    private static func localeNames(_ raw: [String: String]) -> [String: String] {
+        raw.filter { $0.key.range(of: "\\A[a-z]{2,3}\\z", options: .regularExpression) != nil }
+    }
+
+    private static func displayName(_ names: [String: String]) -> String? {
+        names["en"] ?? names.sorted(by: { $0.key < $1.key }).first?.value
+    }
+
+    /// Sections gathered under their pilgrimage, in the order `sections`
+    /// lists them. A section the index names but does not ship — Kumano's
+    /// Iseji carries metadata and no package — is simply not there to group,
+    /// and a pilgrimage left with nothing would be a header over an empty
+    /// space. Anything unclaimed trails the list under no header, so the
+    /// groups always account for every route the picker was given.
+    private static func grouped(_ routes: [PilgrimageCatalogEntry],
+                                under pilgrimages: [IndexFile.Pilgrimage]) -> [PilgrimageGroup] {
+        let byId = Dictionary(routes.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var claimed = Set<String>()
+        // The name is resolved before any section is claimed: a pilgrimage
+        // this build cannot name must leave its sections to the loose group
+        // rather than swallow them into a group it will not return.
+        var groups = pilgrimages.compactMap { pilgrimage -> PilgrimageGroup? in
+            guard !pilgrimage.id.isEmpty,
+                  let name = displayName(localeNames(pilgrimage.name)) else { return nil }
+            let entries = pilgrimage.sections.compactMap { section -> PilgrimageCatalogEntry? in
+                guard let entry = byId[section], claimed.insert(section).inserted else { return nil }
+                return entry
+            }
+            guard !entries.isEmpty else { return nil }
+            return PilgrimageGroup(
+                id: pilgrimage.id,
+                name: String(name.prefix(PilgrimageWayImporter.maxStageNameCharacters)),
+                entries: entries)
+        }
+        let loose = routes.filter { !claimed.contains($0.id) }
+        if !loose.isEmpty {
+            groups.append(PilgrimageGroup(id: "", name: nil, entries: loose))
+        }
+        return groups
     }
 
     // MARK: - Cache
