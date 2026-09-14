@@ -72,7 +72,7 @@ struct HonorWaysSheet: View {
                 } header: {
                     Text("From a shared walk").font(Constants.Typography.caption)
                 } footer: {
-                    Text("Any Walk with me page has a \"walk it there\" button.")
+                    Text("A walk someone shared with you, from walk.pilgrimapp.org.")
                         .font(Constants.Typography.caption)
                 }
             }
