@@ -1,0 +1,16 @@
+{
+  "id": "camino-frances",
+  "name": "Camino de Santiago (Francés)",
+  "names": { "es": "Camino de Santiago (Francés)", "gl": "Camiño de Santiago (Francés)" },
+  "country": "ES",
+  "region": "Europe",
+  "distanceKm": 46.1,
+  "stageCount": 2,
+  "tradition": "christian",
+  "summary": "The most walked of the caminos.",
+  "cover": "cover.jpg",
+  "stages": [
+    { "index": 0, "name": "Saint-Jean-Pied-de-Port to Roncesvalles", "distanceKm": 24.2, "gainMeters": 1419, "hours": { "min": 7, "max": 9 }, "difficulty": "hard" },
+    { "index": 1, "name": "Roncesvalles to Zubiri", "distanceKm": 21.9, "gainMeters": 217, "hours": { "min": 5, "max": 7 }, "difficulty": "moderate" }
+  ]
+}

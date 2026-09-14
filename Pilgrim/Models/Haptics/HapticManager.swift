@@ -96,6 +96,7 @@ enum HapticPattern {
     case seekBreathOut
     case honorOffWay
     case honorArrival
+    case honorWaterAhead
 
     func fire() {
         switch self {
@@ -147,7 +148,7 @@ enum HapticPattern {
         case .seekTick, .seekAligned, .seekArrival, .seekBreathIn, .seekBreathOut:
             fireSeek()
 
-        case .honorOffWay, .honorArrival:
+        case .honorOffWay, .honorArrival, .honorWaterAhead:
             fireHonor()
         }
     }
@@ -213,6 +214,14 @@ enum HapticPattern {
                 generator.notificationOccurred(.success)
             }
 
+        case .honorWaterAhead:
+            // One tap at the whisper's intensity: a notice, not an alert.
+            if !Self.playHonorWaterAhead() {
+                let generator = UIImpactFeedbackGenerator(style: .soft)
+                generator.prepare()
+                generator.impactOccurred()
+            }
+
         default:
             break
         }
@@ -227,6 +236,15 @@ enum HapticPattern {
             CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0.24)
         ]
         return HapticEngineHost.shared.play(events)
+    }
+
+    /// `playWhisperProximity`'s single event: same softness and roundness,
+    /// once instead of three times.
+    private static func playHonorWaterAhead() -> Bool {
+        let soft = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.4)
+        let round = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.2)
+        return HapticEngineHost.shared.play(
+            [CHHapticEvent(eventType: .hapticTransient, parameters: [soft, round], relativeTime: 0)])
     }
 
     private static func playPlacementFailed() -> Bool {

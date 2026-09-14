@@ -18,9 +18,21 @@ struct HonorArrivalCard: Equatable {
     let voicesHeard: Int
     let placesPassed: Int
     /// The engine's numbers on the companion's timeline; persisted into the
-    /// index link at save time so the summary can read them back.
+    /// index link at save time so the summary can read them back. A stage
+    /// carries the package's own active seconds as `theirSeconds` too, but
+    /// the summary ignores them for a stage — there is no companion to
+    /// compare arrival against.
     let theirSeconds: Double
     let yourSeconds: Double
+    /// Set only for a pilgrimage stage; the card then speaks of the stage
+    /// rather than of another walker.
+    let stageName: String?
+    let distanceWalkedMeters: Double
+    /// The stage's closing line, present only once arrival fired on a stage.
+    /// Optional and last, like `WayMoment.place` and `.transcript`.
+    var closing: String?
+
+    var isStage: Bool { stageName != nil }
 }
 
 // MARK: - Honor Engine Lifecycle
@@ -40,7 +52,9 @@ extension ActiveWalkViewModel {
         let generation = honorGeneration
         let engine = HonorEngine(
             way: way,
-            softTapEnabled: UserPreferences.honorSoftTapEnabled.value,
+            // A stage has no other walker to be off the way *from*; the soft
+            // tap and the companion dot are both about someone else.
+            softTapEnabled: UserPreferences.honorSoftTapEnabled.value && !way.isPilgrimageStage,
             voicesEnabled: UserPreferences.honorVoicesEnabled.value && UserPreferences.soundsEnabled.value
         )
         let player = honorSenses.makeVoicePlayer()
@@ -80,6 +94,7 @@ extension ActiveWalkViewModel {
             .store(in: &honorCancellables)
         heading.start()
         honorHeading = heading
+        bindMarkPins()
         refreshHonorPins()
     }
 
@@ -97,14 +112,25 @@ extension ActiveWalkViewModel {
     /// Where the companion is now: a binary search over the route on the
     /// engine's published frac, cheap enough for the map's per-frame read.
     /// The map itself throttles the dot to one move every two seconds.
+    /// A stage has no companion — its clock is synthesized so the engine
+    /// works unchanged, and nothing draws it.
     var companionCoordinate: CLLocationCoordinate2D? {
-        honorEngine.map { $0.geometry.coordinate(atFrac: $0.companionFrac) }
+        guard way?.isPilgrimageStage != true else { return nil }
+        return honorEngine.map { $0.geometry.coordinate(atFrac: $0.companionFrac) }
     }
 
     /// Runs from both `stop()` and `cancel()`; the second call is a no-op.
-    /// `honorArrival` deliberately survives — the summary reads it.
+    /// `honorArrival` deliberately survives — the summary reads it. So does
+    /// `pendingReplyOrigin`: a reply still recording at walk end completes
+    /// after this teardown, and `recordReplyIfPending` needs the origin to
+    /// file it under. `cancel()` clears it itself, since a discarded walk
+    /// files no reply.
     func teardownHonor() {
         guard honorEngine != nil || wayVoicePlayer != nil else { return }
+        if let engine = honorEngine, engine.isAnchoredOnWay {
+            honorStageOutcome = HonorStageOutcome(progressFrac: engine.progressFrac,
+                                                  arrived: engine.phase == .arrived)
+        }
         honorGeneration += 1
         honorCancellables.removeAll()
         honorEngine?.stop()
@@ -118,9 +144,10 @@ extension ActiveWalkViewModel {
         activeVoice = nil
         isVoicePaused = false
         honorCards.removeAll()
+        honorMarkPins.removeAll()
+        markPinAnchor = nil
         reachedMomentIDs.removeAll()
         suggestedMeditationMinutes = nil
-        pendingReplyOrigin = nil
         touchedCardIDs.removeAll()
         voiceRate = 1
         honorFocus = nil
@@ -128,6 +155,19 @@ extension ActiveWalkViewModel {
         honorHeading = nil
         headingDegrees = nil
         softTapCaption = nil
+    }
+
+    /// What a checkpoint has to carry for a crashed honor walk to find its Way
+    /// again. Read here rather than from an event, so the checkpoint's own
+    /// cadence is the only clock involved: the engine is gone with the process,
+    /// and the last checkpoint is all a recovery has left of it. The outcome
+    /// half follows `teardownHonor()`'s rule — an unanchored engine is a walker
+    /// still approaching, not a stage begun.
+    var honorCheckpointState: (wayId: String, outcome: HonorStageOutcome?)? {
+        guard mode == .honor, let way else { return nil }
+        guard let engine = honorEngine, engine.isAnchoredOnWay else { return (way.id, nil) }
+        return (way.id, HonorStageOutcome(progressFrac: engine.progressFrac,
+                                          arrived: engine.phase == .arrived))
     }
 
     // MARK: - Events
@@ -160,6 +200,10 @@ extension ActiveWalkViewModel {
         case .softTap(let meters):
             showSoftTapCaption(meters: meters)
             fireHonorHaptic(.honorOffWay)
+
+        case .markAhead(let mark, let meters):
+            showMarkCaption(mark: mark, meters: meters)
+            fireHonorHaptic(.honorWaterAhead)
 
         case .arrived(let theirSeconds, let yourSeconds):
             recordHonorArrival(theirSeconds: theirSeconds, yourSeconds: yourSeconds)
@@ -206,12 +250,16 @@ extension ActiveWalkViewModel {
         builder.addWorkoutEvent(TempWalkEvent(uuid: nil, eventType: .honorArrival, timestamp: Date()))
         addWaypoint(label: HonorPersistence.arrivalWaypointLabel(wayTitle: way.title),
                     icon: HonorPersistence.arrivalWaypointIcon)
-        honorArrival = HonorArrivalCard(wayTitle: way.title, voicesHeard: heardVoiceIDs.count,
-                                        placesPassed: reachedMomentIDs.count,
-                                        theirSeconds: theirSeconds, yourSeconds: yourSeconds)
+        honorArrival = HonorArrivalCard(
+            wayTitle: way.title, voicesHeard: heardVoiceIDs.count,
+            placesPassed: reachedMomentIDs.count,
+            theirSeconds: theirSeconds, yourSeconds: yourSeconds,
+            stageName: way.stage?.name,
+            distanceWalkedMeters: honorEngine?.distanceWalkedMeters ?? 0,
+            closing: way.stage?.closing)
     }
 
-    // MARK: - Cards, media, replies
+    // MARK: - Cards and media
 
     /// Whether a card is on screen at all — the walk screen's card layer
     /// spans the screen and must not take taps meant for the map when it
@@ -328,53 +376,6 @@ extension ActiveWalkViewModel {
         return FileManager.default.fileExists(atPath: resolved.path) ? resolved : nil
     }
 
-    /// Starts a recording answering `voice`. When that recording completes,
-    /// `bindCompletedRecordings` (ActiveWalkViewModel.swift) has it, and
-    /// `recordReplyIfPending` writes the mapping.
-    func replyHere(to voice: WayMoment) {
-        pendingReplyOrigin = voice
-        if !isRecordingVoice { toggleVoiceRecording() }
-        // `isRecordingVoice` only mirrors `voiceRecordingManagement.isRecording`
-        // through an async main-queue sink, so it can't be trusted here yet —
-        // reading the component directly gives the synchronous answer.
-        // Denied permission, an inactive walk, or a recorder that failed to
-        // open all leave it false; with nothing now in flight, no completed
-        // recording will ever arrive to consume this origin.
-        if !voiceRecordingManagement.isRecording {
-            pendingReplyOrigin = nil
-        }
-    }
-
-    /// The reply is filed under the origin voice's own index — the `n` in
-    /// the `voice-n` ids `OwnWalkWayBuilder` writes — never its position in
-    /// `moments`, which mixes every kind of moment together.
-    func recordReplyIfPending(latestRecording: TempVoiceRecording) {
-        guard let way, let origin = pendingReplyOrigin, let n = Self.originIndex(of: origin) else { return }
-        pendingReplyOrigin = nil
-        try? honorSenses.store().setReply(wayId: way.id, originN: n, relativePath: latestRecording.fileRelativePath)
-    }
-
-    /// The walker's earlier reply to `voice`, from a previous honoring of the
-    /// same Way. A mapping whose recording is gone reads as no reply at all —
-    /// `mediaURL(for:)` returns nil for a file that isn't there.
-    func existingReplyURL(for voice: WayMoment) -> URL? {
-        guard let way, let n = Self.originIndex(of: voice),
-              let relative = honorSenses.store().replies(for: way.id)[n] else { return nil }
-        return mediaURL(for: .recording(relativePath: relative))
-    }
-
-    /// The card's "your reply" button comes through here rather than touching
-    /// the player directly: one voice plays at a time, so a Way voice must be
-    /// given up rather than silently replaced under a chip that still claims
-    /// it is playing. The engine gets its turn back when the reply ends,
-    /// through the player's `onFinished`.
-    func playReply(url: URL) {
-        wayVoicePlayer?.stop()
-        activeVoice = nil
-        isVoicePaused = false
-        wayVoicePlayer?.play(url: url, volume: Float(UserPreferences.voiceGuideVolume.value))
-    }
-
     func startMeditation(minutes: Int) {
         suggestedMeditationMinutes = minutes
         startMeditation()
@@ -435,24 +436,10 @@ extension ActiveWalkViewModel {
             isOnWay: engine.isOnWay, isArrived: engine.phase == .arrived)
     }
 
-    // MARK: - Private
-
-    private static let voiceIDPrefix = "voice-"
-    private static let softTapCaptionSeconds: TimeInterval = 20
-
-    /// The `n` in the `voice-n` ids `OwnWalkWayBuilder` writes — the index a
-    /// reply is filed under. Nil for any other moment id.
-    private static func originIndex(of moment: WayMoment) -> Int? {
-        guard moment.id.hasPrefix(voiceIDPrefix) else { return nil }
-        return Int(moment.id.dropFirst(voiceIDPrefix.count))
-    }
-
-    private func fireHonorHaptic(_ pattern: HapticPattern) {
-        guard honorSenses.isAppActive() else { return }
-        pattern.fire()
-    }
-
-    private var honorLocationFixes: AnyPublisher<CLLocation, Never> {
+    /// The walker's fixes as `CLLocation`s. Not private: the mark pins in
+    /// `ActiveWalkViewModel+MarkPins.swift` follow the same stream rather
+    /// than re-deriving coordinates from the raw sample.
+    var honorLocationFixes: AnyPublisher<CLLocation, Never> {
         $currentLocation
             .compactMap { sample -> CLLocation? in
                 guard let sample else { return nil }
@@ -463,5 +450,15 @@ extension ActiveWalkViewModel {
                     speed: sample.speed, timestamp: sample.timestamp)
             }
             .eraseToAnyPublisher()
+    }
+
+    // MARK: - Private
+
+    /// Not private: the water notice borrows this slot, so it borrows this life.
+    static let softTapCaptionSeconds: TimeInterval = 20
+
+    private func fireHonorHaptic(_ pattern: HapticPattern) {
+        guard honorSenses.isAppActive() else { return }
+        pattern.fire()
     }
 }

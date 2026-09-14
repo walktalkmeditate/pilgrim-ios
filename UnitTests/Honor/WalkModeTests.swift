@@ -7,7 +7,7 @@ final class WalkModeTests: XCTestCase {
         XCTAssertEqual(WalkMode.allCases, [.wander, .honor, .seek])
         XCTAssertTrue(WalkMode.honor.isAvailable)
         XCTAssertEqual(WalkMode.honor.subtitle, "walk in their steps")
-        XCTAssertEqual(WalkMode.honor.buttonLabel, "Choose a way")
+        XCTAssertEqual(WalkMode.honor.buttonLabel, "Honor")
     }
 
     func testHonorQuotesAreLocalized() {

@@ -142,6 +142,23 @@ public class VoiceRecordingManagement: NSObject, WalkBuilderComponent {
         audioRecorder = nil
     }
 
+    /// The walk is being thrown away, so its open recording is too. The
+    /// delegate is detached before the stop so no commit follows the discard,
+    /// and `commitRecording(successfully: false)` — the same path an OS-failed
+    /// recording takes — removes the partial file and releases the microphone
+    /// session here, rather than leaving it held for a commit that will never
+    /// come.
+    public func discardRecording() {
+        guard isRecording else { return }
+        stopMetering()
+        isRecording = false
+        recordingStartDate = nil
+        audioRecorder?.delegate = nil
+        audioRecorder?.stop()
+        audioRecorder = nil
+        commitRecording(successfully: false)
+    }
+
     private func flushCurrentRecording() {
         guard isRecording, audioRecorder != nil else {
             builder?.flushVoiceRecordings(voiceRecordingsRelay.value)

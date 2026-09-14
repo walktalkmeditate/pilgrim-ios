@@ -76,6 +76,7 @@ struct UserPreferences {
 
     static let honorVoicesEnabled = UserPreference.Required<Bool>(key: "honorVoicesEnabled", defaultValue: true)
     static let honorSoftTapEnabled = UserPreference.Required<Bool>(key: "honorSoftTapEnabled", defaultValue: false)
+    static let pilgrimageOfflineNoteShown = UserPreference.Required<Bool>(key: "pilgrimageOfflineNoteShown", defaultValue: false)
 
     static let celestialAwarenessEnabled = UserPreference.Required<Bool>(key: "celestialAwarenessEnabled", defaultValue: false)
 

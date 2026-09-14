@@ -1,4 +1,5 @@
 import CoreLocation
+import Network
 import SwiftUI
 
 enum HonorOverviewModel {
@@ -40,6 +41,15 @@ enum HonorOverviewModel {
         WeatherCondition(rawValue: condition)?.label.lowercased() ?? condition
     }
 
+    /// Offline tiles are slice three. Until then a stage walked without a
+    /// connection draws over the basemap's empty grey, and the overview says
+    /// so once — the ghost line, the pins, the marks, the cards, the water,
+    /// and the ledger all work without a network.
+    static func offlineNote(isStage: Bool, isConnected: Bool, alreadyShown: Bool) -> String? {
+        guard isStage, !isConnected, !alreadyShown else { return nil }
+        return "map tiles need a connection; the way itself is on your phone."
+    }
+
     static func bounds(of way: Way) -> MapCameraBounds? {
         let lats = way.route.map(\.lat), lons = way.route.map(\.lon)
         guard let minLat = lats.min(), let maxLat = lats.max(),
@@ -59,12 +69,21 @@ struct HonorOverviewView: View {
     let onRetryMedia: () -> Void
     let onWalkWithoutMissing: () -> Void
 
-    @State private var cameraCenter: CLLocationCoordinate2D?
-    @State private var cameraZoom: CGFloat = 14
+    /// Where the map's camera actually is, as the map reports it. Nil until
+    /// the first report: this screen opens fit to the whole Way, a zoom it
+    /// never chose and cannot know, and marks must not be drawn on a guess.
+    @State private var liveCenter: CLLocationCoordinate2D?
+    @State private var liveZoom: CGFloat?
     @State private var isMeditating = false
     @State private var distanceToStart: Double?
     @State private var todayCondition: String?
     @State private var voicesEnabled = UserPreferences.honorVoicesEnabled.value
+    @State private var showMorningCard = false
+    @State private var todayWeather: WeatherSnapshot?
+    @State private var offlineNote: String?
+    /// The probe's only strong owner, so the handler need not retain what it
+    /// cancels.
+    @State private var connectivityMonitor: NWPathMonitor?
     #if DEBUG
     @State private var debugExportURL: URL?
     @State private var isShowingDebugExport = false
@@ -80,6 +99,10 @@ struct HonorOverviewView: View {
     }
 
     @State private var rendering: WayRendering?
+    /// The stage's service pins. Not part of `WayRendering`: they answer to
+    /// the live camera the map reports, not to the Way alone — fit to a whole
+    /// stage they are all below `WayMarkPins.drawFromZoom` and none is drawn.
+    @State private var markPins: [PilgrimAnnotation] = []
     /// A tapped pin: its photo or voice in a half-height sheet of its own.
     @State private var previewMoment: WayMoment?
 
@@ -89,16 +112,19 @@ struct HonorOverviewView: View {
                 isInteractive: true,
                 showsUserLocation: true,
                 followsUserLocation: false,
-                pinAnnotations: rendering?.pins ?? [],
+                pinAnnotations: markPins + (rendering?.pins ?? []),
                 onAnnotationTap: { pin in
                     guard let id = pin.kind.wayMomentID else { return }
                     previewMoment = way.moments.first { $0.id == id }
                 },
-                cameraCenter: $cameraCenter,
-                cameraZoom: $cameraZoom,
                 cameraBounds: rendering?.bounds,
                 isMeditating: $isMeditating,
-                honorWay: rendering?.state
+                honorWay: rendering?.state,
+                onCameraChanged: { center, zoom in
+                    liveCenter = center
+                    liveZoom = zoom
+                    refreshMarkPins()
+                }
             )
             .frame(maxHeight: .infinity)
 
@@ -121,13 +147,15 @@ struct HonorOverviewView: View {
             }
             #endif
         }
-        .onAppear { probeDistance() }
+        .onAppear { probeDistance(); checkConnectivity() }
+        .onDisappear { releaseConnectivityMonitor() }
         .task(id: way.id) {
             rendering = WayRendering(
                 pins: PilgrimMapView.wayPins(for: way, heardVoiceIDs: []),
                 bounds: HonorOverviewModel.bounds(of: way),
                 state: HonorWayState(way: way)
             )
+            refreshMarkPins()
         }
         .task { await fetchToday() }
         .sheet(item: $previewMoment) { moment in
@@ -138,6 +166,16 @@ struct HonorOverviewView: View {
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showMorningCard) {
+            if let stage = way.stage {
+                StageMorningCard(stage: stage, weather: todayWeather, buttonTitle: "walk") {
+                    showMorningCard = false
+                    onBegin()
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
         }
         #if DEBUG
         .sheet(isPresented: $isShowingDebugExport) {
@@ -171,7 +209,8 @@ struct HonorOverviewView: View {
             Text(way.title)
                 .font(Constants.Typography.heading)
                 .foregroundColor(.ink)
-            Text(DateFormatter.localizedString(from: way.departedAt, dateStyle: .long, timeStyle: .short))
+            Text(WayStageLine.line(for: way)
+                 ?? DateFormatter.localizedString(from: way.departedAt, dateStyle: .long, timeStyle: .short))
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
             HStack {
@@ -194,16 +233,27 @@ struct HonorOverviewView: View {
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
             }
-            Toggle(isOn: $voicesEnabled) {
-                Text("walk with their voice")
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.ink)
+            if let offlineNote {
+                Text(offlineNote)
+                    .font(Constants.Typography.caption)
+                    .foregroundColor(.fog)
             }
-            .tint(.stone)
-            .onChange(of: voicesEnabled) { _, on in UserPreferences.honorVoicesEnabled.value = on }
-            .disabled(way.voiceCount == 0)
+            // A stage carries no recordings, so "walk with their voice" would
+            // be a switch over nothing — and would say "their" besides.
+            if !way.isPilgrimageStage {
+                Toggle(isOn: $voicesEnabled) {
+                    Text("walk with their voice")
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                }
+                .tint(.stone)
+                .onChange(of: voicesEnabled) { _, on in UserPreferences.honorVoicesEnabled.value = on }
+                .disabled(way.voiceCount == 0)
+            }
 
-            Button(action: onBegin) {
+            Button {
+                if way.isPilgrimageStage { showMorningCard = true } else { onBegin() }
+            } label: {
                 Text("Begin")
                     .font(Constants.Typography.button)
                     .foregroundColor(.parchment)
@@ -212,7 +262,7 @@ struct HonorOverviewView: View {
                     .background(isGathering ? Color.fog : Color.stone)
                     .cornerRadius(Constants.UI.CornerRadius.normal)
             }
-            .accessibilityLabel("Begin honoring this way")
+            .accessibilityLabel(way.isPilgrimageStage ? "Walk this stage" : "Begin honoring this way")
             .disabled(isGathering)
         }
         .padding(Constants.UI.Padding.normal)
@@ -270,6 +320,7 @@ struct HonorOverviewView: View {
         guard let here = CLLocationManager().location,
               let snapshot = await WeatherService.shared.fetchCurrent(for: here) else { return }
         todayCondition = snapshot.condition.rawValue
+        todayWeather = snapshot
     }
 
     private func durationText(_ seconds: Double) -> String {
@@ -279,8 +330,53 @@ struct HonorOverviewView: View {
         return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
     }
 
+    /// Nothing is drawn until the map has said where it is: a Way fit to a
+    /// whole stage sits well below the draw-from zoom, and the first forty
+    /// marks in file order would clump at one end of it.
+    private func refreshMarkPins() {
+        guard let zoom = liveZoom else {
+            markPins = []
+            return
+        }
+        markPins = WayMarkPins.pins(marks: way.marks ?? [], zoom: zoom, near: liveCenter)
+    }
+
     private func probeDistance() {
         guard let first = way.route.first, let here = CLLocationManager().location else { return }
         distanceToStart = here.distance(from: CLLocation(latitude: first.lat, longitude: first.lon))
+    }
+
+    /// A single probe, released in its own handler and again on dismissal —
+    /// no monitor outlives this screen. The state holds the only strong
+    /// reference, so the handler can capture it weakly and still be sure the
+    /// monitor is alive to report: a handler that captured the monitor it
+    /// cancels is a cycle, and one that captured nothing could be freed
+    /// before it ever ran.
+    private func checkConnectivity() {
+        // The note is said once ever and only on a stage; a probe that could
+        // not produce it is a monitor allocated for nothing.
+        guard way.isPilgrimageStage, !UserPreferences.pilgrimageOfflineNoteShown.value else { return }
+        let monitor = NWPathMonitor()
+        connectivityMonitor = monitor
+        monitor.pathUpdateHandler = { [weak monitor] path in
+            let connected = path.status == .satisfied
+            DispatchQueue.main.async {
+                if let note = HonorOverviewModel.offlineNote(
+                    isStage: way.isPilgrimageStage, isConnected: connected,
+                    alreadyShown: UserPreferences.pilgrimageOfflineNoteShown.value) {
+                    offlineNote = note
+                    UserPreferences.pilgrimageOfflineNoteShown.value = true
+                }
+                releaseConnectivityMonitor()
+            }
+            monitor?.cancel()
+        }
+        monitor.start(queue: DispatchQueue(label: "honor-connectivity-check"))
+    }
+
+    private func releaseConnectivityMonitor() {
+        connectivityMonitor?.cancel()
+        connectivityMonitor?.pathUpdateHandler = nil
+        connectivityMonitor = nil
     }
 }

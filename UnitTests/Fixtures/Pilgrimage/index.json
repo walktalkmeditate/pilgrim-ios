@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-08-19T15:31:51.448Z",
+  "release": "v1.7.0",
+  "routes": [
+    {
+      "id": "camino-frances",
+      "name": { "en": "Camino de Santiago (Frances)", "es": "Camino de Santiago (Francés)" },
+      "region": "Europe",
+      "country": "ES",
+      "distanceKm": 46.1,
+      "topology": "linear",
+      "tradition": "christian",
+      "path": "routes/camino-frances",
+      "ways": { "stageCount": 2, "bytes": 214000, "placesPerStage": 0.4, "sparse": true }
+    },
+    {
+      "id": "camino-norte",
+      "name": { "en": "Camino del Norte (Northern Way)" },
+      "region": "Europe",
+      "country": "ES",
+      "distanceKm": 784,
+      "topology": "linear",
+      "tradition": "christian",
+      "path": "routes/camino-norte"
+    },
+    {
+      "id": "../etc/passwd",
+      "name": { "en": "Not a route" },
+      "region": "Europe",
+      "country": "ES",
+      "distanceKm": 10,
+      "topology": "linear",
+      "tradition": "christian",
+      "path": "routes/x",
+      "ways": { "stageCount": 1, "bytes": 100 }
+    }
+  ]
+}

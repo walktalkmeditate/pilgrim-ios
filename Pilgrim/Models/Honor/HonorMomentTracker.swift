@@ -12,6 +12,8 @@ struct HonorMomentTracker {
         case voicePause
         case voiceResume
         case voiceDropped(WayMoment)
+        /// A water source `meters` ahead on the line.
+        case markAhead(WayMark, meters: Double)
     }
 
     struct Gates: Equatable {
@@ -29,11 +31,21 @@ struct HonorMomentTracker {
     private var queue: [WayMoment] = []
     private(set) var playing: WayMoment?
     private(set) var isVoicePaused = false
+    private let marks: [WayMark]
+    private var firedMarks: Set<String> = []
+    /// Active seconds at the last water caption; nil means the first is free.
+    private var lastMarkSeconds: TimeInterval?
 
-    init(moments: [WayMoment], geometry: WayGeometry, voicesEnabled: Bool) {
+    init(moments: [WayMoment], marks: [WayMark] = [], geometry: WayGeometry, voicesEnabled: Bool) {
         // A tiebreak on id keeps ordering deterministic when two moments
         // share a frac — the same rule `WayImporter` sorts by.
         self.moments = moments.sorted { $0.frac == $1.frac ? $0.id < $1.id : $0.frac < $1.frac }
+        // Only on-way water speaks: a fountain 250 m off the trail is a
+        // detour, not a drink. Filtering once here keeps the per-fix scan to
+        // the handful that could ever fire.
+        self.marks = marks
+            .filter { $0.kind == .water && $0.offLineMeters <= HonorTuning.onWayMeters }
+            .sorted { $0.frac < $1.frac }
         self.geometry = geometry
         self.voicesEnabled = voicesEnabled
     }
@@ -42,7 +54,9 @@ struct HonorMomentTracker {
         location: CLLocationCoordinate2D,
         progressFrac: Double,
         gates: Gates,
-        isStationary: Bool
+        isStationary: Bool,
+        activeSeconds: TimeInterval = 0,
+        isOnWay: Bool = true
     ) -> [Action] {
         var actions: [Action] = []
         let here = CLLocation(latitude: location.latitude, longitude: location.longitude)
@@ -74,6 +88,7 @@ struct HonorMomentTracker {
             }
         }
 
+        actions += waterAhead(progressFrac: progressFrac, activeSeconds: activeSeconds, isOnWay: isOnWay)
         actions += startNextIfPossible(gates: gates)
         return actions
     }
@@ -104,6 +119,23 @@ struct HonorMomentTracker {
         let next = queue.removeFirst()
         playing = next
         return [.voiceStart(next)]
+    }
+
+    /// The nearest unfired water source the walker is about to reach. Never
+    /// one already behind them, never off the way, and at most one an hour
+    /// of walking — the marks skipped inside the quiet hour stay silent pins.
+    private mutating func waterAhead(progressFrac: Double, activeSeconds: TimeInterval, isOnWay: Bool) -> [Action] {
+        guard isOnWay, !marks.isEmpty, geometry.totalMeters > 0 else { return [] }
+        if let last = lastMarkSeconds, activeSeconds - last < HonorTuning.markQuietSeconds { return [] }
+        for mark in marks where !firedMarks.contains(mark.id) {
+            let ahead = (mark.frac - progressFrac) * geometry.totalMeters
+            guard ahead >= 0 else { continue }
+            guard ahead <= HonorTuning.markAheadMeters else { break }
+            firedMarks.insert(mark.id)
+            lastMarkSeconds = activeSeconds
+            return [.markAhead(mark, meters: ahead)]
+        }
+        return []
     }
 
     private func place(of moment: WayMoment) -> CLLocation {

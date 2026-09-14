@@ -8,6 +8,13 @@ struct PilgrimMapView: UIViewRepresentable {
 
     private static let renderFrameRateRange = CAFrameRateRange(minimum: 10, maximum: 30, preferred: 30)
     fileprivate static let renderingDisplayState: MBMapView.DisplayState = [.foregroundActive, .foregroundInactive]
+    /// The zoom the follow-puck viewport holds a walk at. Public so a screen
+    /// that draws from the camera can start from the truth rather than from a
+    /// literal of its own.
+    static let followPuckZoom: CGFloat = 16
+    /// Mapbox's own default ornament inset, kept so a map with no sheet over
+    /// it looks exactly as the SDK intends.
+    private static let mapboxOrnamentMargin: CGFloat = 8
 
     var isInteractive: Bool = true
     var showsUserLocation: Bool = true
@@ -30,6 +37,11 @@ struct PilgrimMapView: UIViewRepresentable {
     /// active. All rendering lives in PilgrimMapView+HonorWay.swift.
     var honorWay: HonorWayState?
     var companion: CLLocationCoordinate2D?
+    /// Where the camera actually is (center, zoom), for screens whose content
+    /// depends on it. Deliberately one-way: `cameraCenter`/`cameraZoom` drive
+    /// the camera below, so writing the live camera back through them would
+    /// loop. Throttled — see `reportCamera`.
+    var onCameraChanged: ((CLLocationCoordinate2D, CGFloat) -> Void)?
     @Binding var cameraCenter: CLLocationCoordinate2D?
     @Binding var cameraZoom: CGFloat
     @Binding var isMeditating: Bool
@@ -76,7 +88,8 @@ struct PilgrimMapView: UIViewRepresentable {
         walkingColor: UIColor = .moss,
         isMeditating: Binding<Bool> = .constant(false),
         honorWay: HonorWayState? = nil,
-        companion: CLLocationCoordinate2D? = nil
+        companion: CLLocationCoordinate2D? = nil,
+        onCameraChanged: ((CLLocationCoordinate2D, CGFloat) -> Void)? = nil
     ) {
         self.isInteractive = isInteractive
         self.showsUserLocation = showsUserLocation
@@ -98,6 +111,7 @@ struct PilgrimMapView: UIViewRepresentable {
         self.walkingColor = walkingColor
         self.honorWay = honorWay
         self.companion = companion
+        self.onCameraChanged = onCameraChanged
     }
 
     func makeCoordinator() -> Coordinator {
@@ -139,6 +153,7 @@ struct PilgrimMapView: UIViewRepresentable {
         mapView.ornaments.options.scaleBar.visibility = .hidden
         mapView.ornaments.options.compass.visibility = .hidden
         mapView.ornaments.options.attributionButton.position = .bottomLeading
+        Self.applyOrnamentMargins(bottomInset, to: mapView, coordinator: context.coordinator)
 
         configurePuck(on: mapView)
 
@@ -179,6 +194,7 @@ struct PilgrimMapView: UIViewRepresentable {
         }.store(in: &context.coordinator.cancellables)
 
         Self.installSeekWispCameraObservers(on: mapView, coordinator: context.coordinator)
+        Self.installCameraReport(on: mapView, coordinator: context.coordinator)
 
         context.coordinator.mapView = mapView
         context.coordinator.startObservingAppLifecycle()
@@ -194,6 +210,7 @@ struct PilgrimMapView: UIViewRepresentable {
         context.coordinator.pendingAnnotations = pinAnnotations
         context.coordinator.pendingActivePhotoID = activePhotoID
         context.coordinator.onAnnotationTap = onAnnotationTap
+        context.coordinator.onCameraChanged = onCameraChanged
         context.coordinator.currentPinAnnotations = pinAnnotations
         context.coordinator.walkingColor = walkingColor
 
@@ -205,6 +222,8 @@ struct PilgrimMapView: UIViewRepresentable {
 
         mapView.gestures.options.panEnabled = isInteractive
         mapView.gestures.options.pinchEnabled = isInteractive
+
+        Self.applyOrnamentMargins(bottomInset, to: mapView, coordinator: context.coordinator)
 
         if colorScheme != context.coordinator.currentColorScheme {
             context.coordinator.currentColorScheme = colorScheme
@@ -232,7 +251,7 @@ struct PilgrimMapView: UIViewRepresentable {
                 context.coordinator.lastBottomInset = bottomInset
                 mapView.viewport.transition(
                     to: mapView.viewport.makeFollowPuckViewportState(
-                        options: FollowPuckViewportStateOptions(padding: padding, zoom: 16)
+                        options: FollowPuckViewportStateOptions(padding: padding, zoom: Self.followPuckZoom)
                     )
                 )
             }
@@ -305,6 +324,18 @@ struct PilgrimMapView: UIViewRepresentable {
     // MARK: - Annotations
     //
     // Route-line rendering lives in PilgrimMapView+RouteSource.swift.
+
+    /// Mapbox's terms require the logo and the attribution button to stay on
+    /// the map, and their `visibility` is a restricted API we have no licence
+    /// to call. So on screens that lay a sheet over the map we lift the
+    /// ornaments to sit above it rather than let the sheet bury them.
+    private static func applyOrnamentMargins(_ inset: CGFloat, to mapView: MBMapView, coordinator: Coordinator) {
+        guard abs(coordinator.lastOrnamentInset - inset) > 0.5 else { return }
+        coordinator.lastOrnamentInset = inset
+        let margins = CGPoint(x: mapboxOrnamentMargin, y: mapboxOrnamentMargin + inset)
+        mapView.ornaments.options.logo.margins = margins
+        mapView.ornaments.options.attributionButton.margins = margins
+    }
 
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], activePhotoID: String?, on mapView: MBMapView, coordinator: Coordinator) {
         // Same reason as the honor gate: the wabi-sabi pass flips
@@ -429,9 +460,10 @@ struct PilgrimMapView: UIViewRepresentable {
                 // in `buildPoints`; the halo above still carries the hour's
                 // light, so the two-part reading survives the glyph swap.
                 continue
-            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
-                // Way moments render as faded PointAnnotations in `buildPoints`
-                // (via MapGlyph.wayMark) — no filled circle underneath.
+            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint, .wayMark:
+                // Way moments and marks render as faded PointAnnotations in
+                // `buildPoints` (via MapGlyph.wayMark) — no filled circle
+                // underneath.
                 continue
             }
             circles.append(circle)
@@ -543,7 +575,7 @@ struct PilgrimMapView: UIViewRepresentable {
                 }
                 point.iconSize = 1.0
                 points.append(point)
-            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint:
+            case .wayVoice, .wayPhoto, .wayRest, .waySit, .wayWaypoint, .wayMark:
                 // Branching on the specific way* kind, and the shared
                 // wayPoint() builder, both live in PilgrimMapView+HonorWay.swift
                 // — keeps this switch (and SwiftLint's cyclomatic-complexity
@@ -601,6 +633,9 @@ struct PilgrimMapView: UIViewRepresentable {
         var pointManager: PointAnnotationManager?
         var isFollowing = false
         var lastBottomInset: CGFloat = 0
+        /// Starts negative so the first apply always runs, including for the
+        /// screens whose inset is a legitimate zero.
+        var lastOrnamentInset: CGFloat = -1
         /// Diffs incoming route segments into bounded partial source
         /// updates (AF9/AF46). Reset whenever the source is torn down
         /// (style reload, color change) so the next apply rebuilds fully.
@@ -613,6 +648,14 @@ struct PilgrimMapView: UIViewRepresentable {
         var currentColorScheme: ColorScheme = .light
         weak var mapView: MBMapView?
         var onAnnotationTap: ((PilgrimAnnotation) -> Void)?
+        /// The live-camera report and its throttle state. The tokens live
+        /// apart from `cancellables` so `dismantleUIView` can end the report
+        /// on its own, without touching the style/seek observers.
+        var onCameraChanged: ((CLLocationCoordinate2D, CGFloat) -> Void)?
+        var cameraReportCancelables: [AnyCancelable] = []
+        var lastReportedZoomLevel: Int?
+        var lastReportedCenter: CLLocationCoordinate2D?
+        var lastCameraReportUptime: CFTimeInterval = 0
         var currentPinAnnotations: [PilgrimAnnotation] = []
         var tapGestureAdded = false
         /// Last pin set actually applied to the annotation managers, for

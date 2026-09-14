@@ -31,6 +31,8 @@ class MainCoordinator: ObservableObject {
     /// start and pin what the resolution is allowed to do. Production always
     /// gets the real importer.
     var importShare: (String) async throws -> Way = { try await WayImporter().importShare(id: $0) }
+    /// Injectable so a spec can point the ledger at a temporary directory.
+    var pilgrimageLedgers = PilgrimageLedgerStore()
 
     private var pendingSnapshot: TempWalk?
     private var bannerDismissWork: DispatchWorkItem?
@@ -103,13 +105,19 @@ class MainCoordinator: ObservableObject {
                 guard let self else { return }
                 if success {
                     snapshot.uuid = walk?.uuid
-                    // The only place a walk is bound to its Way: `save` is
-                    // idempotent (an own-walk Way is first written here), and
-                    // `link` overwrites, so it must not run again elsewhere.
+                    // The only place a finished walk is bound to its Way:
+                    // `save` is idempotent (an own-walk Way is first written
+                    // here), and `link` overwrites, so it must not run again
+                    // elsewhere. Crash recovery binds too, but only a walk
+                    // this path never reached, so the two can't collide.
+                    // A packaged stage is skipped — this `way` was captured at
+                    // Begin, and an Update that redrew the stage while the
+                    // walk was on would be written back over here.
                     if let way, let uuid = walk?.uuid {
-                        try? WayStore.shared.save(way)
+                        if !way.source.isPackageOwned { try? WayStore.shared.save(way) }
                         let arrival = vm?.honorArrival.map { (theirSeconds: $0.theirSeconds, yourSeconds: $0.yourSeconds) }
                         try? WayStore.shared.link(walkUUID: uuid, to: way.id, arrival: arrival)
+                        self.recordStageWalk(way: way, outcome: vm?.honorStageOutcome)
                     }
                     self.pendingSnapshot = snapshot
                     self.activeWalkViewModel = nil
@@ -185,6 +193,12 @@ class MainCoordinator: ObservableObject {
     /// Resets the import state and any toast left over from a previous link
     /// so a stale failure line never greets the next opening of the sheet.
     func chooseWay() {
+        // Downloading a second route, Replace, Update, and Remove are all
+        // refused while a walk is on; this is where the manager learns what
+        // "on" means.
+        Task { @MainActor in
+            PilgrimagePackageManager.shared.isWalkActive = { [weak self] in self?.activeWalkViewModel != nil }
+        }
         honorImportState = .idle
         showLinkToast(nil)
         honorWaysPresented = true
@@ -269,6 +283,13 @@ class MainCoordinator: ObservableObject {
 
     func retryMedia(for way: Way) {
         Task { @MainActor in WayMediaDownloader.shared.retry(way) }
+    }
+
+    /// A finished walk's way into the route's ledger. Silent for a Way that is
+    /// not a stage; the store decides what a stage walk has to have earned.
+    func recordStageWalk(way: Way?, outcome: HonorStageOutcome?, at date: Date = Date()) {
+        guard let stage = way?.stage else { return }
+        pilgrimageLedgers.record(stage: stage, outcome: outcome, at: date)
     }
 
     /// "walk without the missing voices": the sink is dropped first, so a

@@ -123,12 +123,88 @@ final class HonorMomentTrackerTests: XCTestCase {
 
     func testEveryGateHoldsAVoice() {
         let closed: [HonorMomentTracker.Gates] = [
-            .init(paused: true), .init(meditating: true), .init(recording: true), .init(externalAudio: true),
+            .init(paused: true), .init(meditating: true), .init(recording: true), .init(externalAudio: true)
         ]
         for gates in closed {
             var t = HonorMomentTracker(moments: [voice1], geometry: geometry, voicesEnabled: true)
             XCTAssertEqual(t.update(location: coord(300), progressFrac: 0.3, gates: gates, isStationary: false), [], "\(gates)")
             XCTAssertEqual(t.gatesDidChange(.init()), [.voiceStart(voice1)], "\(gates)")
         }
+    }
+}
+
+extension HonorMomentTrackerTests {
+
+    private func water(_ id: String, frac: Double, offLine: Double = 10) -> WayMark {
+        WayMark(id: id, kind: .water, name: "Fuente \(id)",
+                at: WayCoordinate(lat: 0, lon: frac * 1000 / 111_320), frac: frac, offLineMeters: offLine)
+    }
+
+    private func markTracker(_ marks: [WayMark]) -> HonorMomentTracker {
+        HonorMomentTracker(moments: [], marks: marks, geometry: geometry, voicesEnabled: false)
+    }
+
+    private func markAhead(_ actions: [HonorMomentTracker.Action]) -> [String] {
+        actions.compactMap { if case .markAhead(let mark, _) = $0 { return mark.id } else { return nil } }
+    }
+
+    func testWaterFiresOnceInsideThreeHundredMetresBeforeIt() {
+        var t = markTracker([water("a", frac: 0.5)])
+        // 400 m short: too early.
+        XCTAssertEqual(markAhead(t.update(location: coord(100), progressFrac: 0.1, gates: .init(),
+                                          isStationary: false, activeSeconds: 0, isOnWay: true)), [])
+        // 250 m short: the caption.
+        let hit = t.update(location: coord(250), progressFrac: 0.25, gates: .init(),
+                           isStationary: false, activeSeconds: 60, isOnWay: true)
+        XCTAssertEqual(markAhead(hit), ["a"])
+        guard case .markAhead(_, let meters) = hit.first else { return XCTFail("action") }
+        XCTAssertEqual(meters, 250, accuracy: 5)
+        // And never again — not inside the quiet hour, and not after it
+        // either while the mark is still ahead.
+        XCTAssertEqual(markAhead(t.update(location: coord(300), progressFrac: 0.3, gates: .init(),
+                                          isStationary: false, activeSeconds: 120, isOnWay: true)), [])
+        XCTAssertEqual(markAhead(t.update(location: coord(300), progressFrac: 0.3, gates: .init(),
+                                          isStationary: false, activeSeconds: 4000, isOnWay: true)), [],
+                       "a mark that has spoken stays silent even once the hour has passed")
+    }
+
+    func testWaterNeverFiresOnceItIsBehindYou() {
+        var t = markTracker([water("a", frac: 0.5)])
+        XCTAssertEqual(markAhead(t.update(location: coord(600), progressFrac: 0.6, gates: .init(),
+                                          isStationary: false, activeSeconds: 0, isOnWay: true)), [],
+                       "a fountain you have already passed is not news")
+    }
+
+    func testAFountainOffTheTrailIsADetourNotADrink() {
+        var t = markTracker([water("far", frac: 0.5, offLine: 250)])
+        XCTAssertEqual(markAhead(t.update(location: coord(250), progressFrac: 0.25, gates: .init(),
+                                          isStationary: false, activeSeconds: 0, isOnWay: true)), [])
+    }
+
+    func testOffWayWalkersGetNothing() {
+        var t = markTracker([water("a", frac: 0.5)])
+        XCTAssertEqual(markAhead(t.update(location: coord(250), progressFrac: 0.25, gates: .init(),
+                                          isStationary: false, activeSeconds: 0, isOnWay: false)), [])
+    }
+
+    func testTheFirstIsFreeThenOnePerHourOfWalking() {
+        var t = markTracker([water("a", frac: 0.3), water("b", frac: 0.5), water("c", frac: 0.9)])
+        XCTAssertEqual(markAhead(t.update(location: coord(100), progressFrac: 0.1, gates: .init(),
+                                          isStationary: false, activeSeconds: 0, isOnWay: true)), ["a"])
+        // b is 200 m ahead, 20 minutes later: inside the quiet hour.
+        XCTAssertEqual(markAhead(t.update(location: coord(300), progressFrac: 0.3, gates: .init(),
+                                          isStationary: false, activeSeconds: 1200, isOnWay: true)), [],
+                       "a skipped mark stays a silent pin")
+        // c is 200 m ahead, an hour and a half in.
+        XCTAssertEqual(markAhead(t.update(location: coord(700), progressFrac: 0.7, gates: .init(),
+                                          isStationary: false, activeSeconds: 5400, isOnWay: true)), ["c"])
+    }
+
+    func testOnlyWaterSpeaks() {
+        let bed = WayMark(id: "bed", kind: .bed, name: "Albergue",
+                          at: WayCoordinate(lat: 0, lon: 500 / 111_320), frac: 0.5, offLineMeters: 10)
+        var t = markTracker([bed])
+        XCTAssertEqual(markAhead(t.update(location: coord(250), progressFrac: 0.25, gates: .init(),
+                                          isStationary: false, activeSeconds: 0, isOnWay: true)), [])
     }
 }

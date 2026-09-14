@@ -16,10 +16,21 @@ struct SeekStoryContext {
 
 /// What this honor held: whose Way was followed, and whether its end was
 /// reached. The title is nil until a caller that can reach the Way store
-/// fills it — the event stream alone does not carry it.
+/// fills it — the event stream alone does not carry it. `routeName` and
+/// `stageLabel` are set only for a pilgrimage stage, where there is no other
+/// walker for the lexicon to speak of.
 struct HonorStoryContext {
     let wayTitle: String?
     let arrived: Bool
+    var routeName: String?
+    var stageLabel: String?
+
+    init(wayTitle: String?, arrived: Bool, routeName: String? = nil, stageLabel: String? = nil) {
+        self.wayTitle = wayTitle
+        self.arrived = arrived
+        self.routeName = routeName
+        self.stageLabel = stageLabel
+    }
 }
 
 /// Pure mapping from a walk's events to its practice context, mirroring how

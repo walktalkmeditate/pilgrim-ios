@@ -321,6 +321,26 @@ struct AboutView: View {
                 url: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!
             )
 
+            Text("The maps you walk on are drawn by Mapbox from OpenStreetMap, whose roads and paths are surveyed and kept current by people who walk them.")
+                .font(Constants.Typography.body)
+                .foregroundColor(.ink)
+
+            linkRow(
+                icon: "map",
+                label: "© Mapbox",
+                url: URL(string: "https://www.mapbox.com/about/maps/")!
+            )
+
+            // "© OpenStreetMap contributors" is the credit OSM's terms ask
+            // for, word for word — the copyright is the contributors', not a
+            // company's. Our own "Map data —" prefix was what wrapped the
+            // line, so that went instead.
+            linkRow(
+                icon: "point.topleft.down.curvedto.point.bottomright.up",
+                label: "© OpenStreetMap contributors",
+                url: URL(string: "https://www.openstreetmap.org/copyright")!
+            )
+
             Text("The pilgrimage routes named alongside the collective's distance — their lengths, their seasons, and how many people walk them each year — come from the open-pilgrimages dataset, shared under the Open Database License.")
                 .font(Constants.Typography.body)
                 .foregroundColor(.ink)

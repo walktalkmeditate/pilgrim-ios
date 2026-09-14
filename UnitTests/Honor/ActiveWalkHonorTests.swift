@@ -29,9 +29,9 @@ final class ActiveWalkHonorTests: XCTestCase {
 
     private var player: SpyVoicePlayer!
     private var heading: SpyHeading!
-    private var vm: ActiveWalkViewModel!
+    var vm: ActiveWalkViewModel!
     private var recordingURL: URL!
-    private let start = Date(timeIntervalSince1970: 1_000_000)
+    let start = Date(timeIntervalSince1970: 1_000_000)
 
     private func way(id: String = "walk:test") -> Way {
         let route = (0...10).map { i in WayPoint(lat: 0, lon: Double(i) * 0.000898, alt: nil, t: Double(i) * 60) }
@@ -79,13 +79,13 @@ final class ActiveWalkHonorTests: XCTestCase {
         super.tearDown()
     }
 
-    private func fix(lon: Double, seconds: Double) -> TempRouteDataSample {
+    func fix(lon: Double, seconds: Double) -> TempRouteDataSample {
         TempRouteDataSample(uuid: nil, timestamp: start.addingTimeInterval(seconds), latitude: 0, longitude: lon,
                             altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, speed: 1.4, direction: 90)
     }
 
     /// Every engine stream hops through `receive(on: .main)`: settle after each write.
-    private func drive(_ sample: TempRouteDataSample) {
+    func drive(_ sample: TempRouteDataSample) {
         vm.currentLocation = sample
         settleCombineSchedulers()
     }
@@ -94,7 +94,7 @@ final class ActiveWalkHonorTests: XCTestCase {
     /// the components report readiness first, and on the simulator none ever
     /// does. Without the real `.recording` status the engine's pause gate
     /// would stay shut and no voice could start.
-    private func begin(startedSecondsAgo: TimeInterval = 0) {
+    func begin(startedSecondsAgo: TimeInterval = 0) {
         vm.builder.setStatus(.ready)
         if startedSecondsAgo > 0 {
             vm.builder._test_setStartDate(Date().addingTimeInterval(-startedSecondsAgo))
@@ -293,6 +293,42 @@ final class ActiveWalkHonorTests: XCTestCase {
         vm.recordReplyIfPending(latestRecording: recording)
         XCTAssertEqual(store.replies(for: testWay.id), [1: "Recordings/reply.m4a"])
         XCTAssertNil(vm.pendingReplyOrigin)
+    }
+
+    /// The same late delivery as the stage reflection, on a shared Way's
+    /// voice: `stop()` must not take the origin or the subscription with it.
+    func testAVoiceReplyStillRecordingWhenTheWalkEndsIsStillFiled() throws {
+        let storeDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let store = WayStore(baseDirectory: storeDir)
+        defer { try? FileManager.default.removeItem(at: storeDir) }
+        let testWay = way(id: "walk:\(UUID().uuidString)")
+        try store.save(testWay)
+
+        var senses = HonorSenses()
+        senses.makeVoicePlayer = { [player] in player! }
+        senses.isAppActive = { false }
+        senses.store = { store }
+        vm.cancel()
+        vm = ActiveWalkViewModel(mode: .honor, way: testWay, honorSenses: senses)
+        settleCombineSchedulers()
+
+        begin()
+        let relativePath = "Recordings/late-voice-reply.m4a"
+        vm.voiceRecordingManagement._test_setActiveRecording(start: start, relativePath: relativePath)
+        settleCombineSchedulers()
+
+        vm.replyHere(to: testWay.moments.first { $0.id == "voice-1" }!)
+        XCTAssertEqual(vm.pendingReplyOrigin?.id, "voice-1")
+
+        vm.stop()
+        settleCombineSchedulers()
+        vm.builder.flushVoiceRecordings([
+            TempVoiceRecording(uuid: UUID(), startDate: start, endDate: start.addingTimeInterval(5),
+                               duration: 5, fileRelativePath: relativePath, isEnhanced: false)
+        ])
+        settleCombineSchedulers()
+
+        XCTAssertEqual(store.replies(for: testWay.id), [1: relativePath])
     }
 
     func testShowCardJumpsTheQueue() {

@@ -21,4 +21,13 @@ enum HonorTuning {
     static let arrivalMinDistanceRatio = 0.5
     static let arrivalFixCount = SeekEngineTuning.arrivalFixCount
     static let arrivalAccuracyMeters = SeekEngineTuning.arrivalAccuracyMeters
+    /// How far the walker moves before the nearest-forty mark selection is
+    /// recomputed. A resort of every mark on the stage is not a per-fix job.
+    static let markPinRefreshMeters = 200.0
+    /// How far before an on-way water source the caption rises.
+    static let markAheadMeters = 300.0
+    /// The Camino Francés carries a median of eight on-way sources per stage
+    /// and 23 on its wettest day; without this the caption would be the
+    /// day's loudest voice.
+    static let markQuietSeconds: TimeInterval = 3600
 }

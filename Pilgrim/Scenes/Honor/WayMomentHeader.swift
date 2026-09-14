@@ -22,6 +22,12 @@ struct WayMomentHeader: View {
                 Text(Self.kicker(for: moment))
                     .font(compact ? Constants.Typography.body : Constants.Typography.heading)
                     .foregroundColor(.ink)
+                if let localName = Self.localName(for: moment) {
+                    Text(localName)
+                        .font(Constants.Typography.caption)
+                        .foregroundColor(.fog)
+                        .lineLimit(1)
+                }
                 if let subline {
                     HStack(spacing: 4) {
                         if let tick {
@@ -60,6 +66,28 @@ struct WayMomentHeader: View {
         }
     }
 
+    /// The languages a place's own name is worth showing in, in the order
+    /// the routes run: Basque and Galician before Spanish on the caminos,
+    /// Japanese for Shikoku. A name equal to the label says nothing twice.
+    static let localNameOrder = ["eu", "gl", "es", "fr", "ja", "pt", "it", "de"]
+
+    static func localName(for moment: WayMoment) -> String? {
+        guard let names = moment.names else { return nil }
+        let label = kicker(for: moment)
+        for code in localNameOrder {
+            guard let name = names[code], !name.isEmpty, name != label else { continue }
+            return name
+        }
+        return nil
+    }
+
+    /// A card body for a place: the dataset's own words when it has them,
+    /// otherwise the shortest true thing. A stage has no "they".
+    static func placeCopy(for moment: WayMoment, isStage: Bool) -> String {
+        if let text = moment.text, !text.isEmpty { return text }
+        return isStage ? "A place on the way." : "A place they marked."
+    }
+
     /// "here" within a few strides, otherwise the distance still to cover in
     /// the walker's own unit; the walk card's subline, with the street name
     /// when the Way has one.
@@ -86,5 +114,22 @@ enum WayDistance {
         }
         if meters < 1000 { return "\(Int(meters.rounded())) m" }
         return String(format: "%.1f km", meters / 1000)
+    }
+}
+
+/// "stage 1 of 33 · 24 km · hard" — what stands where a shared walk shows
+/// the day it was walked. A stage's own date is the build's timestamp and
+/// means nothing to the walker.
+enum WayStageLine {
+
+    static func line(for way: Way) -> String? {
+        way.stage.map(line(for:))
+    }
+
+    static func line(for stage: WayStage) -> String {
+        var parts = ["stage \(stage.index + 1) of \(stage.count)",
+                     StatsHelper.string(for: stage.distanceKm * 1000, unit: UnitLength.meters, type: .distance)]
+        if !stage.difficulty.isEmpty { parts.append(stage.difficulty) }
+        return parts.joined(separator: " · ")
     }
 }

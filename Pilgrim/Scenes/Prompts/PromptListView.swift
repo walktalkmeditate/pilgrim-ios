@@ -228,8 +228,21 @@ struct PromptListView: View {
     private var practice: (mode: PracticeMode, seekStory: SeekStoryContext?, honorStory: HonorStoryContext?) {
         let practice = WalkPracticeModel.practice(events: walk.workoutEvents.map { ($0.eventType, $0.timestamp) })
         guard let story = practice.honorStory, let uuid = walk.uuid else { return practice }
-        let title = WayStore.shared.way(forWalk: uuid)?.title
-        return (practice.mode, practice.seekStory, HonorStoryContext(wayTitle: title, arrived: story.arrived))
+        let way = WayStore.shared.way(forWalk: uuid)
+        return (practice.mode, practice.seekStory,
+                HonorStoryContext(wayTitle: way?.title, arrived: story.arrived,
+                                  routeName: routeName(for: way),
+                                  stageLabel: way?.stage.map { "stage \($0.index + 1) of \($0.count)" }))
+    }
+
+    /// The route's own name when its package is still on the phone, else the
+    /// slug the stage carries — the journal must still name the route after
+    /// the package has been removed.
+    private func routeName(for way: Way?) -> String? {
+        guard let stage = way?.stage else { return nil }
+        return PilgrimagePackageManager.shared.installed().flatMap {
+            $0.routeId == stage.routeId ? $0.route.name : nil
+        } ?? stage.routeId
     }
 
     private func buildPhotoContext() -> ([PhotoContextEntry], NarrativeArc?) {

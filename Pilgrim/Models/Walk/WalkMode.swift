@@ -14,7 +14,7 @@ enum WalkMode: String, CaseIterable {
     var buttonLabel: String {
         switch self {
         case .wander: return "Wander"
-        case .honor: return "Choose a way"
+        case .honor: return "Honor"
         case .seek: return "Seek"
         }
     }

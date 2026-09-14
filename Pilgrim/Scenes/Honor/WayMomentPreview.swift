@@ -44,14 +44,21 @@ struct WayMomentPreview: View {
 
     /// "1.2 km along their way · 8:41 AM · Rúa do Franco": the moment's place
     /// on the line, the hour it happened in the walk's own time zone, and the
-    /// street the sharer's page names when it has one.
+    /// street the sharer's page names when it has one. A stage keeps the
+    /// distance and drops the hour: its clock is synthesized by the build.
     private static func alongTheWay(way: Way, moment: WayMoment) -> String {
         let distance = StatsHelper.string(for: moment.frac * way.totalDistanceMeters, unit: UnitLength.meters, type: .distance)
-        let elapsed = WayGeometry(route: way.route).elapsed(atFrac: moment.frac)
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        formatter.timeZone = way.tzIdentifier.flatMap(TimeZone.init(identifier:)) ?? .current
-        var parts = ["\(distance) along their way", formatter.string(from: way.departedAt.addingTimeInterval(elapsed))]
+        var parts: [String] = []
+        if way.isPilgrimageStage {
+            parts.append("\(distance) along the stage")
+        } else {
+            let elapsed = WayGeometry(route: way.route).elapsed(atFrac: moment.frac)
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.timeZone = way.tzIdentifier.flatMap(TimeZone.init(identifier:)) ?? .current
+            parts.append("\(distance) along their way")
+            parts.append(formatter.string(from: way.departedAt.addingTimeInterval(elapsed)))
+        }
         if let place = moment.place, !place.isEmpty { parts.append(place) }
         return parts.joined(separator: " · ")
     }
@@ -69,8 +76,17 @@ struct WayMomentPreview: View {
                 Text("tap the photo to see it whole").font(Constants.Typography.caption).foregroundColor(.fog)
             }
         case .waypoint:
-            Text("A place they marked. When you walk it, it rises as a card as you reach it.")
-                .font(Constants.Typography.body).foregroundColor(.ink)
+            VStack(alignment: .leading, spacing: Constants.UI.Padding.small) {
+                Text(WayMomentHeader.placeCopy(for: moment, isStage: way.isPilgrimageStage))
+                    .font(Constants.Typography.body).foregroundColor(.ink)
+                if let minutes = moment.sitMinutes, minutes > 0 {
+                    Text("When you walk it, the way will offer you \(minutes) minutes of sitting here.")
+                        .font(Constants.Typography.caption).foregroundColor(.fog)
+                } else {
+                    Text("When you walk it, it rises as a card as you reach it.")
+                        .font(Constants.Typography.caption).foregroundColor(.fog)
+                }
+            }
         case .rest:
             Text("A pause in their walk. The companion will wait here with you.")
                 .font(Constants.Typography.body).foregroundColor(.ink)

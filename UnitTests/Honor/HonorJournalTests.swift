@@ -53,17 +53,17 @@ final class HonorJournalTests: XCTestCase {
         let way = Way(id: "walk:x", source: .ownWalk(UUID()), title: "Old walk", departedAt: Date(), tzIdentifier: nil,
                       expires: nil, route: [], totalDistanceMeters: 0, theirActiveSeconds: 600, moments: [], weather: nil)
         let plain = WalkDataFactory.makeWalk()
-        XCTAssertNil(HonorSummaryModel.summaryData(for: plain, way: way, link: nil, replies: [:]))
+        XCTAssertNil(HonorSummaryModel.summaryData(for: plain, way: way, link: nil, replies: [:], ledger: nil))
         let honored = WalkDataFactory.makeWalk(
             activeDuration: 540,
             workoutEvents: [TempWalkEvent(uuid: nil, eventType: .honorMode, timestamp: Date()),
                             TempWalkEvent(uuid: nil, eventType: .honorArrival, timestamp: Date())])
         let link = WayLink(wayId: "walk:x", theirSeconds: 600, yourSeconds: 540)
-        let data = HonorSummaryModel.summaryData(for: honored, way: way, link: link, replies: [2: "r"])
+        let data = HonorSummaryModel.summaryData(for: honored, way: way, link: link, replies: [2: "r"], ledger: nil)
         XCTAssertEqual(data?.wayTitle, "Old walk")
         XCTAssertEqual(data?.repliesMade, 1)
         XCTAssertEqual(data?.arrivedBeforeTheirsSeconds, 60)
-        let unlinked = HonorSummaryModel.summaryData(for: honored, way: way, link: nil, replies: [:])
+        let unlinked = HonorSummaryModel.summaryData(for: honored, way: way, link: nil, replies: [:], ledger: nil)
         XCTAssertNil(unlinked?.arrivedBeforeTheirsSeconds, "no delta without the engine's record")
     }
 
