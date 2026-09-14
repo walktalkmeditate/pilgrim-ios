@@ -321,6 +321,22 @@ struct AboutView: View {
                 url: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!
             )
 
+            Text("The maps you walk on are drawn by Mapbox from OpenStreetMap, whose roads and paths are surveyed and kept current by people who walk them.")
+                .font(Constants.Typography.body)
+                .foregroundColor(.ink)
+
+            linkRow(
+                icon: "map",
+                label: "Maps — © Mapbox",
+                url: URL(string: "https://www.mapbox.com/about/maps/")!
+            )
+
+            linkRow(
+                icon: "point.topleft.down.curvedto.point.bottomright.up",
+                label: "Map data — © OpenStreetMap contributors",
+                url: URL(string: "https://www.openstreetmap.org/copyright")!
+            )
+
             Text("The pilgrimage routes named alongside the collective's distance — their lengths, their seasons, and how many people walk them each year — come from the open-pilgrimages dataset, shared under the Open Database License.")
                 .font(Constants.Typography.body)
                 .foregroundColor(.ink)
