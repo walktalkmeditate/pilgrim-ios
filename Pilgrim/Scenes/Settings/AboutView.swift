@@ -327,13 +327,17 @@ struct AboutView: View {
 
             linkRow(
                 icon: "map",
-                label: "Maps — © Mapbox",
+                label: "© Mapbox",
                 url: URL(string: "https://www.mapbox.com/about/maps/")!
             )
 
+            // "© OpenStreetMap contributors" is the credit OSM's terms ask
+            // for, word for word — the copyright is the contributors', not a
+            // company's. Our own "Map data —" prefix was what wrapped the
+            // line, so that went instead.
             linkRow(
                 icon: "point.topleft.down.curvedto.point.bottomright.up",
-                label: "Map data — © OpenStreetMap contributors",
+                label: "© OpenStreetMap contributors",
                 url: URL(string: "https://www.openstreetmap.org/copyright")!
             )
 
