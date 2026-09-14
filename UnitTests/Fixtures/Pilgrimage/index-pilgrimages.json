@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-09-10T19:42:52.671Z",
+  "release": "v1.9.1",
+  "routes": [
+    {
+      "id": "camino-frances",
+      "name": { "en": "Camino de Santiago (Frances)" },
+      "region": "Europe",
+      "country": "ES",
+      "distanceKm": 775,
+      "tradition": "christian",
+      "ways": { "stageCount": 33, "bytes": 1049489, "placesPerStage": 0.1, "sparse": true }
+    },
+    {
+      "id": "shikoku-88-awa",
+      "name": { "en": "Awa (Temples 1-23)" },
+      "region": "Asia",
+      "country": "JP",
+      "distanceKm": 213,
+      "tradition": "buddhist",
+      "ways": { "stageCount": 5, "bytes": 185623, "placesPerStage": 9.6, "sparse": false }
+    },
+    {
+      "id": "shikoku-88-iyo",
+      "name": { "en": "Iyo (Temples 39-65)" },
+      "region": "Asia",
+      "country": "JP",
+      "distanceKm": 366,
+      "tradition": "buddhist",
+      "ways": { "stageCount": 13, "bytes": 402113, "placesPerStage": 7.1, "sparse": false }
+    },
+    {
+      "id": "shikoku-88-sanuki",
+      "name": { "en": "Sanuki (Temples 65-88, and the return to Temple 1)" },
+      "region": "Asia",
+      "country": "JP",
+      "distanceKm": 269,
+      "tradition": "buddhist",
+      "ways": { "stageCount": 9, "bytes": 265004, "placesPerStage": 8.8, "sparse": false }
+    },
+    {
+      "id": "shikoku-88-tosa",
+      "name": { "en": "Tosa (Temples 23-39)" },
+      "region": "Asia",
+      "country": "JP",
+      "distanceKm": 292,
+      "tradition": "buddhist",
+      "ways": { "stageCount": 13, "bytes": 310887, "placesPerStage": 6.4, "sparse": false }
+    },
+    {
+      "id": "st-cuthberts-way",
+      "name": { "en": "St Cuthbert's Way" },
+      "region": "Europe",
+      "country": "GB",
+      "distanceKm": 100,
+      "tradition": "christian",
+      "ways": { "stageCount": 6, "bytes": 90000, "placesPerStage": 3.0, "sparse": false }
+    }
+  ],
+  "pilgrimages": [
+    {
+      "id": "shikoku-88",
+      "name": { "en": "Shikoku 88 Temple Pilgrimage", "ja": "四国八十八箇所" },
+      "kind": "legs",
+      "circular": true,
+      "sections": ["shikoku-88-awa", "shikoku-88-tosa", "shikoku-88-iyo", "shikoku-88-sanuki"]
+    },
+    {
+      "id": "camino-de-santiago",
+      "name": { "en": "Camino de Santiago" },
+      "kind": "alternatives",
+      "sections": ["camino-frances", "camino-primitivo"]
+    },
+    {
+      "id": "kumano-kodo",
+      "name": { "en": "Kumano Kodo" },
+      "kind": "alternatives",
+      "sections": ["kumano-kodo-iseji", "kumano-kodo-ohechi"]
+    }
+  ]
+}

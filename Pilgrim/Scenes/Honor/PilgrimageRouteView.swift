@@ -156,7 +156,9 @@ struct PilgrimageRouteView: View {
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog.opacity(0.7))
             }
-            Text(PilgrimageCatalogModel.card(entry: entry, ledger: ledger, isInstalled: isInstalled, hasUpdate: hasUpdate))
+            // No install badge here: the button directly below already says
+            // "On your phone" or "Update" in words, and the page has room.
+            Text(PilgrimageCatalogModel.card(entry: entry, ledger: ledger, isInstalled: isInstalled))
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
             downloadButton

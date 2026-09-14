@@ -202,6 +202,78 @@ final class PilgrimageCatalogServiceTests: XCTestCase {
         }
         XCTAssertNil(service.catalog)
     }
+
+    // MARK: - Grouping sections under their pilgrimage
+
+    /// The dataset lists routes by id, so the four dojo arrive as awa, iyo,
+    /// sanuki, tosa. `sections` carries the order they are walked in, which
+    /// for Shikoku is the order of the temple numbers.
+    func testSectionsAreOrderedAsTheirPilgrimageWalksThemNotAsTheIndexListsThem() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        XCTAssertEqual(catalog.routes.map(\.id),
+                       ["camino-frances", "shikoku-88-awa", "shikoku-88-iyo",
+                        "shikoku-88-sanuki", "shikoku-88-tosa", "st-cuthberts-way"],
+                       "the index itself is sorted by id")
+        let shikoku = try XCTUnwrap(catalog.groups.first { $0.id == "shikoku-88" })
+        XCTAssertEqual(shikoku.name, "Shikoku 88 Temple Pilgrimage")
+        XCTAssertEqual(shikoku.entries.map(\.id),
+                       ["shikoku-88-awa", "shikoku-88-tosa", "shikoku-88-iyo", "shikoku-88-sanuki"])
+    }
+
+    /// Temples 1-23, then 23-39, then 39-65, then 65-88: the ranges have to
+    /// run forward, or the list is telling the walker to start in the middle.
+    func testTheShikokuSectionsReadAsAForwardRunOfTempleNumbers() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        let shikoku = try XCTUnwrap(catalog.groups.first { $0.id == "shikoku-88" })
+        let firstTemples = shikoku.entries.compactMap { entry -> Int? in
+            guard let digits = entry.name.firstMatch(of: /(\d+)-\d+/) else { return nil }
+            return Int(digits.1)
+        }
+        XCTAssertEqual(firstTemples, [1, 23, 39, 65])
+    }
+
+    func testASectionWithNoDownloadablePackageIsSkippedAndItsPilgrimageSurvives() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        let camino = try XCTUnwrap(catalog.groups.first { $0.id == "camino-de-santiago" })
+        XCTAssertEqual(camino.entries.map(\.id), ["camino-frances"],
+                       "camino-primitivo has no route row to group")
+    }
+
+    /// Kumano's two sections both ship metadata only, so listing the
+    /// pilgrimage would offer a header over nothing.
+    func testAPilgrimageWithNothingToWalkIsNotListed() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        XCTAssertNil(catalog.groups.first { $0.id == "kumano-kodo" })
+    }
+
+    /// A route the index files under no pilgrimage is still a route someone
+    /// can walk, so it keeps a place — under no header, because inventing one
+    /// would name a pilgrimage the dataset never claimed.
+    func testARouteBelongingToNoPilgrimageIsStillOffered() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        let loose = try XCTUnwrap(catalog.groups.last)
+        XCTAssertNil(loose.name)
+        XCTAssertEqual(loose.entries.map(\.id), ["st-cuthberts-way"])
+    }
+
+    /// The grouped list is the only list the picker draws, so a route missing
+    /// from it is a route no one can reach, and a route in it twice traps
+    /// `List`'s `Identifiable` diffing.
+    func testEveryRouteAppearsInExactlyOneGroup() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        let grouped = catalog.groups.flatMap { $0.entries.map(\.id) }
+        XCTAssertEqual(grouped.sorted(), catalog.routes.map(\.id).sorted())
+        XCTAssertEqual(Set(grouped).count, grouped.count)
+    }
+
+    /// An index written before the pilgrimage layer still parses, and its
+    /// routes still reach the picker.
+    func testAnIndexWithNoPilgrimageBlockKeepsEveryRouteUnderNoHeader() throws {
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index.json"))
+        XCTAssertEqual(catalog.groups.count, 1)
+        XCTAssertNil(catalog.groups.first?.name)
+        XCTAssertEqual(catalog.groups.first?.entries.map(\.id), catalog.routes.map(\.id))
+    }
 }
 
 extension PilgrimageCatalogServiceTests {
@@ -275,35 +347,53 @@ final class PilgrimageCatalogModelTests: XCTestCase {
     }
 
     func testACardWithoutAPackageJustCountsTheStages() {
-        XCTAssertEqual(PilgrimageCatalogModel.card(entry: entry, ledger: nil, isInstalled: false, hasUpdate: false),
+        XCTAssertEqual(PilgrimageCatalogModel.card(entry: entry, ledger: nil, isInstalled: false),
                        "ES · \(StatsHelper.string(for: 764_000, unit: UnitLength.meters, type: .distance)) · 33 stages")
     }
 
-    func testACardWithAPackageSaysSoAndCarriesItsProgress() {
+    func testACardWithAPackageCarriesItsProgressAndLeavesInstallToTheBadge() {
         var led = PilgrimageLedger(routeId: "camino-frances")
         led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
                    outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true, hasUpdate: false)
-        XCTAssertTrue(line.contains("on your phone"), line)
+        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true)
         XCTAssertTrue(line.contains("stage 2 of 33"), line)
-        XCTAssertFalse(line.contains("updated"), line)
+        XCTAssertFalse(line.contains("on your phone"), line)
     }
 
-    /// Spec: when the catalog's release is newer than the installed
-    /// `release.txt`, the card reads "on your phone · updated · <progress>".
-    func testACardWithAnUpdateSaysSoBetweenPhoneAndProgress() {
-        var led = PilgrimageLedger(routeId: "camino-frances")
-        led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
-                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true, hasUpdate: true)
-        XCTAssertTrue(line.contains("on your phone · updated · stage 2 of 33"), line)
+    /// One route is on the phone at a time, so the badge is the mark for
+    /// which one — and it stays out of the card entirely.
+    func testTheBadgeMarksTheInstalledRouteAndNothingElse() {
+        XCTAssertNil(PilgrimageCatalogModel.installBadge(isInstalled: false, hasUpdate: false))
+        XCTAssertNil(PilgrimageCatalogModel.installBadge(isInstalled: false, hasUpdate: true))
+        XCTAssertEqual(PilgrimageCatalogModel.installBadge(isInstalled: true, hasUpdate: false)?.label,
+                       "on your phone")
+    }
+
+    /// `hasUpdate` means the installed release trails the catalog's, so an
+    /// update is waiting. The old card called that state "updated", which
+    /// reads as though the route were already current.
+    func testAWaitingUpdateDoesNotClaimToBeAlreadyUpdated() {
+        let badge = PilgrimageCatalogModel.installBadge(isInstalled: true, hasUpdate: true)
+        XCTAssertEqual(badge?.label, "update ready")
+        XCTAssertNotEqual(badge?.symbol, PilgrimageCatalogModel.installBadge(isInstalled: true, hasUpdate: false)?.symbol,
+                          "a waiting update and a current package must not share one glyph")
+    }
+
+    /// The glyph carries the state visually, so the words have to survive
+    /// somewhere a screen reader can reach them.
+    func testEveryBadgeSpellsItselfOutForVoiceOver() {
+        for hasUpdate in [true, false] {
+            let badge = PilgrimageCatalogModel.installBadge(isInstalled: true, hasUpdate: hasUpdate)
+            XCTAssertFalse(badge?.label.isEmpty ?? true)
+            XCTAssertFalse(badge?.symbol.isEmpty ?? true)
+        }
     }
 
     func testASparseRouteSaysSoWithoutHidingItself() {
         XCTAssertEqual(PilgrimageCatalogModel.sparseNote(for: sparseEntry), "few places marked yet")
         XCTAssertNil(PilgrimageCatalogModel.sparseNote(for: entry))
         // The note is its own quiet line, never folded into the meta line.
-        XCTAssertFalse(PilgrimageCatalogModel.card(entry: sparseEntry, ledger: nil, isInstalled: false, hasUpdate: false)
+        XCTAssertFalse(PilgrimageCatalogModel.card(entry: sparseEntry, ledger: nil, isInstalled: false)
             .contains("few places marked yet"))
     }
 
