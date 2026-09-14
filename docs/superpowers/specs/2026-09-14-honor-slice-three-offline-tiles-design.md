@@ -20,7 +20,7 @@ The package does not change. The download does not change. A second, optional st
 4. **Cellular is allowed; the size is the guardrail.** No wifi-only mode. The button carries the estimate; the walker decides. (Rejected: `NetworkRestriction.disallowCellular` with an override — one more state to draw for a 26 MB ceiling.)
 5. **Two doors, one state.** The route page owns save / saved / progress. Settings → Data gets a "Maps" row beside "Ways" that shows what is saved and can delete it. Both read the same manager.
 6. **Proof is a feature.** A `#if DEBUG` switch flips `OfflineSwitch.shared.isMapboxStackConnected` so a saved stage can be verified to render in a living room. Without it the feature ships on faith.
-7. **The `.readOnly` tile store mode already set in `AppDelegate` is correct and stays.** It means: check the tile store first; if a tile pack covers the tile, use it; otherwise fetch the tile. That is exactly the behaviour a saved region needs. The earlier note that this would need switching to a "shared" mode was wrong.
+7. **The `.readOnly` tile store mode already set in `AppDelegate` is correct and stays.** It means: check the tile store first; if a tile pack covers the tile, use it; otherwise fetch the tile. That is exactly the behaviour a saved region needs. The earlier note that this would need switching to a "shared" mode was wrong. **One caveat, stated so it is not forgotten:** the whole `TileStoreUsageMode` enum is marked `__attribute__((deprecated))` in the MapboxCoreMaps 11.23.1 headers this app vendors, with no replacement named. The Swift `MapboxMapsOptions.tileStoreUsageMode` property still uses it without a deprecation of its own, and the behaviour is what we rely on today — but a future SDK major could remove it. The `AppDelegate` line gets a dated comment naming this decision, and the plan's SDK-upgrade checklist item re-reads this decision before any MapboxMaps bump past 11.x.
 
 ## Vocabulary
 
@@ -48,11 +48,13 @@ enum Phase: Equatable {
 /// Set by `MainCoordinatorView`, like the package manager's.
 var isWalkActive: () -> Bool = { false }
 
-func status(for routeId: String, stageCount: Int) -> Status   // .none, .partial(saved:of:), .saved(bytes:)
-func estimateBytes(for stages: [Way]) -> Int                  // corridor tile count × bytesPerTile
+func status(for routeId: String, stages: [Way]) -> Status      // .none, .partial(saved:of:), .saved(bytes:); a region counts as saved only if complete AND its corridor hash matches the stage
+func estimateBytes(for routeId: String, stages: [Way]) -> Int  // corridor tile count × the route's own bytes-per-tile
 func save(routeId: String, stages: [Way]) async throws
 func cancel()
 func remove(routeId: String)                                   // every region with the route's prefix
+func removeRegions(routeId: String, atOrAbove index: Int)      // Update's retired indices
+func reconcile(installed: (routeId: String, stageCount: Int)?) // once at launch; removes every region the installed route does not account for
 ```
 
 The Mapbox objects are reached only through one protocol, injected at init:
@@ -64,7 +66,7 @@ protocol TileRegionLoading {
     func loadRegion(id: String, options: TileRegionLoadOptions,
                     progress: @escaping (Int, Int) -> Void,
                     completion: @escaping (Result<TileRegionSummary, Error>) -> Void) -> AnyCancelable
-    func regions() -> [TileRegionSummary]                      // our own value type: id, completedResourceCount, requiredResourceCount, bytes — not the SDK's TileRegion, so the fake needs no Mapbox type
+    func regions() -> [TileRegionSummary]                      // our own value type: id, completedResourceCount, requiredResourceCount, bytes, metadata (the corridor hash) — not the SDK's TileRegion, so the fake needs no Mapbox type
     func removeRegion(id: String)
     func hasStylePack(styleURI: StyleURI) -> Bool
 }
@@ -107,9 +109,14 @@ The corridor is the region's `Geometry` in `TileRegionLoadOptions(geometry:descr
 
 ### 2.2 The estimate
 
-`estimateBytes(for:)` counts the distinct XYZ tiles the corridor touches at z10–15 (Streets) and z10–14 (DEM) and multiplies by `bytesPerTile`. The descriptors start at z0, but a corridor touches only a handful of tiles below z10 — a rounding error the estimate leaves out. That constant starts at the measured value from the design session — 10 KB, from three Francés tiles at z14/z15 — and **calibrates itself**: when a save completes, the tile store's real `completedResourceSize` divided by the region's tile count is written to `UserDefaults` under `pilgrimage.tiles.bytesPerTile`, and the next estimate uses it. After the first save the number stops being a guess.
+`estimateBytes(for:)` counts the distinct XYZ tiles the corridor touches at z10–15 (Streets) and z10–14 (DEM) and multiplies by a bytes-per-tile figure. The descriptors start at z0, but a corridor touches only a handful of tiles below z10 — a rounding error the estimate leaves out.
 
-The UI always writes the estimate as "~13 MB". Once saved it shows the real byte count with no tilde.
+**The bytes-per-tile figure is per route, never global.** Tile density differs by an order of magnitude between routes the catalog already carries — the whole Francés is ~26 MB, the whole Nakahechi ~2 MB — so one shared number calibrated by whichever route saved last would understate the next route right where the estimate is the only guardrail decision 4 relies on. Each route id gets its own value under `UserDefaults` key `pilgrimage.tiles.bytesPerTile.<routeId>`:
+
+- **Seeded** from the design session's measurement where one exists — 10 KB for `camino-frances`, from three of its tiles at z14/z15 — and from that same 10 KB as a stated default for a route with no measurement of its own.
+- **Calibrated** when a save of that route completes: the tile store's real `completedResourceSize` for the route's regions, divided by their tile count, replaces the seed. After the first save of a route its number stops being a guess; a different route's save never touches it.
+
+The UI always writes the estimate as "~26 MB". Once saved it shows the real byte count with no tilde.
 
 ## 3. The save
 
@@ -119,21 +126,37 @@ The UI always writes the estimate as "~13 MB". Once saved it shows the real byte
 guard !isWalkActive()            → throw .walkInProgress
 guard phase == .idle             → return (one save at a time)
 phase = .saving(done: 0, total: 2 + stages.count)
-for style in [.light, .dark]:
-    if !hasStylePack(style): loadStylePack(...)   // awaits completion
-    done += 1
-for stage in stages (by index):
-    if regions()[stage.id] is complete: done += 1; continue
-    loadRegion(id: stage.id, options: TileRegionLoadOptions(geometry: corridor, descriptors: [streets, terrain], acceptExpired: true))
-    done += 1
-phase = .idle
+do:
+    for style in [.light, .dark]:
+        guard !isWalkActive()    → throw .walkInProgress
+        if !hasStylePack(style): loadStylePack(...)   // awaits completion
+        done += 1
+    for stage in stages (by index):
+        guard !isWalkActive()    → throw .walkInProgress
+        let corridor = WayGeometry.corridor(around: stage.route, halfWidthMeters: 500)
+        if regions()[stage.id] is complete
+           and regions()[stage.id].metadata.corridorHash == hash(corridor): done += 1; continue
+        loadRegion(id: stage.id, options: TileRegionLoadOptions(geometry: corridor, descriptors: [streets, terrain],
+                                                                 metadata: ["corridorHash": hash(corridor)], acceptExpired: true))
+        done += 1
+    phase = .idle
+catch error:
+    cancel the in-flight load
+    phase = .failed(mapped(error))
+    throw
 ```
+
+Three things in that loop are there for a reason:
+
+- **`isWalkActive` is re-checked before every load, not only at entry.** A save is up to 35 sequential network loads; a walker who taps save and then starts the day's stage would otherwise keep every remaining load running under the walk. `PilgrimagePackageManager.download()` re-checks before its commit for the same reason. Throwing `.walkInProgress` mid-loop keeps every region already complete.
+- **"Complete" is not enough to skip a stage — the corridor has to match too.** Each region's `metadata` carries a hash of the corridor it was loaded for. After an Update redraws a stage, its region is still complete by resource count but its hash no longer matches, so the loop reloads it; a region loaded under an existing id is replaced. Without the hash, a resumed save would skip a stage whose offline tiles now cover the wrong path.
+- **Every error lands in `.failed`.** The loop's error path sets `phase = .failed(...)` before rethrowing, so the route page has a state to draw (§5.1) and the promise in §3.4 is kept. `.failed` clears back to `.idle` on the next `save` or `cancel`.
 
 `acceptExpired: true` lets a resumed save on a flaky connection complete with cached-but-expired tiles instead of failing on them.
 
 ### 3.2 Cancel keeps what is done
 
-`cancel()` cancels the in-flight `AnyCancelable` and sets `phase = .idle`. Regions already complete stay. Tapping save again runs the same loop, which skips every complete region and picks up at the first gap. There is no partial-download state to draw: the route page reads `status(for:)`, which is `.partial(saved: 12, of: 33)`, and offers the same button.
+`cancel()` cancels the in-flight `AnyCancelable` and sets `phase = .idle`. Regions already complete stay. Tapping save again runs the same loop, which skips every region that is complete and still matches its stage's corridor, and picks up at the first gap. There is no partial-download state to draw: the route page reads `status(for:)`, which is `.partial(saved: 12, of: 33)`, and offers the same button.
 
 ### 3.3 Resource safety
 
@@ -144,7 +167,7 @@ phase = .idle
 
 ### 3.4 Errors
 
-`PilgrimageError` gains no new cases. A failed region load maps to `.incomplete` ("the download didn't finish"); a disk-full error from the store maps to `.diskFull`; `.walkInProgress` and `.catalogUnreachable` are reused as they are. The route page shows `PilgrimageCopy.line(for:)` under the button exactly as it does for a failed package download.
+`PilgrimageError` gains no new cases. A failed region or style-pack load maps to `.incomplete` ("the download didn't finish"); a disk-full error from the store maps to `.diskFull`; `.walkInProgress` is thrown by the entry guard and by the per-load re-check. `.catalogUnreachable` is not among them: `save` takes the stages it is given and never touches the catalog, so there is no path that could raise it. Whatever is thrown is also what `phase = .failed(...)` carries, and the route page shows `PilgrimageCopy.line(for:)` under the button exactly as it does for a failed package download (§5.1).
 
 ## 4. Lifecycle — nothing orphaned
 
@@ -152,7 +175,13 @@ phase = .idle
 
 - **`remove(routeId:)`** → `tiles.remove(routeId:)` after the stages are gone. Packs no other region references are freed by the store.
 - **`replace(with:release:)`** → `tiles.remove(routeId: previous)` for the outgoing route. The incoming route starts with no maps; saving them is the same separate tap.
-- **`update(entry:release:)`** → after the new stages land, if `tiles.status(for:)` was `.saved` or `.partial` before the update, `tiles.save(...)` runs again. Loading a region under an existing id replaces it in place, so a redrawn stage gets a corridor that matches its new line. A route that had no maps gets none.
+- **`update(entry:release:)`** → after the new stages land, two things and no download:
+  1. **Regions at retired indices are removed.** `update` already retires the stage Ways above the new count through `store.retireMany`; the tiles manager removes the regions for that same index range, so a route that shrinks from 33 stages to 20 does not leave `pilgrimage:<routeId>:20` through `:32` in the store forever.
+  2. **Nothing is re-downloaded on the walker's behalf.** The maps were saved by a deliberate tap with the size in view (decision 1, decision 4); an Update that silently pulled up to ~26 MB — over whatever connection the walker has the moment the update lands, mid-route — would be exactly the spend that tap exists to consent to. Instead, `status(for:)` now reads `.partial` for every stage whose corridor hash no longer matches (§3.1), the route page shows the same **Save maps for the way · 12 of 33 saved** button it shows for any interrupted save, and the morning card says **no offline maps for today** for a redrawn stage. The walker's re-tap runs the ordinary loop, which reloads only the stages that changed.
+
+  A route that had no maps gets none.
+
+**At launch, the store is reconciled against what is actually installed.** The three hooks above are event-driven, and one path bypasses all of them: the package manager's crash recovery for a kill mid-Replace runs through `installed()`'s swap-marker branch straight into `removeStagesAndPackage()`, never through `remove` or `replace`. A kill between the incoming route's commit and the outgoing route's `tiles.remove` would leave the outgoing route's regions — up to ~26 MB — with no route to reference them and no hook that would ever reach them. So `PilgrimageTilesManager.reconcile(installed: String?)` runs once at app launch after the package manager has resolved `installed()`: every region whose id does not carry the installed route's `pilgrimage:<routeId>:` prefix is removed, and so is every region at an index at or above the installed route's stage count. It is idempotent, it is the backstop for every lifecycle gap rather than only the one found, and it is the reason the summary's "nothing is ever orphaned" is a property of the store and not a promise about call sites.
 
 Expired regions stay usable offline — the SDK serves them rather than dropping them — so a 33-day walk needs no refresh policy. Re-tapping save refreshes; nothing refreshes on its own.
 
@@ -165,10 +194,11 @@ Under the existing download button, one row driven by `status(for:)` while idle 
 | status | row |
 |---|---|
 | package not installed | nothing — maps need stages |
-| `.none` | button: **Save maps for the way · ~13 MB** |
+| `.none` | button: **Save maps for the way · ~26 MB** |
 | `.partial(12, of: 33)` | button: **Save maps for the way · 12 of 33 saved** |
 | `.saved(bytes)` | check glyph, caption: **maps saved · 26 MB**, tappable to save again |
 | `.saving(done, total)` | caption: **maps · stage 12 of 33**, and a **cancel** |
+| `.failed(error)` | the `.none` or `.partial` button as above, with `PilgrimageCopy.line(for: error)` in `.rust` beneath it — the same footer a failed package download shows |
 
 The check glyph is the same `checkmark.circle.fill` in `.moss` the catalog list uses for the installed route, so "on your phone" and "maps saved" read as one family. Copy is `Constants.Typography.caption` for captions and `.button` for the button, like the page around it.
 
@@ -192,7 +222,12 @@ A **Maps** row on `DataCard`, a sibling of **Ways**, using `settingNavRow(label:
 - detail **none saved** when nothing is saved
 - detail **Camino Francés · 26 MB** otherwise (the route's display name from the installed package, bytes from the store)
 
-It opens `OfflineMapsView`: the one saved pilgrimage, its byte count, the stage count saved, and **Delete maps**, which calls `tiles.remove(routeId:)` and leaves the stages alone. The footer says so: *"Removes the saved basemap. The route's stages stay on your phone."* One pilgrimage at a time keeps this a single entry rather than a list; the view is written for one and the row reads "none saved" when there is none.
+It opens `OfflineMapsView`, which has two states:
+
+- **Nothing saved** — the row said "none saved" and can still be tapped, so the view has to say something: one caption, **no maps saved**, in the place `WaysListView` puts "no ways yet", and no Delete row. It does not link back to the route page; the way to save maps is the route page's own button, and a settings screen that launches downloads would be a second door to the same tap.
+- **One route saved** — the pilgrimage's display name, its real byte count from the store, the stage count saved of the total, and **Delete maps**. Delete **confirms first**, like Remove route and Delete all Ways do: an alert titled *Delete maps?* whose message is the footer line, *"Removes the saved basemap. The route's stages stay on your phone."*, with **Delete** and **Cancel**. Confirming calls `tiles.remove(routeId:)` and leaves the stages alone.
+
+One pilgrimage at a time keeps this a single entry rather than a list; the view is written for one.
 
 ### 5.5 The debug switch
 
@@ -224,6 +259,13 @@ Everything below runs against the `TileRegionLoading` fake; no test touches Mapb
 - **Errors:** a failing region load surfaces `.incomplete` and leaves earlier regions in place; a disk-full error surfaces `.diskFull`.
 - **Status and copy:** `status(for:)` across none / partial / saved; the row label and the morning-card line for each.
 - **Store location and backup exclusion**, per section 6.
+- **A walk starting mid-save stops it:** `isWalkActive` flips true after stage 5's load; the save throws `.walkInProgress`, no sixth load is requested, and five regions remain.
+- **A redrawn stage is reloaded, an unchanged one is not:** with every region complete, changing one stage's line and saving again requests exactly that stage's region, with the new corridor hash in its metadata.
+- **Update removes retired indices and downloads nothing:** an update from 33 to 20 stages removes regions 20–32, makes no load calls, and `status(for:)` reports `.partial` for any stage whose hash changed.
+- **Launch reconciliation:** with regions on disk for two route ids and one at an index past the installed stage count, `reconcile(installed:)` removes the foreign route's regions and the out-of-range one and leaves the rest; run twice, the second run removes nothing.
+- **A failed load lands in `.failed` and clears:** a region load that throws sets `phase` to `.failed(.incomplete)` with earlier regions intact; the next `save` or `cancel` returns it to `.idle`.
+- **Delete confirms:** the Maps view's Delete action presents the alert before calling `remove`, and Cancel calls nothing.
+- **Per-route calibration:** saving route A writes A's key only; B's estimate is unchanged by A's save, and a route with no seed uses the stated default.
 
 ## 8. Out of scope
 
