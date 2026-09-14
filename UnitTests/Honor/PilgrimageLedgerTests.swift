@@ -159,4 +159,34 @@ final class PilgrimageLedgerTests: XCTestCase {
         XCTAssertEqual(store.load(routeId: "camino-frances")?.completedCount, 1)
         XCTAssertNil(store.load(routeId: "../etc"))
     }
+
+    /// open-pilgrimages has renamed route ids twice — `kumano-kodo` became
+    /// `kumano-kodo-nakahechi` in v1.8.0, and `shikoku-88` became the four
+    /// dojo in v1.9.0. A pilgrim who walked stages under the old id keeps a
+    /// ledger the catalog can no longer name.
+    ///
+    /// The kilometres must survive that, because an id the dataset renames
+    /// is not a walk the pilgrim un-walked. What the ledger must NOT do is
+    /// conjure a row: the picker draws the catalog, so a record with no
+    /// catalog entry is preserved and unlisted, never half-listed.
+    @MainActor
+    func testARenamedRouteLeavesItsLedgerReadableAndUnlisted() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        let store = PilgrimageLedgerStore(store: WayStore(baseDirectory: dir))
+
+        var walked = PilgrimageLedger(routeId: "shikoku-88")
+        walked.record(stageIndex: 0, name: "Temples 1-10", distanceKm: 40,
+                      outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: day)
+        store.save(walked)
+
+        let catalog = try PilgrimageCatalogService.parse(PilgrimageFixtures.data("index-pilgrimages.json"))
+        XCTAssertFalse(catalog.routes.contains { $0.id == "shikoku-88" },
+                       "shikoku-88 is a pilgrimage id now, and pilgrimages have no package")
+        XCTAssertFalse(catalog.groups.flatMap(\.entries).contains { $0.id == "shikoku-88" })
+
+        let kept = try XCTUnwrap(store.load(routeId: "shikoku-88"))
+        XCTAssertEqual(kept.completedCount, 1)
+        XCTAssertEqual(kept.totalKmWalked, 40, accuracy: 0.01)
+    }
 }

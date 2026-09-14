@@ -347,35 +347,53 @@ final class PilgrimageCatalogModelTests: XCTestCase {
     }
 
     func testACardWithoutAPackageJustCountsTheStages() {
-        XCTAssertEqual(PilgrimageCatalogModel.card(entry: entry, ledger: nil, isInstalled: false, hasUpdate: false),
+        XCTAssertEqual(PilgrimageCatalogModel.card(entry: entry, ledger: nil, isInstalled: false),
                        "ES · \(StatsHelper.string(for: 764_000, unit: UnitLength.meters, type: .distance)) · 33 stages")
     }
 
-    func testACardWithAPackageSaysSoAndCarriesItsProgress() {
+    func testACardWithAPackageCarriesItsProgressAndLeavesInstallToTheBadge() {
         var led = PilgrimageLedger(routeId: "camino-frances")
         led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
                    outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true, hasUpdate: false)
-        XCTAssertTrue(line.contains("on your phone"), line)
+        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true)
         XCTAssertTrue(line.contains("stage 2 of 33"), line)
-        XCTAssertFalse(line.contains("updated"), line)
+        XCTAssertFalse(line.contains("on your phone"), line)
     }
 
-    /// Spec: when the catalog's release is newer than the installed
-    /// `release.txt`, the card reads "on your phone · updated · <progress>".
-    func testACardWithAnUpdateSaysSoBetweenPhoneAndProgress() {
-        var led = PilgrimageLedger(routeId: "camino-frances")
-        led.record(stageIndex: 0, name: "a", distanceKm: 24.2,
-                   outcome: HonorStageOutcome(progressFrac: 1, arrived: true), at: Date())
-        let line = PilgrimageCatalogModel.card(entry: entry, ledger: led, isInstalled: true, hasUpdate: true)
-        XCTAssertTrue(line.contains("on your phone · updated · stage 2 of 33"), line)
+    /// One route is on the phone at a time, so the badge is the mark for
+    /// which one — and it stays out of the card entirely.
+    func testTheBadgeMarksTheInstalledRouteAndNothingElse() {
+        XCTAssertNil(PilgrimageCatalogModel.installBadge(isInstalled: false, hasUpdate: false))
+        XCTAssertNil(PilgrimageCatalogModel.installBadge(isInstalled: false, hasUpdate: true))
+        XCTAssertEqual(PilgrimageCatalogModel.installBadge(isInstalled: true, hasUpdate: false)?.label,
+                       "on your phone")
+    }
+
+    /// `hasUpdate` means the installed release trails the catalog's, so an
+    /// update is waiting. The old card called that state "updated", which
+    /// reads as though the route were already current.
+    func testAWaitingUpdateDoesNotClaimToBeAlreadyUpdated() {
+        let badge = PilgrimageCatalogModel.installBadge(isInstalled: true, hasUpdate: true)
+        XCTAssertEqual(badge?.label, "update ready")
+        XCTAssertNotEqual(badge?.symbol, PilgrimageCatalogModel.installBadge(isInstalled: true, hasUpdate: false)?.symbol,
+                          "a waiting update and a current package must not share one glyph")
+    }
+
+    /// The glyph carries the state visually, so the words have to survive
+    /// somewhere a screen reader can reach them.
+    func testEveryBadgeSpellsItselfOutForVoiceOver() {
+        for hasUpdate in [true, false] {
+            let badge = PilgrimageCatalogModel.installBadge(isInstalled: true, hasUpdate: hasUpdate)
+            XCTAssertFalse(badge?.label.isEmpty ?? true)
+            XCTAssertFalse(badge?.symbol.isEmpty ?? true)
+        }
     }
 
     func testASparseRouteSaysSoWithoutHidingItself() {
         XCTAssertEqual(PilgrimageCatalogModel.sparseNote(for: sparseEntry), "few places marked yet")
         XCTAssertNil(PilgrimageCatalogModel.sparseNote(for: entry))
         // The note is its own quiet line, never folded into the meta line.
-        XCTAssertFalse(PilgrimageCatalogModel.card(entry: sparseEntry, ledger: nil, isInstalled: false, hasUpdate: false)
+        XCTAssertFalse(PilgrimageCatalogModel.card(entry: sparseEntry, ledger: nil, isInstalled: false)
             .contains("few places marked yet"))
     }
 

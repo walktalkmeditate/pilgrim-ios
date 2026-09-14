@@ -3,21 +3,40 @@ import SwiftUI
 enum PilgrimageCatalogModel {
 
     /// "ES · 764 km · 33 stages", or, once the package is here, the route's
-    /// own progress instead of the bare stage count. `hasUpdate` inserts
-    /// "updated" right after "on your phone" — the spec's line for a route
-    /// whose installed `release.txt` trails the catalog's current release.
-    static func card(entry: PilgrimageCatalogEntry, ledger: PilgrimageLedger?, isInstalled: Bool, hasUpdate: Bool) -> String {
+    /// own progress instead of the bare stage count. Whether it is installed
+    /// is carried by `installBadge` and not by this line: only one route can
+    /// be on the phone at a time, so a glyph says it faster than a clause
+    /// buried between a distance and a stage count.
+    static func card(entry: PilgrimageCatalogEntry, ledger: PilgrimageLedger?, isInstalled: Bool) -> String {
         var parts: [String] = []
         if let country = entry.country, !country.isEmpty { parts.append(country) }
         parts.append(StatsHelper.string(for: entry.distanceKm * 1000, unit: UnitLength.meters, type: .distance))
         if isInstalled {
-            parts.append("on your phone")
-            if hasUpdate { parts.append("updated") }
             parts.append(PilgrimageLedger.progressLine(ledger: ledger, stageCount: entry.stageCount))
         } else {
             parts.append(entry.stageCount == 1 ? "1 stage" : "\(entry.stageCount) stages")
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// The glyph marking the one route that is on the phone. `label` is what
+    /// VoiceOver reads, so dropping the words from the card costs a screen
+    /// reader nothing.
+    struct InstallBadge: Equatable {
+        let symbol: String
+        let label: String
+        let tint: Color
+    }
+
+    /// `hasUpdate` means the installed `release.txt` trails the catalog's
+    /// current release — an update is *waiting*, which is why this says
+    /// "update ready" where the card used to say "updated", a word that
+    /// claimed the opposite of what it meant.
+    static func installBadge(isInstalled: Bool, hasUpdate: Bool) -> InstallBadge? {
+        guard isInstalled else { return nil }
+        return hasUpdate
+            ? InstallBadge(symbol: "arrow.down.circle.fill", label: "update ready", tint: .stone)
+            : InstallBadge(symbol: "checkmark.circle.fill", label: "on your phone", tint: .moss)
     }
 
     /// The build marks a route sparse when fewer than half its stages carry
@@ -141,14 +160,24 @@ struct PilgrimageCatalogView: View {
     @ViewBuilder
     private func row(_ entry: PilgrimageCatalogEntry) -> some View {
         let isInstalled = installed?.routeId == entry.id
+        let badge = PilgrimageCatalogModel.installBadge(isInstalled: isInstalled,
+                                                        hasUpdate: hasUpdate(for: entry))
         HStack(alignment: .top, spacing: Constants.UI.Padding.normal) {
             coverPlate(entry)
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.name)
-                    .font(Constants.Typography.body)
-                    .foregroundColor(.ink)
+                HStack(spacing: Constants.UI.Padding.xs) {
+                    Text(entry.name)
+                        .font(Constants.Typography.body)
+                        .foregroundColor(.ink)
+                    if let badge {
+                        Image(systemName: badge.symbol)
+                            .font(.system(size: 13))
+                            .foregroundColor(badge.tint)
+                            .accessibilityLabel(badge.label)
+                    }
+                }
                 Text(PilgrimageCatalogModel.card(entry: entry, ledger: ledgers[entry.id],
-                                                 isInstalled: isInstalled, hasUpdate: hasUpdate(for: entry)))
+                                                 isInstalled: isInstalled))
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
                 if let sparseNote = PilgrimageCatalogModel.sparseNote(for: entry) {
