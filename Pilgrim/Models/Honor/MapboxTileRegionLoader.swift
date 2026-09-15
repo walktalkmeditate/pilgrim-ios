@@ -216,7 +216,12 @@ final class MapboxTileRegionLoader: TileRegionLoading {
         }
         offlineManager.allStylePacks { [weak self] result in
             guard case .success(let packs) = result else { return }
-            let uris = Set(packs.map(\.styleURI))
+            // A pack whose load was interrupted persists partially and still
+            // reports its style URI here; reading it as present would skip
+            // it on every later save and leave the offline map without a
+            // style.
+            let complete = packs.filter { Self.isComplete(completed: Int($0.completedResourceCount), required: Int($0.requiredResourceCount)) }
+            let uris = Set(complete.map(\.styleURI))
             DispatchQueue.main.async {
                 let present = Set(StylePackRequest.allCases.filter { uris.contains(Self.styleURI($0).rawValue) })
                 guard let self, token == self.refreshGeneration, self.cachedPacks != present else { return }
@@ -224,6 +229,13 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                 self.onChange?(.packs)
             }
         }
+    }
+
+    /// Mirrors `TileRegionSummary.isComplete`: a `StylePack` reports the same
+    /// two counts under different names, so the completeness rule for "is
+    /// this style present" has to be the same rule as "is this region done".
+    static func isComplete(completed: Int, required: Int) -> Bool {
+        required > 0 && completed >= required
     }
 
     static func mapped(_ error: Error) -> TileRegionLoadingError {

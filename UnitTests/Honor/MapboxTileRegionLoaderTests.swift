@@ -57,4 +57,19 @@ final class MapboxTileRegionLoaderTests: XCTestCase {
         XCTAssertEqual(MapboxTileRegionLoader.mapped(URLError(.cannotWriteToFile)), .diskFull)
         XCTAssertEqual(MapboxTileRegionLoader.mapped(NSError(domain: "t", code: 1)), .failed)
     }
+
+    /// A pack interrupted mid-load must not read as present, or `refresh()`
+    /// would skip it on every later save. Pure function — no loader, no
+    /// `StylePack`, so this pins the rule `refresh()` actually filters by.
+    func testIsCompleteMirrorsTileRegionSummarysIsComplete() {
+        XCTAssertTrue(MapboxTileRegionLoader.isComplete(completed: 10, required: 10))
+        XCTAssertFalse(MapboxTileRegionLoader.isComplete(completed: 4, required: 10))
+        XCTAssertFalse(MapboxTileRegionLoader.isComplete(completed: 0, required: 0))
+
+        for (completed, required) in [(10, 10), (4, 10), (0, 0), (0, 5), (5, 0)] {
+            let summary = TileRegionSummary(id: "x", completedResourceCount: completed, requiredResourceCount: required,
+                                            completedResourceSize: 0, metadata: [:])
+            XCTAssertEqual(MapboxTileRegionLoader.isComplete(completed: completed, required: required), summary.isComplete)
+        }
+    }
 }
