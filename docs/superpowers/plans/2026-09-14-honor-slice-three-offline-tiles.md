@@ -6,7 +6,7 @@
 
 **Architecture:** A new `PilgrimageTilesManager` (sibling of `PilgrimagePackageManager`, same `Phase` shape, same `isWalkActive` seam) owns tile regions keyed by the stage's Way id. Every Mapbox call goes through a `TileRegionLoading` protocol with one production conformer (`MapboxTileRegionLoader`) and one test fake, so every test in this plan runs without Mapbox. The package manager's three lifecycle moments call the tiles manager; a launch-time `reconcile` is the backstop. Two SwiftUI surfaces read the manager: the route page row and Settings → Data → Maps; the morning card gets one caption line.
 
-**Tech Stack:** Swift 5.10, SwiftUI, Combine, MapboxMaps 11.23.1 (SPM) — `OfflineManager`, `TileStore`, `TilesetDescriptorOptions`, `TileRegionLoadOptions`, `StylePackLoadOptions`, `OfflineSwitch`; Turf `Polygon` (transitive via MapboxMaps); XCTest.
+**Tech Stack:** Swift 5.10, SwiftUI, Combine, MapboxMaps 11.20.0 (SPM) — `OfflineManager`, `TileStore`, `TilesetDescriptorOptions`, `TileRegionLoadOptions`, `StylePackLoadOptions`, `OfflineSwitch`; Turf `Polygon` (transitive via MapboxMaps); XCTest.
 
 **Spec:** `docs/superpowers/specs/2026-09-14-honor-slice-three-offline-tiles-design.md` (commit `1e4e514`). Section numbers below refer to it.
 
@@ -1806,7 +1806,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
 ```
 
 Two things to check against the SDK as you build, and adjust only the named line if they differ:
-- `TileRegionError` may not expose `.canceled` as an enum case in 11.23.1; if the compiler objects, replace that `if let` line with `if (error as NSError).domain.contains("TileRegionError"), (error as NSError).code == 3 { return .cancelled }` after confirming the cancel code by grepping `MBXTileRegionErrorType.h` in the artifacts. Cancellation is already handled by the manager's generation counter, so `.cancelled` vs `.failed` only affects the mapped `PilgrimageError`, which is `.incomplete` either way.
+- `TileRegionError` may not expose `.canceled` as an enum case in 11.20.0; if the compiler objects, replace that `if let` line with `if (error as NSError).domain.contains("TileRegionError"), (error as NSError).code == 3 { return .cancelled }` after confirming the cancel code by grepping `MBXTileRegionErrorType.h` in the artifacts. Cancellation is already handled by the manager's generation counter, so `.cancelled` vs `.failed` only affects the mapped `PilgrimageError`, which is `.incomplete` either way.
 - `StylePack.styleURI` is the raw string property on `MapboxCoreMaps.StylePack`; if it is named `styleURL`, use that.
 
 - [ ] **Step 4: The AppDelegate comment**
@@ -1817,7 +1817,7 @@ Replace `Pilgrim/AppDelegate.swift:44`:
         // 2026-09-14, Honor slice three: .readOnly is what a saved tile
         // region needs — the store is checked first and a covering pack is
         // used. The whole TileStoreUsageMode enum is marked deprecated in
-        // the 11.23.1 CoreMaps headers with no replacement named; re-read
+        // the 11.20.0 CoreMaps headers with no replacement named; re-read
         // decision 7 of the slice-three spec before any bump past 11.x.
         MapboxMapsOptions.tileStoreUsageMode = .readOnly
 ```

@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-14
 **Repo:** pilgrim-ios only. The dataset does not change.
-**Builds on:** `2026-09-03-honor-slice-two-pilgrimage-stages-design.md` (shipped in PR #84: the pilgrimage package, one route at a time, the per-route ledger, the morning card) and PR #85 (sections grouped under their pilgrimage). Uses MapboxMaps 11.23.1 via SPM.
+**Builds on:** `2026-09-03-honor-slice-two-pilgrimage-stages-design.md` (shipped in PR #84: the pilgrimage package, one route at a time, the per-route ledger, the morning card) and PR #85 (sections grouped under their pilgrimage). Uses MapboxMaps 11.20.0 via SPM.
 **Plan:** one, in pilgrim-ios. The Mapbox tile store sits behind a protocol so every task's tests run against a fake.
 **Not in this slice:** a rolling "next few stages" window, wifi-only mode, automatic refresh of expired tiles, offline whispers or cairns, Android parity.
 
@@ -20,7 +20,7 @@ The package does not change. The download does not change. A second, optional st
 4. **Cellular is allowed; the size is the guardrail.** No wifi-only mode. The button carries the estimate; the walker decides. (Rejected: `NetworkRestriction.disallowCellular` with an override — one more state to draw for a 26 MB ceiling.)
 5. **Two doors, one state.** The route page owns save / saved / progress. Settings → Data gets a "Maps" row beside "Ways" that shows what is saved and can delete it. Both read the same manager.
 6. **Proof is a feature.** A `#if DEBUG` switch flips `OfflineSwitch.shared.isMapboxStackConnected` so a saved stage can be verified to render in a living room. Without it the feature ships on faith.
-7. **The `.readOnly` tile store mode already set in `AppDelegate` is correct and stays.** It means: check the tile store first; if a tile pack covers the tile, use it; otherwise fetch the tile. That is exactly the behaviour a saved region needs. The earlier note that this would need switching to a "shared" mode was wrong. **One caveat, stated so it is not forgotten:** the whole `TileStoreUsageMode` enum is marked `__attribute__((deprecated))` in the MapboxCoreMaps 11.23.1 headers this app vendors, with no replacement named. The Swift `MapboxMapsOptions.tileStoreUsageMode` property still uses it without a deprecation of its own, and the behaviour is what we rely on today — but a future SDK major could remove it. The `AppDelegate` line gets a dated comment naming this decision, and the plan's SDK-upgrade checklist item re-reads this decision before any MapboxMaps bump past 11.x.
+7. **The `.readOnly` tile store mode already set in `AppDelegate` is correct and stays.** It means: check the tile store first; if a tile pack covers the tile, use it; otherwise fetch the tile. That is exactly the behaviour a saved region needs. The earlier note that this would need switching to a "shared" mode was wrong. **One caveat, stated so it is not forgotten:** the whole `TileStoreUsageMode` enum is marked `__attribute__((deprecated))` in the MapboxCoreMaps 11.20.0 headers this app vendors, with no replacement named. The Swift `MapboxMapsOptions.tileStoreUsageMode` property still uses it without a deprecation of its own, and the behaviour is what we rely on today — but a future SDK major could remove it. The `AppDelegate` line gets a dated comment naming this decision, and the plan's SDK-upgrade checklist item re-reads this decision before any MapboxMaps bump past 11.x.
 
 ## Vocabulary
 
