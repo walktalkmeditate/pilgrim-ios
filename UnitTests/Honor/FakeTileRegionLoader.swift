@@ -24,6 +24,8 @@ final class FakeTileRegionLoader: TileRegionLoading {
         let handle: Handle
     }
 
+    var onChange: (() -> Void)?
+
     var stylePacks: Set<StylePackRequest> = []
     private(set) var stored: [String: TileRegionSummary] = [:]
     var regionRequests: [TileRegionRequest] = []

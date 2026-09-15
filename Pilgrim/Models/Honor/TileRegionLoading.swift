@@ -50,6 +50,11 @@ protocol TileLoadHandle: AnyObject {
 /// The one seam between the manager and Mapbox. Every method is
 /// synchronous to call and reports through closures on the main queue.
 protocol TileRegionLoading: AnyObject {
+    /// The store answers asynchronously, so a `regions()` read taken before
+    /// the first answer lands sees nothing. This is how that synchronous
+    /// reader learns the answer changed and is worth asking again.
+    var onChange: (() -> Void)? { get set }
+
     func hasStylePack(_ pack: StylePackRequest) -> Bool
     func loadStylePack(_ pack: StylePackRequest,
                        completion: @escaping (Result<Void, TileRegionLoadingError>) -> Void) -> TileLoadHandle

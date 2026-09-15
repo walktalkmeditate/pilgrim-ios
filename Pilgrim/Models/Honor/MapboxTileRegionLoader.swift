@@ -23,31 +23,40 @@ final class MapboxTileRegionLoader: TileRegionLoading {
             ?? FileManager.default.temporaryDirectory
         return support.appendingPathComponent("pilgrimage-tiles", isDirectory: true)
     }()
-    static let usesExplicitStorePath = true
-    static let descriptorZoomRanges = (streets: PilgrimageTilesDescriptors.streetsZoom,
-                                       terrain: PilgrimageTilesDescriptors.terrainZoom)
-    static let terrainTilesets = [PilgrimageTilesDescriptors.terrainTileset]
+
+    /// The three descriptors every region is loaded with, as value types so
+    /// a test can read what the SDK is given without opening a `TileStore`.
+    static func descriptorOptions() -> [TilesetDescriptorOptions] {
+        // The SDK takes the zoom band as `UInt8`; the spec constants are
+        // `Int` so a test can pin them without linking Mapbox.
+        let streets = UInt8(PilgrimageTilesDescriptors.streetsZoom.lowerBound)...UInt8(PilgrimageTilesDescriptors.streetsZoom.upperBound)
+        let terrain = UInt8(PilgrimageTilesDescriptors.terrainZoom.lowerBound)...UInt8(PilgrimageTilesDescriptors.terrainZoom.upperBound)
+        return [
+            TilesetDescriptorOptions(styleURI: .light, zoomRange: streets, tilesets: nil),
+            TilesetDescriptorOptions(styleURI: .dark, zoomRange: streets, tilesets: nil),
+            // The DEM is added at runtime by the wabi-sabi style pass, so it
+            // is in neither base style: unnamed here, the hillshade would be
+            // blank offline.
+            TilesetDescriptorOptions(styleURI: .light, zoomRange: terrain,
+                                     tilesets: [PilgrimageTilesDescriptors.terrainTileset])
+        ]
+    }
+
+    var onChange: (() -> Void)?
 
     private let tileStore: TileStore
     private let offlineManager: OfflineManager
     private let descriptors: [TilesetDescriptor]
-    /// Refreshed from the store on every `regions()`; the manager reads it
-    /// synchronously and the store answers asynchronously.
+    /// Empty until the first asynchronous store read lands, then refreshed
+    /// on every `regions()` call. `onChange` fires whenever it is replaced,
+    /// which is how a synchronous reader learns the answer arrived.
     private var cached: [TileRegionSummary] = []
     private var cachedPacks: Set<StylePackRequest> = []
 
     init() {
         tileStore = TileStore.shared(for: Self.storeURL)
         offlineManager = OfflineManager()
-        // The SDK takes the zoom band as `UInt8`; the spec constants are
-        // `Int` so a test can pin them without linking Mapbox.
-        let streetsBand = UInt8(Self.descriptorZoomRanges.streets.lowerBound)...UInt8(Self.descriptorZoomRanges.streets.upperBound)
-        let terrainBand = UInt8(Self.descriptorZoomRanges.terrain.lowerBound)...UInt8(Self.descriptorZoomRanges.terrain.upperBound)
-        let streetsLight = TilesetDescriptorOptions(styleURI: .light, zoomRange: streetsBand, tilesets: nil)
-        let streetsDark = TilesetDescriptorOptions(styleURI: .dark, zoomRange: streetsBand, tilesets: nil)
-        let terrain = TilesetDescriptorOptions(styleURI: .light, zoomRange: terrainBand,
-                                               tilesets: Self.terrainTilesets)
-        descriptors = [streetsLight, streetsDark, terrain].map(offlineManager.createTilesetDescriptor(for:))
+        descriptors = Self.descriptorOptions().map(offlineManager.createTilesetDescriptor(for:))
         refresh()
     }
 
@@ -70,6 +79,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                 switch result {
                 case .success:
                     self?.cachedPacks.insert(pack)
+                    self?.onChange?()
                     completion(.success(()))
                 case .failure(let error):
                     completion(.failure(Self.mapped(error)))
@@ -105,6 +115,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                                                     metadata: ["corridorHash": request.corridorHash])
                     self?.cached.removeAll { $0.id == summary.id }
                     self?.cached.append(summary)
+                    self?.onChange?()
                     completion(.success(summary))
                 case .failure(let error):
                     completion(.failure(Self.mapped(error)))
@@ -122,22 +133,26 @@ final class MapboxTileRegionLoader: TileRegionLoading {
     func removeRegion(id: String) {
         tileStore.removeTileRegion(forId: id)
         cached.removeAll { $0.id == id }
+        onChange?()
     }
 
     // MARK: - Store → cache
 
     /// The store answers on a worker thread; the cache is what the manager
-    /// reads. A read that lands mid-refresh sees the previous answer, which
-    /// is at most one save behind.
+    /// reads synchronously. A signal only goes out when the answer actually
+    /// differs — `regions()` refreshes, so signalling every read would spin
+    /// a view that reads `regions()` in its body. The summaries are sorted
+    /// because the metadata calls finish in arbitrary order and an unstable
+    /// order would read as a change on every pass.
     private func refresh() {
         tileStore.allTileRegions { [weak self] result in
-            guard case .success(let regions) = result else { return }
+            guard let self, case .success(let regions) = result else { return }
             let group = DispatchGroup()
             var summaries: [TileRegionSummary] = []
             let lock = NSLock()
             for region in regions {
                 group.enter()
-                self?.tileStore.tileRegionMetadata(forId: region.id) { metadataResult in
+                self.tileStore.tileRegionMetadata(forId: region.id) { metadataResult in
                     let hash = ((try? metadataResult.get()) as? [String: String])?["corridorHash"] ?? ""
                     let summary = TileRegionSummary(id: region.id,
                                                     completedResourceCount: Int(region.completedResourceCount),
@@ -148,18 +163,28 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                     group.leave()
                 }
             }
-            group.notify(queue: .main) { self?.cached = summaries }
+            group.notify(queue: .main) { [weak self] in
+                let sorted = summaries.sorted { $0.id < $1.id }
+                guard let self, self.cached != sorted else { return }
+                self.cached = sorted
+                self.onChange?()
+            }
         }
         offlineManager.allStylePacks { [weak self] result in
             guard case .success(let packs) = result else { return }
             let uris = Set(packs.map(\.styleURI))
             DispatchQueue.main.async {
-                self?.cachedPacks = Set(StylePackRequest.allCases.filter { uris.contains(Self.styleURI($0).rawValue) })
+                let present = Set(StylePackRequest.allCases.filter { uris.contains(Self.styleURI($0).rawValue) })
+                guard let self, self.cachedPacks != present else { return }
+                self.cachedPacks = present
+                self.onChange?()
             }
         }
     }
 
     private static func mapped(_ error: Error) -> TileRegionLoadingError {
+        if let tileError = error as? TileRegionError, case .diskFull = tileError { return .diskFull }
+        if let packError = error as? StylePackError, case .diskFull = packError { return .diskFull }
         if WayMediaDownloader.isDiskFull(error) { return .diskFull }
         if let tileError = error as? TileRegionError, case .canceled = tileError { return .cancelled }
         return .failed

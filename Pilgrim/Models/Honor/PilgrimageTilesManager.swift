@@ -40,6 +40,9 @@ final class PilgrimageTilesManager: ObservableObject {
     init(loader: TileRegionLoading, defaults: UserDefaults = .standard) {
         self.loader = loader
         self.defaults = defaults
+        // A view that read `status` before the store answered has nothing
+        // else to tell it the saved answer has arrived.
+        loader.onChange = { [weak self] in self?.objectWillChange.send() }
     }
 
     // MARK: - Geometry and keys
