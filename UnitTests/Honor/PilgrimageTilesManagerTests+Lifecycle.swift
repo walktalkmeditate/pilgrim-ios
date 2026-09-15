@@ -42,9 +42,8 @@ extension PilgrimageTilesManagerTests {
         XCTAssertEqual(loader.removedIds.count, before, "a second run removes nothing")
     }
 
-    /// The launch reconcile runs against a loader whose cache is still empty:
-    /// the store answers asynchronously and the first sweep sees nothing. It
-    /// has to run again when the answer lands — and only then.
+    /// The launch reconcile is asked while the store is still answering, so
+    /// it sweeps nothing until the answer lands — and then exactly once.
     func testReconcileSweepsOnceTheStoreAnswers() {
         loader.seed(id: "pilgrimage:camino-frances:7", corridorHash: "h")
         loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h")
@@ -58,14 +57,13 @@ extension PilgrimageTilesManagerTests {
 
         let before = loader.removedIds.count
         loader.releaseRegions()
-        XCTAssertEqual(loader.removedIds.count, before, "the held request ran once, not on every later change")
+        XCTAssertEqual(loader.removedIds.count, before, "the sweep ran on its answer, not on every later change")
     }
 
     /// On a phone that has saved maps the style-pack answer comes back a
-    /// round trip ahead of the regions. If it released the held request, the
-    /// sweep would run against a cache that is still empty and the regions
-    /// answer would find nothing left to do.
-    func testAPacksOnlyChangeDoesNotConsumeTheHeldReconcile() {
+    /// round trip ahead of the regions. It says nothing about what is on
+    /// disk, so it must not stand in for the answer the sweep is waiting on.
+    func testAPacksOnlyChangeDoesNotRunThePendingSweep() {
         loader.seed(id: "pilgrimage:camino-frances:7", corridorHash: "h")
         loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h")
         loader.withholdsRegions = true
@@ -82,5 +80,38 @@ extension PilgrimageTilesManagerTests {
         for way in stages(2) { loader.seed(id: way.id, corridorHash: "h") }
         manager.reconcile(installed: nil)
         XCTAssertEqual(Set(loader.removedIds), Set(stages(2).map(\.id)))
+    }
+
+    /// An empty store answers "no regions", which equals the empty cache and
+    /// so signals no change at all. A sweep waiting for a change would still
+    /// be waiting when a save wrote its first region — and a launch that
+    /// found nothing installed sweeps everything it is handed.
+    func testAReconcileFromAnEmptyLaunchNeverSweepsALaterSave() async throws {
+        manager.reconcile(installed: nil)
+        loader.seedStylePacks()
+        let two = stages(2)
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: two) }
+        await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion()
+        try await task.value
+        XCTAssertTrue(loader.removedIds.isEmpty, "the launch reconcile has no claim on a later save")
+        XCTAssertEqual(manager.status(for: "camino-frances", stages: two), .saved(bytes: 200_000))
+    }
+
+    /// The store can answer in the middle of a save, long after the launch
+    /// that asked. The save is the newer truth about what belongs on disk.
+    func testASaveCancelsAPendingLaunchSweep() async throws {
+        loader.withholdsRegions = true
+        manager.reconcile(installed: nil)
+        loader.seedStylePacks()
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: stages(2)) }
+        await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion()
+        try await task.value
+
+        loader.releaseRegions()
+        XCTAssertTrue(loader.removedIds.isEmpty, "the save outranks a launch sweep still waiting on the store")
     }
 }

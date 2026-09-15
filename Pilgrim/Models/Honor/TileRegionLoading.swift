@@ -74,5 +74,12 @@ protocol TileRegionLoading: AnyObject {
                     progress: @escaping (_ completed: Int, _ required: Int) -> Void,
                     completion: @escaping (Result<TileRegionSummary, TileRegionLoadingError>) -> Void) -> TileLoadHandle
     func regions() -> [TileRegionSummary]
+    /// Asks the store for its regions and calls back when that answer has
+    /// landed — even when the answer is "nothing changed" — so a launch-time
+    /// reader can act on a real snapshot rather than on an empty cache.
+    /// Unlike `onChange`, this fires on the answer, not on a difference: an
+    /// empty store answers "no regions", which equals the empty cache and
+    /// signals nothing at all.
+    func refreshRegions(completion: @escaping () -> Void)
     func removeRegion(id: String)
 }

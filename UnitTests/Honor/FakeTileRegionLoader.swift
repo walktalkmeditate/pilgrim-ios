@@ -74,6 +74,17 @@ final class FakeTileRegionLoader: TileRegionLoading {
         return withholdsRegions ? [] : Array(stored.values)
     }
 
+    private var pendingRegionsCompletions: [() -> Void] = []
+
+    func refreshRegions(completion: @escaping () -> Void) {
+        regionsReadCount += 1
+        if withholdsRegions {
+            pendingRegionsCompletions.append(completion)
+        } else {
+            completion()
+        }
+    }
+
     func removeRegion(id: String) {
         removedIds.append(id)
         stored[id] = nil
@@ -121,7 +132,12 @@ final class FakeTileRegionLoader: TileRegionLoading {
     /// The store answering at last: what the real loader does when its first
     /// asynchronous read lands and the cache stops being empty.
     func releaseRegions() {
+        // The flag drops before the completions run: each one reads
+        // `regions()` and must see the answer, not the withheld emptiness.
         withholdsRegions = false
+        let waiting = pendingRegionsCompletions
+        pendingRegionsCompletions = []
+        for completion in waiting { completion() }
         onChange?(.regions)
     }
 

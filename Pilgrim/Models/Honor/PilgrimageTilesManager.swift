@@ -55,16 +55,11 @@ final class PilgrimageTilesManager: ObservableObject {
         loader.onChange = { [weak self] change in
             guard let self else { return }
             self.objectWillChange.send()
-            // Only the regions answer speaks for what is on disk. The packs
-            // answer is one round trip ahead of it, so releasing the held
-            // reconcile on any change at all would sweep an empty cache and
-            // leave the regions answer with no request to run.
+            // Only the regions answer speaks for what is on disk; the packs
+            // answer is a round trip ahead of it and says nothing about the
+            // store's contents.
             if change == .regions {
                 self.regionsChanged.send()
-                if let request = self.pendingReconcile {
-                    self.pendingReconcile = nil
-                    self.sweep(request.installed)
-                }
             }
         }
     }
@@ -182,6 +177,9 @@ final class PilgrimageTilesManager: ObservableObject {
     /// the stage would otherwise carry every remaining load under the walk.
     func save(routeId: String, stages: [Way]) async throws {
         if case .saving = phase { return }
+        // Once the walker is writing regions a launch sweep has no business
+        // firing, whatever it was told was installed when it was asked.
+        sweepGeneration += 1
         guard !isWalkActive() else {
             // The row's catch relies on phase carrying every failure; a
             // refusal at the door has to land there like a refusal mid-loop.
@@ -319,20 +317,18 @@ final class PilgrimageTilesManager: ObservableObject {
     /// installed route does not account for goes, so "nothing orphaned" is
     /// a property of the store rather than a promise about call sites.
     func reconcile(installed: (routeId: String, stageCount: Int)?) {
-        sweep(installed)
-        // At launch the loader's cache is empty until the store's first
-        // asynchronous answer lands, so the sweep above can see nothing at
-        // all. Holding the request lets the first change re-run it; reconcile
-        // is idempotent, and the request clears on that run so every later
-        // change — a save storing a region, a removal — does not re-sweep.
-        pendingReconcile = ReconcileRequest(installed: installed)
+        // The sweep must run on a real snapshot, and never on a save's
+        // behalf: a request from a launch with nothing installed would
+        // otherwise delete the first region a later save writes.
+        sweepGeneration += 1
+        let generation = sweepGeneration
+        loader.refreshRegions { [weak self] in
+            guard let self, self.sweepGeneration == generation else { return }
+            self.sweep(installed)
+        }
     }
 
-    private struct ReconcileRequest {
-        let installed: (routeId: String, stageCount: Int)?
-    }
-
-    private var pendingReconcile: ReconcileRequest?
+    private var sweepGeneration = 0
 
     private func sweep(_ installed: (routeId: String, stageCount: Int)?) {
         for region in loader.regions() where region.id.hasPrefix("pilgrimage:") {

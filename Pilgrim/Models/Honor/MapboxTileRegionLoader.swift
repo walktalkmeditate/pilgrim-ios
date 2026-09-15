@@ -62,6 +62,8 @@ final class MapboxTileRegionLoader: TileRegionLoading {
     /// regions a removal took out, or byte counts a save has already
     /// overtaken — and `calibrate` divides by those bytes.
     private var refreshGeneration = 0
+    /// Callers waiting for the store's next regions answer, whatever it says.
+    private var pendingRegionsCompletions: [() -> Void] = []
 
     init() {
         tileStore = TileStore.shared(for: Self.storeURL)
@@ -150,6 +152,11 @@ final class MapboxTileRegionLoader: TileRegionLoading {
         return cached
     }
 
+    func refreshRegions(completion: @escaping () -> Void) {
+        pendingRegionsCompletions.append(completion)
+        refresh()
+    }
+
     func removeRegion(id: String) {
         tileStore.removeTileRegion(forId: id)
         // A refresh already in flight is older than this removal; its
@@ -189,10 +196,22 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                 }
             }
             group.notify(queue: .main) { [weak self] in
+                guard let self, token == self.refreshGeneration else { return }
+                // Taken out from under the equality guard below, which is
+                // silent when the answer matches the cache — and an empty
+                // store answering an empty cache is exactly the launch case
+                // that has to be heard. A stale token returns above and
+                // leaves these for the refresh that overtook it.
+                let waiting = self.pendingRegionsCompletions
+                self.pendingRegionsCompletions = []
                 let sorted = summaries.sorted { $0.id < $1.id }
-                guard let self, token == self.refreshGeneration, self.cached != sorted else { return }
-                self.cached = sorted
-                self.onChange?(.regions)
+                if self.cached != sorted {
+                    self.cached = sorted
+                    self.onChange?(.regions)
+                }
+                // After the cache is written, never before: a completion reads
+                // `regions()` and must see the answer it waited for.
+                for completion in waiting { completion() }
             }
         }
         offlineManager.allStylePacks { [weak self] result in
