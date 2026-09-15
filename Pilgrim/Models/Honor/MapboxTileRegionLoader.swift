@@ -52,8 +52,9 @@ final class MapboxTileRegionLoader: TileRegionLoading {
     private let offlineManager: OfflineManager
     private let descriptors: [TilesetDescriptor]
     /// Empty until the first asynchronous store read lands, then refreshed
-    /// on every `regions()` call. `onChange` fires whenever it is replaced,
-    /// which is how a synchronous reader learns the answer arrived.
+    /// on every `regions()` call. `onChange` fires when what `settled`
+    /// reads of it changes, which is how a synchronous reader learns the
+    /// answer arrived.
     private var cached: [TileRegionSummary] = []
     private var cachedPacks: Set<StylePackRequest> = []
     /// `regions()` refreshes on every read, so several store reads can be in
@@ -169,11 +170,13 @@ final class MapboxTileRegionLoader: TileRegionLoading {
     // MARK: - Store → cache
 
     /// The store answers on a worker thread; the cache is what the manager
-    /// reads synchronously. A signal only goes out when the answer actually
-    /// differs — `regions()` refreshes, so signalling every read would spin
-    /// a view that reads `regions()` in its body. The summaries are sorted
-    /// because the metadata calls finish in arbitrary order and an unstable
-    /// order would read as a change on every pass.
+    /// reads synchronously. Every differing answer is written to it, but a
+    /// signal goes out only when the settled projection differs: `regions()`
+    /// refreshes, so a reader that reloads on the signal and reads
+    /// `regions()` would, if progress counts signalled, differ again on
+    /// every pass and spin for the length of a save. The summaries are
+    /// sorted because the metadata calls finish in arbitrary order and an
+    /// unstable order would read as a change on every pass.
     private func refresh() {
         refreshGeneration += 1
         let token = refreshGeneration
@@ -206,8 +209,9 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                 self.pendingRegionsCompletions = []
                 let sorted = summaries.sorted { $0.id < $1.id }
                 if self.cached != sorted {
+                    let settledChanged = Self.settled(self.cached) != Self.settled(sorted)
                     self.cached = sorted
-                    self.onChange?(.regions)
+                    if settledChanged { self.onChange?(.regions) }
                 }
                 // After the cache is written, never before: a completion reads
                 // `regions()` and must see the answer it waited for.
@@ -229,6 +233,19 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                 self.onChange?(.packs)
             }
         }
+    }
+
+    /// What `onChange(.regions)` speaks for: which regions exist, whether
+    /// each is done, and which corridor it was loaded for. Counts and bytes
+    /// move on every progress tick of a save and are left out.
+    struct SettledRegion: Equatable {
+        let id: String
+        let isComplete: Bool
+        let corridorHash: String?
+    }
+
+    static func settled(_ regions: [TileRegionSummary]) -> [SettledRegion] {
+        regions.map { SettledRegion(id: $0.id, isComplete: $0.isComplete, corridorHash: $0.corridorHash) }
     }
 
     /// Mirrors `TileRegionSummary.isComplete`: a `StylePack` reports the same

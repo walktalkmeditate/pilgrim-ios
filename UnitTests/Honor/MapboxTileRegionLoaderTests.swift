@@ -60,6 +60,28 @@ final class MapboxTileRegionLoaderTests: XCTestCase {
         XCTAssertEqual(MapboxTileRegionLoader.mapped(NSError(domain: "t", code: 1)), .failed)
     }
 
+    /// A region mid-download reports new counts on every progress tick. A
+    /// reader that reloads on `.regions` and reads `regions()` — which
+    /// refreshes — would spin for the length of a save if those signalled.
+    /// Pure function — no loader.
+    func testTheSettledProjectionIgnoresCountsAndSizesButNotCompletionOrHash() {
+        func region(completed: Int, size: Int, hash: String) -> TileRegionSummary {
+            TileRegionSummary(id: "r", completedResourceCount: completed, requiredResourceCount: 10,
+                              completedResourceSize: size, metadata: ["corridorHash": hash])
+        }
+        let downloading = region(completed: 3, size: 300, hash: "h")
+        let further = region(completed: 7, size: 700, hash: "h")
+        let done = region(completed: 10, size: 1_000, hash: "h")
+        let redrawn = region(completed: 3, size: 300, hash: "h2")
+
+        XCTAssertNotEqual(downloading, further, "the snapshots differ, so the cache is rewritten")
+        XCTAssertEqual(MapboxTileRegionLoader.settled([downloading]), MapboxTileRegionLoader.settled([further]))
+        XCTAssertNotEqual(MapboxTileRegionLoader.settled([downloading]), MapboxTileRegionLoader.settled([done]))
+        XCTAssertNotEqual(MapboxTileRegionLoader.settled([downloading]), MapboxTileRegionLoader.settled([redrawn]))
+        XCTAssertNotEqual(MapboxTileRegionLoader.settled([downloading]), MapboxTileRegionLoader.settled([]),
+                          "a region appearing or vanishing is a settled change")
+    }
+
     /// A pack interrupted mid-load must not read as present, or `refresh()`
     /// would skip it on every later save. Pure function — no loader, no
     /// `StylePack`, so this pins the rule `refresh()` actually filters by.
