@@ -14,10 +14,10 @@ The package does not change. The download does not change. A second, optional st
 
 ## Decisions (from the 2026-09-14 brainstorm)
 
-1. **Maps are a separate, opt-in tap, not part of Download.** The package is ~1.3 MB and instant; the maps are up to ~26 MB. A walker browsing routes should not pay for tiles, and a walker at home on wifi should be able to fetch them deliberately with the size in front of them. (Rejected: bundling tiles into Download, which makes one button mean two very different things; per-stage tiles fetched when a stage is begun, which puts a network step and a nightly chore in front of the walk.)
+1. **Maps are a separate, opt-in tap, not part of Download.** The package is ~1.3 MB and instant; the maps are up to ~30 MB. A walker browsing routes should not pay for tiles, and a walker at home on wifi should be able to fetch them deliberately with the size in front of them. (Rejected: bundling tiles into Download, which makes one button mean two very different things; per-stage tiles fetched when a stage is begun, which puts a network step and a nightly chore in front of the walk.)
 2. **Per stage in storage, whole way in one action.** One Mapbox tile region per stage, keyed like the stage's Way. The walker taps once for the whole route; the loop runs stage by stage so progress reads "stage 12 of 33", cancel keeps what is done, and a second tap resumes at the first gap. (Rejected: one region for the whole route — no partial progress, no resume; a rolling window of the next few stages — needs a ledger watcher and background fetching to save ~20 MB, and is a policy on top of per-stage regions if ever wanted.)
 3. **Zoom ceiling: Streets to z14, terrain DEM to z14.** Measured on three Francés stages: z14 tiles already carry footpaths, tracks, hamlets and lodging POIs; z15–16 adds building footprints and nothing else; the DEM tileset has no z15. The tile store also caps a route at 750 unique tile packs, and the 15–16 band would put the Francés alone at ~1,800 z15-rooted packs against that ceiling — at z14 it needs ~200. Whole-way estimates at these ceilings, at the 10 KB seed: Camino Francés ~30 MB, Nakahechi ~2 MB.
-4. **Cellular is allowed; the size is the guardrail.** No wifi-only mode. The button carries the estimate; the walker decides. (Rejected: `NetworkRestriction.disallowCellular` with an override — one more state to draw for a 26 MB ceiling.)
+4. **Cellular is allowed; the size is the guardrail.** No wifi-only mode. The button carries the estimate; the walker decides. (Rejected: `NetworkRestriction.disallowCellular` with an override — one more state to draw for a 30 MB ceiling.)
 5. **Two doors, one state.** The route page owns save / saved / progress. Settings → Data gets a "Maps" row beside "Ways" that shows what is saved and can delete it. Both read the same manager.
 6. **Proof is a feature.** A `#if DEBUG` switch flips `OfflineSwitch.shared.isMapboxStackConnected` so a saved stage can be verified to render in a living room. Without it the feature ships on faith.
 7. **The `.readOnly` tile store mode already set in `AppDelegate` is correct and stays.** It means: check the tile store first; if a tile pack covers the tile, use it; otherwise fetch the tile. That is exactly the behaviour a saved region needs. The earlier note that this would need switching to a "shared" mode was wrong. **One caveat, stated so it is not forgotten:** the whole `TileStoreUsageMode` enum is marked `__attribute__((deprecated))` in the MapboxCoreMaps 11.20.0 headers this app vendors, with no replacement named. The Swift `MapboxMapsOptions.tileStoreUsageMode` property still uses it without a deprecation of its own, and the behaviour is what we rely on today — but a future SDK major could remove it. The `AppDelegate` line gets a dated comment naming this decision, and the plan's SDK-upgrade checklist item re-reads this decision before any MapboxMaps bump past 11.x.
@@ -118,7 +118,7 @@ The corridor is the region's `Geometry` in `TileRegionLoadOptions(geometry:descr
 - **Seeded** from the design session's measurement where one exists — 10 KB for `camino-frances`, from three of its tiles at z14/z15 — and from that same 10 KB as a stated default for a route with no measurement of its own. At the 10 KB seed the whole Francés estimates at ~30 MB (3,006 tiles across both tilesets, from the dataset's 33 stage lines) and the Nakahechi at ~2 MB.
 - **Calibrated** when a save of that route completes: the tile store's real `completedResourceSize` for the route's regions, divided by their tile count, replaces the seed. After the first save of a route its number stops being a guess; a different route's save never touches it.
 
-The UI always writes the estimate as "~26 MB". Once saved it shows the real byte count with no tilde.
+The UI always writes the estimate as "~30 MB". Once saved it shows the real byte count with no tilde.
 
 ## 3. The save
 
@@ -165,7 +165,7 @@ Three things in that loop are there for a reason:
 - The current `AnyCancelable` is stored on the manager and cancelled in `cancel()`, in `remove(routeId:)`, and in `deinit`.
 - Every progress and completion closure captures `[weak self]`.
 - One save in flight; a second call while `.saving` returns without doing anything, mirroring the package manager's guard.
-- The SDK downloads in-process. There is no background `URLSession`; backgrounding the app mid-save pauses it, and resume covers the rest. At ~26 MB worst case a save is seconds on wifi.
+- The SDK downloads in-process. There is no background `URLSession`; backgrounding the app mid-save pauses it, and resume covers the rest. At ~30 MB worst case a save is seconds on wifi.
 
 ### 3.4 Errors
 
@@ -179,11 +179,11 @@ Three things in that loop are there for a reason:
 - **`replace(with:release:)`** → `tiles.remove(routeId: previous)` for the outgoing route. The incoming route starts with no maps; saving them is the same separate tap.
 - **`update(entry:release:)`** → after the new stages land, two things and no download:
   1. **Regions at retired indices are removed.** `update` already retires the stage Ways above the new count through `store.retireMany`; the tiles manager removes the regions for that same index range, so a route that shrinks from 33 stages to 20 does not leave `pilgrimage:<routeId>:20` through `:32` in the store forever.
-  2. **Nothing is re-downloaded on the walker's behalf.** The maps were saved by a deliberate tap with the size in view (decision 1, decision 4); an Update that silently pulled up to ~26 MB — over whatever connection the walker has the moment the update lands, mid-route — would be exactly the spend that tap exists to consent to. Instead, `status(for:)` now reads `.partial` for every stage whose corridor hash no longer matches (§3.1), the route page shows the same **Save maps for the way · 12 of 33 saved** button it shows for any interrupted save, and the morning card says **no offline maps for today** for a redrawn stage. The walker's re-tap runs the ordinary loop, which reloads only the stages that changed.
+  2. **Nothing is re-downloaded on the walker's behalf.** The maps were saved by a deliberate tap with the size in view (decision 1, decision 4); an Update that silently pulled up to ~30 MB — over whatever connection the walker has the moment the update lands, mid-route — would be exactly the spend that tap exists to consent to. Instead, `status(for:)` now reads `.partial` for every stage whose corridor hash no longer matches (§3.1), the route page shows the same **Save maps for the way · 12 of 33 saved** button it shows for any interrupted save, and the morning card says **no offline maps for today** for a redrawn stage. The walker's re-tap runs the ordinary loop, which reloads only the stages that changed.
 
   A route that had no maps gets none.
 
-**At launch, the store is reconciled against what is actually installed.** The three hooks above are event-driven, and one path bypasses all of them: the package manager's crash recovery for a kill mid-Replace runs through `installed()`'s swap-marker branch straight into `removeStagesAndPackage()`, never through `remove` or `replace`. A kill between the incoming route's commit and the outgoing route's `tiles.remove` would leave the outgoing route's regions — up to ~26 MB — with no route to reference them and no hook that would ever reach them. So `PilgrimageTilesManager.reconcile(installed: String?)` runs once at app launch after the package manager has resolved `installed()`: every region whose id does not carry the installed route's `pilgrimage:<routeId>:` prefix is removed, and so is every region at an index at or above the installed route's stage count. It is idempotent, it is the backstop for every lifecycle gap rather than only the one found, and it is the reason the summary's "nothing is ever orphaned" is a property of the store and not a promise about call sites.
+**At launch, the store is reconciled against what is actually installed.** The three hooks above are event-driven, and one path bypasses all of them: the package manager's crash recovery for a kill mid-Replace runs through `installed()`'s swap-marker branch straight into `removeStagesAndPackage()`, never through `remove` or `replace`. A kill between the incoming route's commit and the outgoing route's `tiles.remove` would leave the outgoing route's regions — up to ~30 MB — with no route to reference them and no hook that would ever reach them. So `PilgrimageTilesManager.reconcile(installed: String?)` runs once at app launch after the package manager has resolved `installed()`: every region whose id does not carry the installed route's `pilgrimage:<routeId>:` prefix is removed, and so is every region at an index at or above the installed route's stage count. It is idempotent, it is the backstop for every lifecycle gap rather than only the one found, and it is the reason the summary's "nothing is ever orphaned" is a property of the store and not a promise about call sites.
 
 Expired regions stay usable offline — the SDK serves them rather than dropping them — so a 33-day walk needs no refresh policy. Re-tapping save resumes rather than refreshes: a complete region whose corridor hash still matches its stage is skipped, and nothing refreshes on its own.
 
@@ -196,9 +196,9 @@ Under the existing download button, one row driven by `status(for:)` while idle 
 | status | row |
 |---|---|
 | package not installed | nothing — maps need stages |
-| `.none` | button: **Save maps for the way · ~26 MB** |
+| `.none` | button: **Save maps for the way · ~30 MB** |
 | `.partial(12, of: 33)` | button: **Save maps for the way · 12 of 33 saved** |
-| `.saved(bytes)` | check glyph, caption: **maps saved · 26 MB**, tappable to save again |
+| `.saved(bytes)` | check glyph, caption: **maps saved · 30 MB**, tappable to save again |
 | `.saving(done, total)` | caption: **maps · stage 12 of 33**, and a **cancel** |
 | `.failed(error)` | the `.none` or `.partial` button as above, with `PilgrimageCopy.line(for: error)` in `.rust` beneath it — the same footer a failed package download shows |
 
@@ -222,7 +222,7 @@ Unchanged. The install badge is the only glyph a row carries; map state lives on
 A **Maps** row on `DataCard`, a sibling of **Ways**, using `settingNavRow(label:detail:)`:
 
 - detail **none saved** when nothing is saved
-- detail **Camino Francés · 26 MB** otherwise (the route's display name from the installed package, bytes from the store)
+- detail **Camino Francés · 30 MB** otherwise (the route's display name from the installed package, bytes from the store)
 
 It opens `OfflineMapsView`, which has two states:
 
@@ -240,9 +240,9 @@ One pilgrimage at a time keeps this a single entry rather than a list; the view 
 Two properties of `TileStore.default` are load-bearing and are verified by the plan, each with a test:
 
 1. **Its directory is under Application Support, not Caches.** A Caches location is purgeable under storage pressure, and a walker on day 20 could lose the maps for day 21. If the SDK's default is not Application Support, the store is created at an explicit path under it.
-2. **It is excluded from iCloud backup.** ~26 MB of re-downloadable tiles should not sync. If the SDK does not set `isExcludedFromBackup`, the app does, after the store is created.
+2. **It is excluded from iCloud backup.** ~30 MB of re-downloadable tiles should not sync. If the SDK does not set `isExcludedFromBackup`, the app does, after the store is created.
 
-Neither the package's `maxPackageBytes` (a JSON ceiling) nor a tile store `DiskQuota` applies to the save. With one pilgrimage at a time and a ~26 MB ceiling across the whole catalog, there is nothing to quota. The ambient cache keeps the SDK's defaults.
+Neither the package's `maxPackageBytes` (a JSON ceiling) nor a tile store `DiskQuota` applies to the save. With one pilgrimage at a time and a ~30 MB ceiling across the whole catalog, there is nothing to quota. The ambient cache keeps the SDK's defaults.
 
 ## 7. Testing
 
