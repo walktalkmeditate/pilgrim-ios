@@ -2453,6 +2453,209 @@ Do not dispatch TestFlight. Report the PR URL and the device-pass table.
 
 ---
 
+### Task 11: The corridor becomes a MultiPolygon (added after the whole-branch review)
+
+**Why this task exists.** The whole-branch review ran the shipped single-ring corridor over the real datasets: 598 self-intersections on the Camino Francés, 248 on the Kohechi, and 130 of Shikoku Awa's 1,424 route points testing *outside* their own corridor under the even-odd rule `ringContains` uses. A bowtie ring is invalid GeoJSON and its tiling in Mapbox is undefined — and the lobes are exactly the mountain hairpins where there is no signal. Decision (2026-09-15, human): rebuild the corridor as a MultiPolygon of convex parts that Mapbox unions.
+
+**Files:**
+- Modify: `Pilgrim/Models/Honor/WayGeometry.swift` — `corridor(around:halfWidthMeters:)` now returns `[[CLLocationCoordinate2D]]`; add `corridorContains(_:_:)`; `simplified`, `ringContains`, `ringAreaSquareMeters` unchanged.
+- Modify: `Pilgrim/Models/Honor/PilgrimageTilesDescriptors.swift` — `tileCount(rings:zooms:)`.
+- Modify: `Pilgrim/Models/Honor/PilgrimageTilesManager.swift` — `rings(for:)`, `corridorHash(_ rings:)`.
+- Modify: `Pilgrim/Models/Honor/TileRegionLoading.swift` — `TileRegionRequest.rings`.
+- Modify: `Pilgrim/Models/Honor/MapboxTileRegionLoader.swift` — builds `.multiPolygon`.
+- Modify: `UnitTests/Honor/WayGeometryCorridorTests.swift` (rewritten), `UnitTests/Honor/PilgrimageTilesDescriptorsTests.swift`, `UnitTests/Honor/PilgrimageTilesManagerTests.swift`, `UnitTests/Honor/FakeTileRegionLoaderTests.swift`, `UnitTests/Honor/FakeTileRegionLoader.swift` (only where `ring:` is spelled).
+- Modify: `docs/superpowers/specs/2026-09-14-honor-slice-three-offline-tiles-design.md` §2.1.
+
+**Interfaces:**
+- Produces: `static func corridor(around points: [CLLocationCoordinate2D], halfWidthMeters: Double) -> [[CLLocationCoordinate2D]]` (each part a closed ring, first coordinate repeated last); `static func corridorContains(_ rings: [[CLLocationCoordinate2D]], _ point: CLLocationCoordinate2D) -> Bool`; `PilgrimageTilesDescriptors.tileCount(rings: [[CLLocationCoordinate2D]], zooms: ClosedRange<Int>) -> Int` (a tile counts once however many parts touch it); `PilgrimageTilesManager.rings(for:)`, `corridorHash(_ rings: [[CLLocationCoordinate2D]])` (SHA-256 over every ring's coordinates in order, so a different part order is a different hash — parts are emitted deterministically); `TileRegionRequest(id:rings:corridorHash:acceptExpired:)`.
+
+**The geometry.** After `simplified(points, toleranceMeters: 25)`, in the local-metre frame the existing `corridor` already uses:
+- For each segment `a→b`: one **quad** `[a+n, b+n, b−n, a−n, a+n]` where `n` is the segment's own perpendicular scaled to `halfWidthMeters` (not the central-difference normal — each quad is exactly that segment's rectangle).
+- For each vertex `v` (including both ends): one axis-aligned **square** of side `2·halfWidthMeters` centred on `v`, `[v+(−h,−h), v+(h,−h), v+(h,h), v+(−h,h), v+(−h,−h)]`.
+- Parts are emitted as `[quad₀, square₀, quad₁, square₁, …, quadₙ₋₁, squareₙ]` — deterministic order for the hash.
+- A single point yields one square. Two points yield one quad and two squares.
+Every part is convex, so no part can self-intersect, and the union covers every point within `halfWidthMeters` of the line *and* every bend and endpoint generously. Mapbox unions the parts of a MultiPolygon when tiling.
+
+- [ ] **Step 1: Rewrite the corridor tests** — replace the body of `UnitTests/Honor/WayGeometryCorridorTests.swift` with:
+
+```swift
+import XCTest
+import CoreLocation
+@testable import Pilgrim
+
+final class WayGeometryCorridorTests: XCTestCase {
+
+    private func straight(km: Double, lat: Double = 42) -> [CLLocationCoordinate2D] {
+        let metersPerDegreeLon = 111_320 * cos(lat * .pi / 180)
+        let steps = Int(km * 10)
+        return (0...steps).map { i in
+            CLLocationCoordinate2D(latitude: lat, longitude: Double(i) * 100 / metersPerDegreeLon)
+        }
+    }
+
+    private func offset(_ from: CLLocationCoordinate2D, northMeters: Double, eastMeters: Double) -> CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: from.latitude + northMeters / 111_320,
+                               longitude: from.longitude + eastMeters / (111_320 * cos(from.latitude * .pi / 180)))
+    }
+
+    func testEveryPartIsAClosedConvexRing() {
+        let line = straight(km: 3)
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        XCTAssertEqual(parts.count, 3, "one quad for the simplified two-point line, one square per end")
+        for part in parts {
+            XCTAssertEqual(part.count, 5)
+            XCTAssertEqual(part.first?.latitude, part.last?.latitude)
+            XCTAssertEqual(part.first?.longitude, part.last?.longitude)
+        }
+    }
+
+    func testAStraightLineIsCoveredToHalfWidthAndNotBeyond() {
+        let line = straight(km: 3)
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        let mid = line[15]
+        XCTAssertTrue(WayGeometry.corridorContains(parts, mid))
+        XCTAssertTrue(WayGeometry.corridorContains(parts, offset(mid, northMeters: 480, eastMeters: 0)))
+        XCTAssertFalse(WayGeometry.corridorContains(parts, offset(mid, northMeters: 520, eastMeters: 0)))
+        // The end square reaches half a width past the endpoint; a full width does not.
+        XCTAssertTrue(WayGeometry.corridorContains(parts, offset(line.last!, northMeters: 0, eastMeters: 480)))
+        XCTAssertFalse(WayGeometry.corridorContains(parts, offset(line.last!, northMeters: 0, eastMeters: 1_020)))
+    }
+
+    func testARightAngleBendKeepsItsOuterCornerAndEveryPointOnTheLine() {
+        let lat = 42.0
+        let east = straight(km: 2, lat: lat)
+        let north = (1...20).map { i in offset(east.last!, northMeters: Double(i) * 100, eastMeters: 0) }
+        let line = east + north
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        // 300 m outside the bend on the diagonal: inside the vertex square.
+        XCTAssertTrue(WayGeometry.corridorContains(parts, offset(east.last!, northMeters: -212, eastMeters: 212)))
+        // 700 m outside on the diagonal: outside every part.
+        XCTAssertFalse(WayGeometry.corridorContains(parts, offset(east.last!, northMeters: -495, eastMeters: 495)))
+        for point in line where !WayGeometry.corridorContains(parts, point) {
+            XCTFail("route point \(point) outside its own corridor")
+            break
+        }
+    }
+
+    /// The failure the single ring had: a hairpin whose inner offsets crossed.
+    func testAHairpinCoversItsOwnPointsWithNoSelfIntersectingPart() {
+        let lat = 42.0
+        let out = straight(km: 1, lat: lat)
+        let back = (1...10).map { i in offset(out.last!, northMeters: 60, eastMeters: -Double(i) * 100) }
+        let line = out + back
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        for point in line where !WayGeometry.corridorContains(parts, point) {
+            XCTFail("hairpin point \(point) outside its own corridor")
+            break
+        }
+        for part in parts {
+            XCTAssertEqual(part.count, 5, "quads and squares only — nothing that could self-intersect")
+        }
+    }
+
+    func testSimplificationDropsWigglesUnderTolerance() {
+        var line = straight(km: 1)
+        for i in stride(from: 1, to: line.count, by: 2) {
+            line[i] = offset(line[i], northMeters: 10, eastMeters: 0)
+        }
+        XCTAssertEqual(WayGeometry.simplified(line, toleranceMeters: 25).count, 2)
+    }
+
+    /// The checked-in `stage-00.json` is a short synthetic stage, not the
+    /// real Francés day; what matters is that a decoded Way's route goes
+    /// through the same path a real one will.
+    func testADecodedStageCorridorCoversItsWholeLineIncludingTheEnds() throws {
+        let data = try PilgrimageFixtures.data("stage-00.json")
+        let way = try PilgrimageWayImporter.way(from: data, routeId: "camino-frances", stageIndex: 0)
+        let line = way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        for point in line where !WayGeometry.corridorContains(parts, point) {
+            XCTFail("route point \(point) outside its own corridor")
+            break
+        }
+    }
+
+    func testOnePointBecomesOneSquare() {
+        let parts = WayGeometry.corridor(around: [CLLocationCoordinate2D(latitude: 42, longitude: 0)], halfWidthMeters: 500)
+        XCTAssertEqual(parts.count, 1)
+        XCTAssertEqual(parts[0].count, 5)
+    }
+}
+```
+
+- [ ] **Step 2: Run to verify it fails** — `corridor` returns a single ring; the new tests do not compile (`corridorContains` missing; `parts.count` on a flat array).
+
+- [ ] **Step 3: Implement** — in `WayGeometry.swift`, replace `corridor(around:halfWidthMeters:)` with:
+
+```swift
+    /// The parts a stage's tile region is loaded for: one rectangle per
+    /// segment of the simplified line and one square per vertex, each
+    /// `halfWidthMeters` from the line. Convex parts cannot self-intersect,
+    /// so the geometry stays valid on a hairpin — the single offset ring
+    /// this replaced crossed itself hundreds of times on the real Francés
+    /// and left a tenth of Shikoku Awa's own points outside their corridor.
+    /// Mapbox unions the parts of a MultiPolygon when it tiles.
+    static func corridor(around points: [CLLocationCoordinate2D], halfWidthMeters h: Double) -> [[CLLocationCoordinate2D]] {
+        let line = simplified(points, toleranceMeters: 25)
+        guard let first = line.first else { return [] }
+        let latScale = 111_320.0
+        let lonScale = 111_320.0 * cos(first.latitude * .pi / 180)
+        let local = line.map { (x: ($0.longitude - first.longitude) * lonScale, y: ($0.latitude - first.latitude) * latScale) }
+        func geo(_ p: (x: Double, y: Double)) -> CLLocationCoordinate2D {
+            CLLocationCoordinate2D(latitude: first.latitude + p.y / latScale, longitude: first.longitude + p.x / lonScale)
+        }
+        func square(_ v: (x: Double, y: Double)) -> [CLLocationCoordinate2D] {
+            [geo((v.x - h, v.y - h)), geo((v.x + h, v.y - h)), geo((v.x + h, v.y + h)), geo((v.x - h, v.y + h)), geo((v.x - h, v.y - h))]
+        }
+        var parts: [[CLLocationCoordinate2D]] = []
+        for i in 0..<local.count {
+            if i + 1 < local.count {
+                let a = local[i], b = local[i + 1]
+                var dx = b.x - a.x, dy = b.y - a.y
+                let len = (dx * dx + dy * dy).squareRoot()
+                if len > 0 {
+                    dx /= len; dy /= len
+                    let nx = -dy * h, ny = dx * h
+                    parts.append([geo((a.x + nx, a.y + ny)), geo((b.x + nx, b.y + ny)),
+                                  geo((b.x - nx, b.y - ny)), geo((a.x - nx, a.y - ny)), geo((a.x + nx, a.y + ny))])
+                }
+            }
+            parts.append(square(local[i]))
+        }
+        return parts
+    }
+
+    static func corridorContains(_ rings: [[CLLocationCoordinate2D]], _ point: CLLocationCoordinate2D) -> Bool {
+        rings.contains { ringContains($0, point) }
+    }
+```
+
+Then, in order:
+- `PilgrimageTilesDescriptors.tileCount(ring:zooms:)` → `tileCount(rings: [[CLLocationCoordinate2D]], zooms:)`: compute the bounding box over all rings' coordinates, and count a tile when `tileTouches(any ring)` — collect `(z, x, y)` into a `Set` so a tile touched by a quad and a square counts once.
+- `PilgrimageTilesManager`: `ring(for:)` → `rings(for:)`; `corridorHash(_ ring:)` → `corridorHash(_ rings:)` hashing every ring's coordinates in emission order; `tileCount(for:)` passes `rings:`; `save` builds `TileRegionRequest(id:rings:corridorHash:acceptExpired:)`.
+- `TileRegionLoading.swift`: `TileRegionRequest.ring` → `rings: [[CLLocationCoordinate2D]]`; the doc comment says "closed rings, one per convex part".
+- `MapboxTileRegionLoader.loadRegion`: `let polygons = request.rings.map { [ $0.map { LocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) } ] }` and `geometry: .multiPolygon(MultiPolygon(polygons))` (Turf's `MultiPolygon.init(_ coordinates: [[[LocationCoordinate2D]]])`).
+- Tests that spell `ring:`: `FakeTileRegionLoaderTests` (its `ring` fixture becomes `[ring]` passed as `rings:`), `PilgrimageTilesManagerTests` (`corridorHash(for:)` unchanged in name; the estimate test's expected count uses `tileCount(rings:)`), `PilgrimageTilesDescriptorsTests` (`tileCount(rings:)`; keep the fourfold-growth assertion — it still holds).
+- Spec §2.1: replace the paragraph describing the single ring with the MultiPolygon description and the measured reason (598 crossings; 130 of 1,424 Awa points outside), and change the signature shown.
+
+- [ ] **Step 4: Run green** — `WayGeometryCorridorTests` 7/7, `PilgrimageTilesDescriptorsTests` 4/4, `PilgrimageTilesManagerTests` 23/23, `FakeTileRegionLoaderTests` 3/3, `MapboxTileRegionLoaderTests` 4/4, `OfflineMapsViewModelTests` 4/4. Build succeeds.
+
+- [ ] **Step 5: Lint and commit**
+
+```bash
+git commit -m "feat(tiles): the corridor is a MultiPolygon of convex parts
+
+The single offset ring crossed itself 598 times on the real Francés and
+left 130 of Shikoku Awa's 1,424 points outside their own corridor — a
+bowtie is invalid GeoJSON and its tiling is undefined, at exactly the
+hairpins with no signal. One rectangle per segment and one square per
+vertex cannot self-intersect; Mapbox unions them.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
+```
+
+---
+
 ## Self-review
 
 **Spec coverage.** §1.1 manager + protocol → Tasks 1, 3, 4, 5. §1.2 keys → Task 3 (`regionPrefix`, `stageWayId`). §1.3 descriptors, glyphs, band note → Tasks 3, 6. §2.1 corridor → Task 2. §2.2 per-route estimate + calibration → Task 3 (+ Task 4's `calibrate` call). §3.1–3.4 loop, cancel, resource safety, errors → Task 4. §4 lifecycle + launch reconcile → Task 5. §5.1 row → Task 7. §5.2 morning card → Task 8. §5.3 catalog unchanged → no task (correct). §5.4 Settings + confirm + empty state → Task 9. §5.5 debug switch → Task 9. §6 store location + backup → Task 6. §7 tests → every bullet has a named test in Tasks 2–9; "Delete confirms" is a view-level alert and is covered by the device pass step 5 plus the copy test, since SwiftUI alerts have no unit-test surface here. §8/§9 → nothing to build.
