@@ -26,11 +26,11 @@ enum OfflineMapsModel {
     /// Nil when no stage of the installed route has a saved region. A
     /// partial save is still bytes on the phone, so it is reported.
     static func load(routeName: String, routeId: String, stages: [Way], tiles: PilgrimageTilesManager) -> Saved? {
-        let savedStages = stages.filter(tiles.isStageSaved)
-        guard !savedStages.isEmpty else { return nil }
         // One store read for the whole route: `regions()` refreshes the
         // loader's cache, so asking it per stage re-reads once per stage.
         let byId = Dictionary(tiles.loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let savedStages = stages.filter { tiles.isSaved($0, region: byId[$0.id]) }
+        guard !savedStages.isEmpty else { return nil }
         let bytes = savedStages.compactMap { byId[$0.id] }.reduce(0) { $0 + $1.completedResourceSize }
         return Saved(routeName: routeName, bytes: bytes, savedStages: savedStages.count, totalStages: stages.count)
     }

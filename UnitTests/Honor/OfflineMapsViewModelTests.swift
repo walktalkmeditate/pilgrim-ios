@@ -34,6 +34,7 @@ final class OfflineMapsViewModelTests: XCTestCase {
         loader.seed(id: stages[0].id, corridorHash: PilgrimageTilesManager.corridorHash(for: stages[0]), bytes: 5_000_000)
         let saved = OfflineMapsModel.load(routeName: "Camino de Santiago (Frances)", routeId: "camino-frances", stages: stages, tiles: tiles)
         XCTAssertEqual(saved, OfflineMapsModel.Saved(routeName: "Camino de Santiago (Frances)", bytes: 5_000_000, savedStages: 1, totalStages: 3))
+        XCTAssertEqual(loader.regionsReadCount, 1, "one store read for the whole route, not one per stage")
         XCTAssertNil(OfflineMapsModel.load(routeName: "x", routeId: "camino-frances", stages: [], tiles: tiles))
     }
 }

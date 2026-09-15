@@ -76,7 +76,10 @@ final class PilgrimageTilesManager: ObservableObject {
     }
 
     /// Complete by resource count and loaded for the stage's current line.
-    private func isSaved(_ way: Way, region: TileRegionSummary?) -> Bool {
+    /// Internal, not private: a caller that already holds a store snapshot
+    /// (`regions()` read once into a dictionary) must be able to check each
+    /// stage against it without re-reading the store per stage.
+    func isSaved(_ way: Way, region: TileRegionSummary?) -> Bool {
         guard let region, region.isComplete else { return false }
         return region.corridorHash == Self.corridorHash(for: way)
     }

@@ -31,6 +31,7 @@ final class FakeTileRegionLoader: TileRegionLoading {
 
     var stylePacks: Set<StylePackRequest> = []
     private(set) var stored: [String: TileRegionSummary] = [:]
+    private(set) var regionsReadCount = 0
     var regionRequests: [TileRegionRequest] = []
     private(set) var packRequests: [StylePackRequest] = []
     private(set) var removedIds: [String] = []
@@ -62,7 +63,10 @@ final class FakeTileRegionLoader: TileRegionLoading {
         return handle
     }
 
-    func regions() -> [TileRegionSummary] { Array(stored.values) }
+    func regions() -> [TileRegionSummary] {
+        regionsReadCount += 1
+        return Array(stored.values)
+    }
 
     func removeRegion(id: String) {
         removedIds.append(id)
