@@ -64,6 +64,10 @@ struct PilgrimageRouteView: View {
     let onChoose: (Way) -> Void
 
     @ObservedObject private var packages = PilgrimagePackageManager.shared
+    @ObservedObject private var tiles = PilgrimageTilesManager.shared
+    /// The installed route's stage Ways, read once in `reload()`: the maps
+    /// row needs their lines for its estimate and its status.
+    @State private var stageWays: [Way] = []
     @State private var route: PilgrimageRoute?
     @State private var ledger: PilgrimageLedger?
     @State private var installed: PilgrimagePackageManager.Installed?
@@ -162,6 +166,9 @@ struct PilgrimageRouteView: View {
                 .font(Constants.Typography.caption)
                 .foregroundColor(.fog)
             downloadButton
+            if isInstalled && !stageWays.isEmpty {
+                PilgrimageMapsRow(routeId: entry.id, stages: stageWays, tiles: tiles)
+            }
         }
     }
 
@@ -270,6 +277,7 @@ struct PilgrimageRouteView: View {
 
     private var isBusy: Bool {
         if case .downloading = packages.phase { return true }
+        if case .saving = tiles.phase { return true }
         return false
     }
 
@@ -331,6 +339,9 @@ struct PilgrimageRouteView: View {
     private func reload() {
         installed = packages.installed()
         if installed?.routeId == entry.id { route = installed?.route }
+        stageWays = isInstalled
+            ? (0..<(route?.stageCount ?? 0)).compactMap { WayStore.shared.load(id: WayStore.stageWayId(routeId: entry.id, stageIndex: $0)) }
+            : []
         ledger = ledgerStore.load(routeId: entry.id)
         if ledger?.redrawNoticePending == true {
             showRedrawNotice = true
