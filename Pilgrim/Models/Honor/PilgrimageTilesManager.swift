@@ -233,4 +233,55 @@ final class PilgrimageTilesManager: ObservableObject {
     deinit {
         inFlight?.cancel()
     }
+
+    /// Shared like the package manager's; the production loader is attached
+    /// in `MainCoordinatorView` so this file never imports Mapbox.
+    static let shared = PilgrimageTilesManager(loader: MapboxTileRegionLoader())
+
+    // MARK: - Lifecycle
+
+    /// Every region with the route's prefix. Packs no other region references
+    /// are freed by the store; the style packs are shared and stay.
+    func remove(routeId: String) {
+        cancel()
+        let prefix = Self.regionPrefix(routeId: routeId)
+        for region in loader.regions() where region.id.hasPrefix(prefix) {
+            loader.removeRegion(id: region.id)
+        }
+    }
+
+    /// Update's retired indices: the same range `PilgrimagePackageManager`
+    /// hands to `retireMany`. Nothing is downloaded on the walker's behalf.
+    func removeRegions(routeId: String, atOrAbove index: Int) {
+        let prefix = Self.regionPrefix(routeId: routeId)
+        for region in loader.regions() where region.id.hasPrefix(prefix) {
+            if let stageIndex = Self.stageIndex(of: region.id, prefix: prefix), stageIndex >= index {
+                loader.removeRegion(id: region.id)
+            }
+        }
+    }
+
+    /// Once at launch. The three lifecycle hooks are event-driven and one
+    /// path bypasses them: a kill mid-Replace is finished by `installed()`'s
+    /// swap-marker branch, never by `remove` or `replace`. Anything the
+    /// installed route does not account for goes, so "nothing orphaned" is
+    /// a property of the store rather than a promise about call sites.
+    func reconcile(installed: (routeId: String, stageCount: Int)?) {
+        for region in loader.regions() where region.id.hasPrefix("pilgrimage:") {
+            guard let installed else {
+                loader.removeRegion(id: region.id)
+                continue
+            }
+            let prefix = Self.regionPrefix(routeId: installed.routeId)
+            let index = Self.stageIndex(of: region.id, prefix: prefix)
+            if !region.id.hasPrefix(prefix) || index == nil || index! >= installed.stageCount {
+                loader.removeRegion(id: region.id)
+            }
+        }
+    }
+
+    private static func stageIndex(of regionId: String, prefix: String) -> Int? {
+        guard regionId.hasPrefix(prefix) else { return nil }
+        return Int(regionId.dropFirst(prefix.count))
+    }
 }

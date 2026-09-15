@@ -280,6 +280,25 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         XCTAssertNotNil(manager.installed())
     }
 
+    func testRemoveReplaceAndUpdateReachTheTilesManager() async throws {
+        let tilesLoader = FakeTileRegionLoader()
+        let tiles = PilgrimageTilesManager(loader: tilesLoader, defaults: UserDefaults(suiteName: "pm-tiles-\(UUID().uuidString)")!)
+        let manager = PilgrimagePackageManager(store: wayStore, ledgers: ledgers, session: StubURLProtocol.session())
+        manager.tiles = tiles
+        try await manager.download(entry: entry, release: "v1.7.0")
+        tilesLoader.seed(id: "pilgrimage:camino-frances:0", corridorHash: "h")
+        tilesLoader.seed(id: "pilgrimage:camino-frances:1", corridorHash: "h")
+
+        // Update to a one-stage package: index 1 is retired and its region goes.
+        try stubOneStagePackage(release: "v1.8.0")
+        try await manager.update(entry: entryWithOneStage, release: "v1.8.0")
+        XCTAssertEqual(tilesLoader.removedIds, ["pilgrimage:camino-frances:1"])
+        XCTAssertTrue(tilesLoader.regionRequests.isEmpty, "an update downloads no maps")
+
+        try manager.remove(routeId: "camino-frances")
+        XCTAssertTrue(tilesLoader.removedIds.contains("pilgrimage:camino-frances:0"))
+    }
+
 }
 
 extension PilgrimagePackageManagerTests {

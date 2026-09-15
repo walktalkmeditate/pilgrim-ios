@@ -240,6 +240,7 @@
 		493C30BC957DAB3F448A2BE0 /* ActiveWalkViewModel+Segments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87CEE1CB8907A7EAE847CF69 /* ActiveWalkViewModel+Segments.swift */; };
 		4942C685817BB789737E18B1 /* whisper-play-7.aac in Resources */ = {isa = PBXBuildFile; fileRef = A1E1CDD84132639F8B1B90D8 /* whisper-play-7.aac */; };
 		4997C102426B18E2BE23D309 /* OwnWalkWayBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02475497E961BD82401A2037 /* OwnWalkWayBuilder.swift */; };
+		49F88972292B99B214C57484 /* MapboxTileRegionLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C834A8042EB4BE24A8AE4077 /* MapboxTileRegionLoader.swift */; };
 		4A874B223DF94F32AE65A3B2 /* ThreadStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44E1DA26DB135B0837E447F /* ThreadStoreTests.swift */; };
 		4BCC1742561447DFBD59EF01 /* ThreadsDossierBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1060C3B913FD4DA88015D30D /* ThreadsDossierBuilder.swift */; };
 		4C4159A687E6427094B9CA5A /* ShareStatusSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A615AC9A6DC4AFEBC7DBD97 /* ShareStatusSection.swift */; };
@@ -283,6 +284,7 @@
 		5A58541C1D0FCD23EDF0DF2C /* ActiveWalkView+Honor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57015020E935520A43C76E97 /* ActiveWalkView+Honor.swift */; };
 		5A75182DEE57461AB02425A6 /* DossierSensesTracks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EF62C0258F4A5E9B1CB669 /* DossierSensesTracks.swift */; };
 		5B1B61ECF42C2E13F7E923AA /* SeekGlance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBA20381F115380FCCA8D9 /* SeekGlance.swift */; };
+		5C6AE6F64FFD45CF29316CFC /* PilgrimageTilesManagerTests+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC5F764303FBB1B169367D2 /* PilgrimageTilesManagerTests+Lifecycle.swift */; };
 		5C6D7E8F9A0B1C2D3E4F5A6B /* RouteTrimmer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E8F9A0B1C2D3E4F5A6B7C /* RouteTrimmer.swift */; };
 		5EABF8FC1039B9C353B3E537 /* CollectiveMilestoneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713143F89313FC17FEFEB54B /* CollectiveMilestoneTests.swift */; };
 		5EB2EE597FAA4E288699FEF4 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019A1ED39BF4E889F5DF99C /* WaveformGenerator.swift */; };
@@ -1259,6 +1261,7 @@
 		C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelestialCalculatorIlluminationTests.swift; sourceTree = "<group>"; };
 		C6EA04337299ABAFFB2644FC /* PromptAssembler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptAssembler.swift; sourceTree = "<group>"; };
 		C7AE2E45E3D1892209D4CA15 /* CollectiveCounterServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveCounterServiceTests.swift; sourceTree = "<group>"; };
+		C834A8042EB4BE24A8AE4077 /* MapboxTileRegionLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MapboxTileRegionLoader.swift; sourceTree = "<group>"; };
 		C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineBar.swift; sourceTree = "<group>"; };
 		CAA0FD7FD97115969FADF2C4 /* PilgrimPackageConverter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageConverter.swift; sourceTree = "<group>"; };
 		CC00000100000000ABOUTV01 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
@@ -1335,6 +1338,7 @@
 		DD00CC0100000000000001 /* MeditateDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditateDetection.swift; sourceTree = "<group>"; };
 		DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptGeneratorTests.swift; sourceTree = "<group>"; };
 		DD2DDA53AB9BF3A478409478 /* whisper-play-9.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-9.aac"; sourceTree = "<group>"; };
+		DDC5F764303FBB1B169367D2 /* PilgrimageTilesManagerTests+Lifecycle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PilgrimageTilesManagerTests+Lifecycle.swift"; sourceTree = "<group>"; };
 		DDD8506242AA6CD81468A74B /* PilgrimPackageModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageModelTests.swift; sourceTree = "<group>"; };
 		DDD98EC76665031455843D5C /* PromptVoice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptVoice.swift; sourceTree = "<group>"; };
 		DE043FF931CEC5F6E0583AC2 /* PilgrimageTilesManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimageTilesManagerTests.swift; sourceTree = "<group>"; };
@@ -2689,6 +2693,7 @@
 				35A741BE039CF44697386BB1 /* TileRegionLoading.swift */,
 				5E6D0B669C95F652ABA43E71 /* PilgrimageTilesDescriptors.swift */,
 				FEAA54CA9370B6ECF3CB4AFF /* PilgrimageTilesManager.swift */,
+				C834A8042EB4BE24A8AE4077 /* MapboxTileRegionLoader.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2824,6 +2829,7 @@
 				879CD467DCC38E64913048FC /* WayGeometryCorridorTests.swift */,
 				32A87BA7525C8DD26202489A /* PilgrimageTilesDescriptorsTests.swift */,
 				DE043FF931CEC5F6E0583AC2 /* PilgrimageTilesManagerTests.swift */,
+				DDC5F764303FBB1B169367D2 /* PilgrimageTilesManagerTests+Lifecycle.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3643,6 +3649,7 @@
 				47413CBD504FB08B9D4346C2 /* TileRegionLoading.swift in Sources */,
 				17FD5929BB3BD4D2D0B6C611 /* PilgrimageTilesDescriptors.swift in Sources */,
 				2B596B023970F55918D47164 /* PilgrimageTilesManager.swift in Sources */,
+				49F88972292B99B214C57484 /* MapboxTileRegionLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3833,6 +3840,7 @@
 				9EBD1319E497AAED5AF15494 /* WayGeometryCorridorTests.swift in Sources */,
 				0AA51FDC9D1E0B75ED9C8269 /* PilgrimageTilesDescriptorsTests.swift in Sources */,
 				4DDE4755C32DB0D2A34503F9 /* PilgrimageTilesManagerTests.swift in Sources */,
+				5C6AE6F64FFD45CF29316CFC /* PilgrimageTilesManagerTests+Lifecycle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
