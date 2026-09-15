@@ -60,7 +60,7 @@
 **Files:**
 - Create: `Pilgrim/Models/Honor/TileRegionLoading.swift`
 - Create: `UnitTests/Honor/FakeTileRegionLoader.swift`
-- Test: `UnitTests/Honor/PilgrimageTilesManagerTests.swift` (created here with one test; later tasks add to it)
+- Test: `UnitTests/Honor/FakeTileRegionLoaderTests.swift`
 
 **Interfaces:**
 - Produces: `protocol TileRegionLoading`, `struct TileRegionSummary`, `struct TileRegionRequest`, `struct StylePackRequest`, `final class FakeTileRegionLoader: TileRegionLoading` (test target).
@@ -246,72 +246,79 @@ final class FakeTileRegionLoader: TileRegionLoading {
 }
 ```
 
-- [ ] **Step 4: Register the fake and write the first (failing) manager test**
+- [ ] **Step 4: Register the fake and write a test that proves the fake itself**
 
 Run: `ruby scripts/xcode-add.rb UnitTests UnitTests/Honor/FakeTileRegionLoader.swift`
 
+The manager does not exist until Task 3, and a test file that names it would stop the whole `UnitTests` target compiling in between — so this task's test exercises the fake, which every later task's tests lean on.
+
 ```swift
-// UnitTests/Honor/PilgrimageTilesManagerTests.swift
+// UnitTests/Honor/FakeTileRegionLoaderTests.swift
 import XCTest
+import CoreLocation
 @testable import Pilgrim
 
-@MainActor
-final class PilgrimageTilesManagerTests: XCTestCase {
+final class FakeTileRegionLoaderTests: XCTestCase {
 
-    var loader: FakeTileRegionLoader!
-    var defaults: UserDefaults!
-    var manager: PilgrimageTilesManager!
+    private let ring = [
+        CLLocationCoordinate2D(latitude: 42, longitude: 0), CLLocationCoordinate2D(latitude: 42, longitude: 0.01),
+        CLLocationCoordinate2D(latitude: 42.01, longitude: 0.01), CLLocationCoordinate2D(latitude: 42.01, longitude: 0),
+        CLLocationCoordinate2D(latitude: 42, longitude: 0)
+    ]
 
-    override func setUp() {
-        super.setUp()
-        loader = FakeTileRegionLoader()
-        defaults = UserDefaults(suiteName: "tiles-tests-\(UUID().uuidString)")
-        manager = PilgrimageTilesManager(loader: loader, defaults: defaults)
+    func testALoadIsRecordedAndCompletesIntoTheStore() {
+        let fake = FakeTileRegionLoader()
+        let request = TileRegionRequest(id: "pilgrimage:camino-frances:0", ring: ring, corridorHash: "h", acceptExpired: true)
+        var result: Result<TileRegionSummary, TileRegionLoadingError>?
+        _ = fake.loadRegion(request, progress: { _, _ in }) { result = $0 }
+        XCTAssertEqual(fake.regionRequests, [request])
+        XCTAssertTrue(fake.regions().isEmpty, "nothing is stored until the load completes")
+        fake.completeNextRegion()
+        XCTAssertEqual(try result?.get().id, request.id)
+        XCTAssertEqual(fake.regions().first?.corridorHash, "h")
+        XCTAssertTrue(fake.regions().first?.isComplete ?? false)
     }
 
-    override func tearDown() {
-        defaults.removePersistentDomain(forName: defaults.description)
-        super.tearDown()
+    func testAFailureIsDeliveredOnceAndStoresNothing() {
+        let fake = FakeTileRegionLoader()
+        let request = TileRegionRequest(id: "pilgrimage:camino-frances:0", ring: ring, corridorHash: "h", acceptExpired: true)
+        var result: Result<TileRegionSummary, TileRegionLoadingError>?
+        _ = fake.loadRegion(request, progress: { _, _ in }) { result = $0 }
+        fake.nextRegionFailure = .diskFull
+        fake.completeNextRegion()
+        if case .failure(let error)? = result { XCTAssertEqual(error, .diskFull) } else { XCTFail("expected failure") }
+        XCTAssertTrue(fake.regions().isEmpty)
+        XCTAssertNil(fake.nextRegionFailure, "one failure, not a sticky one")
     }
 
-    /// A 3 km straight stage east along latitude 42, 31 points 100 m apart.
-    func stage(_ index: Int, count: Int = 3, routeId: String = "camino-frances", lonOffset: Double = 0) -> Way {
-        let points = (0...30).map { i in
-            WayPoint(lat: 42, lon: lonOffset + Double(i) * 0.001209, alt: nil, t: Double(i) * 60)
-        }
-        let stage = WayStage(routeId: routeId, index: index, count: count, name: "stage \(index)", theme: "t",
-                             narrative: "n", closing: "c", warnings: [], distanceKm: 3, gainMeters: 50,
-                             hours: WayStageHours(min: 1, max: 2), difficulty: "easy",
-                             start: WayStagePlace(name: "a", at: WayCoordinate(lat: 42, lon: lonOffset)),
-                             end: WayStagePlace(name: "b", at: WayCoordinate(lat: 42, lon: lonOffset + 0.03627)))
-        return Way(id: WayStore.stageWayId(routeId: routeId, stageIndex: index),
-                   source: .pilgrimage(routeId: routeId, stageIndex: index),
-                   title: "stage \(index)", departedAt: Date(timeIntervalSince1970: 0), tzIdentifier: nil,
-                   expires: nil, route: points, totalDistanceMeters: 3000, theirActiveSeconds: 1800,
-                   moments: [], weather: nil, spans: nil, marks: nil, stage: stage)
-    }
-
-    func stages(_ count: Int, routeId: String = "camino-frances") -> [Way] {
-        (0..<count).map { stage($0, count: count, routeId: routeId, lonOffset: Double($0) * 0.04) }
-    }
-
-    func testAFreshManagerReportsNothingSaved() {
-        XCTAssertEqual(manager.status(for: "camino-frances", stages: stages(3)), .none)
+    func testSeedAndRemoveAndPacks() {
+        let fake = FakeTileRegionLoader()
+        fake.seed(id: "pilgrimage:camino-frances:1", corridorHash: "h", complete: false)
+        XCTAssertFalse(fake.regions().first?.isComplete ?? true)
+        fake.removeRegion(id: "pilgrimage:camino-frances:1")
+        XCTAssertTrue(fake.regions().isEmpty)
+        XCTAssertEqual(fake.removedIds, ["pilgrimage:camino-frances:1"])
+        XCTAssertFalse(fake.hasStylePack(.light))
+        var packResult: Result<Void, TileRegionLoadingError>?
+        _ = fake.loadStylePack(.light) { packResult = $0 }
+        fake.completeNextPack()
+        XCTAssertNotNil(try packResult?.get())
+        XCTAssertTrue(fake.hasStylePack(.light))
     }
 }
 ```
 
-Run: `ruby scripts/xcode-add.rb UnitTests UnitTests/Honor/PilgrimageTilesManagerTests.swift`
+Run: `ruby scripts/xcode-add.rb UnitTests UnitTests/Honor/FakeTileRegionLoaderTests.swift`
 
-- [ ] **Step 5: Run the test to verify it fails**
+- [ ] **Step 5: Run the tests to verify they pass**
 
-Run the test command with `-only-testing:UnitTests/PilgrimageTilesManagerTests`.
-Expected: build error — `cannot find 'PilgrimageTilesManager' in scope`.
+Run the test command with `-only-testing:UnitTests/FakeTileRegionLoaderTests`.
+Expected: `Executed 3 tests, with 0 failures`.
 
 - [ ] **Step 6: Commit the seam**
 
 ```bash
-git add Pilgrim/Models/Honor/TileRegionLoading.swift UnitTests/Honor/FakeTileRegionLoader.swift UnitTests/Honor/PilgrimageTilesManagerTests.swift Pilgrim.xcodeproj/project.pbxproj
+git add Pilgrim/Models/Honor/TileRegionLoading.swift UnitTests/Honor/FakeTileRegionLoader.swift UnitTests/Honor/FakeTileRegionLoaderTests.swift Pilgrim.xcodeproj/project.pbxproj
 git commit -m "feat(tiles): the seam between the manager and Mapbox, and its fake
 
 TileRegionLoading is the only door to the offline API. It speaks in our
@@ -320,8 +327,6 @@ slice runs without one.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ```
-
-(The manager test stays red until Task 3 — that is expected; it pins the name the next tasks must produce.)
 
 ---
 
@@ -587,7 +592,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Create: `Pilgrim/Models/Honor/PilgrimageTilesDescriptors.swift`
 - Create: `Pilgrim/Models/Honor/PilgrimageTilesManager.swift` (status + estimate only; the save loop is Task 4)
 - Create: `UnitTests/Honor/PilgrimageTilesDescriptorsTests.swift`
-- Modify: `UnitTests/Honor/PilgrimageTilesManagerTests.swift` (estimate + status tests)
+- Create: `UnitTests/Honor/PilgrimageTilesManagerTests.swift` (helpers, first status test, estimate + status tests)
 - Modify: `docs/superpowers/specs/2026-09-14-honor-slice-three-offline-tiles-design.md:83-90` (the zoom-band note)
 
 **Interfaces:**
@@ -638,9 +643,62 @@ final class PilgrimageTilesDescriptorsTests: XCTestCase {
 
 Run: `ruby scripts/xcode-add.rb UnitTests UnitTests/Honor/PilgrimageTilesDescriptorsTests.swift`
 
-- [ ] **Step 2: Add estimate and status tests to the manager test file**
+- [ ] **Step 2: Create the manager test file with its helpers, then the estimate and status tests**
 
-Append inside `PilgrimageTilesManagerTests`:
+```swift
+// UnitTests/Honor/PilgrimageTilesManagerTests.swift
+import XCTest
+import CoreLocation
+@testable import Pilgrim
+
+@MainActor
+final class PilgrimageTilesManagerTests: XCTestCase {
+
+    var loader: FakeTileRegionLoader!
+    var defaults: UserDefaults!
+    var manager: PilgrimageTilesManager!
+
+    override func setUp() {
+        super.setUp()
+        loader = FakeTileRegionLoader()
+        defaults = UserDefaults(suiteName: "tiles-tests-\(UUID().uuidString)")
+        manager = PilgrimageTilesManager(loader: loader, defaults: defaults)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: defaults.description)
+        super.tearDown()
+    }
+
+    /// A 3 km straight stage east along latitude 42, 31 points 100 m apart.
+    func stage(_ index: Int, count: Int = 3, routeId: String = "camino-frances", lonOffset: Double = 0) -> Way {
+        let points = (0...30).map { i in
+            WayPoint(lat: 42, lon: lonOffset + Double(i) * 0.001209, alt: nil, t: Double(i) * 60)
+        }
+        let stage = WayStage(routeId: routeId, index: index, count: count, name: "stage \(index)", theme: "t",
+                             narrative: "n", closing: "c", warnings: [], distanceKm: 3, gainMeters: 50,
+                             hours: WayStageHours(min: 1, max: 2), difficulty: "easy",
+                             start: WayStagePlace(name: "a", at: WayCoordinate(lat: 42, lon: lonOffset)),
+                             end: WayStagePlace(name: "b", at: WayCoordinate(lat: 42, lon: lonOffset + 0.03627)))
+        return Way(id: WayStore.stageWayId(routeId: routeId, stageIndex: index),
+                   source: .pilgrimage(routeId: routeId, stageIndex: index),
+                   title: "stage \(index)", departedAt: Date(timeIntervalSince1970: 0), tzIdentifier: nil,
+                   expires: nil, route: points, totalDistanceMeters: 3000, theirActiveSeconds: 1800,
+                   moments: [], weather: nil, spans: nil, marks: nil, stage: stage)
+    }
+
+    func stages(_ count: Int, routeId: String = "camino-frances") -> [Way] {
+        (0..<count).map { stage($0, count: count, routeId: routeId, lonOffset: Double($0) * 0.04) }
+    }
+
+    func testAFreshManagerReportsNothingSaved() {
+        XCTAssertEqual(manager.status(for: "camino-frances", stages: stages(3)), .none)
+    }
+```
+
+Run: `ruby scripts/xcode-add.rb UnitTests UnitTests/Honor/PilgrimageTilesManagerTests.swift`
+
+Then append inside the class, before its closing brace:
 
 ```swift
     // MARK: - Estimate
