@@ -238,6 +238,8 @@ One pilgrimage at a time keeps this a single entry rather than a list; the view 
 
 `#if DEBUG`, on the same Data card: a toggle **simulate no signal for maps** bound to `OfflineSwitch.shared.isMapboxStackConnected` (inverted). It forces the Mapbox stack offline without airplane mode, so a saved stage can be opened on the walk screen and seen to render — or not — at home. It is the acceptance test for this slice on a real device and the hook a screenshot test can use.
 
+**Removed after the device pass (2026-09-15).** It did its job — offline rendering was verified on the SE3 — and airplane mode proves the same thing without a switch that only ever appeared in Debug builds. The Data card is shorter for it.
+
 ## 6. Storage facts to verify
 
 Two properties of `TileStore.default` are load-bearing and are verified by the plan, each with a test:
