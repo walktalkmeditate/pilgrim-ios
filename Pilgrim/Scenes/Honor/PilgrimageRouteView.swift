@@ -53,6 +53,15 @@ enum PilgrimageRouteModel {
         if !isInstalled { return "Download" }
         return hasUpdate ? "Update" : "On your phone"
     }
+
+    /// A save started mid-Update hashes stage lines that are being
+    /// rewritten and can re-add a region the update hook removed. Only a
+    /// package download holds the row: a save in flight is not one, and
+    /// the row's own cancel has to stay reachable.
+    static func mapsRowIsHeld(packagePhase: PilgrimagePackageManager.Phase) -> Bool {
+        if case .downloading = packagePhase { return true }
+        return false
+    }
 }
 
 /// One route: what it is, where you are in it, and every stage it divides
@@ -181,6 +190,7 @@ struct PilgrimageRouteView: View {
             if isInstalled && !stageWays.isEmpty {
                 PilgrimageMapsRow(routeId: entry.id, stages: stageWays,
                                   estimateBytes: mapsEstimateBytes, status: mapsStatus, tiles: tiles)
+                    .disabled(PilgrimageRouteModel.mapsRowIsHeld(packagePhase: packages.phase))
             }
         }
     }
