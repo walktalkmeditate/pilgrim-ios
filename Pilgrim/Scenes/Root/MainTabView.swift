@@ -39,7 +39,6 @@ struct MainTabView: View {
             }
             .accessibilityIdentifier("tab_settings")
         }
-        .tint(.stone)
         .fullScreenCover(item: $coordinator.activeWalkViewModel, onDismiss: {
             coordinator.handleActiveWalkDismiss()
         }) { vm in
@@ -158,5 +157,10 @@ struct MainTabView: View {
         }
         .animation(.easeInOut, value: coordinator.recoveredWalkDate != nil)
         .animation(.easeInOut, value: coordinator.pendingLinkToast)
+        // Last, so every cover and sheet this chain attaches inherits it. Set
+        // on the TabView alone, the Honor and summary sheets sat outside it
+        // and their back buttons fell to the asset-catalog accent, which has
+        // no constellation variant.
+        .tint(.stone)
     }
 }
