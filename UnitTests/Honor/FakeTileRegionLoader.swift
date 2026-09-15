@@ -132,11 +132,15 @@ final class FakeTileRegionLoader: TileRegionLoading {
 
     /// The store answering: what the real loader does when a regions read
     /// lands — every completion waiting on it runs, once, after the cache.
+    /// The real loader is silent when the answer matches its cache, and an
+    /// empty store answering an empty cache is the launch case; a fake that
+    /// signalled there would let a test pass on a signal production never
+    /// sends.
     func releaseRegions() {
         let waiting = pendingRegionsCompletions
         pendingRegionsCompletions = []
         for completion in waiting { completion() }
-        onChange?(.regions)
+        if !stored.isEmpty { onChange?(.regions) }
     }
 
     /// The style-pack answer on its own. On a phone that has saved maps this
