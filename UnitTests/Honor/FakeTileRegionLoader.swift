@@ -24,6 +24,9 @@ final class FakeTileRegionLoader: TileRegionLoading {
         let handle: Handle
     }
 
+    /// Fired wherever the real loader fires it — on a stored region, a
+    /// stored pack and a removal — so a test cannot prove the opposite of
+    /// what production does.
     var onChange: (() -> Void)?
 
     var stylePacks: Set<StylePackRequest> = []
@@ -64,6 +67,7 @@ final class FakeTileRegionLoader: TileRegionLoading {
     func removeRegion(id: String) {
         removedIds.append(id)
         stored[id] = nil
+        onChange?()
     }
 
     // MARK: - Driving the fake
@@ -72,6 +76,7 @@ final class FakeTileRegionLoader: TileRegionLoading {
         guard !pendingPacks.isEmpty else { return }
         let pending = pendingPacks.removeFirst()
         stylePacks.insert(pending.pack)
+        onChange?()
         pending.completion(.success(()))
     }
 
@@ -89,6 +94,7 @@ final class FakeTileRegionLoader: TileRegionLoading {
                                         completedResourceSize: bytesPerRegion,
                                         metadata: ["corridorHash": pending.request.corridorHash])
         stored[summary.id] = summary
+        onChange?()
         pending.completion(.success(summary))
     }
 

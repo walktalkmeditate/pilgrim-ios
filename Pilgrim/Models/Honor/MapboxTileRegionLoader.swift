@@ -115,6 +115,10 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                                                     metadata: ["corridorHash": request.corridorHash])
                     self?.cached.removeAll { $0.id == summary.id }
                     self?.cached.append(summary)
+                    // `refresh()` compares against a sorted array; leaving
+                    // this one appended would read as a change on the next
+                    // pass and signal a second time for the same save.
+                    self?.cached.sort { $0.id < $1.id }
                     self?.onChange?()
                     completion(.success(summary))
                 case .failure(let error):
@@ -182,7 +186,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
         }
     }
 
-    private static func mapped(_ error: Error) -> TileRegionLoadingError {
+    static func mapped(_ error: Error) -> TileRegionLoadingError {
         if let tileError = error as? TileRegionError, case .diskFull = tileError { return .diskFull }
         if let packError = error as? StylePackError, case .diskFull = packError { return .diskFull }
         if WayMediaDownloader.isDiskFull(error) { return .diskFull }

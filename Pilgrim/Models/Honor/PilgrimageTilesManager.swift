@@ -76,17 +76,25 @@ final class PilgrimageTilesManager: ObservableObject {
     }
 
     /// Complete by resource count and loaded for the stage's current line.
-    func isStageSaved(_ way: Way) -> Bool {
-        guard let region = region(for: way), region.isComplete else { return false }
+    private func isSaved(_ way: Way, region: TileRegionSummary?) -> Bool {
+        guard let region, region.isComplete else { return false }
         return region.corridorHash == Self.corridorHash(for: way)
     }
 
+    /// The single-stage entry point, for the morning card.
+    func isStageSaved(_ way: Way) -> Bool {
+        isSaved(way, region: region(for: way))
+    }
+
     func status(for routeId: String, stages: [Way]) -> Status {
-        let saved = stages.filter(isStageSaved)
+        // One store read for the whole route: `regions()` refreshes the
+        // loader's cache, so asking it per stage re-reads once per stage.
+        let byId = Dictionary(loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let saved = stages.filter { isSaved($0, region: byId[$0.id]) }
         guard !saved.isEmpty else { return .none }
         let packsPresent = StylePackRequest.allCases.allSatisfy(loader.hasStylePack)
         guard saved.count == stages.count, packsPresent else { return .partial(saved: saved.count, of: stages.count) }
-        let bytes = saved.compactMap(region(for:)).reduce(0) { $0 + $1.completedResourceSize }
+        let bytes = saved.compactMap { byId[$0.id] }.reduce(0) { $0 + $1.completedResourceSize }
         return .saved(bytes: bytes)
     }
 

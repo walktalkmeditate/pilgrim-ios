@@ -39,4 +39,14 @@ final class MapboxTileRegionLoaderTests: XCTestCase {
         XCTAssertEqual(options[2].maxZoom, 14)
         XCTAssertEqual(options[2].tilesets, ["mapbox://mapbox.mapbox-terrain-dem-v1"])
     }
+
+    /// The SDK names a full disk as its own case, which the shared
+    /// URLError/Cocoa check cannot see. Pure function — no loader.
+    func testMappedErrorsNameAFullDiskAndACancel() {
+        XCTAssertEqual(MapboxTileRegionLoader.mapped(TileRegionError.diskFull("x")), .diskFull)
+        XCTAssertEqual(MapboxTileRegionLoader.mapped(StylePackError.diskFull("x")), .diskFull)
+        XCTAssertEqual(MapboxTileRegionLoader.mapped(TileRegionError.canceled("x")), .cancelled)
+        XCTAssertEqual(MapboxTileRegionLoader.mapped(URLError(.cannotWriteToFile)), .diskFull)
+        XCTAssertEqual(MapboxTileRegionLoader.mapped(NSError(domain: "t", code: 1)), .failed)
+    }
 }

@@ -1,4 +1,5 @@
 // UnitTests/Honor/PilgrimageTilesManagerTests.swift
+import Combine
 import XCTest
 import CoreLocation
 @testable import Pilgrim
@@ -279,5 +280,25 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         let expected = 800_000 / manager.tileCount(for: two)
         XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerTile.camino-frances"), expected)
         XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerTile.kumano-kodo-nakahechi"), 0)
+    }
+
+    /// A view that read `status` before the store answered needs this to
+    /// learn the answer arrived.
+    func testTheManagerPublishesWhenTheLoaderAnnouncesAChange() async throws {
+        var published = false
+        let sink = manager.objectWillChange.sink { _ in published = true }
+        loader.seedStylePacks()
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: stages(1)) }
+        await Task.yield()
+
+        // `phase` publishes through `@Published` too, so reset here and read
+        // back before yielding: the only thing that can have fired in
+        // between is the loader's own signal.
+        published = false
+        loader.completeNextRegion()
+        XCTAssertTrue(published)
+
+        try await task.value
+        withExtendedLifetime(sink) {}
     }
 }
