@@ -29,10 +29,12 @@ final class PilgrimageTilesManager: ObservableObject {
     var isWalkActive: () -> Bool = { false }
 
     static let halfWidthMeters = 500.0
-    /// Measured on three Camino Francés tiles at z14/z15 in the design
-    /// session; the seed for that route and the default for any route with
-    /// no measurement of its own. Replaced per route after its first save.
-    static let seedBytesPerTile = 10_000
+    /// One z11 cell of the corridor, both tilesets together, measured against
+    /// the tile API on 2026-09-15: 3.8 MB on the Francés, 2.7 MB on the
+    /// Nakahechi. The default for every route until its first save
+    /// calibrates it. The 10 KB it replaced was a streets tile, and tiles
+    /// are not what the store downloads.
+    static let seedBytesPerPack = 4_000_000
 
     /// Shared like the package manager's; the production loader is attached
     /// in `MainCoordinatorView` so this file never imports Mapbox.
@@ -71,17 +73,24 @@ final class PilgrimageTilesManager: ObservableObject {
                              halfWidthMeters: halfWidthMeters)
     }
 
-    /// SHA-256 of the corridor's coordinates at 1e-6°, so a resumed save can
-    /// tell a redrawn stage from an unchanged one by comparing two strings.
+    /// SHA-256 of the region version and the corridor's coordinates at
+    /// 1e-6°, so a resumed save can tell a redrawn stage — or one saved
+    /// under earlier descriptors — from an unchanged one by comparing two
+    /// strings.
     static func corridorHash(for way: Way) -> String {
         corridorHash(rings(for: way))
     }
 
-    /// Every part in the order `corridor` emits them: the order is part of
-    /// the hash, and `corridor` is deterministic, so the same line always
-    /// hashes the same and a reordering would read as a redrawn stage.
-    static func corridorHash(_ rings: [[CLLocationCoordinate2D]]) -> String {
+    /// The version goes in first: a region saved under earlier descriptors
+    /// then fails the check, reads as unsaved, and the next save reloads it
+    /// under the current ones. Then every part in the order `corridor`
+    /// emits them: the order is part of the hash, and `corridor` is
+    /// deterministic, so the same line always hashes the same and a
+    /// reordering would read as a redrawn stage.
+    static func corridorHash(_ rings: [[CLLocationCoordinate2D]],
+                             version: Int = PilgrimageTilesDescriptors.regionVersion) -> String {
         var data = Data()
+        data.append(contentsOf: withUnsafeBytes(of: version) { Array($0) })
         for ring in rings {
             for point in ring {
                 data.append(contentsOf: withUnsafeBytes(of: (point.latitude * 1_000_000).rounded()) { Array($0) })
@@ -146,36 +155,36 @@ final class PilgrimageTilesManager: ObservableObject {
 
     // MARK: - Estimate
 
-    static func bytesPerTileKey(routeId: String) -> String { "pilgrimage.tiles.bytesPerTile.\(routeId)" }
+    static func bytesPerPackKey(routeId: String) -> String { "pilgrimage.tiles.bytesPerPack.\(routeId)" }
 
-    func bytesPerTile(routeId: String) -> Int {
-        let stored = defaults.integer(forKey: Self.bytesPerTileKey(routeId: routeId))
-        return stored > 0 ? stored : Self.seedBytesPerTile
+    func bytesPerPack(routeId: String) -> Int {
+        let stored = defaults.integer(forKey: Self.bytesPerPackKey(routeId: routeId))
+        return stored > 0 ? stored : Self.seedBytesPerPack
     }
 
-    /// Below this a corridor touches a handful of tiles, a rounding error
-    /// the estimate leaves out.
-    static let estimateFloorZoom = 10
-
-    /// Streets tiles plus DEM tiles. The two tilesets share a ceiling — the
-    /// descriptors test pins that — so one sweep of the corridor counts both.
-    func tileCount(for stages: [Way]) -> Int {
-        let zooms = Self.estimateFloorZoom...PilgrimageTilesDescriptors.streetsZoom.upperBound
-        return stages.reduce(0) { $0 + PilgrimageTilesDescriptors.tileCount(rings: Self.rings(for: $1), zooms: zooms) } * 2
+    /// Distinct z11 cells the whole route's corridor touches. The store
+    /// downloads a pack — a z11 tile and every descendant to z14 — whole
+    /// whenever the corridor touches any of it, so tiles were the wrong
+    /// unit: the Nakahechi's ~2 MB of tiles landed as 596 MB of packs.
+    /// Every stage's rings go into one sweep so a cell two stages share is
+    /// counted once, as the store holds it once.
+    func packCount(for stages: [Way]) -> Int {
+        let root = PilgrimageTilesDescriptors.packRootZoom
+        return PilgrimageTilesDescriptors.tileCount(rings: stages.flatMap { Self.rings(for: $0) }, zooms: root...root)
     }
 
     func estimateBytes(for routeId: String, stages: [Way]) -> Int {
-        tileCount(for: stages) * bytesPerTile(routeId: routeId)
+        packCount(for: stages) * bytesPerPack(routeId: routeId)
     }
 
-    /// After a save of this route lands: its real bytes over its tile count
+    /// After a save of this route lands: its real bytes over its pack count
     /// replace the seed. Another route's key is never touched.
     func calibrate(routeId: String, stages: [Way]) {
         let byId = regionsById()
         let bytes = stages.compactMap { byId[$0.id] }.reduce(0) { $0 + $1.completedResourceSize }
-        let tiles = tileCount(for: stages)
-        guard bytes > 0, tiles > 0 else { return }
-        defaults.set(bytes / tiles, forKey: Self.bytesPerTileKey(routeId: routeId))
+        let packs = packCount(for: stages)
+        guard bytes >= 1, packs >= 1 else { return }
+        defaults.set(bytes / packs, forKey: Self.bytesPerPackKey(routeId: routeId))
     }
 
     // MARK: - Save

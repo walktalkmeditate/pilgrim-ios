@@ -28,24 +28,18 @@ final class MapboxTileRegionLoaderTests: XCTestCase {
     }
 
     /// Reads the options the SDK is actually handed. They are value types,
-    /// so this opens no `TileStore`.
-    func testDescriptorOptionsCarryTheSpecsRangesAndTheTerrainTileset() {
+    /// so this opens no `TileStore`. No tileset is named: the DEM's z11
+    /// packs are 8–9 MB each — 511 MB across the Francés for a hillshade
+    /// that renders with signal — and the contours and landcover that stay
+    /// come with the style's own composite source.
+    func testDescriptorOptionsAreTheTwoStylesAtTheSpecsRangeAndNameNoTileset() {
         let options = MapboxTileRegionLoader.descriptorOptions()
-        XCTAssertEqual(options.count, 3)
-
-        XCTAssertEqual(options[0].styleURI, StyleURI.light.rawValue)
-        XCTAssertEqual(options[1].styleURI, StyleURI.dark.rawValue)
-        XCTAssertEqual(options[2].styleURI, StyleURI.light.rawValue)
-
-        for streets in [options[0], options[1]] {
-            XCTAssertEqual(streets.minZoom, 0)
-            XCTAssertEqual(streets.maxZoom, 14)
-            XCTAssertNil(streets.tilesets)
+        XCTAssertEqual(options.map(\.styleURI), [StyleURI.light.rawValue, StyleURI.dark.rawValue])
+        for option in options {
+            XCTAssertEqual(option.minZoom, 11)
+            XCTAssertEqual(option.maxZoom, 14)
+            XCTAssertNil(option.tilesets)
         }
-
-        XCTAssertEqual(options[2].minZoom, 0)
-        XCTAssertEqual(options[2].maxZoom, 14)
-        XCTAssertEqual(options[2].tilesets, ["mapbox://mapbox.mapbox-terrain-dem-v1"])
     }
 
     /// The descriptors test pins `rasterizesIdeographsLocally`; this pins

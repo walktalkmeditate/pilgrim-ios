@@ -28,21 +28,20 @@ final class MapboxTileRegionLoader: TileRegionLoading {
         return support.appendingPathComponent("pilgrimage-tiles", isDirectory: true)
     }()
 
-    /// The three descriptors every region is loaded with, as value types so
+    /// The two descriptors every region is loaded with, as value types so
     /// a test can read what the SDK is given without opening a `TileStore`.
+    /// Nothing is named in `tilesets`: the style's composite source already
+    /// carries Streets and terrain-v2 — contours and landcover — and the DEM
+    /// the wabi-sabi pass adds at runtime is left out on purpose. Its z11
+    /// packs are 8–9 MB each, 511 MB across the Francés, for a hillshade
+    /// that renders whenever there is signal.
     static func descriptorOptions() -> [TilesetDescriptorOptions] {
-        // The SDK takes the zoom band as `UInt8`; the spec constants are
-        // `Int` so a test can pin them without linking Mapbox.
-        let streets = UInt8(PilgrimageTilesDescriptors.streetsZoom.lowerBound)...UInt8(PilgrimageTilesDescriptors.streetsZoom.upperBound)
-        let terrain = UInt8(PilgrimageTilesDescriptors.terrainZoom.lowerBound)...UInt8(PilgrimageTilesDescriptors.terrainZoom.upperBound)
+        // The SDK takes the zoom band as `UInt8`; the spec constant is
+        // `Int` so a test can pin it without linking Mapbox.
+        let zoom = UInt8(PilgrimageTilesDescriptors.streetsZoom.lowerBound)...UInt8(PilgrimageTilesDescriptors.streetsZoom.upperBound)
         return [
-            TilesetDescriptorOptions(styleURI: .light, zoomRange: streets, tilesets: nil),
-            TilesetDescriptorOptions(styleURI: .dark, zoomRange: streets, tilesets: nil),
-            // The DEM is added at runtime by the wabi-sabi style pass, so it
-            // is in neither base style: unnamed here, the hillshade would be
-            // blank offline.
-            TilesetDescriptorOptions(styleURI: .light, zoomRange: terrain,
-                                     tilesets: [PilgrimageTilesDescriptors.terrainTileset])
+            TilesetDescriptorOptions(styleURI: .light, zoomRange: zoom, tilesets: nil),
+            TilesetDescriptorOptions(styleURI: .dark, zoomRange: zoom, tilesets: nil)
         ]
     }
 

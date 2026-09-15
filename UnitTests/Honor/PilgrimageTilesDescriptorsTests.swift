@@ -5,27 +5,31 @@ import CoreLocation
 
 final class PilgrimageTilesDescriptorsTests: XCTestCase {
 
-    /// The SDK loads tile packs in fixed zoom bands — 0–5, 6–10, 11–14,
-    /// 15–16 — and caps a store at 750 unique packs. Streets ends at 14:
-    /// the 15–16 band adds building footprints only and would put the
-    /// Francés alone at ~1,800 packs. The DEM tileset has no z15 at all;
-    /// 14 is both its ceiling and a band edge.
-    func testTheCeilingsAreBandEdges() {
-        XCTAssertEqual(PilgrimageTilesDescriptors.streetsZoom, 0...14)
-        XCTAssertEqual(PilgrimageTilesDescriptors.terrainZoom, 0...14)
+    /// The SDK downloads whole packs in fixed zoom bands — 0–5, 6–10,
+    /// 11–14, 15–16 — not the tiles a corridor touches. A range from 0
+    /// pulls the planet-wide 0–5 pack of every tileset in the style, 206 MB
+    /// before a route tile, which is how a ~2 MB Nakahechi estimate landed
+    /// as 596 MB on the phone. Streets ends at 14: the 15–16 band adds
+    /// building footprints only and would put the Francés alone at ~1,800
+    /// packs against the store's 750.
+    func testTheRangeIsTheOneBandWhosePacksFollowTheCorridor() {
+        XCTAssertEqual(PilgrimageTilesDescriptors.streetsZoom, 11...14)
     }
 
-    /// The estimate sweeps the corridor once and counts it for both
-    /// tilesets; that shortcut holds only while the two ceilings agree.
-    func testStreetsAndTerrainShareACeilingSoTheEstimateSweepsOnce() {
-        XCTAssertEqual(PilgrimageTilesDescriptors.streetsZoom.upperBound, PilgrimageTilesDescriptors.terrainZoom.upperBound)
+    /// The estimate counts z11 cells because that is what the store
+    /// downloads; the range has to start on that band's root or the count
+    /// speaks for packs the region never pulls.
+    func testThePackRootIsTheRangesFloor() {
+        XCTAssertEqual(PilgrimageTilesDescriptors.packRootZoom, 11)
+        XCTAssertEqual(PilgrimageTilesDescriptors.streetsZoom.lowerBound, PilgrimageTilesDescriptors.packRootZoom)
     }
 
-    /// The DEM is added by `PilgrimMapStyle.applyWabiSabiStyle` at runtime,
-    /// not by the base style, so it has to be named or the hillshade is
-    /// blank offline.
-    func testTheTerrainTilesetIsTheOneTheStyleAdds() {
-        XCTAssertEqual(PilgrimageTilesDescriptors.terrainTileset, "mapbox://mapbox.mapbox-terrain-dem-v1")
+    /// Version 1 saved regions from z0 with the DEM named, and phones have
+    /// them. The version is hashed into every corridor so those read as
+    /// unsaved; a descriptor change that forgets to move it leaves 596 MB
+    /// of the wrong packs reading as maps saved.
+    func testTheRegionVersionMovedPastTheDescriptorsThatShippedFirst() {
+        XCTAssertEqual(PilgrimageTilesDescriptors.regionVersion, 2)
     }
 
     func testGlyphsRasterizeIdeographsLocally() {

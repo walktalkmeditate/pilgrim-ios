@@ -6,17 +6,29 @@ import Foundation
 /// so a test can pin them without touching Mapbox.
 enum PilgrimageTilesDescriptors {
 
-    /// The SDK loads tile packs in fixed zoom bands — 0–5, 6–10, 11–14,
-    /// 15–16 — recommends ceilings on a band edge, and caps a store at 750
-    /// unique packs. The 15–16 band adds building footprints only and would
-    /// put the Francés alone at ~1,800 z15-rooted packs, so Streets ends at
-    /// 14: offline, the walk screen's z16 overzooms the saved z14.
-    static let streetsZoom: ClosedRange<Int> = 0...14
-    /// The DEM tileset has no z15; 14 is its ceiling and a band edge.
-    static let terrainZoom: ClosedRange<Int> = 0...14
-    /// Added at runtime by `PilgrimMapStyle.applyWabiSabiStyle`, so not in
-    /// either base style: it has to be named or the hillshade is blank offline.
-    static let terrainTileset = "mapbox://mapbox.mapbox-terrain-dem-v1"
+    /// The SDK downloads whole tile packs in fixed zoom bands — 0–5, 6–10,
+    /// 11–14, 15–16 — not the tiles a corridor touches, and caps a store at
+    /// 750 unique packs. A range starting at 0 pulls the planet-wide 0–5
+    /// pack of every tileset in the style, 206 MB before a single route
+    /// tile, and each z6 pack is ~90 MB on top; 11 is the first band whose
+    /// packs follow the corridor. The 15–16 band adds building footprints
+    /// only and would put the Francés alone at ~1,800 z15-rooted packs, so
+    /// Streets ends at 14. Offline, the walk screen's z16 overzooms the
+    /// saved z14, and below z11 the whole-route preview draws its line on
+    /// bare parchment.
+    static let streetsZoom: ClosedRange<Int> = 11...14
+    /// The root of the one band the region lives in: a pack is one z11
+    /// tile with its descendants to z14, per tileset, so the estimate counts
+    /// z11 cells rather than tiles.
+    static let packRootZoom = 11
+    /// Mixed into every corridor hash. The first field build saved regions
+    /// from z0 with the DEM named — 596 MB for the four-stage Nakahechi —
+    /// and a region saved under those descriptors must not read as saved:
+    /// with the version in the hash it fails the check, the next save
+    /// reloads it under the current descriptors, and the store frees the
+    /// packs nothing references any more. Bump this whenever the
+    /// descriptors change under regions already on phones.
+    static let regionVersion = 2
     /// Shikoku and Kumano labels are CJK; rasterizing ideographs on the
     /// device keeps the style pack from carrying every glyph range.
     static let rasterizesIdeographsLocally = true
@@ -24,8 +36,9 @@ enum PilgrimageTilesDescriptors {
     /// Distinct XYZ tiles whose centre or any corner lies inside any part of
     /// the corridor, summed over `zooms`. Mapbox unions the parts, so a tile
     /// a quad and its vertex square both cover is downloaded once and counted
-    /// once. Below z10 a corridor touches a handful of tiles, a rounding
-    /// error the estimate leaves out.
+    /// once — and the rings of several stages passed together dedup the same
+    /// way, which is how a z11 cell two stages share is one pack in the
+    /// estimate as it is in the store.
     static func tileCount(rings: [[CLLocationCoordinate2D]], zooms: ClosedRange<Int>) -> Int {
         let parts = rings.filter { $0.count > 3 }
         guard !parts.isEmpty else { return 0 }

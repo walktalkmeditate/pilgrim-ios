@@ -72,24 +72,56 @@ final class PilgrimageTilesManagerTests: XCTestCase {
 
     // MARK: - Estimate
 
-    func testTheEstimateUsesTheRoutesOwnBytesPerTileAndTheSeedByDefault() {
+    /// Tiles were the wrong unit: the store downloads whole z11 packs, and
+    /// a ~2 MB tile estimate for the Nakahechi landed as 596 MB. The count
+    /// is the z11 cells of the whole corridor, every stage's rings in one
+    /// sweep.
+    func testThePackCountIsTheZ11CellsOfTheWholeCorridor() {
         let three = stages(3)
-        // Two terms on purpose — Streets and the DEM — so a collapse in the
-        // manager's sweep still has to equal the sum it stands for.
-        let floor = PilgrimageTilesManager.estimateFloorZoom
-        let tiles = three.reduce(0) { total, way in
-            let rings = WayGeometry.corridor(around: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) },
-                                             halfWidthMeters: 500)
-            return total + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: floor...14)
-                + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: floor...14)
+        let rings = three.flatMap { way in
+            WayGeometry.corridor(around: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) },
+                                 halfWidthMeters: 500)
         }
+        XCTAssertGreaterThan(manager.packCount(for: three), 0)
+        XCTAssertEqual(manager.packCount(for: three), PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 11...11))
+    }
+
+    /// The store holds a pack once however many stages touch it, so the
+    /// estimate must too. The fixture's first two stages sit in one z11
+    /// cell — the first reaches into its western neighbour as well — so
+    /// counted apart they are three packs and together they are two.
+    func testAZ11CellTwoStagesShareIsCountedOnce() {
+        let two = stages(2)
+        XCTAssertEqual(two.map { manager.packCount(for: [$0]) }, [2, 1])
+        XCTAssertEqual(manager.packCount(for: two), 2)
+    }
+
+    func testTheEstimateIsPacksTimesTheRoutesOwnBytesPerPackAndTheSeedByDefault() {
+        let three = stages(3)
+        let packs = manager.packCount(for: three)
         XCTAssertEqual(manager.estimateBytes(for: "camino-frances", stages: three),
-                       tiles * PilgrimageTilesManager.seedBytesPerTile)
-        defaults.set(25_000, forKey: "pilgrimage.tiles.bytesPerTile.camino-frances")
-        XCTAssertEqual(manager.estimateBytes(for: "camino-frances", stages: three), tiles * 25_000)
+                       packs * PilgrimageTilesManager.seedBytesPerPack)
+        defaults.set(2_700_000, forKey: "pilgrimage.tiles.bytesPerPack.camino-frances")
+        XCTAssertEqual(manager.estimateBytes(for: "camino-frances", stages: three), packs * 2_700_000)
         XCTAssertEqual(manager.estimateBytes(for: "kumano-kodo-nakahechi", stages: stages(3, routeId: "kumano-kodo-nakahechi")),
-                       tiles * PilgrimageTilesManager.seedBytesPerTile,
+                       packs * PilgrimageTilesManager.seedBytesPerPack,
                        "another route's calibration never leaks")
+    }
+
+    /// A region saved under earlier descriptors must not read as saved: the
+    /// version is part of the hash, so the next save reloads it under the
+    /// current ones and the store frees the packs nothing references.
+    func testTheCorridorHashCarriesTheRegionVersion() {
+        let way = stage(0)
+        let rings = PilgrimageTilesManager.rings(for: way)
+        let current = PilgrimageTilesDescriptors.regionVersion
+        XCTAssertEqual(PilgrimageTilesManager.corridorHash(for: way), PilgrimageTilesManager.corridorHash(rings, version: current))
+        XCTAssertNotEqual(PilgrimageTilesManager.corridorHash(rings, version: current),
+                          PilgrimageTilesManager.corridorHash(rings, version: current - 1))
+
+        loader.seedStylePacks()
+        loader.seed(id: way.id, corridorHash: PilgrimageTilesManager.corridorHash(rings, version: current - 1))
+        XCTAssertFalse(manager.isStageSaved(way), "a first-build region reads as unsaved")
     }
 
     // MARK: - Status
@@ -361,9 +393,25 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         loader.completeNextRegion(); await untilPending()
         loader.completeNextRegion()
         try await task.value
-        let expected = 800_000 / manager.tileCount(for: two)
-        XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerTile.camino-frances"), expected)
-        XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerTile.kumano-kodo-nakahechi"), 0)
+        let expected = 800_000 / manager.packCount(for: two)
+        XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerPack.camino-frances"), expected)
+        XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerPack.kumano-kodo-nakahechi"), 0)
+    }
+
+    /// A route with no bytes in the store, or no corridor to count, has
+    /// nothing to calibrate with; writing zero would turn the next estimate
+    /// into "~1 MB" for the whole Francés.
+    func testCalibrateWritesNothingWithoutBytesAndPacks() {
+        let two = stages(2)
+        manager.calibrate(routeId: "camino-frances", stages: two)
+        XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerPack.camino-frances"), 0, "no bytes yet")
+
+        let lineless = Way(id: two[0].id, source: two[0].source, title: "no line", departedAt: two[0].departedAt,
+                           tzIdentifier: nil, expires: nil, route: [], totalDistanceMeters: 0, theirActiveSeconds: 0,
+                           moments: [], weather: nil, spans: nil, marks: nil, stage: two[0].stage)
+        loader.seed(id: lineless.id, corridorHash: "h", bytes: 5_000_000)
+        manager.calibrate(routeId: "camino-frances", stages: [lineless])
+        XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerPack.camino-frances"), 0, "bytes, but no pack to divide by")
     }
 
     /// A store read per stage would be thirty-five of them on the Francés,
