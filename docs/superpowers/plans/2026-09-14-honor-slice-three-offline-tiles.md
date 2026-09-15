@@ -397,8 +397,10 @@ final class WayGeometryCorridorTests: XCTestCase {
         XCTAssertEqual(simplified.count, 2, "a straight-enough line is its two ends")
     }
 
-    /// The real Francés stage 0 from the test fixture: 24 km, Pyrenees.
-    /// Area within 20 % of length × 1 km, and every route point inside.
+    /// The checked-in `stage-00.json` is a short synthetic stage (about
+    /// 1 km, eleven points), not the real Francés day — what matters is
+    /// that a decoded Way's route goes through the same path a real one
+    /// will. Area within 20 % of length × 1 km, every route point inside.
     func testTheFrancesStageZeroCorridorIsTightAndCoversItsLine() throws {
         let data = try PilgrimageFixtures.data("stage-00.json")
         let way = try PilgrimageWayImporter.way(from: data, routeId: "camino-frances", stageIndex: 0)
@@ -470,18 +472,10 @@ Append to `Pilgrim/Models/Honor/WayGeometry.swift`, inside the struct, after `be
             left.append((local[i].x + nx, local[i].y + ny))
             right.append((local[i].x - nx, local[i].y - ny))
         }
-        // The ends are squared off by extending half a width past each.
-        let startDir = (x: local[1].x - local[0].x, y: local[1].y - local[0].y)
-        let endDir = (x: local[local.count - 1].x - local[local.count - 2].x, y: local[local.count - 1].y - local[local.count - 2].y)
-        func unit(_ v: (x: Double, y: Double)) -> (x: Double, y: Double) {
-            let l = (v.x * v.x + v.y * v.y).squareRoot()
-            return l > 0 ? (v.x / l, v.y / l) : (1, 0)
-        }
-        let s = unit(startDir), e = unit(endDir)
-        left[0] = (left[0].x - s.x * halfWidthMeters, left[0].y - s.y * halfWidthMeters)
-        right[0] = (right[0].x - s.x * halfWidthMeters, right[0].y - s.y * halfWidthMeters)
-        left[left.count - 1] = (left[left.count - 1].x + e.x * halfWidthMeters, left[left.count - 1].y + e.y * halfWidthMeters)
-        right[right.count - 1] = (right[right.count - 1].x + e.x * halfWidthMeters, right[right.count - 1].y + e.y * halfWidthMeters)
+        // No end caps: the ring closes on the endpoints' own perpendicular
+        // offsets, so the area is length × width and the tile that holds
+        // each endpoint is already inside. A cap would add a fixed square
+        // kilometre to every stage, which on a short one doubles it.
         let ringLocal = left + right.reversed() + [left[0]]
         return ringLocal.map {
             CLLocationCoordinate2D(latitude: first.latitude + $0.y / latScale, longitude: first.longitude + $0.x / lonScale)
@@ -565,12 +559,12 @@ Append to `Pilgrim/Models/Honor/WayGeometry.swift`, inside the struct, after `be
 Run with `-only-testing:UnitTests/WayGeometryCorridorTests`.
 Expected: `Executed 5 tests, with 0 failures`.
 
-If `testTheFrancesStageZeroCorridorIsTightAndCoversItsLine` fails on area: the stage has switchbacks, so the corridor self-overlaps and the shoelace area under-counts; widen the accuracy to 35 % and note why in the test. Do not change the corridor.
+If an area assertion fails, the corridor is wrong, not the test: a 500 m half-width ring around a line of length L has area L × 1000 m² with no end caps. Do not widen the tolerance.
 
 - [ ] **Step 5: Lint and commit**
 
 Run: `swiftlint lint --quiet Pilgrim/Models/Honor/WayGeometry.swift UnitTests/Honor/WayGeometryCorridorTests.swift`
-Expected: no errors (a `function_body_length` warning on `corridor` is acceptable; an error is not — split the end-squaring into a private helper if it errors).
+Expected: no errors (a `function_body_length` warning on `corridor` is acceptable; an error is not).
 
 ```bash
 git add Pilgrim/Models/Honor/WayGeometry.swift UnitTests/Honor/WayGeometryCorridorTests.swift Pilgrim.xcodeproj/project.pbxproj
