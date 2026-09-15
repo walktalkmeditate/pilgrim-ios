@@ -70,6 +70,14 @@ struct OfflineMapsView: View {
             }
         }
         .navigationTitle("Maps")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Maps")
+                    .font(Constants.Typography.heading)
+                    .foregroundColor(.ink)
+            }
+        }
         .onAppear(perform: reload)
         // A screen opened before the store answered would otherwise say "no
         // maps saved" until it was left and reopened. Regions only, not

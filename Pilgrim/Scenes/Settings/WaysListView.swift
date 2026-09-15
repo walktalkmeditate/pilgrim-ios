@@ -64,6 +64,14 @@ struct WaysListView: View {
             }
         }
         .navigationTitle("Ways")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Ways")
+                    .font(Constants.Typography.heading)
+                    .foregroundColor(.ink)
+            }
+        }
         .onAppear(perform: reload)
         .alert("Delete all Ways?", isPresented: $confirmDeleteAll) {
             Button("Delete", role: .destructive) {

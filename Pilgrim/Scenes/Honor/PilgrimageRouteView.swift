@@ -122,6 +122,13 @@ struct PilgrimageRouteView: View {
         .navigationTitle(entry.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // The app draws its own titles so they follow the palette; the
+            // system title would sit in the system font and label colour.
+            ToolbarItem(placement: .principal) {
+                Text(entry.name)
+                    .font(Constants.Typography.heading)
+                    .foregroundColor(.ink)
+            }
             if isInstalled {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
