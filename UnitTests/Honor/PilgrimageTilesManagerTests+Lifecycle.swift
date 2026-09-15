@@ -36,9 +36,11 @@ extension PilgrimageTilesManagerTests {
         loader.seed(id: "pilgrimage:camino-frances:7", corridorHash: "h")
         loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h")
         manager.reconcile(installed: (routeId: "camino-frances", stageCount: 3))
+        loader.releaseRegions()
         XCTAssertEqual(Set(loader.removedIds), ["pilgrimage:camino-frances:7", "pilgrimage:kumano-kodo-nakahechi:0"])
         let before = loader.removedIds.count
         manager.reconcile(installed: (routeId: "camino-frances", stageCount: 3))
+        loader.releaseRegions()
         XCTAssertEqual(loader.removedIds.count, before, "a second run removes nothing")
     }
 
@@ -47,7 +49,6 @@ extension PilgrimageTilesManagerTests {
     func testReconcileSweepsOnceTheStoreAnswers() {
         loader.seed(id: "pilgrimage:camino-frances:7", corridorHash: "h")
         loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h")
-        loader.withholdsRegions = true
 
         manager.reconcile(installed: (routeId: "camino-frances", stageCount: 3))
         XCTAssertTrue(loader.removedIds.isEmpty, "the store has not answered yet")
@@ -66,7 +67,6 @@ extension PilgrimageTilesManagerTests {
     func testAPacksOnlyChangeDoesNotRunThePendingSweep() {
         loader.seed(id: "pilgrimage:camino-frances:7", corridorHash: "h")
         loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h")
-        loader.withholdsRegions = true
 
         manager.reconcile(installed: (routeId: "camino-frances", stageCount: 3))
         loader.firePacksChange()
@@ -79,6 +79,7 @@ extension PilgrimageTilesManagerTests {
     func testReconcileWithNothingInstalledRemovesEveryRegion() {
         for way in stages(2) { loader.seed(id: way.id, corridorHash: "h") }
         manager.reconcile(installed: nil)
+        loader.releaseRegions()
         XCTAssertEqual(Set(loader.removedIds), Set(stages(2).map(\.id)))
     }
 
@@ -88,6 +89,7 @@ extension PilgrimageTilesManagerTests {
     /// found nothing installed sweeps everything it is handed.
     func testAReconcileFromAnEmptyLaunchNeverSweepsALaterSave() async throws {
         manager.reconcile(installed: nil)
+        loader.releaseRegions()
         loader.seedStylePacks()
         let two = stages(2)
         let task = Task { try await manager.save(routeId: "camino-frances", stages: two) }
@@ -102,7 +104,6 @@ extension PilgrimageTilesManagerTests {
     /// The store can answer in the middle of a save, long after the launch
     /// that asked. The save is the newer truth about what belongs on disk.
     func testASaveCancelsAPendingLaunchSweep() async throws {
-        loader.withholdsRegions = true
         manager.reconcile(installed: nil)
         loader.seedStylePacks()
         let task = Task { try await manager.save(routeId: "camino-frances", stages: stages(2)) }

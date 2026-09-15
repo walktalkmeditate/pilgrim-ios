@@ -50,10 +50,6 @@ final class FakeTileRegionLoader: TileRegionLoading {
     /// Resource count a completed region reports; tests that care set it.
     var requiredResourcesPerRegion = 10
     var bytesPerRegion = 100_000
-    /// The real loader's cache is empty until the store's first asynchronous
-    /// answer lands, so a synchronous read taken before that sees nothing
-    /// even though regions are stored.
-    var withholdsRegions = false
 
     func hasStylePack(_ pack: StylePackRequest) -> Bool { stylePacks.contains(pack) }
 
@@ -76,18 +72,18 @@ final class FakeTileRegionLoader: TileRegionLoading {
 
     func regions() -> [TileRegionSummary] {
         regionsReadCount += 1
-        return withholdsRegions ? [] : Array(stored.values)
+        return Array(stored.values)
     }
 
     private var pendingRegionsCompletions: [() -> Void] = []
 
+    /// Never answered inline: production always answers asynchronously, and
+    /// a fake that answered on the spot would let a test prove a launch
+    /// sweep ran before the store had spoken. `releaseRegions()` is the
+    /// store speaking.
     func refreshRegions(completion: @escaping () -> Void) {
         regionsReadCount += 1
-        if withholdsRegions {
-            pendingRegionsCompletions.append(completion)
-        } else {
-            completion()
-        }
+        pendingRegionsCompletions.append(completion)
     }
 
     func removeRegion(id: String) {
@@ -134,12 +130,9 @@ final class FakeTileRegionLoader: TileRegionLoading {
         pending.completion(.success(summary))
     }
 
-    /// The store answering at last: what the real loader does when its first
-    /// asynchronous read lands and the cache stops being empty.
+    /// The store answering: what the real loader does when a regions read
+    /// lands — every completion waiting on it runs, once, after the cache.
     func releaseRegions() {
-        // The flag drops before the completions run: each one reads
-        // `regions()` and must see the answer, not the withheld emptiness.
-        withholdsRegions = false
         let waiting = pendingRegionsCompletions
         pendingRegionsCompletions = []
         for completion in waiting { completion() }

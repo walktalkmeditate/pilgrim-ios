@@ -35,6 +35,20 @@ final class FakeTileRegionLoaderTests: XCTestCase {
         XCTAssertNil(fake.nextRegionFailure, "one failure, not a sticky one")
     }
 
+    /// Production always answers `refreshRegions` asynchronously; a fake
+    /// that answered inline would let a test prove a launch sweep ran
+    /// before the store had spoken.
+    func testRefreshRegionsAnswersOnlyWhenReleasedAndOnce() {
+        let fake = FakeTileRegionLoader()
+        var answered = 0
+        fake.refreshRegions { answered += 1 }
+        XCTAssertEqual(answered, 0, "nothing answers until the store speaks")
+        fake.releaseRegions()
+        XCTAssertEqual(answered, 1)
+        fake.releaseRegions()
+        XCTAssertEqual(answered, 1, "a completion is delivered once")
+    }
+
     func testSeedAndRemoveAndPacks() {
         let fake = FakeTileRegionLoader()
         fake.seed(id: "pilgrimage:camino-frances:1", corridorHash: "h", complete: false)
