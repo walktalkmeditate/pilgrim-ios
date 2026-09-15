@@ -115,4 +115,16 @@ extension PilgrimageTilesManagerTests {
         loader.releaseRegions()
         XCTAssertTrue(loader.removedIds.isEmpty, "the save outranks a launch sweep still waiting on the store")
     }
+
+    /// A save refused at the door writes nothing, so the launch sweep it
+    /// would have outranked still has its work to do when the store answers.
+    func testASaveRefusedWhileWalkingLeavesThePendingLaunchSweep() async {
+        loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h")
+        manager.reconcile(installed: nil)
+        manager.isWalkActive = { true }
+        _ = try? await manager.save(routeId: "camino-frances", stages: stages(1))
+
+        loader.releaseRegions()
+        XCTAssertEqual(loader.removedIds, ["pilgrimage:kumano-kodo-nakahechi:0"], "the refusal did not cancel the sweep")
+    }
 }

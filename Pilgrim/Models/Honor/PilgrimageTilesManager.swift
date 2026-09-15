@@ -195,15 +195,16 @@ final class PilgrimageTilesManager: ObservableObject {
     /// the stage would otherwise carry every remaining load under the walk.
     func save(routeId: String, stages: [Way]) async throws {
         if case .saving = phase { return }
-        // Once the walker is writing regions a launch sweep has no business
-        // firing, whatever it was told was installed when it was asked.
-        sweepGeneration += 1
         guard !isWalkActive() else {
             // The row's catch relies on phase carrying every failure; a
             // refusal at the door has to land there like a refusal mid-loop.
             phase = .failed(.walkInProgress)
             throw PilgrimageError.walkInProgress
         }
+        // Once the walker is writing regions a launch sweep has no business
+        // firing, whatever it was told was installed when it was asked. A
+        // save refused at the door writes nothing, so the sweep stays.
+        sweepGeneration += 1
         phase = .saving(done: 0, total: StylePackRequest.allCases.count + stages.count)
         let myGeneration = generation
         var done = 0
