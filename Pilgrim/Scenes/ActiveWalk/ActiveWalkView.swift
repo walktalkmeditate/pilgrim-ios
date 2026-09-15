@@ -16,6 +16,11 @@ struct ActiveWalkView: View {
     @State private var showMeditation = false
     @State private var showOptions = false
     @State private var showStageDay = false
+    /// Computed when the day sheet is asked for, never in its content
+    /// closure: that closure re-runs on every 1 Hz tick of the view model
+    /// while the sheet is up, and `isStageSaved` hashes the corridor and
+    /// starts a store round trip each time — on the walk screen.
+    @State private var stageMapsLine: String?
     @State private var showIntention = false
     @State private var showWaypoint = false
     @State private var showBackConfirmation = false
@@ -292,6 +297,7 @@ struct ActiveWalkView: View {
                 stageDay: viewModel.way?.stage,
                 onOpenStageDay: {
                     showOptions = false
+                    stageMapsLine = viewModel.way.map { StageMorningCardModel.mapsLine(saved: PilgrimageTilesManager.shared.isStageSaved($0)) }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         showStageDay = true
                     }
@@ -304,7 +310,7 @@ struct ActiveWalkView: View {
         .sheet(isPresented: $showStageDay) {
             if let stage = viewModel.way?.stage {
                 StageMorningCard(stage: stage, weather: viewModel.weatherSnapshot,
-                                 mapsLine: viewModel.way.map { StageMorningCardModel.mapsLine(saved: PilgrimageTilesManager.shared.isStageSaved($0)) },
+                                 mapsLine: stageMapsLine,
                                  buttonTitle: "close") {
                     showStageDay = false
                 }

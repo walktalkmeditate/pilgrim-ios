@@ -71,6 +71,9 @@ struct PilgrimageRouteView: View {
     /// Computed beside `stageWays` rather than in the row's body: the
     /// estimate walks every stage's corridor tile by tile.
     @State private var mapsEstimateBytes = 0
+    /// Read beside `mapsEstimateBytes`, never in the row's body: `status`
+    /// hashes every stage's corridor and starts a store round trip.
+    @State private var mapsStatus: PilgrimageTilesManager.Status = .none
     @State private var route: PilgrimageRoute?
     @State private var ledger: PilgrimageLedger?
     @State private var installed: PilgrimagePackageManager.Installed?
@@ -127,6 +130,12 @@ struct PilgrimageRouteView: View {
             reload()
             await loadStagesIfNeeded()
         }
+        .onReceive(tiles.regionsChanged) { _ in refreshMapsStatus() }
+        // A save whose regions were all present loads only packs and ends
+        // with no regions signal, and a cancel ends with none either.
+        .onChange(of: tiles.phase) { _, phase in
+            if phase == .idle { refreshMapsStatus() }
+        }
         .alert("Replace?", isPresented: $confirmReplace) {
             Button("Replace", role: .destructive) { Task { await install(replacing: true) } }
             Button("Keep it", role: .cancel) {}
@@ -171,7 +180,7 @@ struct PilgrimageRouteView: View {
             downloadButton
             if isInstalled && !stageWays.isEmpty {
                 PilgrimageMapsRow(routeId: entry.id, stages: stageWays,
-                                  estimateBytes: mapsEstimateBytes, tiles: tiles)
+                                  estimateBytes: mapsEstimateBytes, status: mapsStatus, tiles: tiles)
             }
         }
     }
@@ -347,11 +356,16 @@ struct PilgrimageRouteView: View {
             ? (0..<(route?.stageCount ?? 0)).compactMap { WayStore.shared.load(id: WayStore.stageWayId(routeId: entry.id, stageIndex: $0)) }
             : []
         mapsEstimateBytes = isInstalled ? tiles.estimateBytes(for: entry.id, stages: stageWays) : 0
+        refreshMapsStatus()
         ledger = ledgerStore.load(routeId: entry.id)
         if ledger?.redrawNoticePending == true {
             showRedrawNotice = true
             ledgerStore.clearRedrawNotice(routeId: entry.id)
         }
+    }
+
+    private func refreshMapsStatus() {
+        mapsStatus = isInstalled ? tiles.status(for: entry.id, stages: stageWays) : .none
     }
 
     /// Fetches the route's stage list when nothing is downloaded, so the

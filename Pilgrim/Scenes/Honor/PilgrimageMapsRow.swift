@@ -33,6 +33,10 @@ struct PilgrimageMapsRow: View {
     /// every stage's corridor tile by tile, which is far too much work for a
     /// view body that re-runs on every published change.
     let estimateBytes: Int
+    /// Also the route page's: reading it hashes every stage's corridor and
+    /// starts a tile-store round trip, so it is refreshed on the store's
+    /// own signal rather than on every body pass.
+    let status: PilgrimageTilesManager.Status
     @ObservedObject var tiles: PilgrimageTilesManager
 
     var body: some View {
@@ -60,7 +64,6 @@ struct PilgrimageMapsRow: View {
 
     @ViewBuilder
     private var idleRow: some View {
-        let status = tiles.status(for: routeId, stages: stages)
         if case .saved(let bytes) = status {
             Button { Task { await save() } } label: {
                 HStack(spacing: Constants.UI.Padding.xs) {

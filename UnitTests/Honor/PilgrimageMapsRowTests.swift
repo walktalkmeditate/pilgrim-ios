@@ -2,7 +2,22 @@
 import XCTest
 @testable import Pilgrim
 
+@MainActor
 final class PilgrimageMapsRowTests: XCTestCase {
+
+    /// The row is redrawn on every published change of the route page; a
+    /// body that hashed every stage's corridor and read the store would do
+    /// so on each of them. The status arrives already computed.
+    func testTheRowsBodyReadsNoStore() {
+        let loader = FakeTileRegionLoader()
+        let tiles = PilgrimageTilesManager(loader: loader, defaults: UserDefaults(suiteName: "row-\(UUID().uuidString)")!)
+        let statuses: [PilgrimageTilesManager.Status] = [.none, .partial(saved: 1, of: 3), .saved(bytes: 100)]
+        for status in statuses {
+            let row = PilgrimageMapsRow(routeId: "camino-frances", stages: [], estimateBytes: 0, status: status, tiles: tiles)
+            _ = row.body
+        }
+        XCTAssertEqual(loader.regionsReadCount, 0)
+    }
 
     func testTheEstimateIsRoundedAndTilded() {
         XCTAssertEqual(PilgrimageMapsRowModel.label(status: .none, estimateBytes: 26_400_000), "Save maps for the way · ~26 MB")
