@@ -41,7 +41,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         }
         mark("entered didFinishLaunching")
 
+        // 2026-09-14, Honor slice three: .readOnly is what a saved tile
+        // region needs — the store is checked first and a covering pack is
+        // used. The whole TileStoreUsageMode enum is marked deprecated in
+        // the 11.20.0 CoreMaps headers with no replacement named; re-read
+        // decision 7 of the slice-three spec before any bump past 11.x.
         MapboxMapsOptions.tileStoreUsageMode = .readOnly
+        // Maps objects read these options at construction, so the store the
+        // regions are saved into has to be named here, before any map exists;
+        // otherwise the map reads the SDK's default store and every saved
+        // region is invisible to it.
+        MapboxMapsOptions.tileStore = TileStore.shared(for: MapboxTileRegionLoader.storeURL)
         mark("after Mapbox init")
 
         // Clean up any Live Activities left over from a previous session
@@ -53,36 +63,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         WalkActivityManager.shared.endAllStaleActivities()
         mark("after endAllStaleActivities")
 
-        // One-time migration: seed bell + soundscape preferences with
-        // their initial values for users who have never explicitly set
-        // them. Previously these preferences had fallback defaultValues,
-        // which made the "None" selection impossible to persist — setting
-        // to nil would read back as the default. Removing the fallbacks
-        // fixes None, but we still want fresh installs and pre-migration
-        // users to get sensible initial choices. Explicit existing
-        // selections are preserved.
-        //
-        // Writes go directly to UserDefaults rather than through
-        // `UserPreferences.X.value = Y`, because this runs before any
-        // UserPreferences static members are touched. The
-        // `UserPreference._Base.publisher` is created lazily on first
-        // access of the static let, at which point it reads the current
-        // UserDefaults value — so it picks up the migrated seeds
-        // automatically without needing to go through `set()`.
-        let soundscapeMigrationKey = "soundscapeDefaultMigrated_v1"
-        if !UserDefaults.standard.bool(forKey: soundscapeMigrationKey) {
-            let seeds: [(key: String, initialValue: String)] = [
-                ("walkStartBellId", "echo-chime"),
-                ("walkEndBellId", "gentle-harp"),
-                ("meditationStartBellId", "temple-bell"),
-                ("meditationEndBellId", "yoga-chime"),
-                ("selectedSoundscapeId", "gentle-stream")
-            ]
-            for seed in seeds where UserDefaults.standard.object(forKey: seed.key) == nil {
-                UserDefaults.standard.set(seed.initialValue, forKey: seed.key)
-            }
-            UserDefaults.standard.set(true, forKey: soundscapeMigrationKey)
-        }
+        migrateSoundscapeDefaults()
         mark("after soundscape migration")
 
         #if DEBUG
@@ -146,6 +127,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         return true
     }
 
+    /// One-time migration: seed bell + soundscape preferences with their
+    /// initial values for users who have never explicitly set them.
+    /// Previously these preferences had fallback defaultValues, which made
+    /// the "None" selection impossible to persist — setting to nil would
+    /// read back as the default. Removing the fallbacks fixes None, but we
+    /// still want fresh installs and pre-migration users to get sensible
+    /// initial choices. Explicit existing selections are preserved.
+    ///
+    /// Writes go directly to UserDefaults rather than through
+    /// `UserPreferences.X.value = Y`, because this runs before any
+    /// UserPreferences static members are touched. The
+    /// `UserPreference._Base.publisher` is created lazily on first access of
+    /// the static let, at which point it reads the current UserDefaults
+    /// value — so it picks up the migrated seeds automatically without
+    /// needing to go through `set()`.
+    private func migrateSoundscapeDefaults() {
+        let soundscapeMigrationKey = "soundscapeDefaultMigrated_v1"
+        guard !UserDefaults.standard.bool(forKey: soundscapeMigrationKey) else { return }
+        let seeds: [(key: String, initialValue: String)] = [
+            ("walkStartBellId", "echo-chime"),
+            ("walkEndBellId", "gentle-harp"),
+            ("meditationStartBellId", "temple-bell"),
+            ("meditationEndBellId", "yoga-chime"),
+            ("selectedSoundscapeId", "gentle-stream")
+        ]
+        for seed in seeds where UserDefaults.standard.object(forKey: seed.key) == nil {
+            UserDefaults.standard.set(seed.initialValue, forKey: seed.key)
+        }
+        UserDefaults.standard.set(true, forKey: soundscapeMigrationKey)
+    }
+
     /// Grouped so the `DataManager.setup` completion closure — already at
     /// the `function_body_length` gate — gains one call site, not two.
     private func runPostDoneLaunchTasks() {
@@ -158,6 +170,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         #endif
         startLaunchRecordingCleanup()
         sweepExpiredWays()
+        reconcileTilesAtLaunch()
+    }
+
+    /// Once per process launch, after the store is readable: a kill
+    /// mid-Replace is finished by installed()'s marker branch, which no
+    /// lifecycle hook sees, so the tiles manager sweeps whatever the
+    /// installed route does not account for.
+    ///
+    /// Skipped under XCTest like its neighbours: the sweep runs against the
+    /// shared tile store, which would race a unit test writing its own
+    /// fixtures into that same process-global tree.
+    private func reconcileTilesAtLaunch() {
+        guard NSClassFromString("XCTestCase") == nil else { return }
+        Task { @MainActor in
+            PilgrimagePackageManager.shared.tiles = PilgrimageTilesManager.shared
+            let installed = PilgrimagePackageManager.shared.installed()
+            PilgrimageTilesManager.shared.reconcile(
+                installed: installed.map { (routeId: $0.routeId, stageCount: $0.route.stageCount) })
+        }
     }
 
     /// Skipped under XCTest for the same reason `startLaunchRecordingCleanup`

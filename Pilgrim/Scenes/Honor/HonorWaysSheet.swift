@@ -79,6 +79,11 @@ struct HonorWaysSheet: View {
             .navigationTitle("Choose a way")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Choose a way")
+                        .font(Constants.Typography.heading)
+                        .foregroundColor(.ink)
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                         .font(Constants.Typography.button)
@@ -167,6 +172,11 @@ struct OwnWalkPicker: View {
             .navigationTitle("Walk again")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Walk again")
+                        .font(Constants.Typography.heading)
+                        .foregroundColor(.ink)
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                         .font(Constants.Typography.button)

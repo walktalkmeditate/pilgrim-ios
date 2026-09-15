@@ -17,6 +17,13 @@ enum StageMorningCardModel {
         let imperial = UserPreferences.distanceMeasurementType.safeValue == .miles
         return "\(snapshot.condition.label.lowercased()), \(snapshot.formattedTemperature(imperial: imperial))"
     }
+
+    /// The moment before the day starts is where a walker needs to know
+    /// whether the map will be there. Not on the walk screen — the
+    /// minimalism rule holds there — but here, with the weather.
+    static func mapsLine(saved: Bool) -> String {
+        saved ? "maps saved for today" : "no offline maps for today — save on wifi"
+    }
 }
 
 /// The stage's own words before the walk, and again from the walk's overflow
@@ -25,6 +32,9 @@ struct StageMorningCard: View {
 
     let stage: WayStage
     let weather: WeatherSnapshot?
+    /// Nil for a card shown outside a pilgrimage's context; the callers
+    /// that have a tiles manager compute it.
+    let mapsLine: String?
     /// "walk" before the walk; "close" once it has begun.
     let buttonTitle: String
     let onAction: () -> Void
@@ -45,6 +55,11 @@ struct StageMorningCard: View {
                     warnings
                     if let weatherLine = StageMorningCardModel.weatherLine(weather) {
                         Text(weatherLine)
+                            .font(Constants.Typography.caption)
+                            .foregroundColor(.fog)
+                    }
+                    if let mapsLine {
+                        Text(mapsLine)
                             .font(Constants.Typography.caption)
                             .foregroundColor(.fog)
                     }

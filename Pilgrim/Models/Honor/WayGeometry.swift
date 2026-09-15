@@ -212,4 +212,112 @@ struct WayGeometry {
         let degrees = atan2(y, x) * 180 / .pi
         return (degrees + 360).truncatingRemainder(dividingBy: 360)
     }
+
+    // MARK: - Corridor
+
+    /// The parts a stage's tile region is loaded for: one rectangle per
+    /// segment of the simplified line and one square per vertex, each
+    /// `halfWidthMeters` from the line. Convex parts cannot self-intersect,
+    /// so the geometry stays valid on a hairpin — the single offset ring
+    /// this replaced crossed itself hundreds of times on the real Francés
+    /// and left a tenth of Shikoku Awa's own points outside their corridor.
+    /// Mapbox unions the parts of a MultiPolygon when it tiles.
+    ///
+    /// Parts are emitted quad-then-square per vertex, in line order, because
+    /// `PilgrimageTilesManager.corridorHash` hashes them in that order: a
+    /// different order would read as a redrawn stage and reload every region.
+    static func corridor(around points: [CLLocationCoordinate2D], halfWidthMeters h: Double) -> [[CLLocationCoordinate2D]] {
+        let line = simplified(points, toleranceMeters: 25)
+        guard let first = line.first else { return [] }
+        let latScale = 111_320.0
+        let lonScale = 111_320.0 * cos(first.latitude * .pi / 180)
+        // Work in local metres, then back to degrees at the end.
+        let local = line.map { (x: ($0.longitude - first.longitude) * lonScale, y: ($0.latitude - first.latitude) * latScale) }
+        func geo(_ p: (x: Double, y: Double)) -> CLLocationCoordinate2D {
+            CLLocationCoordinate2D(latitude: first.latitude + p.y / latScale, longitude: first.longitude + p.x / lonScale)
+        }
+        func square(_ v: (x: Double, y: Double)) -> [CLLocationCoordinate2D] {
+            [geo((v.x - h, v.y - h)), geo((v.x + h, v.y - h)), geo((v.x + h, v.y + h)), geo((v.x - h, v.y + h)), geo((v.x - h, v.y - h))]
+        }
+        var parts: [[CLLocationCoordinate2D]] = []
+        for i in 0..<local.count {
+            if i + 1 < local.count {
+                let a = local[i], b = local[i + 1]
+                var dx = b.x - a.x, dy = b.y - a.y
+                let len = (dx * dx + dy * dy).squareRoot()
+                // A zero-length segment has no perpendicular and so no
+                // rectangle; its endpoints' squares still cover it.
+                if len > 0 {
+                    dx /= len; dy /= len
+                    let nx = -dy * h, ny = dx * h
+                    // Right side forward, left side back: counterclockwise
+                    // like the squares, as RFC 7946 asks of an exterior ring.
+                    parts.append([geo((a.x - nx, a.y - ny)), geo((b.x - nx, b.y - ny)),
+                                  geo((b.x + nx, b.y + ny)), geo((a.x + nx, a.y + ny)), geo((a.x - nx, a.y - ny))])
+                }
+            }
+            parts.append(square(local[i]))
+        }
+        return parts
+    }
+
+    static func corridorContains(_ rings: [[CLLocationCoordinate2D]], _ point: CLLocationCoordinate2D) -> Bool {
+        rings.contains { ringContains($0, point) }
+    }
+
+    /// Douglas–Peucker on a local-metre projection. A 500 m corridor does
+    /// not care about a 10 m wiggle, and fewer vertices is a smaller polygon
+    /// for the tile store to rasterise against.
+    static func simplified(_ points: [CLLocationCoordinate2D], toleranceMeters: Double) -> [CLLocationCoordinate2D] {
+        guard points.count > 2, let first = points.first else { return points }
+        let latScale = 111_320.0
+        let lonScale = 111_320.0 * cos(first.latitude * .pi / 180)
+        let local = points.map { (x: ($0.longitude - first.longitude) * lonScale, y: ($0.latitude - first.latitude) * latScale) }
+        var keep = [Bool](repeating: false, count: points.count)
+        keep[0] = true
+        keep[points.count - 1] = true
+        var stack: [(Int, Int)] = [(0, points.count - 1)]
+        while let (a, b) = stack.popLast() {
+            guard b - a > 1 else { continue }
+            let ax = local[a].x, ay = local[a].y, bx = local[b].x, by = local[b].y
+            let dx = bx - ax, dy = by - ay
+            let lenSq = dx * dx + dy * dy
+            var farthest = -1.0, index = a
+            for i in (a + 1)..<b {
+                let px = local[i].x - ax, py = local[i].y - ay
+                let distance: Double
+                if lenSq > 0 {
+                    let u = max(0, min(1, (px * dx + py * dy) / lenSq))
+                    let cx = px - u * dx, cy = py - u * dy
+                    distance = (cx * cx + cy * cy).squareRoot()
+                } else {
+                    distance = (px * px + py * py).squareRoot()
+                }
+                if distance > farthest { farthest = distance; index = i }
+            }
+            if farthest > toleranceMeters {
+                keep[index] = true
+                stack.append((a, index))
+                stack.append((index, b))
+            }
+        }
+        return zip(points, keep).compactMap { $1 ? $0 : nil }
+    }
+
+    /// Ray casting, in degrees — good enough for "is this tile centre inside".
+    static func ringContains(_ ring: [CLLocationCoordinate2D], _ point: CLLocationCoordinate2D) -> Bool {
+        guard ring.count > 3 else { return false }
+        var inside = false
+        var j = ring.count - 1
+        for i in 0..<ring.count {
+            let yi = ring[i].latitude, xi = ring[i].longitude
+            let yj = ring[j].latitude, xj = ring[j].longitude
+            if (yi > point.latitude) != (yj > point.latitude) {
+                let x = (xj - xi) * (point.latitude - yi) / (yj - yi) + xi
+                if point.longitude < x { inside.toggle() }
+            }
+            j = i
+        }
+        return inside
+    }
 }

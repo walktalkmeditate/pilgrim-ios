@@ -38,6 +38,12 @@ final class PilgrimagePackageManager: ObservableObject {
 
     let store: WayStore
     let ledgers: PilgrimageLedgerStore
+
+    /// The saved basemap follows the package: Remove and Replace take a
+    /// route's regions, Update takes the retired indices. Optional so the
+    /// manager's own tests construct it without a tiles manager.
+    var tiles: PilgrimageTilesManager?
+
     private let session: URLSession
 
     /// Guards against a second `download` interleaving with one already in
@@ -239,6 +245,7 @@ final class PilgrimagePackageManager: ObservableObject {
         if let previous, previous.routeId != entry.id {
             // The ledger stays: a route that comes back finds its record.
             removeStagesAndPackage(routeId: previous.routeId, stageCount: previous.route.stageCount)
+            tiles?.remove(routeId: previous.routeId)
         }
         clearReplacingMarker()
     }
@@ -254,6 +261,11 @@ final class PilgrimagePackageManager: ObservableObject {
         // nothing lists them and no next row reaches them, so they go.
         store.retireMany(ids: Self.stageIds(routeId: entry.id,
                                             range: fresh.route.stageCount..<max(previousStageCount, fresh.route.stageCount)))
+        // The maps that were saved stay saved; only the regions at indices the
+        // route no longer has go. A redrawn stage's region is reported as
+        // stale by the tiles manager's own hash check and re-saved by the
+        // walker's next tap — never downloaded here on their behalf.
+        tiles?.removeRegions(routeId: entry.id, atOrAbove: fresh.route.stageCount)
         if let ledger = ledgers.load(routeId: entry.id) {
             ledgers.save(ledger.reconciled(against: fresh.route.stages))
         }
@@ -268,6 +280,7 @@ final class PilgrimagePackageManager: ObservableObject {
         let stageCount = installed().flatMap { $0.routeId == routeId ? $0.route.stageCount : nil }
             ?? PilgrimageWayImporter.maxStageCount
         removeStagesAndPackage(routeId: routeId, stageCount: stageCount)
+        tiles?.remove(routeId: routeId)
     }
 
     /// Takes the stages, `route.json`, and `release.txt`. Never `ledger.json`

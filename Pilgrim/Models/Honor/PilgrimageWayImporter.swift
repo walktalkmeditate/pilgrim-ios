@@ -8,6 +8,8 @@ enum PilgrimageError: Error, Equatable {
     case diskFull
     case walkInProgress
     case catalogUnreachable
+    /// The tile store's 750-unique-pack ceiling refused a region.
+    case mapTooLarge
 }
 
 enum PilgrimageCopy {
@@ -18,6 +20,7 @@ enum PilgrimageCopy {
         case .diskFull: return HonorImportCopy.line(for: .failed(.diskFull)) ?? "not enough space on this phone"
         case .walkInProgress: return "finish your walk first"
         case .catalogUnreachable: return "the routes are out of reach right now"
+        case .mapTooLarge: return "more map than can be saved at once"
         }
     }
 }

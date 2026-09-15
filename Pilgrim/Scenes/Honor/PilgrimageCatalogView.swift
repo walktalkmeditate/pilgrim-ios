@@ -76,6 +76,11 @@ struct PilgrimageCatalogView: View {
                 .navigationTitle("Pilgrimages")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Text("Pilgrimages")
+                            .font(Constants.Typography.heading)
+                            .foregroundColor(.ink)
+                    }
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Close") { dismiss() }
                             .font(Constants.Typography.button)

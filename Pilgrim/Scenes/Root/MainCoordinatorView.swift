@@ -198,6 +198,8 @@ class MainCoordinator: ObservableObject {
         // "on" means.
         Task { @MainActor in
             PilgrimagePackageManager.shared.isWalkActive = { [weak self] in self?.activeWalkViewModel != nil }
+            PilgrimageTilesManager.shared.isWalkActive = { [weak self] in self?.activeWalkViewModel != nil }
+            PilgrimagePackageManager.shared.tiles = PilgrimageTilesManager.shared
         }
         honorImportState = .idle
         showLinkToast(nil)

@@ -38,6 +38,46 @@ extension PilgrimagePackageManagerTests {
                                stageCount: 1, bytes: 100_000)
     }
 
+    /// A second route id carrying the same two fixture stages, re-identified
+    /// by JSON mutation rather than `stubNorte`'s text replace, so a
+    /// cross-route Replace has a whole package of its own to install.
+    func stubTwoStagePackage(routeId: String, release: String = "v1.7.0") throws {
+        StubURLProtocol.stub(url: try XCTUnwrap(PilgrimageCatalogService.packageURL(release: release, routeId: routeId, file: "route.json")),
+                             body: try reslugged("route.json", to: routeId))
+        for index in 0...1 {
+            let file = PilgrimagePackageManager.stageFileName(index)
+            StubURLProtocol.stub(url: try XCTUnwrap(PilgrimageCatalogService.packageURL(release: release, routeId: routeId, file: file)),
+                                 body: try reslugged(file, to: routeId, stageIndex: index))
+        }
+    }
+
+    func entry(routeId: String) -> PilgrimageCatalogEntry {
+        PilgrimageCatalogEntry(id: routeId, name: entry.name, names: [:], country: "ES",
+                               region: "Europe", distanceKm: 46.1, tradition: "christian",
+                               stageCount: 2, bytes: 214_000)
+    }
+
+    /// The route file re-identified under a different route id; every stage
+    /// row's own name and count are untouched, since the download cross-checks
+    /// each stage file against them.
+    private func reslugged(_ fixture: String, to routeId: String) throws -> Data {
+        var obj = try XCTUnwrap(try JSONSerialization.jsonObject(with: try PilgrimageFixtures.data(fixture)) as? [String: Any])
+        obj["id"] = routeId
+        return try JSONSerialization.data(withJSONObject: obj)
+    }
+
+    /// A stage file re-identified under a different route id: the importer
+    /// checks the file's own `id` and `stage.routeId` against the id it was
+    /// fetched for.
+    private func reslugged(_ fixture: String, to routeId: String, stageIndex: Int) throws -> Data {
+        var obj = try XCTUnwrap(try JSONSerialization.jsonObject(with: try PilgrimageFixtures.data(fixture)) as? [String: Any])
+        obj["id"] = WayStore.stageWayId(routeId: routeId, stageIndex: stageIndex)
+        var stage = try XCTUnwrap(obj["stage"] as? [String: Any])
+        stage["routeId"] = routeId
+        obj["stage"] = stage
+        return try JSONSerialization.data(withJSONObject: obj)
+    }
+
     /// Both stages walked, so a reconciliation test can show one entry
     /// surviving and the other dropped.
     func seedTwoStageLedger() {

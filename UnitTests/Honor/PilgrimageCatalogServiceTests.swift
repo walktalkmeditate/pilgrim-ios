@@ -412,6 +412,16 @@ final class PilgrimageCatalogModelTests: XCTestCase {
         XCTAssertFalse(PilgrimageRouteModel.stageLine(single).contains("4 to 4"))
     }
 
+    /// During an Update the stage lines are being rewritten, so a save
+    /// started then hashes soon-to-be-stale corridors. Only a download
+    /// holds the row — never `isBusy`, which includes a save in flight and
+    /// would take the row's own cancel with it.
+    func testTheMapsRowIsHeldOnlyWhileThePackageDownloads() {
+        XCTAssertTrue(PilgrimageRouteModel.mapsRowIsHeld(packagePhase: .downloading(done: 1, total: 34)))
+        XCTAssertFalse(PilgrimageRouteModel.mapsRowIsHeld(packagePhase: .idle))
+        XCTAssertFalse(PilgrimageRouteModel.mapsRowIsHeld(packagePhase: .failed(.incomplete)))
+    }
+
     /// One formatter, two callers: the stage list and the morning card must
     /// not drift apart, and a non-finite figure must never reach `Int(_:)`.
     func testTheStageFactsFormatterIsTheOneBothCallersUse() {

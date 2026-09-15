@@ -427,7 +427,7 @@ extension PilgrimageStageWalkTests {
         try store.save(shareWay())
         XCTAssertEqual(store.list().count, 2, "both are in the store")
 
-        let listed = WaysListView.listable(store.list())
+        let listed = WaysListModel.listable(store.list())
         XCTAssertEqual(listed.map(\.id), ["share:9mYhRL7GWx"], "only the shared walk is offered")
 
         listed.forEach { store.delete(id: $0.id) }

@@ -79,6 +79,10 @@ struct HonorOverviewView: View {
     @State private var todayCondition: String?
     @State private var voicesEnabled = UserPreferences.honorVoicesEnabled.value
     @State private var showMorningCard = false
+    /// Read once per Way and again on the store's own signal, never in the
+    /// sheet's body: `isStageSaved` hashes the corridor and starts a
+    /// tile-store round trip.
+    @State private var stageMapsSaved = false
     @State private var todayWeather: WeatherSnapshot?
     @State private var offlineNote: String?
     /// The probe's only strong owner, so the handler need not retain what it
@@ -156,7 +160,9 @@ struct HonorOverviewView: View {
                 state: HonorWayState(way: way)
             )
             refreshMarkPins()
+            refreshStageMapsSaved()
         }
+        .onReceive(PilgrimageTilesManager.shared.regionsChanged) { _ in refreshStageMapsSaved() }
         .task { await fetchToday() }
         .sheet(item: $previewMoment) { moment in
             WayMomentPreview(
@@ -169,7 +175,9 @@ struct HonorOverviewView: View {
         }
         .sheet(isPresented: $showMorningCard) {
             if let stage = way.stage {
-                StageMorningCard(stage: stage, weather: todayWeather, buttonTitle: "walk") {
+                StageMorningCard(stage: stage, weather: todayWeather,
+                                 mapsLine: StageMorningCardModel.mapsLine(saved: stageMapsSaved),
+                                 buttonTitle: "walk") {
                     showMorningCard = false
                     onBegin()
                 }
@@ -339,6 +347,13 @@ struct HonorOverviewView: View {
             return
         }
         markPins = WayMarkPins.pins(marks: way.marks ?? [], zoom: zoom, near: liveCenter)
+    }
+
+    /// Only a stage has a region to look for, and only a stage opens the
+    /// morning card, so a shared walk never asks the store.
+    private func refreshStageMapsSaved() {
+        guard way.isPilgrimageStage else { return }
+        stageMapsSaved = PilgrimageTilesManager.shared.isStageSaved(way)
     }
 
     private func probeDistance() {
