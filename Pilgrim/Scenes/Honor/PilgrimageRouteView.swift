@@ -68,6 +68,9 @@ struct PilgrimageRouteView: View {
     /// The installed route's stage Ways, read once in `reload()`: the maps
     /// row needs their lines for its estimate and its status.
     @State private var stageWays: [Way] = []
+    /// Computed beside `stageWays` rather than in the row's body: the
+    /// estimate walks every stage's corridor tile by tile.
+    @State private var mapsEstimateBytes = 0
     @State private var route: PilgrimageRoute?
     @State private var ledger: PilgrimageLedger?
     @State private var installed: PilgrimagePackageManager.Installed?
@@ -167,7 +170,8 @@ struct PilgrimageRouteView: View {
                 .foregroundColor(.fog)
             downloadButton
             if isInstalled && !stageWays.isEmpty {
-                PilgrimageMapsRow(routeId: entry.id, stages: stageWays, tiles: tiles)
+                PilgrimageMapsRow(routeId: entry.id, stages: stageWays,
+                                  estimateBytes: mapsEstimateBytes, tiles: tiles)
             }
         }
     }
@@ -342,6 +346,7 @@ struct PilgrimageRouteView: View {
         stageWays = isInstalled
             ? (0..<(route?.stageCount ?? 0)).compactMap { WayStore.shared.load(id: WayStore.stageWayId(routeId: entry.id, stageIndex: $0)) }
             : []
+        mapsEstimateBytes = isInstalled ? tiles.estimateBytes(for: entry.id, stages: stageWays) : 0
         ledger = ledgerStore.load(routeId: entry.id)
         if ledger?.redrawNoticePending == true {
             showRedrawNotice = true

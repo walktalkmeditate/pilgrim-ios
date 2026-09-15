@@ -34,6 +34,10 @@ final class PilgrimageTilesManager: ObservableObject {
     /// no measurement of its own. Replaced per route after its first save.
     static let seedBytesPerTile = 10_000
 
+    /// Shared like the package manager's; the production loader is attached
+    /// in `MainCoordinatorView` so this file never imports Mapbox.
+    static let shared = PilgrimageTilesManager(loader: MapboxTileRegionLoader())
+
     let loader: TileRegionLoading
     private let defaults: UserDefaults
 
@@ -42,7 +46,16 @@ final class PilgrimageTilesManager: ObservableObject {
         self.defaults = defaults
         // A view that read `status` before the store answered has nothing
         // else to tell it the saved answer has arrived.
-        loader.onChange = { [weak self] in self?.objectWillChange.send() }
+        loader.onChange = { [weak self] in
+            guard let self else { return }
+            self.objectWillChange.send()
+            // The launch sweep ran before the store's first answer and saw
+            // nothing; this is that answer arriving.
+            if let request = self.pendingReconcile {
+                self.pendingReconcile = nil
+                self.sweep(request.installed)
+            }
+        }
     }
 
     // MARK: - Geometry and keys
@@ -126,7 +139,11 @@ final class PilgrimageTilesManager: ObservableObject {
     /// After a save of this route lands: its real bytes over its tile count
     /// replace the seed. Another route's key is never touched.
     func calibrate(routeId: String, stages: [Way]) {
-        let bytes = stages.compactMap(region(for:)).reduce(0) { $0 + $1.completedResourceSize }
+        // One store read for the whole route, like `status`: `regions()`
+        // refreshes the loader's cache, so asking it per stage re-reads once
+        // per stage.
+        let byId = Dictionary(loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let bytes = stages.compactMap { byId[$0.id] }.reduce(0) { $0 + $1.completedResourceSize }
         let tiles = tileCount(for: stages)
         guard bytes > 0, tiles > 0 else { return }
         defaults.set(bytes / tiles, forKey: Self.bytesPerTileKey(routeId: routeId))
@@ -167,9 +184,13 @@ final class PilgrimageTilesManager: ObservableObject {
                 done += 1
                 phase = .saving(done: done, total: StylePackRequest.allCases.count + stages.count)
             }
+            // One store read for the whole loop. Every region the loop goes
+            // on to load is one this snapshot said was missing, so nothing
+            // it learns later could change a skip decision.
+            let byId = Dictionary(loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             for way in stages.sorted(by: { ($0.stage?.index ?? 0) < ($1.stage?.index ?? 0) }) {
                 guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
-                if !isStageSaved(way) {
+                if !isSaved(way, region: byId[way.id]) {
                     let ring = Self.ring(for: way)
                     let request = TileRegionRequest(id: way.id, ring: ring,
                                                     corridorHash: Self.corridorHash(ring), acceptExpired: true)
@@ -253,10 +274,6 @@ final class PilgrimageTilesManager: ObservableObject {
         inFlight?.cancel()
     }
 
-    /// Shared like the package manager's; the production loader is attached
-    /// in `MainCoordinatorView` so this file never imports Mapbox.
-    static let shared = PilgrimageTilesManager(loader: MapboxTileRegionLoader())
-
     // MARK: - Lifecycle
 
     /// Every region with the route's prefix. Packs no other region references
@@ -286,16 +303,31 @@ final class PilgrimageTilesManager: ObservableObject {
     /// installed route does not account for goes, so "nothing orphaned" is
     /// a property of the store rather than a promise about call sites.
     func reconcile(installed: (routeId: String, stageCount: Int)?) {
+        sweep(installed)
+        // At launch the loader's cache is empty until the store's first
+        // asynchronous answer lands, so the sweep above can see nothing at
+        // all. Holding the request lets the first change re-run it; reconcile
+        // is idempotent, and the request clears on that run so every later
+        // change — a save storing a region, a removal — does not re-sweep.
+        pendingReconcile = ReconcileRequest(installed: installed)
+    }
+
+    private struct ReconcileRequest {
+        let installed: (routeId: String, stageCount: Int)?
+    }
+
+    private var pendingReconcile: ReconcileRequest?
+
+    private func sweep(_ installed: (routeId: String, stageCount: Int)?) {
         for region in loader.regions() where region.id.hasPrefix("pilgrimage:") {
-            guard let installed else {
-                loader.removeRegion(id: region.id)
-                continue
+            if let installed {
+                let prefix = Self.regionPrefix(routeId: installed.routeId)
+                // `stageIndex` is nil for a region of another route, so one
+                // condition covers a foreign prefix and an unreadable index.
+                let index = Self.stageIndex(of: region.id, prefix: prefix)
+                if let index, index < installed.stageCount { continue }
             }
-            let prefix = Self.regionPrefix(routeId: installed.routeId)
-            let index = Self.stageIndex(of: region.id, prefix: prefix)
-            if !region.id.hasPrefix(prefix) || index == nil || index! >= installed.stageCount {
-                loader.removeRegion(id: region.id)
-            }
+            loader.removeRegion(id: region.id)
         }
     }
 

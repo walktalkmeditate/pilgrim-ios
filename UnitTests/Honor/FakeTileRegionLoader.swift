@@ -43,6 +43,10 @@ final class FakeTileRegionLoader: TileRegionLoading {
     /// Resource count a completed region reports; tests that care set it.
     var requiredResourcesPerRegion = 10
     var bytesPerRegion = 100_000
+    /// The real loader's cache is empty until the store's first asynchronous
+    /// answer lands, so a synchronous read taken before that sees nothing
+    /// even though regions are stored.
+    var withholdsRegions = false
 
     func hasStylePack(_ pack: StylePackRequest) -> Bool { stylePacks.contains(pack) }
 
@@ -65,7 +69,7 @@ final class FakeTileRegionLoader: TileRegionLoading {
 
     func regions() -> [TileRegionSummary] {
         regionsReadCount += 1
-        return Array(stored.values)
+        return withholdsRegions ? [] : Array(stored.values)
     }
 
     func removeRegion(id: String) {
@@ -100,6 +104,13 @@ final class FakeTileRegionLoader: TileRegionLoading {
         stored[summary.id] = summary
         onChange?()
         pending.completion(.success(summary))
+    }
+
+    /// The store answering at last: what the real loader does when its first
+    /// asynchronous read lands and the cache stops being empty.
+    func releaseRegions() {
+        withholdsRegions = false
+        onChange?()
     }
 
     /// Seeds a region as though a previous save stored it.

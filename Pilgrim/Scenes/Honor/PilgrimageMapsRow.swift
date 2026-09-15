@@ -29,6 +29,10 @@ struct PilgrimageMapsRow: View {
 
     let routeId: String
     let stages: [Way]
+    /// Computed by the route page when its stages load. The estimate walks
+    /// every stage's corridor tile by tile, which is far too much work for a
+    /// view body that re-runs on every published change.
+    let estimateBytes: Int
     @ObservedObject var tiles: PilgrimageTilesManager
 
     var body: some View {
@@ -72,8 +76,7 @@ struct PilgrimageMapsRow: View {
             .accessibilityLabel("maps saved, \(PilgrimageMapsRowModel.megabytes(bytes)). Tap to save again")
         } else {
             Button { Task { await save() } } label: {
-                Text(PilgrimageMapsRowModel.label(status: status,
-                                                  estimateBytes: tiles.estimateBytes(for: routeId, stages: stages)))
+                Text(PilgrimageMapsRowModel.label(status: status, estimateBytes: estimateBytes))
                     .font(Constants.Typography.button)
                     .foregroundColor(.stone)
                     .frame(maxWidth: .infinity)

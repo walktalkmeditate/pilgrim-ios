@@ -42,6 +42,25 @@ extension PilgrimageTilesManagerTests {
         XCTAssertEqual(loader.removedIds.count, before, "a second run removes nothing")
     }
 
+    /// The launch reconcile runs against a loader whose cache is still empty:
+    /// the store answers asynchronously and the first sweep sees nothing. It
+    /// has to run again when the answer lands — and only then.
+    func testReconcileSweepsOnceTheStoreAnswers() {
+        loader.seed(id: "pilgrimage:camino-frances:7", corridorHash: "h")
+        loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h")
+        loader.withholdsRegions = true
+
+        manager.reconcile(installed: (routeId: "camino-frances", stageCount: 3))
+        XCTAssertTrue(loader.removedIds.isEmpty, "the store has not answered yet")
+
+        loader.releaseRegions()
+        XCTAssertEqual(Set(loader.removedIds), ["pilgrimage:camino-frances:7", "pilgrimage:kumano-kodo-nakahechi:0"])
+
+        let before = loader.removedIds.count
+        loader.releaseRegions()
+        XCTAssertEqual(loader.removedIds.count, before, "the held request ran once, not on every later change")
+    }
+
     func testReconcileWithNothingInstalledRemovesEveryRegion() {
         for way in stages(2) { loader.seed(id: way.id, corridorHash: "h") }
         manager.reconcile(installed: nil)

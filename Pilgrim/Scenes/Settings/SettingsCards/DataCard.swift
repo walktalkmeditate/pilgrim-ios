@@ -5,6 +5,7 @@ import MapboxMaps
 
 struct DataCard: View {
 
+    @ObservedObject private var tiles = PilgrimageTilesManager.shared
     @State private var waysDetail: String = ""
     @State private var mapsDetail: String = ""
     #if DEBUG
@@ -49,11 +50,18 @@ struct DataCard: View {
             let count = WayStore.shared.list().count
             let mb = Double(WayStore.shared.totalDiskUsage()) / 1_000_000
             waysDetail = "\(count) ways · \(String(format: "%.1f MB", mb))"
-            mapsDetail = OfflineMapsModel.rowDetail(
-                OfflineMapsModel.loadInstalled(packages: PilgrimagePackageManager.shared, tiles: PilgrimageTilesManager.shared).saved)
+            reloadMapsDetail()
             #if DEBUG
             simulateOffline = !OfflineSwitch.shared.isMapboxStackConnected
             #endif
         }
+        // A card drawn before the store answered would say "none saved"
+        // until Settings was left and reopened.
+        .onReceive(tiles.objectWillChange) { _ in reloadMapsDetail() }
+    }
+
+    private func reloadMapsDetail() {
+        mapsDetail = OfflineMapsModel.rowDetail(
+            OfflineMapsModel.loadInstalled(packages: PilgrimagePackageManager.shared, tiles: tiles).saved)
     }
 }

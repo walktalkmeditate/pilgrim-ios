@@ -19,6 +19,14 @@ final class MapboxTileRegionLoaderTests: XCTestCase {
         XCTAssertTrue(MapboxTileRegionLoader.storeURL.isFileURL)
     }
 
+    /// Maps objects read `MapboxMapsOptions` at construction, so the store
+    /// has to be named at launch, before any map exists — otherwise every
+    /// map reads the SDK's default store and no saved region is ever found.
+    /// The test host's `AppDelegate` ran that line; no loader is built here.
+    func testTheMapIsWiredToTheStoreTheRegionsAreSavedInto() {
+        XCTAssertNotNil(MapboxMapsOptions.tileStore)
+    }
+
     /// Reads the options the SDK is actually handed. They are value types,
     /// so this opens no `TileStore`.
     func testDescriptorOptionsCarryTheSpecsRangesAndTheTerrainTileset() {

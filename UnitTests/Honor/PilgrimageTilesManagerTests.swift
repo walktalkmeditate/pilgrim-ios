@@ -283,6 +283,19 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerTile.kumano-kodo-nakahechi"), 0)
     }
 
+    /// A store read per stage would be thirty-five of them on the Francés,
+    /// each one refreshing the loader's cache off the real store.
+    func testASaveReadsTheStoreOnceBeforeTheLoopAndOnceToCalibrate() async throws {
+        loader.seedStylePacks()
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: stages(3)) }
+        await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion()
+        try await task.value
+        XCTAssertEqual(loader.regionsReadCount, 2, "one snapshot for the loop, one for calibrate")
+    }
+
     /// A view that read `status` before the store answered needs this to
     /// learn the answer arrived.
     func testTheManagerPublishesWhenTheLoaderAnnouncesAChange() async throws {

@@ -18,9 +18,13 @@ final class MapboxTileRegionLoader: TileRegionLoading {
     /// storage pressure and a walker on day 20 could lose day 21's maps.
     /// `TileStore.shared(for:)` excludes its path from iCloud backup.
     static let storeURL: URL = {
-        let support = (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
-                                                     appropriateFor: nil, create: true))
-            ?? FileManager.default.temporaryDirectory
+        guard let support = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
+                                                          appropriateFor: nil, create: true) else {
+            // Latched for the life of the process and otherwise invisible:
+            // every save would appear to work and could vanish overnight.
+            print("[MapboxTileRegionLoader] Application Support unavailable; saved maps will land in a purgeable directory")
+            return FileManager.default.temporaryDirectory.appendingPathComponent("pilgrimage-tiles", isDirectory: true)
+        }
         return support.appendingPathComponent("pilgrimage-tiles", isDirectory: true)
     }()
 
@@ -52,6 +56,12 @@ final class MapboxTileRegionLoader: TileRegionLoading {
     /// which is how a synchronous reader learns the answer arrived.
     private var cached: [TileRegionSummary] = []
     private var cachedPacks: Set<StylePackRequest> = []
+    /// `regions()` refreshes on every read, so several store reads can be in
+    /// flight at once and they answer in arbitrary order. Only the newest
+    /// may write the cache: an older snapshot landing last would put back
+    /// regions a removal took out, or byte counts a save has already
+    /// overtaken — and `calibrate` divides by those bytes.
+    private var refreshGeneration = 0
 
     init() {
         tileStore = TileStore.shared(for: Self.storeURL)
@@ -149,6 +159,8 @@ final class MapboxTileRegionLoader: TileRegionLoading {
     /// because the metadata calls finish in arbitrary order and an unstable
     /// order would read as a change on every pass.
     private func refresh() {
+        refreshGeneration += 1
+        let token = refreshGeneration
         tileStore.allTileRegions { [weak self] result in
             guard let self, case .success(let regions) = result else { return }
             let group = DispatchGroup()
@@ -169,7 +181,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
             }
             group.notify(queue: .main) { [weak self] in
                 let sorted = summaries.sorted { $0.id < $1.id }
-                guard let self, self.cached != sorted else { return }
+                guard let self, token == self.refreshGeneration, self.cached != sorted else { return }
                 self.cached = sorted
                 self.onChange?()
             }
@@ -179,7 +191,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
             let uris = Set(packs.map(\.styleURI))
             DispatchQueue.main.async {
                 let present = Set(StylePackRequest.allCases.filter { uris.contains(Self.styleURI($0).rawValue) })
-                guard let self, self.cachedPacks != present else { return }
+                guard let self, token == self.refreshGeneration, self.cachedPacks != present else { return }
                 self.cachedPacks = present
                 self.onChange?()
             }
