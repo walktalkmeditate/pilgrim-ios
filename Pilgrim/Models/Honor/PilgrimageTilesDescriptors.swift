@@ -7,9 +7,11 @@ import Foundation
 enum PilgrimageTilesDescriptors {
 
     /// The SDK loads tile packs in fixed zoom bands — 0–5, 6–10, 11–14,
-    /// 15–16 — and recommends choosing ceilings on a band edge. z15 costs
-    /// the same packs as z16, so the walk screen's z16 is native.
-    static let streetsZoom: ClosedRange<Int> = 0...16
+    /// 15–16 — recommends ceilings on a band edge, and caps a store at 750
+    /// unique packs. The 15–16 band adds building footprints only and would
+    /// put the Francés alone at ~1,800 z15-rooted packs, so Streets ends at
+    /// 14: offline, the walk screen's z16 overzooms the saved z14.
+    static let streetsZoom: ClosedRange<Int> = 0...14
     /// The DEM tileset has no z15; 14 is its ceiling and a band edge.
     static let terrainZoom: ClosedRange<Int> = 0...14
     /// Added at runtime by `PilgrimMapStyle.applyWabiSabiStyle`, so not in

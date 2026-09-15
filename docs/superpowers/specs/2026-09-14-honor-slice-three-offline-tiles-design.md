@@ -16,7 +16,7 @@ The package does not change. The download does not change. A second, optional st
 
 1. **Maps are a separate, opt-in tap, not part of Download.** The package is ~1.3 MB and instant; the maps are up to ~26 MB. A walker browsing routes should not pay for tiles, and a walker at home on wifi should be able to fetch them deliberately with the size in front of them. (Rejected: bundling tiles into Download, which makes one button mean two very different things; per-stage tiles fetched when a stage is begun, which puts a network step and a nightly chore in front of the walk.)
 2. **Per stage in storage, whole way in one action.** One Mapbox tile region per stage, keyed like the stage's Way. The walker taps once for the whole route; the loop runs stage by stage so progress reads "stage 12 of 33", cancel keeps what is done, and a second tap resumes at the first gap. (Rejected: one region for the whole route — no partial progress, no resume; a rolling window of the next few stages — needs a ledger watcher and background fetching to save ~20 MB, and is a policy on top of per-stage regions if ever wanted.)
-3. **Zoom ceiling: Streets to z16, terrain DEM to z14.** Measured on three Francés stages: z14 tiles already carry footpaths, tracks, hamlets and lodging POIs; z15–16 adds building footprints and nothing else; the DEM tileset has no z15. Whole-way sizes at these ceilings: Camino Francés ~26 MB, Nakahechi ~2 MB.
+3. **Zoom ceiling: Streets to z14, terrain DEM to z14.** Measured on three Francés stages: z14 tiles already carry footpaths, tracks, hamlets and lodging POIs; z15–16 adds building footprints and nothing else; the DEM tileset has no z15. The tile store also caps a route at 750 unique tile packs, and the 15–16 band would put the Francés alone at ~1,800 z15-rooted packs against that ceiling — at z14 it needs ~200. Whole-way estimates at these ceilings, at the 10 KB seed: Camino Francés ~30 MB, Nakahechi ~2 MB.
 4. **Cellular is allowed; the size is the guardrail.** No wifi-only mode. The button carries the estimate; the walker decides. (Rejected: `NetworkRestriction.disallowCellular` with an override — one more state to draw for a 26 MB ceiling.)
 5. **Two doors, one state.** The route page owns save / saved / progress. Settings → Data gets a "Maps" row beside "Ways" that shows what is saved and can delete it. Both read the same manager.
 6. **Proof is a feature.** A `#if DEBUG` switch flips `OfflineSwitch.shared.isMapboxStackConnected` so a saved stage can be verified to render in a living room. Without it the feature ships on faith.
@@ -84,10 +84,10 @@ Style pack ids are the style URIs themselves; the SDK keys them that way.
 
 Two `TilesetDescriptor`s, built once and reused for every region:
 
-- Streets: `TilesetDescriptorOptions(styleURI: .light, zoomRange: 0...16, tilesets: nil)` and the same for `.dark`. The light and dark styles read the same Streets source, so the tile store holds each tile once.
+- Streets: `TilesetDescriptorOptions(styleURI: .light, zoomRange: 0...14, tilesets: nil)` and the same for `.dark`. The light and dark styles read the same Streets source, so the tile store holds each tile once.
 - Terrain: `TilesetDescriptorOptions(styleURI: .light, zoomRange: 0...14, tilesets: ["mapbox://mapbox.mapbox-terrain-dem-v1"])`. The DEM is not in either base style — `PilgrimMapStyle.applyWabiSabiStyle` adds it at runtime — so it must be named here or the hillshade is blank offline. Its ceiling is 14 because the tileset has no z15; a test pins the number.
 
-The zoom range starts at 0 on purpose: the route page and the overview fit a whole stage at around z11, and the region has to cover that as well as the walk screen's z16. **Streets runs to 16, not 15, because of how the SDK batches:** tile packs are loaded in fixed zoom bands — 0–5, 6–10, 11–14, 15–16 — and the SDK recommends choosing ceilings on a band edge. A ceiling of 15 downloads the whole 15–16 band anyway, so 16 costs nothing more and makes the walk screen's z16 native rather than overzoomed. The DEM's 14 is both its ceiling and a band edge. Decision 3's byte figures were measured at these bands and stand.
+The zoom range starts at 0 on purpose: the route page and the overview fit a whole stage at around z11, and the region has to cover that as well as the walk screen. **Streets ends at 14, a band edge:** tile packs are loaded in fixed zoom bands — 0–5, 6–10, 11–14, 15–16 — the SDK recommends choosing ceilings on a band edge, and a tile store holds at most 750 unique packs. The 15–16 band was dropped because it adds building footprints only (decision 3) and would put the Francés at ~1,800 z15-rooted packs against that 750-pack ceiling; at 14 the whole route is ~200. Offline, the walk screen's z16 overzooms the saved z14 tiles; online it fetches z16 as it does today. The DEM's 14 is both its ceiling and a band edge.
 
 Style packs load with `StylePackLoadOptions(glyphsRasterizationMode: .ideographsRasterizedLocally)`, explicitly. Shikoku and Kumano labels are CJK; rasterizing ideographs on the device keeps the pack from carrying every glyph range. This is the SDK default, and it is written down so nobody "fixes" it.
 
@@ -111,11 +111,11 @@ The corridor is the region's `Geometry` in `TileRegionLoadOptions(geometry:descr
 
 ### 2.2 The estimate
 
-`estimateBytes(for:)` counts the distinct XYZ tiles the corridor touches at z10–15 (Streets) and z10–14 (DEM) and multiplies by a bytes-per-tile figure. The descriptors start at z0, but a corridor touches only a handful of tiles below z10 — a rounding error the estimate leaves out.
+`estimateBytes(for:)` counts the distinct XYZ tiles the corridor touches at z10–14, once for Streets and once for the DEM, and multiplies by a bytes-per-tile figure. The descriptors start at z0, but a corridor touches only a handful of tiles below z10 — a rounding error the estimate leaves out.
 
-**The bytes-per-tile figure is per route, never global.** Tile density differs by an order of magnitude between routes the catalog already carries — the whole Francés is ~26 MB, the whole Nakahechi ~2 MB — so one shared number calibrated by whichever route saved last would understate the next route right where the estimate is the only guardrail decision 4 relies on. Each route id gets its own value under `UserDefaults` key `pilgrimage.tiles.bytesPerTile.<routeId>`:
+**The bytes-per-tile figure is per route, never global.** Tile density differs by an order of magnitude between routes the catalog already carries — the whole Francés is ~30 MB, the whole Nakahechi ~2 MB — so one shared number calibrated by whichever route saved last would understate the next route right where the estimate is the only guardrail decision 4 relies on. Each route id gets its own value under `UserDefaults` key `pilgrimage.tiles.bytesPerTile.<routeId>`:
 
-- **Seeded** from the design session's measurement where one exists — 10 KB for `camino-frances`, from three of its tiles at z14/z15 — and from that same 10 KB as a stated default for a route with no measurement of its own.
+- **Seeded** from the design session's measurement where one exists — 10 KB for `camino-frances`, from three of its tiles at z14/z15 — and from that same 10 KB as a stated default for a route with no measurement of its own. At the 10 KB seed the whole Francés estimates at ~30 MB (3,006 tiles across both tilesets, from the dataset's 33 stage lines) and the Nakahechi at ~2 MB.
 - **Calibrated** when a save of that route completes: the tile store's real `completedResourceSize` for the route's regions, divided by their tile count, replaces the seed. After the first save of a route its number stops being a guess; a different route's save never touches it.
 
 The UI always writes the estimate as "~26 MB". Once saved it shows the real byte count with no tilde.
@@ -169,7 +169,7 @@ Three things in that loop are there for a reason:
 
 ### 3.4 Errors
 
-`PilgrimageError` gains no new cases. A failed region or style-pack load maps to `.incomplete` ("the download didn't finish"); a disk-full error from the store maps to `.diskFull`; `.walkInProgress` is thrown by the entry guard and by the per-load re-check. `.catalogUnreachable` is not among them: `save` takes the stages it is given and never touches the catalog, so there is no path that could raise it. Whatever is thrown is also what `phase = .failed(...)` carries, and the route page shows `PilgrimageCopy.line(for:)` under the button exactly as it does for a failed package download (§5.1).
+`PilgrimageError` gains one case, `.mapTooLarge` — *more map than can be saved at once* — for the store's `tileCountExceeded`: the 750-unique-pack ceiling refusing a region before it downloads anything, which a retry would refuse the same way. A failed region or style-pack load maps to `.incomplete` ("the download didn't finish"); a disk-full error from the store maps to `.diskFull`; `.walkInProgress` is thrown by the entry guard and by the per-load re-check. `.catalogUnreachable` is not among them: `save` takes the stages it is given and never touches the catalog, so there is no path that could raise it. Whatever is thrown is also what `phase = .failed(...)` carries, and the route page shows `PilgrimageCopy.line(for:)` under the button exactly as it does for a failed package download (§5.1).
 
 ## 4. Lifecycle — nothing orphaned
 
@@ -185,7 +185,7 @@ Three things in that loop are there for a reason:
 
 **At launch, the store is reconciled against what is actually installed.** The three hooks above are event-driven, and one path bypasses all of them: the package manager's crash recovery for a kill mid-Replace runs through `installed()`'s swap-marker branch straight into `removeStagesAndPackage()`, never through `remove` or `replace`. A kill between the incoming route's commit and the outgoing route's `tiles.remove` would leave the outgoing route's regions — up to ~26 MB — with no route to reference them and no hook that would ever reach them. So `PilgrimageTilesManager.reconcile(installed: String?)` runs once at app launch after the package manager has resolved `installed()`: every region whose id does not carry the installed route's `pilgrimage:<routeId>:` prefix is removed, and so is every region at an index at or above the installed route's stage count. It is idempotent, it is the backstop for every lifecycle gap rather than only the one found, and it is the reason the summary's "nothing is ever orphaned" is a property of the store and not a promise about call sites.
 
-Expired regions stay usable offline — the SDK serves them rather than dropping them — so a 33-day walk needs no refresh policy. Re-tapping save refreshes; nothing refreshes on its own.
+Expired regions stay usable offline — the SDK serves them rather than dropping them — so a 33-day walk needs no refresh policy. Re-tapping save resumes rather than refreshes: a complete region whose corridor hash still matches its stage is skipped, and nothing refreshes on its own.
 
 ## 5. What the walker sees
 
@@ -256,9 +256,9 @@ Everything below runs against the `TileRegionLoading` fake; no test touches Mapb
 - **One at a time:** a second `save` during `.saving` makes no calls.
 - **Corridor polygon:** a straight line yields a rectangle of the right width; a right-angle bend yields a ring that contains the bend's outer corner; the Francés stage 0 line yields a ring whose area is within 20 % of length × 1 km.
 - **Estimate:** the tile count for the Nakahechi corridor at z10–15 is 129 (the design session's figure) and the estimate scales with `bytesPerTile`; a completed save updates `bytesPerTile` from the real byte count.
-- **Ceilings:** the terrain descriptor's zoom range ends at 14 and the Streets descriptor's at 15; the terrain descriptor names `mapbox://mapbox.mapbox-terrain-dem-v1`; both start at 0.
+- **Ceilings:** the terrain descriptor's zoom range ends at 14 and the Streets descriptor's at 14; the terrain descriptor names `mapbox://mapbox.mapbox-terrain-dem-v1`; both start at 0.
 - **Glyphs:** style packs are requested with `.ideographsRasterizedLocally`.
-- **Errors:** a failing region load surfaces `.incomplete` and leaves earlier regions in place; a disk-full error surfaces `.diskFull`.
+- **Errors:** a failing region load surfaces `.incomplete` and leaves earlier regions in place; a disk-full error surfaces `.diskFull`; the store's `tileCountExceeded` surfaces `.mapTooLarge`.
 - **Status and copy:** `status(for:)` across none / partial / saved; the row label and the morning-card line for each.
 - **Store location and backup exclusion**, per section 6.
 - **A walk starting mid-save stops it:** `isWalkActive` flips true after stage 5's load; the save throws `.walkInProgress`, no sixth load is requested, and five regions remain.
@@ -281,4 +281,4 @@ Everything below runs against the `TileRegionLoading` fake; no test touches Mapb
 
 ## 9. Open questions
 
-None that block the plan. Two facts are verified during it rather than assumed (section 6). The Mapbox account's offline billing is recorded in the 2026-09-01 decisions as MAU-included; the design session could not find a documentation sentence that says so in as many words, and the pack limit — *"the cumulative number of unique tile packs cannot exceed 750"* — is an order of magnitude above the whole catalog installed at once.
+None that block the plan. Two facts are verified during it rather than assumed (section 6). The Mapbox account's offline billing is recorded in the 2026-09-01 decisions as MAU-included; the design session could not find a documentation sentence that says so in as many words, and the pack limit — *"the cumulative number of unique tile packs cannot exceed 750"* — is what set the Streets ceiling: at z14 the whole Francés needs ~200 packs, where z16 would have needed ~1,800.

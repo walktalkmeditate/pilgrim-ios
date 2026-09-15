@@ -39,7 +39,7 @@ final class MapboxTileRegionLoaderTests: XCTestCase {
 
         for streets in [options[0], options[1]] {
             XCTAssertEqual(streets.minZoom, 0)
-            XCTAssertEqual(streets.maxZoom, 16)
+            XCTAssertEqual(streets.maxZoom, 14)
             XCTAssertNil(streets.tilesets)
         }
 
@@ -48,11 +48,13 @@ final class MapboxTileRegionLoaderTests: XCTestCase {
         XCTAssertEqual(options[2].tilesets, ["mapbox://mapbox.mapbox-terrain-dem-v1"])
     }
 
-    /// The SDK names a full disk as its own case, which the shared
-    /// URLError/Cocoa check cannot see. Pure function — no loader.
-    func testMappedErrorsNameAFullDiskAndACancel() {
+    /// The SDK names a full disk and its 750-pack ceiling as their own
+    /// cases, which the shared URLError/Cocoa check cannot see. Pure
+    /// function — no loader.
+    func testMappedErrorsNameAFullDiskAPackCeilingAndACancel() {
         XCTAssertEqual(MapboxTileRegionLoader.mapped(TileRegionError.diskFull("x")), .diskFull)
         XCTAssertEqual(MapboxTileRegionLoader.mapped(StylePackError.diskFull("x")), .diskFull)
+        XCTAssertEqual(MapboxTileRegionLoader.mapped(TileRegionError.tileCountExceeded("x")), .tileCountExceeded)
         XCTAssertEqual(MapboxTileRegionLoader.mapped(TileRegionError.canceled("x")), .cancelled)
         XCTAssertEqual(MapboxTileRegionLoader.mapped(URLError(.cannotWriteToFile)), .diskFull)
         XCTAssertEqual(MapboxTileRegionLoader.mapped(NSError(domain: "t", code: 1)), .failed)

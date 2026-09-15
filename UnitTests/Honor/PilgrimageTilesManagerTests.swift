@@ -74,11 +74,14 @@ final class PilgrimageTilesManagerTests: XCTestCase {
 
     func testTheEstimateUsesTheRoutesOwnBytesPerTileAndTheSeedByDefault() {
         let three = stages(3)
+        // Two terms on purpose — Streets and the DEM — so a collapse in the
+        // manager's sweep still has to equal the sum it stands for.
+        let floor = PilgrimageTilesManager.estimateFloorZoom
         let tiles = three.reduce(0) { total, way in
             let rings = WayGeometry.corridor(around: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) },
                                              halfWidthMeters: 500)
-            return total + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 10...16)
-                + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 10...14)
+            return total + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: floor...14)
+                + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: floor...14)
         }
         XCTAssertEqual(manager.estimateBytes(for: "camino-frances", stages: three),
                        tiles * PilgrimageTilesManager.seedBytesPerTile)
@@ -315,6 +318,24 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? PilgrimageError, .diskFull)
         }
+    }
+
+    /// The store's pack ceiling refuses a region before it downloads
+    /// anything; "didn't finish" would send the walker back to a retry that
+    /// refuses the same way.
+    func testAPackCeilingRefusalSurfacesAsMapTooLarge() async {
+        loader.seedStylePacks()
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: stages(1)) }
+        await untilPending()
+        loader.nextRegionFailure = .tileCountExceeded
+        loader.completeNextRegion()
+        do {
+            try await task.value
+            XCTFail("expected mapTooLarge")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .mapTooLarge)
+        }
+        XCTAssertEqual(manager.phase, .failed(.mapTooLarge))
     }
 
     func testACompletedSaveCalibratesThisRouteOnly() async throws {

@@ -242,6 +242,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
         if let tileError = error as? TileRegionError, case .diskFull = tileError { return .diskFull }
         if let packError = error as? StylePackError, case .diskFull = packError { return .diskFull }
         if WayMediaDownloader.isDiskFull(error) { return .diskFull }
+        if let tileError = error as? TileRegionError, case .tileCountExceeded = tileError { return .tileCountExceeded }
         if let tileError = error as? TileRegionError, case .canceled = tileError { return .cancelled }
         return .failed
     }

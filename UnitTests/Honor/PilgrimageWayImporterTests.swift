@@ -339,6 +339,7 @@ extension PilgrimageWayImporterTests {
         XCTAssertEqual(PilgrimageCopy.line(for: .incomplete), "the download didn't finish")
         XCTAssertEqual(PilgrimageCopy.line(for: .walkInProgress), "finish your walk first")
         XCTAssertEqual(PilgrimageCopy.line(for: .catalogUnreachable), "the routes are out of reach right now")
+        XCTAssertEqual(PilgrimageCopy.line(for: .mapTooLarge), "more map than can be saved at once")
         XCTAssertEqual(PilgrimageCopy.line(for: .diskFull),
                        HonorImportCopy.line(for: .failed(.diskFull)),
                        "disk full keeps the copy the share importer already ships")

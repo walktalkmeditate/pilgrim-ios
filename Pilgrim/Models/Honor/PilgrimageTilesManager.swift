@@ -134,13 +134,15 @@ final class PilgrimageTilesManager: ObservableObject {
         return stored > 0 ? stored : Self.seedBytesPerTile
     }
 
+    /// Below this a corridor touches a handful of tiles, a rounding error
+    /// the estimate leaves out.
+    static let estimateFloorZoom = 10
+
+    /// Streets tiles plus DEM tiles. The two tilesets share a ceiling — the
+    /// descriptors test pins that — so one sweep of the corridor counts both.
     func tileCount(for stages: [Way]) -> Int {
-        stages.reduce(0) { total, way in
-            let rings = Self.rings(for: way)
-            return total
-                + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 10...PilgrimageTilesDescriptors.streetsZoom.upperBound)
-                + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 10...PilgrimageTilesDescriptors.terrainZoom.upperBound)
-        }
+        let zooms = Self.estimateFloorZoom...PilgrimageTilesDescriptors.streetsZoom.upperBound
+        return stages.reduce(0) { $0 + PilgrimageTilesDescriptors.tileCount(rings: Self.rings(for: $1), zooms: zooms) } * 2
     }
 
     func estimateBytes(for routeId: String, stages: [Way]) -> Int {
@@ -277,6 +279,7 @@ final class PilgrimageTilesManager: ObservableObject {
     private static func mapped(_ error: TileRegionLoadingError) -> PilgrimageError {
         switch error {
         case .diskFull: return .diskFull
+        case .tileCountExceeded: return .mapTooLarge
         case .failed, .cancelled: return .incomplete
         }
     }

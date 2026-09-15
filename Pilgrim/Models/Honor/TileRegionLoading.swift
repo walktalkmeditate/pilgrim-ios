@@ -40,6 +40,9 @@ enum TileRegionLoadingError: Error, Equatable {
     case failed
     case diskFull
     case cancelled
+    /// The store's 750-unique-pack ceiling: the SDK refuses the region
+    /// before downloading anything, so a retry would refuse the same way.
+    case tileCountExceeded
 }
 
 /// A handle the manager can cancel. The production loader wraps Mapbox's
