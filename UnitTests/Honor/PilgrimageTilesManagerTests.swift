@@ -160,6 +160,7 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         await Task.yield()
         XCTAssertEqual(loader.regionRequests.map(\.id), [three[1].id])
         XCTAssertEqual(loader.regionRequests.first?.corridorHash, PilgrimageTilesManager.corridorHash(for: three[1]))
+        XCTAssertEqual(loader.regionRequests.first?.acceptExpired, true)
         loader.completeNextRegion()
         try await task.value
     }
@@ -228,6 +229,28 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         XCTAssertEqual(manager.status(for: "camino-frances", stages: three), .partial(saved: 1, of: 3))
         manager.cancel()
         XCTAssertEqual(manager.phase, .idle)
+    }
+
+    func testAFailedPhaseClearsOnTheNextSave() async throws {
+        let one = stages(1)
+        loader.seedStylePacks()
+        let failing = Task { try await manager.save(routeId: "camino-frances", stages: one) }
+        await Task.yield()
+        loader.nextRegionFailure = .failed
+        loader.completeNextRegion()
+        do {
+            try await failing.value
+            XCTFail("expected incomplete")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .incomplete)
+        }
+        XCTAssertEqual(manager.phase, .failed(.incomplete))
+
+        let second = Task { try await manager.save(routeId: "camino-frances", stages: one) }
+        await Task.yield()
+        XCTAssertEqual(manager.phase, .saving(done: 2, total: 3), "both packs were there; the region is loading again")
+        loader.completeNextRegion()
+        try await second.value
     }
 
     func testDiskFullSurfacesAsDiskFull() async {

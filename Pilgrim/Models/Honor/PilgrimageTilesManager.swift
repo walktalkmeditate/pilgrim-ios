@@ -162,11 +162,14 @@ final class PilgrimageTilesManager: ObservableObject {
             calibrate(routeId: routeId, stages: stages)
             phase = .idle
         } catch let error as PilgrimageError {
-            inFlight?.cancel()
-            inFlight = nil
-            // A cancel already put the phase back; a genuine failure is
-            // shown until the next save or cancel clears it.
-            if generation == myGeneration { phase = .failed(error) }
+            // A cancel already put the phase back and cleaned up, and a save
+            // started since then owns `inFlight`. A genuine failure is shown
+            // until the next save or cancel clears it.
+            if generation == myGeneration {
+                inFlight?.cancel()
+                inFlight = nil
+                phase = .failed(error)
+            }
             throw error
         }
     }
