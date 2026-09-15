@@ -17,6 +17,32 @@ final class WayGeometryCorridorTests: XCTestCase {
                                longitude: from.longitude + eastMeters / (111_320 * cos(from.latitude * .pi / 180)))
     }
 
+    /// Walks the closed ring in the local-metre frame and returns true only
+    /// when every turn bends the same way. A bowtie carries five coordinates
+    /// exactly like a quad does, so counting them proves nothing about
+    /// self-intersection; the sign of the cross products does.
+    private func isConvex(_ ring: [CLLocationCoordinate2D]) -> Bool {
+        guard let first = ring.first, ring.count > 3 else { return false }
+        let lonScale = cos(first.latitude * .pi / 180)
+        let vertices = ring.dropLast().map { (x: $0.longitude * lonScale, y: $0.latitude) }
+        var edges: [(x: Double, y: Double)] = []
+        for i in vertices.indices {
+            let a = vertices[i], b = vertices[(i + 1) % vertices.count]
+            let edge = (x: b.x - a.x, y: b.y - a.y)
+            // A zero-length edge has no direction to turn from.
+            if edge.x != 0 || edge.y != 0 { edges.append(edge) }
+        }
+        guard edges.count > 2 else { return false }
+        var sign = 0.0
+        for i in edges.indices {
+            let current = edges[i], next = edges[(i + 1) % edges.count]
+            let cross = current.x * next.y - current.y * next.x
+            if cross == 0 { continue }
+            if sign == 0 { sign = cross } else if (cross > 0) != (sign > 0) { return false }
+        }
+        return sign != 0
+    }
+
     func testEveryPartIsAClosedConvexRing() {
         let line = straight(km: 3)
         let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
@@ -25,6 +51,7 @@ final class WayGeometryCorridorTests: XCTestCase {
             XCTAssertEqual(part.count, 5)
             XCTAssertEqual(part.first?.latitude, part.last?.latitude)
             XCTAssertEqual(part.first?.longitude, part.last?.longitude)
+            XCTAssertTrue(isConvex(part), "every part is convex, so no part can self-intersect")
         }
     }
 
@@ -48,9 +75,11 @@ final class WayGeometryCorridorTests: XCTestCase {
         let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
         // 300 m outside the bend on the diagonal: inside the vertex square.
         XCTAssertTrue(WayGeometry.corridorContains(parts, offset(east.last!, northMeters: -212, eastMeters: 212)))
-        // The vertex square is axis-aligned, so it reaches a half width on
-        // each axis — 707 m on the diagonal — and is deliberately generous
-        // at a bend. 520 m on each axis clears it and both rectangles.
+        // The vertex square is axis-aligned, so its corner reaches 707 m on
+        // the diagonal: 700 m out is still covered, and that generosity at a
+        // bend is the price of a part that cannot self-intersect.
+        XCTAssertTrue(WayGeometry.corridorContains(parts, offset(east.last!, northMeters: -495, eastMeters: 495)))
+        // 520 m on each axis clears the square and both rectangles.
         XCTAssertFalse(WayGeometry.corridorContains(parts, offset(east.last!, northMeters: -520, eastMeters: 520)))
         for point in line where !WayGeometry.corridorContains(parts, point) {
             XCTFail("route point \(point) outside its own corridor")
@@ -70,7 +99,8 @@ final class WayGeometryCorridorTests: XCTestCase {
             break
         }
         for part in parts {
-            XCTAssertEqual(part.count, 5, "quads and squares only — nothing that could self-intersect")
+            XCTAssertEqual(part.count, 5, "quads and squares only")
+            XCTAssertTrue(isConvex(part), "every part is convex, so no part can self-intersect")
         }
     }
 
@@ -100,5 +130,17 @@ final class WayGeometryCorridorTests: XCTestCase {
         let parts = WayGeometry.corridor(around: [CLLocationCoordinate2D(latitude: 42, longitude: 0)], halfWidthMeters: 500)
         XCTAssertEqual(parts.count, 1)
         XCTAssertEqual(parts[0].count, 5)
+    }
+
+    /// A zero-length segment has no perpendicular, so it yields no rectangle
+    /// — but both its vertices still yield squares, and the point is covered.
+    func testTwoIdenticalPointsYieldSquaresAndNoRectangle() {
+        let point = CLLocationCoordinate2D(latitude: 42, longitude: 0)
+        let parts = WayGeometry.corridor(around: [point, point], halfWidthMeters: 500)
+        XCTAssertEqual(parts.count, 2)
+        for part in parts {
+            XCTAssertEqual(part.count, 5)
+        }
+        XCTAssertTrue(WayGeometry.corridorContains(parts, point))
     }
 }

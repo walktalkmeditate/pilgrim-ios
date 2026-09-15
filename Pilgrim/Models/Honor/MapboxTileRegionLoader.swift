@@ -103,7 +103,9 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                     progress: @escaping (Int, Int) -> Void,
                     completion: @escaping (Result<TileRegionSummary, TileRegionLoadingError>) -> Void) -> TileLoadHandle {
         // One polygon per convex part; the store unions them when it tiles.
-        let polygons = request.rings.map { [$0.map { LocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }] }
+        let polygons = request.rings.map { ring in
+            [ring.map { LocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }]
+        }
         guard let options = TileRegionLoadOptions(geometry: .multiPolygon(MultiPolygon(polygons)),
                                                   descriptors: descriptors,
                                                   metadata: ["corridorHash": request.corridorHash],

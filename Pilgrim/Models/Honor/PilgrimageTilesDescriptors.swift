@@ -25,19 +25,35 @@ enum PilgrimageTilesDescriptors {
     /// once. Below z10 a corridor touches a handful of tiles, a rounding
     /// error the estimate leaves out.
     static func tileCount(rings: [[CLLocationCoordinate2D]], zooms: ClosedRange<Int>) -> Int {
-        let coordinates = rings.filter { $0.count > 3 }.flatMap { $0 }
-        guard !coordinates.isEmpty else { return 0 }
-        let lats = coordinates.map(\.latitude), lons = coordinates.map(\.longitude)
+        let parts = rings.filter { $0.count > 3 }
+        guard !parts.isEmpty else { return 0 }
+        // A winding stage has hundreds of parts and most tiles in its overall
+        // box touch none of them, so each part's own box rejects it before
+        // the five containment probes run. Box-disjoint implies untouched —
+        // every way `tileTouches` can be true puts a point in both boxes —
+        // so this is a rejection, not an approximation.
+        let boxes = parts.map { part -> (minLat: Double, maxLat: Double, minLon: Double, maxLon: Double) in
+            let lats = part.map(\.latitude), lons = part.map(\.longitude)
+            return (lats.min()!, lats.max()!, lons.min()!, lons.max()!)
+        }
         var total = 0
         for z in zooms {
             let n = Double(1 << z)
-            let (xMin, yMax) = tile(lat: lats.min()!, lon: lons.min()!, n: n)
-            let (xMax, yMin) = tile(lat: lats.max()!, lon: lons.max()!, n: n)
+            let (xMin, yMax) = tile(lat: boxes.map(\.minLat).min()!, lon: boxes.map(\.minLon).min()!, n: n)
+            let (xMax, yMin) = tile(lat: boxes.map(\.maxLat).max()!, lon: boxes.map(\.maxLon).max()!, n: n)
             // The sweep visits each (z, x, y) once and stops at the first
             // part that touches it, so overlapping parts cannot double-count.
             for x in xMin...xMax {
-                for y in yMin...yMax where rings.contains(where: { tileTouches($0, x: x, y: y, n: n) }) {
-                    total += 1
+                for y in yMin...yMax {
+                    let southWest = coordinate(x: Double(x), y: Double(y + 1), n: n)
+                    let northEast = coordinate(x: Double(x + 1), y: Double(y), n: n)
+                    let touched = parts.indices.contains { index in
+                        let box = boxes[index]
+                        return box.maxLat >= southWest.latitude && box.minLat <= northEast.latitude
+                            && box.maxLon >= southWest.longitude && box.minLon <= northEast.longitude
+                            && tileTouches(parts[index], x: x, y: y, n: n)
+                    }
+                    if touched { total += 1 }
                 }
             }
         }

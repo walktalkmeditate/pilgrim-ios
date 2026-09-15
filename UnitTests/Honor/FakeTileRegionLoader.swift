@@ -1,4 +1,5 @@
 import Foundation
+import XCTest
 @testable import Pilgrim
 
 /// Records every call, completes on demand, and fails when told to. Loads
@@ -80,8 +81,15 @@ final class FakeTileRegionLoader: TileRegionLoading {
 
     // MARK: - Driving the fake
 
+    /// Driving a completion with nothing pending means the test is a step
+    /// ahead of the manager. Returning quietly leaves the manager waiting on
+    /// a continuation nobody will resume, which hangs the whole suite rather
+    /// than failing the one test that mis-sequenced.
     func completeNextPack() {
-        guard !pendingPacks.isEmpty else { return }
+        guard !pendingPacks.isEmpty else {
+            XCTFail("completeNextPack called with nothing pending")
+            return
+        }
         let pending = pendingPacks.removeFirst()
         stylePacks.insert(pending.pack)
         onChange?()
@@ -89,7 +97,10 @@ final class FakeTileRegionLoader: TileRegionLoading {
     }
 
     func completeNextRegion() {
-        guard !pendingRegions.isEmpty else { return }
+        guard !pendingRegions.isEmpty else {
+            XCTFail("completeNextRegion called with nothing pending")
+            return
+        }
         let pending = pendingRegions.removeFirst()
         if let failure = nextRegionFailure {
             nextRegionFailure = nil
