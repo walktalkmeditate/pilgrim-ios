@@ -115,6 +115,20 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         XCTAssertEqual(manager.status(for: "camino-frances", stages: two), .saved(bytes: 100_000))
     }
 
+    /// Settings → Data reads one thing from one store read: the stages
+    /// saved, and the bytes of every region with the route's prefix — a
+    /// stale one included, so Delete can still reach what an Update left.
+    /// Another route's bytes are never the installed route's.
+    func testTheFootprintCountsStaleBytesOfTheRouteFromOneRead() {
+        let three = stages(3)
+        loader.seed(id: three[0].id, corridorHash: PilgrimageTilesManager.corridorHash(for: three[0]), bytes: 5_000_000)
+        loader.seed(id: three[1].id, corridorHash: "stale", bytes: 2_000_000)
+        loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h", bytes: 9_000_000)
+        XCTAssertEqual(manager.footprint(routeId: "camino-frances", stages: three),
+                       PilgrimageTilesManager.Footprint(savedStages: 1, bytes: 7_000_000))
+        XCTAssertEqual(loader.regionsReadCount, 1)
+    }
+
     // MARK: - Save
 
     func testASaveLoadsPacksThenRegionsInOrderAndSkipsWhatIsThere() async throws {

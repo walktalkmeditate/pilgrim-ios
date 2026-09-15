@@ -38,7 +38,7 @@ final class PilgrimageTilesManager: ObservableObject {
     /// in `MainCoordinatorView` so this file never imports Mapbox.
     static let shared = PilgrimageTilesManager(loader: MapboxTileRegionLoader())
 
-    let loader: TileRegionLoading
+    private let loader: TileRegionLoading
     private let defaults: UserDefaults
 
     /// For readers that care only about what is on disk, not about a save's
@@ -95,15 +95,18 @@ final class PilgrimageTilesManager: ObservableObject {
 
     // MARK: - Status
 
+    /// One store read for a whole route: `regions()` refreshes the loader's
+    /// cache, so asking it per stage re-reads once per stage.
+    private func regionsById() -> [String: TileRegionSummary] {
+        Dictionary(loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
     private func region(for way: Way) -> TileRegionSummary? {
         loader.regions().first { $0.id == way.id }
     }
 
     /// Complete by resource count and loaded for the stage's current line.
-    /// Internal, not private: a caller that already holds a store snapshot
-    /// (`regions()` read once into a dictionary) must be able to check each
-    /// stage against it without re-reading the store per stage.
-    func isSaved(_ way: Way, region: TileRegionSummary?) -> Bool {
+    private func isSaved(_ way: Way, region: TileRegionSummary?) -> Bool {
         guard let region, region.isComplete else { return false }
         return region.corridorHash == Self.corridorHash(for: way)
     }
@@ -114,15 +117,31 @@ final class PilgrimageTilesManager: ObservableObject {
     }
 
     func status(for routeId: String, stages: [Way]) -> Status {
-        // One store read for the whole route: `regions()` refreshes the
-        // loader's cache, so asking it per stage re-reads once per stage.
-        let byId = Dictionary(loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let byId = regionsById()
         let saved = stages.filter { isSaved($0, region: byId[$0.id]) }
         guard !saved.isEmpty else { return .none }
         let packsPresent = StylePackRequest.allCases.allSatisfy(loader.hasStylePack)
         guard saved.count == stages.count, packsPresent else { return .partial(saved: saved.count, of: stages.count) }
         let bytes = saved.compactMap { byId[$0.id] }.reduce(0) { $0 + $1.completedResourceSize }
         return .saved(bytes: bytes)
+    }
+
+    /// What Settings → Data shows, from one store read: how many stages are
+    /// saved, and the bytes of every region carrying the route's prefix.
+    /// Stale regions count too: after an Update redraws the way each hash
+    /// goes stale while the bytes stay on the phone, and Delete has to
+    /// reach them.
+    struct Footprint: Equatable {
+        let savedStages: Int
+        let bytes: Int
+    }
+
+    func footprint(routeId: String, stages: [Way]) -> Footprint {
+        let byId = regionsById()
+        let savedStages = stages.filter { isSaved($0, region: byId[$0.id]) }.count
+        let prefix = Self.regionPrefix(routeId: routeId)
+        let bytes = byId.values.filter { $0.id.hasPrefix(prefix) }.reduce(0) { $0 + $1.completedResourceSize }
+        return Footprint(savedStages: savedStages, bytes: bytes)
     }
 
     // MARK: - Estimate
@@ -152,10 +171,7 @@ final class PilgrimageTilesManager: ObservableObject {
     /// After a save of this route lands: its real bytes over its tile count
     /// replace the seed. Another route's key is never touched.
     func calibrate(routeId: String, stages: [Way]) {
-        // One store read for the whole route, like `status`: `regions()`
-        // refreshes the loader's cache, so asking it per stage re-reads once
-        // per stage.
-        let byId = Dictionary(loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let byId = regionsById()
         let bytes = stages.compactMap { byId[$0.id] }.reduce(0) { $0 + $1.completedResourceSize }
         let tiles = tileCount(for: stages)
         guard bytes > 0, tiles > 0 else { return }
@@ -205,10 +221,10 @@ final class PilgrimageTilesManager: ObservableObject {
                 done += 1
                 phase = .saving(done: done, total: StylePackRequest.allCases.count + stages.count)
             }
-            // One store read for the whole loop. Every region the loop goes
-            // on to load is one this snapshot said was missing, so nothing
-            // it learns later could change a skip decision.
-            let byId = Dictionary(loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            // One snapshot for the whole loop. Every region the loop goes on
+            // to load is one this snapshot said was missing, so nothing it
+            // learns later could change a skip decision.
+            let byId = regionsById()
             for way in stages.sorted(by: { ($0.stage?.index ?? 0) < ($1.stage?.index ?? 0) }) {
                 guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
                 if !isSaved(way, region: byId[way.id]) {

@@ -29,17 +29,9 @@ enum OfflineMapsModel {
         // No stages is no route to report on; the launch reconcile is what
         // clears regions nothing references.
         guard !stages.isEmpty else { return nil }
-        // One store read for the whole route: `regions()` refreshes the
-        // loader's cache, so asking it per stage re-reads once per stage.
-        let byId = Dictionary(tiles.loader.regions().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let savedStages = stages.filter { tiles.isSaved($0, region: byId[$0.id]) }
-        // Every region of the route, not only the ones still matching their
-        // stage: after an Update redraws the way, each hash is stale while
-        // the bytes are still on the phone, and Delete has to reach them.
-        let prefix = PilgrimageTilesManager.regionPrefix(routeId: routeId)
-        let bytes = byId.values.filter { $0.id.hasPrefix(prefix) }.reduce(0) { $0 + $1.completedResourceSize }
-        guard bytes > 0 else { return nil }
-        return Saved(routeName: routeName, bytes: bytes, savedStages: savedStages.count, totalStages: stages.count)
+        let footprint = tiles.footprint(routeId: routeId, stages: stages)
+        guard footprint.bytes > 0 else { return nil }
+        return Saved(routeName: routeName, bytes: footprint.bytes, savedStages: footprint.savedStages, totalStages: stages.count)
     }
 
     /// What the Data card and this view both read: the installed route's
