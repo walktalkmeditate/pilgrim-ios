@@ -46,15 +46,6 @@ class MainCoordinator: ObservableObject {
         // in ... }` hops elsewhere in this file) — hop over the same way to
         // reach the backfill's guaranteed main-actor invocation.
         Task { @MainActor in ThreadsBackfill.runIfNeeded() }
-        // Once per launch: a kill mid-Replace is finished by installed()'s
-        // marker branch, which no lifecycle hook sees; the tiles manager
-        // sweeps whatever the installed route does not account for.
-        Task { @MainActor in
-            PilgrimagePackageManager.shared.tiles = PilgrimageTilesManager.shared
-            let installed = PilgrimagePackageManager.shared.installed()
-            PilgrimageTilesManager.shared.reconcile(
-                installed: installed.map { (routeId: $0.routeId, stageCount: $0.route.stageCount) })
-        }
     }
 
     private func checkForRecovery() {

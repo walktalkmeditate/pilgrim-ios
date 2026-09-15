@@ -44,6 +44,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         MapboxMapsOptions.tileStoreUsageMode = .readOnly
         mark("after Mapbox init")
 
+        // Once per process launch, after the store is readable: a kill
+        // mid-Replace is finished by installed()'s marker branch, which no
+        // lifecycle hook sees, so the tiles manager sweeps whatever the
+        // installed route does not account for.
+        Task { @MainActor in
+            PilgrimagePackageManager.shared.tiles = PilgrimageTilesManager.shared
+            let installed = PilgrimagePackageManager.shared.installed()
+            PilgrimageTilesManager.shared.reconcile(
+                installed: installed.map { (routeId: $0.routeId, stageCount: $0.route.stageCount) })
+        }
+
         // Clean up any Live Activities left over from a previous session
         // that ended abnormally (crash, force-quit, OOM kill). Any activity
         // alive at app launch is necessarily stale — the walk that created

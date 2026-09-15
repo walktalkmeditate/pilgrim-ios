@@ -295,8 +295,19 @@ final class PilgrimagePackageManagerTests: XCTestCase {
         XCTAssertEqual(tilesLoader.removedIds, ["pilgrimage:camino-frances:1"])
         XCTAssertTrue(tilesLoader.regionRequests.isEmpty, "an update downloads no maps")
 
-        try manager.remove(routeId: "camino-frances")
+        // Replace with a different route: the outgoing route's own region
+        // goes too, not just its stages and package. Re-seeded so this step
+        // stands on its own rather than on the update's untouched index 0.
+        tilesLoader.seed(id: "pilgrimage:camino-frances:0", corridorHash: "h")
+        try stubTwoStagePackage(routeId: "camino-norte")
+        try await manager.replace(with: entry(routeId: "camino-norte"), release: "v1.7.0")
         XCTAssertTrue(tilesLoader.removedIds.contains("pilgrimage:camino-frances:0"))
+        XCTAssertEqual(manager.installed()?.routeId, "camino-norte")
+
+        let franciscoRemovals = tilesLoader.removedIds.filter { $0.hasPrefix("pilgrimage:camino-frances:") }.count
+        try manager.remove(routeId: "camino-norte")
+        XCTAssertEqual(tilesLoader.removedIds.filter { $0.hasPrefix("pilgrimage:camino-frances:") }.count, franciscoRemovals,
+                       "camino-norte's removal touches none of camino-frances's already-removed regions")
     }
 
 }
