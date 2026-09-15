@@ -88,4 +88,173 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         loader.seedStylePacks()
         XCTAssertEqual(manager.status(for: "camino-frances", stages: two), .saved(bytes: 100_000))
     }
+
+    // MARK: - Save
+
+    func testASaveLoadsPacksThenRegionsInOrderAndSkipsWhatIsThere() async throws {
+        let three = stages(3)
+        loader.stylePacks = [.light]
+        loader.seed(id: three[1].id, corridorHash: PilgrimageTilesManager.corridorHash(for: three[1]))
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: three) }
+        await Task.yield()
+        XCTAssertEqual(loader.packRequests, [.dark], "the light pack was already there")
+        loader.completeNextPack()
+        await Task.yield()
+        XCTAssertEqual(loader.regionRequests.map(\.id), [three[0].id])
+        loader.completeNextRegion()
+        await Task.yield()
+        XCTAssertEqual(loader.regionRequests.map(\.id), [three[0].id, three[2].id], "stage 1 was complete and current")
+        loader.completeNextRegion()
+        try await task.value
+        XCTAssertEqual(manager.phase, .idle)
+        XCTAssertEqual(manager.status(for: "camino-frances", stages: three), .saved(bytes: 300_000))
+    }
+
+    func testProgressCountsPacksAndStages() async throws {
+        let two = stages(2)
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: two) }
+        await Task.yield()
+        XCTAssertEqual(manager.phase, .saving(done: 0, total: 4))
+        loader.completeNextPack(); await Task.yield()
+        loader.completeNextPack(); await Task.yield()
+        XCTAssertEqual(manager.phase, .saving(done: 2, total: 4))
+        loader.completeNextRegion(); await Task.yield()
+        XCTAssertEqual(manager.phase, .saving(done: 3, total: 4))
+        loader.completeNextRegion()
+        try await task.value
+    }
+
+    func testCancelKeepsWhatIsDoneAndResumeStartsAtTheGap() async throws {
+        let four = stages(4)
+        loader.seedStylePacks()
+        let first = Task { try await manager.save(routeId: "camino-frances", stages: four) }
+        await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        manager.cancel()
+        _ = try? await first.value
+        XCTAssertEqual(manager.phase, .idle)
+        XCTAssertEqual(manager.status(for: "camino-frances", stages: four), .partial(saved: 2, of: 4))
+        XCTAssertTrue(loader.pendingRegions.isEmpty || loader.pendingRegions.first!.handle.isCancelled)
+
+        loader.regionRequests.removeAll()
+        let second = Task { try await manager.save(routeId: "camino-frances", stages: four) }
+        await Task.yield()
+        XCTAssertEqual(loader.regionRequests.first?.id, four[2].id, "resume picks up at the first gap")
+        // The cancelled load is still queued in the fake; its late completion
+        // reaches the manager, which must ignore it, so it takes three
+        // completions to finish the two remaining stages.
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion()
+        try await second.value
+    }
+
+    func testARedrawnStageIsReloadedAndAnUnchangedOneIsNot() async throws {
+        var three = stages(3)
+        loader.seedStylePacks()
+        for way in three { loader.seed(id: way.id, corridorHash: PilgrimageTilesManager.corridorHash(for: way)) }
+        // Redraw stage 1: shift its line.
+        three[1] = stage(1, count: 3, lonOffset: 0.04 + 0.01)
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: three) }
+        await Task.yield()
+        XCTAssertEqual(loader.regionRequests.map(\.id), [three[1].id])
+        XCTAssertEqual(loader.regionRequests.first?.corridorHash, PilgrimageTilesManager.corridorHash(for: three[1]))
+        loader.completeNextRegion()
+        try await task.value
+    }
+
+    func testAWalkStartingMidSaveStopsItAndKeepsWhatIsDone() async throws {
+        let seven = stages(7)
+        loader.seedStylePacks()
+        var walking = false
+        manager.isWalkActive = { walking }
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: seven) }
+        for _ in 0..<5 { await Task.yield(); loader.completeNextRegion() }
+        await Task.yield()
+        walking = true
+        loader.completeNextRegion()
+        await Task.yield()
+        do {
+            try await task.value
+            XCTFail("expected walkInProgress")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .walkInProgress)
+        }
+        XCTAssertEqual(loader.regionRequests.count, 6, "no seventh load was requested")
+        XCTAssertEqual(manager.status(for: "camino-frances", stages: seven), .partial(saved: 6, of: 7))
+    }
+
+    func testRefusedWhileWalkingBeforeAnythingIsRequested() async {
+        manager.isWalkActive = { true }
+        do {
+            try await manager.save(routeId: "camino-frances", stages: stages(2))
+            XCTFail("expected walkInProgress")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .walkInProgress)
+        }
+        XCTAssertTrue(loader.packRequests.isEmpty)
+        XCTAssertTrue(loader.regionRequests.isEmpty)
+    }
+
+    func testASecondSaveWhileSavingMakesNoCalls() async throws {
+        let two = stages(2)
+        let first = Task { try await manager.save(routeId: "camino-frances", stages: two) }
+        await Task.yield()
+        try await manager.save(routeId: "camino-frances", stages: two)
+        XCTAssertEqual(loader.packRequests.count, 1)
+        loader.completeNextPack(); await Task.yield()
+        loader.completeNextPack(); await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion()
+        try await first.value
+    }
+
+    func testAFailedLoadLandsInFailedKeepsEarlierRegionsAndClears() async throws {
+        let three = stages(3)
+        loader.seedStylePacks()
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: three) }
+        await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.nextRegionFailure = .failed
+        loader.completeNextRegion()
+        do {
+            try await task.value
+            XCTFail("expected incomplete")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .incomplete)
+        }
+        XCTAssertEqual(manager.phase, .failed(.incomplete))
+        XCTAssertEqual(manager.status(for: "camino-frances", stages: three), .partial(saved: 1, of: 3))
+        manager.cancel()
+        XCTAssertEqual(manager.phase, .idle)
+    }
+
+    func testDiskFullSurfacesAsDiskFull() async {
+        loader.seedStylePacks()
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: stages(1)) }
+        await Task.yield()
+        loader.nextRegionFailure = .diskFull
+        loader.completeNextRegion()
+        do {
+            try await task.value
+            XCTFail("expected diskFull")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .diskFull)
+        }
+    }
+
+    func testACompletedSaveCalibratesThisRouteOnly() async throws {
+        let two = stages(2)
+        loader.seedStylePacks()
+        loader.bytesPerRegion = 400_000
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: two) }
+        await Task.yield()
+        loader.completeNextRegion(); await Task.yield()
+        loader.completeNextRegion()
+        try await task.value
+        let expected = 800_000 / manager.tileCount(for: two)
+        XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerTile.camino-frances"), expected)
+        XCTAssertEqual(defaults.integer(forKey: "pilgrimage.tiles.bytesPerTile.kumano-kodo-nakahechi"), 0)
+    }
 }

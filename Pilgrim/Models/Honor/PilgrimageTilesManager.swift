@@ -117,4 +117,117 @@ final class PilgrimageTilesManager: ObservableObject {
         guard bytes > 0, tiles > 0 else { return }
         defaults.set(bytes / tiles, forKey: Self.bytesPerTileKey(routeId: routeId))
     }
+
+    // MARK: - Save
+
+    private var inFlight: TileLoadHandle?
+    /// The continuation the in-flight load will resume. `cancel()` resumes it
+    /// itself, because a cancelled load never reports back.
+    private var pending: CheckedContinuation<Void, Error>?
+    /// Bumped on every `cancel()`; a completion that lands after its
+    /// generation was cancelled is a no-op rather than a state change.
+    private var generation = 0
+
+    /// Style packs first, then one region per stage in order, skipping any
+    /// region that is complete and still matches its stage's corridor.
+    /// `isWalkActive` is re-checked before every load: a save is up to
+    /// thirty-five network loads and a walker who taps and then starts
+    /// the stage would otherwise carry every remaining load under the walk.
+    func save(routeId: String, stages: [Way]) async throws {
+        guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+        if case .saving = phase { return }
+        phase = .saving(done: 0, total: StylePackRequest.allCases.count + stages.count)
+        let myGeneration = generation
+        var done = 0
+        do {
+            for pack in StylePackRequest.allCases {
+                guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+                if !loader.hasStylePack(pack) {
+                    try await loadPack(pack, generation: myGeneration)
+                }
+                done += 1
+                phase = .saving(done: done, total: StylePackRequest.allCases.count + stages.count)
+            }
+            for way in stages.sorted(by: { ($0.stage?.index ?? 0) < ($1.stage?.index ?? 0) }) {
+                guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
+                if !isStageSaved(way) {
+                    let ring = Self.ring(for: way)
+                    let request = TileRegionRequest(id: way.id, ring: ring,
+                                                    corridorHash: Self.corridorHash(ring), acceptExpired: true)
+                    try await loadRegion(request, generation: myGeneration)
+                }
+                done += 1
+                phase = .saving(done: done, total: StylePackRequest.allCases.count + stages.count)
+            }
+            calibrate(routeId: routeId, stages: stages)
+            phase = .idle
+        } catch let error as PilgrimageError {
+            inFlight?.cancel()
+            inFlight = nil
+            // A cancel already put the phase back; a genuine failure is
+            // shown until the next save or cancel clears it.
+            if generation == myGeneration { phase = .failed(error) }
+            throw error
+        }
+    }
+
+    private func loadPack(_ pack: StylePackRequest, generation myGeneration: Int) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            pending = continuation
+            inFlight = loader.loadStylePack(pack) { [weak self] result in
+                guard let self else {
+                    continuation.resume(throwing: PilgrimageError.incomplete)
+                    return
+                }
+                // `cancel()` resumed this continuation already; a late
+                // completion resuming it a second time would trap.
+                guard self.generation == myGeneration else { return }
+                self.pending = nil
+                self.inFlight = nil
+                continuation.resume(with: result.mapError(Self.mapped))
+            }
+        }
+    }
+
+    private func loadRegion(_ request: TileRegionRequest, generation myGeneration: Int) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            pending = continuation
+            inFlight = loader.loadRegion(request, progress: { _, _ in }) { [weak self] result in
+                guard let self else {
+                    continuation.resume(throwing: PilgrimageError.incomplete)
+                    return
+                }
+                // `cancel()` resumed this continuation already; a late
+                // completion resuming it a second time would trap.
+                guard self.generation == myGeneration else { return }
+                self.pending = nil
+                self.inFlight = nil
+                continuation.resume(with: result.map { _ in () }.mapError(Self.mapped))
+            }
+        }
+    }
+
+    private static func mapped(_ error: TileRegionLoadingError) -> PilgrimageError {
+        switch error {
+        case .diskFull: return .diskFull
+        case .failed, .cancelled: return .incomplete
+        }
+    }
+
+    /// Regions already complete stay. The in-flight load is cancelled and
+    /// its late completion ignored by generation.
+    func cancel() {
+        generation += 1
+        inFlight?.cancel()
+        inFlight = nil
+        if let pending {
+            self.pending = nil
+            pending.resume(throwing: PilgrimageError.incomplete)
+        }
+        phase = .idle
+    }
+
+    deinit {
+        inFlight?.cancel()
+    }
 }
