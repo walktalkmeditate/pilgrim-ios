@@ -145,8 +145,13 @@ final class PilgrimageTilesManager: ObservableObject {
     /// thirty-five network loads and a walker who taps and then starts
     /// the stage would otherwise carry every remaining load under the walk.
     func save(routeId: String, stages: [Way]) async throws {
-        guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
         if case .saving = phase { return }
+        guard !isWalkActive() else {
+            // The row's catch relies on phase carrying every failure; a
+            // refusal at the door has to land there like a refusal mid-loop.
+            phase = .failed(.walkInProgress)
+            throw PilgrimageError.walkInProgress
+        }
         phase = .saving(done: 0, total: StylePackRequest.allCases.count + stages.count)
         let myGeneration = generation
         var done = 0

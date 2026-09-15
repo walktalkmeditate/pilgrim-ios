@@ -197,6 +197,7 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         }
         XCTAssertTrue(loader.packRequests.isEmpty)
         XCTAssertTrue(loader.regionRequests.isEmpty)
+        XCTAssertEqual(manager.phase, .failed(.walkInProgress))
     }
 
     func testASecondSaveWhileSavingMakesNoCalls() async throws {
