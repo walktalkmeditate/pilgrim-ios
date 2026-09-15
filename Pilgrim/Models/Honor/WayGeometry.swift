@@ -212,4 +212,121 @@ struct WayGeometry {
         let degrees = atan2(y, x) * 180 / .pi
         return (degrees + 360).truncatingRemainder(dividingBy: 360)
     }
+
+    // MARK: - Corridor
+
+    /// A closed ring around `points`, `halfWidthMeters` to each side: the
+    /// geometry a stage's tile region is loaded for. A corridor rather than
+    /// a bounding box because a 20 km diagonal is 400 km² boxed and 20 km²
+    /// this way. Offsets are taken along the perpendicular of each vertex's
+    /// adjoining segments; a single point becomes a square.
+    static func corridor(around points: [CLLocationCoordinate2D], halfWidthMeters: Double) -> [CLLocationCoordinate2D] {
+        let line = simplified(points, toleranceMeters: 25)
+        guard let first = line.first else { return [] }
+        let latScale = 111_320.0
+        let lonScale = 111_320.0 * cos(first.latitude * .pi / 180)
+        guard line.count > 1 else {
+            let dLat = halfWidthMeters / latScale, dLon = halfWidthMeters / lonScale
+            return [
+                CLLocationCoordinate2D(latitude: first.latitude - dLat, longitude: first.longitude - dLon),
+                CLLocationCoordinate2D(latitude: first.latitude - dLat, longitude: first.longitude + dLon),
+                CLLocationCoordinate2D(latitude: first.latitude + dLat, longitude: first.longitude + dLon),
+                CLLocationCoordinate2D(latitude: first.latitude + dLat, longitude: first.longitude - dLon),
+                CLLocationCoordinate2D(latitude: first.latitude - dLat, longitude: first.longitude - dLon)
+            ]
+        }
+        // Work in local metres, then back to degrees at the end.
+        let local = line.map { (x: ($0.longitude - first.longitude) * lonScale, y: ($0.latitude - first.latitude) * latScale) }
+        var left: [(x: Double, y: Double)] = []
+        var right: [(x: Double, y: Double)] = []
+        for i in 0..<local.count {
+            let prev = local[max(i - 1, 0)], next = local[min(i + 1, local.count - 1)]
+            var dx = next.x - prev.x, dy = next.y - prev.y
+            let len = (dx * dx + dy * dy).squareRoot()
+            if len > 0 { dx /= len; dy /= len } else { dx = 1; dy = 0 }
+            // Perpendicular to the direction of travel.
+            let nx = -dy * halfWidthMeters, ny = dx * halfWidthMeters
+            left.append((local[i].x + nx, local[i].y + ny))
+            right.append((local[i].x - nx, local[i].y - ny))
+        }
+        // No end caps: the ring closes on the endpoints' own perpendicular
+        // offsets, so the area is length × width and the tile that holds
+        // each endpoint is already inside. A cap would add a fixed square
+        // kilometre to every stage, which on a short one doubles it.
+        let ringLocal = left + right.reversed() + [left[0]]
+        return ringLocal.map {
+            CLLocationCoordinate2D(latitude: first.latitude + $0.y / latScale, longitude: first.longitude + $0.x / lonScale)
+        }
+    }
+
+    /// Douglas–Peucker on a local-metre projection. A 500 m corridor does
+    /// not care about a 10 m wiggle, and fewer vertices is a smaller polygon
+    /// for the tile store to rasterise against.
+    static func simplified(_ points: [CLLocationCoordinate2D], toleranceMeters: Double) -> [CLLocationCoordinate2D] {
+        guard points.count > 2, let first = points.first else { return points }
+        let latScale = 111_320.0
+        let lonScale = 111_320.0 * cos(first.latitude * .pi / 180)
+        let local = points.map { (x: ($0.longitude - first.longitude) * lonScale, y: ($0.latitude - first.latitude) * latScale) }
+        var keep = [Bool](repeating: false, count: points.count)
+        keep[0] = true
+        keep[points.count - 1] = true
+        var stack: [(Int, Int)] = [(0, points.count - 1)]
+        while let (a, b) = stack.popLast() {
+            guard b - a > 1 else { continue }
+            let ax = local[a].x, ay = local[a].y, bx = local[b].x, by = local[b].y
+            let dx = bx - ax, dy = by - ay
+            let lenSq = dx * dx + dy * dy
+            var farthest = -1.0, index = a
+            for i in (a + 1)..<b {
+                let px = local[i].x - ax, py = local[i].y - ay
+                let distance: Double
+                if lenSq > 0 {
+                    let u = max(0, min(1, (px * dx + py * dy) / lenSq))
+                    let cx = px - u * dx, cy = py - u * dy
+                    distance = (cx * cx + cy * cy).squareRoot()
+                } else {
+                    distance = (px * px + py * py).squareRoot()
+                }
+                if distance > farthest { farthest = distance; index = i }
+            }
+            if farthest > toleranceMeters {
+                keep[index] = true
+                stack.append((a, index))
+                stack.append((index, b))
+            }
+        }
+        return zip(points, keep).compactMap { $1 ? $0 : nil }
+    }
+
+    /// Shoelace on a local-metre projection. Test support and the estimate's
+    /// sanity check; not used on the walk.
+    static func ringAreaSquareMeters(_ ring: [CLLocationCoordinate2D]) -> Double {
+        guard ring.count > 3, let first = ring.first else { return 0 }
+        let latScale = 111_320.0
+        let lonScale = 111_320.0 * cos(first.latitude * .pi / 180)
+        var sum = 0.0
+        for i in 0..<(ring.count - 1) {
+            let ax = (ring[i].longitude - first.longitude) * lonScale, ay = (ring[i].latitude - first.latitude) * latScale
+            let bx = (ring[i + 1].longitude - first.longitude) * lonScale, by = (ring[i + 1].latitude - first.latitude) * latScale
+            sum += ax * by - bx * ay
+        }
+        return abs(sum) / 2
+    }
+
+    /// Ray casting, in degrees — good enough for "is this tile centre inside".
+    static func ringContains(_ ring: [CLLocationCoordinate2D], _ point: CLLocationCoordinate2D) -> Bool {
+        guard ring.count > 3 else { return false }
+        var inside = false
+        var j = ring.count - 1
+        for i in 0..<ring.count {
+            let yi = ring[i].latitude, xi = ring[i].longitude
+            let yj = ring[j].latitude, xj = ring[j].longitude
+            if (yi > point.latitude) != (yj > point.latitude) {
+                let x = (xj - xi) * (point.latitude - yi) / (yj - yi) + xi
+                if point.longitude < x { inside.toggle() }
+            }
+            j = i
+        }
+        return inside
+    }
 }
