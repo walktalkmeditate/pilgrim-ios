@@ -40,6 +40,11 @@ final class FakeTileRegionLoader: TileRegionLoading {
     private(set) var pendingRegions: [PendingRegion] = []
     private(set) var pendingPacks: [PendingPack] = []
 
+    /// Whether there is a load for a test to complete. A test that drives the
+    /// fake before the save has reached its next load parks the save on a
+    /// continuation nobody will resume.
+    var hasPendingWork: Bool { !pendingRegions.isEmpty || !pendingPacks.isEmpty }
+
     /// When set, `completeNextRegion()` fails with it instead of storing.
     var nextRegionFailure: TileRegionLoadingError?
     /// Resource count a completed region reports; tests that care set it.

@@ -17,7 +17,7 @@ extension PilgrimageTilesManagerTests {
     func testRemoveCancelsAnInFlightSave() async {
         loader.seedStylePacks()
         let task = Task { try await manager.save(routeId: "camino-frances", stages: stages(2)) }
-        await Task.yield()
+        await untilPending()
         manager.remove(routeId: "camino-frances")
         _ = try? await task.value
         XCTAssertEqual(manager.phase, .idle)
@@ -91,8 +91,8 @@ extension PilgrimageTilesManagerTests {
         loader.seedStylePacks()
         let two = stages(2)
         let task = Task { try await manager.save(routeId: "camino-frances", stages: two) }
-        await Task.yield()
-        loader.completeNextRegion(); await Task.yield()
+        await untilPending()
+        loader.completeNextRegion(); await untilPending()
         loader.completeNextRegion()
         try await task.value
         XCTAssertTrue(loader.removedIds.isEmpty, "the launch reconcile has no claim on a later save")
@@ -106,8 +106,8 @@ extension PilgrimageTilesManagerTests {
         manager.reconcile(installed: nil)
         loader.seedStylePacks()
         let task = Task { try await manager.save(routeId: "camino-frances", stages: stages(2)) }
-        await Task.yield()
-        loader.completeNextRegion(); await Task.yield()
+        await untilPending()
+        loader.completeNextRegion(); await untilPending()
         loader.completeNextRegion()
         try await task.value
 
