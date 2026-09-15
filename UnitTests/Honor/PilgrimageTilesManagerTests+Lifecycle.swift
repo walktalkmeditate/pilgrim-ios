@@ -61,6 +61,23 @@ extension PilgrimageTilesManagerTests {
         XCTAssertEqual(loader.removedIds.count, before, "the held request ran once, not on every later change")
     }
 
+    /// On a phone that has saved maps the style-pack answer comes back a
+    /// round trip ahead of the regions. If it released the held request, the
+    /// sweep would run against a cache that is still empty and the regions
+    /// answer would find nothing left to do.
+    func testAPacksOnlyChangeDoesNotConsumeTheHeldReconcile() {
+        loader.seed(id: "pilgrimage:camino-frances:7", corridorHash: "h")
+        loader.seed(id: "pilgrimage:kumano-kodo-nakahechi:0", corridorHash: "h")
+        loader.withholdsRegions = true
+
+        manager.reconcile(installed: (routeId: "camino-frances", stageCount: 3))
+        loader.firePacksChange()
+        XCTAssertTrue(loader.removedIds.isEmpty, "the packs answer does not speak for what is on disk")
+
+        loader.releaseRegions()
+        XCTAssertEqual(Set(loader.removedIds), ["pilgrimage:camino-frances:7", "pilgrimage:kumano-kodo-nakahechi:0"])
+    }
+
     func testReconcileWithNothingInstalledRemovesEveryRegion() {
         for way in stages(2) { loader.seed(id: way.id, corridorHash: "h") }
         manager.reconcile(installed: nil)

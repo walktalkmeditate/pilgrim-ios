@@ -41,19 +41,30 @@ final class PilgrimageTilesManager: ObservableObject {
     let loader: TileRegionLoading
     private let defaults: UserDefaults
 
+    /// For readers that care only about what is on disk, not about a save's
+    /// progress: `objectWillChange` also fires on every `phase` step, and a
+    /// reader that re-reads the whole route would do so once per stage of a
+    /// save it does not even display.
+    let regionsChanged = PassthroughSubject<Void, Never>()
+
     init(loader: TileRegionLoading, defaults: UserDefaults = .standard) {
         self.loader = loader
         self.defaults = defaults
         // A view that read `status` before the store answered has nothing
         // else to tell it the saved answer has arrived.
-        loader.onChange = { [weak self] in
+        loader.onChange = { [weak self] change in
             guard let self else { return }
             self.objectWillChange.send()
-            // The launch sweep ran before the store's first answer and saw
-            // nothing; this is that answer arriving.
-            if let request = self.pendingReconcile {
-                self.pendingReconcile = nil
-                self.sweep(request.installed)
+            // Only the regions answer speaks for what is on disk. The packs
+            // answer is one round trip ahead of it, so releasing the held
+            // reconcile on any change at all would sweep an empty cache and
+            // leave the regions answer with no request to run.
+            if change == .regions {
+                self.regionsChanged.send()
+                if let request = self.pendingReconcile {
+                    self.pendingReconcile = nil
+                    self.sweep(request.installed)
+                }
             }
         }
     }

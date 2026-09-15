@@ -25,10 +25,11 @@ final class FakeTileRegionLoader: TileRegionLoading {
         let handle: Handle
     }
 
-    /// Fired wherever the real loader fires it — on a stored region, a
-    /// stored pack and a removal — so a test cannot prove the opposite of
+    /// Fired wherever the real loader fires it, and labelled the way the
+    /// real loader labels it — `.regions` on a stored region and a removal,
+    /// `.packs` on a stored pack — so a test cannot prove the opposite of
     /// what production does.
-    var onChange: (() -> Void)?
+    var onChange: ((TileStoreChange) -> Void)?
 
     var stylePacks: Set<StylePackRequest> = []
     private(set) var stored: [String: TileRegionSummary] = [:]
@@ -76,7 +77,7 @@ final class FakeTileRegionLoader: TileRegionLoading {
     func removeRegion(id: String) {
         removedIds.append(id)
         stored[id] = nil
-        onChange?()
+        onChange?(.regions)
     }
 
     // MARK: - Driving the fake
@@ -92,7 +93,7 @@ final class FakeTileRegionLoader: TileRegionLoading {
         }
         let pending = pendingPacks.removeFirst()
         stylePacks.insert(pending.pack)
-        onChange?()
+        onChange?(.packs)
         pending.completion(.success(()))
     }
 
@@ -113,7 +114,7 @@ final class FakeTileRegionLoader: TileRegionLoading {
                                         completedResourceSize: bytesPerRegion,
                                         metadata: ["corridorHash": pending.request.corridorHash])
         stored[summary.id] = summary
-        onChange?()
+        onChange?(.regions)
         pending.completion(.success(summary))
     }
 
@@ -121,7 +122,13 @@ final class FakeTileRegionLoader: TileRegionLoading {
     /// asynchronous read lands and the cache stops being empty.
     func releaseRegions() {
         withholdsRegions = false
-        onChange?()
+        onChange?(.regions)
+    }
+
+    /// The style-pack answer on its own. On a phone that has saved maps this
+    /// is the signal that arrives first, one round trip ahead of the regions.
+    func firePacksChange() {
+        onChange?(.packs)
     }
 
     /// Seeds a region as though a previous save stored it.

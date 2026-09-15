@@ -80,9 +80,10 @@ struct OfflineMapsView: View {
         .navigationTitle("Maps")
         .onAppear(perform: reload)
         // A screen opened before the store answered would otherwise say "no
-        // maps saved" until it was left and reopened. The loader signals
-        // after its cache is updated, and only when it changed.
-        .onReceive(tiles.objectWillChange) { _ in reload() }
+        // maps saved" until it was left and reopened. Regions only, not
+        // `objectWillChange`: that also fires on every step of a save, and
+        // this reload decodes every stage Way of the route off disk.
+        .onReceive(tiles.regionsChanged) { _ in reload() }
         .alert(OfflineMapsModel.deleteTitle, isPresented: $confirmDelete) {
             Button("Delete", role: .destructive) {
                 if let routeId { tiles.remove(routeId: routeId) }

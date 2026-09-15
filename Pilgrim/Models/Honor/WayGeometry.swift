@@ -250,8 +250,10 @@ struct WayGeometry {
                 if len > 0 {
                     dx /= len; dy /= len
                     let nx = -dy * h, ny = dx * h
-                    parts.append([geo((a.x + nx, a.y + ny)), geo((b.x + nx, b.y + ny)),
-                                  geo((b.x - nx, b.y - ny)), geo((a.x - nx, a.y - ny)), geo((a.x + nx, a.y + ny))])
+                    // Right side forward, left side back: counterclockwise
+                    // like the squares, as RFC 7946 asks of an exterior ring.
+                    parts.append([geo((a.x - nx, a.y - ny)), geo((b.x - nx, b.y - ny)),
+                                  geo((b.x + nx, b.y + ny)), geo((a.x + nx, a.y + ny)), geo((a.x - nx, a.y - ny))])
                 }
             }
             parts.append(square(local[i]))
@@ -300,21 +302,6 @@ struct WayGeometry {
             }
         }
         return zip(points, keep).compactMap { $1 ? $0 : nil }
-    }
-
-    /// Shoelace on a local-metre projection. Test support and the estimate's
-    /// sanity check; not used on the walk.
-    static func ringAreaSquareMeters(_ ring: [CLLocationCoordinate2D]) -> Double {
-        guard ring.count > 3, let first = ring.first else { return 0 }
-        let latScale = 111_320.0
-        let lonScale = 111_320.0 * cos(first.latitude * .pi / 180)
-        var sum = 0.0
-        for i in 0..<(ring.count - 1) {
-            let ax = (ring[i].longitude - first.longitude) * lonScale, ay = (ring[i].latitude - first.latitude) * latScale
-            let bx = (ring[i + 1].longitude - first.longitude) * lonScale, by = (ring[i + 1].latitude - first.latitude) * latScale
-            sum += ax * by - bx * ay
-        }
-        return abs(sum) / 2
     }
 
     /// Ray casting, in degrees — good enough for "is this tile centre inside".

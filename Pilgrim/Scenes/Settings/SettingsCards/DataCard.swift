@@ -56,8 +56,10 @@ struct DataCard: View {
             #endif
         }
         // A card drawn before the store answered would say "none saved"
-        // until Settings was left and reopened.
-        .onReceive(tiles.objectWillChange) { _ in reloadMapsDetail() }
+        // until Settings was left and reopened. Regions only: every step of
+        // a save publishes too, and this reload decodes every stage Way of
+        // the route off disk.
+        .onReceive(tiles.regionsChanged) { _ in reloadMapsDetail() }
     }
 
     private func reloadMapsDetail() {

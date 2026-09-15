@@ -46,7 +46,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
         ]
     }
 
-    var onChange: (() -> Void)?
+    var onChange: ((TileStoreChange) -> Void)?
 
     private let tileStore: TileStore
     private let offlineManager: OfflineManager
@@ -89,7 +89,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                 switch result {
                 case .success:
                     self?.cachedPacks.insert(pack)
-                    self?.onChange?()
+                    self?.onChange?(.packs)
                     completion(.success(()))
                 case .failure(let error):
                     completion(.failure(Self.mapped(error)))
@@ -126,13 +126,16 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                                                     requiredResourceCount: Int(region.requiredResourceCount),
                                                     completedResourceSize: Int(region.completedResourceSize),
                                                     metadata: ["corridorHash": request.corridorHash])
+                    // A refresh already in flight is older than this write;
+                    // its snapshot would drop the region again.
+                    self?.refreshGeneration += 1
                     self?.cached.removeAll { $0.id == summary.id }
                     self?.cached.append(summary)
                     // `refresh()` compares against a sorted array; leaving
                     // this one appended would read as a change on the next
                     // pass and signal a second time for the same save.
                     self?.cached.sort { $0.id < $1.id }
-                    self?.onChange?()
+                    self?.onChange?(.regions)
                     completion(.success(summary))
                 case .failure(let error):
                     completion(.failure(Self.mapped(error)))
@@ -149,8 +152,11 @@ final class MapboxTileRegionLoader: TileRegionLoading {
 
     func removeRegion(id: String) {
         tileStore.removeTileRegion(forId: id)
+        // A refresh already in flight is older than this removal; its
+        // snapshot would put the region back.
+        refreshGeneration += 1
         cached.removeAll { $0.id == id }
-        onChange?()
+        onChange?(.regions)
     }
 
     // MARK: - Store → cache
@@ -186,7 +192,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                 let sorted = summaries.sorted { $0.id < $1.id }
                 guard let self, token == self.refreshGeneration, self.cached != sorted else { return }
                 self.cached = sorted
-                self.onChange?()
+                self.onChange?(.regions)
             }
         }
         offlineManager.allStylePacks { [weak self] result in
@@ -196,7 +202,7 @@ final class MapboxTileRegionLoader: TileRegionLoading {
                 let present = Set(StylePackRequest.allCases.filter { uris.contains(Self.styleURI($0).rawValue) })
                 guard let self, token == self.refreshGeneration, self.cachedPacks != present else { return }
                 self.cachedPacks = present
-                self.onChange?()
+                self.onChange?(.packs)
             }
         }
     }

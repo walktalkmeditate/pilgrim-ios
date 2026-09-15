@@ -48,13 +48,24 @@ protocol TileLoadHandle: AnyObject {
     func cancel()
 }
 
+/// Which of the store's two answers arrived. They are separate round trips
+/// that land at different times — the style packs come back from one call,
+/// the regions from `allTileRegions` plus a metadata read each — and on a
+/// phone that has saved maps the packs answer is reliably first. A reader
+/// waiting for what is on disk must not be woken by the packs.
+enum TileStoreChange: Equatable {
+    case regions
+    case packs
+}
+
 /// The one seam between the manager and Mapbox. Every method is
 /// synchronous to call and reports through closures on the main queue.
 protocol TileRegionLoading: AnyObject {
     /// The store answers asynchronously, so a `regions()` read taken before
     /// the first answer lands sees nothing. This is how that synchronous
-    /// reader learns the answer changed and is worth asking again.
-    var onChange: (() -> Void)? { get set }
+    /// reader learns an answer arrived and is worth asking again — and which
+    /// answer it was.
+    var onChange: ((TileStoreChange) -> Void)? { get set }
 
     func hasStylePack(_ pack: StylePackRequest) -> Bool
     func loadStylePack(_ pack: StylePackRequest,
