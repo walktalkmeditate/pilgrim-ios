@@ -409,7 +409,11 @@ final class WayGeometryCorridorTests: XCTestCase {
         let geometry = WayGeometry(route: way.route)
         let area = WayGeometry.ringAreaSquareMeters(ring)
         XCTAssertEqual(area, geometry.totalMeters * 1_000, accuracy: geometry.totalMeters * 1_000 * 0.2)
-        for point in line where !WayGeometry.ringContains(ring, point) {
+        // The first and last points lie exactly on the ring's closing edges
+        // — a boundary ray casting cannot decide either way — so only the
+        // interior points are asserted inside. The endpoint's tile still
+        // loads: the two ring vertices offset from it sit inside that tile.
+        for point in line.dropFirst().dropLast() where !WayGeometry.ringContains(ring, point) {
             XCTFail("route point \(point) outside its own corridor")
             break
         }
