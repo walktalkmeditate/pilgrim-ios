@@ -282,9 +282,10 @@ final class WhisperManifestServiceAsyncInitTests: XCTestCase {
     }
 
     // The initial load publishes via the main actor, which this test holds
-    // until it returns — so the pre-load state is deterministic.
+    // until it awaits — so the pre-load state read above the await is
+    // deterministic.
     @MainActor
-    func testLookupsBeforeInitialLoadCompletes_returnEmptyWithoutBlocking() throws {
+    func testLookupsBeforeInitialLoadCompletes_returnEmptyWithoutBlocking() async throws {
         let bootstrap = try writeBootstrapFixture()
         let service = WhisperManifestService(manifestDirectory: tempDir, bootstrapManifestURL: { bootstrap })
 
@@ -293,6 +294,12 @@ final class WhisperManifestServiceAsyncInitTests: XCTestCase {
         XCTAssertTrue(service.placeableWhispers(for: .gratitude).isEmpty)
         XCTAssertNil(service.whisper(byId: "gratitude-1"))
         XCTAssertEqual(service.placeableCategories(), [])
+
+        // Let the load finish while its fixture still exists. Left running,
+        // it reads the bootstrap after `tearDown` has deleted the temp
+        // directory, trips the missing-bootstrap assertion, and takes the
+        // whole test host down with whatever else was in flight.
+        await service.initialLoad?.value
     }
 
     @MainActor
