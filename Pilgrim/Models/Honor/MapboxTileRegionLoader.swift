@@ -181,7 +181,21 @@ final class MapboxTileRegionLoader: TileRegionLoading {
         refreshGeneration += 1
         let token = refreshGeneration
         tileStore.allTileRegions { [weak self] result in
-            guard let self, case .success(let regions) = result else { return }
+            guard let self else { return }
+            guard case .success(let regions) = result else {
+                // The launch reconcile waits on this answer through
+                // `refreshRegions`; returning past the drain would leave its
+                // sweep pending for the life of the process. The cache is
+                // left as it was. Not unit-testable: only a real store can
+                // fail here, and the fake has no failing `allTileRegions`.
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, token == self.refreshGeneration else { return }
+                    let waiting = self.pendingRegionsCompletions
+                    self.pendingRegionsCompletions = []
+                    for completion in waiting { completion() }
+                }
+                return
+            }
             let group = DispatchGroup()
             var summaries: [TileRegionSummary] = []
             let lock = NSLock()
