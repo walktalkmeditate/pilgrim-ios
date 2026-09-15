@@ -195,6 +195,11 @@ final class PilgrimageTilesManager: ObservableObject {
                 if !loader.hasStylePack(pack) {
                     try await loadPack(pack, generation: myGeneration)
                 }
+                // A cancel can land between a load's completion and this
+                // hop; without this check the loop would start the next
+                // load under a stale generation, whose completion would
+                // never resume the save's continuation.
+                guard generation == myGeneration else { throw PilgrimageError.incomplete }
                 done += 1
                 phase = .saving(done: done, total: StylePackRequest.allCases.count + stages.count)
             }
@@ -210,6 +215,11 @@ final class PilgrimageTilesManager: ObservableObject {
                                                     corridorHash: Self.corridorHash(rings), acceptExpired: true)
                     try await loadRegion(request, generation: myGeneration)
                 }
+                // A cancel can land between a load's completion and this
+                // hop; without this check the loop would start the next
+                // load under a stale generation, whose completion would
+                // never resume the save's continuation.
+                guard generation == myGeneration else { throw PilgrimageError.incomplete }
                 done += 1
                 phase = .saving(done: done, total: StylePackRequest.allCases.count + stages.count)
             }

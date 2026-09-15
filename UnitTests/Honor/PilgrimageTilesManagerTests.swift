@@ -176,6 +176,28 @@ final class PilgrimageTilesManagerTests: XCTestCase {
         try await second.value
     }
 
+    /// A cancel arriving between a load's completion and the loop's next
+    /// hop must not let the loop start another load under a generation the
+    /// cancel already moved past: that load's completion would never resume
+    /// the save's continuation, leaving the `Task` hanging forever.
+    func testACancelLandingBetweenALoadsCompletionAndTheNextHopEndsTheSave() async throws {
+        let two = stages(2)
+        loader.seedStylePacks()
+        let task = Task { try await manager.save(routeId: "camino-frances", stages: two) }
+        await untilPending()
+        loader.completeNextRegion()
+        manager.cancel()
+        let requestsAtCancel = loader.regionRequests.count
+        do {
+            try await task.value
+            XCTFail("expected the save to throw")
+        } catch {
+            XCTAssertEqual(error as? PilgrimageError, .incomplete)
+        }
+        XCTAssertEqual(manager.phase, .idle)
+        XCTAssertEqual(loader.regionRequests.count, requestsAtCancel, "no further region was requested after the cancel")
+    }
+
     func testARedrawnStageIsReloadedAndAnUnchangedOneIsNot() async throws {
         var three = stages(3)
         loader.seedStylePacks()
