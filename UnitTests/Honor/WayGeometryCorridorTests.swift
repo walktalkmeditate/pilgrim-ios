@@ -43,6 +43,22 @@ final class WayGeometryCorridorTests: XCTestCase {
         return sign != 0
     }
 
+    /// Shoelace formula in the same local-metre frame `isConvex` projects
+    /// into: positive for a counterclockwise ring, RFC 7946's rule for an
+    /// exterior ring. `isConvex` accepts either winding, so this is what
+    /// actually pins `corridor`'s orientation.
+    private func signedArea(_ ring: [CLLocationCoordinate2D]) -> Double {
+        guard let first = ring.first else { return 0 }
+        let lonScale = cos(first.latitude * .pi / 180)
+        let points = ring.map { (x: $0.longitude * lonScale, y: $0.latitude) }
+        var sum = 0.0
+        for i in 0..<(points.count - 1) {
+            let a = points[i], b = points[i + 1]
+            sum += a.x * b.y - b.x * a.y
+        }
+        return sum / 2
+    }
+
     func testEveryPartIsAClosedConvexRing() {
         let line = straight(km: 3)
         let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
@@ -52,7 +68,22 @@ final class WayGeometryCorridorTests: XCTestCase {
             XCTAssertEqual(part.first?.latitude, part.last?.latitude)
             XCTAssertEqual(part.first?.longitude, part.last?.longitude)
             XCTAssertTrue(isConvex(part), "every part is convex, so no part can self-intersect")
+            XCTAssertGreaterThan(signedArea(part), 0, "RFC 7946 exterior rings wind counterclockwise")
         }
+    }
+
+    /// `isConvex` above accepts either winding, so it cannot catch a flip to
+    /// clockwise on its own — this pins `signedArea` itself against a ring
+    /// whose orientation is known by construction, not derived from `corridor`.
+    func testSignedAreaIsNegativeForAHandBuiltClockwiseSquare() {
+        let clockwiseSquare = [
+            CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            CLLocationCoordinate2D(latitude: 1, longitude: 0),
+            CLLocationCoordinate2D(latitude: 1, longitude: 1),
+            CLLocationCoordinate2D(latitude: 0, longitude: 1),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        ]
+        XCTAssertLessThan(signedArea(clockwiseSquare), 0)
     }
 
     func testAStraightLineIsCoveredToHalfWidthAndNotBeyond() {
