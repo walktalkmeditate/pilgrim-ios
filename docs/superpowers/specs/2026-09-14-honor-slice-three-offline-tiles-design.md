@@ -98,10 +98,12 @@ Style packs load with `StylePackLoadOptions(glyphsRasterizationMode: .ideographs
 `WayGeometry` gains one pure function:
 
 ```swift
-static func corridor(around points: [CLLocationCoordinate2D], halfWidthMeters: Double) -> Polygon
+static func corridor(around points: [CLLocationCoordinate2D], halfWidthMeters: Double) -> [[CLLocationCoordinate2D]]
 ```
 
-It simplifies the line (Douglas–Peucker, 25 m tolerance — a 500 m buffer does not care about a 10 m wiggle), offsets each vertex ±`halfWidthMeters` along the perpendicular of its adjoining segments, and closes the ring: left side forward, right side back. Metres to degrees use the point's own latitude for longitude.
+It simplifies the line (Douglas–Peucker, 25 m tolerance — a 500 m buffer does not care about a 10 m wiggle) and returns a MultiPolygon: one rectangle per segment, `halfWidthMeters` to each side of that segment's own perpendicular, and one axis-aligned square of side 2 × `halfWidthMeters` centred on each vertex, including both ends. Parts are emitted quad-then-square per vertex, in line order, so the corridor hash is stable. Metres to degrees use the first point's own latitude for longitude.
+
+**Convex parts, not one offset ring.** The first implementation returned a single ring — every vertex offset left, then every vertex offset right in reverse. Measured on the real datasets it crossed itself 598 times on the Camino Francés and 248 times on the Kohechi, and 130 of Shikoku Awa's 1,424 route points tested *outside* their own corridor under the even-odd rule. A bowtie is invalid GeoJSON and its tiling in Mapbox is undefined — and the lobes sit exactly at the mountain hairpins where there is no signal to fall back on. A rectangle and a square are convex and cannot self-intersect, whatever the line does; Mapbox unions the parts of a MultiPolygon when it tiles, so overlap between them costs nothing. The price is generosity at each bend and end — the vertex square reaches `halfWidthMeters` × √2 on its diagonal — which is the direction to err in.
 
 Half width is 500 m. A stage that runs 20 km diagonally is 400 km² as a bounding box and 20 km² as a corridor; at z15 that is the difference between thousands of tiles and hundreds.
 

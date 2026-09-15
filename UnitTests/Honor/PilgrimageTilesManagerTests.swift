@@ -53,10 +53,10 @@ final class PilgrimageTilesManagerTests: XCTestCase {
     func testTheEstimateUsesTheRoutesOwnBytesPerTileAndTheSeedByDefault() {
         let three = stages(3)
         let tiles = three.reduce(0) { total, way in
-            let ring = WayGeometry.corridor(around: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) },
-                                            halfWidthMeters: 500)
-            return total + PilgrimageTilesDescriptors.tileCount(ring: ring, zooms: 10...16)
-                + PilgrimageTilesDescriptors.tileCount(ring: ring, zooms: 10...14)
+            let rings = WayGeometry.corridor(around: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) },
+                                             halfWidthMeters: 500)
+            return total + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 10...16)
+                + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 10...14)
         }
         XCTAssertEqual(manager.estimateBytes(for: "camino-frances", stages: three),
                        tiles * PilgrimageTilesManager.seedBytesPerTile)

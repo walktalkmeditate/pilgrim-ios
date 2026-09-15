@@ -4,15 +4,15 @@ import CoreLocation
 
 final class FakeTileRegionLoaderTests: XCTestCase {
 
-    private let ring = [
+    private let rings = [[
         CLLocationCoordinate2D(latitude: 42, longitude: 0), CLLocationCoordinate2D(latitude: 42, longitude: 0.01),
         CLLocationCoordinate2D(latitude: 42.01, longitude: 0.01), CLLocationCoordinate2D(latitude: 42.01, longitude: 0),
         CLLocationCoordinate2D(latitude: 42, longitude: 0)
-    ]
+    ]]
 
     func testALoadIsRecordedAndCompletesIntoTheStore() {
         let fake = FakeTileRegionLoader()
-        let request = TileRegionRequest(id: "pilgrimage:camino-frances:0", ring: ring, corridorHash: "h", acceptExpired: true)
+        let request = TileRegionRequest(id: "pilgrimage:camino-frances:0", rings: rings, corridorHash: "h", acceptExpired: true)
         var result: Result<TileRegionSummary, TileRegionLoadingError>?
         _ = fake.loadRegion(request, progress: { _, _ in }) { result = $0 }
         XCTAssertEqual(fake.regionRequests, [request])
@@ -25,7 +25,7 @@ final class FakeTileRegionLoaderTests: XCTestCase {
 
     func testAFailureIsDeliveredOnceAndStoresNothing() {
         let fake = FakeTileRegionLoader()
-        let request = TileRegionRequest(id: "pilgrimage:camino-frances:0", ring: ring, corridorHash: "h", acceptExpired: true)
+        let request = TileRegionRequest(id: "pilgrimage:camino-frances:0", rings: rings, corridorHash: "h", acceptExpired: true)
         var result: Result<TileRegionSummary, TileRegionLoadingError>?
         _ = fake.loadRegion(request, progress: { _, _ in }) { result = $0 }
         fake.nextRegionFailure = .diskFull

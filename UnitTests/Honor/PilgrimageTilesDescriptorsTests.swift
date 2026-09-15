@@ -26,12 +26,12 @@ final class PilgrimageTilesDescriptorsTests: XCTestCase {
     }
 
     /// The design session's figure for the Nakahechi corridor at z10–15 was
-    /// 129 tiles from 504 points; this ring is the same shape of thing.
+    /// 129 tiles from 504 points; this corridor is the same shape of thing.
     func testTileCountGrowsFourfoldPerZoomOnALongCorridor() {
         let line = (0...300).map { i in CLLocationCoordinate2D(latitude: 33.8, longitude: 135.5 + Double(i) * 0.001) }
-        let ring = WayGeometry.corridor(around: line, halfWidthMeters: 500)
-        let z13 = PilgrimageTilesDescriptors.tileCount(ring: ring, zooms: 13...13)
-        let z15 = PilgrimageTilesDescriptors.tileCount(ring: ring, zooms: 15...15)
+        let rings = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        let z13 = PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 13...13)
+        let z15 = PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 15...15)
         XCTAssertGreaterThan(z13, 5)
         XCTAssertEqual(Double(z15) / Double(z13), 4, accuracy: 1.5)
     }

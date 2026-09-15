@@ -60,22 +60,27 @@ final class PilgrimageTilesManager: ObservableObject {
 
     // MARK: - Geometry and keys
 
-    static func ring(for way: Way) -> [CLLocationCoordinate2D] {
+    static func rings(for way: Way) -> [[CLLocationCoordinate2D]] {
         WayGeometry.corridor(around: way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) },
                              halfWidthMeters: halfWidthMeters)
     }
 
-    /// SHA-256 of the ring's coordinates at 1e-6°, so a resumed save can
+    /// SHA-256 of the corridor's coordinates at 1e-6°, so a resumed save can
     /// tell a redrawn stage from an unchanged one by comparing two strings.
     static func corridorHash(for way: Way) -> String {
-        corridorHash(ring(for: way))
+        corridorHash(rings(for: way))
     }
 
-    static func corridorHash(_ ring: [CLLocationCoordinate2D]) -> String {
+    /// Every part in the order `corridor` emits them: the order is part of
+    /// the hash, and `corridor` is deterministic, so the same line always
+    /// hashes the same and a reordering would read as a redrawn stage.
+    static func corridorHash(_ rings: [[CLLocationCoordinate2D]]) -> String {
         var data = Data()
-        for point in ring {
-            data.append(contentsOf: withUnsafeBytes(of: (point.latitude * 1_000_000).rounded()) { Array($0) })
-            data.append(contentsOf: withUnsafeBytes(of: (point.longitude * 1_000_000).rounded()) { Array($0) })
+        for ring in rings {
+            for point in ring {
+                data.append(contentsOf: withUnsafeBytes(of: (point.latitude * 1_000_000).rounded()) { Array($0) })
+                data.append(contentsOf: withUnsafeBytes(of: (point.longitude * 1_000_000).rounded()) { Array($0) })
+            }
         }
         return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
@@ -125,10 +130,10 @@ final class PilgrimageTilesManager: ObservableObject {
 
     func tileCount(for stages: [Way]) -> Int {
         stages.reduce(0) { total, way in
-            let ring = Self.ring(for: way)
+            let rings = Self.rings(for: way)
             return total
-                + PilgrimageTilesDescriptors.tileCount(ring: ring, zooms: 10...PilgrimageTilesDescriptors.streetsZoom.upperBound)
-                + PilgrimageTilesDescriptors.tileCount(ring: ring, zooms: 10...PilgrimageTilesDescriptors.terrainZoom.upperBound)
+                + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 10...PilgrimageTilesDescriptors.streetsZoom.upperBound)
+                + PilgrimageTilesDescriptors.tileCount(rings: rings, zooms: 10...PilgrimageTilesDescriptors.terrainZoom.upperBound)
         }
     }
 
@@ -191,9 +196,9 @@ final class PilgrimageTilesManager: ObservableObject {
             for way in stages.sorted(by: { ($0.stage?.index ?? 0) < ($1.stage?.index ?? 0) }) {
                 guard !isWalkActive() else { throw PilgrimageError.walkInProgress }
                 if !isSaved(way, region: byId[way.id]) {
-                    let ring = Self.ring(for: way)
-                    let request = TileRegionRequest(id: way.id, ring: ring,
-                                                    corridorHash: Self.corridorHash(ring), acceptExpired: true)
+                    let rings = Self.rings(for: way)
+                    let request = TileRegionRequest(id: way.id, rings: rings,
+                                                    corridorHash: Self.corridorHash(rings), acceptExpired: true)
                     try await loadRegion(request, generation: myGeneration)
                 }
                 done += 1

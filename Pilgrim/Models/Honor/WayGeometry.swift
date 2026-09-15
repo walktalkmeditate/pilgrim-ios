@@ -215,48 +215,52 @@ struct WayGeometry {
 
     // MARK: - Corridor
 
-    /// A closed ring around `points`, `halfWidthMeters` to each side: the
-    /// geometry a stage's tile region is loaded for. A corridor rather than
-    /// a bounding box because a 20 km diagonal is 400 km² boxed and 20 km²
-    /// this way. Offsets are taken along the perpendicular of each vertex's
-    /// adjoining segments; a single point becomes a square.
-    static func corridor(around points: [CLLocationCoordinate2D], halfWidthMeters: Double) -> [CLLocationCoordinate2D] {
+    /// The parts a stage's tile region is loaded for: one rectangle per
+    /// segment of the simplified line and one square per vertex, each
+    /// `halfWidthMeters` from the line. Convex parts cannot self-intersect,
+    /// so the geometry stays valid on a hairpin — the single offset ring
+    /// this replaced crossed itself hundreds of times on the real Francés
+    /// and left a tenth of Shikoku Awa's own points outside their corridor.
+    /// Mapbox unions the parts of a MultiPolygon when it tiles.
+    ///
+    /// Parts are emitted quad-then-square per vertex, in line order, because
+    /// `PilgrimageTilesManager.corridorHash` hashes them in that order: a
+    /// different order would read as a redrawn stage and reload every region.
+    static func corridor(around points: [CLLocationCoordinate2D], halfWidthMeters h: Double) -> [[CLLocationCoordinate2D]] {
         let line = simplified(points, toleranceMeters: 25)
         guard let first = line.first else { return [] }
         let latScale = 111_320.0
         let lonScale = 111_320.0 * cos(first.latitude * .pi / 180)
-        guard line.count > 1 else {
-            let dLat = halfWidthMeters / latScale, dLon = halfWidthMeters / lonScale
-            return [
-                CLLocationCoordinate2D(latitude: first.latitude - dLat, longitude: first.longitude - dLon),
-                CLLocationCoordinate2D(latitude: first.latitude - dLat, longitude: first.longitude + dLon),
-                CLLocationCoordinate2D(latitude: first.latitude + dLat, longitude: first.longitude + dLon),
-                CLLocationCoordinate2D(latitude: first.latitude + dLat, longitude: first.longitude - dLon),
-                CLLocationCoordinate2D(latitude: first.latitude - dLat, longitude: first.longitude - dLon)
-            ]
-        }
         // Work in local metres, then back to degrees at the end.
         let local = line.map { (x: ($0.longitude - first.longitude) * lonScale, y: ($0.latitude - first.latitude) * latScale) }
-        var left: [(x: Double, y: Double)] = []
-        var right: [(x: Double, y: Double)] = []
+        func geo(_ p: (x: Double, y: Double)) -> CLLocationCoordinate2D {
+            CLLocationCoordinate2D(latitude: first.latitude + p.y / latScale, longitude: first.longitude + p.x / lonScale)
+        }
+        func square(_ v: (x: Double, y: Double)) -> [CLLocationCoordinate2D] {
+            [geo((v.x - h, v.y - h)), geo((v.x + h, v.y - h)), geo((v.x + h, v.y + h)), geo((v.x - h, v.y + h)), geo((v.x - h, v.y - h))]
+        }
+        var parts: [[CLLocationCoordinate2D]] = []
         for i in 0..<local.count {
-            let prev = local[max(i - 1, 0)], next = local[min(i + 1, local.count - 1)]
-            var dx = next.x - prev.x, dy = next.y - prev.y
-            let len = (dx * dx + dy * dy).squareRoot()
-            if len > 0 { dx /= len; dy /= len } else { dx = 1; dy = 0 }
-            // Perpendicular to the direction of travel.
-            let nx = -dy * halfWidthMeters, ny = dx * halfWidthMeters
-            left.append((local[i].x + nx, local[i].y + ny))
-            right.append((local[i].x - nx, local[i].y - ny))
+            if i + 1 < local.count {
+                let a = local[i], b = local[i + 1]
+                var dx = b.x - a.x, dy = b.y - a.y
+                let len = (dx * dx + dy * dy).squareRoot()
+                // A zero-length segment has no perpendicular and so no
+                // rectangle; its endpoints' squares still cover it.
+                if len > 0 {
+                    dx /= len; dy /= len
+                    let nx = -dy * h, ny = dx * h
+                    parts.append([geo((a.x + nx, a.y + ny)), geo((b.x + nx, b.y + ny)),
+                                  geo((b.x - nx, b.y - ny)), geo((a.x - nx, a.y - ny)), geo((a.x + nx, a.y + ny))])
+                }
+            }
+            parts.append(square(local[i]))
         }
-        // No end caps: the ring closes on the endpoints' own perpendicular
-        // offsets, so the area is length × width and the tile that holds
-        // each endpoint is already inside. A cap would add a fixed square
-        // kilometre to every stage, which on a short one doubles it.
-        let ringLocal = left + right.reversed() + [left[0]]
-        return ringLocal.map {
-            CLLocationCoordinate2D(latitude: first.latitude + $0.y / latScale, longitude: first.longitude + $0.x / lonScale)
-        }
+        return parts
+    }
+
+    static func corridorContains(_ rings: [[CLLocationCoordinate2D]], _ point: CLLocationCoordinate2D) -> Bool {
+        rings.contains { ringContains($0, point) }
     }
 
     /// Douglas–Peucker on a local-metre projection. A 500 m corridor does

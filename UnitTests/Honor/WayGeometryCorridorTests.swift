@@ -12,72 +12,93 @@ final class WayGeometryCorridorTests: XCTestCase {
         }
     }
 
-    func testAStraightLineYieldsARectangleOfTheRightWidth() {
-        let line = straight(km: 3)
-        let ring = WayGeometry.corridor(around: line, halfWidthMeters: 500)
-        XCTAssertEqual(ring.first?.latitude, ring.last?.latitude)
-        XCTAssertEqual(ring.first?.longitude, ring.last?.longitude, "ring is closed")
-        let area = WayGeometry.ringAreaSquareMeters(ring)
-        XCTAssertEqual(area, 3_000 * 1_000, accuracy: 3_000 * 1_000 * 0.05)
-        let latitudes = ring.map(\.latitude)
-        let spanMeters = (latitudes.max()! - latitudes.min()!) * 111_320
-        XCTAssertEqual(spanMeters, 1_000, accuracy: 20)
+    private func offset(_ from: CLLocationCoordinate2D, northMeters: Double, eastMeters: Double) -> CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: from.latitude + northMeters / 111_320,
+                               longitude: from.longitude + eastMeters / (111_320 * cos(from.latitude * .pi / 180)))
     }
 
-    func testARightAngleBendKeepsItsOuterCorner() {
+    func testEveryPartIsAClosedConvexRing() {
+        let line = straight(km: 3)
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        XCTAssertEqual(parts.count, 3, "one quad for the simplified two-point line, one square per end")
+        for part in parts {
+            XCTAssertEqual(part.count, 5)
+            XCTAssertEqual(part.first?.latitude, part.last?.latitude)
+            XCTAssertEqual(part.first?.longitude, part.last?.longitude)
+        }
+    }
+
+    func testAStraightLineIsCoveredToHalfWidthAndNotBeyond() {
+        let line = straight(km: 3)
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        let mid = line[15]
+        XCTAssertTrue(WayGeometry.corridorContains(parts, mid))
+        XCTAssertTrue(WayGeometry.corridorContains(parts, offset(mid, northMeters: 480, eastMeters: 0)))
+        XCTAssertFalse(WayGeometry.corridorContains(parts, offset(mid, northMeters: 520, eastMeters: 0)))
+        // The end square reaches half a width past the endpoint; a full width does not.
+        XCTAssertTrue(WayGeometry.corridorContains(parts, offset(line.last!, northMeters: 0, eastMeters: 480)))
+        XCTAssertFalse(WayGeometry.corridorContains(parts, offset(line.last!, northMeters: 0, eastMeters: 1_020)))
+    }
+
+    func testARightAngleBendKeepsItsOuterCornerAndEveryPointOnTheLine() {
         let lat = 42.0
         let east = straight(km: 2, lat: lat)
-        let metersPerDegreeLat = 111_320.0
-        let north = (1...20).map { i in
-            CLLocationCoordinate2D(latitude: lat + Double(i) * 100 / metersPerDegreeLat, longitude: east.last!.longitude)
-        }
-        let ring = WayGeometry.corridor(around: east + north, halfWidthMeters: 500)
-        // 300 m outside the bend on the diagonal: inside a 500 m corridor.
-        let corner = CLLocationCoordinate2D(latitude: lat - 212 / metersPerDegreeLat,
-                                            longitude: east.last!.longitude + 212 / (metersPerDegreeLat * cos(lat * .pi / 180)))
-        XCTAssertTrue(WayGeometry.ringContains(ring, corner))
-        // 700 m outside: not.
-        let far = CLLocationCoordinate2D(latitude: lat - 495 / metersPerDegreeLat,
-                                         longitude: east.last!.longitude + 495 / (metersPerDegreeLat * cos(lat * .pi / 180)))
-        XCTAssertFalse(WayGeometry.ringContains(ring, far))
-    }
-
-    func testSimplificationDropsWigglesUnderTolerance() {
-        var line = straight(km: 1)
-        // A 10 m wiggle on every other point.
-        for i in stride(from: 1, to: line.count, by: 2) {
-            line[i] = CLLocationCoordinate2D(latitude: line[i].latitude + 10 / 111_320, longitude: line[i].longitude)
-        }
-        let simplified = WayGeometry.simplified(line, toleranceMeters: 25)
-        XCTAssertEqual(simplified.count, 2, "a straight-enough line is its two ends")
-    }
-
-    /// The checked-in `stage-00.json` is a short synthetic stage (about
-    /// 1 km, eleven points), not the real Francés day — what matters is
-    /// that a decoded Way's route goes through the same path a real one
-    /// will. Area within 20 % of length × 1 km, every route point inside.
-    func testTheFrancesStageZeroCorridorIsTightAndCoversItsLine() throws {
-        let data = try PilgrimageFixtures.data("stage-00.json")
-        let way = try PilgrimageWayImporter.way(from: data, routeId: "camino-frances", stageIndex: 0)
-        let line = way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
-        let ring = WayGeometry.corridor(around: line, halfWidthMeters: 500)
-        let geometry = WayGeometry(route: way.route)
-        let area = WayGeometry.ringAreaSquareMeters(ring)
-        XCTAssertEqual(area, geometry.totalMeters * 1_000, accuracy: geometry.totalMeters * 1_000 * 0.2)
-        // The first and last points lie exactly on the ring's closing edges
-        // — a boundary ray casting cannot decide either way — so only the
-        // interior points are asserted inside. The endpoint's tile still
-        // loads: the two ring vertices offset from it sit inside that tile.
-        for point in line.dropFirst().dropLast() where !WayGeometry.ringContains(ring, point) {
+        let north = (1...20).map { i in offset(east.last!, northMeters: Double(i) * 100, eastMeters: 0) }
+        let line = east + north
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        // 300 m outside the bend on the diagonal: inside the vertex square.
+        XCTAssertTrue(WayGeometry.corridorContains(parts, offset(east.last!, northMeters: -212, eastMeters: 212)))
+        // The vertex square is axis-aligned, so it reaches a half width on
+        // each axis — 707 m on the diagonal — and is deliberately generous
+        // at a bend. 520 m on each axis clears it and both rectangles.
+        XCTAssertFalse(WayGeometry.corridorContains(parts, offset(east.last!, northMeters: -520, eastMeters: 520)))
+        for point in line where !WayGeometry.corridorContains(parts, point) {
             XCTFail("route point \(point) outside its own corridor")
             break
         }
     }
 
-    func testTwoPointsAndOnePointStillProduceARing() {
-        let two = WayGeometry.corridor(around: Array(straight(km: 0.1).prefix(2)), halfWidthMeters: 500)
-        XCTAssertGreaterThanOrEqual(two.count, 5)
-        let one = WayGeometry.corridor(around: [CLLocationCoordinate2D(latitude: 42, longitude: 0)], halfWidthMeters: 500)
-        XCTAssertGreaterThanOrEqual(one.count, 5, "a point becomes a square")
+    /// The failure the single ring had: a hairpin whose inner offsets crossed.
+    func testAHairpinCoversItsOwnPointsWithNoSelfIntersectingPart() {
+        let lat = 42.0
+        let out = straight(km: 1, lat: lat)
+        let back = (1...10).map { i in offset(out.last!, northMeters: 60, eastMeters: -Double(i) * 100) }
+        let line = out + back
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        for point in line where !WayGeometry.corridorContains(parts, point) {
+            XCTFail("hairpin point \(point) outside its own corridor")
+            break
+        }
+        for part in parts {
+            XCTAssertEqual(part.count, 5, "quads and squares only — nothing that could self-intersect")
+        }
+    }
+
+    func testSimplificationDropsWigglesUnderTolerance() {
+        var line = straight(km: 1)
+        for i in stride(from: 1, to: line.count, by: 2) {
+            line[i] = offset(line[i], northMeters: 10, eastMeters: 0)
+        }
+        XCTAssertEqual(WayGeometry.simplified(line, toleranceMeters: 25).count, 2)
+    }
+
+    /// The checked-in `stage-00.json` is a short synthetic stage, not the
+    /// real Francés day; what matters is that a decoded Way's route goes
+    /// through the same path a real one will.
+    func testADecodedStageCorridorCoversItsWholeLineIncludingTheEnds() throws {
+        let data = try PilgrimageFixtures.data("stage-00.json")
+        let way = try PilgrimageWayImporter.way(from: data, routeId: "camino-frances", stageIndex: 0)
+        let line = way.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+        let parts = WayGeometry.corridor(around: line, halfWidthMeters: 500)
+        for point in line where !WayGeometry.corridorContains(parts, point) {
+            XCTFail("route point \(point) outside its own corridor")
+            break
+        }
+    }
+
+    func testOnePointBecomesOneSquare() {
+        let parts = WayGeometry.corridor(around: [CLLocationCoordinate2D(latitude: 42, longitude: 0)], halfWidthMeters: 500)
+        XCTAssertEqual(parts.count, 1)
+        XCTAssertEqual(parts[0].count, 5)
     }
 }

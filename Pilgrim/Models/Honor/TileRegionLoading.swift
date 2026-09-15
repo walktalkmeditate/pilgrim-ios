@@ -6,9 +6,10 @@ import Foundation
 /// `TileRegionLoadOptions`, and the fake just records it.
 struct TileRegionRequest: Equatable {
     let id: String
-    /// Closed ring, first coordinate repeated last. WGS84.
-    let ring: [CLLocationCoordinate2D]
-    /// Stable hash of `ring` so a resumed save can tell a redrawn stage
+    /// Closed rings, one per convex part of the corridor, each with its
+    /// first coordinate repeated last. WGS84.
+    let rings: [[CLLocationCoordinate2D]]
+    /// Stable hash of `rings` so a resumed save can tell a redrawn stage
     /// from an unchanged one without re-deriving the geometry.
     let corridorHash: String
     let acceptExpired: Bool

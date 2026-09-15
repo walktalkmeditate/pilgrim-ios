@@ -19,19 +19,24 @@ enum PilgrimageTilesDescriptors {
     /// device keeps the style pack from carrying every glyph range.
     static let rasterizesIdeographsLocally = true
 
-    /// Distinct XYZ tiles whose centre or any corner lies inside the ring,
-    /// summed over `zooms`. Below z10 a corridor touches a handful of tiles,
-    /// a rounding error the estimate leaves out.
-    static func tileCount(ring: [CLLocationCoordinate2D], zooms: ClosedRange<Int>) -> Int {
-        guard ring.count > 3 else { return 0 }
-        let lats = ring.map(\.latitude), lons = ring.map(\.longitude)
+    /// Distinct XYZ tiles whose centre or any corner lies inside any part of
+    /// the corridor, summed over `zooms`. Mapbox unions the parts, so a tile
+    /// a quad and its vertex square both cover is downloaded once and counted
+    /// once. Below z10 a corridor touches a handful of tiles, a rounding
+    /// error the estimate leaves out.
+    static func tileCount(rings: [[CLLocationCoordinate2D]], zooms: ClosedRange<Int>) -> Int {
+        let coordinates = rings.filter { $0.count > 3 }.flatMap { $0 }
+        guard !coordinates.isEmpty else { return 0 }
+        let lats = coordinates.map(\.latitude), lons = coordinates.map(\.longitude)
         var total = 0
         for z in zooms {
             let n = Double(1 << z)
             let (xMin, yMax) = tile(lat: lats.min()!, lon: lons.min()!, n: n)
             let (xMax, yMin) = tile(lat: lats.max()!, lon: lons.max()!, n: n)
+            // The sweep visits each (z, x, y) once and stops at the first
+            // part that touches it, so overlapping parts cannot double-count.
             for x in xMin...xMax {
-                for y in yMin...yMax where tileTouches(ring, x: x, y: y, n: n) {
+                for y in yMin...yMax where rings.contains(where: { tileTouches($0, x: x, y: y, n: n) }) {
                     total += 1
                 }
             }
