@@ -15,6 +15,7 @@
 		0379F19A766F1A45B011537D /* VoiceGuideSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90791FB10E8E34FB9BBAB3DD /* VoiceGuideSchedulerTests.swift */; };
 		03A4AA6D8DD2B3AA6E9AF157 /* PromptGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD13E8087B26CC89725C3041 /* PromptGeneratorTests.swift */; };
 		0497A85158418E09A4753B5B /* SeekGlance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBA20381F115380FCCA8D9 /* SeekGlance.swift */; };
+		077F610E6692A2C19B7DDD73 /* MapboxTileRegionLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69693406F86788236C30F7FA /* MapboxTileRegionLoaderTests.swift */; };
 		07875A090C554A7DA8798FFC /* AstronomicalEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50439593CB6445CBB05B4ED3 /* AstronomicalEventsTests.swift */; };
 		08508B6253B3427ABA939DED /* ActivityTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CBD6B08E4C437DA90FDDB0 /* ActivityTimelineBar.swift */; };
 		085A5DD2915A505529A94BA3 /* WayPhotoViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD4E7D8A0E356F0605D09A1D /* WayPhotoViewer.swift */; };
@@ -1056,6 +1057,7 @@
 		65CE1DB41D3DBD404C28973B /* VoiceGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973C /* MeditationGuideManagement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagement.swift; sourceTree = "<group>"; };
 		65CE1DB41D3DBD404C28973D /* MeditationGuideManagementTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeditationGuideManagementTests.swift; sourceTree = "<group>"; };
+		69693406F86788236C30F7FA /* MapboxTileRegionLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MapboxTileRegionLoaderTests.swift; sourceTree = "<group>"; };
 		6AA7F1293F3B3A254BBF2A4C /* WayMomentHeader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WayMomentHeader.swift; sourceTree = "<group>"; };
 		6BF7056E6064D6423F5E736E /* InteractiveShareSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InteractiveShareSection.swift; sourceTree = "<group>"; };
 		6C077B3FA336178A9F4CBC6F /* whisper-play-4.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-play-4.aac"; sourceTree = "<group>"; };
@@ -2830,6 +2832,7 @@
 				32A87BA7525C8DD26202489A /* PilgrimageTilesDescriptorsTests.swift */,
 				DE043FF931CEC5F6E0583AC2 /* PilgrimageTilesManagerTests.swift */,
 				DDC5F764303FBB1B169367D2 /* PilgrimageTilesManagerTests+Lifecycle.swift */,
+				69693406F86788236C30F7FA /* MapboxTileRegionLoaderTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3841,6 +3844,7 @@
 				0AA51FDC9D1E0B75ED9C8269 /* PilgrimageTilesDescriptorsTests.swift in Sources */,
 				4DDE4755C32DB0D2A34503F9 /* PilgrimageTilesManagerTests.swift in Sources */,
 				5C6AE6F64FFD45CF29316CFC /* PilgrimageTilesManagerTests+Lifecycle.swift in Sources */,
+				077F610E6692A2C19B7DDD73 /* MapboxTileRegionLoaderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

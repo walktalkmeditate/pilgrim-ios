@@ -41,6 +41,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         }
         mark("entered didFinishLaunching")
 
+        // 2026-09-14, Honor slice three: .readOnly is what a saved tile
+        // region needs — the store is checked first and a covering pack is
+        // used. The whole TileStoreUsageMode enum is marked deprecated in
+        // the 11.23.1 CoreMaps headers with no replacement named; re-read
+        // decision 7 of the slice-three spec before any bump past 11.x.
         MapboxMapsOptions.tileStoreUsageMode = .readOnly
         mark("after Mapbox init")
 
