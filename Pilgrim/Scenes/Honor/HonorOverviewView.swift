@@ -169,7 +169,9 @@ struct HonorOverviewView: View {
         }
         .sheet(isPresented: $showMorningCard) {
             if let stage = way.stage {
-                StageMorningCard(stage: stage, weather: todayWeather, buttonTitle: "walk") {
+                StageMorningCard(stage: stage, weather: todayWeather,
+                                 mapsLine: StageMorningCardModel.mapsLine(saved: PilgrimageTilesManager.shared.isStageSaved(way)),
+                                 buttonTitle: "walk") {
                     showMorningCard = false
                     onBegin()
                 }

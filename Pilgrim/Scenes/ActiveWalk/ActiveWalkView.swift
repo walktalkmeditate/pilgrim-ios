@@ -303,7 +303,9 @@ struct ActiveWalkView: View {
         }
         .sheet(isPresented: $showStageDay) {
             if let stage = viewModel.way?.stage {
-                StageMorningCard(stage: stage, weather: viewModel.weatherSnapshot, buttonTitle: "close") {
+                StageMorningCard(stage: stage, weather: viewModel.weatherSnapshot,
+                                 mapsLine: viewModel.way.map { StageMorningCardModel.mapsLine(saved: PilgrimageTilesManager.shared.isStageSaved($0)) },
+                                 buttonTitle: "close") {
                     showStageDay = false
                 }
                 .presentationDetents([.large])

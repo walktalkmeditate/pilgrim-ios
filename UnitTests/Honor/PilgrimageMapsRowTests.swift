@@ -24,4 +24,9 @@ final class PilgrimageMapsRowTests: XCTestCase {
         XCTAssertEqual(PilgrimageMapsRowModel.savingLine(done: 14, total: 35), "maps · stage 12 of 33")
         XCTAssertEqual(PilgrimageMapsRowModel.savingLine(done: 0, total: 35), "maps · stage 0 of 33")
     }
+
+    func testTheMorningCardSaysWhetherTodayIsSaved() {
+        XCTAssertEqual(StageMorningCardModel.mapsLine(saved: true), "maps saved for today")
+        XCTAssertEqual(StageMorningCardModel.mapsLine(saved: false), "no offline maps for today — save on wifi")
+    }
 }
