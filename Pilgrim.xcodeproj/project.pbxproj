@@ -229,6 +229,7 @@
 		45FC4B3F013CF3603F423878 /* PilgrimMapView+HonorWay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 657285380BA538D2061BACCA /* PilgrimMapView+HonorWay.swift */; };
 		467D2EC4F49BBE9A09994568 /* whisper-wonder-4.aac in Resources */ = {isa = PBXBuildFile; fileRef = 2E025444B46DA3683D802DAB /* whisper-wonder-4.aac */; };
 		468F3FE3EE06A11CE097F405 /* PilgrimMapView+SeekFog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AD7C7A50CC75536619799F2 /* PilgrimMapView+SeekFog.swift */; };
+		47413CBD504FB08B9D4346C2 /* TileRegionLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35A741BE039CF44697386BB1 /* TileRegionLoading.swift */; };
 		47B51B337DB4D7CEA15ADB11 /* HonorMomentTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D3A7A1F2616273BF1D7DF9 /* HonorMomentTrackerTests.swift */; };
 		487022E2F9AD1AE6D374FF39 /* Pods_UnitTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C56A574B3F5BFCBF50DB5368 /* Pods_UnitTests.framework */; };
 		48CE4EDDAB9C4702A5BAAB87 /* SolarHorizonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* SolarHorizonTests.swift */; };
@@ -286,6 +287,7 @@
 		61354C1F38254A46A4FA6F12 /* TranscriptNLPTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FD4596572E04627AE9EBA83 /* TranscriptNLPTests.swift */; };
 		6518B11255647EACE0249B10 /* whisper-compassion-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = A8159CD04A05F3887CFD27E5 /* whisper-compassion-3.aac */; };
 		65C728BC01058D8D9A777D2E /* SeekEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D927024992021199976C22 /* SeekEngine.swift */; };
+		66EBEB493A94322D4CE25300 /* FakeTileRegionLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42DCD7A79F8262BCA11BE073 /* FakeTileRegionLoader.swift */; };
 		6974E7EAF5A14C6CAA88085C /* LunationCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CAC84DBE9A24323906E2A32 /* LunationCalendar.swift */; };
 		69C78B00BAD71C64783279F7 /* HonorOverviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE1BFEB94806A03D2E5BBF1 /* HonorOverviewModelTests.swift */; };
 		69DA4490041B15E3D1973DD4 /* HonorPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F27E3942F3A3506303C87B7 /* HonorPersistence.swift */; };
@@ -361,6 +363,7 @@
 		A1B2C3D4E5F6A7B8C9D0E1F5 /* PermissionStatusViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F4 /* PermissionStatusViewModelTests.swift */; };
 		A1D1F4AE4E4A57C4BE47933A /* whisper-gratitude-1.aac in Resources */ = {isa = PBXBuildFile; fileRef = E57C921D7D601C294F25037B /* whisper-gratitude-1.aac */; };
 		A202835F81B1FBAC6C4DF948 /* whisper-courage-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 4C7167E03AD5DC1D36990357 /* whisper-courage-3.aac */; };
+		A218058E008DE4CA3A1C79E2 /* FakeTileRegionLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63411BA85CC22B5852A05E15 /* FakeTileRegionLoaderTests.swift */; };
 		A335D1077B91B27F6F396088 /* whisper-wonder-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = 92CA99A75060F9E4C6F93A1F /* whisper-wonder-3.aac */; };
 		A34C52220B725CFB6FFCB9BD /* SeekChainGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FFEFA24B7A952A033F823BF /* SeekChainGenerator.swift */; };
 		A3FD6419946824ADC00B14D1 /* whisper-stillness-3.aac in Resources */ = {isa = PBXBuildFile; fileRef = F5DBDBA14D74B3061F349DA5 /* whisper-stillness-3.aac */; };
@@ -958,6 +961,7 @@
 		30F1855EFA5E8651248785BF /* whisper-courage-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-courage-1.aac"; sourceTree = "<group>"; };
 		31A66535C9A2D8EE7F70F5B4 /* HonorImportReducerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorImportReducerTests.swift; sourceTree = "<group>"; };
 		3542AA50A2E8FA62E52758C7 /* WhisperPlacementSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperPlacementSheet.swift; sourceTree = "<group>"; };
+		35A741BE039CF44697386BB1 /* TileRegionLoading.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TileRegionLoading.swift; sourceTree = "<group>"; };
 		378126B70503E7FF35DA0C6B /* whisper-presence-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-presence-1.aac"; sourceTree = "<group>"; };
 		390BFBA7B83028EA625B0CF9 /* AudioManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManifestService.swift; sourceTree = "<group>"; };
 		3979B0C401A69966EB931831 /* OwnWalkWayBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OwnWalkWayBuilderTests.swift; sourceTree = "<group>"; };
@@ -975,6 +979,7 @@
 		4181215714A52E71449BC390 /* WalkDataFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WalkDataFactory.swift; sourceTree = "<group>"; };
 		418597007FA33513845EEE65 /* ActiveWalkSeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActiveWalkSeekTests.swift; sourceTree = "<group>"; };
 		41D1577001FA4F5C5BEE2D27 /* SeekSetupFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeekSetupFlowTests.swift; sourceTree = "<group>"; };
+		42DCD7A79F8262BCA11BE073 /* FakeTileRegionLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FakeTileRegionLoader.swift; sourceTree = "<group>"; };
 		44661BA899955FDD26DFF034 /* whisper-compassion-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-compassion-1.aac"; sourceTree = "<group>"; };
 		44C8743FE13846D2827B0B84 /* DossierSensesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DossierSensesTests.swift; sourceTree = "<group>"; };
 		47BB0C825C8EFC112CA91645 /* HonorMomentTracker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HonorMomentTracker.swift; sourceTree = "<group>"; };
@@ -1035,6 +1040,7 @@
 		61E0E0469BBA6DBACF1408FA /* PilgrimPackageImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageImporter.swift; sourceTree = "<group>"; };
 		62963F6ED9C823C21B05E003 /* whisper-lightness-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-lightness-1.aac"; sourceTree = "<group>"; };
 		62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserPreferencesArchivedTests.swift; sourceTree = "<group>"; };
+		63411BA85CC22B5852A05E15 /* FakeTileRegionLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FakeTileRegionLoaderTests.swift; sourceTree = "<group>"; };
 		63D25426D1C7A8D3170DA0C5 /* StubURLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StubURLProtocol.swift; sourceTree = "<group>"; };
 		657285380BA538D2061BACCA /* PilgrimMapView+HonorWay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+HonorWay.swift"; sourceTree = "<group>"; };
 		65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrphanRecordingSweep.swift; sourceTree = "<group>"; };
@@ -2670,6 +2676,7 @@
 				3CF008A9F47153297E8066FB /* PilgrimageLedger.swift */,
 				3E348852AF9D1CE8CFF4DC9F /* PilgrimagePackageManager.swift */,
 				795FD27830F9ABDE701FF695 /* WayMarkPins.swift */,
+				35A741BE039CF44697386BB1 /* TileRegionLoading.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2800,6 +2807,8 @@
 				0E2A9429CB66F17FFADF62F6 /* PilgrimagePackageManagerTests+Lifecycle.swift */,
 				4B63681470BB539B1ABE9F26 /* PilgrimagePackageManagerTests+Fixtures.swift */,
 				A09B2D11E4B93E710997E5F2 /* PilgrimageStageWalkTests+Recovery.swift */,
+				42DCD7A79F8262BCA11BE073 /* FakeTileRegionLoader.swift */,
+				63411BA85CC22B5852A05E15 /* FakeTileRegionLoaderTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3616,6 +3625,7 @@
 				B12CAF606F9CBFC5F4CDF7FB /* ActiveWalkViewModel+MarkPins.swift in Sources */,
 				24452083C36DE26C83FBEB50 /* StageMorningCard.swift in Sources */,
 				7AFF502841893F0B79AA6DC1 /* ActiveWalkViewModel+Replies.swift in Sources */,
+				47413CBD504FB08B9D4346C2 /* TileRegionLoading.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3801,6 +3811,8 @@
 				FFC88FB2D138D620033DDF88 /* PilgrimagePackageManagerTests+Lifecycle.swift in Sources */,
 				4EDAC8A10F665B5FC16B1C99 /* PilgrimagePackageManagerTests+Fixtures.swift in Sources */,
 				0D3750101913EFC65959146D /* PilgrimageStageWalkTests+Recovery.swift in Sources */,
+				66EBEB493A94322D4CE25300 /* FakeTileRegionLoader.swift in Sources */,
+				A218058E008DE4CA3A1C79E2 /* FakeTileRegionLoaderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
