@@ -48,6 +48,12 @@ final class MapboxTileRegionLoaderTests: XCTestCase {
         XCTAssertEqual(options[2].tilesets, ["mapbox://mapbox.mapbox-terrain-dem-v1"])
     }
 
+    /// The descriptors test pins `rasterizesIdeographsLocally`; this pins
+    /// that the loader reads it rather than restating the SDK's default.
+    func testTheGlyphsModeComesFromThePinnedConstant() {
+        XCTAssertEqual(MapboxTileRegionLoader.glyphsRasterizationMode, .ideographsRasterizedLocally)
+    }
+
     /// The SDK names a full disk and its 750-pack ceiling as their own
     /// cases, which the shared URLError/Cocoa check cannot see. Pure
     /// function — no loader.

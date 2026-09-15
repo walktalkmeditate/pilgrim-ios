@@ -77,13 +77,20 @@ final class MapboxTileRegionLoader: TileRegionLoading {
         pack == .light ? .light : .dark
     }
 
+    /// Derived from the pinned constant rather than written here: the
+    /// SDK's default happens to agree today, and a default is exactly the
+    /// kind of thing that gets "fixed".
+    static var glyphsRasterizationMode: GlyphsRasterizationMode {
+        PilgrimageTilesDescriptors.rasterizesIdeographsLocally ? .ideographsRasterizedLocally : .noGlyphsRasterizedLocally
+    }
+
     // MARK: - TileRegionLoading
 
     func hasStylePack(_ pack: StylePackRequest) -> Bool { cachedPacks.contains(pack) }
 
     func loadStylePack(_ pack: StylePackRequest,
                        completion: @escaping (Result<Void, TileRegionLoadingError>) -> Void) -> TileLoadHandle {
-        guard let options = StylePackLoadOptions(glyphsRasterizationMode: .ideographsRasterizedLocally) else {
+        guard let options = StylePackLoadOptions(glyphsRasterizationMode: Self.glyphsRasterizationMode) else {
             completion(.failure(.failed))
             return Handle(AnyCancelable {})
         }
