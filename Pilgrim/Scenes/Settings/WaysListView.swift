@@ -1,11 +1,40 @@
 import SwiftUI
 
+/// The list's rules, kept pure so the Data card's row can count exactly
+/// what the list shows.
+enum WaysListModel {
+
+    /// A stage's Way is one file of an installed package: taking it here would
+    /// leave `route.json` and `release.txt` behind, and the route screen would
+    /// still say the route is on your phone with no stages under it. The route
+    /// screen removes a package whole, so this list never offers one — and
+    /// "Delete all Ways", which walks this same array, cannot reach one either.
+    static func listable(_ ways: [Way]) -> [Way] {
+        ways.filter { !$0.source.isPackageOwned }
+    }
+
+    /// The Data card's row, over the Ways the list shows: counted over the
+    /// whole store it said "5 ways" above a list of one.
+    static func rowDetail(count: Int, bytes: Int) -> String {
+        "\(count) \(count == 1 ? "way" : "ways") · \(String(format: "%.1f MB", Double(bytes) / 1_000_000))"
+    }
+
+    /// One line under the list when package stages are on the phone, so a
+    /// walker who downloaded a route does not go looking for it here. Nil
+    /// with no stages, and with no installed route to name them by.
+    static func packageFooter(routeName: String?, stageCount: Int) -> String? {
+        guard let routeName, stageCount > 0 else { return nil }
+        return "the \(routeName) keeps its \(stageCount) \(stageCount == 1 ? "stage" : "stages") on its route page"
+    }
+}
+
 struct WaysListView: View {
     @State private var ways: [Way] = []
     /// Computed alongside `ways` in `reload()`, not read live from `WayStore`
     /// in the row: `body` re-runs on every list mutation, and `diskUsage`/
     /// `hasMedia` are filesystem stats per call.
     @State private var details: [String: String] = [:]
+    @State private var packageFooter: String?
     @State private var confirmDeleteAll = false
 
     var body: some View {
@@ -30,6 +59,9 @@ struct WaysListView: View {
                 Button("Delete all Ways", role: .destructive) { confirmDeleteAll = true }
                     .font(Constants.Typography.button)
             }
+            if let packageFooter {
+                Text(packageFooter).font(Constants.Typography.caption).foregroundColor(.fog)
+            }
         }
         .navigationTitle("Ways")
         .onAppear(perform: reload)
@@ -52,18 +84,13 @@ struct WaysListView: View {
         WayStore.shared.delete(id: id)
     }
 
-    /// A stage's Way is one file of an installed package: taking it here would
-    /// leave `route.json` and `release.txt` behind, and the route screen would
-    /// still say the route is on your phone with no stages under it. The route
-    /// screen removes a package whole, so this list never offers one — and
-    /// "Delete all Ways", which walks this same array, cannot reach one either.
-    static func listable(_ ways: [Way]) -> [Way] {
-        ways.filter { if case .pilgrimage = $0.source { return false } else { return true } }
-    }
-
     private func reload() {
         for id in WayStore.shared.sweepExpired(now: Date()) { WayMediaDownloader.shared.cancel(wayId: id) }
-        ways = Self.listable(WayStore.shared.list())
+        let all = WayStore.shared.list()
+        ways = WaysListModel.listable(all)
+        // The stages the list just hid, named by the route that owns them.
+        packageFooter = WaysListModel.packageFooter(routeName: PilgrimagePackageManager.shared.installed()?.route.name,
+                                                    stageCount: all.count - ways.count)
         details = Dictionary(uniqueKeysWithValues: ways.map { ($0.id, detail(for: $0)) })
     }
 

@@ -123,7 +123,7 @@ final class WayStoreTests: XCTestCase {
         store.delete(id: "share:aaaaaaaaaa")
         XCTAssertNil(store.load(id: "share:aaaaaaaaaa"))
         XCTAssertNil(store.wayId(forWalk: walk))
-        XCTAssertEqual(store.totalDiskUsage(), 0)
+        XCTAssertEqual(store.diskUsage(of: store.list()), 0)
     }
 
     func testListReturnsNewestAcceptedFirst() throws {

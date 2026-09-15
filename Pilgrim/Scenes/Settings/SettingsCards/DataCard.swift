@@ -47,9 +47,11 @@ struct DataCard: View {
         }
         .settingsCard()
         .onAppear {
-            let count = WayStore.shared.list().count
-            let mb = Double(WayStore.shared.totalDiskUsage()) / 1_000_000
-            waysDetail = "\(count) ways · \(String(format: "%.1f MB", mb))"
+            // Counted the way the list counts: package stages are managed on
+            // their route page, and a row that counted them said "5 ways"
+            // above a list of one.
+            let listed = WaysListModel.listable(WayStore.shared.list())
+            waysDetail = WaysListModel.rowDetail(count: listed.count, bytes: WayStore.shared.diskUsage(of: listed))
             reloadMapsDetail()
             #if DEBUG
             simulateOffline = !OfflineSwitch.shared.isMapboxStackConnected

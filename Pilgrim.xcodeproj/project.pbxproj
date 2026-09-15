@@ -574,6 +574,7 @@
 		D62B90461A22862A8FDA006C /* VoiceGuideDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2543BE1F771480BD145035 /* VoiceGuideDownloadManager.swift */; };
 		D69446C38B3D4915B5EE6940 /* TourPhotoExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A6C2F48C9A4A83B2DF7DD4 /* TourPhotoExporterTests.swift */; };
 		D73AA76C19382E58B58E4025 /* OfflineMapsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFEC98960B66C514DB754552 /* OfflineMapsViewModelTests.swift */; };
+		4DA8125B1BFD42B7AF21493F /* WaysListModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1715910123A401785E693AC /* WaysListModelTests.swift */; };
 		D7E8F9A0B1C2D3E4F5A6B7C8 /* SealGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D9 /* SealGeometry.swift */; };
 		D9B0FCF6475717C81CEAC35D /* AudioPriorityQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7778DEF038B34761DEEA84 /* AudioPriorityQueue.swift */; };
 		DA6DDA89F11F4728B6B553A1 /* WhisperManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305468F7FF377BC0DFF74897 /* WhisperManifest.swift */; };
@@ -1378,6 +1379,7 @@
 		EE9D015FE4FF4FF3905F9ADF /* ConstellationOverlay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConstellationOverlay.swift; sourceTree = "<group>"; };
 		EFD52EBCDBB52EAE65C974A0 /* PilgrimPackageConverterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilgrimPackageConverterTests.swift; sourceTree = "<group>"; };
 		EFEC98960B66C514DB754552 /* OfflineMapsViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OfflineMapsViewModelTests.swift; sourceTree = "<group>"; };
+		B1715910123A401785E693AC /* WaysListModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WaysListModelTests.swift; sourceTree = "<group>"; };
 		F0F0F00200000001AABBCC01 /* CormorantGaramond-Light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Light.otf"; sourceTree = "<group>"; };
 		F0F0F00200000002AABBCC02 /* CormorantGaramond-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Regular.otf"; sourceTree = "<group>"; };
 		F0F0F00200000003AABBCC03 /* CormorantGaramond-SemiBold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-SemiBold.otf"; sourceTree = "<group>"; };
@@ -2845,6 +2847,7 @@
 				69693406F86788236C30F7FA /* MapboxTileRegionLoaderTests.swift */,
 				92B6FA98E0D6F55AEC01621F /* PilgrimageMapsRowTests.swift */,
 				EFEC98960B66C514DB754552 /* OfflineMapsViewModelTests.swift */,
+				B1715910123A401785E693AC /* WaysListModelTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3861,6 +3864,7 @@
 				077F610E6692A2C19B7DDD73 /* MapboxTileRegionLoaderTests.swift in Sources */,
 				2B75FA9032074853BA3F07D0 /* PilgrimageMapsRowTests.swift in Sources */,
 				D73AA76C19382E58B58E4025 /* OfflineMapsViewModelTests.swift in Sources */,
+				4DA8125B1BFD42B7AF21493F /* WaysListModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

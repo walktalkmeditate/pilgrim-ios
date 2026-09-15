@@ -157,8 +157,8 @@ final class WayStore {
         return fileManager.sizeOfDirectory(at: directory(for: id)) ?? 0
     }
 
-    func totalDiskUsage() -> Int {
-        list().reduce(0) { $0 + diskUsage(id: $1.id) }
+    func diskUsage(of ways: [Way]) -> Int {
+        ways.reduce(0) { $0 + diskUsage(id: $1.id) }
     }
 
     // MARK: - Replies and the walk index
