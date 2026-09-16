@@ -12,9 +12,6 @@ struct PilgrimMapView: UIViewRepresentable {
     /// that draws from the camera can start from the truth rather than from a
     /// literal of its own.
     static let followPuckZoom: CGFloat = 16
-    /// Mapbox's own default ornament inset, kept so a map with no sheet over
-    /// it looks exactly as the SDK intends.
-    private static let mapboxOrnamentMargin: CGFloat = 8
 
     var isInteractive: Bool = true
     var showsUserLocation: Bool = true
@@ -153,7 +150,6 @@ struct PilgrimMapView: UIViewRepresentable {
         mapView.ornaments.options.scaleBar.visibility = .hidden
         mapView.ornaments.options.compass.visibility = .hidden
         mapView.ornaments.options.attributionButton.position = .bottomLeading
-        Self.applyOrnamentMargins(bottomInset, to: mapView, coordinator: context.coordinator)
 
         configurePuck(on: mapView)
 
@@ -222,8 +218,6 @@ struct PilgrimMapView: UIViewRepresentable {
 
         mapView.gestures.options.panEnabled = isInteractive
         mapView.gestures.options.pinchEnabled = isInteractive
-
-        Self.applyOrnamentMargins(bottomInset, to: mapView, coordinator: context.coordinator)
 
         if colorScheme != context.coordinator.currentColorScheme {
             context.coordinator.currentColorScheme = colorScheme
@@ -324,18 +318,6 @@ struct PilgrimMapView: UIViewRepresentable {
     // MARK: - Annotations
     //
     // Route-line rendering lives in PilgrimMapView+RouteSource.swift.
-
-    /// Mapbox's terms require the logo and the attribution button to stay on
-    /// the map, and their `visibility` is a restricted API we have no licence
-    /// to call. So on screens that lay a sheet over the map we lift the
-    /// ornaments to sit above it rather than let the sheet bury them.
-    private static func applyOrnamentMargins(_ inset: CGFloat, to mapView: MBMapView, coordinator: Coordinator) {
-        guard abs(coordinator.lastOrnamentInset - inset) > 0.5 else { return }
-        coordinator.lastOrnamentInset = inset
-        let margins = CGPoint(x: mapboxOrnamentMargin, y: mapboxOrnamentMargin + inset)
-        mapView.ornaments.options.logo.margins = margins
-        mapView.ornaments.options.attributionButton.margins = margins
-    }
 
     private static func applyAnnotations(_ pinAnnotations: [PilgrimAnnotation], activePhotoID: String?, on mapView: MBMapView, coordinator: Coordinator) {
         // Same reason as the honor gate: the wabi-sabi pass flips
@@ -633,9 +615,6 @@ struct PilgrimMapView: UIViewRepresentable {
         var pointManager: PointAnnotationManager?
         var isFollowing = false
         var lastBottomInset: CGFloat = 0
-        /// Starts negative so the first apply always runs, including for the
-        /// screens whose inset is a legitimate zero.
-        var lastOrnamentInset: CGFloat = -1
         /// Diffs incoming route segments into bounded partial source
         /// updates (AF9/AF46). Reset whenever the source is torn down
         /// (style reload, color change) so the next apply rebuilds fully.

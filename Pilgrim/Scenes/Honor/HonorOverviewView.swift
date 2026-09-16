@@ -109,9 +109,15 @@ struct HonorOverviewView: View {
     @State private var markPins: [PilgrimAnnotation] = []
     /// A tapped pin: its photo or voice in a half-height sheet of its own.
     @State private var previewMoment: WayMoment?
+    /// The card's measured height, so the map can run beneath it and still
+    /// fit the whole stage into the part of itself that stays uncovered.
+    @State private var cardHeight: CGFloat = 0
 
     var body: some View {
-        VStack(spacing: 0) {
+        // The card lies over the map rather than beside it. The map keeps its
+        // full height and `bottomInset` holds the route clear of the card, so
+        // nothing of the stage is lost behind it.
+        ZStack(alignment: .bottom) {
             PilgrimMapView(
                 isInteractive: true,
                 showsUserLocation: true,
@@ -122,6 +128,7 @@ struct HonorOverviewView: View {
                     previewMoment = way.moments.first { $0.id == id }
                 },
                 cameraBounds: rendering?.bounds,
+                bottomInset: cardHeight,
                 isMeditating: $isMeditating,
                 honorWay: rendering?.state,
                 onCameraChanged: { center, zoom in
@@ -130,10 +137,15 @@ struct HonorOverviewView: View {
                     refreshMarkPins()
                 }
             )
-            .frame(maxHeight: .infinity)
 
             card
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: CardHeightKey.self, value: proxy.size.height)
+                    }
+                )
         }
+        .onPreferenceChange(CardHeightKey.self) { cardHeight = $0 }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -393,5 +405,14 @@ struct HonorOverviewView: View {
         connectivityMonitor?.cancel()
         connectivityMonitor?.pathUpdateHandler = nil
         connectivityMonitor = nil
+    }
+}
+
+/// How tall the overview's card is, so the map beneath it knows how much of
+/// itself the card covers.
+private struct CardHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat { 0 }
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
