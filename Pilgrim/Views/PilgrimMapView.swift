@@ -262,18 +262,33 @@ struct PilgrimMapView: UIViewRepresentable {
                 // starts nil.
                 let changed = context.coordinator.lastAppliedBounds != bounds
                     || context.coordinator.lastAppliedBoundsInset != bottomInset
-                if changed {
-                    context.coordinator.lastAppliedBounds = bounds
-                    context.coordinator.lastAppliedBoundsInset = bottomInset
+                // Padding taller than the map itself makes `camera(for:)`
+                // throw, and a view mid-layout is briefly exactly that. The
+                // inset is a card lying over the map, so on a short screen it
+                // can ask for more room than there is: leave the route a
+                // minimum to be drawn in rather than let the fit fail.
+                let roomForRoute: CGFloat = 160
+                let headroom = max(0, mapView.bounds.height - roomForRoute - 80)
+                let padding = UIEdgeInsets(top: 40, left: 30,
+                                           bottom: 40 + min(bottomInset, headroom), right: 30)
+                let fits = mapView.bounds.height > padding.top + padding.bottom
+                    && mapView.bounds.width > padding.left + padding.right
+                if changed && fits {
                     do {
                         let camera = try mapView.mapboxMap.camera(
                             for: [bounds.sw, bounds.ne],
                             camera: CameraOptions(),
-                            coordinatesPadding: UIEdgeInsets(top: 40, left: 30, bottom: 40 + bottomInset, right: 30),
+                            coordinatesPadding: padding,
                             maxZoom: nil,
                             offset: nil
                         )
                         mapView.camera.ease(to: camera, duration: cameraDuration)
+                        // Recorded only once the fit actually landed. Set
+                        // before the attempt, a single throw would read as
+                        // "already applied" for good and strand the map on
+                        // the default zero-zoom camera — the globe.
+                        context.coordinator.lastAppliedBounds = bounds
+                        context.coordinator.lastAppliedBoundsInset = bottomInset
                     } catch {
                         print("[PilgrimMapView] camera(for:bounds:) failed: \(error)")
                     }
