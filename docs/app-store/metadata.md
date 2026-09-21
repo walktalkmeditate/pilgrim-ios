@@ -10,7 +10,7 @@ Voice Journal & Meditation
 
 ## Keywords (100 chars)
 
-contemplative,pilgrimage,transcription,offline,nature,step,practice,solo,creative,prompt,breathe,diary,camino,private,reflect
+camino,shikoku,kumano,pilgrimage,offline,contemplative,reflect,breathe,solo,private,trail,diary
 
 ## Category
 
@@ -27,6 +27,10 @@ Every walk holds something waiting to be noticed.
 
 Pilgrim is a walking companion for those who walk with intention — whether across a continent or around the block. No leaderboards. No calorie goals. No social feeds. Just you, the path, and whatever arises.
 
+THREE WAYS TO WALK
+
+Wander, with no aim but the walking. Seek, when something is unresolved and you want the walk to work on it. Honor, to follow a path someone else laid down.
+
 WALK
 
 GPS tracking with live pace, steps, altitude, and waypoint marking. A three-way time breakdown shows how each walk splits between walking, talking, and meditating — because those are different states of attention.
@@ -42,6 +46,14 @@ Six styles of writing prompts — contemplative, reflective, creative, gratitude
 MEDITATE
 
 A dedicated meditation mode with an animated breathing circle and customizable rhythms. Downloadable voice guide packs offer spoken prompts during stillness. Meditation time is tracked separately and shown alongside walk time.
+
+WALK A PILGRIMAGE
+
+The Camino de Santiago, the Kumano Kodō, Shikoku's eighty-eight temples. Download a route and walk it a stage at a time. Each morning the day opens with its own words; each evening closes with a line you can answer. Temples, shrines, water and shelter sit on the map where they actually are. Save the maps before you go and the path is there with no signal at all.
+
+FOLLOW A WALK SOMEONE SHARED
+
+Someone walks, and shares it. You walk the same ground, and their voices arrive where they were spoken — their photos waiting where they were taken. You can answer them in the same place. Or walk one of your own walks again, and meet what you said the first time.
 
 PILGRIM COLLECTS GOSHUIN
 
@@ -62,12 +74,15 @@ pilgrimapp.org
 Current version's release notes. Replace (don't append) each release.
 The `/release notes` skill can generate these from git history.
 
-### v1.0.0
+### v2.0.0
 
-The first step.
+Walk with someone.
 
-Walk. Record. Reflect. Meditate.
-Everything on your device, nothing in the cloud.
+Honor is the third way to walk, beside Wander and Seek. Follow a path someone else laid down — one of your own walks again, a walk a friend shared with you, or a stage of a real pilgrimage.
+
+The Camino de Santiago, the Kumano Kodō, Shikoku's temple route. Download one and walk it a stage at a time. Their voices arrive where they were spoken. Photos wait where they were taken. Water, shelter and shrines sit quietly on the map. Each morning the day's stage opens with its own words, and each evening closes with a line you can answer.
+
+Save the maps for a way before you go, and the path is there with no signal at all.
 
 Walk well.
 
@@ -82,3 +97,5 @@ Walk well.
 Pilgrim uses background location to track walking routes while the screen is locked during walks (30+ minutes). The app also plays ambient soundscapes and meditation voice guides in the background during active walks. Both background modes are only active during an explicit user-initiated walk session and stop when the walk ends.
 
 To test: tap Wander on the Path tab, then tap Start. Walk or let City Run simulation run for a few minutes. Tap Meditate to see the meditation mode. Tap End to complete the walk and see the summary.
+
+To test Honor, the new third mode: tap Honor on the Path tab. "Walk a pilgrimage" lists real routes — open one (the Kumano Kodō's Nakahechi is the shortest) and tap Download; it fetches a small package of stages from a public dataset. Open a stage, then Begin. "Save maps for the way" on the route page downloads the basemap so the stage renders without a network connection. A shared walk can also be opened by pasting a walk.pilgrimapp.org link into the same sheet. No account is needed for any of it.
