@@ -30,4 +30,11 @@ enum HonorTuning {
     /// and 23 on its wettest day; without this the caption would be the
     /// day's loudest voice.
     static let markQuietSeconds: TimeInterval = 3600
+    /// How long before the stamp office shuts the notice is worth saying —
+    /// from 15:00 for a 17:00 close. Earlier it is a fact about the
+    /// afternoon rather than a choice anyone is making.
+    static let stampNoticeMinutes = 120
+    /// Nearer than this and the temple has stopped being a decision: the
+    /// walker is already arriving.
+    static let stampMinAheadMeters = 1000.0
 }

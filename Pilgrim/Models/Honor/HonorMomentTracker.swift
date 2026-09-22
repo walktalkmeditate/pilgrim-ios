@@ -14,6 +14,29 @@ struct HonorMomentTracker {
         case voiceDropped(WayMoment)
         /// A water source `meters` ahead on the line.
         case markAhead(WayMark, meters: Double)
+        /// A stamp temple `meters` ahead, with the office soon to shut.
+        case stampAhead(WayMoment, meters: Double)
+    }
+
+    /// When the route's stamp office shuts and the clock to read that
+    /// against. Absent on every route but Shikoku's, and the notice says
+    /// nothing at all without it.
+    struct StampOffice {
+        let closesMinutes: Int
+        let timeZone: TimeZone
+        let now: () -> Date
+
+        /// True from two hours before the office shuts until it does.
+        /// Earlier is noise; later there is no stamp left to be had, and a
+        /// walker who has already lost it does not need telling.
+        var isClosingSoon: Bool {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = timeZone
+            let clock = calendar.dateComponents([.hour, .minute], from: now())
+            guard let hour = clock.hour, let minute = clock.minute else { return false }
+            let minutesNow = hour * 60 + minute
+            return minutesNow >= closesMinutes - HonorTuning.stampNoticeMinutes && minutesNow < closesMinutes
+        }
     }
 
     struct Gates: Equatable {
@@ -33,10 +56,20 @@ struct HonorMomentTracker {
     private(set) var isVoicePaused = false
     private let marks: [WayMark]
     private var firedMarks: Set<String> = []
-    /// Active seconds at the last water caption; nil means the first is free.
-    private var lastMarkSeconds: TimeInterval?
+    /// Active seconds at the last notice of any kind — water or temple; nil
+    /// means the first is free. One clock for both, so the two can never
+    /// land on the caption line together and the walk screen stays as quiet
+    /// as one notice an hour.
+    private var lastNoticeSeconds: TimeInterval?
+    private let stamp: StampOffice?
+    /// The stamp temples among the moments, in the order they are passed.
+    /// Empty whenever the route states no hours, so the scan below has
+    /// nothing to scan on every Way but Shikoku's.
+    private let fudasho: [WayMoment]
+    private var firedStamps: Set<String> = []
 
-    init(moments: [WayMoment], marks: [WayMark] = [], geometry: WayGeometry, voicesEnabled: Bool) {
+    init(moments: [WayMoment], marks: [WayMark] = [], geometry: WayGeometry, voicesEnabled: Bool,
+         stamp: StampOffice? = nil) {
         // A tiebreak on id keeps ordering deterministic when two moments
         // share a frac — the same rule `WayImporter` sorts by.
         self.moments = moments.sorted { $0.frac == $1.frac ? $0.id < $1.id : $0.frac < $1.frac }
@@ -48,6 +81,8 @@ struct HonorMomentTracker {
             .sorted { $0.frac < $1.frac }
         self.geometry = geometry
         self.voicesEnabled = voicesEnabled
+        self.stamp = stamp
+        self.fudasho = stamp == nil ? [] : self.moments.filter { $0.templeNumber != nil }
     }
 
     mutating func update(
@@ -88,6 +123,10 @@ struct HonorMomentTracker {
             }
         }
 
+        // The temple before the fountain: both draw on the same quiet period,
+        // and of the two an office about to shut is the one still worth a
+        // walker's afternoon.
+        actions += stampAhead(progressFrac: progressFrac, activeSeconds: activeSeconds, isOnWay: isOnWay)
         actions += waterAhead(progressFrac: progressFrac, activeSeconds: activeSeconds, isOnWay: isOnWay)
         actions += startNextIfPossible(gates: gates)
         return actions
@@ -126,14 +165,38 @@ struct HonorMomentTracker {
     /// of walking — the marks skipped inside the quiet hour stay silent pins.
     private mutating func waterAhead(progressFrac: Double, activeSeconds: TimeInterval, isOnWay: Bool) -> [Action] {
         guard isOnWay, !marks.isEmpty, geometry.totalMeters > 0 else { return [] }
-        if let last = lastMarkSeconds, activeSeconds - last < HonorTuning.markQuietSeconds { return [] }
+        if let last = lastNoticeSeconds, activeSeconds - last < HonorTuning.markQuietSeconds { return [] }
         for mark in marks where !firedMarks.contains(mark.id) {
             let ahead = (mark.frac - progressFrac) * geometry.totalMeters
             guard ahead >= 0 else { continue }
             guard ahead <= HonorTuning.markAheadMeters else { break }
             firedMarks.insert(mark.id)
-            lastMarkSeconds = activeSeconds
+            lastNoticeSeconds = activeSeconds
             return [.markAhead(mark, meters: ahead)]
+        }
+        return []
+    }
+
+    /// The nearest stamp temple still far enough ahead to be a choice, in the
+    /// last two hours its office is open. Once per temple, never one already
+    /// behind, and never off the way — where progress is stale and the
+    /// distance would be a guess.
+    ///
+    /// A fact and never a forecast: what the office does and how far it is,
+    /// for the walker to judge their own pace against. An arrival time drawn
+    /// from a few minutes of walking would read a lunch stop as a finished
+    /// day, and a confident wrong call costs more than silence.
+    private mutating func stampAhead(progressFrac: Double, activeSeconds: TimeInterval, isOnWay: Bool) -> [Action] {
+        guard isOnWay, !fudasho.isEmpty, geometry.totalMeters > 0, let stamp else { return [] }
+        if let last = lastNoticeSeconds, activeSeconds - last < HonorTuning.markQuietSeconds { return [] }
+        guard stamp.isClosingSoon else { return [] }
+        for temple in fudasho where !firedStamps.contains(temple.id) {
+            let ahead = (temple.frac - progressFrac) * geometry.totalMeters
+            // Behind them, or close enough that the walk has already decided.
+            guard ahead >= HonorTuning.stampMinAheadMeters else { continue }
+            firedStamps.insert(temple.id)
+            lastNoticeSeconds = activeSeconds
+            return [.stampAhead(temple, meters: ahead)]
         }
         return []
     }

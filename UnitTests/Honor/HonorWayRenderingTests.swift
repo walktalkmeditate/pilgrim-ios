@@ -140,6 +140,38 @@ extension HonorWayRenderingTests {
         XCTAssertEqual(WayDistance.string(meters: 18_244, unit: .miles), "11.3 mi")
     }
 
+    /// The line a walker on the henro actually reads, in their own clock and
+    /// their own unit.
+    func testTheStampNoticeSpeaksTheWalkersClockAndUnit() {
+        UserPreferences.distanceMeasurementType.value = .kilometers
+        defer { UserPreferences.distanceMeasurementType.delete() }
+        XCTAssertEqual(WayStampNotice.caption(templeNumber: 10, closesMinutes: 17 * 60, meters: 3200,
+                                              locale: Locale(identifier: "en_US")),
+                       "temple 10 stamps until 5 · 3.2 km")
+        XCTAssertEqual(WayStampNotice.caption(templeNumber: 10, closesMinutes: 17 * 60, meters: 3200,
+                                              locale: Locale(identifier: "ja_JP")),
+                       "temple 10 stamps until 17 · 3.2 km")
+        UserPreferences.distanceMeasurementType.value = .miles
+        XCTAssertEqual(WayStampNotice.caption(templeNumber: 88, closesMinutes: 17 * 60, meters: 18_244,
+                                              locale: Locale(identifier: "en_US")),
+                       "temple 88 stamps until 5 · 11.3 mi")
+    }
+
+    /// The hour comes from the data, never a literal: the same 17:00 reads
+    /// "5" where the clock is 12-hour and "17" where it is 24-hour, and an
+    /// office that shut on the half hour would have to say so.
+    func testTheClosingHourFollowsTheLocalesOwnClock() {
+        let twelve = Locale(identifier: "en_US")
+        for twentyFour in [Locale(identifier: "ja_JP"), Locale(identifier: "en_GB")] {
+            XCTAssertEqual(WayStampNotice.hour(17 * 60, locale: twentyFour), "17", "\(twentyFour.identifier)")
+            XCTAssertEqual(WayStampNotice.hour(8 * 60, locale: twentyFour), "8", "\(twentyFour.identifier)")
+        }
+        XCTAssertEqual(WayStampNotice.hour(17 * 60, locale: twelve), "5")
+        XCTAssertEqual(WayStampNotice.hour(8 * 60, locale: twelve), "8")
+        XCTAssertEqual(WayStampNotice.hour(12 * 60, locale: twelve), "12", "noon is not zero")
+        XCTAssertEqual(WayStampNotice.hour(17 * 60 + 30, locale: twelve), "5:30")
+    }
+
     func testRelationLineFollowsTheDistancePreference() {
         UserPreferences.distanceMeasurementType.value = .miles
         defer { UserPreferences.distanceMeasurementType.delete() }

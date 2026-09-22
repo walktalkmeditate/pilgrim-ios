@@ -365,6 +365,39 @@ extension PilgrimageStageWalkTests {
         XCTAssertEqual(vm.softTapCaption, "water in \(WayDistance.string(meters: 280))")
         XCTAssertTrue(vm.honorCards.isEmpty, "a mark is never a card")
     }
+
+    /// The stamp office borrows the same line and adds nothing to the screen.
+    func testTheStampNoticeBorrowsTheCaptionLineAndNothingElse() {
+        var temple = WayMoment(id: "temple-10", frac: 0.9, at: WayCoordinate(lat: 0, lon: 900 / 111_320),
+                               kind: .waypoint(label: "Kirihata-ji", icon: "seal"))
+        temple.text = "Temple 10 · Koyasan Shingon · stamp available (¥500)"
+        var way = stageWay()
+        way.stampHours = WayStampHours(opensMinutes: 8 * 60, closesMinutes: 17 * 60)
+        let vm = honorWalk(way: way)
+        vm.builder.setStatus(.ready)
+        vm.startRecording()
+
+        vm.handleHonorEvent(.stampAhead(temple: temple, meters: 3200))
+
+        XCTAssertEqual(vm.softTapCaption,
+                       WayStampNotice.caption(templeNumber: 10, closesMinutes: 17 * 60, meters: 3200))
+        XCTAssertTrue(vm.honorCards.isEmpty, "a notice is never a card")
+    }
+
+    /// Belt and braces behind the tracker's own gate: a Way with no hours
+    /// can put nothing on the line even if an event somehow reached it.
+    func testAWayWithoutStampHoursPutsNothingOnTheLine() {
+        var temple = WayMoment(id: "temple-10", frac: 0.9, at: WayCoordinate(lat: 0, lon: 900 / 111_320),
+                               kind: .waypoint(label: "Kirihata-ji", icon: "seal"))
+        temple.text = "Temple 10 · Koyasan Shingon · stamp available (¥500)"
+        let vm = honorWalk(way: stageWay())
+        vm.builder.setStatus(.ready)
+        vm.startRecording()
+
+        vm.handleHonorEvent(.stampAhead(temple: temple, meters: 3200))
+
+        XCTAssertNil(vm.softTapCaption)
+    }
 }
 
 extension PilgrimageStageWalkTests {

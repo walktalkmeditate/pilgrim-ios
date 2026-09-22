@@ -58,14 +58,15 @@ extension ActiveWalkViewModel {
     }
 
     /// The water notice borrows the soft tap's slot — nothing new in the
-    /// stats sheet — and retires itself the same way, generation-guarded so
-    /// teardown makes this write a no-op.
+    /// stats sheet — and retires itself the same way.
     func showMarkCaption(mark: WayMark, meters: Double) {
-        softTapCaption = "water in \(WayDistance.string(meters: max(0, meters.isFinite ? meters : 0)))"
-        let generation = honorGeneration
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.softTapCaptionSeconds) { [weak self] in
-            guard let self, self.honorGeneration == generation else { return }
-            self.softTapCaption = nil
-        }
+        showHonorCaption("water in \(WayDistance.string(meters: max(0, meters.isFinite ? meters : 0)))")
+    }
+
+    /// The stamp office's one line, in that same borrowed slot. Silent
+    /// without the route's hours, which is every Way but a Shikoku stage's.
+    func showStampCaption(temple: WayMoment, meters: Double) {
+        guard let number = temple.templeNumber, let closes = way?.stampHours?.closesMinutes else { return }
+        showHonorCaption(WayStampNotice.caption(templeNumber: number, closesMinutes: closes, meters: meters))
     }
 }

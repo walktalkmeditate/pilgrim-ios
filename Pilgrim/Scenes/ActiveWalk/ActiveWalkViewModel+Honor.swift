@@ -205,6 +205,13 @@ extension ActiveWalkViewModel {
             showMarkCaption(mark: mark, meters: meters)
             fireHonorHaptic(.honorWaterAhead)
 
+        case .stampAhead(let temple, let meters):
+            showStampCaption(temple: temple, meters: meters)
+            // The water source's tap, deliberately: one at the whisper's
+            // intensity, a notice and not an alert. Both are the same kind
+            // of passing word, so they feel the same in the pocket.
+            fireHonorHaptic(.honorWaterAhead)
+
         case .arrived(let theirSeconds, let yourSeconds):
             recordHonorArrival(theirSeconds: theirSeconds, yourSeconds: yourSeconds)
             fireHonorHaptic(.honorArrival)
@@ -229,14 +236,19 @@ extension ActiveWalkViewModel {
         showCard(for: moment)
     }
 
-    /// The caption retires itself, so a walker who rejoins the Way is never
-    /// left reading a distance they have already closed. Generation-guarded
-    /// like every other honor `asyncAfter`: teardown bumps the generation and
-    /// this write becomes a no-op.
     private func showSoftTapCaption(meters: Double) {
         // `Int(_:)` traps on an infinity; the engine already clamps, and this
         // is the last line of defence before the number reaches the screen.
-        softTapCaption = "off the way · \(Int(min(meters.isFinite ? meters : 0, 999_999))) m"
+        showHonorCaption("off the way · \(Int(min(meters.isFinite ? meters : 0, 999_999))) m")
+    }
+
+    /// The walk screen's one caption line, shared by every notice that may
+    /// use it. It retires itself, so a walker who rejoins the Way is never
+    /// left reading a distance they have already closed. Generation-guarded
+    /// like every other honor `asyncAfter`: teardown bumps the generation and
+    /// this write becomes a no-op.
+    func showHonorCaption(_ text: String) {
+        softTapCaption = text
         let generation = honorGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.softTapCaptionSeconds) { [weak self] in
             guard let self, self.honorGeneration == generation else { return }

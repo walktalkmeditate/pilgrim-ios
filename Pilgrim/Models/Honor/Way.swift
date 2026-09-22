@@ -92,6 +92,27 @@ struct WayMoment: Codable, Equatable, Identifiable {
         return false
     }
 
+    /// The fudasho's number when this place is one of the numbered stamp
+    /// temples, nil otherwise — both the test for "is this a temple" and the
+    /// source of the word the caption uses, so the notice can never name a
+    /// temple the rule did not recognise.
+    ///
+    /// Read from `text`, which the dataset writes as "Temple 10 · …", and
+    /// deliberately not from `icon == "seal"`: a seal means a stamp is
+    /// available, which is equally true of Camino pilgrim offices, Spanish
+    /// cathedrals and Kumano shrines — 48 such places across the routes that
+    /// ship today — while only the numbered temples keep an office that
+    /// shuts. Only the digits are taken, so a change to the separator can
+    /// never put half a sentence on a caption line.
+    var templeNumber: Int? {
+        guard let text, text.hasPrefix(Self.templePrefix) else { return nil }
+        let digits = text.dropFirst(Self.templePrefix.count).prefix { $0.isASCII && $0.isNumber }
+        guard (1...4).contains(digits.count) else { return nil }
+        return Int(digits)
+    }
+
+    private static let templePrefix = "Temple "
+
     /// The file behind a voice or photo moment; nil for the other kinds.
     var media: WayMedia? {
         switch kind {
