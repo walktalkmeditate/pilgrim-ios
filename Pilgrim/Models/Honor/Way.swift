@@ -126,6 +126,20 @@ struct WayStageHours: Codable, Equatable {
     let max: Double
 }
 
+/// When a route's stamp office opens and shuts, in minutes since midnight.
+/// On the Shikoku henro the nōkyōjo closes at 17:00 while the temple grounds
+/// stay open: a walker who arrives between the two gets no stamp and walks
+/// back for one another day.
+///
+/// Minutes rather than the dataset's "17:00" because the parse belongs at the
+/// import boundary, with every other number the package carries — the rule
+/// that reads this on every fix is then arithmetic and can never meet a
+/// malformed hour.
+struct WayStampHours: Codable, Equatable {
+    let opensMinutes: Int
+    let closesMinutes: Int
+}
+
 struct WayStagePlace: Codable, Equatable {
     let name: String
     let at: WayCoordinate
@@ -206,6 +220,11 @@ struct Way: Codable, Equatable {
     var marks: [WayMark]?
     /// Present only for a pilgrimage stage.
     var stage: WayStage?
+    /// The route's stamp hours, copied onto each of its stages at import so
+    /// the walk reads one Way and nothing else. Optional and last, like
+    /// `spans` and `marks`: a `way.json` written before stamp hours existed
+    /// still decodes, and every route that declares no hours stays silent.
+    var stampHours: WayStampHours?
 
     var voiceCount: Int { moments.filter(\.isVoice).count }
     var photoCount: Int {

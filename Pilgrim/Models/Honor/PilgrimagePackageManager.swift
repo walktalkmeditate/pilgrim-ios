@@ -183,7 +183,8 @@ final class PilgrimagePackageManager: ObservableObject {
                     throw PilgrimageError.notWalkable
                 }
                 let stagePlan = StagePlan(routeId: entry.id, url: stageURL, stageCount: fetched.route.stageCount,
-                                          expected: fetched.route.stages[index])
+                                          expected: fetched.route.stages[index],
+                                          stampHours: fetched.route.stampHours)
                 packageBytes += try await Self.stageOneStage(stagePlan, into: temp, session: session)
                 try Self.checkBudget(packageBytes, cap: cap)
                 phase = .downloading(done: index + 2, total: total)
@@ -329,6 +330,10 @@ final class PilgrimagePackageManager: ObservableObject {
         let url: URL
         let stageCount: Int
         let expected: PilgrimageRouteStage
+        /// `route.json`'s, copied onto the stage Way here: the two files come
+        /// down separately and only this loop holds both, while the walk that
+        /// reads them later holds one Way and no route at all.
+        let stampHours: WayStampHours?
     }
 
     /// Validated as it lands, then written in the store's own encoding, so
@@ -344,7 +349,8 @@ final class PilgrimagePackageManager: ObservableObject {
     nonisolated private static func stageOneStage(_ plan: StagePlan, into temp: URL, session: URLSession) async throws -> Int {
         let index = plan.expected.index
         let data = try await fetch(url: plan.url, cap: PilgrimageWayImporter.maxStageBytes, session: session)
-        let way = try PilgrimageWayImporter.way(from: data, routeId: plan.routeId, stageIndex: index)
+        let way = try PilgrimageWayImporter.way(from: data, routeId: plan.routeId, stageIndex: index,
+                                                stampHours: plan.stampHours)
         guard way.stage?.count == plan.stageCount, way.stage?.name == plan.expected.name else {
             throw PilgrimageError.notWalkable
         }
