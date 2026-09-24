@@ -288,6 +288,82 @@ extension PilgrimageWayImporterTests {
         XCTAssertEqual(route.stages.map(\.index), [0, 1])
         XCTAssertEqual(route.stages[0].difficulty, "hard")
         XCTAssertEqual(route.stages[1].hours, WayStageHours(min: 5, max: 7))
+        XCTAssertNil(route.stampHours, "the Camino declares no stamp office hours")
+    }
+
+    /// Shikoku's `route.json` writes `"08:00"`; the phone keeps minutes.
+    func testARoutesStampHoursAreReadAsMinutesSinceMidnight() throws {
+        let route = try PilgrimageWayImporter.route(from: routeFile(stampHours: """
+            "stampHours": { "opens": "08:00", "closes": "17:00" },
+            """))
+        XCTAssertEqual(route.stampHours, WayStampHours(opensMinutes: 480, closesMinutes: 1020))
+    }
+
+    /// A walker told the wrong closing time is worse off than one told
+    /// nothing, so an hour this build cannot read is dropped whole — and the
+    /// route stays walkable regardless, since the stamp notice is the only
+    /// thing that needed it.
+    func testAnUnreadableStampHourLeavesTheRouteWalkableAndSilent() throws {
+        let unreadable = [
+            #""stampHours": { "opens": "08:00", "closes": "5pm" },"#,
+            #""stampHours": { "opens": "8:00", "closes": "17:00" },"#,
+            #""stampHours": { "opens": "08:00", "closes": "24:00" },"#,
+            #""stampHours": { "opens": "08:00", "closes": "17:60" },"#,
+            #""stampHours": { "opens": "08:00", "closes": "" },"#
+        ]
+        for block in unreadable {
+            let route = try PilgrimageWayImporter.route(from: routeFile(stampHours: block))
+            XCTAssertNil(route.stampHours, block)
+            XCTAssertEqual(route.stageCount, 2, "the route is still walkable: \(block)")
+        }
+    }
+
+    /// The route file and the stage files come down separately and only the
+    /// package manager holds both, so the hours are copied onto each stage
+    /// Way — the walk reads one Way and never the route.
+    func testAStageCarriesItsRoutesStampHoursAndSurvivesTheStoresEncoding() throws {
+        let hours = WayStampHours(opensMinutes: 480, closesMinutes: 1020)
+        let way = try PilgrimageWayImporter.way(from: PilgrimageFixtures.data("stage-00.json"),
+                                                routeId: "camino-frances", stageIndex: 0, stampHours: hours)
+        XCTAssertEqual(way.stampHours, hours)
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        XCTAssertEqual(try decoder.decode(Way.self, from: try encoder.encode(way)), way)
+    }
+
+    /// Every route but Shikoku's, and every `way.json` already on a phone
+    /// from a build that had no such field.
+    func testAStageWithoutStampHoursCarriesNoneAndAnOlderWayJsonStillDecodes() throws {
+        let plain = try PilgrimageWayImporter.way(from: PilgrimageFixtures.data("stage-00.json"),
+                                                  routeId: "camino-frances", stageIndex: 0)
+        XCTAssertNil(plain.stampHours, "a route that declares no hours hands its stages none")
+
+        let stamped = try PilgrimageWayImporter.way(from: PilgrimageFixtures.data("stage-00.json"),
+                                                    routeId: "camino-frances", stageIndex: 0,
+                                                    stampHours: WayStampHours(opensMinutes: 480, closesMinutes: 1020))
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: try encoder.encode(stamped)) as? [String: Any])
+        XCTAssertNotNil(object["stampHours"], "written when the route has them")
+        object.removeValue(forKey: "stampHours")
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let older = try decoder.decode(Way.self, from: try JSONSerialization.data(withJSONObject: object))
+        XCTAssertNil(older.stampHours, "a way.json written before the field existed still decodes")
+    }
+
+    /// The fixture route with a `stampHours` block spliced in where the
+    /// dataset writes it: between the summary and the stages.
+    private func routeFile(stampHours block: String) throws -> Data {
+        let base = String(data: try PilgrimageFixtures.data("route.json"), encoding: .utf8)!
+        let json = base.replacingOccurrences(of: "\"cover\": \"cover.jpg\",",
+                                             with: "\(block)\n  \"cover\": \"cover.jpg\",")
+        XCTAssertNotEqual(json, base)
+        return Data(json.utf8)
     }
 
     func testARouteFileWhoseNumbersAreOutOfRangeIsNotWalkable() throws {

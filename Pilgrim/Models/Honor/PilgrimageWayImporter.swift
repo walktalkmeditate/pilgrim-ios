@@ -44,6 +44,9 @@ struct PilgrimageRoute: Equatable {
     let stageCount: Int
     let tradition: String?
     let summary: String?
+    /// Only a route whose dataset declares them; nil everywhere else. Sits
+    /// where `route.json` writes it, between the summary and the stages.
+    let stampHours: WayStampHours?
     let stages: [PilgrimageRouteStage]
 }
 
@@ -151,6 +154,11 @@ enum PilgrimageWayImporter {
             let hours: StageFile.Hours
             let difficulty: String
         }
+        /// "HH:mm" on a 24-hour clock, as the dataset's schema writes it.
+        struct StampHours: Decodable {
+            let opens: String
+            let closes: String
+        }
         let id: String
         let name: String
         let names: [String: String]?
@@ -161,11 +169,16 @@ enum PilgrimageWayImporter {
         let tradition: String?
         let summary: String?
         let stages: [Stage]
+        let stampHours: StampHours?
     }
 
     // MARK: - Stage
 
-    static func way(from data: Data, routeId: String, stageIndex: Int) throws -> Way {
+    /// `stampHours` comes from the route this stage belongs to: it is written
+    /// once on `route.json`, and the manager hands it down as each stage is
+    /// staged. A stage parsed without its route — a spec, a stage file read
+    /// on its own — simply carries none.
+    static func way(from data: Data, routeId: String, stageIndex: Int, stampHours: WayStampHours? = nil) throws -> Way {
         guard WayStore.isValidRouteId(routeId), (0..<maxStageCount).contains(stageIndex) else {
             throw PilgrimageError.notWalkable
         }
@@ -199,6 +212,7 @@ enum PilgrimageWayImporter {
             weather: nil)
         way.marks = marks(from: file.marks)
         way.stage = stage(from: file.stage)
+        way.stampHours = stampHours
         return way
     }
 
@@ -281,6 +295,7 @@ enum PilgrimageWayImporter {
             stageCount: file.stageCount,
             tradition: file.tradition.map { capped($0, WayImporter.maxLabelCharacters) },
             summary: trimmed(file.summary, maxSummaryCharacters),
+            stampHours: stampHours(file.stampHours),
             stages: file.stages
                 .sorted { $0.index < $1.index }
                 .map { PilgrimageRouteStage(index: $0.index, name: capped($0.name, maxStageNameCharacters),
@@ -338,6 +353,24 @@ enum PilgrimageWayImporter {
               inLat(stage.start.at.lat), inLon(stage.start.at.lon),
               inLat(stage.end.at.lat), inLon(stage.end.at.lon) else { return false }
         return true
+    }
+
+    /// A route that states its stamp hours in anything but "HH:mm" states
+    /// none: a walker told the wrong closing time is worse off than a walker
+    /// told nothing, so an unreadable pair is dropped whole rather than
+    /// half-read.
+    private static func stampHours(_ raw: RouteFile.StampHours?) -> WayStampHours? {
+        guard let raw, let opens = minutesSinceMidnight(raw.opens),
+              let closes = minutesSinceMidnight(raw.closes) else { return nil }
+        return WayStampHours(opensMinutes: opens, closesMinutes: closes)
+    }
+
+    private static func minutesSinceMidnight(_ clock: String) -> Int? {
+        let parts = clock.split(separator: ":", omittingEmptySubsequences: false)
+        guard parts.count == 2, parts[0].count == 2, parts[1].count == 2,
+              let hour = Int(parts[0]), let minute = Int(parts[1]),
+              (0...23).contains(hour), (0...59).contains(minute) else { return nil }
+        return hour * 60 + minute
     }
 
     private static func isSaneDistance(_ km: Double) -> Bool { km.isFinite && (0...maxDistanceKm).contains(km) }

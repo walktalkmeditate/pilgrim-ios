@@ -208,3 +208,148 @@ extension HonorMomentTrackerTests {
                                           isStationary: false, activeSeconds: 0, isOnWay: true)), [])
     }
 }
+
+/// The stamp office notice: on the Shikoku henro the nōkyōjo shuts at 17:00,
+/// and a walker who arrives after it walks back for the stamp another day.
+/// A fact and never a forecast — what the office does and how far it is.
+extension HonorMomentTrackerTests {
+
+    /// 10 km straight east, so a frac is a kilometre: the stamp rule works in
+    /// kilometres where the water rule works in metres.
+    private var longGeometry: WayGeometry {
+        WayGeometry(route: (0...10).map { i in
+            WayPoint(lat: 0, lon: Double(i) * 0.00898, alt: nil, t: Double(i) * 600)
+        })
+    }
+
+    private static let tokyo = TimeZone(identifier: "Asia/Tokyo")!
+
+    /// A fixed wall clock in the temple's own time zone.
+    private static func tokyoClock(_ hour: Int, _ minute: Int) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = tokyo
+        return calendar.date(from: DateComponents(year: 2026, month: 4, day: 12, hour: hour, minute: minute))!
+    }
+
+    private func office(_ hour: Int, _ minute: Int) -> HonorMomentTracker.StampOffice {
+        HonorMomentTracker.StampOffice(closesMinutes: 17 * 60, timeZone: Self.tokyo,
+                                       now: { Self.tokyoClock(hour, minute) })
+    }
+
+    /// A numbered fudasho as the dataset writes one: the number lives in the
+    /// composed `text`, the romanized name in `label`.
+    private func temple(_ number: Int, frac: Double) -> WayMoment {
+        var moment = WayMoment(id: "temple-\(number)", frac: frac,
+                               at: WayCoordinate(lat: 0, lon: frac * 10_000 / 111_320),
+                               kind: .waypoint(label: "Kirihata-ji", icon: "seal"))
+        moment.text = "Temple \(number) · Koyasan Shingon · stamp available (¥500)"
+        return moment
+    }
+
+    private func stampTracker(_ moments: [WayMoment], marks: [WayMark] = [],
+                              at clock: (hour: Int, minute: Int)? = (15, 30)) -> HonorMomentTracker {
+        HonorMomentTracker(moments: moments, marks: marks, geometry: longGeometry, voicesEnabled: false,
+                           stamp: clock.map { office($0.hour, $0.minute) })
+    }
+
+    private func stampAhead(_ actions: [HonorMomentTracker.Action]) -> [String] {
+        actions.compactMap { if case .stampAhead(let temple, _) = $0 { return temple.id } else { return nil } }
+    }
+
+    /// Every route but Shikoku's. Nothing, ever — whatever the hour.
+    func testARouteThatStatesNoStampHoursNeverSpeaksOfTemples() {
+        var t = stampTracker([temple(10, frac: 0.5)], at: nil)
+        XCTAssertEqual(stampAhead(t.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
+                                           isStationary: false, activeSeconds: 0, isOnWay: true)), [])
+    }
+
+    func testTheNoticeOpensTwoHoursBeforeClosingAndShutsWithTheOffice() {
+        // 14:59: the afternoon is still young and the notice is noise.
+        var early = stampTracker([temple(10, frac: 0.5)], at: (14, 59))
+        XCTAssertEqual(stampAhead(early.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
+                                               isStationary: false, activeSeconds: 0, isOnWay: true)), [])
+        // 15:00 exactly: two hours to closing.
+        var onTheHour = stampTracker([temple(10, frac: 0.5)], at: (15, 0))
+        XCTAssertEqual(stampAhead(onTheHour.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
+                                                   isStationary: false, activeSeconds: 0, isOnWay: true)),
+                       ["temple-10"])
+        // 17:00: there is no stamp left to be had, and a walker who has lost
+        // it does not need telling.
+        var closed = stampTracker([temple(10, frac: 0.5)], at: (17, 0))
+        XCTAssertEqual(stampAhead(closed.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
+                                                isStationary: false, activeSeconds: 0, isOnWay: true)), [])
+    }
+
+    func testATempleInsideAKilometreHasStoppedBeingADecision() {
+        // Fracs are taken off the line's true length, so the two cases sit a
+        // metre either side of the kilometre rather than near it.
+        let total = longGeometry.totalMeters
+        var near = stampTracker([temple(10, frac: 0.5)])
+        XCTAssertEqual(stampAhead(near.update(location: coord(4000), progressFrac: 0.5 - 999 / total,
+                                              gates: .init(), isStationary: false,
+                                              activeSeconds: 0, isOnWay: true)), [],
+                       "999 m short: the walker can see it and is already arriving")
+
+        var far = stampTracker([temple(10, frac: 0.5)])
+        let hit = far.update(location: coord(4000), progressFrac: 0.5 - 1001 / total, gates: .init(),
+                             isStationary: false, activeSeconds: 0, isOnWay: true)
+        XCTAssertEqual(stampAhead(hit), ["temple-10"])
+        guard case .stampAhead(_, let meters) = hit.first else { return XCTFail("action") }
+        XCTAssertEqual(meters, 1001, accuracy: 1)
+    }
+
+    func testEachTempleSpeaksOnce() {
+        var t = stampTracker([temple(10, frac: 0.5), temple(11, frac: 0.9)])
+        XCTAssertEqual(stampAhead(t.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
+                                           isStationary: false, activeSeconds: 0, isOnWay: true)),
+                       ["temple-10"])
+        // Still 3 km ahead a minute later: inside the quiet hour, and spoken
+        // for in any case.
+        XCTAssertEqual(stampAhead(t.update(location: coord(2000), progressFrac: 0.2, gates: .init(),
+                                           isStationary: false, activeSeconds: 60, isOnWay: true)), [])
+        // An hour and a half of walking on, temple 10 has had its say and it
+        // is temple 11 — 4 km ahead — that speaks.
+        XCTAssertEqual(stampAhead(t.update(location: coord(5000), progressFrac: 0.5, gates: .init(),
+                                           isStationary: false, activeSeconds: 5400, isOnWay: true)),
+                       ["temple-11"])
+    }
+
+    func testATempleAlreadyBehindIsNeverAnnounced() {
+        var t = stampTracker([temple(10, frac: 0.3)])
+        XCTAssertEqual(stampAhead(t.update(location: coord(6000), progressFrac: 0.6, gates: .init(),
+                                           isStationary: false, activeSeconds: 0, isOnWay: true)), [],
+                       "a temple you have walked past cannot still be stamped today")
+    }
+
+    /// A seal means a stamp is available, which is equally true of Camino
+    /// pilgrim offices and Kumano shrines. Only the numbered fudasho keep an
+    /// office that shuts, and only the dataset's own "Temple N" says so.
+    func testASealThatIsNotANumberedTempleStaysSilent() {
+        var pilgrimOffice = WayMoment(id: "wp-sjpp-pilgrim-office", frac: 0.5,
+                                      at: WayCoordinate(lat: 0, lon: 5000 / 111_320),
+                                      kind: .waypoint(label: "Pilgrim Welcome Office", icon: "seal"))
+        pilgrimOffice.text = "Pilgrim office · 172 m · stamp available"
+        var t = stampTracker([pilgrimOffice])
+        XCTAssertEqual(stampAhead(t.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
+                                           isStationary: false, activeSeconds: 0, isOnWay: true)), [])
+    }
+
+    func testAWalkerOffTheWayIsToldNothing() {
+        var t = stampTracker([temple(10, frac: 0.5)])
+        XCTAssertEqual(stampAhead(t.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
+                                           isStationary: false, activeSeconds: 0, isOnWay: false)), [],
+                       "off the way the distance ahead would be a guess")
+    }
+
+    /// One caption line, one notice: the temple takes it, and the fountain
+    /// keeps the quiet hour it would have started anyway.
+    func testTheTempleTakesTheLineAheadOfTheFountain() {
+        let fountain = WayMark(id: "fuente", kind: .water, name: "Fuente",
+                               at: WayCoordinate(lat: 0, lon: 1200 / 111_320), frac: 0.12, offLineMeters: 10)
+        var t = stampTracker([temple(10, frac: 0.5)], marks: [fountain])
+        let actions = t.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
+                               isStationary: false, activeSeconds: 0, isOnWay: true)
+        XCTAssertEqual(stampAhead(actions), ["temple-10"])
+        XCTAssertEqual(markAhead(actions), [], "the fountain waits out the quiet hour the temple started")
+    }
+}
