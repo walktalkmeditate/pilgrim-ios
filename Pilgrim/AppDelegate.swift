@@ -52,6 +52,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         // otherwise the map reads the SDK's default store and every saved
         // region is invisible to it.
         MapboxMapsOptions.tileStore = TileStore.shared(for: MapboxTileRegionLoader.storeURL)
+        // Before the first map, whose events manager reads the key once at
+        // construction and only watches it afterwards.
+        MapboxTelemetry.optOut()
         mark("after Mapbox init")
 
         // Clean up any Live Activities left over from a previous session
