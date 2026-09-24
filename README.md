@@ -138,20 +138,22 @@ See all your walks rendered on [view.pilgrimapp.org](https://view.pilgrimapp.org
 
 ## Privacy
 
-Everything you make on a walk lives on your device. The few network calls Pilgrim makes are listed here, and none of them carries an account.
+Pilgrim is anonymous: there are no accounts, and nothing it sends says who you are. Everything you make on a walk lives on your device. The calls it does make are below; the [privacy policy](https://pilgrimapp.org/privacy) has the full account.
 
-- Transcription: on-device via WhisperKit
-- Writing prompts: generated on-device from walk context, copy into your own AI
-- Maps: Mapbox with no user-identifying requests; saved pilgrimage maps render with no network at all
-- Weather: Apple WeatherKit (no personal account linked)
 - Walk data: stored in CoreData on the device
-- Whispers and cairns: during a walk, the app asks walk.pilgrimapp.org for those near where you are. Placing one stores its position there with a random token, never an account
-- Honor: a shared walk is fetched by its link from walk.pilgrimapp.org, and pilgrimages come from the public open-pilgrimages dataset on jsDelivr. Your answers to a shared walk are kept on your device
+- Transcription: on-device via WhisperKit; the model downloads once from Hugging Face
+- Writing prompts: made on-device; opening them looks up the start and end place names through Apple's geocoder
+- Weather: Apple WeatherKit, with the walk's location at its start
+- Maps: Mapbox tiles; saved pilgrimage maps render with no network at all
+- Whispers and cairns: each walk asks walk.pilgrimapp.org for those near you, sending your location with no ID. Placing one stores its position; whispers expire, cairns are public and permanent
+- Honor: a shared walk is fetched by its link from walk.pilgrimapp.org, and pilgrimages come from the public open-pilgrimages dataset on jsDelivr. Your answers to a shared walk stay on your device
 - Audio: soundscapes, voice guides, and whispers download from cdn.pilgrimapp.org
-- Sharing: a walk page holds only what you choose to include, and it expires
-- Collective counter: opt-in, sends only anonymous totals (walk count, distance, meditation time)
+- Sharing: a page anyone with the link can open. Route, stats, and weather always; a note, photos, and waypoints if you add them; transcripts never. *Interactive* uploads the recordings and full-size photos you pick and trims 150 m from each end. The server asks Mapbox for a map image and DeepSeek for a haiku from the place, weather, and distance. Pages expire
+- Feedback: a Trail Note becomes a public issue in this repository
+- Podcast: opt-in and anonymous; submitted recordings are kept for 30 days
+- Collective counter: opt-in, sends only totals (walk count, distance, meditation and talk time)
 
-There is no backend that knows who you are. There is no account to create. The app ships with a full privacy manifest declaring every API it uses and why.
+Shares, whispers, stones, feedback, podcast submissions, and the counter carry an anonymous app ID, made on the device and used to limit abuse. There is no backend that knows who you are. There is no account to create. The app ships with a full privacy manifest declaring every API it uses and why.
 
 ---
 
