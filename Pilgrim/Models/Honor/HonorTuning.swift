@@ -30,6 +30,10 @@ enum HonorTuning {
     /// and 23 on its wettest day; without this the caption would be the
     /// day's loudest voice.
     static let markQuietSeconds: TimeInterval = 3600
+    /// The least walking between any two notices on the caption line, water
+    /// or temple. The line holds a notice for 20 s; a minute keeps one from
+    /// replacing another still being read, or two taps landing together.
+    static let noticeGapSeconds: TimeInterval = 60
     /// How long before the stamp office shuts the notice is worth saying —
     /// from 15:00 for a 17:00 close. Earlier it is a fact about the
     /// afternoon rather than a choice anyone is making.

@@ -56,10 +56,12 @@ struct HonorMomentTracker {
     private(set) var isVoicePaused = false
     private let marks: [WayMark]
     private var firedMarks: Set<String> = []
-    /// Active seconds at the last notice of any kind — water or temple; nil
-    /// means the first is free. One clock for both, so the two can never
-    /// land on the caption line together and the walk screen stays as quiet
-    /// as one notice an hour.
+    /// Active seconds at the last water caption; nil means the first is
+    /// free. Water's alone, so a fountain never costs a temple its notice,
+    /// nor a temple a fountain.
+    private var lastWaterSeconds: TimeInterval?
+    /// Active seconds at the last notice of either kind, read only for the
+    /// short gap that keeps two notices off the caption line at once.
     private var lastNoticeSeconds: TimeInterval?
     private let stamp: StampOffice?
     /// The stamp temples among the moments, in the order they are passed.
@@ -123,9 +125,9 @@ struct HonorMomentTracker {
             }
         }
 
-        // The temple before the fountain: both draw on the same quiet period,
-        // and of the two an office about to shut is the one still worth a
-        // walker's afternoon.
+        // The temple before the fountain: when both are due on one fix the
+        // gap lets only the first speak, and of the two an office about to
+        // shut is the one still worth a walker's afternoon.
         actions += stampAhead(progressFrac: progressFrac, activeSeconds: activeSeconds, isOnWay: isOnWay)
         actions += waterAhead(progressFrac: progressFrac, activeSeconds: activeSeconds, isOnWay: isOnWay)
         actions += startNextIfPossible(gates: gates)
@@ -164,13 +166,14 @@ struct HonorMomentTracker {
     /// one already behind them, never off the way, and at most one an hour
     /// of walking — the marks skipped inside the quiet hour stay silent pins.
     private mutating func waterAhead(progressFrac: Double, activeSeconds: TimeInterval, isOnWay: Bool) -> [Action] {
-        guard isOnWay, !marks.isEmpty, geometry.totalMeters > 0 else { return [] }
-        if let last = lastNoticeSeconds, activeSeconds - last < HonorTuning.markQuietSeconds { return [] }
+        guard isOnWay, !marks.isEmpty, geometry.totalMeters > 0, isLineFree(at: activeSeconds) else { return [] }
+        if let last = lastWaterSeconds, activeSeconds - last < HonorTuning.markQuietSeconds { return [] }
         for mark in marks where !firedMarks.contains(mark.id) {
             let ahead = (mark.frac - progressFrac) * geometry.totalMeters
             guard ahead >= 0 else { continue }
             guard ahead <= HonorTuning.markAheadMeters else { break }
             firedMarks.insert(mark.id)
+            lastWaterSeconds = activeSeconds
             lastNoticeSeconds = activeSeconds
             return [.markAhead(mark, meters: ahead)]
         }
@@ -182,23 +185,34 @@ struct HonorMomentTracker {
     /// behind, and never off the way — where progress is stale and the
     /// distance would be a guess.
     ///
+    /// No quiet hour between temples — it held a 16:10 notice's successor past
+    /// 17:00. Only the nearest choice may speak, once, so the next waits until
+    /// the walker is within a kilometre of the one already named.
+    ///
     /// A fact and never a forecast: what the office does and how far it is,
     /// for the walker to judge their own pace against. An arrival time drawn
     /// from a few minutes of walking would read a lunch stop as a finished
     /// day, and a confident wrong call costs more than silence.
     private mutating func stampAhead(progressFrac: Double, activeSeconds: TimeInterval, isOnWay: Bool) -> [Action] {
-        guard isOnWay, !fudasho.isEmpty, geometry.totalMeters > 0, let stamp else { return [] }
-        if let last = lastNoticeSeconds, activeSeconds - last < HonorTuning.markQuietSeconds { return [] }
-        guard stamp.isClosingSoon else { return [] }
-        for temple in fudasho where !firedStamps.contains(temple.id) {
+        guard isOnWay, !fudasho.isEmpty, geometry.totalMeters > 0, let stamp,
+              isLineFree(at: activeSeconds), stamp.isClosingSoon else { return [] }
+        for temple in fudasho {
             let ahead = (temple.frac - progressFrac) * geometry.totalMeters
             // Behind them, or close enough that the walk has already decided.
             guard ahead >= HonorTuning.stampMinAheadMeters else { continue }
+            // The nearest choice, already named: the next is not news yet.
+            guard !firedStamps.contains(temple.id) else { return [] }
             firedStamps.insert(temple.id)
             lastNoticeSeconds = activeSeconds
             return [.stampAhead(temple, meters: ahead)]
         }
         return []
+    }
+
+    /// One notice on the caption line at a time, whatever its kind.
+    private func isLineFree(at activeSeconds: TimeInterval) -> Bool {
+        guard let last = lastNoticeSeconds else { return true }
+        return activeSeconds - last >= HonorTuning.noticeGapSeconds
     }
 
     private func place(of moment: WayMoment) -> CLLocation {
