@@ -170,6 +170,31 @@ enum PilgrimageWayImporter {
         let summary: String?
         let stages: [Stage]
         let stampHours: StampHours?
+
+        private enum CodingKeys: String, CodingKey {
+            case id, name, names, country, region, distanceKm, stageCount, tradition, summary, stages, stampHours
+        }
+
+        /// What the synthesized decode would do, except for `stampHours`: a
+        /// value of a shape this build cannot read is dropped rather than
+        /// thrown, since a throw here refuses the whole route — and the same
+        /// decode is how `installed()` knows the route is on the phone at all.
+        /// The stamp notice is the only reader, so the cost of a reshaped
+        /// value stays the notice.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(String.self, forKey: .id)
+            name = try container.decode(String.self, forKey: .name)
+            names = try container.decodeIfPresent([String: String].self, forKey: .names)
+            country = try container.decodeIfPresent(String.self, forKey: .country)
+            region = try container.decodeIfPresent(String.self, forKey: .region)
+            distanceKm = try container.decode(Double.self, forKey: .distanceKm)
+            stageCount = try container.decode(Int.self, forKey: .stageCount)
+            tradition = try container.decodeIfPresent(String.self, forKey: .tradition)
+            summary = try container.decodeIfPresent(String.self, forKey: .summary)
+            stages = try container.decode([Stage].self, forKey: .stages)
+            stampHours = try? container.decodeIfPresent(StampHours.self, forKey: .stampHours)
+        }
     }
 
     // MARK: - Stage
@@ -358,7 +383,8 @@ enum PilgrimageWayImporter {
     /// A route that states its stamp hours in anything but "HH:mm" states
     /// none: a walker told the wrong closing time is worse off than a walker
     /// told nothing, so an unreadable pair is dropped whole rather than
-    /// half-read.
+    /// half-read. A value of the wrong shape never reaches here: the decode
+    /// above has already dropped it.
     private static func stampHours(_ raw: RouteFile.StampHours?) -> WayStampHours? {
         guard let raw, let opens = minutesSinceMidnight(raw.opens),
               let closes = minutesSinceMidnight(raw.closes) else { return nil }

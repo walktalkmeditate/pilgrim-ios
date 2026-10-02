@@ -318,6 +318,38 @@ extension PilgrimageWayImporterTests {
         }
     }
 
+    /// The same promise for a value that is not even the right shape — a
+    /// later dataset writing a season's two windows as an array, say. The
+    /// stamp notice is the only thing that reads these hours, so a shape this
+    /// build cannot read costs that notice and never the route.
+    func testAMisShapedStampHoursLeavesTheRouteWalkableAndSilent() throws {
+        let misShaped = [
+            #""stampHours": { "opens": "08:00" },"#,
+            #""stampHours": { "opens": 8, "closes": 17 },"#,
+            #""stampHours": "08:00-17:00","#,
+            #""stampHours": { "opens": null, "closes": "17:00" },"#,
+            #""stampHours": null,"#,
+            #""stampHours": [ { "opens": "08:00", "closes": "12:00" }, { "opens": "13:00", "closes": "17:00" } ],"#
+        ]
+        for block in misShaped {
+            let route = try PilgrimageWayImporter.route(from: routeFile(stampHours: block))
+            XCTAssertNil(route.stampHours, block)
+            XCTAssertEqual(route.stageCount, 2, "the route is still walkable: \(block)")
+            XCTAssertEqual(route.stages.count, 2, block)
+        }
+    }
+
+    /// Leniency is for `stampHours` alone: a route file whose required
+    /// members are mis-shaped is still refused whole.
+    func testARequiredMemberMisShapedIsStillNotWalkable() throws {
+        let base = String(data: try PilgrimageFixtures.data("route.json"), encoding: .utf8)!
+        let broken = base.replacingOccurrences(of: "\"stageCount\": 2", with: "\"stageCount\": \"2\"")
+        XCTAssertNotEqual(broken, base)
+        XCTAssertThrowsError(try PilgrimageWayImporter.route(from: Data(broken.utf8))) {
+            XCTAssertEqual($0 as? PilgrimageError, .notWalkable)
+        }
+    }
+
     /// The route file and the stage files come down separately and only the
     /// package manager holds both, so the hours are copied onto each stage
     /// Way — the walk reads one Way and never the route.

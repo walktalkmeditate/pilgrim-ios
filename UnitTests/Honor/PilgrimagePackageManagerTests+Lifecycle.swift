@@ -155,6 +155,33 @@ extension PilgrimagePackageManagerTests {
         XCTAssertEqual(manager.phase, .failed(.walkInProgress))
     }
 
+    // MARK: - A route file this build only partly reads
+
+    /// `installed()` reads `route.json` through the same decode as the
+    /// download. A stamp-hours shape this build cannot read must not make the
+    /// route vanish from the phone — the launch sweep would then find every
+    /// saved map unaccounted for and take them all.
+    func testAnInstalledRouteWhoseStampHoursAreMisShapedStillReadsAsInstalled() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        try rewriteInstalledRouteFile(stampHours: [["opens": "08:00", "closes": "12:00"],
+                                                   ["opens": "13:00", "closes": "17:00"]])
+
+        let installed = try XCTUnwrap(manager.installed(), "still on the phone")
+        XCTAssertEqual(installed.routeId, "camino-frances")
+        XCTAssertEqual(installed.route.stageCount, 2)
+        XCTAssertNil(installed.route.stampHours, "a shape this build cannot read states no hours")
+    }
+
+    /// The installed `route.json` with its `stampHours` replaced, byte for
+    /// byte what a dataset release would have put there.
+    func rewriteInstalledRouteFile(stampHours: Any) throws {
+        let file = try XCTUnwrap(wayStore.pilgrimageDirectory(for: "camino-frances")).appendingPathComponent("route.json")
+        var obj = try XCTUnwrap(try JSONSerialization.jsonObject(with: try Data(contentsOf: file)) as? [String: Any])
+        obj["stampHours"] = stampHours
+        try JSONSerialization.data(withJSONObject: obj).write(to: file, options: .atomic)
+    }
+
     // MARK: - A stage that disagrees with its route file
 
     /// `route.json` and the stage files come down separately. A stage that
