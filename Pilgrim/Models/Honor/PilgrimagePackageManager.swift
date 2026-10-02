@@ -28,8 +28,9 @@ final class PilgrimagePackageManager: ObservableObject {
     /// Update, and Remove are all refused while a walk is on.
     var isWalkActive: () -> Bool = { false }
 
-    /// The commit's one write to the store, behind a seam so a spec can fail
-    /// it mid-loop and prove the rollback below.
+    /// Every write of a stage Way to the store — the commit's, and the
+    /// launch pass's that hands a route's stamp hours down — behind a seam so
+    /// a spec can fail it mid-loop and prove what each does next.
     var saveStage: (Way) throws -> Void
 
     /// The whole package's ceiling, counted on the bytes that actually land.
@@ -137,6 +138,35 @@ final class PilgrimagePackageManager: ObservableObject {
     private func installedStageCount(for routeId: String) -> Int {
         guard let installed = installed(), installed.routeId == routeId else { return 0 }
         return installed.route.stages.count
+    }
+
+    // MARK: - At launch
+
+    /// A route installed by a build that predates stamp hours on the stage
+    /// Way — 2.0.0 — has them in its `route.json`, copied byte for byte, and
+    /// none on the stages it staged; Update compares releases only, so
+    /// nothing would ever hand them down. Run at every launch: each stage Way
+    /// whose hours differ from the route's is saved with the route's, and
+    /// nothing else about it changes. Compare, then save, so every launch
+    /// after the first writes nothing and no flag is needed.
+    ///
+    /// Stands aside while a download is in flight: its commit writes these
+    /// same files from off the main actor and stamps them itself. A route
+    /// that states no hours is never touched.
+    func restampStageHours(of installed: Installed) {
+        guard !isDownloading, let hours = installed.route.stampHours else { return }
+        for index in 0..<installed.route.stageCount {
+            let id = WayStore.stageWayId(routeId: installed.routeId, stageIndex: index)
+            guard var way = store.load(id: id), way.stampHours != hours else { continue }
+            way.stampHours = hours
+            do {
+                try saveStage(way)
+            } catch {
+                // That stage stays silent and the next launch tries again;
+                // a notice is never a reason to fail a launch.
+                print("[PilgrimagePackageManager] stamp hours not written to \(id): \(error)")
+            }
+        }
     }
 
     // MARK: - Download

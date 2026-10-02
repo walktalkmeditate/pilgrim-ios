@@ -170,24 +170,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         #endif
         startLaunchRecordingCleanup()
         sweepExpiredWays()
-        reconcileTilesAtLaunch()
+        reconcilePilgrimageAtLaunch()
     }
 
     /// Once per process launch, after the store is readable: a kill
     /// mid-Replace is finished by installed()'s marker branch, which no
     /// lifecycle hook sees, so the tiles manager sweeps whatever the
-    /// installed route does not account for.
+    /// installed route does not account for. The same read hands the
+    /// route's stamp hours down to any stage Way staged before they were.
     ///
     /// Skipped under XCTest like its neighbours: the sweep runs against the
     /// shared tile store, which would race a unit test writing its own
     /// fixtures into that same process-global tree.
-    private func reconcileTilesAtLaunch() {
+    private func reconcilePilgrimageAtLaunch() {
         guard NSClassFromString("XCTestCase") == nil else { return }
         Task { @MainActor in
             PilgrimagePackageManager.shared.tiles = PilgrimageTilesManager.shared
             let installed = PilgrimagePackageManager.shared.installed()
             PilgrimageTilesManager.shared.reconcile(
                 installed: installed.map { (routeId: $0.routeId, stageCount: $0.route.stageCount) })
+            if let installed {
+                PilgrimagePackageManager.shared.restampStageHours(of: installed)
+            }
         }
     }
 

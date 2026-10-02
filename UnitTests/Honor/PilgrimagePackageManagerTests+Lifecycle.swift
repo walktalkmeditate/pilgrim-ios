@@ -182,6 +182,134 @@ extension PilgrimagePackageManagerTests {
         try JSONSerialization.data(withJSONObject: obj).write(to: file, options: .atomic)
     }
 
+    // MARK: - Stamp hours for a route installed before the stages carried them
+
+    /// What open-pilgrimages v1.12.0 writes on every Shikoku `route.json`.
+    private static let shikokuHours = ["opens": "08:00", "closes": "17:00"]
+
+    private var stageZeroId: String { WayStore.stageWayId(routeId: "camino-frances", stageIndex: 0) }
+    private var stageOneId: String { WayStore.stageWayId(routeId: "camino-frances", stageIndex: 1) }
+
+    /// A Shikoku leg downloaded under 2.0.0: `route.json` was copied byte for
+    /// byte and carries the hours, the stage Ways staged beside it do not,
+    /// and Update compares releases only — so nothing would ever offer the
+    /// walker the notice. The launch pass hands the hours down, and touches
+    /// nothing else a walker has made of the stage.
+    func testAStageInstalledWithoutItsRoutesStampHoursLearnsThemAtLaunch() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        try rewriteInstalledRouteFile(stampHours: Self.shikokuHours)
+        let walk = UUID()
+        try wayStore.link(walkUUID: walk, to: stageZeroId, arrival: nil)
+        try wayStore.setReply(wayId: stageZeroId, originN: HonorPersistence.stageReflectionOrigin,
+                              relativePath: "Recordings/reply.m4a")
+        let acceptedAt = wayStore.acceptedAt(id: stageZeroId)
+        let before = try XCTUnwrap(wayStore.load(id: stageZeroId))
+        XCTAssertNil(before.stampHours, "the state a 2.0.0 install leaves")
+
+        manager.restampStageHours(of: try XCTUnwrap(manager.installed()))
+
+        let hours = WayStampHours(opensMinutes: 480, closesMinutes: 1020)
+        XCTAssertEqual(wayStore.load(id: stageZeroId)?.stampHours, hours)
+        XCTAssertEqual(wayStore.load(id: stageOneId)?.stampHours, hours)
+        let stamped = try XCTUnwrap(wayStore.load(id: stageZeroId))
+        var unstamped = stamped
+        unstamped.stampHours = nil
+        XCTAssertEqual(unstamped, before, "nothing but the hours is rewritten")
+        XCTAssertEqual(PilgrimageTilesManager.corridorHash(for: stamped), PilgrimageTilesManager.corridorHash(for: before),
+                       "a saved map region still matches its stage")
+        XCTAssertEqual(wayStore.acceptedAt(id: stageZeroId), acceptedAt)
+        XCTAssertEqual(wayStore.replies(for: stageZeroId)[HonorPersistence.stageReflectionOrigin], "Recordings/reply.m4a")
+        XCTAssertEqual(wayStore.wayLink(forWalk: walk)?.wayId, stageZeroId)
+        XCTAssertEqual(manager.installed()?.release, "v1.7.0", "the package itself is left as it was")
+    }
+
+    /// Compare, then save: every launch runs the pass, and only the first
+    /// after the app update has anything to write.
+    func testASecondLaunchPassWritesNothing() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        try rewriteInstalledRouteFile(stampHours: Self.shikokuHours)
+        let saves = countingSaves(on: manager)
+
+        manager.restampStageHours(of: try XCTUnwrap(manager.installed()))
+        XCTAssertEqual(saves.count, 2, "both stages lacked them")
+
+        manager.restampStageHours(of: try XCTUnwrap(manager.installed()))
+        XCTAssertEqual(saves.count, 2, "the second pass found nothing to change")
+    }
+
+    /// Every route but Shikoku's states no hours, and the pass leaves its
+    /// stages exactly as they are.
+    func testARouteThatStatesNoStampHoursIsLeftAlone() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        let saves = countingSaves(on: manager)
+
+        manager.restampStageHours(of: try XCTUnwrap(manager.installed()))
+
+        XCTAssertEqual(saves.count, 0)
+        XCTAssertNil(wayStore.load(id: stageZeroId)?.stampHours)
+    }
+
+    /// A launch pass must never take the launch down with it: a stage the
+    /// disk refuses stays silent until the next launch tries again, and the
+    /// rest still learn their hours.
+    func testAStageThatCannotBeWrittenLeavesTheRestStamped() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        try rewriteInstalledRouteFile(stampHours: Self.shikokuHours)
+        let store = wayStore!
+        let refused = stageZeroId
+        manager.saveStage = { way in
+            if way.id == refused { throw CocoaError(.fileWriteOutOfSpace) }
+            try store.save(way)
+        }
+
+        manager.restampStageHours(of: try XCTUnwrap(manager.installed()))
+
+        XCTAssertNil(wayStore.load(id: stageZeroId)?.stampHours, "left as it was")
+        XCTAssertNotNil(wayStore.load(id: stageOneId)?.stampHours)
+    }
+
+    /// An Update's commit writes the same stage files from off the main
+    /// actor; a pass that loaded a stage before the commit and saved it after
+    /// would put the old stage back. The download stamps its own stages.
+    func testThePassStandsAsideWhileADownloadIsInFlight() async throws {
+        let manager = makeManager()
+        try await manager.download(entry: entry, release: "v1.7.0")
+        try rewriteInstalledRouteFile(stampHours: Self.shikokuHours)
+        let installed = try XCTUnwrap(manager.installed())
+        StubURLProtocol.stub(url: try url("route.json", release: "v1.8.0"),
+                             body: try PilgrimageFixtures.data("route.json"), delay: 0.4)
+        StubURLProtocol.stub(url: try url("stage-00.json", release: "v1.8.0"),
+                             body: try PilgrimageFixtures.data("stage-00.json"))
+        StubURLProtocol.stub(url: try url("stage-01.json", release: "v1.8.0"),
+                             body: try PilgrimageFixtures.data("stage-01.json"))
+        let saves = countingSaves(on: manager)
+        let update = Task { try await manager.update(entry: entry, release: "v1.8.0") }
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        manager.restampStageHours(of: installed)
+
+        XCTAssertEqual(saves.count, 0, "nothing written while the download holds the stages")
+        try await update.value
+    }
+
+    /// Every write the manager makes to a stage Way, counted on the way to
+    /// this test's own store.
+    private final class SaveCount { var count = 0 }
+
+    private func countingSaves(on manager: PilgrimagePackageManager) -> SaveCount {
+        let saves = SaveCount()
+        let store = wayStore!
+        manager.saveStage = { way in
+            saves.count += 1
+            try store.save(way)
+        }
+        return saves
+    }
+
     // MARK: - A stage that disagrees with its route file
 
     /// `route.json` and the stage files come down separately. A stage that
