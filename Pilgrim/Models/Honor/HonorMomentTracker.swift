@@ -62,11 +62,14 @@ struct HonorMomentTracker {
     private let marks: [WayMark]
     private var firedMarks: Set<String> = []
     /// Active seconds at the last water caption; nil means the first is
-    /// free. Water's alone, so a fountain never costs a temple its notice,
-    /// nor a temple a fountain.
+    /// free. Water's own, so a fountain no longer holds a temple for an
+    /// hour, nor a temple a fountain.
     private var lastWaterSeconds: TimeInterval?
     /// Active seconds at the last notice of either kind, read only for the
-    /// short gap that keeps two notices off the caption line at once.
+    /// short gap that keeps two notices off the caption line at once. That
+    /// minute can still cost one of them: a fountain under about 80 m ahead
+    /// when the other notice speaks is passed before the minute is up, and a
+    /// temple 1.00–1.08 km ahead is inside the kilometre by then.
     private var lastNoticeSeconds: TimeInterval?
     private let stamp: StampOffice?
     /// The stamp temples among the moments, in the order they are passed.
