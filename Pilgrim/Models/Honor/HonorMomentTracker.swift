@@ -29,6 +29,11 @@ struct HonorMomentTracker {
         /// True from two hours before the office shuts until it does.
         /// Earlier is noise; later there is no stamp left to be had, and a
         /// walker who has already lost it does not need telling.
+        ///
+        /// Deliberately reads the closing time alone, on the same day: every
+        /// value the dataset carries is 08:00–17:00, so `opens` never falls
+        /// inside the window and no close comes early enough to wrap past
+        /// midnight. An office that did either would need both handled here.
         var isClosingSoon: Bool {
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = timeZone
