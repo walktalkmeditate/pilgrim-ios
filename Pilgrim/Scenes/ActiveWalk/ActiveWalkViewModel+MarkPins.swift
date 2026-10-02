@@ -65,8 +65,10 @@ extension ActiveWalkViewModel {
 
     /// The stamp office's one line, in that same borrowed slot. Silent
     /// without the route's hours, which is every Way but a Shikoku stage's.
-    func showStampCaption(temple: WayMoment, meters: Double) {
-        guard let number = temple.templeNumber, let closes = way?.stampHours?.closesMinutes else { return }
+    /// Returns whether the line was shown, so the tap can go with it.
+    func showStampCaption(temple: WayMoment, meters: Double) -> Bool {
+        guard let number = temple.templeNumber, let closes = way?.stampHours?.closesMinutes else { return false }
         showHonorCaption(WayStampNotice.caption(templeNumber: number, closesMinutes: closes, meters: meters))
+        return true
     }
 }

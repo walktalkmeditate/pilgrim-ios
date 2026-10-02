@@ -206,11 +206,13 @@ extension ActiveWalkViewModel {
             fireHonorHaptic(.honorWaterAhead)
 
         case .stampAhead(let temple, let meters):
-            showStampCaption(temple: temple, meters: meters)
             // The water source's tap, deliberately: one at the whisper's
             // intensity, a notice and not an alert. Both are the same kind
-            // of passing word, so they feel the same in the pocket.
-            fireHonorHaptic(.honorWaterAhead)
+            // of passing word, so they feel the same in the pocket — and
+            // only with a line to read, never a tap about nothing.
+            if showStampCaption(temple: temple, meters: meters) {
+                fireHonorHaptic(.honorWaterAhead)
+            }
 
         case .arrived(let theirSeconds, let yourSeconds):
             recordHonorArrival(theirSeconds: theirSeconds, yourSeconds: yourSeconds)
