@@ -12,6 +12,7 @@ enum HonorEngineEvent: Equatable {
     case voiceDropped(WayMoment)
     case softTap(offWayMeters: Double)
     case markAhead(mark: WayMark, meters: Double)
+    case stampAhead(temple: WayMoment, meters: Double)
     case arrived(theirSeconds: Double, yourSeconds: Double)
 }
 
@@ -87,7 +88,20 @@ final class HonorEngine: ObservableObject {
         self.arrival = ArrivalDebounce(requiredFixes: HonorTuning.arrivalFixCount,
                                        accuracyMeters: HonorTuning.arrivalAccuracyMeters)
         self.moments = HonorMomentTracker(moments: way.moments, marks: way.marks ?? [],
-                                          geometry: geometry, voicesEnabled: voicesEnabled)
+                                          geometry: geometry, voicesEnabled: voicesEnabled,
+                                          stamp: Self.stampOffice(for: way, now: now))
+    }
+
+    /// The office keeps the Way's own clock where it names one and the
+    /// walker's phone otherwise — which on Shikoku is the same clock, since
+    /// the dataset's stage files carry no time zone and the walker is
+    /// standing in front of the temple.
+    private static func stampOffice(for way: Way, now: @escaping () -> Date) -> HonorMomentTracker.StampOffice? {
+        guard let hours = way.stampHours else { return nil }
+        return HonorMomentTracker.StampOffice(
+            closesMinutes: hours.closesMinutes,
+            timeZone: way.tzIdentifier.flatMap(TimeZone.init(identifier:)) ?? .current,
+            now: now)
     }
 
     // MARK: - Binding
@@ -318,6 +332,7 @@ final class HonorEngine: ObservableObject {
             case .voiceResume: subject.send(.voiceResume)
             case .voiceDropped(let moment): subject.send(.voiceDropped(moment))
             case .markAhead(let mark, let meters): subject.send(.markAhead(mark: mark, meters: meters))
+            case .stampAhead(let temple, let meters): subject.send(.stampAhead(temple: temple, meters: meters))
             }
         }
     }

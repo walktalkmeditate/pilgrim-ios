@@ -28,8 +28,9 @@ final class PilgrimagePackageManager: ObservableObject {
     /// Update, and Remove are all refused while a walk is on.
     var isWalkActive: () -> Bool = { false }
 
-    /// The commit's one write to the store, behind a seam so a spec can fail
-    /// it mid-loop and prove the rollback below.
+    /// Every write of a stage Way to the store — the commit's, and the
+    /// launch pass's that hands a route's stamp hours down — behind a seam so
+    /// a spec can fail it mid-loop and prove what each does next.
     var saveStage: (Way) throws -> Void
 
     /// The whole package's ceiling, counted on the bytes that actually land.
@@ -139,6 +140,35 @@ final class PilgrimagePackageManager: ObservableObject {
         return installed.route.stages.count
     }
 
+    // MARK: - At launch
+
+    /// A route installed by a build that predates stamp hours on the stage
+    /// Way — 2.0.0 — has them in its `route.json`, copied byte for byte, and
+    /// none on the stages it staged; Update compares releases only, so
+    /// nothing would ever hand them down. Run at every launch: each stage Way
+    /// whose hours differ from the route's is saved with the route's, and
+    /// nothing else about it changes. Compare, then save, so every launch
+    /// after the first writes nothing and no flag is needed.
+    ///
+    /// Stands aside while a download is in flight: its commit writes these
+    /// same files from off the main actor and stamps them itself. A route
+    /// that states no hours is never touched.
+    func restampStageHours(of installed: Installed) {
+        guard !isDownloading, let hours = installed.route.stampHours else { return }
+        for index in 0..<installed.route.stageCount {
+            let id = WayStore.stageWayId(routeId: installed.routeId, stageIndex: index)
+            guard var way = store.load(id: id), way.stampHours != hours else { continue }
+            way.stampHours = hours
+            do {
+                try saveStage(way)
+            } catch {
+                // That stage stays silent and the next launch tries again;
+                // a notice is never a reason to fail a launch.
+                print("[PilgrimagePackageManager] stamp hours not written to \(id): \(error)")
+            }
+        }
+    }
+
     // MARK: - Download
 
     /// Fetches `route.json` and every stage at the exact release the index
@@ -183,7 +213,8 @@ final class PilgrimagePackageManager: ObservableObject {
                     throw PilgrimageError.notWalkable
                 }
                 let stagePlan = StagePlan(routeId: entry.id, url: stageURL, stageCount: fetched.route.stageCount,
-                                          expected: fetched.route.stages[index])
+                                          expected: fetched.route.stages[index],
+                                          stampHours: fetched.route.stampHours)
                 packageBytes += try await Self.stageOneStage(stagePlan, into: temp, session: session)
                 try Self.checkBudget(packageBytes, cap: cap)
                 phase = .downloading(done: index + 2, total: total)
@@ -329,6 +360,10 @@ final class PilgrimagePackageManager: ObservableObject {
         let url: URL
         let stageCount: Int
         let expected: PilgrimageRouteStage
+        /// `route.json`'s, copied onto the stage Way here: the two files come
+        /// down separately and only this loop holds both, while the walk that
+        /// reads them later holds one Way and no route at all.
+        let stampHours: WayStampHours?
     }
 
     /// Validated as it lands, then written in the store's own encoding, so
@@ -344,7 +379,8 @@ final class PilgrimagePackageManager: ObservableObject {
     nonisolated private static func stageOneStage(_ plan: StagePlan, into temp: URL, session: URLSession) async throws -> Int {
         let index = plan.expected.index
         let data = try await fetch(url: plan.url, cap: PilgrimageWayImporter.maxStageBytes, session: session)
-        let way = try PilgrimageWayImporter.way(from: data, routeId: plan.routeId, stageIndex: index)
+        let way = try PilgrimageWayImporter.way(from: data, routeId: plan.routeId, stageIndex: index,
+                                                stampHours: plan.stampHours)
         guard way.stage?.count == plan.stageCount, way.stage?.name == plan.expected.name else {
             throw PilgrimageError.notWalkable
         }

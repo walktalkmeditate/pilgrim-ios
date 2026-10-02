@@ -30,4 +30,22 @@ enum HonorTuning {
     /// and 23 on its wettest day; without this the caption would be the
     /// day's loudest voice.
     static let markQuietSeconds: TimeInterval = 3600
+    /// The least walking between any two notices on the caption line, water
+    /// or temple. The line holds a notice for 20 s; a minute keeps one from
+    /// replacing another still being read, or two taps landing together.
+    static let noticeGapSeconds: TimeInterval = 60
+    /// How long before the stamp office shuts the notice is worth saying —
+    /// from 15:00 for a 17:00 close. Earlier it is a fact about the
+    /// afternoon rather than a choice anyone is making.
+    static let stampNoticeMinutes = 120
+    /// Nearer than this and the temple has stopped being a decision: the
+    /// walker is already arriving.
+    static let stampMinAheadMeters = 1000.0
+    /// The least walking between two temple notices. Shikoku's temples can
+    /// stand barely a kilometre apart: on Awa stage-00 from 15.0 km, temple 6
+    /// spoke at 1.1 km and temple 7 two minutes later. Across all 40 stages
+    /// at 4 km/h, ten minutes removed every pair under ten minutes apart and
+    /// cost 1 notice in 3,979; water's hour would hold a 16:10 notice's
+    /// successor past 17:00.
+    static let stampQuietSeconds: TimeInterval = 600
 }

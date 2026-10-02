@@ -36,6 +36,7 @@ final class PilgrimageStageWalkTests: XCTestCase {
     /// The walk the current test drove, so teardown can end it: a view model
     /// left running keeps its engine, its compass, and its subscriptions.
     private var vm: ActiveWalkViewModel?
+    private var hapticAttempts = 0
 
     override func setUpWithError() throws {
         dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -56,7 +57,12 @@ final class PilgrimageStageWalkTests: XCTestCase {
         let store = self.store!
         var senses = HonorSenses()
         senses.store = { store }
-        senses.isAppActive = { false }
+        // Asked only on the way to a haptic, so the count is every tap the
+        // walk tried to give; answering false keeps the device still.
+        senses.isAppActive = { [weak self] in
+            self?.hapticAttempts += 1
+            return false
+        }
         senses.makeVoicePlayer = { SilentVoicePlayer() }
         senses.makeHeadingProvider = { StubHeading() }
         return senses
@@ -364,6 +370,45 @@ extension PilgrimageStageWalkTests {
 
         XCTAssertEqual(vm.softTapCaption, "water in \(WayDistance.string(meters: 280))")
         XCTAssertTrue(vm.honorCards.isEmpty, "a mark is never a card")
+    }
+
+    /// The stamp office borrows the same line and adds nothing to the screen.
+    func testTheStampNoticeBorrowsTheCaptionLineAndNothingElse() {
+        var temple = WayMoment(id: "temple-10", frac: 0.9, at: WayCoordinate(lat: 0, lon: 900 / 111_320),
+                               kind: .waypoint(label: "Kirihata-ji", icon: "seal"))
+        temple.text = "Temple 10 · Koyasan Shingon · stamp available (¥500)"
+        var way = stageWay()
+        way.stampHours = WayStampHours(opensMinutes: 8 * 60, closesMinutes: 17 * 60)
+        let vm = honorWalk(way: way)
+        vm.builder.setStatus(.ready)
+        vm.startRecording()
+
+        let before = hapticAttempts
+
+        vm.handleHonorEvent(.stampAhead(temple: temple, meters: 3200))
+
+        XCTAssertEqual(vm.softTapCaption,
+                       WayStampNotice.caption(templeNumber: 10, closesMinutes: 17 * 60, meters: 3200))
+        XCTAssertTrue(vm.honorCards.isEmpty, "a notice is never a card")
+        XCTAssertEqual(hapticAttempts - before, 1, "the line comes with its one soft tap")
+    }
+
+    /// Belt and braces behind the tracker's own gate: a Way with no hours
+    /// can put nothing on the line even if an event somehow reached it —
+    /// and a tap with nothing to read would be a tap about nothing.
+    func testAWayWithoutStampHoursPutsNothingOnTheLineAndTapsNothing() {
+        var temple = WayMoment(id: "temple-10", frac: 0.9, at: WayCoordinate(lat: 0, lon: 900 / 111_320),
+                               kind: .waypoint(label: "Kirihata-ji", icon: "seal"))
+        temple.text = "Temple 10 · Koyasan Shingon · stamp available (¥500)"
+        let vm = honorWalk(way: stageWay())
+        vm.builder.setStatus(.ready)
+        vm.startRecording()
+        let before = hapticAttempts
+
+        vm.handleHonorEvent(.stampAhead(temple: temple, meters: 3200))
+
+        XCTAssertNil(vm.softTapCaption)
+        XCTAssertEqual(hapticAttempts - before, 0, "no caption, no tap")
     }
 }
 

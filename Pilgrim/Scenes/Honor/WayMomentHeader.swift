@@ -117,6 +117,34 @@ enum WayDistance {
     }
 }
 
+/// "temple 10 stamps until 5 · 3.2 km" — the one line a stamp office is
+/// allowed to say, in the walk screen's own register: lowercase and terse,
+/// the distance in the unit the walker chose. A fact, not a forecast: what
+/// the office does and how far it is, for the walker to judge their own pace
+/// against.
+enum WayStampNotice {
+
+    static func caption(templeNumber: Int, closesMinutes: Int, meters: Double, locale: Locale = .current) -> String {
+        let distance = WayDistance.string(meters: max(0, meters.isFinite ? meters : 0))
+        return "temple \(templeNumber) stamps until \(hour(closesMinutes, locale: locale)) · \(distance)"
+    }
+
+    /// The same 17:00 as "5" where the walker's clock is 12-hour and "17"
+    /// where it is 24-hour — their own numbers, asked of the locale rather
+    /// than assumed. No meridiem marker: "until 5 PM" reads as a timetable,
+    /// and this is a line passed on a walk.
+    static func hour(_ minutesSinceMidnight: Int, locale: Locale = .current) -> String {
+        let hour = minutesSinceMidnight / 60
+        let minute = minutesSinceMidnight % 60
+        let shown = isTwelveHourClock(locale) ? (hour % 12 == 0 ? 12 : hour % 12) : hour
+        return minute == 0 ? "\(shown)" : String(format: "%d:%02d", shown, minute)
+    }
+
+    private static func isTwelveHourClock(_ locale: Locale) -> Bool {
+        DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: locale)?.contains("a") ?? false
+    }
+}
+
 /// "stage 1 of 33 · 24 km · hard" — what stands where a shared walk shows
 /// the day it was walked. A stage's own date is the build's timestamp and
 /// means nothing to the walker.
