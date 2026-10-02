@@ -289,6 +289,11 @@ extension PilgrimagePackageManagerTests {
         let saves = countingSaves(on: manager)
         let update = Task { try await manager.update(entry: entry, release: "v1.8.0") }
         try await Task.sleep(nanoseconds: 100_000_000)
+        guard case .downloading = manager.phase else {
+            XCTFail("the Update finished before the pass ran, so this proves nothing: lengthen route.json's stub delay")
+            try await update.value
+            return
+        }
 
         manager.restampStageHours(of: installed)
 
