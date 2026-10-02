@@ -74,6 +74,8 @@ struct HonorMomentTracker {
     /// nothing to scan on every Way but Shikoku's.
     private let fudasho: [WayMoment]
     private var firedStamps: Set<String> = []
+    /// Active seconds at the last temple notice; nil means the first is free.
+    private var lastStampSeconds: TimeInterval?
 
     init(moments: [WayMoment], marks: [WayMark] = [], geometry: WayGeometry, voicesEnabled: Bool,
          stamp: StampOffice? = nil) {
@@ -190,9 +192,10 @@ struct HonorMomentTracker {
     /// behind, and never off the way — where progress is stale and the
     /// distance would be a guess.
     ///
-    /// No quiet hour between temples — it held a 16:10 notice's successor past
-    /// 17:00. Only the nearest choice may speak, once, so the next waits until
-    /// the walker is within a kilometre of the one already named.
+    /// Temples keep ten minutes between them, not water's hour, which held a
+    /// 16:10 notice's successor past 17:00. Only the nearest choice may speak,
+    /// once, so the next also waits until the walker is within a kilometre of
+    /// the one already named.
     ///
     /// A fact and never a forecast: what the office does and how far it is,
     /// for the walker to judge their own pace against. An arrival time drawn
@@ -201,6 +204,7 @@ struct HonorMomentTracker {
     private mutating func stampAhead(progressFrac: Double, activeSeconds: TimeInterval, isOnWay: Bool) -> [Action] {
         guard isOnWay, !fudasho.isEmpty, geometry.totalMeters > 0, let stamp,
               isLineFree(at: activeSeconds), stamp.isClosingSoon else { return [] }
+        if let last = lastStampSeconds, activeSeconds - last < HonorTuning.stampQuietSeconds { return [] }
         for temple in fudasho {
             let ahead = (temple.frac - progressFrac) * geometry.totalMeters
             // Behind them, or close enough that the walk has already decided.
@@ -208,6 +212,7 @@ struct HonorMomentTracker {
             // The nearest choice, already named: the next is not news yet.
             guard !firedStamps.contains(temple.id) else { return [] }
             firedStamps.insert(temple.id)
+            lastStampSeconds = activeSeconds
             lastNoticeSeconds = activeSeconds
             return [.stampAhead(temple, meters: ahead)]
         }

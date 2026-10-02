@@ -376,9 +376,10 @@ extension HonorMomentTrackerTests {
     }
 
     /// The review's case: water at 14:30 used to hold every temple until
-    /// 15:30 of walking. A fountain is no reason to lose a stamp.
+    /// 15:30 of walking. A fountain is no reason to lose a stamp, and it
+    /// starts no temple hold: only the shared minute stands between them.
     func testAFountainDoesNotSilenceATemple() {
-        var clock = (hour: 14, minute: 30)
+        var clock = (hour: 14, minute: 59)
         var t = stampTracker([temple(10, frac: 0.5)], marks: [fountain(atKm: 1.2)],
                              clock: { Self.tokyoClock(clock.hour, clock.minute) })
         XCTAssertEqual(markAhead(t.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
@@ -386,9 +387,10 @@ extension HonorMomentTrackerTests {
                        ["fuente-1.2"])
 
         clock = (15, 0)
-        XCTAssertEqual(stampAhead(t.update(location: coord(2500), progressFrac: 0.25, gates: .init(),
-                                           isStationary: false, activeSeconds: 1800, isOnWay: true)),
-                       ["temple-10"], "half an hour after the water, the temple still speaks")
+        XCTAssertEqual(stampAhead(t.update(location: coord(1060), progressFrac: 0.106, gates: .init(),
+                                           isStationary: false, activeSeconds: HonorTuning.noticeGapSeconds,
+                                           isOnWay: true)),
+                       ["temple-10"], "a minute after the water, the temple speaks")
     }
 
     func testATempleDoesNotSilenceAFountain() {
@@ -402,19 +404,22 @@ extension HonorMomentTrackerTests {
     }
 
     /// The review's other case: a first temple at 16:10 used to hold the
-    /// next past 17:00, so the second never spoke that day.
+    /// next past 17:00, so the second never spoke that day. Now it may speak
+    /// from 16:20.
     func testTwoTemplesInTheLastHoursBothSpeakOnceEach() {
         var clock = (hour: 16, minute: 10)
-        var t = stampTracker([temple(10, frac: 0.3), temple(11, frac: 0.9)],
+        var t = stampTracker([temple(10, frac: 0.22), temple(11, frac: 0.9)],
                              clock: { Self.tokyoClock(clock.hour, clock.minute) })
         XCTAssertEqual(stampAhead(t.update(location: coord(1000), progressFrac: 0.1, gates: .init(),
                                            isStationary: false, activeSeconds: 0, isOnWay: true)),
                        ["temple-10"])
 
-        // 500 m short of temple 10: it is decided, and temple 11 is the choice.
-        clock = (16, 30)
-        XCTAssertEqual(stampAhead(t.update(location: coord(2500), progressFrac: 0.25, gates: .init(),
-                                           isStationary: false, activeSeconds: 1200, isOnWay: true)),
+        // Ten minutes on, 600 m short of temple 10: it is decided, and
+        // temple 11 is the choice.
+        clock = (16, 20)
+        XCTAssertEqual(stampAhead(t.update(location: coord(1600), progressFrac: 0.16, gates: .init(),
+                                           isStationary: false, activeSeconds: HonorTuning.stampQuietSeconds,
+                                           isOnWay: true)),
                        ["temple-11"])
 
         clock = (16, 50)
@@ -440,20 +445,47 @@ extension HonorMomentTrackerTests {
     }
 
     /// A temple named a step outside the kilometre is inside it a minute
-    /// later; the next temple waits a breath rather than land on the same
-    /// caption the first is still showing.
-    func testTheNextTempleWaitsABreathAfterTheLast() {
+    /// later. The next temple waits ten minutes of walking after the last,
+    /// not the caption's minute: two temples a breath apart read as one
+    /// notice correcting another.
+    func testTheNextTempleWaitsTenMinutesAfterTheLast() {
         let total = longGeometry.totalMeters
         var t = stampTracker([temple(10, frac: 0.5), temple(11, frac: 0.9)])
         XCTAssertEqual(stampAhead(t.update(location: coord(3999), progressFrac: 0.5 - 1001 / total, gates: .init(),
                                            isStationary: false, activeSeconds: 0, isOnWay: true)),
                        ["temple-10"])
-        let tooSoon = HonorTuning.noticeGapSeconds / 2
-        XCTAssertEqual(stampAhead(t.update(location: coord(4010), progressFrac: 0.5 - 990 / total, gates: .init(),
-                                           isStationary: false, activeSeconds: tooSoon, isOnWay: true)), [])
-        XCTAssertEqual(stampAhead(t.update(location: coord(4050), progressFrac: 0.5 - 950 / total, gates: .init(),
+        XCTAssertEqual(stampAhead(t.update(location: coord(4032), progressFrac: 0.5 - 968 / total, gates: .init(),
+                                           isStationary: false, activeSeconds: HonorTuning.noticeGapSeconds / 2,
+                                           isOnWay: true)), [], "inside the caption's minute")
+        XCTAssertEqual(stampAhead(t.update(location: coord(4066), progressFrac: 0.5 - 934 / total, gates: .init(),
                                            isStationary: false, activeSeconds: HonorTuning.noticeGapSeconds,
+                                           isOnWay: true)), [], "the line is free, but the last temple spoke a minute ago")
+        XCTAssertEqual(stampAhead(t.update(location: coord(4665), progressFrac: 0.5 - 335 / total, gates: .init(),
+                                           isStationary: false, activeSeconds: HonorTuning.stampQuietSeconds - 1,
+                                           isOnWay: true)), [])
+        XCTAssertEqual(stampAhead(t.update(location: coord(4666), progressFrac: 0.5 - 334 / total, gates: .init(),
+                                           isStationary: false, activeSeconds: HonorTuning.stampQuietSeconds,
                                            isOnWay: true)),
                        ["temple-11"])
+    }
+
+    /// Shikoku's temples can stand barely a kilometre apart. On Awa stage-00
+    /// from 15.0 km at 4 km/h, temple 6 spoke at 1.1 km and temple 7 at
+    /// 2.1 km two minutes later. The second is held until ten minutes after
+    /// the first, and still speaks well before the walker reaches it.
+    func testTwoTemplesAKilometreApartDoNotSpeakMinutesApart() {
+        let total = longGeometry.totalMeters
+        var t = stampTracker([temple(6, frac: 0.5), temple(7, frac: 0.5 + 1130 / total)])
+        XCTAssertEqual(stampAhead(t.update(location: coord(3900), progressFrac: 0.5 - 1100 / total, gates: .init(),
+                                           isStationary: false, activeSeconds: 0, isOnWay: true)),
+                       ["temple-6"])
+        XCTAssertEqual(stampAhead(t.update(location: coord(4033), progressFrac: 0.5 - 967 / total, gates: .init(),
+                                           isStationary: false, activeSeconds: 120, isOnWay: true)), [],
+                       "temple 6 is inside the kilometre and temple 7 is the choice, but not two minutes on")
+        let hit = t.update(location: coord(4567), progressFrac: 0.5 - 433 / total, gates: .init(),
+                           isStationary: false, activeSeconds: HonorTuning.stampQuietSeconds, isOnWay: true)
+        XCTAssertEqual(stampAhead(hit), ["temple-7"])
+        guard case .stampAhead(_, let meters) = hit.first else { return XCTFail("action") }
+        XCTAssertEqual(meters, 1563, accuracy: 1)
     }
 }
