@@ -172,6 +172,20 @@ extension HonorWayRenderingTests {
         XCTAssertEqual(WayStampNotice.hour(17 * 60 + 30, locale: twelve), "5:30")
     }
 
+    /// The eighty-eight are numbered from one: a "Temple 0" is a typo in the
+    /// data, and the caption would otherwise read "temple 0 stamps until 5".
+    func testTempleZeroIsNotANumberedTemple() {
+        func place(_ text: String) -> WayMoment {
+            var moment = WayMoment(id: "wp", frac: 0.5, at: nil, kind: .waypoint(label: "Ryozen-ji", icon: "seal"))
+            moment.text = text
+            return moment
+        }
+        XCTAssertNil(place("Temple 0 · Koyasan Shingon · stamp available (¥500)").templeNumber)
+        XCTAssertNil(place("Temple 0000 · Koyasan Shingon").templeNumber, "zero however it is padded")
+        XCTAssertEqual(place("Temple 1 · Koyasan Shingon · stamp available (¥500)").templeNumber, 1)
+        XCTAssertEqual(place("Temple 88 · Shingon").templeNumber, 88)
+    }
+
     func testRelationLineFollowsTheDistancePreference() {
         UserPreferences.distanceMeasurementType.value = .miles
         defer { UserPreferences.distanceMeasurementType.delete() }

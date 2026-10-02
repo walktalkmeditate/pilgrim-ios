@@ -103,12 +103,13 @@ struct WayMoment: Codable, Equatable, Identifiable {
     /// cathedrals and Kumano shrines — 48 such places across the routes that
     /// ship today — while only the numbered temples keep an office that
     /// shuts. Only the digits are taken, so a change to the separator can
-    /// never put half a sentence on a caption line.
+    /// never put half a sentence on a caption line, and the temples are
+    /// numbered from one, so a zero is a typo and names nothing.
     var templeNumber: Int? {
         guard let text, text.hasPrefix(Self.templePrefix) else { return nil }
         let digits = text.dropFirst(Self.templePrefix.count).prefix { $0.isASCII && $0.isNumber }
-        guard (1...4).contains(digits.count) else { return nil }
-        return Int(digits)
+        guard (1...4).contains(digits.count), let number = Int(digits), number > 0 else { return nil }
+        return number
     }
 
     private static let templePrefix = "Temple "
