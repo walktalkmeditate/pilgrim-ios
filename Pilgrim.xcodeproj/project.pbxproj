@@ -203,6 +203,7 @@
 		2E45C3D0E8EAC7789774F479 /* whisper-stillness-2.aac in Resources */ = {isa = PBXBuildFile; fileRef = 061E977B7C29F32543182E9B /* whisper-stillness-2.aac */; };
 		2E59989F7B4496B95EBB0AB7 /* SoundManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263D620E1DB30C5FCA0143CC /* SoundManagement.swift */; };
 		3026F5401165F511ADF6A425 /* WayImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD6A8FE7FA38DDDF7FE897FF /* WayImporter.swift */; };
+		3142528E87F77E9EFAF79DE8 /* StageLinkResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9D9D6F58FBBD0F41C958FE /* StageLinkResolverTests.swift */; };
 		32190B1BFA6491123F61C477 /* PilgrimageWayImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 042CB0A642107281F17ADB9A /* PilgrimageWayImporterTests.swift */; };
 		327DC05F7A67BC78A63EB5A4 /* InkScrollView+LunarMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B74716356D8FD1E3AD91D3A /* InkScrollView+LunarMarkers.swift */; };
 		3388473FDC9340D4B1E61E75 /* CelestialCalculatorIlluminationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B1EF60CA6E4AFCBB09E532 /* CelestialCalculatorIlluminationTests.swift */; };
@@ -445,6 +446,7 @@
 		B4C5D6E7F8A9B0C1D2E3F4A6 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* FeedbackService.swift */; };
 		B4C5D6E7F8A9B0C1D2E3F4A8 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A7 /* FeedbackView.swift */; };
 		B5A132B5FFF7DC9429076140 /* whisper-play-6.aac in Resources */ = {isa = PBXBuildFile; fileRef = 94D4ED498F6BB16685DC466E /* whisper-play-6.aac */; };
+		B5AA77FC1EF12281243CD150 /* StageLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 634C42EE4BBE220E48763570 /* StageLink.swift */; };
 		B5CB838747A53368D71068C7 /* TourManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F521AB197701BFC0252FFFBC /* TourManifest.swift */; };
 		B630C01285A745C4C0B04FC5 /* SeekDemoSeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891AB02D5C379B14317F9FBA /* SeekDemoSeedTests.swift */; };
 		B6EE97B5CE406DEAF57A3EEC /* whisper-presence-5.aac in Resources */ = {isa = PBXBuildFile; fileRef = 27C63629FE423C2F81E35D5C /* whisper-presence-5.aac */; };
@@ -1061,6 +1063,7 @@
 		62963F6ED9C823C21B05E003 /* whisper-lightness-1.aac */ = {isa = PBXFileReference; includeInIndex = 1; path = "whisper-lightness-1.aac"; sourceTree = "<group>"; };
 		62D3301D1CBA5198814EFBE0 /* UserPreferencesArchivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserPreferencesArchivedTests.swift; sourceTree = "<group>"; };
 		63411BA85CC22B5852A05E15 /* FakeTileRegionLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FakeTileRegionLoaderTests.swift; sourceTree = "<group>"; };
+		634C42EE4BBE220E48763570 /* StageLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StageLink.swift; sourceTree = "<group>"; };
 		63D25426D1C7A8D3170DA0C5 /* StubURLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StubURLProtocol.swift; sourceTree = "<group>"; };
 		657285380BA538D2061BACCA /* PilgrimMapView+HonorWay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PilgrimMapView+HonorWay.swift"; sourceTree = "<group>"; };
 		65A190F6D27B2C253319978C /* OrphanRecordingSweep.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrphanRecordingSweep.swift; sourceTree = "<group>"; };
@@ -1413,6 +1416,7 @@
 		FF0C3B1FFBCAF6277D0D9E96 /* WhisperPlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WhisperPlayer.swift; sourceTree = "<group>"; };
 		FF22BB33CC44DD55EE66FF88 /* EtegamiRouteStrokeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EtegamiRouteStrokeTests.swift; sourceTree = "<group>"; };
 		FF9003DAA26DCF18D810004A /* CollectiveTrailSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectiveTrailSection.swift; sourceTree = "<group>"; };
+		FF9D9D6F58FBBD0F41C958FE /* StageLinkResolverTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StageLinkResolverTests.swift; sourceTree = "<group>"; };
 		FFDE354370A5891DF5C3F183 /* VoiceGuideSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceGuideSettingsView.swift; sourceTree = "<group>"; };
 		GOSHUIN0000000000000002 /* GoshuinMilestones.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinMilestones.swift; sourceTree = "<group>"; };
 		GOSHUIN0000000000000004 /* GoshuinPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoshuinPageView.swift; sourceTree = "<group>"; };
@@ -2712,6 +2716,7 @@
 				5E6D0B669C95F652ABA43E71 /* PilgrimageTilesDescriptors.swift */,
 				FEAA54CA9370B6ECF3CB4AFF /* PilgrimageTilesManager.swift */,
 				C834A8042EB4BE24A8AE4077 /* MapboxTileRegionLoader.swift */,
+				634C42EE4BBE220E48763570 /* StageLink.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -2854,6 +2859,7 @@
 				92B6FA98E0D6F55AEC01621F /* PilgrimageMapsRowTests.swift */,
 				EFEC98960B66C514DB754552 /* OfflineMapsViewModelTests.swift */,
 				B1715910123A401785E693AC /* WaysListModelTests.swift */,
+				FF9D9D6F58FBBD0F41C958FE /* StageLinkResolverTests.swift */,
 			);
 			name = Honor;
 			path = Honor;
@@ -3677,6 +3683,7 @@
 				4FD777544BEA7A4E360B985F /* PilgrimageMapsRow.swift in Sources */,
 				8254848373FD9AFDEA6F61BE /* OfflineMapsView.swift in Sources */,
 				D32C3526625171C03290CF0F /* MapboxTelemetry.swift in Sources */,
+				B5AA77FC1EF12281243CD150 /* StageLink.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3873,6 +3880,7 @@
 				D73AA76C19382E58B58E4025 /* OfflineMapsViewModelTests.swift in Sources */,
 				4DA8125B1BFD42B7AF21493F /* WaysListModelTests.swift in Sources */,
 				EFFDCF86ACC158836AB51275 /* MapboxTelemetryTests.swift in Sources */,
+				3142528E87F77E9EFAF79DE8 /* StageLinkResolverTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
