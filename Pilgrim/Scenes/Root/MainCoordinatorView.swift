@@ -223,6 +223,15 @@ class MainCoordinator: ObservableObject {
         }
     }
 
+    /// Every link, from the OS or the paste field, arrives here.
+    func open(_ link: HonorLinkDestination) {
+        switch link {
+        case .share(let id): openWay(shareId: id)
+        case .stage(let routeId, let index): openStage(routeId: routeId, index: index)
+        case .unrecognised: showLinkToast("this link needs a newer Pilgrim")
+        }
+    }
+
     /// Fetch happens wherever the user is: inside the Ways sheet the state
     /// renders inline beside the paste field (a not-found error keeps the
     /// field editable); from a link with no sheet open, a toast carries it.

@@ -67,7 +67,7 @@ struct MainTabView: View {
                 importState: coordinator.honorImportState,
                 onChoose: { coordinator.openOverview(for: $0) },
                 onPaste: { text in
-                    if let id = HonorLink.parse(text: text) { coordinator.openWay(shareId: id) }
+                    if let link = HonorLink.parse(text: text) { coordinator.open(link) }
                 }
             )
         }
@@ -84,24 +84,19 @@ struct MainTabView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .pilgrimOpenWay)) { note in
-            guard let id = note.userInfo?["shareId"] as? String else { return }
+            guard let link = note.userInfo?["link"] as? HonorLinkDestination else { return }
             // Consumed here too so a warm-launch link (this view already
-            // mounted) doesn't sit in `pendingShareId` for a later onAppear
-            // to replay a second time.
-            PilgrimApp.pendingShareId = nil
-            // Mid-walk `openWay` refuses and says so with a toast, so the tab
-            // must not switch out from under the walker for a link that is
-            // about to go nowhere.
-            if coordinator.activeWalkViewModel == nil { selectedTab = .path }
-            coordinator.openWay(shareId: id)
+            // mounted) doesn't sit in `pendingLink` for a later onAppear to
+            // replay a second time.
+            PilgrimApp.pendingLink = nil
+            open(link)
         }
         .onAppear {
             // A link tapped on a cold launch posted before this view existed
             // to receive it (see `PilgrimApp.route`) — claim it exactly once.
-            if let id = PilgrimApp.pendingShareId {
-                PilgrimApp.pendingShareId = nil
-                if coordinator.activeWalkViewModel == nil { selectedTab = .path }
-                coordinator.openWay(shareId: id)
+            if let link = PilgrimApp.pendingLink {
+                PilgrimApp.pendingLink = nil
+                open(link)
             }
         }
         .alert("Save Failed", isPresented: $coordinator.showSaveError) {
@@ -162,5 +157,13 @@ struct MainTabView: View {
         // and their back buttons fell to the asset-catalog accent, which has
         // no constellation variant.
         .tint(.stone)
+    }
+
+    /// Mid-walk the coordinator refuses and says so with a toast, so the tab
+    /// must not switch out from under the walker for a link that is about to
+    /// go nowhere. A link this build can't read goes nowhere either.
+    private func open(_ link: HonorLinkDestination) {
+        if coordinator.activeWalkViewModel == nil, link != .unrecognised { selectedTab = .path }
+        coordinator.open(link)
     }
 }

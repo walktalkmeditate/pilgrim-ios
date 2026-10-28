@@ -556,6 +556,27 @@ extension MainCoordinatorHonorTests {
         XCTAssertNil(coordinator.honorRouteLink, "the replaced stage link must land nothing")
         XCTAssertNil(coordinator.pendingRouteLink)
     }
+
+    func testAnUnrecognisedLinkSaysANewerPilgrimIsNeeded() {
+        let coordinator = MainCoordinator()
+
+        coordinator.open(.unrecognised)
+
+        XCTAssertEqual(coordinator.pendingLinkToast, "this link needs a newer Pilgrim")
+        XCTAssertNil(coordinator.honorRouteLink)
+        XCTAssertEqual(coordinator.honorImportState, .idle)
+    }
+
+    @MainActor
+    func testAStageDestinationOpensTheStage() async {
+        let coordinator = MainCoordinator()
+        stub(coordinator, cached: catalog)
+
+        coordinator.open(.stage(routeId: "camino-frances", index: 13))
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+    }
 }
 
 /// A one-shot gate: `wait()` suspends until `open()` is called, and returns
