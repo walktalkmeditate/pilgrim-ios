@@ -71,6 +71,9 @@ struct PilgrimageRouteView: View {
     let entry: PilgrimageCatalogEntry
     let release: String
     let onChoose: (Way) -> Void
+    /// From a stage link: the stage to bring into view, and the download
+    /// question to ask about it. Nil from the catalog.
+    var focusStage: Int?
 
     @ObservedObject private var packages = PilgrimagePackageManager.shared
     @ObservedObject private var tiles = PilgrimageTilesManager.shared
@@ -96,6 +99,10 @@ struct PilgrimageRouteView: View {
     @State private var confirmRemove = false
     @State private var showRedrawNotice = false
     @State private var promptDownload = false
+    /// The focus is applied once, so returning to the screen never asks the
+    /// download question a second time.
+    @State private var focusApplied = false
+    @State private var scrollTarget: Int?
 
     private let ledgerStore = PilgrimageLedgerStore()
 
@@ -108,6 +115,16 @@ struct PilgrimageRouteView: View {
     private var stages: [PilgrimageRouteStage] { route?.stages ?? [] }
 
     var body: some View {
+        ScrollViewReader { proxy in
+            routeList
+                .onChange(of: scrollTarget) { _, target in
+                    guard let target else { return }
+                    withAnimation { proxy.scrollTo(target, anchor: .center) }
+                }
+        }
+    }
+
+    private var routeList: some View {
         List {
             Section { header } footer: { statusFooter }
             if isInstalled {
@@ -145,6 +162,7 @@ struct PilgrimageRouteView: View {
         .task {
             reload()
             await loadStagesIfNeeded()
+            applyFocus()
         }
         .onReceive(tiles.regionsChanged) { _ in refreshMapsStatus() }
         // A save whose regions were all present loads only packs and ends
@@ -264,6 +282,7 @@ struct PilgrimageRouteView: View {
         if !stages.isEmpty {
             ForEach(stages, id: \.index) { stage in
                 Button { open(stage) } label: { stageRow(stage) }
+                    .id(stage.index)
             }
         } else if isLoadingStages {
             HStack {
@@ -320,6 +339,17 @@ struct PilgrimageRouteView: View {
             return
         }
         onChoose(way)
+    }
+
+    /// Asks the question tapping the stage row would ask: with the route not
+    /// on the phone, whether to download it. An installed route whose
+    /// stage is missing (an older release) asks nothing; its Update button
+    /// is the answer.
+    private func applyFocus() {
+        guard let focusStage, !focusApplied else { return }
+        focusApplied = true
+        if stages.contains(where: { $0.index == focusStage }) { scrollTarget = focusStage }
+        if !isInstalled { promptDownload = true }
     }
 
     /// Every path that starts an install goes through here, so the Replace

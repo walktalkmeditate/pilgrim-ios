@@ -83,6 +83,19 @@ struct MainTabView: View {
                 )
             }
         }
+        .sheet(item: $coordinator.honorRouteLink, onDismiss: coordinator.promotePendingHonorWay) { link in
+            NavigationStack {
+                PilgrimageRouteView(entry: link.entry, release: link.release,
+                                    onChoose: { coordinator.openOverview(for: $0) }, focusStage: link.focus)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") { coordinator.honorRouteLink = nil }
+                                .font(Constants.Typography.button)
+                                .foregroundColor(.stone)
+                        }
+                    }
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .pilgrimOpenWay)) { note in
             guard let link = note.userInfo?["link"] as? HonorLinkDestination else { return }
             // Consumed here too so a warm-launch link (this view already
