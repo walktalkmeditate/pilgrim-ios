@@ -453,8 +453,73 @@ extension MainCoordinatorHonorTests {
         XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
         XCTAssertNil(coordinator.honorOverviewWay)
         XCTAssertNil(coordinator.pendingHonorWay)
-        coordinator.handleOverviewDismiss()
         XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    func testAnOverviewRequestedWhileARouteLinkIsParkedIsNotStranded() throws {
+        let coordinator = MainCoordinator()
+        let first = try makeWay()
+        let second = try makeWay()
+        coordinator.openOverview(for: first)
+        coordinator.openRouteLink(link(focus: 13))
+
+        coordinator.openOverview(for: second)
+        coordinator.handleOverviewDismiss()
+
+        XCTAssertEqual(coordinator.honorOverviewWay?.id, second.id)
+        XCTAssertNil(coordinator.pendingHonorWay)
+        XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    func testAWayParkedBehindAWalkAgainOverviewIsNotStranded() throws {
+        let coordinator = MainCoordinator()
+        let shared = try makeWay()
+        coordinator.completedSnapshot = makeWalk()
+        coordinator.openRouteLink(link(focus: 13))
+        coordinator.walkAgain(makeWalk())
+        coordinator.completedSnapshot = nil
+        coordinator.handleSummaryDismiss()
+        XCTAssertNotNil(coordinator.honorOverviewWay)
+        XCTAssertNil(coordinator.pendingRouteLink, "walking again is the newest request")
+
+        coordinator.openOverview(for: shared)
+        coordinator.handleOverviewDismiss()
+
+        XCTAssertEqual(coordinator.honorOverviewWay?.id, shared.id)
+        XCTAssertNil(coordinator.pendingHonorWay)
+        XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    func testBeginClearsAWayParkedBehindTheOverview() throws {
+        let coordinator = MainCoordinator()
+        addTeardownBlock { coordinator.cancelWalk() }
+        let way = try makeWay()
+        coordinator.openOverview(for: way)
+        coordinator.pendingHonorWay = try makeWay()
+
+        coordinator.startHonor(way: way)
+        coordinator.handleOverviewDismiss()
+
+        XCTAssertNotNil(coordinator.activeWalkViewModel)
+        XCTAssertNil(coordinator.pendingHonorWay)
+        XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    @MainActor
+    func testAStageLinkReplacedBeforeItsTaskRunsLandsNothing() async throws {
+        let coordinator = MainCoordinator()
+        let held = heldImport(try makeWay())
+        coordinator.importShare = held.fetch
+        stub(coordinator, cached: catalog)
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        coordinator.openWay(shareId: "Qoi4YmPHLN")
+        await settle()
+
+        XCTAssertNil(coordinator.honorRouteLink)
+        XCTAssertNil(coordinator.pendingRouteLink)
+        held.release()
+        await settle()
     }
 
     func testNewestLinkWinsWhileTheWaysSheetIsStillClosing() throws {

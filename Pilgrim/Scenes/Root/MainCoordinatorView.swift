@@ -270,7 +270,7 @@ class MainCoordinator: ObservableObject {
         if honorImportState == .fetching { honorImportState = .idle }
         wirePilgrimageManagers()
         importTask = Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self, !Task.isCancelled else { return }
             let installed = self.installedRouteId()
             let way = installed == routeId
                 ? self.loadStageWay(WayStore.stageWayId(routeId: routeId, stageIndex: index))
@@ -403,6 +403,7 @@ class MainCoordinator: ObservableObject {
     /// summary sheet close, then present (AF60: never two sheets at once).
     /// A nil build (OwnWalkWayBuilder.make(from:) rejecting too short a route or a missing uuid) parks nothing and no overview appears; every host wiring `onWalkAgain` must also wire its summary's `onDismiss` to `promotePendingHonorWay`, since the park is global but the promote is per-host.
     func walkAgain(_ walk: WalkInterface) {
+        pendingRouteLink = nil
         pendingHonorWay = OwnWalkWayBuilder.make(from: walk)
     }
 
@@ -438,11 +439,12 @@ class MainCoordinator: ObservableObject {
         }
         if let way = pendingStartWay {
             pendingStartWay = nil
+            pendingHonorWay = nil
             pendingRouteLink = nil
             startWalk(mode: .honor, way: way)
         } else if honorOverviewWay == nil {
             // On an item swap the incoming overview is already showing; promoting now would stack a second sheet.
-            promotePendingRouteLink()
+            promotePendingHonorWay()
         }
     }
 
