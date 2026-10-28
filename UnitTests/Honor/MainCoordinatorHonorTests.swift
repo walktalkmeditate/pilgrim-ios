@@ -209,6 +209,219 @@ final class MainCoordinatorHonorTests: XCTestCase {
     }
 }
 
+// MARK: - Stage links
+
+extension MainCoordinatorHonorTests {
+
+    private var frances: PilgrimageCatalogEntry {
+        PilgrimageCatalogEntry(id: "camino-frances", name: "Camino Francés", names: [:], country: "ES",
+                               region: "Europe", distanceKm: 780, tradition: "christian", stageCount: 33, bytes: 1_000)
+    }
+
+    private var catalog: PilgrimageCatalog { PilgrimageCatalog(release: "v1.12.0", routes: [frances]) }
+
+    private func link(focus: Int?) -> HonorRouteLink {
+        HonorRouteLink(entry: frances, release: "v1.12.0", focus: focus)
+    }
+
+    /// Everything `openStage` reads, answered without a package on disk or a
+    /// network. The catalog load fails unless a spec says otherwise, so a
+    /// spec that reaches it by accident shows up as a toast.
+    private func stub(_ coordinator: MainCoordinator, installed: String? = nil, way: Way? = nil,
+                      cached: PilgrimageCatalog? = nil,
+                      load: @escaping @MainActor () async throws -> PilgrimageCatalog = { throw PilgrimageError.catalogUnreachable }) {
+        coordinator.installedRouteId = { installed }
+        coordinator.loadStageWay = { _ in way }
+        coordinator.cachedCatalog = { cached }
+        coordinator.loadCatalog = load
+    }
+
+    @MainActor
+    func testStageLinkForAnInstalledStageOpensItsOverview() async throws {
+        let coordinator = MainCoordinator()
+        let way = try makeWay()
+        stub(coordinator, installed: "camino-frances", way: way)
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.honorOverviewWay?.id, way.id, "a downloaded stage never waits on the catalog")
+        XCTAssertNil(coordinator.honorRouteLink)
+        XCTAssertNil(coordinator.pendingLinkToast)
+    }
+
+    @MainActor
+    func testStageLinkForARouteNotOnThePhoneOpensTheRouteFocused() async {
+        let coordinator = MainCoordinator()
+        stub(coordinator, cached: catalog)
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+        XCTAssertNil(coordinator.honorOverviewWay)
+    }
+
+    @MainActor
+    func testStageLinkLoadsTheCatalogWhenNoneIsInHand() async {
+        let coordinator = MainCoordinator()
+        let gate = AsyncGate()
+        let catalog = self.catalog
+        stub(coordinator, load: {
+            await gate.wait()
+            return catalog
+        })
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await settle()
+        XCTAssertEqual(coordinator.pendingLinkToast, "reaching for the route…")
+
+        gate.open()
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+        XCTAssertNil(coordinator.pendingLinkToast)
+    }
+
+    @MainActor
+    func testStageLinkForARouteTheCatalogLacksSaysSo() async {
+        let coordinator = MainCoordinator()
+        stub(coordinator, cached: PilgrimageCatalog(release: "v1.12.0", routes: []))
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.pendingLinkToast, "this route isn't in Pilgrim yet")
+        XCTAssertNil(coordinator.honorRouteLink)
+    }
+
+    @MainActor
+    func testStageLinkWithTheCatalogOutOfReachSaysSo() async {
+        let coordinator = MainCoordinator()
+        stub(coordinator)
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.pendingLinkToast, PilgrimageCopy.line(for: .catalogUnreachable))
+        XCTAssertNil(coordinator.honorRouteLink)
+    }
+
+    func testStageLinkWhileWalkingSetsTheToast() throws {
+        let coordinator = MainCoordinator()
+        addTeardownBlock { coordinator.cancelWalk() }
+        coordinator.startWalk()
+        _ = try XCTUnwrap(coordinator.activeWalkViewModel, "the guard under test only means something with a walk running")
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+
+        XCTAssertEqual(coordinator.pendingLinkToast, "finish this walk first")
+        XCTAssertNil(coordinator.honorRouteLink)
+        XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    @MainActor
+    func testStageLinkOverTheWaysSheetParksUntilItCloses() async {
+        let coordinator = MainCoordinator()
+        stub(coordinator, cached: catalog)
+        coordinator.chooseWay()
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertFalse(coordinator.honorWaysPresented)
+        XCTAssertNil(coordinator.honorRouteLink, "the route sheet must wait for the Ways sheet to finish closing")
+        XCTAssertEqual(coordinator.pendingRouteLink, link(focus: 13))
+
+        coordinator.promotePendingHonorWay()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+        XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    @MainActor
+    func testStageLinkOverAnOverviewClosesItAndOpensOnDismiss() async throws {
+        let coordinator = MainCoordinator()
+        addTeardownBlock { coordinator.cancelWalk() }
+        stub(coordinator, cached: catalog)
+        coordinator.openOverview(for: try makeWay())
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertNil(coordinator.honorOverviewWay)
+        XCTAssertNil(coordinator.honorRouteLink)
+        XCTAssertEqual(coordinator.pendingRouteLink, link(focus: 13))
+
+        coordinator.handleOverviewDismiss()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+        XCTAssertNil(coordinator.activeWalkViewModel)
+    }
+
+    @MainActor
+    func testABeginInFlightWinsOverAStageLink() async throws {
+        let coordinator = MainCoordinator()
+        addTeardownBlock { coordinator.cancelWalk() }
+        stub(coordinator, cached: catalog)
+        let way = try makeWay()
+        coordinator.openOverview(for: way)
+        coordinator.startHonor(way: way)
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertNil(coordinator.honorRouteLink)
+        XCTAssertNil(coordinator.pendingRouteLink)
+        XCTAssertEqual(coordinator.pendingStartWay?.id, way.id)
+    }
+
+    func testChoosingAStageInsideTheRouteSheetParksTheWay() throws {
+        let coordinator = MainCoordinator()
+        let way = try makeWay()
+        coordinator.honorRouteLink = link(focus: 13)
+
+        coordinator.openOverview(for: way)
+
+        XCTAssertNil(coordinator.honorRouteLink)
+        XCTAssertNil(coordinator.honorOverviewWay, "the overview must wait for the route sheet to finish closing")
+        XCTAssertEqual(coordinator.pendingHonorWay?.id, way.id)
+
+        coordinator.promotePendingHonorWay()
+
+        XCTAssertEqual(coordinator.honorOverviewWay?.id, way.id)
+    }
+
+    func testASecondStageLinkSwapsTheOpenRouteSheet() {
+        let coordinator = MainCoordinator()
+        coordinator.honorRouteLink = link(focus: 13)
+
+        coordinator.openRouteLink(link(focus: 19))
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 19))
+        XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    @MainActor
+    func testStageLinkCancelsAShareImportInFlight() async throws {
+        let coordinator = MainCoordinator()
+        let held = heldImport(try makeWay())
+        coordinator.importShare = held.fetch
+        stub(coordinator, cached: catalog)
+
+        coordinator.openWay(shareId: "Qoi4YmPHLN")
+        XCTAssertEqual(coordinator.honorImportState, .fetching)
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+        held.release()
+        await settle()
+
+        XCTAssertEqual(coordinator.honorImportState, .idle)
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+        XCTAssertNil(coordinator.honorOverviewWay, "the cancelled share import must land nothing")
+    }
+}
+
 /// A one-shot gate: `wait()` suspends until `open()` is called, and returns
 /// at once after. Lets a spec hold an async call open across other work
 /// without a sleep or a wall-clock deadline.
