@@ -231,7 +231,7 @@ extension MainCoordinatorHonorTests {
                       cached: PilgrimageCatalog? = nil,
                       load: @escaping @MainActor () async throws -> PilgrimageCatalog = { throw PilgrimageError.catalogUnreachable }) {
         coordinator.installedRouteId = { installed }
-        coordinator.loadStageWay = { _ in way }
+        coordinator.loadStageWay = { $0 == "pilgrimage:camino-frances:13" ? way : nil }
         coordinator.cachedCatalog = { cached }
         coordinator.loadCatalog = load
     }
@@ -419,6 +419,77 @@ extension MainCoordinatorHonorTests {
         XCTAssertEqual(coordinator.honorImportState, .idle)
         XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
         XCTAssertNil(coordinator.honorOverviewWay, "the cancelled share import must land nothing")
+    }
+
+    @MainActor
+    func testStageLinkOverASummaryParksUntilItCloses() async {
+        let coordinator = MainCoordinator()
+        stub(coordinator, cached: catalog)
+        coordinator.completedSnapshot = makeWalk()
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertNil(coordinator.honorRouteLink, "a route sheet over the summary would never appear")
+        XCTAssertEqual(coordinator.pendingRouteLink, link(focus: 13))
+
+        coordinator.completedSnapshot = nil
+        coordinator.handleSummaryDismiss()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+    }
+
+    @MainActor
+    func testNewestLinkWinsOverAnOlderShareParkedBehindASummary() throws {
+        let coordinator = MainCoordinator()
+        let way = try makeWay()
+        coordinator.completedSnapshot = makeWalk()
+        coordinator.openOverview(for: way)
+
+        coordinator.openRouteLink(link(focus: 13))
+        coordinator.completedSnapshot = nil
+        coordinator.handleSummaryDismiss()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+        XCTAssertNil(coordinator.honorOverviewWay)
+        XCTAssertNil(coordinator.pendingHonorWay)
+        coordinator.handleOverviewDismiss()
+        XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    func testNewestLinkWinsWhileTheWaysSheetIsStillClosing() throws {
+        let coordinator = MainCoordinator()
+        let way = try makeWay()
+        coordinator.chooseWay()
+        coordinator.openRouteLink(link(focus: 13))
+
+        coordinator.openOverview(for: way)
+        coordinator.promotePendingHonorWay()
+
+        XCTAssertEqual(coordinator.honorOverviewWay?.id, way.id)
+        XCTAssertNil(coordinator.honorRouteLink, "the older route link must not stack on the newer overview")
+        XCTAssertNil(coordinator.pendingRouteLink)
+    }
+
+    @MainActor
+    func testACancelledStageLinkLandsNothing() async {
+        let coordinator = MainCoordinator()
+        let gate = AsyncGate()
+        let catalog = self.catalog
+        stub(coordinator, load: {
+            await gate.wait()
+            return catalog
+        })
+
+        coordinator.importShare = { _ in throw WayError.unavailable }
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await settle()
+        coordinator.openWay(shareId: "Qoi4YmPHLN")
+        gate.open()
+        await settle()
+
+        XCTAssertNil(coordinator.honorRouteLink, "the replaced stage link must land nothing")
+        XCTAssertNil(coordinator.pendingRouteLink)
     }
 }
 

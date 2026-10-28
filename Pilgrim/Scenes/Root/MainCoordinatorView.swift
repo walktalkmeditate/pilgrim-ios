@@ -293,6 +293,7 @@ class MainCoordinator: ObservableObject {
                     return
                 }
             }
+            guard !Task.isCancelled else { return }
             self.importTask = nil
             // A Begin already in flight, or a walk started while the catalog
             // loaded, wins: nothing may interrupt it.
@@ -318,7 +319,11 @@ class MainCoordinator: ObservableObject {
     /// promotes it. An open route sheet is simply swapped, since the link's
     /// id carries its focus.
     func openRouteLink(_ link: HonorRouteLink) {
-        if honorWaysPresented || completedSnapshot != nil || honorOverviewWay != nil {
+        // A full slot means a sheet is mid-close, and the newest request
+        // replaces whatever the other slot holds.
+        let sheetClosing = pendingHonorWay != nil || pendingRouteLink != nil
+        pendingHonorWay = nil
+        if honorWaysPresented || completedSnapshot != nil || honorOverviewWay != nil || sheetClosing {
             pendingRouteLink = link
             honorWaysPresented = false
             honorOverviewWay = nil
@@ -335,7 +340,11 @@ class MainCoordinator: ObservableObject {
         // `handleSummaryDismiss` promotes the park when the summary closes,
         // exactly as the Ways sheet's dismiss does. Choosing a stage inside
         // the route sheet lands here too.
-        if honorWaysPresented || honorRouteLink != nil || completedSnapshot != nil {
+        // A full slot means a sheet is mid-close, and the newest request
+        // replaces whatever the other slot holds.
+        let sheetClosing = pendingHonorWay != nil || pendingRouteLink != nil
+        pendingRouteLink = nil
+        if honorWaysPresented || honorRouteLink != nil || completedSnapshot != nil || sheetClosing {
             pendingHonorWay = way
             honorWaysPresented = false
             honorRouteLink = nil
@@ -432,7 +441,7 @@ class MainCoordinator: ObservableObject {
             pendingRouteLink = nil
             startWalk(mode: .honor, way: way)
         } else if honorOverviewWay == nil {
-            // Not on an item swap: the incoming overview is already showing.
+            // On an item swap the incoming overview is already showing; promoting now would stack a second sheet.
             promotePendingRouteLink()
         }
     }
