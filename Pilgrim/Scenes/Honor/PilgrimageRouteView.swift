@@ -296,10 +296,15 @@ struct PilgrimageRouteView: View {
                 Text(PilgrimageCopy.line(for: stagesFailure))
                     .font(Constants.Typography.caption)
                     .foregroundColor(.fog)
-                Button("try again") { Task { await loadStagesIfNeeded(force: true) } }
-                    .font(Constants.Typography.caption)
-                    .foregroundColor(.stone)
-                    .frame(minHeight: 44)
+                Button("try again") {
+                    Task {
+                        await loadStagesIfNeeded(force: true)
+                        applyFocus()
+                    }
+                }
+                .font(Constants.Typography.caption)
+                .foregroundColor(.stone)
+                .frame(minHeight: 44)
             }
         }
     }
@@ -344,9 +349,10 @@ struct PilgrimageRouteView: View {
     /// Asks the question tapping the stage row would ask: with the route not
     /// on the phone, whether to download it. An installed route whose
     /// stage is missing (an older release) asks nothing; its Update button
-    /// is the answer.
+    /// is the answer. It waits for the stage list, so a failed preview leaves
+    /// the error and "try again" alone and the retry applies the focus once.
     private func applyFocus() {
-        guard let focusStage, !focusApplied else { return }
+        guard let focusStage, !focusApplied, !stages.isEmpty else { return }
         focusApplied = true
         if stages.contains(where: { $0.index == focusStage }) { scrollTarget = focusStage }
         if !isInstalled { promptDownload = true }

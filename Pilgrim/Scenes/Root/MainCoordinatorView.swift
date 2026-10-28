@@ -43,7 +43,7 @@ class MainCoordinator: ObservableObject {
     var installedRouteId: @MainActor () -> String? = { PilgrimagePackageManager.shared.installed()?.routeId }
     var loadStageWay: (String) -> Way? = { WayStore.shared.load(id: $0) }
     var cachedCatalog: @MainActor () -> PilgrimageCatalog? = { PilgrimageCatalogService.shared.catalog }
-    var loadCatalog: @MainActor () async throws -> PilgrimageCatalog = { try await PilgrimageCatalogService.shared.load() }
+    var loadCatalog: @MainActor (_ force: Bool) async throws -> PilgrimageCatalog = { try await PilgrimageCatalogService.shared.load(force: $0) }
 
     private var pendingSnapshot: TempWalk?
     private var bannerDismissWork: DispatchWorkItem?
@@ -289,10 +289,16 @@ class MainCoordinator: ObservableObject {
                                           stageWayExists: way != nil, catalog: catalog)
             }
             var outcome = resolve(self.cachedCatalog())
-            if outcome == .needsCatalog {
+            var forced = false
+            // The in-memory catalog is never refreshed and the disk cache can be a
+            // day old, so a route added since then reads as missing here while the
+            // web page says it exists. One forced load settles it before refusing.
+            while outcome == .needsCatalog || (outcome == .notInCatalog && !forced) {
+                let force = outcome == .notInCatalog
+                forced = forced || force
                 self.showLinkToast("reaching for the route…")
                 do {
-                    let catalog = try await self.loadCatalog()
+                    let catalog = try await self.loadCatalog(force)
                     guard !Task.isCancelled else { return }
                     outcome = resolve(catalog)
                 } catch {
@@ -412,8 +418,9 @@ class MainCoordinator: ObservableObject {
     /// summary sheet close, then present (AF60: never two sheets at once).
     /// A nil build (OwnWalkWayBuilder.make(from:) rejecting too short a route or a missing uuid) parks nothing and no overview appears; every host wiring `onWalkAgain` must also wire its summary's `onDismiss` to `promotePendingHonorWay`, since the park is global but the promote is per-host.
     func walkAgain(_ walk: WalkInterface) {
+        guard let way = OwnWalkWayBuilder.make(from: walk) else { return }
         pendingRouteLink = nil
-        pendingHonorWay = OwnWalkWayBuilder.make(from: walk)
+        pendingHonorWay = way
     }
 
     func promotePendingHonorWay() {

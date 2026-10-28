@@ -44,16 +44,7 @@ struct MainTabView: View {
         }) { vm in
             ActiveWalkView(viewModel: vm, onCancel: { coordinator.cancelWalk() })
                 .constellationDecorated(nebulae: false)
-                // A cover sits above the tab view's own overlay, so the
-                // "finish this walk first" answer to a link tapped mid-walk
-                // has to be repeated here to be seen at all.
-                .overlay(alignment: .top) {
-                    if let toast = coordinator.pendingLinkToast {
-                        HonorLinkToast(text: toast)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-                }
-                .animation(.easeInOut, value: coordinator.pendingLinkToast)
+                .modifier(LinkToastOverlay(coordinator: coordinator))
         }
         .sheet(item: $coordinator.completedSnapshot, onDismiss: {
             coordinator.handleSummaryDismiss()
@@ -70,6 +61,7 @@ struct MainTabView: View {
                     if let link = HonorLink.parse(text: text) { coordinator.open(link) }
                 }
             )
+            .modifier(LinkToastOverlay(coordinator: coordinator))
         }
         .sheet(item: $coordinator.honorOverviewWay, onDismiss: coordinator.handleOverviewDismiss) { way in
             NavigationStack {
@@ -82,6 +74,7 @@ struct MainTabView: View {
                     onWalkWithoutMissing: coordinator.walkWithoutMissingVoices
                 )
             }
+            .modifier(LinkToastOverlay(coordinator: coordinator))
         }
         .sheet(item: $coordinator.honorRouteLink, onDismiss: coordinator.promotePendingHonorWay) { link in
             NavigationStack {
@@ -95,6 +88,7 @@ struct MainTabView: View {
                         }
                     }
             }
+            .modifier(LinkToastOverlay(coordinator: coordinator))
         }
         .onReceive(NotificationCenter.default.publisher(for: .pilgrimOpenWay)) { note in
             guard let link = note.userInfo?["link"] as? HonorLinkDestination else { return }
@@ -178,5 +172,23 @@ struct MainTabView: View {
     private func open(_ link: HonorLinkDestination) {
         if coordinator.activeWalkViewModel == nil, link != .unrecognised { selectedTab = .path }
         coordinator.open(link)
+    }
+}
+
+/// A cover or sheet sits above the tab view's own overlay, so a stage link's
+/// answer ("finish this walk first", "this route isn't in Pilgrim yet") has to
+/// be repeated inside each one or it is never seen.
+private struct LinkToastOverlay: ViewModifier {
+    @ObservedObject var coordinator: MainCoordinator
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .top) {
+                if let toast = coordinator.pendingLinkToast {
+                    HonorLinkToast(text: toast)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.easeInOut, value: coordinator.pendingLinkToast)
     }
 }

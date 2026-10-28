@@ -42,6 +42,10 @@ final class StageLinkResolverTests: XCTestCase {
                        "Replace is the route screen's question to ask, not the link's")
     }
 
+    func testTheLastStageOpensTheRouteFocusedOnIt() {
+        XCTAssertEqual(resolve(index: 32, catalog: catalog), sheet(focus: 32))
+    }
+
     func testAStagePastTheEndOpensTheRouteUnfocused() {
         XCTAssertEqual(resolve(index: 33, catalog: catalog), sheet(focus: nil))
     }

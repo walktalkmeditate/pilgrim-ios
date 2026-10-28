@@ -226,14 +226,22 @@ extension MainCoordinatorHonorTests {
 
     /// Everything `openStage` reads, answered without a package on disk or a
     /// network. The catalog load fails unless a spec says otherwise, so a
-    /// spec that reaches it by accident shows up as a toast.
+    /// spec that reaches it by accident shows up as a toast. `loadForces`
+    /// records the `force` flag of every load, in order.
+    private final class LoadLog {
+        var forces: [Bool] = []
+    }
+
     private func stub(_ coordinator: MainCoordinator, installed: String? = nil, way: Way? = nil,
-                      cached: PilgrimageCatalog? = nil,
-                      load: @escaping @MainActor () async throws -> PilgrimageCatalog = { throw PilgrimageError.catalogUnreachable }) {
+                      cached: PilgrimageCatalog? = nil, log: LoadLog = LoadLog(),
+                      load: @escaping @MainActor (_ force: Bool) async throws -> PilgrimageCatalog = { _ in throw PilgrimageError.catalogUnreachable }) {
         coordinator.installedRouteId = { installed }
         coordinator.loadStageWay = { $0 == "pilgrimage:camino-frances:13" ? way : nil }
         coordinator.cachedCatalog = { cached }
-        coordinator.loadCatalog = load
+        coordinator.loadCatalog = { force in
+            log.forces.append(force)
+            return try await load(force)
+        }
     }
 
     @MainActor
@@ -267,7 +275,7 @@ extension MainCoordinatorHonorTests {
         let coordinator = MainCoordinator()
         let gate = AsyncGate()
         let catalog = self.catalog
-        stub(coordinator, load: {
+        stub(coordinator, load: { _ in
             await gate.wait()
             return catalog
         })
@@ -284,15 +292,59 @@ extension MainCoordinatorHonorTests {
     }
 
     @MainActor
-    func testStageLinkForARouteTheCatalogLacksSaysSo() async {
+    func testStageLinkForARouteEvenAFreshCatalogLacksSaysSo() async {
         let coordinator = MainCoordinator()
-        stub(coordinator, cached: PilgrimageCatalog(release: "v1.12.0", routes: []))
+        let log = LoadLog()
+        let empty = PilgrimageCatalog(release: "v1.12.0", routes: [])
+        stub(coordinator, cached: empty, log: log, load: { _ in empty })
 
         coordinator.openStage(routeId: "camino-frances", index: 13)
         await coordinator.waitForImport()
 
         XCTAssertEqual(coordinator.pendingLinkToast, "this route isn't in Pilgrim yet")
         XCTAssertNil(coordinator.honorRouteLink)
+        XCTAssertEqual(log.forces, [true], "one forced load, then the refusal")
+    }
+
+    @MainActor
+    func testStageLinkForARouteAddedSinceTheCachedCatalogForcesOneLoad() async {
+        let coordinator = MainCoordinator()
+        let log = LoadLog()
+        let fresh = catalog
+        stub(coordinator, cached: PilgrimageCatalog(release: "v1.11.0", routes: []), log: log, load: { _ in fresh })
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+        XCTAssertEqual(log.forces, [true])
+    }
+
+    @MainActor
+    func testStageLinkForARouteInTheCachedCatalogNeverLoads() async {
+        let coordinator = MainCoordinator()
+        let log = LoadLog()
+        stub(coordinator, cached: catalog, log: log)
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.honorRouteLink, link(focus: 13))
+        XCTAssertEqual(log.forces, [])
+    }
+
+    @MainActor
+    func testStageLinkWithNoCatalogInHandLoadsUnforcedThenForcesOnceIfTheRouteIsMissing() async {
+        let coordinator = MainCoordinator()
+        let log = LoadLog()
+        let empty = PilgrimageCatalog(release: "v1.12.0", routes: [])
+        stub(coordinator, log: log, load: { _ in empty })
+
+        coordinator.openStage(routeId: "camino-frances", index: 13)
+        await coordinator.waitForImport()
+
+        XCTAssertEqual(coordinator.pendingLinkToast, "this route isn't in Pilgrim yet")
+        XCTAssertEqual(log.forces, [false, true])
     }
 
     @MainActor
@@ -471,6 +523,31 @@ extension MainCoordinatorHonorTests {
         XCTAssertNil(coordinator.pendingRouteLink)
     }
 
+    func testAnOverviewItemSwapDoesNotPromoteAParkedRouteLink() throws {
+        let coordinator = MainCoordinator()
+        coordinator.openOverview(for: try makeWay())
+        coordinator.openOverview(for: try makeWay())
+        coordinator.pendingRouteLink = link(focus: 13)
+
+        coordinator.handleOverviewDismiss()
+
+        XCTAssertNil(coordinator.honorRouteLink, "the incoming overview is showing; a route sheet now would stack")
+        XCTAssertNotNil(coordinator.honorOverviewWay)
+    }
+
+    func testWalkAgainOnAWalkTooShortToBuildKeepsAParkedRouteLink() {
+        let coordinator = MainCoordinator()
+        coordinator.completedSnapshot = makeWalk()
+        coordinator.openRouteLink(link(focus: 13))
+        let tooShort = WalkDataFactory.makeWalk(uuid: UUID(), startDate: start,
+                                                endDate: start.addingTimeInterval(180), routeData: [])
+
+        coordinator.walkAgain(tooShort)
+
+        XCTAssertEqual(coordinator.pendingRouteLink, link(focus: 13))
+        XCTAssertNil(coordinator.pendingHonorWay)
+    }
+
     func testAWayParkedBehindAWalkAgainOverviewIsNotStranded() throws {
         let coordinator = MainCoordinator()
         let shared = try makeWay()
@@ -496,6 +573,7 @@ extension MainCoordinatorHonorTests {
         let way = try makeWay()
         coordinator.openOverview(for: way)
         coordinator.pendingHonorWay = try makeWay()
+        coordinator.pendingRouteLink = link(focus: 13)
 
         coordinator.startHonor(way: way)
         coordinator.handleOverviewDismiss()
@@ -541,7 +619,7 @@ extension MainCoordinatorHonorTests {
         let coordinator = MainCoordinator()
         let gate = AsyncGate()
         let catalog = self.catalog
-        stub(coordinator, load: {
+        stub(coordinator, load: { _ in
             await gate.wait()
             return catalog
         })
