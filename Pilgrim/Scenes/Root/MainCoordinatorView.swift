@@ -20,12 +20,16 @@ class MainCoordinator: ObservableObject {
     @Published var honorImportState: HonorImportState = .idle
     /// The only feedback a link has when no Honor sheet is open to carry it.
     @Published var pendingLinkToast: String?
+    @Published var honorRouteLink: HonorRouteLink?
 
     /// A Way waiting for the sheet in front of it to finish closing, and a Way
     /// waiting for the overview to finish closing before its walk begins.
     /// Both exist because of AF60 — see `openOverview(for:)`.
     var pendingHonorWay: Way?
     var pendingStartWay: Way?
+    /// A route screen waiting for the sheet in front of it to finish closing.
+    /// AF60 again: see `openRouteLink(_:)`.
+    var pendingRouteLink: HonorRouteLink?
 
     /// Injectable so a spec can hold an import open across a Begin or a walk
     /// start and pin what the resolution is allowed to do. Production always
@@ -33,6 +37,13 @@ class MainCoordinator: ObservableObject {
     var importShare: (String) async throws -> Way = { try await WayImporter().importShare(id: $0) }
     /// Injectable so a spec can point the ledger at a temporary directory.
     var pilgrimageLedgers = PilgrimageLedgerStore()
+    /// Injectable so a spec can say what is on the phone and what the
+    /// catalog holds without a package on disk or a network. Production
+    /// reads the real managers.
+    var installedRouteId: @MainActor () -> String? = { PilgrimagePackageManager.shared.installed()?.routeId }
+    var loadStageWay: (String) -> Way? = { WayStore.shared.load(id: $0) }
+    var cachedCatalog: @MainActor () -> PilgrimageCatalog? = { PilgrimageCatalogService.shared.catalog }
+    var loadCatalog: @MainActor (_ force: Bool) async throws -> PilgrimageCatalog = { try await PilgrimageCatalogService.shared.load(force: $0) }
 
     private var pendingSnapshot: TempWalk?
     private var bannerDismissWork: DispatchWorkItem?
@@ -193,17 +204,32 @@ class MainCoordinator: ObservableObject {
     /// Resets the import state and any toast left over from a previous link
     /// so a stale failure line never greets the next opening of the sheet.
     func chooseWay() {
-        // Downloading a second route, Replace, Update, and Remove are all
-        // refused while a walk is on; this is where the manager learns what
-        // "on" means.
+        wirePilgrimageManagers()
+        honorImportState = .idle
+        showLinkToast(nil)
+        honorWaysPresented = true
+    }
+
+    /// Downloading a second route, Replace, Update, and Remove are all
+    /// refused while a walk is on; this is where the managers learn what
+    /// "on" means, and where Replace and Remove learn to take the maps with
+    /// them. A stage link reaches the route screen without the Ways sheet,
+    /// so both doors call this.
+    private func wirePilgrimageManagers() {
         Task { @MainActor in
             PilgrimagePackageManager.shared.isWalkActive = { [weak self] in self?.activeWalkViewModel != nil }
             PilgrimageTilesManager.shared.isWalkActive = { [weak self] in self?.activeWalkViewModel != nil }
             PilgrimagePackageManager.shared.tiles = PilgrimageTilesManager.shared
         }
-        honorImportState = .idle
-        showLinkToast(nil)
-        honorWaysPresented = true
+    }
+
+    /// Every link, from the OS or the paste field, arrives here.
+    func open(_ link: HonorLinkDestination) {
+        switch link {
+        case .share(let id): openWay(shareId: id)
+        case .stage(let routeId, let index): openStage(routeId: routeId, index: index)
+        case .unrecognised: showLinkToast("this link needs a newer Pilgrim")
+        }
     }
 
     /// Fetch happens wherever the user is: inside the Ways sheet the state
@@ -241,16 +267,102 @@ class MainCoordinator: ObservableObject {
         }
     }
 
+    /// A stage link does what tapping that stage on the route screen does:
+    /// its overview if the route is on the phone, otherwise the route screen
+    /// with the stage in view. It shares `importTask` with share links, so
+    /// the newest link of either kind wins.
+    func openStage(routeId: String, index: Int) {
+        guard activeWalkViewModel == nil else { showLinkToast("finish this walk first"); return }
+        importTask?.cancel()
+        // The share import this replaces will never land, so its spinner
+        // must not wait for the Ways sheet's next opening.
+        if honorImportState == .fetching { honorImportState = .idle }
+        wirePilgrimageManagers()
+        importTask = Task { @MainActor [weak self] in
+            guard let self, !Task.isCancelled else { return }
+            let installed = self.installedRouteId()
+            let way = installed == routeId
+                ? self.loadStageWay(WayStore.stageWayId(routeId: routeId, stageIndex: index))
+                : nil
+            func resolve(_ catalog: PilgrimageCatalog?) -> StageLinkOutcome {
+                StageLinkResolver.resolve(routeId: routeId, index: index, installedRouteId: installed,
+                                          stageWayExists: way != nil, catalog: catalog)
+            }
+            var outcome = resolve(self.cachedCatalog())
+            var forced = false
+            // The in-memory catalog is never refreshed and the disk cache can be a
+            // day old, so a route added since then reads as missing here while the
+            // web page says it exists. One forced load settles it before refusing.
+            while outcome == .needsCatalog || (outcome == .notInCatalog && !forced) {
+                let force = outcome == .notInCatalog
+                forced = forced || force
+                self.showLinkToast("reaching for the route…")
+                do {
+                    let catalog = try await self.loadCatalog(force)
+                    guard !Task.isCancelled else { return }
+                    outcome = resolve(catalog)
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    self.importTask = nil
+                    self.showLinkToast(PilgrimageCopy.line(for: (error as? PilgrimageError) ?? .catalogUnreachable))
+                    return
+                }
+            }
+            guard !Task.isCancelled else { return }
+            self.importTask = nil
+            // A Begin already in flight, or a walk started while the catalog
+            // loaded, wins: nothing may interrupt it.
+            guard self.activeWalkViewModel == nil, self.pendingStartWay == nil else {
+                self.showLinkToast(nil)
+                return
+            }
+            switch outcome {
+            case .overview:
+                self.showLinkToast(nil)
+                if let way { self.openOverview(for: way) }
+            case .routeSheet(let link):
+                self.showLinkToast(nil)
+                self.openRouteLink(link)
+            case .notInCatalog, .needsCatalog:
+                self.showLinkToast("this route isn't in Pilgrim yet")
+            }
+        }
+    }
+
+    /// AF60: a route screen asked for while the Ways sheet, a summary or an
+    /// overview is up waits for that sheet to close, and its dismiss
+    /// promotes it. An open route sheet is simply swapped, since the link's
+    /// id carries its focus.
+    func openRouteLink(_ link: HonorRouteLink) {
+        // A full slot means a sheet is mid-close, and the newest request
+        // replaces whatever the other slot holds.
+        let sheetClosing = pendingHonorWay != nil || pendingRouteLink != nil
+        pendingHonorWay = nil
+        if honorWaysPresented || completedSnapshot != nil || honorOverviewWay != nil || sheetClosing {
+            pendingRouteLink = link
+            honorWaysPresented = false
+            honorOverviewWay = nil
+        } else {
+            honorRouteLink = link
+        }
+    }
+
     /// From the Ways sheet: park the Way, close the sheet, promote on dismiss.
     /// From a link with no sheet open: present directly (one change).
     func openOverview(for way: Way) {
         // A summary sheet is a presented sheet too: presenting the overview
         // over it drops the overview on the floor and dead-ends the link.
         // `handleSummaryDismiss` promotes the park when the summary closes,
-        // exactly as the Ways sheet's dismiss does.
-        if honorWaysPresented || completedSnapshot != nil {
+        // exactly as the Ways sheet's dismiss does. Choosing a stage inside
+        // the route sheet lands here too.
+        // A full slot means a sheet is mid-close, and the newest request
+        // replaces whatever the other slot holds.
+        let sheetClosing = pendingHonorWay != nil || pendingRouteLink != nil
+        pendingRouteLink = nil
+        if honorWaysPresented || honorRouteLink != nil || completedSnapshot != nil || sheetClosing {
             pendingHonorWay = way
             honorWaysPresented = false
+            honorRouteLink = nil
         } else {
             honorOverviewWay = way
             gather(way)
@@ -306,7 +418,9 @@ class MainCoordinator: ObservableObject {
     /// summary sheet close, then present (AF60: never two sheets at once).
     /// A nil build (OwnWalkWayBuilder.make(from:) rejecting too short a route or a missing uuid) parks nothing and no overview appears; every host wiring `onWalkAgain` must also wire its summary's `onDismiss` to `promotePendingHonorWay`, since the park is global but the promote is per-host.
     func walkAgain(_ walk: WalkInterface) {
-        pendingHonorWay = OwnWalkWayBuilder.make(from: walk)
+        guard let way = OwnWalkWayBuilder.make(from: walk) else { return }
+        pendingRouteLink = nil
+        pendingHonorWay = way
     }
 
     func promotePendingHonorWay() {
@@ -314,7 +428,15 @@ class MainCoordinator: ObservableObject {
             pendingHonorWay = nil
             honorOverviewWay = way
             gather(way)
+        } else {
+            promotePendingRouteLink()
         }
+    }
+
+    private func promotePendingRouteLink() {
+        guard let link = pendingRouteLink else { return }
+        pendingRouteLink = nil
+        honorRouteLink = link
     }
 
     func startHonor(way: Way) {
@@ -333,7 +455,12 @@ class MainCoordinator: ObservableObject {
         }
         if let way = pendingStartWay {
             pendingStartWay = nil
+            pendingHonorWay = nil
+            pendingRouteLink = nil
             startWalk(mode: .honor, way: way)
+        } else if honorOverviewWay == nil {
+            // On an item swap the incoming overview is already showing; promoting now would stack a second sheet.
+            promotePendingHonorWay()
         }
     }
 

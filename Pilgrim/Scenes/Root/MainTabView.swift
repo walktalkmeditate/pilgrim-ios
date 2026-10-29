@@ -44,16 +44,7 @@ struct MainTabView: View {
         }) { vm in
             ActiveWalkView(viewModel: vm, onCancel: { coordinator.cancelWalk() })
                 .constellationDecorated(nebulae: false)
-                // A cover sits above the tab view's own overlay, so the
-                // "finish this walk first" answer to a link tapped mid-walk
-                // has to be repeated here to be seen at all.
-                .overlay(alignment: .top) {
-                    if let toast = coordinator.pendingLinkToast {
-                        HonorLinkToast(text: toast)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-                }
-                .animation(.easeInOut, value: coordinator.pendingLinkToast)
+                .modifier(LinkToastOverlay(coordinator: coordinator))
         }
         .sheet(item: $coordinator.completedSnapshot, onDismiss: {
             coordinator.handleSummaryDismiss()
@@ -67,9 +58,10 @@ struct MainTabView: View {
                 importState: coordinator.honorImportState,
                 onChoose: { coordinator.openOverview(for: $0) },
                 onPaste: { text in
-                    if let id = HonorLink.parse(text: text) { coordinator.openWay(shareId: id) }
+                    if let link = HonorLink.parse(text: text) { coordinator.open(link) }
                 }
             )
+            .modifier(LinkToastOverlay(coordinator: coordinator))
         }
         .sheet(item: $coordinator.honorOverviewWay, onDismiss: coordinator.handleOverviewDismiss) { way in
             NavigationStack {
@@ -82,26 +74,36 @@ struct MainTabView: View {
                     onWalkWithoutMissing: coordinator.walkWithoutMissingVoices
                 )
             }
+            .modifier(LinkToastOverlay(coordinator: coordinator))
+        }
+        .sheet(item: $coordinator.honorRouteLink, onDismiss: coordinator.promotePendingHonorWay) { link in
+            NavigationStack {
+                PilgrimageRouteView(entry: link.entry, release: link.release,
+                                    onChoose: { coordinator.openOverview(for: $0) }, focusStage: link.focus)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") { coordinator.honorRouteLink = nil }
+                                .font(Constants.Typography.button)
+                                .foregroundColor(.stone)
+                        }
+                    }
+            }
+            .modifier(LinkToastOverlay(coordinator: coordinator))
         }
         .onReceive(NotificationCenter.default.publisher(for: .pilgrimOpenWay)) { note in
-            guard let id = note.userInfo?["shareId"] as? String else { return }
+            guard let link = note.userInfo?["link"] as? HonorLinkDestination else { return }
             // Consumed here too so a warm-launch link (this view already
-            // mounted) doesn't sit in `pendingShareId` for a later onAppear
-            // to replay a second time.
-            PilgrimApp.pendingShareId = nil
-            // Mid-walk `openWay` refuses and says so with a toast, so the tab
-            // must not switch out from under the walker for a link that is
-            // about to go nowhere.
-            if coordinator.activeWalkViewModel == nil { selectedTab = .path }
-            coordinator.openWay(shareId: id)
+            // mounted) doesn't sit in `pendingLink` for a later onAppear to
+            // replay a second time.
+            PilgrimApp.pendingLink = nil
+            open(link)
         }
         .onAppear {
             // A link tapped on a cold launch posted before this view existed
             // to receive it (see `PilgrimApp.route`) — claim it exactly once.
-            if let id = PilgrimApp.pendingShareId {
-                PilgrimApp.pendingShareId = nil
-                if coordinator.activeWalkViewModel == nil { selectedTab = .path }
-                coordinator.openWay(shareId: id)
+            if let link = PilgrimApp.pendingLink {
+                PilgrimApp.pendingLink = nil
+                open(link)
             }
         }
         .alert("Save Failed", isPresented: $coordinator.showSaveError) {
@@ -162,5 +164,31 @@ struct MainTabView: View {
         // and their back buttons fell to the asset-catalog accent, which has
         // no constellation variant.
         .tint(.stone)
+    }
+
+    /// Mid-walk the coordinator refuses and says so with a toast, so the tab
+    /// must not switch out from under the walker for a link that is about to
+    /// go nowhere. A link this build can't read goes nowhere either.
+    private func open(_ link: HonorLinkDestination) {
+        if coordinator.activeWalkViewModel == nil, link != .unrecognised { selectedTab = .path }
+        coordinator.open(link)
+    }
+}
+
+/// A cover or sheet sits above the tab view's own overlay, so a stage link's
+/// answer ("finish this walk first", "this route isn't in Pilgrim yet") has to
+/// be repeated inside each one or it is never seen.
+private struct LinkToastOverlay: ViewModifier {
+    @ObservedObject var coordinator: MainCoordinator
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .top) {
+                if let toast = coordinator.pendingLinkToast {
+                    HonorLinkToast(text: toast)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.easeInOut, value: coordinator.pendingLinkToast)
     }
 }
